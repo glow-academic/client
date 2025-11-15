@@ -2,7 +2,6 @@
 Tests for app.utils.agents.generic_agent
 """
 
-import pytest
 
 
 class TestGeneric_Agent:

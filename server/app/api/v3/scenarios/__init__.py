@@ -1,5 +1,7 @@
 """Scenarios v3 router."""
 
+from fastapi import APIRouter
+
 from app.api.v3.scenarios.create import router as create_router
 from app.api.v3.scenarios.delete import router as delete_router
 from app.api.v3.scenarios.detail import router as detail_router
@@ -12,7 +14,6 @@ from app.api.v3.scenarios.randomize import router as randomize_router
 from app.api.v3.scenarios.search import router as search_router
 from app.api.v3.scenarios.select_attributes import router as select_attributes_router
 from app.api.v3.scenarios.update import router as update_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 

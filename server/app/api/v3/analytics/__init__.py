@@ -1,7 +1,8 @@
 """Analytics v3 API resource router."""
 
-from app.api.v3.analytics.refresh import router as refresh_router
 from fastapi import APIRouter
+
+from app.api.v3.analytics.refresh import router as refresh_router
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 

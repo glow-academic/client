@@ -5,6 +5,7 @@ Tests for app.utils.websocket.cancel_active_result
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from app.utils.websocket.cancel_active_result import cancel_active_result
 
 

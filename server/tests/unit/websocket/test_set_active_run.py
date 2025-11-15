@@ -5,6 +5,7 @@ Tests for app.utils.websocket.set_active_run
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.set_active_run import set_active_run
 
 

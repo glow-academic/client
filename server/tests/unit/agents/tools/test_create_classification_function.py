@@ -2,7 +2,6 @@
 Tests for app.utils.agents.tools.create_classification_function
 """
 
-import pytest
 from app.main import classification_progress, classification_results
 from app.utils.agents.tools.create_classification_function import (
     create_classification_function,

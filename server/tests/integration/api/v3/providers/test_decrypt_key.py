@@ -3,8 +3,9 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from app.utils.auth.encrypt_api_key import encrypt_api_key  # type: ignore
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
+
+from app.utils.auth.encrypt_api_key import encrypt_api_key  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

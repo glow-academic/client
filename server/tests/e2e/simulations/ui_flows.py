@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -15,13 +14,13 @@ def create_simulation_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Simulation created via UI flow.",
-    rubric_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
-    time_limit: Optional[int] = None,
-    scenario_ids: Optional[list[str]] = None,
-) -> Tuple[str, str]:
+    rubric_id: str | None = None,
+    department_ids: list[str] | None = None,
+    time_limit: int | None = None,
+    scenario_ids: list[str] | None = None,
+) -> tuple[str, str]:
     """Create a simulation through the UI and return (name, simulation_id)."""
     simulation_name = name or generate_unique_simulation_name("UI Simulation")
 

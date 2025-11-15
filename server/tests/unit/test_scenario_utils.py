@@ -2,7 +2,6 @@
 Tests for app.utils.scenario
 """
 
-import pytest
 
 
 class TestFormat_Parameter_Item_Info:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -18,11 +17,11 @@ def create_provider_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Provider created via UI flow.",
     api_key: str = "test-api-key-12345",
-    base_url_opt: Optional[str] = None,
-) -> Tuple[str, str]:
+    base_url_opt: str | None = None,
+) -> tuple[str, str]:
     """Create a provider through the UI and return (name, provider_id)."""
     provider_name = name or generate_unique_provider_name("UI Provider")
 
@@ -76,11 +75,11 @@ def create_model_via_ui(
     base_url: str,
     provider_id: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Model created via UI flow.",
     input_ppm: float = 3.0,
     output_ppm: float = 15.0,
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a model through the UI and return (name, model_id)."""
     model_name = name or generate_unique_model_name("UI Model")
 
@@ -131,9 +130,9 @@ def edit_provider_via_ui(
     base_url: str,
     provider_id: str,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    base_url_opt: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    base_url_opt: str | None = None,
 ) -> None:
     """Edit a provider through the UI."""
     page.goto(f"{base_url}/system/providers/p/{provider_id}")
@@ -170,12 +169,12 @@ def edit_model_via_ui(
     provider_id: str,
     model_id: str,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    input_ppm: Optional[float] = None,
-    output_ppm: Optional[float] = None,
-    active: Optional[bool] = None,
-    custom_model: Optional[bool] = None,
+    name: str | None = None,
+    description: str | None = None,
+    input_ppm: float | None = None,
+    output_ppm: float | None = None,
+    active: bool | None = None,
+    custom_model: bool | None = None,
 ) -> None:
     """Edit a model through the UI."""
     page.goto(f"{base_url}/system/providers/p/{provider_id}/m/{model_id}")

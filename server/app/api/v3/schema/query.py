@@ -1,12 +1,10 @@
 """Schema query endpoint - v3 API."""
 
-from typing import Annotated
 
-import asyncpg  # type: ignore
-from app.main import get_pool
-from app.main import server
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
+from app.main import get_pool, server
 
 router = APIRouter()
 

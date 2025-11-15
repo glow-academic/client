@@ -5,6 +5,7 @@ Tests for app.utils.websocket.add_guest_socket
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.add_guest_socket import add_guest_socket
 
 

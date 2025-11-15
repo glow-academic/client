@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict
+from collections.abc import Callable
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -32,7 +32,7 @@ def _expect_toast(page: Page, message: str) -> None:
 
 def _set_request_counter(
     page: Page, pattern: str
-) -> tuple[Dict[str, int], Callable[[], None]]:
+) -> tuple[dict[str, int], Callable[[], None]]:
     counts = {"total": 0}
 
     def _handle(request) -> None:

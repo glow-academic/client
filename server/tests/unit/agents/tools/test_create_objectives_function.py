@@ -4,7 +4,6 @@ Tests for app.utils.agents.tools.create_objectives_function
 
 import uuid
 
-import pytest
 from app.main import scenario_progress, scenario_results
 from app.utils.agents.tools.create_objectives_function import create_objectives_function
 

@@ -5,6 +5,7 @@ Tests for app.utils.websocket.is_guest_socket
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.is_guest_socket import is_guest_socket
 
 

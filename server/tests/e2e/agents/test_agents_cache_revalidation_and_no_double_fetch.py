@@ -8,10 +8,8 @@ from playwright.sync_api import Page, expect
 from server.tests.e2e.agents.helpers import (
     create_agent_api,
     delete_agent_api,
-    fetch_agents_list,
     generate_unique_agent_name,
 )
-from server.tests.e2e.agents.ui_flows import create_agent_via_ui
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 

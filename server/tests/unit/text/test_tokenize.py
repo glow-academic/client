@@ -2,7 +2,6 @@
 Tests for app.utils.text.tokenize
 """
 
-import pytest
 
 
 class TestTokenize:

@@ -2,7 +2,6 @@
 Tests for app.utils.text.weighted_sample_without_replacement
 """
 
-import pytest
 
 
 class TestWeighted_Sample_Without_Replacement:

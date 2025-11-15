@@ -4,7 +4,6 @@ Tests for app.utils.chat.get_simulation_conversation_history
 
 from datetime import datetime
 
-import pytest
 from app.utils.chat.get_simulation_conversation_history import (
     get_simulation_conversation_history,
 )

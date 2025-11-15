@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_simulation_name(prefix: str = "E2E Simulation") -> str:
@@ -27,12 +28,12 @@ def generate_unique_simulation_name(prefix: str = "E2E Simulation") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/create/simulations",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_simulations_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch simulations list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_simulation_detail(
     simulation_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch simulation detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_simulation_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default simulation detail used when creating new simulations."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -162,12 +163,12 @@ def create_simulation_api(
     description: str,
     rubric_id: str,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
+    effective_profile_id: str | None = None,
+    department_ids: list[str] | None = None,
     active: bool = True,
     practice_simulation: bool = False,
-    time_limit: Optional[int] = None,
-    scenario_ids: Optional[list[str] | list[Dict[str, Any]]] = None,
+    time_limit: int | None = None,
+    scenario_ids: list[str] | list[dict[str, Any]] | None = None,
 ) -> str:
     """Create a simulation via the API and return its ID."""
     defaults = fetch_simulation_detail_default(
@@ -183,7 +184,7 @@ def create_simulation_api(
     )
 
     # Format scenario_ids - can be list of strings or list of dicts with scenario_id and active
-    formatted_scenario_ids: list[str] | list[Dict[str, Any]] = []
+    formatted_scenario_ids: list[str] | list[dict[str, Any]] = []
     if scenario_ids:
         formatted_scenario_ids = scenario_ids
     elif defaults.get("valid_scenario_ids"):
@@ -200,7 +201,7 @@ def create_simulation_api(
         "rubric_id": rubric_id or defaults.get("valid_rubric_ids", [None])[0],
         "scenario_ids": formatted_scenario_ids,
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/simulations/create",
         payload,
@@ -218,16 +219,16 @@ def update_simulation_api(
     request: APIRequestContext,
     simulation_id: str,
     *,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    rubric_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
-    active: Optional[bool] = None,
-    practice_simulation: Optional[bool] = None,
-    time_limit: Optional[int] = None,
-    scenario_ids: Optional[list[Dict[str, Any]]] = None,
+    title: str | None = None,
+    description: str | None = None,
+    rubric_id: str | None = None,
+    department_ids: list[str] | None = None,
+    active: bool | None = None,
+    practice_simulation: bool | None = None,
+    time_limit: int | None = None,
+    scenario_ids: list[dict[str, Any]] | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Update a simulation via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -246,7 +247,7 @@ def update_simulation_api(
     )
 
     # Build payload with required fields (must provide all)
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "simulationId": simulation_id,
         "title": title if title is not None else current.get("name", ""),
         "description": description
@@ -295,7 +296,7 @@ def delete_simulation_api(
     simulation_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a simulation via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -318,7 +319,7 @@ def duplicate_simulation_api(
     simulation_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Duplicate a simulation via the API and return the new simulation ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -326,7 +327,7 @@ def duplicate_simulation_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/simulations/duplicate",
         {"simulationId": simulation_id},
@@ -341,10 +342,10 @@ def duplicate_simulation_api(
 
 
 def find_editable_simulation(
-    simulations: Iterable[Dict[str, Any]],
+    simulations: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first simulation that matches edit requirements."""
     for simulation in simulations:
         if not simulation.get("can_edit"):

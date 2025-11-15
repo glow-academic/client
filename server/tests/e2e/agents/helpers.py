@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_agent_name(prefix: str = "E2E Agent") -> str:
@@ -27,12 +28,12 @@ def generate_unique_agent_name(prefix: str = "E2E Agent") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/management/agents",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_agents_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch agents list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_agent_detail(
     agent_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch agent detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_agent_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default agent detail used when creating new agents."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -162,14 +163,14 @@ def create_agent_api(
     description: str,
     system_prompt: str,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
-    model_id: Optional[str] = None,
-    role: Optional[str] = None,
-    reasoning: Optional[str] = None,
-    temperature: Optional[float] = None,
-    active: Optional[bool] = None,
-    prompt_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
+    department_ids: list[str] | None = None,
+    model_id: str | None = None,
+    role: str | None = None,
+    reasoning: str | None = None,
+    temperature: float | None = None,
+    active: bool | None = None,
+    prompt_id: str | None = None,
 ) -> str:
     """Create an agent via the API and return its ID."""
     defaults = fetch_agent_detail_default(
@@ -204,7 +205,7 @@ def create_agent_api(
         "active": active if active is not None else True,
         "prompt_id": prompt_id,
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/agents/create",
         payload,
@@ -223,7 +224,7 @@ def delete_agent_api(
     agent_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete an agent via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -242,10 +243,10 @@ def delete_agent_api(
 
 
 def find_editable_agent(
-    agents: Iterable[Dict[str, Any]],
+    agents: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first agent that matches edit requirements."""
     for agent in agents:
         if not agent.get("can_edit"):

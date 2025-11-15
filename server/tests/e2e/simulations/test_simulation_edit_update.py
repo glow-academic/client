@@ -8,7 +8,6 @@ from playwright.sync_api import Page, expect
 from server.tests.e2e.simulations.helpers import (
     create_simulation_api,
     delete_simulation_api,
-    fetch_simulation_detail,
     generate_unique_simulation_name,
 )
 

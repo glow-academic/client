@@ -8,7 +8,7 @@ import json
 import logging
 import random
 import uuid
-from typing import Annotated, Any, Union
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -56,8 +56,8 @@ def parse_jsonb(data: Any) -> list[dict[str, Any]]:
 
 async def select_scenario_attributes(
     conn: asyncpg.Connection,
-    scenario_id: Union[uuid.UUID, str],
-    department_id: Union[uuid.UUID, str],
+    scenario_id: uuid.UUID | str,
+    department_id: uuid.UUID | str,
     profile_id: str | None = None,
 ) -> dict[str, Any]:
     """Select persona, documents, and parameter_items for a scenario.

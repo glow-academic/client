@@ -7,9 +7,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, trace
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, grading_progress, grading_results, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
@@ -22,7 +23,6 @@ from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 

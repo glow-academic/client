@@ -2,7 +2,6 @@
 Tests for app.utils.search
 """
 
-import pytest
 # Imports are done per-test to test individual functions
 
 

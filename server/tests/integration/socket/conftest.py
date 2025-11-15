@@ -7,7 +7,7 @@ import asyncpg  # type: ignore
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    pass
 
 
 class MockSocketIO:
@@ -107,7 +107,6 @@ def patch_get_pool(db: asyncpg.Connection, monkeypatch: pytest.MonkeyPatch) -> N
     global pool, avoiding event loop issues.
     """
     from app import main
-    from app.main import get_pool
 
     # Create a mock pool that returns the test connection
     class ConnectionContext:

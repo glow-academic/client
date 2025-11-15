@@ -7,8 +7,8 @@ from typing import Any
 from agents import function_tool
 from pydantic import Field
 
-from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 from app.main import grading_progress, grading_results
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 
 logger = logging.getLogger(__name__)
 

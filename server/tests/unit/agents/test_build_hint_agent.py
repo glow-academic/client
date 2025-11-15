@@ -2,10 +2,8 @@
 Tests for app.utils.agents.build_hint_agent
 """
 
-from typing import Any
 from unittest.mock import patch
 
-import pytest
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
 

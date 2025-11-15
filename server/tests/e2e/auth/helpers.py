@@ -4,26 +4,26 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -49,7 +49,7 @@ def fetch_profile_context(
     effective_profile_id: str,
     pathname: str = "/",
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch profile context via the signed API."""
     payload = {
         "actualProfileId": actual_profile_id,
@@ -72,7 +72,7 @@ def authorize_emulation(
     requester_profile_id: str,
     target_profile_id: str,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Check if profile emulation is authorized."""
     payload = {
         "requesterProfileId": requester_profile_id,
@@ -93,9 +93,9 @@ def get_profile_by_alias(
     alias: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch profile by alias."""
     effective_id = effective_profile_id or profile_id
     payload = {"alias": alias}
@@ -114,9 +114,9 @@ def get_profile_detail(
     profile_id: str,
     *,
     current_profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch profile detail."""
     effective_id = effective_profile_id or current_profile_id
     payload = {"profileId": profile_id}
@@ -135,7 +135,7 @@ def get_simulatable_profiles(
     requester_profile_id: str,
     *,
     bypass_cache: bool = True,
-) -> list[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get list of profiles that can be emulated by requester."""
     # This uses the authorize-emulation endpoint logic
     # We can test authorization for multiple profiles to find simulatable ones

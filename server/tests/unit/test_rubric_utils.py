@@ -5,7 +5,6 @@ Tests for app.utils.rubric
 import uuid
 from typing import Any
 
-import pytest
 from app.utils.rubric import get_dynamic_rubric  # type: ignore
 
 

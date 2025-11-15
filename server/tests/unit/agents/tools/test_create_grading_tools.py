@@ -5,7 +5,6 @@ Tests for app.utils.agents.tools.create_grading_tools
 import uuid
 from typing import Any
 
-import pytest
 from app.main import grading_progress, grading_results
 from app.utils.agents.tools.create_grading_tools import create_grading_tools
 

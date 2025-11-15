@@ -6,7 +6,6 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from server.tests.e2e.documents.helpers import (
-    bulk_update_documents_api,
     create_document_api,
     delete_document_api,
     generate_unique_document_name,

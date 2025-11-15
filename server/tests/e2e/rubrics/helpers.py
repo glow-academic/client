@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_rubric_name(prefix: str = "E2E Rubric") -> str:
@@ -27,12 +28,12 @@ def generate_unique_rubric_name(prefix: str = "E2E Rubric") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/management/rubrics",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_rubrics_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch rubrics list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_rubric_detail(
     rubric_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch rubric detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_rubric_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default rubric data used when creating new rubrics."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -160,13 +161,13 @@ def create_rubric_api(
     *,
     name: str,
     description: str,
-    department_ids: Optional[list[str]] = None,
+    department_ids: list[str] | None = None,
     active: bool = True,
     points: int = 0,
     passPoints: int = 0,
-    standard_groups: Optional[list[Dict[str, Any]]] = None,
+    standard_groups: list[dict[str, Any]] | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Create a rubric via the API and return its ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -183,7 +184,7 @@ def create_rubric_api(
         "passPoints": passPoints,
         "standard_groups": standard_groups or [],
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/rubrics/create",
         payload,
@@ -202,7 +203,7 @@ def delete_rubric_api(
     rubric_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a rubric via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -221,10 +222,10 @@ def delete_rubric_api(
 
 
 def find_editable_rubric(
-    rubrics: Iterable[Dict[str, Any]],
+    rubrics: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first rubric that matches edit requirements."""
     for rubric in rubrics:
         if not rubric.get("can_edit"):

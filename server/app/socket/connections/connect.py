@@ -4,13 +4,14 @@ import logging
 import time
 from urllib.parse import parse_qs
 
+from pydantic import BaseModel
+
 from app.main import sio
 from app.utils.websocket.add_guest_socket import add_guest_socket
 from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
 from app.utils.websocket.get_socket_owner import get_socket_owner
 from app.utils.websocket.increment_guest_count import increment_guest_count
 from app.utils.websocket.set_socket_owner import set_socket_owner
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

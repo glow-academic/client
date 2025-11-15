@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
 from server.tests.e2e.rubrics.helpers import generate_unique_rubric_name
 
@@ -15,11 +14,11 @@ def create_rubric_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Rubric created via UI flow.",
-    department_ids: Optional[list[str]] = None,
+    department_ids: list[str] | None = None,
     active: bool = True,
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a rubric via UI and return (rubric_name, rubric_id) tuple."""
     rubric_name = name or generate_unique_rubric_name("UI Rubric")
 

@@ -5,7 +5,6 @@ Tests for app.utils.agents.get_output_guardrails
 import uuid
 from typing import Any
 
-import pytest
 from app.utils.agents.get_output_guardrails import get_output_guardrails
 
 

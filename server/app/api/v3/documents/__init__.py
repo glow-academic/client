@@ -10,9 +10,9 @@ from app.api.v3.documents.detail import router as detail_router
 from app.api.v3.documents.detail_bulk import router as detail_bulk_router
 from app.api.v3.documents.download import router as download_router
 from app.api.v3.documents.list import router as list_router
+from app.api.v3.documents.update import router as update_router
 from app.api.v3.documents.upload_finalize import router as upload_finalize_router
 from app.api.v3.documents.upload_tus import router as upload_tus_router
-from app.api.v3.documents.update import router as update_router
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 

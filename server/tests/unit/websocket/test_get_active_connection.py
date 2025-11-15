@@ -5,6 +5,7 @@ Tests for app.utils.websocket.get_active_connection
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.get_active_connection import get_active_connection
 
 

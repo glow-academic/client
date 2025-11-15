@@ -12,7 +12,6 @@ from server.tests.e2e.agents.helpers import (
 )
 from server.tests.e2e.agents.ui_flows import create_agent_via_ui
 
-
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]

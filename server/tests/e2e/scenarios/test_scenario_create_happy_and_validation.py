@@ -9,7 +9,6 @@ from server.tests.e2e.scenarios.helpers import (
     delete_scenario_api,
     generate_unique_scenario_name,
 )
-from server.tests.e2e.scenarios.ui_flows import create_scenario_via_ui
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 

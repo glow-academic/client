@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_parameter_name(prefix: str = "E2E Parameter") -> str:
@@ -27,12 +28,12 @@ def generate_unique_parameter_name(prefix: str = "E2E Parameter") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/management/parameters",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_parameters_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch parameters list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_parameter_detail(
     parameter_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch parameter detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_parameter_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default parameter detail used when creating new parameters."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -164,10 +165,10 @@ def create_parameter_api(
     active: bool = True,
     document_parameter: bool = False,
     practice_parameter: bool = False,
-    department_ids: Optional[list[str]] = None,
-    parameter_items: Optional[list[Dict[str, Any]]] = None,
+    department_ids: list[str] | None = None,
+    parameter_items: list[dict[str, Any]] | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Create a parameter via the API and return its ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -194,7 +195,7 @@ def create_parameter_api(
         "department_ids": department_ids,
         "parameter_items": parameter_items,
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/parameters/create",
         payload,
@@ -211,11 +212,11 @@ def create_parameter_api(
 def update_parameter_api(
     request: APIRequestContext,
     parameter_id: str,
-    updates: Dict[str, Any],
+    updates: dict[str, Any],
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-) -> Dict[str, Any]:
+    effective_profile_id: str | None = None,
+) -> dict[str, Any]:
     """Update a parameter via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -238,7 +239,7 @@ def delete_parameter_api(
     parameter_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a parameter via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -261,7 +262,7 @@ def duplicate_parameter_api(
     parameter_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Duplicate a parameter via the API and return the new parameter ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -269,7 +270,7 @@ def duplicate_parameter_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/parameters/duplicate",
         {"parameterId": parameter_id},
@@ -284,10 +285,10 @@ def duplicate_parameter_api(
 
 
 def find_editable_parameter(
-    parameters: Iterable[Dict[str, Any]],
+    parameters: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first parameter that matches edit requirements."""
     for parameter in parameters:
         if not parameter.get("can_edit"):

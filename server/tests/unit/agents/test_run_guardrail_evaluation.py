@@ -2,7 +2,6 @@
 Tests for app.utils.agents.run_guardrail_evaluation
 """
 
-import pytest
 
 
 class TestRun_Guardrail_Evaluation:

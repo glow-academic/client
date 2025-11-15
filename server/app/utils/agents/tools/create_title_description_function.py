@@ -5,8 +5,9 @@ import uuid
 from typing import Any
 
 from agents import function_tool
-from app.main import scenario_progress, scenario_results
 from pydantic import Field
+
+from app.main import scenario_progress, scenario_results
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
-    from testcontainers.postgres import PostgresContainer  # type: ignore
+    pass  # type: ignore
 
 
 def get_test_db_url() -> str | None:

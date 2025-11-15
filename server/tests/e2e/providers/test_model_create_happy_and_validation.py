@@ -192,7 +192,7 @@ def test_model_create_with_custom_settings(page: Page, base_url: str) -> None:
         page.wait_for_timeout(500)
 
         model_card = (
-            page.locator(f"[data-testid='model-card']")
+            page.locator("[data-testid='model-card']")
             .filter(has_text=model_name)
             .first
         )

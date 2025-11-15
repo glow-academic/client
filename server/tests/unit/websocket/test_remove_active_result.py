@@ -5,6 +5,7 @@ Tests for app.utils.websocket.remove_active_result
 from unittest.mock import patch
 
 import pytest
+
 from app.utils.websocket.remove_active_result import remove_active_result
 
 

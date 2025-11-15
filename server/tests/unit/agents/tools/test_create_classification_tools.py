@@ -2,7 +2,6 @@
 Tests for app.utils.agents.tools.create_classification_tools
 """
 
-import pytest
 from app.utils.agents.tools.create_classification_tools import (
     create_classification_tools,
 )

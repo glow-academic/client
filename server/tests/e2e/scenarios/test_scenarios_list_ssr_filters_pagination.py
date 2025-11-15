@@ -5,13 +5,6 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.scenarios.helpers import (
-    create_scenario_api,
-    delete_scenario_api,
-    fetch_scenarios_list,
-    generate_unique_scenario_name,
-)
-
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]

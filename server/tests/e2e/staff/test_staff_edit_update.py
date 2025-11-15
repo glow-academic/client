@@ -14,7 +14,6 @@ from server.tests.e2e.staff.helpers import (
     fetch_staff_list,
     find_editable_staff,
     generate_unique_staff_name,
-    update_staff_api,
 )
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"

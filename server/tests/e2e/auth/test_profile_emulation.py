@@ -8,7 +8,6 @@ from playwright.sync_api import Page, expect
 from server.tests.e2e.auth.helpers import (
     authorize_emulation,
     fetch_profile_context,
-    get_profile_by_alias,
     get_profile_detail,
 )
 

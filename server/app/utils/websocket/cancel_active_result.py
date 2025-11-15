@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-from typing import Any
 
 from app.main import get_active_results_dict
 

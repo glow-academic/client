@@ -46,7 +46,7 @@ async def test_add_profiles_to_cohort(
     data = response.json()
 
     assert data["success"] is True
-    assert f"Added 2 profile(s)" in data["message"]
+    assert "Added 2 profile(s)" in data["message"]
 
     # Verify profiles were added
     profile_link1 = await db.fetchrow(

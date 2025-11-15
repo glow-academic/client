@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -37,10 +36,10 @@ def create_persona_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Persona created via UI flow.",
     prompt: str = "System prompt authored during UI flow.",
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a persona through the UI and return (name, persona_id)."""
     persona_name = name or generate_unique_persona_name("UI Persona")
 

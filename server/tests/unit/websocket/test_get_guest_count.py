@@ -5,6 +5,7 @@ Tests for app.utils.websocket.get_guest_count
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.get_guest_count import get_guest_count
 
 

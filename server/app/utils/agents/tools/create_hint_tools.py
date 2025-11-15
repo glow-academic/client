@@ -4,8 +4,8 @@ import logging
 
 from agents import Tool
 
-from app.utils.debug_info import debug_info
 from app.utils.agents.tools.create_hint_function import create_hint_function
+from app.utils.debug_info import debug_info
 
 logger = logging.getLogger(__name__)
 

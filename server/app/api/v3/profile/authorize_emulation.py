@@ -3,11 +3,12 @@
 from typing import Annotated
 
 import asyncpg
+from fastapi import APIRouter, Depends, Response
+from pydantic import BaseModel
+
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, Response
-from pydantic import BaseModel
 
 router = APIRouter()
 

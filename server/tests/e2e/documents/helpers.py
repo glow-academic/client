@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_document_name(prefix: str = "E2E Document") -> str:
@@ -27,12 +28,12 @@ def generate_unique_document_name(prefix: str = "E2E Document") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/create/documents",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_documents_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch documents list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_document_detail(
     document_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch document detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -137,9 +138,9 @@ def fetch_document_detail_bulk(
     document_ids: list[str],
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch bulk document details."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -160,14 +161,14 @@ def create_document_api(
     request: APIRequestContext,
     *,
     name: str,
-    file_path: Optional[str] = None,
+    file_path: str | None = None,
     mime_type: str = "application/pdf",
     type: str = "homework",
-    department_ids: Optional[list[str]] = None,
-    parameter_item_ids: Optional[list[str]] = None,
+    department_ids: list[str] | None = None,
+    parameter_item_ids: list[str] | None = None,
     active: bool = True,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """
     Create a document via the API using upload flow.
@@ -247,7 +248,7 @@ def create_document_api(
 
     # Update document type and active status if needed
     # (upload sets defaults, we may need to update)
-    update_payload: Dict[str, Any] = {
+    update_payload: dict[str, Any] = {
         "type": type,
     }
     if department_ids:
@@ -269,10 +270,10 @@ def create_document_api(
 def update_document_api(
     request: APIRequestContext,
     document_id: str,
-    updates: Dict[str, Any],
+    updates: dict[str, Any],
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Update a document via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -293,7 +294,7 @@ def update_document_api(
     # Build payload with required fields
     # Note: update endpoint only supports type, department_id, and parameter_item_ids
     # Name and active status updates would need to be done via SQL or different endpoint
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "documentId": document_id,
         "type": updates.get("type", current.get("type", "homework")),
         "department_id": updates.get("department_id")
@@ -316,10 +317,10 @@ def update_document_api(
 def bulk_update_documents_api(
     request: APIRequestContext,
     document_ids: list[str],
-    updates: Dict[str, Any],
+    updates: dict[str, Any],
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Bulk update documents via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -328,7 +329,7 @@ def bulk_update_documents_api(
         effective_profile_id=effective_profile_id,
     )
 
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "documentIds": document_ids,
         "type": updates.get("type", "__keep__"),
         "department_id": updates.get("department_id"),
@@ -350,7 +351,7 @@ def delete_document_api(
     document_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a document via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -373,7 +374,7 @@ def bulk_delete_documents_api(
     document_ids: list[str],
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Bulk delete documents via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -392,10 +393,10 @@ def bulk_delete_documents_api(
 
 
 def find_editable_document(
-    documents: Iterable[Dict[str, Any]],
+    documents: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first document that matches edit requirements."""
     for document in documents:
         if not document.get("can_edit"):
@@ -415,10 +416,10 @@ def find_existing_document(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    can_edit: Optional[bool] = None,
-    can_delete: Optional[bool] = None,
-) -> Dict[str, Any] | None:
+    effective_profile_id: str | None = None,
+    can_edit: bool | None = None,
+    can_delete: bool | None = None,
+) -> dict[str, Any] | None:
     """Find an existing document from the test database that matches criteria."""
     data = fetch_documents_list(
         request,

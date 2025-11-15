@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import os
-from typing import Dict, Generator
+from collections.abc import Generator
 
 import pytest
 from dotenv import load_dotenv
@@ -23,13 +23,13 @@ SECRET = os.getenv("AUTH_SECRET", "test_secret_key_for_integration_tests")
 STORAGE_STATE = os.getenv("E2E_STORAGE", "")
 
 
-def _build_test_headers(profile_id: str, effective_profile_id: str) -> Dict[str, str]:
+def _build_test_headers(profile_id: str, effective_profile_id: str) -> dict[str, str]:
     logger.info(
         "Building test headers for profile_id=%s effective_profile_id=%s",
         profile_id,
         effective_profile_id,
     )
-    payload = f"{profile_id}|{effective_profile_id}".encode("utf-8")
+    payload = f"{profile_id}|{effective_profile_id}".encode()
     signature = hmac.new(SECRET.encode("utf-8"), payload, hashlib.sha256).digest()
     encoded_signature = base64.b64encode(signature).decode("ascii")
 
@@ -61,7 +61,7 @@ def context(
 
 
 @pytest.fixture(scope="function")
-def test_profile_headers(request: pytest.FixtureRequest) -> Dict[str, str]:
+def test_profile_headers(request: pytest.FixtureRequest) -> dict[str, str]:
     """Return signed test headers, override via marker if needed."""
 
     profile_id = PROFILE_ID
@@ -85,7 +85,7 @@ def test_profile_headers(request: pytest.FixtureRequest) -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def page(context: BrowserContext, test_profile_headers: Dict[str, str]) -> Page:
+def page(context: BrowserContext, test_profile_headers: dict[str, str]) -> Page:
     """Provide a new page with sensible defaults."""
     p = context.new_page()
     extra_headers = {"X-Bypass-Cache": "1", **test_profile_headers}

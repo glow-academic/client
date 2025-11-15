@@ -12,7 +12,6 @@ from server.tests.e2e.providers.helpers import (
     create_provider_api,
     delete_model_api,
     delete_provider_api,
-    generate_unique_model_name,
 )
 from server.tests.e2e.providers.ui_flows import edit_model_via_ui
 

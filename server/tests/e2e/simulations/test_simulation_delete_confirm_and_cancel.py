@@ -8,7 +8,6 @@ from playwright.sync_api import Page, expect
 from server.tests.e2e.simulations.helpers import generate_unique_simulation_name
 from server.tests.e2e.simulations.ui_flows import create_simulation_via_ui
 
-
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]

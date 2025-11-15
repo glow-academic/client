@@ -2,7 +2,6 @@
 Tests for app.utils.websocket.cleanup_profile_connection
 """
 
-import pytest
 
 
 class TestCleanup_Profile_Connection:

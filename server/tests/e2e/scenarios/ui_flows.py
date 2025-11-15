@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -15,9 +14,9 @@ def create_scenario_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     problem_statement: str = "Scenario created via UI flow.",
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a scenario via UI and return (scenario_name, scenario_id)."""
     scenario_name = name or generate_unique_scenario_name("UI Scenario")
 

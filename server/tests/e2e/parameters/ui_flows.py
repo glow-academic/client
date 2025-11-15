@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page
 
@@ -15,13 +14,13 @@ def create_parameter_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Parameter created via UI flow.",
     numerical: bool = False,
     active: bool = True,
     document_parameter: bool = False,
     practice_parameter: bool = False,
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a parameter via UI and return (parameter_name, parameter_id)."""
     parameter_name = name or generate_unique_parameter_name("UI Parameter")
 

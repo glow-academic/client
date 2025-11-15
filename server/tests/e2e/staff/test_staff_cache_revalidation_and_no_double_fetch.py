@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, Dict
+from collections.abc import Callable
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -13,7 +13,6 @@ from server.tests.e2e.staff.helpers import (
     delete_staff_api,
     fetch_staff_list,
     generate_unique_staff_name,
-    update_staff_api,
 )
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
@@ -34,7 +33,7 @@ def _expect_toast(page: Page, message: str) -> None:
 
 def _set_request_counter(
     page: Page, pattern: str
-) -> tuple[Dict[str, int], Callable[[], None]]:
+) -> tuple[dict[str, int], Callable[[], None]]:
     counts = {"total": 0}
 
     def _handle(request) -> None:

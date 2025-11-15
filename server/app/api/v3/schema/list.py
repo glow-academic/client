@@ -1,12 +1,10 @@
 """Schema list endpoint - v3 API."""
 
-from typing import Annotated
 
-import asyncpg  # type: ignore
-from app.main import get_pool
-from app.main import server
-from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, HTTPException
+
+from app.main import get_pool, server
+from app.utils.sql_helper import load_sql
 
 router = APIRouter()
 

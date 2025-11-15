@@ -10,7 +10,6 @@ from server.tests.e2e.cohorts.helpers import (
     delete_cohort_api,
     fetch_cohorts_list,
     generate_unique_cohort_name,
-    leave_cohort_api,
 )
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"

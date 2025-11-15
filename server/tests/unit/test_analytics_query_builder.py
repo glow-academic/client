@@ -4,8 +4,6 @@ Tests for app.utils.analytics_query_builder
 
 from datetime import datetime
 
-import pytest
-
 from app.utils.analytics_query_builder import build_base_filter
 
 

@@ -9,7 +9,6 @@ from server.tests.e2e.cohorts.helpers import (
     delete_cohort_api,
     generate_unique_cohort_name,
 )
-from server.tests.e2e.cohorts.ui_flows import create_cohort_via_ui
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 

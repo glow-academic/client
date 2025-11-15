@@ -3,11 +3,11 @@
 import logging
 from typing import Any
 
-import socketio  # type: ignore
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, sio
 from app.utils.sql_helper import load_sql
 from app.utils.websocket.cancel_active_run import cancel_active_run
-from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 

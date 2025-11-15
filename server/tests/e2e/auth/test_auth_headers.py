@@ -8,10 +8,10 @@ import hmac
 import os
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import Page
 
 from server.tests.e2e.auth.helpers import fetch_profile_context
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, SECRET
+from server.tests.e2e.conftest import SECRET
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -22,7 +22,7 @@ def _build_invalid_headers(
     profile_id: str, effective_profile_id: str, invalid_signature: bool = False
 ) -> dict[str, str]:
     """Build test headers with optional invalid signature."""
-    payload = f"{profile_id}|{effective_profile_id}".encode("utf-8")
+    payload = f"{profile_id}|{effective_profile_id}".encode()
     if invalid_signature:
         # Use wrong secret to create invalid signature
         wrong_secret = "wrong_secret_key"

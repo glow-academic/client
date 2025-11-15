@@ -17,12 +17,12 @@ class TestPdf_Pages_To_Image_Data_Urls:
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"fake pdf content")
 
+        # Patch sys.modules to simulate fitz not being available
+        import sys
+
         from app.utils.document.pdf_pages_to_image_data_urls import (
             pdf_pages_to_image_data_urls,
         )
-
-        # Patch sys.modules to simulate fitz not being available
-        import sys
 
         original_fitz = sys.modules.get("fitz")
         if "fitz" in sys.modules:

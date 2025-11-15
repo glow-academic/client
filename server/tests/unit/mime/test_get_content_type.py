@@ -2,7 +2,6 @@
 Tests for app.utils.mime.get_content_type
 """
 
-import pytest
 
 
 class TestGet_Content_Type:

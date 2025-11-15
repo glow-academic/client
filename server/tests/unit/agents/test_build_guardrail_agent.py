@@ -2,10 +2,8 @@
 Tests for app.utils.agents.build_guardrail_agent
 """
 
-from typing import Any
 from unittest.mock import patch
 
-import pytest
 from app.utils.agents.build_guardrail_agent import build_guardrail_agent
 from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
 

@@ -11,7 +11,6 @@ from server.tests.e2e.rubrics.helpers import (
     delete_rubric_api,
     generate_unique_rubric_name,
 )
-from server.tests.e2e.rubrics.ui_flows import create_rubric_via_ui
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 

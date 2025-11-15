@@ -5,6 +5,7 @@ Tests for app.utils.websocket.get_socket_owner
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.get_socket_owner import get_socket_owner
 
 

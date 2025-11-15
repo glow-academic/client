@@ -5,6 +5,7 @@ Tests for app.utils.websocket.remove_active_connection
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.remove_active_connection import remove_active_connection
 
 

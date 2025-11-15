@@ -12,7 +12,6 @@ from server.tests.e2e.personas.helpers import (
 )
 from server.tests.e2e.personas.ui_flows import create_persona_via_ui
 
-
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
 pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -15,9 +14,9 @@ def create_cohort_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Cohort created via UI flow.",
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a cohort through the UI and return (name, cohort_id)."""
     cohort_name = name or generate_unique_cohort_name("UI Cohort")
 

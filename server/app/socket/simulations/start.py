@@ -5,9 +5,10 @@ import logging
 import uuid
 from typing import Any
 
-import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, scenario_progress, scenario_results, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
@@ -17,7 +18,6 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 

@@ -4,8 +4,9 @@ import logging
 from typing import Any
 
 from agents import ToolsToFinalOutputResult
-from app.utils.agents.generic_agent import GenericAgent
+
 from app.main import hint_progress
+from app.utils.agents.generic_agent import GenericAgent
 
 logger = logging.getLogger(__name__)
 

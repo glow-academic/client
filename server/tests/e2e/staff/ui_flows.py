@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
-
 from playwright.sync_api import Page, expect
-
-from server.tests.e2e.staff.helpers import generate_unique_staff_name
 
 
 def edit_staff_via_ui(
@@ -14,7 +10,7 @@ def edit_staff_via_ui(
     base_url: str,
     profile_id: str,
     *,
-    updates: Optional[Dict[str, str]] = None,
+    updates: dict[str, str] | None = None,
 ) -> None:
     """Edit a staff member through the UI."""
     page.goto(f"{base_url}/management/staff")

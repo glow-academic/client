@@ -1,7 +1,7 @@
 """Invalidate all cache entries for given tags."""
 
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from app.main import redis_client
 from app.utils.cache.tag_set_name import tag_set_name

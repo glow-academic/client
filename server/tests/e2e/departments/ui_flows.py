@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -14,10 +13,10 @@ def create_department_via_ui(
     page: Page,
     base_url: str,
     *,
-    title: Optional[str] = None,
+    title: str | None = None,
     description: str = "Department created via UI flow.",
     active: bool = True,
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     """Create a department via the UI and return (department_name, department_id)."""
     department_title = title or generate_unique_department_name("UI Department")
 

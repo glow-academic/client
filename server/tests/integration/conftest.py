@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 import asyncpg  # type: ignore
 import httpx
-import pytest
 import pytest_asyncio
 
 # Patch agents library BEFORE importing app.main to prevent actual API calls

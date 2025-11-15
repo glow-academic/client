@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_scenario_name(prefix: str = "E2E Scenario") -> str:
@@ -27,12 +28,12 @@ def generate_unique_scenario_name(prefix: str = "E2E Scenario") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/create/scenarios",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_scenarios_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch scenarios list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_scenario_detail(
     scenario_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch scenario detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_scenario_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default scenario detail used when creating new scenarios."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -161,12 +162,12 @@ def create_scenario_api(
     name: str,
     problem_statement: str,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
-    persona_ids: Optional[list[str]] = None,
-    document_ids: Optional[list[str]] = None,
-    objective_ids: Optional[list[str]] = None,
-    parameters: Optional[dict[str, list[str]]] = None,
+    effective_profile_id: str | None = None,
+    department_ids: list[str] | None = None,
+    persona_ids: list[str] | None = None,
+    document_ids: list[str] | None = None,
+    objective_ids: list[str] | None = None,
+    parameters: dict[str, list[str]] | None = None,
     active: bool = True,
     hints_enabled: bool = False,
     objectives_enabled: bool = True,
@@ -203,7 +204,7 @@ def create_scenario_api(
         "input_guardrail_enabled": input_guardrail_enabled,
         "output_guardrail_enabled": output_guardrail_enabled,
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/scenarios/create",
         payload,
@@ -222,7 +223,7 @@ def delete_scenario_api(
     scenario_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a scenario via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -241,10 +242,10 @@ def delete_scenario_api(
 
 
 def find_editable_scenario(
-    scenarios: Iterable[Dict[str, Any]],
+    scenarios: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first scenario that matches edit requirements."""
     for scenario in scenarios:
         if not scenario.get("can_edit"):

@@ -2,7 +2,6 @@
 Tests for app.utils.schema
 """
 
-import pytest
 from app.utils.schema import (
     AnalyticsFilters,
     DataPoint,

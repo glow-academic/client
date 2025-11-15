@@ -4,6 +4,9 @@ import json
 from typing import Annotated, Any, cast
 
 import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
@@ -13,8 +16,6 @@ from app.utils.permissions import (
     get_redirect_path_for_role,
 )
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
 
 router = APIRouter()
 

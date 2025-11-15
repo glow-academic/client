@@ -1,11 +1,12 @@
 """Models sub-router for providers."""
 
+from fastapi import APIRouter
+
 from app.api.v3.providers.models.create import router as create_router
 from app.api.v3.providers.models.delete import router as delete_router
 from app.api.v3.providers.models.detail import router as detail_router
 from app.api.v3.providers.models.duplicate import router as duplicate_router
 from app.api.v3.providers.models.update import router as update_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/models", tags=["providers"])
 

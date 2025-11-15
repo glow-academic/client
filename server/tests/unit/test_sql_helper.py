@@ -2,9 +2,9 @@
 Tests for app.utils.sql_helper
 """
 
-from pathlib import Path
 
 import pytest
+
 from app.utils.sql_helper import load_sql
 
 

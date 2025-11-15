@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Dict
+from collections.abc import Callable
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -12,7 +12,6 @@ from server.tests.e2e.providers.helpers import (
     create_provider_api,
     delete_model_api,
     delete_provider_api,
-    fetch_providers_list,
     generate_unique_model_name,
     generate_unique_provider_name,
 )
@@ -24,7 +23,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def _set_request_counter(
     page: Page, pattern: str
-) -> tuple[Dict[str, int], Callable[[], None]]:
+) -> tuple[dict[str, int], Callable[[], None]]:
     counts = {"total": 0}
 
     def _handle(request) -> None:

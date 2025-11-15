@@ -2,9 +2,7 @@
 Tests for app.utils.permissions
 """
 
-import pytest
 from app.utils.permissions import (
-    ProfileRole,
     ROUTE_PERMISSIONS,
     get_available_subsections_for_role,
     get_redirect_path_for_role,

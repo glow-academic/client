@@ -2,7 +2,6 @@
 Tests for app.utils.mime.infer_mime_from_name
 """
 
-import pytest
 
 
 class TestInfer_Mime_From_Name:

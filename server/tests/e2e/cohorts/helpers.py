@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_cohort_name(prefix: str = "E2E Cohort") -> str:
@@ -27,12 +28,12 @@ def generate_unique_cohort_name(prefix: str = "E2E Cohort") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/cohorts",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_cohorts_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch cohorts list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_cohort_detail(
     cohort_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch cohort detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_cohort_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default cohort detail used when creating new cohorts."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -161,10 +162,10 @@ def create_cohort_api(
     name: str,
     description: str | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
-    profile_ids: Optional[list[str]] = None,
-    simulation_ids: Optional[list[str]] = None,
+    effective_profile_id: str | None = None,
+    department_ids: list[str] | None = None,
+    profile_ids: list[str] | None = None,
+    simulation_ids: list[str] | None = None,
     active: bool = True,
 ) -> str:
     """Create a cohort via the API and return its ID."""
@@ -181,7 +182,7 @@ def create_cohort_api(
         "profile_ids": profile_ids or [],
         "simulation_ids": simulation_ids or [],
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/cohorts/create",
         payload,
@@ -202,11 +203,11 @@ def update_cohort_api(
     title: str | None = None,
     description: str | None = None,
     active: bool | None = None,
-    department_ids: Optional[list[str]] = None,
-    profile_ids: Optional[list[str]] = None,
-    simulation_ids: Optional[list[str]] = None,
+    department_ids: list[str] | None = None,
+    profile_ids: list[str] | None = None,
+    simulation_ids: list[str] | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Update a cohort via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -254,7 +255,7 @@ def delete_cohort_api(
     cohort_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a cohort via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -277,7 +278,7 @@ def duplicate_cohort_api(
     cohort_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Duplicate a cohort via the API and return the new cohort ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -285,7 +286,7 @@ def duplicate_cohort_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/cohorts/duplicate",
         {"cohortId": cohort_id},
@@ -304,7 +305,7 @@ def leave_cohort_api(
     cohort_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Leave a cohort via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -323,10 +324,10 @@ def leave_cohort_api(
 
 
 def find_editable_cohort(
-    cohorts: Iterable[Dict[str, Any]],
+    cohorts: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first cohort that matches edit requirements."""
     for cohort in cohorts:
         if not cohort.get("can_edit"):

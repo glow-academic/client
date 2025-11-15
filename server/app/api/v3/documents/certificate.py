@@ -9,10 +9,11 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.main import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
+
+from app.main import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -43,16 +44,20 @@ async def generate_certificate(
             from reportlab.graphics.shapes import Drawing, Rect  # type: ignore
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import ParagraphStyle  # type: ignore
-            from reportlab.lib.styles import getSampleStyleSheet  # type: ignore
+            from reportlab.lib.styles import (
+                ParagraphStyle,  # type: ignore
+                getSampleStyleSheet,  # type: ignore
+            )
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import Frame  # type: ignore
-            from reportlab.platypus import PageTemplate  # type: ignore
-            from reportlab.platypus import Paragraph  # type: ignore
-            from reportlab.platypus import SimpleDocTemplate  # type: ignore
-            from reportlab.platypus import Spacer  # type: ignore
-            from reportlab.platypus import Table  # type: ignore
-            from reportlab.platypus import TableStyle  # type: ignore
+            from reportlab.platypus import (
+                Frame,  # type: ignore
+                PageTemplate,  # type: ignore
+                Paragraph,  # type: ignore
+                SimpleDocTemplate,  # type: ignore
+                Spacer,  # type: ignore
+                Table,  # type: ignore
+                TableStyle,  # type: ignore
+            )
 
             # Create PDF in memory
             buffer = io.BytesIO()

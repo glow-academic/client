@@ -2,9 +2,10 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.assistants.start import start_assistant
 from tests.integration.socket.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
+
+from app.socket.assistants.start import start_assistant
 
 pytestmark = pytest.mark.asyncio
 

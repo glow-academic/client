@@ -2,7 +2,6 @@
 Tests for app.utils.text.normalize_text
 """
 
-import pytest
 
 
 class TestNormalize_Text:

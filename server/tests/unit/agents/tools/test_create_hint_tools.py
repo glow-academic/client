@@ -2,7 +2,6 @@
 Tests for app.utils.agents.tools.create_hint_tools
 """
 
-import pytest
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
 
 

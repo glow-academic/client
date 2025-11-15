@@ -8,8 +8,6 @@ import uuid
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 
 def mock_function_tool(func: Any) -> Any:
     """Mock function_tool decorator - returns function unchanged."""

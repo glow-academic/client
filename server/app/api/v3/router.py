@@ -3,6 +3,8 @@
 # ============================================================================
 # Batch F: Supporting Resources
 # ============================================================================
+from fastapi import APIRouter
+
 from app.api.v3.agents import router as agents_router
 
 # ============================================================================
@@ -46,7 +48,6 @@ from app.api.v3.rubrics import router as rubrics_router
 from app.api.v3.scenarios import router as scenarios_router
 from app.api.v3.schema import router as schema_router
 from app.api.v3.simulations import router as simulations_router
-from fastapi import APIRouter
 
 # ============================================================================
 # Main Router Configuration

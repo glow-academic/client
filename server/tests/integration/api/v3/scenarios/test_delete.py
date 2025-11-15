@@ -3,7 +3,7 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import get_cs_dept_id, get_superadmin_alias  # type: ignore
+from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 

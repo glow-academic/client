@@ -2,13 +2,7 @@
 
 from __future__ import annotations
 
-import re
-import sys
-from typing import Optional, Tuple
-
 from playwright.sync_api import Page, expect
-
-from server.tests.e2e.documents.helpers import generate_unique_document_name
 
 
 def edit_document_via_ui(
@@ -28,7 +22,7 @@ def edit_document_via_ui(
     # If not found in grid, try list view
     if document_card.count() == 0:
         # In list view, find by document ID in table row
-        document_row = page.locator(f"tr").filter(has_text=document_id)
+        document_row = page.locator("tr").filter(has_text=document_id)
         if document_row.count() == 0:
             raise AssertionError(f"Document {document_id} not found in UI")
 

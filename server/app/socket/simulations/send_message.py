@@ -6,10 +6,12 @@ import logging
 import uuid
 from typing import Any
 
-import socketio  # type: ignore
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
+from openai.types.responses import ResponseTextDeltaEvent
+from pydantic import BaseModel, ValidationError
+
 from app.main import get_pool, hint_progress, hint_results, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
@@ -22,8 +24,6 @@ from app.utils.chat.get_simulation_conversation_history import (
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.sql_helper import load_sql
-from openai.types.responses import ResponseTextDeltaEvent
-from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 

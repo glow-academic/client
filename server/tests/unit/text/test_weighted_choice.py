@@ -2,7 +2,6 @@
 Tests for app.utils.text.weighted_choice
 """
 
-import pytest
 
 
 class TestWeighted_Choice:

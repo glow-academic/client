@@ -130,7 +130,7 @@ async def test_update_profile_last_active(
     """Test updating profile with lastActive (should insert into profile_activity)."""
     profile_id = await get_superadmin_alias(db)
 
-    from datetime import datetime, UTC
+    from datetime import UTC, datetime
 
     last_active = datetime.now(UTC).isoformat()
 

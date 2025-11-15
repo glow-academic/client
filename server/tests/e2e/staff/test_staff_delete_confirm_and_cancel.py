@@ -8,11 +8,9 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from server.tests.e2e.staff.helpers import (
-    bulk_delete_staff_api,
     create_staff_api,
     delete_staff_api,
     fetch_staff_list,
-    find_deletable_staff,
     generate_unique_staff_name,
 )
 

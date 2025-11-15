@@ -5,6 +5,7 @@ Tests for app.utils.websocket.find_chat_by_socket
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.utils.websocket.find_chat_by_socket import find_chat_by_socket
 
 
@@ -20,7 +21,7 @@ class TestFind_Chat_By_Socket:
 
         # Mock scan_iter to return one key
         async def mock_scan_iter(match: str):
-            yield f"active_connection:{chat_id}".encode("utf-8")
+            yield f"active_connection:{chat_id}".encode()
 
         mock_redis.scan_iter = mock_scan_iter
         mock_redis.get = AsyncMock(return_value=socket_id.encode("utf-8"))

@@ -4,7 +4,6 @@ Tests for app.utils.csv.parse_csv_file
 
 from pathlib import Path
 
-import pytest
 from app.utils.csv.parse_csv_file import parse_csv_file
 
 

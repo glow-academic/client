@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_persona_name(prefix: str = "E2E Persona") -> str:
@@ -27,12 +28,12 @@ def generate_unique_persona_name(prefix: str = "E2E Persona") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -55,7 +56,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/create/personas",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -89,9 +90,9 @@ def fetch_personas_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch personas list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -113,9 +114,9 @@ def fetch_persona_detail(
     persona_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch persona detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -136,9 +137,9 @@ def fetch_persona_detail_default(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch default persona detail used when creating new personas."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -162,13 +163,13 @@ def create_persona_api(
     description: str,
     system_prompt: str,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    department_ids: Optional[list[str]] = None,
-    color: Optional[str] = None,
-    icon: Optional[str] = None,
-    model_id: Optional[str] = None,
-    reasoning: Optional[str] = None,
-    temperature: Optional[float] = None,
+    effective_profile_id: str | None = None,
+    department_ids: list[str] | None = None,
+    color: str | None = None,
+    icon: str | None = None,
+    model_id: str | None = None,
+    reasoning: str | None = None,
+    temperature: float | None = None,
 ) -> str:
     """Create a persona via the API and return its ID."""
     defaults = fetch_persona_detail_default(
@@ -199,7 +200,7 @@ def create_persona_api(
         "system_prompt": system_prompt,
         "prompt_id": None,
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/personas/create",
         payload,
@@ -218,7 +219,7 @@ def delete_persona_api(
     persona_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a persona via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -237,10 +238,10 @@ def delete_persona_api(
 
 
 def find_editable_persona(
-    personas: Iterable[Dict[str, Any]],
+    personas: Iterable[dict[str, Any]],
     *,
     require_department_specific: bool | None = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Return the first persona that matches edit requirements."""
     for persona in personas:
         if not persona.get("can_edit"):

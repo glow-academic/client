@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Optional, Tuple
 
 from playwright.sync_api import Page, expect
 
@@ -56,14 +55,14 @@ def create_agent_via_ui(
     page: Page,
     base_url: str,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "Agent created via UI flow.",
     prompt: str = "System prompt authored during UI flow.",
-    model_id: Optional[str] = None,
-    role: Optional[str] = None,
-    reasoning: Optional[str] = None,
-    temperature: Optional[float] = None,
-) -> Tuple[str, str]:
+    model_id: str | None = None,
+    role: str | None = None,
+    reasoning: str | None = None,
+    temperature: float | None = None,
+) -> tuple[str, str]:
     """Create an agent through the UI and return (name, agent_id)."""
     agent_name = name or generate_unique_agent_name("UI Agent")
 

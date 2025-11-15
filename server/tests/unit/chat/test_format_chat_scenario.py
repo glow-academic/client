@@ -2,7 +2,6 @@
 Tests for app.utils.chat.format_chat_scenario
 """
 
-import pytest
 
 
 class TestFormat_Chat_Scenario:

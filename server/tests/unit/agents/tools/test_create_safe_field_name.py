@@ -2,7 +2,6 @@
 Tests for app.utils.agents.tools.create_safe_field_name
 """
 
-import pytest
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
 
 

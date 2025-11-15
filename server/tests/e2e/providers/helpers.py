@@ -6,15 +6,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def generate_unique_provider_name(prefix: str = "E2E Provider") -> str:
@@ -34,12 +35,12 @@ def generate_unique_model_name(prefix: str = "E2E Model") -> str:
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -62,7 +63,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/system/providers",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -96,9 +97,9 @@ def fetch_providers_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch providers list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -120,9 +121,9 @@ def fetch_provider_detail(
     provider_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch provider detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -145,9 +146,9 @@ def fetch_model_detail(
     provider_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch model detail for editing flows."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -174,9 +175,9 @@ def create_provider_api(
     name: str,
     description: str,
     api_key: str,
-    base_url: Optional[str] = None,
+    base_url: str | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Create a provider via the API and return its ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -184,7 +185,7 @@ def create_provider_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "name": name,
         "description": description,
         "api_key": api_key,
@@ -192,7 +193,7 @@ def create_provider_api(
     if base_url:
         payload["base_url"] = base_url
 
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/providers/create",
         payload,
@@ -218,7 +219,7 @@ def create_model_api(
     custom_model: bool = False,
     image_model: bool = False,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Create a model via the API and return its ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -236,7 +237,7 @@ def create_model_api(
         "custom_model": custom_model,
         "image_model": image_model,
     }
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/providers/models/create",
         payload,
@@ -254,12 +255,12 @@ def update_provider_api(
     request: APIRequestContext,
     provider_id: str,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    api_key: Optional[str] = None,
-    base_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    api_key: str | None = None,
+    base_url: str | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Update a provider via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -267,7 +268,7 @@ def update_provider_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    payload: Dict[str, Any] = {"providerId": provider_id}
+    payload: dict[str, Any] = {"providerId": provider_id}
     if name is not None:
         payload["name"] = name
     if description is not None:
@@ -292,15 +293,15 @@ def update_model_api(
     model_id: str,
     provider_id: str,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    input_ppm: Optional[float] = None,
-    output_ppm: Optional[float] = None,
-    active: Optional[bool] = None,
-    custom_model: Optional[bool] = None,
-    image_model: Optional[bool] = None,
+    name: str | None = None,
+    description: str | None = None,
+    input_ppm: float | None = None,
+    output_ppm: float | None = None,
+    active: bool | None = None,
+    custom_model: bool | None = None,
+    image_model: bool | None = None,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Update a model via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -308,7 +309,7 @@ def update_model_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "modelId": model_id,
         "providerId": provider_id,
     }
@@ -342,7 +343,7 @@ def delete_provider_api(
     provider_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a provider via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -365,7 +366,7 @@ def delete_model_api(
     model_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> None:
     """Delete a model via the API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -388,7 +389,7 @@ def duplicate_provider_api(
     provider_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Duplicate a provider via the API and return the new provider ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -396,7 +397,7 @@ def duplicate_provider_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/providers/duplicate",
         {"providerId": provider_id},
@@ -415,7 +416,7 @@ def duplicate_model_api(
     model_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
 ) -> str:
     """Duplicate a model via the API and return the new model ID."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
@@ -423,7 +424,7 @@ def duplicate_model_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    data: Dict[str, Any] = _post_json(
+    data: dict[str, Any] = _post_json(
         request,
         "/api/v3/providers/models/duplicate",
         {"modelId": model_id},
@@ -438,8 +439,8 @@ def duplicate_model_api(
 
 
 def find_editable_provider(
-    providers: Iterable[Dict[str, Any]],
-) -> Dict[str, Any]:
+    providers: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
     """Return the first provider that can be edited."""
     for provider in providers:
         if provider.get("can_edit"):
@@ -448,8 +449,8 @@ def find_editable_provider(
 
 
 def find_editable_model(
-    models: Iterable[Dict[str, Any]],
-) -> Dict[str, Any]:
+    models: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
     """Return the first model that can be edited."""
     for model in models:
         if model.get("can_edit"):

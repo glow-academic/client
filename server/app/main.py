@@ -7,7 +7,6 @@ import platform
 import sys
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -21,7 +20,7 @@ from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
 
 if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
-    from testcontainers.postgres import PostgresContainer  # type: ignore
+    pass  # type: ignore
 
 # Redis is nice in production, but optional in dev
 try:
@@ -320,17 +319,23 @@ async def transaction(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.assistants import send_assistant_message  # type: ignore
-from app.socket.assistants import start_assistant  # type: ignore
-from app.socket.assistants import stop_assistant  # type: ignore
-from app.socket.connections import connect  # type: ignore
-from app.socket.connections import disconnect  # type: ignore
-from app.socket.connections import join_chat  # type: ignore
-from app.socket.connections import leave_chat  # type: ignore
-from app.socket.connections import stop_chat  # type: ignore
-from app.socket.simulations import send_simulation_message  # type: ignore
-from app.socket.simulations import start_simulation  # type: ignore
-from app.socket.simulations import stop_simulation  # type: ignore
+from app.socket.assistants import (
+    send_assistant_message,  # type: ignore
+    start_assistant,  # type: ignore
+    stop_assistant,  # type: ignore
+)
+from app.socket.connections import (
+    connect,  # type: ignore
+    disconnect,  # type: ignore
+    join_chat,  # type: ignore
+    leave_chat,  # type: ignore
+    stop_chat,  # type: ignore
+)
+from app.socket.simulations import (
+    send_simulation_message,  # type: ignore
+    start_simulation,  # type: ignore
+    stop_simulation,  # type: ignore
+)
 from app.socket.simulations.continue_chat import continue_simulation  # type: ignore
 
 
@@ -426,11 +431,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             tool_call_completed,
             tool_call_created,
         )
-        from app.socket.assistants.start import assistant_started
+        from app.socket.assistants.start import assistant_started, title_updated
         from app.socket.assistants.start import (
             start_assistant_error as assistant_error_start,
         )
-        from app.socket.assistants.start import title_updated
         from app.socket.assistants.stop import assistant_stopped
         from app.socket.connections.connect import connection_confirmed
         from app.socket.connections.join_chat import joined_chat

@@ -9,7 +9,6 @@ from server.tests.e2e.departments.helpers import (
     delete_department_api,
     generate_unique_department_name,
 )
-from server.tests.e2e.departments.ui_flows import create_department_via_ui
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 

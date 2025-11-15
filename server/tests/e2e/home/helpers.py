@@ -5,26 +5,26 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 
 from playwright.sync_api import APIRequestContext
 
-from server.tests.e2e.conftest import BASE_URL, PROFILE_ID, _build_test_headers
+from server.tests.e2e.conftest import PROFILE_ID, _build_test_headers
 
 API_BASE = os.getenv("E2E_API_BASE", "http://localhost:8000")
 print(f"[E2E] Using profile_id={PROFILE_ID} api_base={API_BASE}")
-_PROFILE_RESOLUTION_CACHE: Dict[tuple[str, str], tuple[str, str]] = {}
+_PROFILE_RESOLUTION_CACHE: dict[tuple[str, str], tuple[str, str]] = {}
 
 
 def _post_json(
     request: APIRequestContext,
     path: str,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     bypass_cache: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     effective_id = effective_profile_id or profile_id
     headers = {
         "Content-Type": "application/json",
@@ -47,7 +47,7 @@ def _resolve_profile_ids(
     request: APIRequestContext,
     *,
     profile_id: str,
-    effective_profile_id: Optional[str],
+    effective_profile_id: str | None,
     pathname: str = "/home",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
@@ -81,13 +81,13 @@ def fetch_home_data(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    cohort_ids: Optional[list[str]] = None,
-    department_ids: Optional[list[str]] = None,
+    effective_profile_id: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    cohort_ids: list[str] | None = None,
+    department_ids: list[str] | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch home page data via the signed API."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
@@ -102,7 +102,7 @@ def fetch_home_data(
     if not start_date:
         start_date = (datetime.now() - timedelta(days=30)).isoformat()
 
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "profileId": resolved_effective,
         "startDate": start_date,
         "endDate": end_date,
@@ -127,9 +127,9 @@ def fetch_attempt_full(
     attempt_id: str,
     *,
     profile_id: str = PROFILE_ID,
-    effective_profile_id: Optional[str] = None,
+    effective_profile_id: str | None = None,
     bypass_cache: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch full attempt details including chats and messages."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,

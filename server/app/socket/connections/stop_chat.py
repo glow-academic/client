@@ -3,9 +3,10 @@
 import logging
 from typing import Any
 
+from pydantic import BaseModel, ValidationError
+
 from app.main import sio
 from app.utils.websocket.remove_active_connection import remove_active_connection
-from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 

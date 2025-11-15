@@ -5,31 +5,26 @@ import logging
 import os
 import uuid
 import warnings
-from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import socketio  # type: ignore
 from agents import Runner, trace
 from agents.items import (
-    ReasoningItem,
-    ToolCallItem,
-    ToolCallOutputItem,
     TResponseInputItem,
 )
-from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from app.main import get_pool, sio
-from app.utils.agents.generic_agent import GenericAgent
-from app.utils.debug_info import DebugContext
-from app.utils.sql_helper import load_sql
+from agents.mcp.server import MCPServerStreamableHttp
 from dotenv import load_dotenv
 from openai.types.responses import (
-    ResponseFunctionToolCall,
     ResponseFunctionToolCallParam,
     ResponseTextDeltaEvent,
 )
 from pydantic import BaseModel, ValidationError
+
+from app.main import get_pool, sio
+from app.utils.agents.generic_agent import GenericAgent
+from app.utils.debug_info import DebugContext
+from app.utils.sql_helper import load_sql
 
 load_dotenv()
 

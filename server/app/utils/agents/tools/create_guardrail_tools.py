@@ -3,10 +3,10 @@
 import logging
 from typing import Any
 
-from app.utils.debug_info import debug_info
 from app.utils.agents.tools.create_evaluation_function import (
     create_evaluation_function,
 )
+from app.utils.debug_info import debug_info
 
 logger = logging.getLogger(__name__)
 

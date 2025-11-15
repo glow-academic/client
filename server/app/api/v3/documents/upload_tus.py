@@ -7,9 +7,9 @@ import uuid
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.main import get_db
-from app.main import UPLOAD_FOLDER
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
+
+from app.main import UPLOAD_FOLDER, get_db
 
 router = APIRouter()
 

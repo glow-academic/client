@@ -2,12 +2,13 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.socket.connections.connect import connect
-from app.socket.connections.disconnect import disconnect
-from app.utils.websocket.set_active_connection import set_active_connection
-from app.utils.websocket.add_guest_socket import add_guest_socket
 from tests.integration.socket.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
+
+from app.socket.connections.connect import connect
+from app.socket.connections.disconnect import disconnect
+from app.utils.websocket.add_guest_socket import add_guest_socket
+from app.utils.websocket.set_active_connection import set_active_connection
 
 pytestmark = pytest.mark.asyncio
 
