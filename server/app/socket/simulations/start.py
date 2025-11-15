@@ -5,7 +5,14 @@ import logging
 import uuid
 from typing import Any
 
-from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
 from pydantic import BaseModel, ValidationError
 
@@ -364,7 +371,8 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
 
                     # Create tool use behavior to check when all required tools are called
                     def tool_use_behavior(
-                        tool_context: object, tool_results: list[object]
+                        tool_context: RunContextWrapper[Any],
+                        tool_results: list[FunctionToolResult],
                     ) -> ToolsToFinalOutputResult:
                         required_tools = ["title_description"]
                         if objectives_enabled:
@@ -650,7 +658,7 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                     )
                     # Continue with existing scenario (may have no problem statement)
 
-            result = {
+            start_payload = {
                 "attempt_id": row["attempt_id"],
                 "chat_id": row["chat_id"],
                 "chat_title": row["chat_title"],
@@ -664,11 +672,11 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
             }
 
             logger.info(
-                f"Created attempt {result['attempt_id']} for simulation {simulation_id}"
+                f"Created attempt {start_payload['attempt_id']} for simulation {simulation_id}"
             )
 
             # Join the client to the simulation room for real-time updates
-            simulation_room = f"simulation_{result['chat_id']}"
+            simulation_room = f"simulation_{start_payload['chat_id']}"
             await sio.enter_room(sid, simulation_room)
             logger.info(f"Client {sid} joined simulation room {simulation_room}")
 
@@ -677,14 +685,14 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                 SimulationStartedPayload(
                     success=True,
                     message="Simulation started successfully",
-                    attempt_id=str(result["attempt_id"]),
-                    chat_id=str(result["chat_id"]),
+                    attempt_id=str(start_payload["attempt_id"]),
+                    chat_id=str(start_payload["chat_id"]),
                 ),
                 room=sid,
             )
 
             logger.info(
-                f"Simulation started successfully for {sid}: attempt={result['attempt_id']}, chat={result['chat_id']}"
+                f"Simulation started successfully for {sid}: attempt={start_payload['attempt_id']}, chat={start_payload['chat_id']}"
             )
 
     except Exception as e:

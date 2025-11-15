@@ -3,7 +3,11 @@
 import logging
 from typing import Any
 
-from agents import ToolsToFinalOutputResult
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    ToolsToFinalOutputResult,
+)
 
 from app.main import hint_progress
 from app.utils.agents.generic_agent import GenericAgent
@@ -24,7 +28,8 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
 
     # Create tool use behavior - require all 3 hint tools to be called
     def tool_use_behavior(
-        tool_context: object, tool_results: list[object]
+        tool_context: RunContextWrapper[Any],
+        tool_results: list[FunctionToolResult],
     ) -> ToolsToFinalOutputResult:
         # Check if all three hint tools have been called
         hint_1_complete = hint_progress.get("hint_1", False)

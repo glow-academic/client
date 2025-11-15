@@ -1,6 +1,15 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
-from agents import Agent, ModelSettings, Tool, ToolsToFinalOutputResult
+from agents import (
+    Agent,
+    ModelSettings,
+    Tool,
+    ToolsToFinalOutputResult,
+    OutputGuardrail,
+    RunContextWrapper,
+    FunctionToolResult,
+)
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
 from openai.types import Reasoning
@@ -18,7 +27,10 @@ Never expose internal debugging details to the end user in the visible content o
 """
 
 
-ToolUseBehavior = Callable[[object, list[object]], ToolsToFinalOutputResult]
+ToolUseBehavior = Callable[
+    [RunContextWrapper[Any], list[FunctionToolResult]],
+    ToolsToFinalOutputResult | Awaitable[ToolsToFinalOutputResult],
+]
 
 
 class GenericAgent:
@@ -33,11 +45,11 @@ class GenericAgent:
         custom_model: bool,
         base_url: str | None,
         reasoning: str | None,
-        tools: list[Tool] = None,
+        tools: list[Tool] | None = None,
         parallel_tool_calls: bool = False,
         tool_use_behavior: ToolUseBehavior | None = None,
         mcp_servers: list[MCPServer] | None = None,
-        output_guardrails: list[object] | None = None,
+        output_guardrails: list[OutputGuardrail[DebugContext]] | None = None,
     ) -> None:
         if tools is None:
             tools = []
@@ -52,7 +64,9 @@ class GenericAgent:
         self.parallel_tool_calls = parallel_tool_calls
         self.tool_use_behavior = tool_use_behavior
         self.mcp_servers = mcp_servers or []
-        self.output_guardrails: list[object] = output_guardrails or []
+        self.output_guardrails: list[OutputGuardrail[DebugContext]] = (
+            output_guardrails or []
+        )
         self.base_url = base_url
         self.extra_body = None
         self.reasoning: Reasoning | None = None
@@ -102,6 +116,6 @@ class GenericAgent:
 
         # Set optional properties if provided
         if self.tool_use_behavior is not None:
-            agent_instance.tool_use_behavior = self.tool_use_behavior
+            agent_instance.tool_use_behavior = self.tool_use_behavior  # type: ignore[assignment]
 
         return agent_instance

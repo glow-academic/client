@@ -27,13 +27,14 @@ type UpdateChatCreatedAtOut = OutputOf<
  * Cache key includes attemptId for per-attempt caching.
  * Tags allow revalidateTag("attempts") and revalidateTag(`attempt:${attemptId}`) to invalidate.
  */
-const getAttemptFull = unstable_cache(
-  async (input: AttemptFullIn): Promise<AttemptFullOut> => {
-    return api.post("/attempts/full", input);
-  },
-  ["attempts:full"],
-  { tags: ["attempts"] }
-);
+const getAttemptFull = (attemptId: string) =>
+  unstable_cache(
+    async (input: AttemptFullIn): Promise<AttemptFullOut> => {
+      return api.post("/attempts/full", input);
+    },
+    ["attempts:full", attemptId],
+    { tags: ["attempts", `attempt:${attemptId}`] }
+  );
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -43,7 +44,7 @@ export async function generateMetadata(
   const { attemptId } = await params;
 
   try {
-    const attemptData = await getAttemptFull({
+    const attemptData = await getAttemptFull(attemptId)({
       body: { attemptId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
@@ -73,6 +74,13 @@ export async function updateChatCreatedAt(
   return out;
 }
 
+/** ---- Server action to revalidate attempt cache when messages are sent ---- */
+export async function revalidateAttempt(attemptId: string): Promise<void> {
+  "use server";
+  revalidateTag("attempts");
+  revalidateTag(`attempt:${attemptId}`);
+}
+
 /** ---- Page component ---- */
 export default async function AttemptPage({
   params,
@@ -82,7 +90,7 @@ export default async function AttemptPage({
   const { attemptId } = await params;
 
   // Fetch attempt data server-side
-  const attemptData = await getAttemptFull({
+  const attemptData = await getAttemptFull(attemptId)({
     body: { attemptId },
   });
 
@@ -92,6 +100,7 @@ export default async function AttemptPage({
         attemptId={attemptId}
         attemptData={attemptData}
         updateChatCreatedAtAction={updateChatCreatedAt}
+        revalidateAttemptAction={revalidateAttempt}
       />
     </div>
   );

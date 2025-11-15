@@ -1,7 +1,7 @@
 """Scenario detail endpoint - v3 API following DHH principles."""
 
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -186,9 +186,7 @@ async def get_scenario_detail(
             persona_ids = [str(pid) for pid in persona_ids if pid]
 
         # Parse JSONB data with type safety
-        def parse_jsonb(
-            data: Mapping[str, object] | list[object] | str | None,
-        ) -> dict[str, Any] | list[Any] | None:
+        def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
             if isinstance(data, str):
                 try:
                     parsed = json.loads(data)  # type: ignore[no-any-return]
@@ -314,7 +312,7 @@ async def get_scenario_detail(
             for did, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
 
-                    def to_str_list(value: Sequence[object] | None) -> list[str] | None:
+                    def to_str_list(value: Sequence[Any] | None) -> list[str] | None:
                         if value is None:
                             return None
                         if isinstance(value, list):

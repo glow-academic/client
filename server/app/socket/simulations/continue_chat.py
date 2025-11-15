@@ -8,7 +8,13 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import Runner, ToolsToFinalOutputResult, trace
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
 from pydantic import BaseModel, ValidationError
 
@@ -696,7 +702,8 @@ async def _run_grade_agent_inline(
 
         # Create tool use behavior to check when all required tools are called
         def tool_use_behavior(
-            tool_context: object, tool_results: list[object]
+            tool_context: RunContextWrapper[Any],
+            tool_results: list[FunctionToolResult],
         ) -> ToolsToFinalOutputResult:
             required_tools = ["summary"]
             for group in standard_groups:

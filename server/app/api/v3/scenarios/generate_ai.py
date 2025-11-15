@@ -5,7 +5,14 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    ToolsToFinalOutputResult,
+    gen_trace_id,
+    trace,
+)
 from agents.items import TResponseInputItem
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -177,7 +184,8 @@ async def generate_scenario_ai(
 
         # Create tool use behavior to check when all required tools are called
         def tool_use_behavior(
-            tool_context: object, tool_results: list[object]
+            tool_context: RunContextWrapper[Any],
+            tool_results: list[FunctionToolResult],
         ) -> ToolsToFinalOutputResult:
             required_tools = ["title_description"]
             if objectives_enabled:

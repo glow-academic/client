@@ -52,7 +52,7 @@ from app.api.v3.simulations import router as simulations_router
 # ============================================================================
 # Main Router Configuration
 # ============================================================================
-router = APIRouter(prefix="/api/v3", tags=["v3"])
+router: APIRouter = APIRouter(prefix="/api/v3", tags=["v3"])
 
 # Batch B: Profile Routes
 router.include_router(profile_router)

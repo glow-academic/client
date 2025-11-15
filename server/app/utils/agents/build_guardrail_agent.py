@@ -3,7 +3,11 @@
 import logging
 from typing import Any
 
-from agents import ToolsToFinalOutputResult
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    ToolsToFinalOutputResult,
+)
 
 from app.main import guardrail_progress
 from app.utils.agents.generic_agent import GenericAgent
@@ -26,7 +30,8 @@ def build_guardrail_agent(
 
     # Create tool use behavior to wait for evaluation tool to be called
     def tool_use_behavior(
-        tool_context: object, tool_results: list[object]
+        tool_context: RunContextWrapper[Any],
+        tool_results: list[FunctionToolResult],
     ) -> ToolsToFinalOutputResult:
         # Check if evaluation tool has been called
         evaluation_complete = guardrail_progress.get("evaluation", False)

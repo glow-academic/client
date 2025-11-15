@@ -126,6 +126,9 @@ module = [
     "boto3.*",
     "botocore.*",
     "aioboto3.*",
+    "asyncpg.*",
+    "reportlab.*",
+    "testcontainers.*",
 ]
 ignore_missing_imports = true
 

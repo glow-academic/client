@@ -115,7 +115,7 @@ class PracticeFilters(BaseModel):
     departmentIds: list[str] | None = None
 
 
-def _parse_json_strings_recursive(obj: object) -> object:
+def _parse_json_strings_recursive(obj: Any) -> Any:
     """Recursively parse JSON strings in nested structures."""
     if isinstance(obj, str):
         try:
@@ -177,6 +177,7 @@ async def get_practice_overview(
 
         # Handle empty results gracefully - return empty structure instead of error
         # The SQL should always return a row, but handle edge case where it doesn't
+        parsed_result: dict[str, Any]
         if not result:
             # Create empty data structure - parsing function will handle defaults
             parsed_result = {}

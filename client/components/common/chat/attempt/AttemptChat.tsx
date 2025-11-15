@@ -87,12 +87,14 @@ interface AttemptChatProps {
   updateChatCreatedAtAction?: (
     input: UpdateChatCreatedAtIn
   ) => Promise<UpdateChatCreatedAtOut>;
+  revalidateAttemptAction?: (attemptId: string) => Promise<void>;
 }
 
 export default function AttemptChat({
   attemptId,
   attemptData: initialAttemptData,
   updateChatCreatedAtAction,
+  revalidateAttemptAction,
 }: AttemptChatProps) {
   const router = useRouter();
   const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
@@ -520,6 +522,23 @@ export default function AttemptChat({
       }
     };
 
+    const handleMessageSent = async (data: {
+      message_id: string;
+      chat_id: string;
+      message: string;
+      created_at: string;
+    }) => {
+      // Immediately refresh when user message is confirmed by server
+      // This provides immediate feedback that the message was received
+      if (data.chat_id === currentChatIdRef.current) {
+        // Revalidate cache first, then refresh router
+        if (revalidateAttemptAction) {
+          await revalidateAttemptAction(attemptId);
+        }
+        router.refresh();
+      }
+    };
+
     const handleSimulationMessageComplete = (data: {
       message_id: string;
       chat_id: string;
@@ -754,6 +773,7 @@ export default function AttemptChat({
     };
 
     socket.on("simulation_new_message", handleSimulationNewMessage);
+    socket.on("message_sent", handleMessageSent);
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
     socket.on("simulation_message_cancelled", handleSimulationMessageCancelled);
     socket.on("simulation_message_error", handleSimulationMessageError);
@@ -770,6 +790,7 @@ export default function AttemptChat({
 
     return () => {
       socket.off("simulation_new_message", handleSimulationNewMessage);
+      socket.off("message_sent", handleMessageSent);
       socket.off(
         "simulation_message_complete",
         handleSimulationMessageComplete
@@ -793,7 +814,15 @@ export default function AttemptChat({
         handleSimulationGradingProgress
       );
     };
-  }, [socket, currentChat?.id, attemptId, router, isGrading, gradingProgress]);
+  }, [
+    socket,
+    currentChat?.id,
+    attemptId,
+    router,
+    isGrading,
+    gradingProgress,
+    revalidateAttemptAction,
+  ]);
 
   // Update ref when grading state changes
   useEffect(() => {
