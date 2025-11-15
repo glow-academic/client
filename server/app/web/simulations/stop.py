@@ -5,10 +5,9 @@ from typing import Any
 
 import socketio  # type: ignore
 from app.db import get_pool
-from app.web.runs.utils import cancel_active_run
 from app.main import sio
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import emit_error
+from app.web.connections.utils import cancel_active_run
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +22,19 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
         chat_id = data.get("chat_id")
 
         if not chat_id:
-            await emit_error(sid, "Missing chat_id")
+            await sio.emit(
+                "simulation_error", {"success": False, "message": "Missing chat_id"}, room=sid
+            )
+            logger.error(f"Emitted error to {sid}: Missing chat_id")
             return
 
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await emit_error(sid, "Database connection pool not available")
+            await sio.emit(
+                "simulation_error", {"success": False, "message": "Database connection pool not available"}, room=sid
+            )
+            logger.error(f"Emitted error to {sid}: Database connection pool not available")
             return
 
         async with pool.acquire() as conn:
@@ -97,5 +102,8 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error stopping simulation for {sid}: {str(e)}")
-        await emit_error(sid, f"Failed to stop simulation: {str(e)}")
+        await sio.emit(
+            "simulation_error", {"success": False, "message": f"Failed to stop simulation: {str(e)}"}, room=sid
+        )
+        logger.error(f"Emitted error to {sid}: Failed to stop simulation: {str(e)}")
 

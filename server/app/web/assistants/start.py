@@ -6,12 +6,11 @@ from typing import Any
 
 import socketio  # type: ignore
 from agents import Runner, gen_trace_id, trace
-from app.utils.agents import GenericAgent
 from app.db import get_pool
 from app.main import sio
+from app.utils.agents import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
-from app.web.assistants.utils import emit_assistant_error
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +30,18 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
 
         if not profile_id or not initial_message:
             logger.error(f"Missing profile_id or initial_message in request from {sid}")
-            await emit_assistant_error(sid, "Missing profile_id or initial_message")
+            await sio.emit(
+                "assistant_error", {"success": False, "message": "Missing profile_id or initial_message"}, room=sid
+            )
+            logger.error(f"Emitted assistant error to {sid}: Missing profile_id or initial_message")
             return
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
-            await emit_assistant_error(
-                sid, "Missing department_id - please refresh the page"
+            await sio.emit(
+                "assistant_error", {"success": False, "message": "Missing department_id - please refresh the page"}, room=sid
             )
+            logger.error(f"Emitted assistant error to {sid}: Missing department_id - please refresh the page")
             return
 
         logger.info(f"Processing assistant start: profile_id={profile_id}, sid={sid}")
@@ -46,7 +49,10 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
         # Get connection from pool
         pool = get_pool()
         if not pool:
-            await emit_assistant_error(sid, "Database not available")
+            await sio.emit(
+                "assistant_error", {"success": False, "message": "Database not available"}, room=sid
+            )
+            logger.error(f"Emitted assistant error to {sid}: Database not available")
             return
 
         async with pool.acquire() as conn:
@@ -54,7 +60,10 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             sql = load_sql("sql/v3/profile/verify_profile_exists.sql")
             profile_row = await conn.fetchrow(sql, profile_id)
             if not profile_row:
-                await emit_assistant_error(sid, "Profile not found")
+                await sio.emit(
+                    "assistant_error", {"success": False, "message": "Profile not found"}, room=sid
+                )
+                logger.error(f"Emitted assistant error to {sid}: Profile not found")
                 return
 
             # Generate a trace id for the chat
@@ -208,5 +217,8 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error starting assistant for {sid}: {str(e)}")
-        await emit_assistant_error(sid, f"Failed to start assistant: {str(e)}")
+        await sio.emit(
+            "assistant_error", {"success": False, "message": f"Failed to start assistant: {str(e)}"}, room=sid
+        )
+        logger.error(f"Emitted assistant error to {sid}: Failed to start assistant: {str(e)}")
 

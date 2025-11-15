@@ -19,7 +19,6 @@ from app.utils.document import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import emit_error
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,10 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
-            await emit_error(sid, "Missing simulation_id")
+            await sio.emit(
+                "simulation_error", {"success": False, "message": "Missing simulation_id"}, room=sid
+            )
+            logger.error(f"Emitted error to {sid}: Missing simulation_id")
             return
 
         # If the client indicates guest (empty/"null"/None), register under default guest profile
@@ -55,7 +57,10 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await emit_error(sid, "Database connection pool not available")
+            await sio.emit(
+                "simulation_error", {"success": False, "message": "Database connection pool not available"}, room=sid
+            )
+            logger.error(f"Emitted error to {sid}: Database connection pool not available")
             return
 
         async with pool.acquire() as conn:
@@ -92,7 +97,10 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
             )
             
             if not row:
-                await emit_error(sid, "Failed to start simulation attempt")
+                await sio.emit(
+                    "simulation_error", {"success": False, "message": "Failed to start simulation attempt"}, room=sid
+                )
+                logger.error(f"Emitted error to {sid}: Failed to start simulation attempt")
                 return
             
             # Parse JSONB fields if they're strings
@@ -549,5 +557,8 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error starting simulation for {sid}: {str(e)}")
-        await emit_error(sid, f"Failed to start simulation: {str(e)}")
+        await sio.emit(
+            "simulation_error", {"success": False, "message": f"Failed to start simulation: {str(e)}"}, room=sid
+        )
+        logger.error(f"Emitted error to {sid}: Failed to start simulation: {str(e)}")
 

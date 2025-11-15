@@ -340,11 +340,461 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
         )
 
         # Process the message via WebSocket
-        await process_simulation_message_websocket(
-            chat_id=uuid.UUID(chat_id),
-            message=message or "",
-            is_retry=is_retry,
-        )
+        chat_id_uuid = uuid.UUID(chat_id)
+        message_str = message or ""
+        
+        # Get connection pool
+        pool = get_pool()
+        if not pool:
+            raise ValueError("Database connection pool not available")
+
+        async with pool.acquire() as conn:
+            try:
+                # 1. Add the user message to the chat (skip if this is a retry)
+                if message_str and message_str.strip() != "" and not is_retry:
+                    sql = load_sql("sql/v3/simulations/create_message.sql")
+                    user_message_row = await conn.fetchrow(
+                        sql, str(chat_id_uuid), "query", message_str, True
+                    )
+                    user_message = {
+                        "id": user_message_row["id"],
+                        "created_at": user_message_row["created_at"],
+                    }
+
+                    # 2. Emit user message to connected clients
+                    logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
+                    await sio.emit(
+                        "simulation_new_message",
+                        {
+                            "message_id": str(user_message["id"]),
+                            "chat_id": str(chat_id_uuid),
+                            "role": "user",
+                            "content": message_str,
+                            "completed": True,
+                            "created_at": user_message["created_at"].isoformat(),
+                        },
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+                else:
+                    if is_retry:
+                        logger.info(
+                            f"Skipping user message creation for retry in chat {chat_id_uuid}"
+                        )
+
+                # 3. Create placeholder assistant message
+                sql = load_sql("sql/v3/simulations/create_message.sql")
+                assistant_message_row = await conn.fetchrow(
+                    sql, str(chat_id_uuid), "response", "", False
+                )
+                assistant_message = {
+                    "id": assistant_message_row["id"],
+                    "created_at": assistant_message_row["created_at"],
+                }
+
+                # 4. Emit placeholder assistant message
+                logger.info(f"Emitting assistant placeholder to room simulation_{chat_id_uuid}")
+                await sio.emit(
+                    "simulation_new_message",
+                    {
+                        "message_id": str(assistant_message["id"]),
+                        "chat_id": str(chat_id_uuid),
+                        "role": "assistant",
+                        "content": "",
+                        "completed": False,
+                        "created_at": assistant_message["created_at"].isoformat(),
+                    },
+                    room=f"simulation_{chat_id_uuid}",
+                )
+
+                logger.info(f"Processing simulation message for chat {chat_id_uuid}")
+
+                # 5. Stream the assistant response (inlined run_simulation_agent)
+                accumulated_content = ""
+                cancelled = False
+
+                try:
+                    # Cooperative cancellation support using Redis flags
+                    # We poll for a cancellation flag bound to this chat's active run ID
+                    from app.web.connections.utils import (
+                        get_active_run, is_run_cancelled, remove_active_result,
+                        store_active_events, store_active_result,
+                        store_active_run)
+
+                    # Get all context data in a single optimized query using SQL file
+                    sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                    context_row = await conn.fetchrow(sql, str(chat_id_uuid))
+                    
+                    if not context_row:
+                        raise ValueError(f"Chat {chat_id_uuid} not found or no persona configured")
+                    
+                    # Parse JSON array for documents
+                    documents = (
+                        json.loads(context_row["documents"])
+                        if isinstance(context_row["documents"], str)
+                        else context_row["documents"]
+                    )
+                    
+                    context = {
+                        "chat_id": context_row["chat_id"],
+                        "chat_title": context_row["chat_title"],
+                        "trace_id": context_row["trace_id"],
+                        "attempt_id": context_row["attempt_id"],
+                        "simulation_id": context_row["simulation_id"],
+                        "scenario_id": context_row["scenario_id"],
+                        "department_id": context_row["department_id"],
+                        "problem_statement": context_row["problem_statement"],
+                        "persona_id": context_row["persona_id"],
+                        "persona_name": context_row["persona_name"],
+                        "system_prompt": context_row["system_prompt"],
+                        "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                        "reasoning": context_row["reasoning"],
+                        "model_id": context_row["model_id"],
+                        "model_name": context_row["model_name"],
+                        "custom_model": context_row["custom_model"],
+                        "provider_id": context_row["provider_id"],
+                        "provider_name": context_row["provider_name"],
+                        "base_url": context_row["base_url"],
+                        "api_key": context_row["api_key"],
+                        "image_input_active": context_row["image_input_enabled"],
+                        "output_guardrail_active": context_row["output_guardrail_enabled"],
+                        "profile_id": context_row["profile_id"],
+                        "documents": documents,
+                        "req_per_day": context_row["req_per_day"],
+                        "runs_today_count": context_row["runs_today_count"],
+                        "earliest_run_created_at": context_row["earliest_run_created_at"],
+                    }
+                    
+                    # Extract department_id from context
+                    if not context.get("department_id"):
+                        raise ValueError(f"Failed to get department_id from run context for chat {chat_id_uuid}")
+                    
+                    department_id = uuid.UUID(context["department_id"])
+
+                    input_items: list[TResponseInputItem] = []
+
+                    # Format document info if documents are available
+                    if context["documents"]:
+                        document_info = format_document_info(
+                            context["documents"], context["image_input_active"]
+                        )
+                        input_items.append(document_info)
+
+                    # Get all messages using SQL file
+                    sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+                    message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
+                    messages = [dict(row) for row in message_rows]
+
+                    # Prepare conversation history from chat_id
+                    conversation_history = get_simulation_conversation_history(messages)
+
+                    # Format chat scenario using the problem statement from context
+                    chat_scenario = format_chat_scenario(context["problem_statement"])
+
+                    input_items.insert(0, chat_scenario)
+                    input_items.extend(conversation_history)
+
+                    # Get output guardrails if enabled
+                    output_guards = (
+                        get_output_guardrails(chat_id_uuid, department_id, conversation_history, conn)
+                        if context["output_guardrail_active"]
+                        else None
+                    )
+
+                    # Create agent instance using context data
+                    agent_instance = GenericAgent(
+                        agent_name=context["persona_name"],
+                        system_prompt=context["system_prompt"],
+                        temperature=context["temperature"],
+                        model_name=context["model_name"],
+                        model_provider=context["provider_name"],
+                        base_url=context["base_url"],
+                        reasoning=context["reasoning"],
+                        api_key=context["api_key"],
+                        output_guardrails=output_guards,
+                        custom_model=context["custom_model"],
+                    )
+
+                    # Check rate limit
+                    profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+                    if not profile_id_uuid:
+                        raise ValueError("Profile not found. Please contact support.")
+                    
+                    req_per_day = context["req_per_day"]
+                    runs_today_count = context["runs_today_count"]
+                    
+                    if req_per_day is not None and runs_today_count >= req_per_day:
+                        from datetime import timedelta
+                        from zoneinfo import ZoneInfo
+                        earliest_run_created_at = context["earliest_run_created_at"]
+                        if earliest_run_created_at:
+                            next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                            eastern_tz = ZoneInfo("America/New_York")
+                            next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                            error_message = (
+                                f"Daily request limit of {req_per_day} reached. "
+                                f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                                f"{next_allowed_et.strftime('%B %d, %Y')}."
+                            )
+                        else:
+                            error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
+                        raise ValueError(error_message)
+
+                    # Create model run with all junction records using SQL file (using persona, not agent)
+                    sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+                    model_run_row = await conn.fetchrow(
+                        sql_create_run,
+                        context["department_id"],
+                        context["model_id"],
+                        context["persona_id"],
+                        "persona",
+                        context["profile_id"],
+                    )
+                    model_run_id = uuid.UUID(model_run_row["model_run_id"])
+
+                    with trace(
+                        context["chat_title"],
+                        trace_id=context["trace_id"],
+                        group_id=context["attempt_id"],
+                    ):
+                        result = Runner.run_streamed(
+                            agent_instance.agent(),
+                            input=input_items,
+                            context=DebugContext(conn=conn, model_run_id=model_run_id),
+                        )
+
+                    # Store the result in active runs for potential cancellation using unified tracking
+                    chat_id_str = str(chat_id_uuid)
+                    await store_active_run(chat_id_str, result)
+                    await store_active_result(chat_id_str, result)
+
+                    try:
+                        # Process streaming events
+                        events = result.stream_events()
+                        await store_active_events(chat_id_str, events)
+
+                        async for event in events:
+                            # Cooperative cancellation: check a Redis flag bound to this chat's active run
+                            try:
+                                run_id = await get_active_run(chat_id_str)
+                                if run_id and await is_run_cancelled(run_id):
+                                    # Raise a cancellation to unwind upstream and hit finally cleanup
+                                    raise Exception("cancelled")
+                            except Exception:
+                                # If Redis unavailable or check fails, continue; stop is best-effort
+                                pass
+                            if event.type == "raw_response_event":
+                                if isinstance(event.data, ResponseTextDeltaEvent):
+                                    token = event.data.delta
+                                    
+                                    # Check cancellation BEFORE processing this token to avoid emitting it
+                                    try:
+                                        run_id = await get_active_run(chat_id_str)
+                                        if run_id and await is_run_cancelled(run_id):
+                                            cancelled = True
+                                            sql = load_sql("sql/v3/simulations/complete_message.sql")
+                                            await conn.execute(sql, None, str(assistant_message["id"]))
+                                            break
+                                    except Exception:
+                                        pass
+
+                                    # Regular content token
+                                    accumulated_content += token
+
+                                    # Update the database with accumulated content
+                                    sql = load_sql("sql/v3/simulations/update_message_content.sql")
+                                    await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+
+                                    logger.info(
+                                        f"Emitting token to room simulation_{chat_id_uuid}: {token[:20]}..."
+                                    )
+                                    await sio.emit(
+                                        "simulation_message_token",
+                                        {
+                                            "message_id": str(assistant_message["id"]),
+                                            "chat_id": str(chat_id_uuid),
+                                            "token": token,
+                                            "accumulated_content": accumulated_content,
+                                        },
+                                        room=f"simulation_{chat_id_uuid}",
+                                    )
+                                    if cancelled:
+                                        break
+
+                        usage = result.context_wrapper.usage
+                        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+                        await conn.execute(
+                            sql_update_tokens,
+                            str(model_run_id),
+                            usage.input_tokens,
+                            usage.output_tokens,
+                        )
+                    except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
+                        # Treat explicit cancellation/closure as expected
+                        pass
+                    except Exception as e:
+                        # Handle cancellation or other errors
+                        if "cancelled" in str(e).lower():
+                            # This is expected when the run is cancelled
+                            pass
+                        else:
+                            # Re-raise other exceptions
+                            raise e
+                    finally:
+                        # Clean up the active run using unified tracking
+                        from app.web.connections.utils import remove_active_run
+
+                        await remove_active_run(chat_id_str)
+                        await remove_active_result(chat_id_str)
+                except OutputGuardrailTripwireTriggered as e:
+                    # Handle guardrail-triggered output: overwrite message with model-provided reason
+                    reason = ""
+                    try:
+                        reason = (
+                            getattr(e, "guardrail_result", None)
+                            and getattr(e.guardrail_result, "output", None)
+                            and getattr(e.guardrail_result.output, "output_info", None)
+                            and getattr(e.guardrail_result.output.output_info, "reason", "")
+                        ) or ""
+                    except Exception:
+                        reason = ""
+
+                    error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
+
+                    # Persist error onto the assistant message and emit completion + error
+                    sql = load_sql("sql/v3/simulations/complete_message.sql")
+                    await conn.execute(sql, error_text, str(assistant_message["id"]))
+
+                    await sio.emit(
+                        "simulation_message_complete",
+                        {
+                            "message_id": str(assistant_message["id"]),
+                            "chat_id": str(chat_id_uuid),
+                            "final_content": error_text,
+                        },
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+
+                    await sio.emit(
+                        "simulation_message_error",
+                        {"chat_id": str(chat_id_uuid), "error": error_text},
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+
+                    # Skip later completion emission
+                    cancelled = True
+
+                except Exception as e:
+                    if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
+                        # Handle cancellation gracefully
+                        cancelled = True
+                        logger.info(f"Simulation run for chat {chat_id_uuid} was cancelled")
+
+                        # Keep content as-is, don't add cancellation notice
+                        # Mark message as completed when cancelled
+                        sql = load_sql("sql/v3/simulations/complete_message.sql")
+                        await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+
+                        # Emit cancellation signal
+                        logger.info(f"Emitting cancellation to room simulation_{chat_id_uuid}")
+                        await sio.emit(
+                            "simulation_message_cancelled",
+                            {
+                                "message_id": str(assistant_message["id"]),
+                                "chat_id": str(chat_id_uuid),
+                                "final_content": accumulated_content,
+                            },
+                            room=f"simulation_{chat_id_uuid}",
+                        )
+                    else:
+                        # Re-raise other exceptions
+                        raise e
+
+                # 6. Mark as completed and ensure final content is persisted
+                sql = load_sql("sql/v3/simulations/complete_message.sql")
+                await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+
+                # 7. Emit completion signal (only if not cancelled)
+                if not cancelled:
+                    logger.info(f"Emitting completion to room simulation_{chat_id_uuid}")
+                    await sio.emit(
+                        "simulation_message_complete",
+                        {
+                            "message_id": str(assistant_message["id"]),
+                            "chat_id": str(chat_id_uuid),
+                            "final_content": accumulated_content,
+                        },
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+
+                    # 8. Trigger hint generation for practice simulations only (fire and forget)
+                    # Use optimized query to get simulation metadata
+                    sql = load_sql("sql/v3/simulations/get_simulation_metadata_for_chat.sql")
+                    sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
+                    if not sim_metadata_row:
+                        logger.warning(f"Failed to get simulation metadata for chat {chat_id_uuid}")
+                        sim_metadata = {"practice_simulation": False}
+                    else:
+                        sim_metadata = {
+                            "simulation_id": sim_metadata_row["simulation_id"],
+                            "attempt_id": sim_metadata_row["attempt_id"],
+                            "practice_simulation": sim_metadata_row["practice_simulation"],
+                        }
+
+                    if sim_metadata["practice_simulation"]:
+                        logger.info(
+                            f"Triggering hint generation for practice message {assistant_message['id']}"
+                        )
+                        # Extract department_id from run context for hint generation
+                        sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                        run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
+                        hint_dept_id = run_context_for_hints.get("department_id") if run_context_for_hints else None
+                        if not hint_dept_id:
+                            logger.warning(f"Failed to get department_id for hint generation in chat {chat_id_uuid}")
+                        else:
+                            asyncio.create_task(
+                                _generate_hints_background_inline(
+                                    chat_id=chat_id_uuid,
+                                    message_id=assistant_message["id"],
+                                    department_id=uuid.UUID(hint_dept_id),
+                                )
+                            )
+                    else:
+                        logger.debug("Skipping hint generation for non-practice simulation")
+
+            except Exception as e:
+                logger.error(f"Error processing simulation message: {str(e)}")
+                # Best-effort: if we have already created a placeholder assistant message,
+                # persist the error text onto it and mark it complete so the UI shows it.
+                try:
+                    error_text = f"Error: {str(e)}"
+                    if "assistant_message" in locals() and assistant_message is not None:
+                        sql = load_sql("sql/v3/simulations/complete_message.sql")
+                        await conn.execute(sql, error_text, str(assistant_message["id"]))
+
+                        # Emit a completion update using the same message so the client updates content
+                        await sio.emit(
+                            "simulation_message_complete",
+                            {
+                                "message_id": str(assistant_message["id"]),
+                                "chat_id": str(chat_id_uuid),
+                                "final_content": error_text,
+                            },
+                            room=f"simulation_{chat_id_uuid}",
+                        )
+                except Exception as persist_error:
+                    logger.error(
+                        f"Failed to persist/emit error content for chat {chat_id_uuid}: {persist_error}"
+                    )
+
+                # Also emit the explicit error event for toasts/state resets
+                # Only emit explicit error event if not cancelled
+                if "cancelled" not in str(e).lower() and "canceled" not in str(e).lower():
+                    logger.info(f"Emitting error to room simulation_{chat_id_uuid}")
+                    await sio.emit(
+                        "simulation_message_error",
+                        {"chat_id": str(chat_id_uuid), "error": str(e)},
+                        room=f"simulation_{chat_id_uuid}",
+                    )
 
     except Exception as e:
         logger.error(f"Error in send_simulation_message for {sid}: {str(e)}")
@@ -391,469 +841,4 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
             {"success": False, "message": str(e)},
             room=sid,
         )
-
-
-async def process_simulation_message_websocket(
-    chat_id: uuid.UUID,
-    message: str = "",
-    is_retry: bool = False,
-) -> None:
-    """
-    Process a simulation message and stream the response via WebSocket
-    Handles both text and audio messages with unified pipeline
-    """
-
-    # Get connection pool
-    pool = get_pool()
-    if not pool:
-        raise ValueError("Database connection pool not available")
-
-    async with pool.acquire() as conn:
-        try:
-            # 1. Add the user message to the chat (skip if this is a retry)
-            if message and message.strip() != "" and not is_retry:
-                sql = load_sql("sql/v3/simulations/create_message.sql")
-                user_message_row = await conn.fetchrow(
-                    sql, str(chat_id), "query", message, True
-                )
-                user_message = {
-                    "id": user_message_row["id"],
-                    "created_at": user_message_row["created_at"],
-                }
-
-                # 2. Emit user message to connected clients
-                logger.info(f"Emitting user message to room simulation_{chat_id}")
-                await sio.emit(
-                    "simulation_new_message",
-                    {
-                        "message_id": str(user_message["id"]),
-                        "chat_id": str(chat_id),
-                        "role": "user",
-                        "content": message,
-                        "completed": True,
-                        "created_at": user_message["created_at"].isoformat(),
-                    },
-                    room=f"simulation_{chat_id}",
-                )
-            else:
-                if is_retry:
-                    logger.info(
-                        f"Skipping user message creation for retry in chat {chat_id}"
-                    )
-
-            # 3. Create placeholder assistant message
-            sql = load_sql("sql/v3/simulations/create_message.sql")
-            assistant_message_row = await conn.fetchrow(
-                sql, str(chat_id), "response", "", False
-            )
-            assistant_message = {
-                "id": assistant_message_row["id"],
-                "created_at": assistant_message_row["created_at"],
-            }
-
-            # 4. Emit placeholder assistant message
-            logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
-            await sio.emit(
-                "simulation_new_message",
-                {
-                    "message_id": str(assistant_message["id"]),
-                    "chat_id": str(chat_id),
-                    "role": "assistant",
-                    "content": "",
-                    "completed": False,
-                    "created_at": assistant_message["created_at"].isoformat(),
-                },
-                room=f"simulation_{chat_id}",
-            )
-
-            logger.info(f"Processing simulation message for chat {chat_id}")
-
-            # 5. Stream the assistant response (inlined run_simulation_agent)
-            accumulated_content = ""
-            cancelled = False
-
-            try:
-                # Cooperative cancellation support using Redis flags
-                # We poll for a cancellation flag bound to this chat's active run ID
-                from app.web.runs.utils import get_active_run, is_run_cancelled
-                from app.web.connections.utils import (remove_active_result,
-                                                       store_active_events,
-                                                       store_active_result,
-                                                       store_active_run)
-
-                # Get all context data in a single optimized query using SQL file
-                sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
-                context_row = await conn.fetchrow(sql, str(chat_id))
-                
-                if not context_row:
-                    raise ValueError(f"Chat {chat_id} not found or no persona configured")
-                
-                # Parse JSON array for documents
-                documents = (
-                    json.loads(context_row["documents"])
-                    if isinstance(context_row["documents"], str)
-                    else context_row["documents"]
-                )
-                
-                context = {
-                    "chat_id": context_row["chat_id"],
-                    "chat_title": context_row["chat_title"],
-                    "trace_id": context_row["trace_id"],
-                    "attempt_id": context_row["attempt_id"],
-                    "simulation_id": context_row["simulation_id"],
-                    "scenario_id": context_row["scenario_id"],
-                    "department_id": context_row["department_id"],
-                    "problem_statement": context_row["problem_statement"],
-                    "persona_id": context_row["persona_id"],
-                    "persona_name": context_row["persona_name"],
-                    "system_prompt": context_row["system_prompt"],
-                    "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
-                    "reasoning": context_row["reasoning"],
-                    "model_id": context_row["model_id"],
-                    "model_name": context_row["model_name"],
-                    "custom_model": context_row["custom_model"],
-                    "provider_id": context_row["provider_id"],
-                    "provider_name": context_row["provider_name"],
-                    "base_url": context_row["base_url"],
-                    "api_key": context_row["api_key"],
-                    "image_input_active": context_row["image_input_enabled"],
-                    "output_guardrail_active": context_row["output_guardrail_enabled"],
-                    "profile_id": context_row["profile_id"],
-                    "documents": documents,
-                    "req_per_day": context_row["req_per_day"],
-                    "runs_today_count": context_row["runs_today_count"],
-                    "earliest_run_created_at": context_row["earliest_run_created_at"],
-                }
-                
-                # Extract department_id from context
-                if not context.get("department_id"):
-                    raise ValueError(f"Failed to get department_id from run context for chat {chat_id}")
-                
-                department_id = uuid.UUID(context["department_id"])
-
-                input_items: list[TResponseInputItem] = []
-
-                # Format document info if documents are available
-                if context["documents"]:
-                    document_info = format_document_info(
-                        context["documents"], context["image_input_active"]
-                    )
-                    input_items.append(document_info)
-
-                # Get all messages using SQL file
-                sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
-                message_rows = await conn.fetch(sql_messages, str(chat_id))
-                messages = [dict(row) for row in message_rows]
-
-                # Prepare conversation history from chat_id
-                conversation_history = get_simulation_conversation_history(messages)
-
-                # Format chat scenario using the problem statement from context
-                chat_scenario = format_chat_scenario(context["problem_statement"])
-
-                input_items.insert(0, chat_scenario)
-                input_items.extend(conversation_history)
-
-                # Get output guardrails if enabled
-                output_guards = (
-                    get_output_guardrails(chat_id, department_id, conversation_history, conn)
-                    if context["output_guardrail_active"]
-                    else None
-                )
-
-                # Create agent instance using context data
-                agent_instance = GenericAgent(
-                    agent_name=context["persona_name"],
-                    system_prompt=context["system_prompt"],
-                    temperature=context["temperature"],
-                    model_name=context["model_name"],
-                    model_provider=context["provider_name"],
-                    base_url=context["base_url"],
-                    reasoning=context["reasoning"],
-                    api_key=context["api_key"],
-                    output_guardrails=output_guards,
-                    custom_model=context["custom_model"],
-                )
-
-                # Check rate limit
-                profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
-                if not profile_id_uuid:
-                    raise ValueError("Profile not found. Please contact support.")
-                
-                req_per_day = context["req_per_day"]
-                runs_today_count = context["runs_today_count"]
-                
-                if req_per_day is not None and runs_today_count >= req_per_day:
-                    from datetime import timedelta
-                    from zoneinfo import ZoneInfo
-                    earliest_run_created_at = context["earliest_run_created_at"]
-                    if earliest_run_created_at:
-                        next_allowed_utc = earliest_run_created_at + timedelta(days=1)
-                        eastern_tz = ZoneInfo("America/New_York")
-                        next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
-                        error_message = (
-                            f"Daily request limit of {req_per_day} reached. "
-                            f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
-                            f"{next_allowed_et.strftime('%B %d, %Y')}."
-                        )
-                    else:
-                        error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
-                    raise ValueError(error_message)
-
-                # Create model run with all junction records using SQL file (using persona, not agent)
-                sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
-                model_run_row = await conn.fetchrow(
-                    sql_create_run,
-                    context["department_id"],
-                    context["model_id"],
-                    context["persona_id"],
-                    "persona",
-                    context["profile_id"],
-                )
-                model_run_id = uuid.UUID(model_run_row["model_run_id"])
-
-                with trace(
-                    context["chat_title"],
-                    trace_id=context["trace_id"],
-                    group_id=context["attempt_id"],
-                ):
-                    result = Runner.run_streamed(
-                        agent_instance.agent(),
-                        input=input_items,
-                        context=DebugContext(conn=conn, model_run_id=model_run_id),
-                    )
-
-                # Store the result in active runs for potential cancellation using unified tracking
-                chat_id_str = str(chat_id)
-                await store_active_run(chat_id_str, result)
-                await store_active_result(chat_id_str, result)
-
-                try:
-                    # Process streaming events
-                    events = result.stream_events()
-                    await store_active_events(chat_id_str, events)
-
-                    async for event in events:
-                        # Cooperative cancellation: check a Redis flag bound to this chat's active run
-                        try:
-                            run_id = await get_active_run(chat_id_str)
-                            if run_id and await is_run_cancelled(run_id):
-                                # Raise a cancellation to unwind upstream and hit finally cleanup
-                                raise Exception("cancelled")
-                        except Exception:
-                            # If Redis unavailable or check fails, continue; stop is best-effort
-                            pass
-                        if event.type == "raw_response_event":
-                            if isinstance(event.data, ResponseTextDeltaEvent):
-                                token = event.data.delta
-                                
-                                # Check cancellation BEFORE processing this token to avoid emitting it
-                                try:
-                                    run_id = await get_active_run(chat_id_str)
-                                    if run_id and await is_run_cancelled(run_id):
-                                        cancelled = True
-                                        sql = load_sql("sql/v3/simulations/complete_message.sql")
-                                        await conn.execute(sql, None, str(assistant_message["id"]))
-                                        break
-                                except Exception:
-                                    pass
-
-                                # Regular content token
-                                accumulated_content += token
-
-                                # Update the database with accumulated content
-                                sql = load_sql("sql/v3/simulations/update_message_content.sql")
-                                await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
-
-                                logger.info(
-                                    f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
-                                )
-                                await sio.emit(
-                                    "simulation_message_token",
-                                    {
-                                        "message_id": str(assistant_message["id"]),
-                                        "chat_id": str(chat_id),
-                                        "token": token,
-                                        "accumulated_content": accumulated_content,
-                                    },
-                                    room=f"simulation_{chat_id}",
-                                )
-                                if cancelled:
-                                    break
-
-                    usage = result.context_wrapper.usage
-                    sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
-                    await conn.execute(
-                        sql_update_tokens,
-                        str(model_run_id),
-                        usage.input_tokens,
-                        usage.output_tokens,
-                    )
-                except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
-                    # Treat explicit cancellation/closure as expected
-                    pass
-                except Exception as e:
-                    # Handle cancellation or other errors
-                    if "cancelled" in str(e).lower():
-                        # This is expected when the run is cancelled
-                        pass
-                    else:
-                        # Re-raise other exceptions
-                        raise e
-                finally:
-                    # Clean up the active run using unified tracking
-                    from app.web.runs.utils import remove_active_run
-
-                    await remove_active_run(chat_id_str)
-                    await remove_active_result(chat_id_str)
-            except OutputGuardrailTripwireTriggered as e:
-                # Handle guardrail-triggered output: overwrite message with model-provided reason
-                reason = ""
-                try:
-                    reason = (
-                        getattr(e, "guardrail_result", None)
-                        and getattr(e.guardrail_result, "output", None)
-                        and getattr(e.guardrail_result.output, "output_info", None)
-                        and getattr(e.guardrail_result.output.output_info, "reason", "")
-                    ) or ""
-                except Exception:
-                    reason = ""
-
-                error_text = f"Error: {reason or 'Guardrail tripwire triggered'}"
-
-                # Persist error onto the assistant message and emit completion + error
-                sql = load_sql("sql/v3/simulations/complete_message.sql")
-                await conn.execute(sql, error_text, str(assistant_message["id"]))
-
-                await sio.emit(
-                    "simulation_message_complete",
-                    {
-                        "message_id": str(assistant_message["id"]),
-                        "chat_id": str(chat_id),
-                        "final_content": error_text,
-                    },
-                    room=f"simulation_{chat_id}",
-                )
-
-                await sio.emit(
-                    "simulation_message_error",
-                    {"chat_id": str(chat_id), "error": error_text},
-                    room=f"simulation_{chat_id}",
-                )
-
-                # Skip later completion emission
-                cancelled = True
-
-            except Exception as e:
-                if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
-                    # Handle cancellation gracefully
-                    cancelled = True
-                    logger.info(f"Simulation run for chat {chat_id} was cancelled")
-
-                    # Keep content as-is, don't add cancellation notice
-                    # Mark message as completed when cancelled
-                    sql = load_sql("sql/v3/simulations/complete_message.sql")
-                    await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
-
-                    # Emit cancellation signal
-                    logger.info(f"Emitting cancellation to room simulation_{chat_id}")
-                    await sio.emit(
-                        "simulation_message_cancelled",
-                        {
-                            "message_id": str(assistant_message["id"]),
-                            "chat_id": str(chat_id),
-                            "final_content": accumulated_content,
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
-                else:
-                    # Re-raise other exceptions
-                    raise e
-
-            # 6. Mark as completed and ensure final content is persisted
-            sql = load_sql("sql/v3/simulations/complete_message.sql")
-            await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
-
-            # 7. Emit completion signal (only if not cancelled)
-            if not cancelled:
-                logger.info(f"Emitting completion to room simulation_{chat_id}")
-                await sio.emit(
-                    "simulation_message_complete",
-                    {
-                        "message_id": str(assistant_message["id"]),
-                        "chat_id": str(chat_id),
-                        "final_content": accumulated_content,
-                    },
-                    room=f"simulation_{chat_id}",
-                )
-
-                # 8. Trigger hint generation for practice simulations only (fire and forget)
-                # Use optimized query to get simulation metadata
-                sql = load_sql("sql/v3/simulations/get_simulation_metadata_for_chat.sql")
-                sim_metadata_row = await conn.fetchrow(sql, str(chat_id))
-                if not sim_metadata_row:
-                    logger.warning(f"Failed to get simulation metadata for chat {chat_id}")
-                    sim_metadata = {"practice_simulation": False}
-                else:
-                    sim_metadata = {
-                        "simulation_id": sim_metadata_row["simulation_id"],
-                        "attempt_id": sim_metadata_row["attempt_id"],
-                        "practice_simulation": sim_metadata_row["practice_simulation"],
-                    }
-
-                if sim_metadata["practice_simulation"]:
-                    logger.info(
-                        f"Triggering hint generation for practice message {assistant_message['id']}"
-                    )
-                    # Extract department_id from run context for hint generation
-                    sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
-                    run_context_for_hints = await conn.fetchrow(sql, str(chat_id))
-                    hint_dept_id = run_context_for_hints.get("department_id") if run_context_for_hints else None
-                    if not hint_dept_id:
-                        logger.warning(f"Failed to get department_id for hint generation in chat {chat_id}")
-                    else:
-                        asyncio.create_task(
-                            _generate_hints_background_inline(
-                                chat_id=chat_id,
-                                message_id=assistant_message["id"],
-                                department_id=uuid.UUID(hint_dept_id),
-                            )
-                        )
-                else:
-                    logger.debug("Skipping hint generation for non-practice simulation")
-
-        except Exception as e:
-            logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
-            # Best-effort: if we have already created a placeholder assistant message,
-            # persist the error text onto it and mark it complete so the UI shows it.
-            try:
-                error_text = f"Error: {str(e)}"
-                if "assistant_message" in locals() and assistant_message is not None:
-                    sql = load_sql("sql/v3/simulations/complete_message.sql")
-                    await conn.execute(sql, error_text, str(assistant_message["id"]))
-
-                    # Emit a completion update using the same message so the client updates content
-                    await sio.emit(
-                        "simulation_message_complete",
-                        {
-                            "message_id": str(assistant_message["id"]),
-                            "chat_id": str(chat_id),
-                            "final_content": error_text,
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
-            except Exception as persist_error:
-                logger.error(
-                    f"Failed to persist/emit error content for chat {chat_id}: {persist_error}"
-                )
-
-            # Also emit the explicit error event for toasts/state resets
-            # Only emit explicit error event if not cancelled
-            if "cancelled" not in str(e).lower() and "canceled" not in str(e).lower():
-                logger.info(f"Emitting error to room simulation_{chat_id}")
-                await sio.emit(
-                    "simulation_message_error",
-                    {"chat_id": str(chat_id), "error": str(e)},
-                    room=f"simulation_{chat_id}",
-                )
 
