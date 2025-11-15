@@ -24,6 +24,14 @@ class MockSocketIO:
             self.rooms[room] = set()
         self.rooms[room].add(sid)
 
+    async def leave_room(self, sid: str, room: str) -> None:
+        """Remove sid from a room."""
+        if room in self.rooms:
+            self.rooms[room].discard(sid)
+            # Clean up empty rooms
+            if not self.rooms[room]:
+                del self.rooms[room]
+
     def get_events(self, event_name: str | None = None) -> list[dict[str, Any]]:
         """Get captured events, optionally filtered by event name."""
         if event_name:

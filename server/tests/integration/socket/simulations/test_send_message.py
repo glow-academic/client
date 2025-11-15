@@ -3,7 +3,7 @@
 import asyncpg  # type: ignore
 import pytest
 from app.socket.simulations.send_message import send_simulation_message
-from tests.integration.web.conftest import MockSocketIO
+from tests.integration.socket.conftest import MockSocketIO
 
 pytestmark = pytest.mark.asyncio
 
