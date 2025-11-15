@@ -131,9 +131,23 @@ export default function AttemptChat({
     initialAttemptData
   );
 
+  // Simulation state management
+  const [currentChatIndex, setCurrentChatIndex] = useState(
+    initialAttemptData.currentChatIndex ?? 0
+  );
+
   // Update state when initial prop changes (from router.refresh())
   useEffect(() => {
     setAttemptData(initialAttemptData);
+    // Sync currentChatIndex from server data to ensure client stays in sync with server's view
+    if (initialAttemptData?.currentChatIndex !== undefined) {
+      setCurrentChatIndex((prevIndex) => {
+        // Only update if different to avoid unnecessary re-renders
+        return initialAttemptData.currentChatIndex !== prevIndex
+          ? initialAttemptData.currentChatIndex
+          : prevIndex;
+      });
+    }
     // Clear optimistic states for chats that now have server data
     // This ensures server data takes precedence after refresh
     setOptimisticGradingStates((prev) => {
@@ -150,11 +164,6 @@ export default function AttemptChat({
       return updated;
     });
   }, [initialAttemptData]);
-
-  // Simulation state management
-  const [currentChatIndex, setCurrentChatIndex] = useState(
-    initialAttemptData.currentChatIndex ?? 0
-  );
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const [showResults, setShowResults] = useState(
