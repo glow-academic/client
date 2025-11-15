@@ -114,7 +114,7 @@ async def get_leaderboard(
             parsed_result = json.loads(parsed_result)
 
         # Recursively parse JSON strings
-        def parse_json_strings_recursive(obj: Any) -> Any:
+        def parse_json_strings_recursive(obj: Any) -> Any:  # noqa: ANN401
             """Recursively parse JSON strings in nested structures."""
             if isinstance(obj, str):
                 try:

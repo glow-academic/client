@@ -252,7 +252,7 @@ _mcp_server_patcher.start()
 _exceptions_patcher.start()
 
 # Now safe to import app modules
-from app.main import fastapi_app, get_db
+from app.main import fastapi_app, get_db  # noqa: E402
 
 
 @pytest_asyncio.fixture

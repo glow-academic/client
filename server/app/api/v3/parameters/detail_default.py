@@ -21,7 +21,10 @@ class ParameterDetailDefaultRequest(BaseModel):
 
 
 # Reuse models from detail.py (import after defining request to avoid circular import)
-from app.api.v3.parameters.detail import ParameterDetailResponse, ParameterItemDetail
+from app.api.v3.parameters.detail import (  # noqa: E402
+    ParameterDetailResponse,
+    ParameterItemDetail,
+)
 
 router = APIRouter()
 

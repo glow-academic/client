@@ -64,12 +64,8 @@ def test_practice_infinite_mode(page: Page, base_url: str) -> None:
     start_button.wait_for(state="visible", timeout=10000)
 
     # Set up navigation promise
-    navigation_promise = page.wait_for_event("framenavigated", timeout=30000)
-
-    start_button.click()
-
-    # Wait for navigation
-    navigation_promise
+    with page.wait_for_event("framenavigated", timeout=30000):
+        start_button.click()
 
     # Verify navigation to attempt page
     page.wait_for_url(re.compile(r".*/practice/a/[^/]+"), timeout=30000)

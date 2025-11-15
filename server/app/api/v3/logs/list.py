@@ -75,7 +75,7 @@ class LogsListResponse(BaseModel):
 router = APIRouter()
 
 
-def _parse_jsonb_to_model(
+def _parse_jsonb_to_model(  # noqa: ANN401
     data: Any,
     model_class: type[ActorData]
     | type[SubjectData]

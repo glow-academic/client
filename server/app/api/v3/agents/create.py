@@ -59,7 +59,7 @@ async def create_agent(
         raise HTTPException(
             status_code=400,
             detail=f"model_id must be a valid UUID, got: {request.model_id!r}",
-        )
+        ) from None
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None

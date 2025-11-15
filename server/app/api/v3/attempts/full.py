@@ -267,7 +267,7 @@ async def get_attempt_full(
 
         # Parse JSONB fields from strings to Python objects
         # asyncpg returns JSONB as dict/list, but handle string case for safety
-        def parse_jsonb(data: Any) -> Any:
+        def parse_jsonb(data: Any) -> Any:  # noqa: ANN401
             if isinstance(data, str):
                 return json.loads(data)
             return data
@@ -364,7 +364,7 @@ async def get_attempt_full(
 
         # Access result fields defensively (asyncpg may lowercase column names)
         # Try both camelCase and snake_case versions
-        def get_result_field(key: str, default: Any = None) -> Any:
+        def get_result_field(key: str, default: Any = None) -> Any:  # noqa: ANN401
             """Get field from result, trying both camelCase and snake_case."""
             if key in result:
                 return result[key]

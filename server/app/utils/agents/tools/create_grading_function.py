@@ -46,7 +46,7 @@ def create_grading_function(
         score: int = Field(ge=1, le=5, description=score_description),
         feedback: str = Field(default="", description=feedback_description),
     ) -> str:
-        f"""Grade the conversation on: {standard_group["name"]}
+        """Grade the conversation on: {standard_group_name}
 
         {full_description}
 
@@ -56,7 +56,7 @@ def create_grading_function(
 
         Returns:
             Confirmation message
-        """
+        """.format(standard_group_name=standard_group["name"], full_description=full_description)
         grading_results[safe_name] = {"score": score, "feedback": feedback}
         grading_progress[safe_name] = True
 

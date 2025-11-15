@@ -70,7 +70,7 @@ async def recent_app_logs(
 
                     try:
                         context = json.loads(context)
-                    except:
+                    except Exception:
                         context = None
 
                 results.append(
@@ -87,4 +87,4 @@ async def recent_app_logs(
 
             return results
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") from e

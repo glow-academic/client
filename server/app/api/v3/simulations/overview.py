@@ -56,7 +56,7 @@ async def simulation_overview(
     except ValueError:
         raise HTTPException(
             status_code=400, detail=f"Invalid sim_id format: {request.sim_id}"
-        )
+        ) from None
 
     pool = get_pool()
     if not pool:
@@ -136,4 +136,4 @@ async def simulation_overview(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") from e

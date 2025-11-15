@@ -147,7 +147,7 @@ def test_rubric_create_with_standard_groups(page: Page, base_url: str) -> None:
             },
         ]
 
-        for i, standard_data in enumerate(standards_data):
+        for _i, standard_data in enumerate(standards_data):
             if add_standard_button.count():
                 # Scroll to make sure button is visible
                 add_standard_button.first.scroll_into_view_if_needed()

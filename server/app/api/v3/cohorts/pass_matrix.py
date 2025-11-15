@@ -54,7 +54,7 @@ async def cohort_pass_matrix(
     except ValueError:
         raise HTTPException(
             status_code=400, detail=f"Invalid cohort_id format: {request.cohort_id}"
-        )
+        ) from None
 
     pool = get_pool()
     if not pool:
@@ -173,4 +173,4 @@ async def cohort_pass_matrix(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}") from e

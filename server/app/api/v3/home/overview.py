@@ -104,7 +104,7 @@ class HomeFilters(BaseModel):
     departmentIds: list[str] | None = None
 
 
-def _parse_json_strings_recursive(obj: Any) -> Any:
+def _parse_json_strings_recursive(obj: Any) -> Any:  # noqa: ANN401
     """Recursively parse JSON strings in nested structures."""
     if isinstance(obj, str):
         try:
@@ -248,7 +248,7 @@ async def get_home_overview(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

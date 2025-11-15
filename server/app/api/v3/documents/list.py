@@ -165,7 +165,7 @@ async def get_documents_list(
                         parameter_ids = ddata.get("parameter_ids")
                         parameter_item_ids = ddata.get("parameter_item_ids")
 
-                        def to_str_list(value: Any) -> list[str] | None:
+                        def to_str_list(value: Any) -> list[str] | None:  # noqa: ANN401
                             if value is None:
                                 return None
                             if isinstance(value, list):

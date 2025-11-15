@@ -56,7 +56,7 @@ async def scenario_overview(
     except ValueError:
         raise HTTPException(
             status_code=400, detail=f"Invalid scenario_id format: {request.scenario_id}"
-        )
+        ) from None
 
     pool = get_pool()
     if not pool:

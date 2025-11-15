@@ -38,12 +38,8 @@ def test_home_simulation_workflow(page: Page, base_url: str) -> None:
 
     # Set up a promise to wait for the simulationStarted event
     # The WebSocket handler dispatches this event, which triggers navigation
-    navigation_promise = page.wait_for_event("framenavigated", timeout=30000)
-
-    start_button.click()
-
-    # Wait for navigation to attempt page
-    navigation_promise
+    with page.wait_for_event("framenavigated", timeout=30000):
+        start_button.click()
 
     # Verify we navigated to the attempt page
     page.wait_for_url(re.compile(r".*/home/a/[^/]+"), timeout=30000)

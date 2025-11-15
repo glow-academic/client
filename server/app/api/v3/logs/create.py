@@ -61,7 +61,7 @@ class CreateLogResponse(BaseModel):
 router = APIRouter()
 
 
-def ensure_json(value: Any, default: dict[str, Any]) -> dict[str, Any]:
+def ensure_json(value: Any, default: dict[str, Any]) -> dict[str, Any]:  # noqa: ANN401
     """Ensure JSON-serializable values with defaults."""
     if value is None or not isinstance(value, dict):
         return default

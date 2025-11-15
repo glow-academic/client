@@ -319,24 +319,26 @@ async def transaction(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.assistants import (
+from app.socket.assistants import (  # noqa: E402
     send_assistant_message,  # type: ignore
     start_assistant,  # type: ignore
     stop_assistant,  # type: ignore
 )
-from app.socket.connections import (
+from app.socket.connections import (  # noqa: E402
     connect,  # type: ignore
     disconnect,  # type: ignore
     join_chat,  # type: ignore
     leave_chat,  # type: ignore
     stop_chat,  # type: ignore
 )
-from app.socket.simulations import (
+from app.socket.simulations import (  # noqa: E402
     send_simulation_message,  # type: ignore
     start_simulation,  # type: ignore
     stop_simulation,  # type: ignore
 )
-from app.socket.simulations.continue_chat import continue_simulation  # type: ignore
+from app.socket.simulations.continue_chat import (
+    continue_simulation,  # type: ignore  # noqa: E402
+)
 
 
 # Create a combined lifespan to manage both session managers
@@ -422,7 +424,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)
-        from app.socket.assistants.send_message import (
+        from app.socket.assistants.send_message import (  # noqa: E402
             assistant_message_cancelled,
             assistant_message_complete,
             assistant_message_token,

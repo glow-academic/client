@@ -72,7 +72,7 @@ async def get_assistant_chat_full(
             )
 
         # Parse JSONB data from SQL (asyncpg returns JSONB as dict/list, but handle string case for safety)
-        def parse_jsonb(data: Any) -> Any:
+        def parse_jsonb(data: Any) -> Any:  # noqa: ANN401
             if isinstance(data, str):
                 return json.loads(data)
             return data

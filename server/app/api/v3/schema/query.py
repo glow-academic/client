@@ -69,4 +69,4 @@ async def query_data(
     except Exception as e:
         # Return a concise version of the error to the model.
         # The full error is still logged for developers.
-        raise HTTPException(status_code=500, detail=f"Error: {e}")
+        return f"Error: {str(e)}"

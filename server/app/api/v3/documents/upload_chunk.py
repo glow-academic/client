@@ -72,7 +72,7 @@ async def upload_chunk(
         except Exception as e:
             raise HTTPException(
                 status_code=400, detail=f"Invalid base64 chunk data: {str(e)}"
-            )
+            ) from e
 
         # Append to file
         with open(os.path.join(upload_dir, "file"), "ab") as f:

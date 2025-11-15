@@ -69,7 +69,7 @@ class AttemptHistoryRow(BaseModel):
 
     @field_validator("department_ids", mode="before")
     @classmethod
-    def convert_department_id(cls, v: Any) -> list[str] | None:
+    def convert_department_id(cls, v: Any) -> list[str] | None:  # noqa: ANN401
         """Convert single department_id string to list, or return None."""
         if v is None:
             return None

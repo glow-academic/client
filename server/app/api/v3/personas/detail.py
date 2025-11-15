@@ -94,7 +94,7 @@ class PersonaDetailResponse(BaseModel):
 router = APIRouter()
 
 
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
+def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:  # noqa: ANN401
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
@@ -350,7 +350,7 @@ async def get_persona_detail(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

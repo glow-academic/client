@@ -74,7 +74,7 @@ async def duplicate_scenario(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,

@@ -12,5 +12,5 @@ def read_pdf_text_pages(full_path: str) -> list[str]:
             for page in pdf_reader.pages:
                 texts.append((page.extract_text() or "").strip())
     except Exception as e:  # pragma: no cover - surfaced to caller
-        raise ValueError(f"Error reading PDF file {full_path}: {str(e)}")
+        raise ValueError(f"Error reading PDF file {full_path}: {str(e)}") from e
     return texts

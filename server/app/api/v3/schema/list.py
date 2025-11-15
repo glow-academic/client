@@ -38,4 +38,4 @@ async def list_schema() -> str:
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error retrieving schema: {str(e)}"
-        )
+        ) from e

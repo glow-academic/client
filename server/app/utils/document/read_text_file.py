@@ -11,6 +11,6 @@ def read_text_file(full_path: str) -> str:
             with open(full_path, encoding="latin-1") as file:  # noqa: PTH123
                 return file.read().strip()
         except Exception as e:  # pragma: no cover - surfaced to caller
-            raise ValueError(f"Error reading text file {full_path}: {str(e)}")
+            raise ValueError(f"Error reading text file {full_path}: {str(e)}") from e
     except Exception as e:  # pragma: no cover - surfaced to caller
-        raise ValueError(f"Error reading file {full_path}: {str(e)}")
+        raise ValueError(f"Error reading file {full_path}: {str(e)}") from e

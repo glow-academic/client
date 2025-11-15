@@ -80,7 +80,7 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
 
     # Get initial staff count
     initial_rows = staff_table.get_by_test_id("staff-row")
-    initial_count = initial_rows.count()
+    _initial_count = initial_rows.count()
 
     # Click "Create Staff" button to open dropdown
     create_button = page.get_by_role("button", name="Create Staff")
@@ -105,7 +105,7 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
     # Create test CSV file with unique names
     suffix1 = uuid.uuid4().hex[:6]
     suffix2 = uuid.uuid4().hex[:6]
-    
+
     test_csv_rows = [
         {
             "firstName": "John",
@@ -297,7 +297,7 @@ def test_staff_csv_upload_with_validation_errors(page: Page, base_url: str) -> N
         review_stage.wait_for(state="visible", timeout=15000)
 
         # Verify error rows are shown (they should be highlighted)
-        review_table = page.get_by_test_id("csv-review-table")
+        _review_table = page.get_by_test_id("csv-review-table")
         review_rows = page.locator("[data-testid^='csv-review-row-']")
 
         # Verify rows with errors are visible and highlighted
@@ -307,6 +307,7 @@ def test_staff_csv_upload_with_validation_errors(page: Page, base_url: str) -> N
         if first_name_cell.count() > 0:
             # Check if cell has error styling (bg-destructive/10 class)
             # This indicates validation errors
+            pass
 
         # Edit first row to fix error
         first_name_input = first_row.locator("input").first

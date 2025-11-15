@@ -55,7 +55,7 @@ async def persona_overview(
     except ValueError:
         raise HTTPException(
             status_code=400, detail=f"Invalid persona_id format: {request.persona_id}"
-        )
+        ) from None
 
     pool = get_pool()
     if not pool:

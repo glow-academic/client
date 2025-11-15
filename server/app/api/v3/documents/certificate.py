@@ -218,7 +218,7 @@ async def generate_certificate(
                 story.append(Spacer(1, 30))
 
             # Custom page template with decorative border
-            def certificate_page(canvas: Any, doc: Any) -> None:  # type: ignore
+            def certificate_page(canvas: Any, doc: Any) -> None:  # type: ignore  # noqa: ANN401
                 # Draw outer border
                 canvas.setStrokeColor(colors.darkblue)
                 canvas.setLineWidth(3)
@@ -421,4 +421,4 @@ async def generate_certificate(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to generate certificate: {str(e)}"
-        )
+        ) from e
