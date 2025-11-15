@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from app.agents.collection.simulation import cancel_simulation_run
 from app.db import get_pool
+from app.extensions import cancel_active_run
 from app.utils.sql_helper import load_sql
 from app.web.simulations.utils import emit_error, get_sio_instance
 
@@ -35,8 +35,8 @@ async def handle_stop_simulation(sid: str, data: dict[str, Any]) -> None:
 
             # Try immediate in-process cancel first
             immediate = await cancel_active_result(str(chat_id))
-            # Then set cooperative cancel flag (Redis)
-            success = await cancel_simulation_run(chat_id)
+            # Then set cooperative cancel flag (Redis) - inlined cancel_simulation_run
+            success = await cancel_active_run(str(chat_id))
 
             # Stop simulation and mark message complete using SQL
             sql = load_sql("sql/v3/simulations/stop_simulation_run_complete.sql")

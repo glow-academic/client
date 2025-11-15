@@ -1,19 +1,496 @@
 """Handler for continue_simulation WebSocket event."""
 
+import json
 import logging
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
-from app.agents.collection.grade import run_grade_agent
+import asyncpg  # type: ignore
+from agents import Runner, ToolsToFinalOutputResult, trace
+from agents.items import TResponseInputItem
+from app.agents.generic import GenericAgent
 from app.db import get_pool
+from app.utils.agent_helpers import emit_grading_progress
+from app.utils.agent_tools import (create_grading_tools,
+                                   create_safe_field_name, grading_progress,
+                                   grading_results)
+from app.utils.chat import (format_chat_scenario,
+                            get_simulation_conversation_history)
+from app.utils.debug_info import DebugContext
+from app.utils.debug_info import debug_info as debug_info_tool
+from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import (
-    _create_chat_for_scenario,
-    emit_error,
-    get_sio_instance,
-)
+from app.web.simulations.utils import (_create_chat_for_scenario, emit_error,
+                                       get_sio_instance)
 
 logger = logging.getLogger(__name__)
+
+
+async def _run_grade_agent_inline(
+    simulation_chat_id: uuid.UUID,
+    department_id: uuid.UUID,
+    conn: asyncpg.Connection,
+    sio_instance: Any,
+) -> str:
+    """Inlined grading agent logic."""
+    try:
+        # Clear previous results
+        grading_results.clear()
+        grading_progress.clear()
+
+        # Get all grading context data in one optimized query using SQL file
+        sql = load_sql("sql/v3/agents/get_grading_run_context.sql")
+        context_row = await conn.fetchrow(sql, str(simulation_chat_id), str(department_id))
+        
+        if not context_row:
+            raise ValueError(f"Chat {simulation_chat_id} not found or no grading agent configured")
+        
+        # Parse JSON arrays for standard_groups and standards
+        standard_groups_json = (
+            json.loads(context_row["standard_groups"])
+            if isinstance(context_row["standard_groups"], str)
+            else context_row["standard_groups"]
+        )
+        standards_json = (
+            json.loads(context_row["standards"])
+            if isinstance(context_row["standards"], str)
+            else context_row["standards"]
+        )
+        
+        context = {
+            "chat_id": context_row["chat_id"],
+            "scenario_id": context_row["scenario_id"],
+            "attempt_id": context_row["attempt_id"],
+            "title": context_row["title"],
+            "trace_id": context_row["trace_id"],
+            "created_at": context_row["created_at"],
+            "completed": context_row["completed"],
+            "problem_statement": context_row["problem_statement"],
+            "simulation_id": context_row["simulation_id"],
+            "total_chats": context_row["total_chats"],
+            "time_limit": context_row["time_limit"],
+            "rubric": {
+                "id": context_row["rubric_id"],
+                "name": context_row["rubric_name"],
+                "description": context_row["rubric_description"],
+                "points": context_row["rubric_points"],
+                "pass_points": context_row["rubric_pass_points"],
+            },
+            "standard_groups": standard_groups_json,
+            "standards": standards_json,
+            "agent": {
+                "id": context_row["agent_id"],
+                "name": context_row["agent_name"],
+                "system_prompt": context_row["system_prompt"],
+                "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                "reasoning": context_row["reasoning"],
+            },
+            "model": {
+                "id": context_row["model_id"],
+                "name": context_row["model_name"],
+                "custom_model": context_row["custom_model"],
+            },
+            "provider": {
+                "id": context_row["provider_id"],
+                "name": context_row["provider_name"],
+                "base_url": context_row["base_url"],
+                "api_key": context_row["api_key"],
+            },
+            "profile_id": context_row["profile_id"],
+            "req_per_day": context_row["req_per_day"],
+            "runs_today_count": context_row["runs_today_count"],
+            "earliest_run_created_at": context_row["earliest_run_created_at"],
+        }
+
+        # Extract data from context
+        chat = {
+            "id": uuid.UUID(context["chat_id"]),
+            "scenario_id": uuid.UUID(context["scenario_id"]),
+            "attempt_id": uuid.UUID(context["attempt_id"]),
+            "title": context["title"],
+            "trace_id": context["trace_id"],
+        }
+
+        attempt = {
+            "id": uuid.UUID(context["attempt_id"]),
+            "simulation_id": uuid.UUID(context["simulation_id"]),
+        }
+
+        simulation = {
+            "id": uuid.UUID(context["simulation_id"]),
+            "rubric_id": uuid.UUID(context["rubric"]["id"]),
+            "time_limit": context["time_limit"],
+            "department_id": department_id,
+        }
+
+        rubric = {
+            "id": uuid.UUID(context["rubric"]["id"]),
+            "name": context["rubric"]["name"],
+            "description": context["rubric"]["description"],
+            "points": context["rubric"]["points"],
+            "pass_points": context["rubric"]["pass_points"],
+        }
+
+        rubric_id = rubric["id"]
+
+        # Convert standard_groups and standards from JSON to dicts with UUID conversion
+        standard_groups = []
+        for sg in context["standard_groups"]:
+            standard_groups.append(
+                {
+                    "id": uuid.UUID(sg["id"]),
+                    "name": sg["name"],
+                    "short_name": sg["short_name"],
+                    "description": sg["description"],
+                    "points": sg["points"],
+                    "pass_points": sg["pass_points"],
+                    "rubric_id": uuid.UUID(sg["rubric_id"]),
+                }
+            )
+
+        standards = []
+        for std in context["standards"]:
+            standards.append(
+                {
+                    "id": uuid.UUID(std["id"]),
+                    "name": std["name"],
+                    "description": std["description"],
+                    "points": std["points"],
+                    "standard_group_id": uuid.UUID(std["standard_group_id"]),
+                }
+            )
+
+        # Get messages using SQL file
+        sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+        message_rows = await conn.fetch(sql_messages, str(simulation_chat_id))
+        messages = [dict(row) for row in message_rows]
+
+        input_items: list[TResponseInputItem] = []
+
+        # prepare conversation history from chat_id
+        conversation_history = get_simulation_conversation_history(messages)
+
+        # Format scenario from context
+        chat_scenario = format_chat_scenario(context["problem_statement"])
+
+        input_items.insert(0, chat_scenario)
+        input_items.extend(conversation_history)
+
+        logger.info(
+            f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric['name']}"
+        )
+        logger.info(
+            f"Found {len(standard_groups)} standard groups and {len(standards)} standards"
+        )
+
+        # Emit grading start event
+        if sio_instance:
+            await sio_instance.emit(
+                "simulation_grading_progress",
+                {
+                    "type": "start",
+                    "chat_id": str(simulation_chat_id),
+                    "message": "Starting grading process",
+                    "rubric_name": rubric["name"],
+                    "standards_count": len(standard_groups),
+                },
+                room=f"simulation_{simulation_chat_id}",
+            )
+            logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
+
+        # Build dynamic rubric using utility function
+        rubric_input = get_dynamic_rubric(rubric, standard_groups, standards)
+
+        # get the time limit from the simulation
+        time_limit = simulation["time_limit"] or -1
+
+        # Calculate adjusted time limit for multi-simulation attempts
+        total_chats = context["total_chats"]
+        adjusted_time_limit = (
+            (time_limit * 60)
+            if time_limit and total_chats == 1
+            else ((time_limit * 60) // total_chats)
+            if time_limit
+            else 0
+        )
+
+        # Get chat timestamps from context
+        chat_created_at = context["created_at"]
+        chat_completed = context["completed"]
+
+        # Convert timestamps to UTC if they have timezone info
+        if chat_created_at.tzinfo is not None:
+            chat_created_at = chat_created_at.astimezone(UTC)
+        else:
+            chat_created_at = chat_created_at.replace(tzinfo=UTC)
+
+        # Calculate time taken - use current time since completed_at column was removed
+        current_time = datetime.now(UTC)
+        actual_time_taken = max(
+            1, int((current_time - chat_created_at).total_seconds())
+        )
+
+        def format_minutes(seconds: int) -> str:
+            minutes = seconds // 60
+            secs = seconds % 60
+            return f"{minutes} min {secs} sec" if minutes > 0 else f"{secs} sec"
+
+        # create time message
+        time_message: TResponseInputItem
+        if adjusted_time_limit > 0:
+            time_message = {
+                "role": "user",
+                "content": f"The adjusted time limit for this chat is {format_minutes(adjusted_time_limit)}. The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
+            }
+        else:
+            time_message = {
+                "role": "user",
+                "content": f"The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
+            }
+
+        # add rubric to beginning of input_items
+        input_items.insert(0, time_message)
+        input_items.insert(0, rubric_input)
+
+        # Create wrapper for emit_progress that captures sio_instance and chat_id
+        async def emit_progress_wrapper(event_data: dict[str, Any]) -> None:
+            await emit_grading_progress(event_data, sio_instance, simulation_chat_id)
+
+        # Create grading tools for each standard group
+        grading_tools = create_grading_tools(
+            list(standard_groups), list(standards), simulation_chat_id, emit_progress_wrapper
+        )
+        grading_tools.append(debug_info_tool)
+        logger.info(f"Created {len(grading_tools)} grading tools (including debug_info)")
+
+        # Create tool use behavior to check when all required tools are called
+        def tool_use_behavior(
+            tool_context: Any, tool_results: list[Any]
+        ) -> ToolsToFinalOutputResult:
+            required_tools = ["summary"]
+            for group in standard_groups:
+                safe_name = create_safe_field_name(group["short_name"])
+                required_tools.append(safe_name)
+
+            completed_required = all(
+                grading_progress.get(tool, False) for tool in required_tools
+            )
+
+            logger.info(
+                f"Tool use check: required={required_tools}, completed={completed_required}, progress={grading_progress}"
+            )
+            return ToolsToFinalOutputResult(is_final_output=completed_required)
+
+        # Get agent, model, and provider from context
+        agent = context["agent"]
+        model = context["model"]
+        provider = context["provider"]
+
+        grading_agent = GenericAgent(
+            agent_name=agent["name"],
+            system_prompt=agent["system_prompt"],
+            temperature=agent["temperature"],
+            model_name=model["name"],
+            model_provider=provider["name"],
+            base_url=provider["base_url"],
+            api_key=provider["api_key"],
+            reasoning=agent["reasoning"],
+            tools=grading_tools,
+            parallel_tool_calls=False,
+            tool_use_behavior=tool_use_behavior,
+            custom_model=model["custom_model"],
+        )
+
+        agent_instance = grading_agent.agent()
+
+        # Check rate limit
+        profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+        if not profile_id_uuid:
+            raise ValueError("Profile not found. Please contact support.")
+        
+        req_per_day = context["req_per_day"]
+        runs_today_count = context["runs_today_count"]
+        
+        if req_per_day is not None and runs_today_count >= req_per_day:
+            from datetime import timedelta
+            from zoneinfo import ZoneInfo
+            earliest_run_created_at = context["earliest_run_created_at"]
+            if earliest_run_created_at:
+                next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                eastern_tz = ZoneInfo("America/New_York")
+                next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                error_message = (
+                    f"Daily request limit of {req_per_day} reached. "
+                    f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                    f"{next_allowed_et.strftime('%B %d, %Y')}."
+                )
+            else:
+                error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
+            raise ValueError(error_message)
+
+        # Create model run with all junction records using SQL file
+        sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+        model_run_row = await conn.fetchrow(
+            sql_create_run,
+            str(department_id),
+            model["id"],
+            agent["id"],
+            "agent",
+            context["profile_id"],
+        )
+        model_run_id = uuid.UUID(model_run_row["model_run_id"])
+
+        # Run the grading
+        logger.info("Running grading agent...")
+        with trace(
+            chat["title"], trace_id=chat["trace_id"], group_id=str(attempt["id"])
+        ):
+            result = await Runner.run(
+                agent_instance,
+                input=input_items,
+                context=DebugContext(conn=conn, model_run_id=model_run_id),
+            )
+
+        usage = result.context_wrapper.usage
+
+        # Update model run with token usage using SQL file
+        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        await conn.execute(
+            sql_update_tokens,
+            str(model_run_id),
+            usage.input_tokens,
+            usage.output_tokens,
+        )
+
+        # Extract results from the global storage
+        grading_result = grading_results
+
+        logger.info("Grading agent completed successfully")
+        logger.info(f"Grading result keys: {list(grading_result.keys())}")
+        logger.info(f"Grading result content: {grading_result}")
+
+        # Calculate overall score from tool call results
+        overall_score = 0
+        for group in standard_groups:
+            safe_name = create_safe_field_name(group["short_name"])
+            group_data = grading_result.get(safe_name, {})
+            score = group_data.get("score", 0)
+            try:
+                overall_score += int(score)
+            except (TypeError, ValueError):
+                logger.warning(
+                    f"Non-integer value for {group['short_name']} ('{score}'); treating as 0"
+                )
+
+        passed = overall_score >= rubric["pass_points"]
+
+        # Get summary from tool call results
+        summary = grading_result.get("summary", "")
+
+        # Save grading results using SQL files
+        # 1. Create grade record
+        sql_create_grade = load_sql("sql/v3/grading/create_grade_complete.sql")
+        grade_row = await conn.fetchrow(
+            sql_create_grade,
+            str(simulation_chat_id),
+            str(rubric_id),
+            summary,
+            passed,
+            overall_score,
+            actual_time_taken,
+        )
+        if not grade_row:
+            raise ValueError("Failed to create simulation chat grade")
+        grade_id = uuid.UUID(grade_row["id"])
+        
+        # 2. Create feedback records
+        feedback_records = []
+        for group in standard_groups:
+            safe_name = create_safe_field_name(group["short_name"])
+            group_data = grading_result.get(safe_name, {})
+            group_score = group_data.get("score", 0)
+            group_feedback = group_data.get("feedback", "")
+            
+            # Find the corresponding standard for this score
+            group_standards = [
+                s for s in standards if s["standard_group_id"] == group["id"]
+            ]
+            matching_standard = None
+            for standard in group_standards:
+                if standard["points"] == group_score:
+                    matching_standard = standard
+                    break
+            
+            if matching_standard:
+                feedback_records.append({
+                    "standard_id": str(matching_standard["id"]),
+                    "total": group_score,
+                    "feedback": group_feedback,
+                })
+        
+        if feedback_records:
+            feedbacks_json = json.dumps(feedback_records)
+            sql_create_feedbacks = load_sql("sql/v3/grading/create_feedbacks_complete.sql")
+            await conn.execute(sql_create_feedbacks, str(grade_id), feedbacks_json)
+        
+        # 3. Mark chat as completed
+        sql_mark_completed = """
+            UPDATE simulation_chats 
+            SET completed = true 
+            WHERE id = $1::uuid
+        """
+        await conn.execute(sql_mark_completed, str(simulation_chat_id))
+
+        logger.info(
+            f"Saved grading results with {len(standard_groups)} feedback records"
+        )
+
+        # Emit grading completion event
+        if sio_instance:
+            await sio_instance.emit(
+                "simulation_grading_progress",
+                {
+                    "type": "complete",
+                    "chat_id": str(simulation_chat_id),
+                    "message": "Grading completed successfully",
+                    "grade_id": str(grade_id),
+                    "total_score": overall_score,
+                    "passed": passed,
+                    "standards_graded": len(standard_groups),
+                    "time_taken": actual_time_taken,
+                    "summary": summary,
+                },
+                room=f"simulation_{simulation_chat_id}",
+            )
+            logger.info(
+                f"Emitted grading completion event for chat {simulation_chat_id}"
+            )
+
+        logger.info(f"Grading completed successfully with grade ID: {grade_id}")
+
+        return str(grade_id)
+
+    except Exception as e:
+        logger.error(f"Error in grading agent: {str(e)}", exc_info=True)
+
+        # Emit error event
+        if sio_instance:
+            try:
+                await sio_instance.emit(
+                    "simulation_grading_progress",
+                    {
+                        "type": "error",
+                        "chat_id": str(simulation_chat_id),
+                        "message": f"Grading failed: {str(e)}",
+                        "error": str(e),
+                    },
+                    room=f"simulation_{simulation_chat_id}",
+                )
+            except Exception as emit_error:
+                logger.warning(f"Failed to emit error event: {emit_error}")
+
+        raise
 
 
 async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
@@ -277,9 +754,9 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
 
                 chat_message_count = message_count_map.get(chat_id, 0)
                 if chat_message_count >= 2:
-                    simulation_grade_id = await run_grade_agent(
+                    simulation_grade_id = await _run_grade_agent_inline(
                         uuid.UUID(chat_id), uuid.UUID(department_id), conn, sio_instance
-                    )  # type: ignore
+                    )
                     
                     # After grading completes, add current chat's scenario to scenarios_with_grades_set
                     # and recalculate next_index (similar to previous_chat_id handling)
@@ -322,12 +799,12 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
                             str(existing_chat["id"]), 0
                         )
                         if other_message_count >= 2:
-                            await run_grade_agent(
+                            await _run_grade_agent_inline(
                                 uuid.UUID(str(existing_chat["id"])),
                                 uuid.UUID(department_id),
                                 conn,
                                 sio_instance,
-                            )  # type: ignore
+                            )
                         sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
                         await conn.execute(sql, str(existing_chat["id"]))
 

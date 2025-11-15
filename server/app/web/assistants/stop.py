@@ -4,10 +4,10 @@ import logging
 import uuid
 from typing import Any
 
-from app.agents.collection.assistant import cancel_assistant_run
 from app.db import get_pool
-from app.web.assistants.utils import emit_assistant_error, get_sio_instance
+from app.extensions import cancel_active_run
 from app.utils.sql_helper import load_sql
+from app.web.assistants.utils import emit_assistant_error, get_sio_instance
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,8 @@ async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
                 await emit_assistant_error(sid, "Chat not found")
                 return
 
-            # Attempt to cancel the assistant run
-            success = cancel_assistant_run(uuid.UUID(chat_id))
+            # Attempt to cancel the assistant run - inlined cancel_assistant_run
+            success = await cancel_active_run(chat_id)
 
             sio_instance = get_sio_instance()
 

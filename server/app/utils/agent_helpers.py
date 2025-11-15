@@ -1,81 +1,115 @@
+"""Helper functions for agent operations.
+
+These functions provide support functionality for agent execution, including
+progress emission, agent building, and guardrail evaluation.
+"""
+
 import logging
 import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import (
-    Agent,
-    GuardrailFunctionOutput,
-    InputGuardrail,
-    OutputGuardrail,
-    RunContextWrapper,
-    Runner,
-    TContext,
-    ToolsToFinalOutputResult,
-    function_tool,
-    trace,
-)
+from agents import (Agent, GuardrailFunctionOutput, InputGuardrail,
+                    OutputGuardrail, RunContextWrapper, Runner, TContext,
+                    ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from fastapi import Depends
-from pydantic import Field
-
 from app.agents.generic import GenericAgent
 from app.db import get_db
+from app.utils.agent_tools import (create_guardrail_tools, create_hint_tools,
+                                   guardrail_progress, guardrail_results,
+                                   hint_progress)
+from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
-from app.utils.debug_info import DebugContext, debug_info
+from fastapi import Depends
 
 logger = logging.getLogger(__name__)
 
-# Global storage for guardrail results
-guardrail_results: dict[str, Any] = {}
-guardrail_progress: dict[str, bool] = {}
+
+async def emit_grading_progress(
+    event_data: dict[str, Any],
+    sio_instance: Any,
+    chat_id: uuid.UUID,
+) -> None:
+    """Helper to emit grading progress via Socket.IO if available."""
+    if sio_instance and chat_id:
+        try:
+            await sio_instance.emit(
+                "simulation_grading_progress",
+                event_data,
+                room=f"simulation_{chat_id}",
+            )
+            logger.info(f"Emitted grading progress: {event_data.get('type')}")
+        except Exception as e:
+            logger.warning(f"Failed to emit grading progress: {e}")
 
 
-def create_evaluation_function() -> Any:
-    """Create a function tool for evaluating if a response is proper."""
-
-    async def evaluate_response(
-        proper: bool = Field(
-            description="Whether the response adheres to role expectations and is natural"
-        ),
-        reason: str = Field(
-            description="Clear explanation for the evaluation decision"
-        ),
-    ) -> str:
-        """Evaluate if the response is proper and provide reasoning.
-
-        Args:
-            proper: True if the response is appropriate, False if it violates guidelines
-            reason: Detailed explanation of the evaluation
-
-        Returns:
-            Confirmation message
-        """
-        guardrail_results["proper"] = proper
-        guardrail_results["reason"] = reason
-        guardrail_progress["evaluation"] = True
-
-        logger.info(f"✓ Evaluation complete: proper={proper}, reason={reason[:100]}...")
-        return f"Evaluation recorded: {'Proper' if proper else 'Improper'}"
-
-    return function_tool(evaluate_response)
+async def emit_hint_progress(
+    event_data: dict[str, Any],
+    sio_instance: Any,
+    chat_id: uuid.UUID,
+) -> None:
+    """Helper to emit hint generation progress via Socket.IO if available."""
+    if sio_instance and chat_id:
+        try:
+            await sio_instance.emit(
+                "hint_generation_progress",
+                event_data,
+                room=f"simulation_{chat_id}",
+            )
+        except Exception as e:
+            logger.warning(f"Failed to emit hint progress: {e}")
 
 
-def create_guardrail_tools() -> list[Any]:
-    """Create all tools needed for guardrail evaluation."""
-    tools = []
+def build_hint_agent(context: dict[str, Any]) -> GenericAgent:
+    """Create the hint generation agent from context data.
 
-    # Add evaluation tool
-    tools.append(create_evaluation_function())
+    Args:
+        context: Context dict with agent, model, and provider data
 
-    # Add debug_info tool (already decorated with @function_tool)
-    tools.append(debug_info)
+    Returns:
+        GenericAgent instance configured for hint generation
+    """
+    # Create hint tools
+    hint_tools = create_hint_tools()
 
-    logger.info(f"Created {len(tools)} guardrail tools")
-    return tools
+    # Create tool use behavior - require all 3 hint tools to be called
+    def tool_use_behavior(
+        tool_context: Any, tool_results: list[Any]
+    ) -> ToolsToFinalOutputResult:
+        # Check if all three hint tools have been called
+        hint_1_complete = hint_progress.get("hint_1", False)
+        hint_2_complete = hint_progress.get("hint_2", False)
+        hint_3_complete = hint_progress.get("hint_3", False)
+
+        all_hints_complete = hint_1_complete and hint_2_complete and hint_3_complete
+
+        logger.info(
+            f"Tool use behavior check: hint_1={hint_1_complete}, "
+            f"hint_2={hint_2_complete}, hint_3={hint_3_complete}, "
+            f"all_complete={all_hints_complete}, "
+            f"tool_results_count={len(tool_results)}"
+        )
+
+        # Return False to continue until all 3 hints are provided
+        return ToolsToFinalOutputResult(is_final_output=all_hints_complete)
+
+    return GenericAgent(
+        agent_name=context["agent_name"],
+        system_prompt=context["system_prompt"],
+        temperature=context["temperature"],
+        model_name=context["model_name"],
+        model_provider=context["provider_name"],
+        base_url=context["base_url"],
+        api_key=context["api_key"],
+        reasoning=context["reasoning"],
+        custom_model=context["custom_model"],
+        tools=hint_tools,
+        parallel_tool_calls=True,  # Enable parallel execution
+        tool_use_behavior=tool_use_behavior,
+    )
 
 
-def _build_guardrail_agent(context: dict[str, Any]) -> GenericAgent:
+def build_guardrail_agent(context: dict[str, Any]) -> GenericAgent:
     """Create the internal agent that powers the guardrail from context data.
 
     Args:
@@ -114,7 +148,7 @@ def _build_guardrail_agent(context: dict[str, Any]) -> GenericAgent:
     )
 
 
-async def _run_guardrail_evaluation(
+async def run_guardrail_evaluation(
     context: dict[str, Any],
     evaluation_input: list[TResponseInputItem],
     conn: asyncpg.Connection,
@@ -132,12 +166,11 @@ async def _run_guardrail_evaluation(
         GuardrailFunctionOutput with evaluation results
     """
     # Clear previous results
-    global guardrail_results, guardrail_progress
     guardrail_results.clear()
     guardrail_progress.clear()
 
     # Build guardrail agent from context
-    guardrail_agent = _build_guardrail_agent(context)
+    guardrail_agent = build_guardrail_agent(context)
 
     # Check rate limit (already included in context query)
     profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
@@ -277,7 +310,7 @@ def get_input_guardrails(
             evaluation_input = [intro_message] + input_items + list(user_input)
 
         # Run evaluation using shared helper
-        return await _run_guardrail_evaluation(
+        return await run_guardrail_evaluation(
             context=context,
             evaluation_input=evaluation_input,
             conn=conn,
@@ -347,7 +380,7 @@ def get_output_guardrails(
             evaluation_input = [intro_message] + input_items + list(output)
 
         # Run evaluation using shared helper
-        return await _run_guardrail_evaluation(
+        return await run_guardrail_evaluation(
             context=context,
             evaluation_input=evaluation_input,
             conn=conn,
@@ -356,3 +389,4 @@ def get_output_guardrails(
 
     output_guard = OutputGuardrail(_output_guard)
     return [output_guard]
+

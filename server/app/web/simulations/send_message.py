@@ -1,18 +1,25 @@
 """Handler for send_simulation_message WebSocket event."""
 
 import asyncio
+import json
 import logging
 import uuid
 from typing import Any
 
+from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
-from app.agents.collection.simulation import run_simulation_agent
+from agents.items import TResponseInputItem
+from app.agents.generic import GenericAgent
 from app.db import get_pool
+from app.utils.agent_helpers import get_output_guardrails
+from app.utils.chat import (format_chat_scenario,
+                            get_simulation_conversation_history)
+from app.utils.debug_info import DebugContext
+from app.utils.document import format_document_info
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import (
-    _generate_hints_background,
-    get_sio_instance,
-)
+from app.web.simulations.utils import (_generate_hints_background,
+                                       get_sio_instance)
+from openai.types.responses import ResponseTextDeltaEvent
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +175,7 @@ async def process_simulation_message_websocket(
 
             logger.info(f"Processing simulation message for chat {chat_id}")
 
-            # 5. Stream the assistant response
+            # 5. Stream the assistant response (inlined run_simulation_agent)
             accumulated_content = ""
             cancelled = False
 
@@ -176,39 +183,235 @@ async def process_simulation_message_websocket(
                 # Cooperative cancellation support using Redis flags
                 # We poll for a cancellation flag bound to this chat's active run ID
                 from app.extensions import get_active_run, is_run_cancelled
+                from app.main import (remove_active_result,
+                                      store_active_events, store_active_result,
+                                      store_active_run)
 
-                async for token in run_simulation_agent(chat_id, conn):  # type: ignore[arg-type]
-                    # Check cancellation BEFORE processing this token to avoid emitting it
-                    try:
-                        run_id = await get_active_run(str(chat_id))
-                        if run_id and await is_run_cancelled(run_id):
-                            cancelled = True
-                            sql = load_sql("sql/v3/simulations/complete_message.sql")
-                            await conn.execute(sql, None, str(assistant_message["id"]))
-                            break
-                    except Exception:
+                # Get all context data in a single optimized query using SQL file
+                sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
+                context_row = await conn.fetchrow(sql, str(chat_id))
+                
+                if not context_row:
+                    raise ValueError(f"Chat {chat_id} not found or no persona configured")
+                
+                # Parse JSON array for documents
+                documents = (
+                    json.loads(context_row["documents"])
+                    if isinstance(context_row["documents"], str)
+                    else context_row["documents"]
+                )
+                
+                context = {
+                    "chat_id": context_row["chat_id"],
+                    "chat_title": context_row["chat_title"],
+                    "trace_id": context_row["trace_id"],
+                    "attempt_id": context_row["attempt_id"],
+                    "simulation_id": context_row["simulation_id"],
+                    "scenario_id": context_row["scenario_id"],
+                    "department_id": context_row["department_id"],
+                    "problem_statement": context_row["problem_statement"],
+                    "persona_id": context_row["persona_id"],
+                    "persona_name": context_row["persona_name"],
+                    "system_prompt": context_row["system_prompt"],
+                    "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                    "reasoning": context_row["reasoning"],
+                    "model_id": context_row["model_id"],
+                    "model_name": context_row["model_name"],
+                    "custom_model": context_row["custom_model"],
+                    "provider_id": context_row["provider_id"],
+                    "provider_name": context_row["provider_name"],
+                    "base_url": context_row["base_url"],
+                    "api_key": context_row["api_key"],
+                    "image_input_active": context_row["image_input_enabled"],
+                    "output_guardrail_active": context_row["output_guardrail_enabled"],
+                    "profile_id": context_row["profile_id"],
+                    "documents": documents,
+                    "req_per_day": context_row["req_per_day"],
+                    "runs_today_count": context_row["runs_today_count"],
+                    "earliest_run_created_at": context_row["earliest_run_created_at"],
+                }
+                
+                # Extract department_id from context
+                if not context.get("department_id"):
+                    raise ValueError(f"Failed to get department_id from run context for chat {chat_id}")
+                
+                department_id = uuid.UUID(context["department_id"])
+
+                input_items: list[TResponseInputItem] = []
+
+                # Format document info if documents are available
+                if context["documents"]:
+                    document_info = format_document_info(
+                        context["documents"], context["image_input_active"]
+                    )
+                    input_items.append(document_info)
+
+                # Get all messages using SQL file
+                sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+                message_rows = await conn.fetch(sql_messages, str(chat_id))
+                messages = [dict(row) for row in message_rows]
+
+                # Prepare conversation history from chat_id
+                conversation_history = get_simulation_conversation_history(messages)
+
+                # Format chat scenario using the problem statement from context
+                chat_scenario = format_chat_scenario(context["problem_statement"])
+
+                input_items.insert(0, chat_scenario)
+                input_items.extend(conversation_history)
+
+                # Get output guardrails if enabled
+                output_guards = (
+                    get_output_guardrails(chat_id, department_id, conversation_history, conn)
+                    if context["output_guardrail_active"]
+                    else None
+                )
+
+                # Create agent instance using context data
+                agent_instance = GenericAgent(
+                    agent_name=context["persona_name"],
+                    system_prompt=context["system_prompt"],
+                    temperature=context["temperature"],
+                    model_name=context["model_name"],
+                    model_provider=context["provider_name"],
+                    base_url=context["base_url"],
+                    reasoning=context["reasoning"],
+                    api_key=context["api_key"],
+                    output_guardrails=output_guards,
+                    custom_model=context["custom_model"],
+                )
+
+                # Check rate limit
+                profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+                if not profile_id_uuid:
+                    raise ValueError("Profile not found. Please contact support.")
+                
+                req_per_day = context["req_per_day"]
+                runs_today_count = context["runs_today_count"]
+                
+                if req_per_day is not None and runs_today_count >= req_per_day:
+                    from datetime import timedelta
+                    from zoneinfo import ZoneInfo
+                    earliest_run_created_at = context["earliest_run_created_at"]
+                    if earliest_run_created_at:
+                        next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                        eastern_tz = ZoneInfo("America/New_York")
+                        next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
+                        error_message = (
+                            f"Daily request limit of {req_per_day} reached. "
+                            f"Next request allowed after {next_allowed_et.strftime('%I:%M %p %Z')} on "
+                            f"{next_allowed_et.strftime('%B %d, %Y')}."
+                        )
+                    else:
+                        error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
+                    raise ValueError(error_message)
+
+                # Create model run with all junction records using SQL file (using persona, not agent)
+                sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+                model_run_row = await conn.fetchrow(
+                    sql_create_run,
+                    context["department_id"],
+                    context["model_id"],
+                    context["persona_id"],
+                    "persona",
+                    context["profile_id"],
+                )
+                model_run_id = uuid.UUID(model_run_row["model_run_id"])
+
+                with trace(
+                    context["chat_title"],
+                    trace_id=context["trace_id"],
+                    group_id=context["attempt_id"],
+                ):
+                    result = Runner.run_streamed(
+                        agent_instance.agent(),
+                        input=input_items,
+                        context=DebugContext(conn=conn, model_run_id=model_run_id),
+                    )
+
+                # Store the result in active runs for potential cancellation using unified tracking
+                chat_id_str = str(chat_id)
+                await store_active_run(chat_id_str, result)
+                await store_active_result(chat_id_str, result)
+
+                try:
+                    # Process streaming events
+                    events = result.stream_events()
+                    await store_active_events(chat_id_str, events)
+
+                    async for event in events:
+                        # Cooperative cancellation: check a Redis flag bound to this chat's active run
+                        try:
+                            run_id = await get_active_run(chat_id_str)
+                            if run_id and await is_run_cancelled(run_id):
+                                # Raise a cancellation to unwind upstream and hit finally cleanup
+                                raise Exception("cancelled")
+                        except Exception:
+                            # If Redis unavailable or check fails, continue; stop is best-effort
+                            pass
+                        if event.type == "raw_response_event":
+                            if isinstance(event.data, ResponseTextDeltaEvent):
+                                token = event.data.delta
+                                
+                                # Check cancellation BEFORE processing this token to avoid emitting it
+                                try:
+                                    run_id = await get_active_run(chat_id_str)
+                                    if run_id and await is_run_cancelled(run_id):
+                                        cancelled = True
+                                        sql = load_sql("sql/v3/simulations/complete_message.sql")
+                                        await conn.execute(sql, None, str(assistant_message["id"]))
+                                        break
+                                except Exception:
+                                    pass
+
+                                # Regular content token
+                                accumulated_content += token
+
+                                # Update the database with accumulated content
+                                sql = load_sql("sql/v3/simulations/update_message_content.sql")
+                                await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+
+                                logger.info(
+                                    f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
+                                )
+                                await sio_instance.emit(
+                                    "simulation_message_token",
+                                    {
+                                        "message_id": str(assistant_message["id"]),
+                                        "chat_id": str(chat_id),
+                                        "token": token,
+                                        "accumulated_content": accumulated_content,
+                                    },
+                                    room=f"simulation_{chat_id}",
+                                )
+                                if cancelled:
+                                    break
+
+                    usage = result.context_wrapper.usage
+                    sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+                    await conn.execute(
+                        sql_update_tokens,
+                        str(model_run_id),
+                        usage.input_tokens,
+                        usage.output_tokens,
+                    )
+                except (asyncio.CancelledError, GeneratorExit, StopAsyncIteration):
+                    # Treat explicit cancellation/closure as expected
+                    pass
+                except Exception as e:
+                    # Handle cancellation or other errors
+                    if "cancelled" in str(e).lower():
+                        # This is expected when the run is cancelled
                         pass
+                    else:
+                        # Re-raise other exceptions
+                        raise e
+                finally:
+                    # Clean up the active run using unified tracking
+                    from app.extensions import remove_active_run
 
-                    # Regular content token
-                    accumulated_content += token
-
-                    # Update the database with accumulated content
-                    sql = load_sql("sql/v3/simulations/update_message_content.sql")
-                    await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
-
-                    logger.info(
-                        f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
-                    )
-                    await sio_instance.emit(
-                        "simulation_message_token",
-                        {
-                            "message_id": str(assistant_message["id"]),
-                            "chat_id": str(chat_id),
-                            "token": token,
-                            "accumulated_content": accumulated_content,
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
+                    await remove_active_run(chat_id_str)
+                    await remove_active_result(chat_id_str)
             except OutputGuardrailTripwireTriggered as e:
                 # Handle guardrail-triggered output: overwrite message with model-provided reason
                 reason = ""
