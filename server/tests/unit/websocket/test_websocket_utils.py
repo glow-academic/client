@@ -3,27 +3,39 @@ Tests for app.utils.websocket utilities
 """
 
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from app.utils.websocket.add_guest_socket import add_guest_socket
+from app.utils.websocket.cancel_active_result import cancel_active_result
+from app.utils.websocket.cancel_active_run import cancel_active_run
 from app.utils.websocket.decrement_guest_count import decrement_guest_count
+from app.utils.websocket.emit_chat_stopped import emit_chat_stopped
 from app.utils.websocket.emit_grading_progress import emit_grading_progress
 from app.utils.websocket.emit_hint_progress import emit_hint_progress
 from app.utils.websocket.find_chat_by_socket import find_chat_by_socket
 from app.utils.websocket.find_chats_by_socket import find_chats_by_socket
 from app.utils.websocket.find_profile_by_socket import find_profile_by_socket
 from app.utils.websocket.get_active_connection import get_active_connection
+from app.utils.websocket.get_active_run import get_active_run
 from app.utils.websocket.get_guest_count import get_guest_count
 from app.utils.websocket.get_socket_owner import get_socket_owner
 from app.utils.websocket.increment_guest_count import increment_guest_count
 from app.utils.websocket.is_guest_socket import is_guest_socket
-from app.utils.websocket.remove_active_connection import remove_active_connection
+from app.utils.websocket.is_run_cancelled import is_run_cancelled
+from app.utils.websocket.remove_active_connection import \
+    remove_active_connection
+from app.utils.websocket.remove_active_result import remove_active_result
+from app.utils.websocket.remove_active_run import remove_active_run
 from app.utils.websocket.remove_guest_socket import remove_guest_socket
 from app.utils.websocket.remove_socket_owner import remove_socket_owner
 from app.utils.websocket.set_active_connection import set_active_connection
+from app.utils.websocket.set_active_run import set_active_run
 from app.utils.websocket.set_socket_owner import set_socket_owner
+from app.utils.websocket.store_active_events import store_active_events
+from app.utils.websocket.store_active_result import store_active_result
+from app.utils.websocket.store_active_run import store_active_run
 
 
 class TestEmitGradingProgress:
