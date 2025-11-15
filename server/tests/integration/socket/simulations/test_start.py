@@ -44,7 +44,7 @@ async def test_start_simulation_success(
         "SELECT * FROM simulation_attempts WHERE id = $1", attempt_id
     )
     assert attempt_row is not None
-    assert attempt_row["simulation_id"] == simulation_id
+    assert str(attempt_row["simulation_id"]) == simulation_id
 
 
 async def test_start_simulation_missing_simulation_id(

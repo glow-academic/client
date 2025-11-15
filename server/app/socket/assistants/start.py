@@ -6,8 +6,7 @@ from typing import Any
 
 import socketio  # type: ignore
 from agents import Runner, gen_trace_id, trace
-from app.main import get_pool
-from app.main import sio
+from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
@@ -71,7 +70,7 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             # Verify profile exists
             sql = load_sql("sql/v3/profile/verify_profile_exists.sql")
-            profile_row = await conn.fetchrow(sql, profile_id)
+            profile_row = await conn.fetchrow(sql, uuid.UUID(profile_id))
             if not profile_row:
                 await sio.emit(
                     "assistant_error",
@@ -92,10 +91,12 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
                 sql,
                 datetime.now(UTC),
                 "New Chat",  # Will be updated by title agent
-                profile_id,
+                uuid.UUID(profile_id),
                 trace_id,
             )
-            chat_id_uuid = chat_row["id"]  # Keep as UUID for run_title_agent
+            chat_id_uuid_raw = chat_row["id"]  # asyncpg UUID object
+            # Convert asyncpg UUID to Python UUID
+            chat_id_uuid = uuid.UUID(str(chat_id_uuid_raw))
             chat_id = str(chat_id_uuid)
             logger.info(f"Created new assistant chat: {chat_id}")
 
@@ -107,8 +108,9 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             # Update the title with the title agent (inlined run_title_agent)
             # Get all agent/model/provider/chat data in single query using SQL file
             sql = load_sql("sql/v3/agents/get_title_run_context.sql")
+            # Pass as UUID objects - asyncpg needs explicit types for parameter inference
             context_row = await conn.fetchrow(
-                sql, str(chat_id_uuid), str(department_id)
+                sql, chat_id_uuid, uuid.UUID(str(department_id))
             )
 
             if not context_row:
@@ -182,11 +184,11 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
             model_run_row = await conn.fetchrow(
                 sql_create_run,
-                str(department_id),
-                context["model_id"],
-                context["agent_id"],
+                uuid.UUID(str(department_id)),
+                uuid.UUID(context["model_id"]),
+                uuid.UUID(context["agent_id"]),
                 "agent",
-                context["profile_id"],
+                uuid.UUID(context["profile_id"]) if context["profile_id"] else None,
             )
             model_run_id = uuid.UUID(model_run_row["model_run_id"])
 
@@ -207,7 +209,7 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             )
             await conn.execute(
                 sql_update_tokens,
-                str(model_run_id),
+                model_run_id,
                 usage.input_tokens,
                 usage.output_tokens,
             )
@@ -218,7 +220,7 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
 
             # Update the chat title using SQL file
             sql_update_title = load_sql("sql/v3/assistant/update_chat_title.sql")
-            await conn.execute(sql_update_title, str(chat_id_uuid), chat_title)
+            await conn.execute(sql_update_title, chat_id_uuid, chat_title)
 
             logger.info(f"Chat title: {chat_title}")
 

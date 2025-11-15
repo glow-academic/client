@@ -230,16 +230,13 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
                     scenario_progress.clear()
 
                     # Get all context data in a single optimized query using SQL file
-                    doc_ids_str = [str(d) for d in doc_ids] if doc_ids else []
-                    param_ids_str = [str(p) for p in param_ids] if param_ids else []
-
                     sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
                     context_row = await conn.fetchrow(
                         sql,
-                        str(department_id),
-                        str(persona_id) if persona_id else None,
-                        doc_ids_str,
-                        param_ids_str,
+                        department_id,  # Already a UUID object
+                        persona_id if persona_id else None,  # Already a UUID object or None
+                        doc_ids if doc_ids else [],  # Already a list of UUID objects
+                        param_ids if param_ids else [],  # Already a list of UUID objects
                     )
 
                     if not context_row:
@@ -417,11 +414,11 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
                     )
                     model_run_row = await conn.fetchrow(
                         sql_create_run,
-                        str(department_id),
-                        context["model_id"],
-                        context["agent_id"],
+                        department_id,  # Already a UUID object
+                        uuid.UUID(context["model_id"]),
+                        uuid.UUID(context["agent_id"]),
                         "agent",
-                        final_profile_id,
+                        final_profile_id,  # Already a UUID object or None
                     )
                     model_run_id = uuid.UUID(model_run_row["model_run_id"])
 

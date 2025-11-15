@@ -47,7 +47,7 @@ async def test_start_assistant_success(
     chat_id = started_events[0]["chat_id"]
     chat_row = await db.fetchrow("SELECT * FROM assistant_chats WHERE id = $1", chat_id)
     assert chat_row is not None
-    assert chat_row["profile_id"] == profile_id
+    assert str(chat_row["profile_id"]) == profile_id
 
 
 async def test_start_assistant_missing_profile_id(

@@ -1,7 +1,11 @@
 -- Get all data needed to run scenario agent with optimized JOIN
 -- Parameters: $1=department_id (uuid), $2=persona_id (uuid, nullable), $3=document_ids[] (uuid array), $4=parameter_item_ids[] (uuid array)
 -- Returns: agent, model, provider, persona, documents, parameter items, and default guest profile data
-WITH default_guest AS (
+WITH params AS (
+    -- Explicitly cast parameters for asyncpg type inference
+    SELECT $1::uuid as department_id, $2::uuid as persona_id, $3::uuid[] as document_ids, $4::uuid[] as parameter_item_ids
+),
+default_guest AS (
     SELECT id::text as guest_profile_id
     FROM profiles 
     WHERE role = 'guest' AND default_profile = true 
@@ -11,26 +15,27 @@ best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN params p
     WHERE a.role = 'scenario'
     AND a.active = true
     AND (
         -- Include if agent is linked to the specified department
-        ad.department_id = $1::uuid
+        ad.department_id = p.department_id
         -- OR agent has no department links (cross-department)
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
     ORDER BY 
         -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = $1::uuid THEN 0 ELSE 1 END
+        CASE WHEN ad.department_id = p.department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
 profile_rate_limit AS (
     -- Get rate limit for the default guest profile
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles p
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    WHERE p.id = (SELECT id FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+    FROM profiles prof
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    WHERE prof.id = (SELECT id FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
 ),
 runs_today AS (
     -- Count model runs for the default guest profile since start of day
@@ -63,9 +68,9 @@ SELECT
     pr.api_key,
     
     -- Persona data (nullable)
-    p.id::text as persona_id,
-    p.name as persona_name,
-    p.description as persona_description,
+    pers.id::text as persona_id,
+    pers.name as persona_name,
+    pers.description as persona_description,
     
     -- Documents data (aggregated as JSON array)
     COALESCE(
@@ -76,10 +81,10 @@ SELECT
                 'file_path', d.file_path,
                 'mime_type', d.mime_type
             )
-            ORDER BY array_position($3::uuid[], d.id)
+            ORDER BY array_position(p.document_ids, d.id)
         )
         FROM documents d
-        WHERE d.id = ANY($3::uuid[])
+        WHERE d.id = ANY(p.document_ids)
         ),
         '[]'::json
     ) as documents,
@@ -93,11 +98,11 @@ SELECT
                 'param_name', pa.name,
                 'param_description', pa.description
             )
-            ORDER BY array_position($4::uuid[], pi.id)
+            ORDER BY array_position(p.parameter_item_ids, pi.id)
         )
         FROM parameter_items pi
         JOIN parameters pa ON pi.parameter_id = pa.id
-        WHERE pi.id = ANY($4::uuid[])
+        WHERE pi.id = ANY(p.parameter_item_ids)
         ),
         '[]'::json
     ) as parameter_items,
@@ -112,8 +117,9 @@ SELECT
 
 FROM best_agent ba
 INNER JOIN agents a ON a.id = ba.agent_id
+CROSS JOIN params p
 -- Try department-specific prompt first, fall back to default prompt
-LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = $1::uuid AND adp_prompt.active = true
+LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
 LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
@@ -122,8 +128,7 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 INNER JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
-LEFT JOIN personas p ON p.id = $2::uuid
+LEFT JOIN personas pers ON pers.id = p.persona_id
 CROSS JOIN default_guest dg
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
-

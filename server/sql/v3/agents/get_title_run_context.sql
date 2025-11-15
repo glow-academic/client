@@ -1,30 +1,36 @@
 -- Get all data needed to run title agent with optimized JOIN
 -- Parameters: $1=chat_id (uuid), $2=department_id (uuid)
 -- Returns: agent, model, provider, and chat data
-WITH best_agent AS (
+WITH params AS (
+    -- Explicitly cast parameters to UUID for asyncpg type inference
+    SELECT $1::uuid as chat_id, $2::uuid as department_id
+),
+best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    CROSS JOIN params p
     WHERE a.role = 'title'
     AND a.active = true
     AND (
         -- Include if agent is linked to the specified department
-        ad.department_id = $2::uuid
+        ad.department_id = p.department_id
         -- OR agent has no department links (cross-department)
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
     ORDER BY 
         -- Prioritize department-specific agents over cross-department agents
-        CASE WHEN ad.department_id = $2::uuid THEN 0 ELSE 1 END
+        CASE WHEN ad.department_id = p.department_id THEN 0 ELSE 1 END
     LIMIT 1
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile (via assistant_chats)
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles p
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    WHERE p.id = (SELECT profile_id FROM assistant_chats WHERE id = $1::uuid)
+    FROM profiles prof
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    CROSS JOIN params p
+    WHERE prof.id = (SELECT profile_id FROM assistant_chats WHERE id = p.chat_id)
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day
@@ -33,7 +39,8 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM model_runs mr
     JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
-    WHERE mrp.profile_id = (SELECT profile_id FROM assistant_chats WHERE id = $1::uuid)
+    CROSS JOIN params p
+    WHERE mrp.profile_id = (SELECT profile_id FROM assistant_chats WHERE id = p.chat_id)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )
@@ -69,8 +76,9 @@ SELECT
 
 FROM best_agent ba
 INNER JOIN agents a ON a.id = ba.agent_id
+CROSS JOIN params p
 -- Try department-specific prompt first, fall back to default prompt
-LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = $2::uuid AND adp_prompt.active = true
+LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
 LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
@@ -79,7 +87,7 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 INNER JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
-INNER JOIN assistant_chats ac ON ac.id = $1::uuid
+INNER JOIN assistant_chats ac ON ac.id = p.chat_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 
