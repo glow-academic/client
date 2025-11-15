@@ -329,12 +329,14 @@ export function DocumentUploadDialog({
           ".java,.py,.c,.h,.cpp,.hpp,.cc,.cs,.js,.jsx,.ts,.tsx,.mjs,.cjs,.html,.css,.scss,.md,.json,.yml,.yaml,.xml,.sh,.bash,.zsh,.rb,.go,.rs,.kt,.swift,.m,.mm,.sql,.ipynb",
         ].join(",")}
         className="hidden"
+        data-testid="document-upload-input"
       />
 
       {/* Upload classification dialog */}
       {showUploadDialog && (
         <UploadClassificationDialog
           open={showUploadDialog}
+          data-testid="document-classification-dialog"
           files={pendingFiles}
           onClose={() => {
             setShowUploadDialog(false);

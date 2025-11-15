@@ -295,6 +295,7 @@ export default function Home({ homeData }: HomeProps) {
             item ? (
               <SimulationProgress
                 key={item.id}
+                id={item.id}
                 viewMode={
                   item.viewMode === "ta" ? ViewMode.TA : ViewMode.INSTRUCTIONAL
                 }

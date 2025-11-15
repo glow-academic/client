@@ -376,7 +376,7 @@ export default function AttemptMessages({
   }, [targetChatId]);
 
   return (
-    <div className="flex-1 flex flex-col p-0 min-h-0 relative">
+    <div className="flex-1 flex flex-col p-0 min-h-0 relative" data-testid="attempt-messages-container">
       <TooltipProvider>
         <>
           <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
@@ -389,7 +389,7 @@ export default function AttemptMessages({
                         Choose a prompt below or type your own message
                       </p>
                     </div>
-                    <div className="flex flex-col gap-3 w-full max-w-md">
+                    <div className="flex flex-col gap-3 w-full max-w-md" data-testid="starter-prompts">
                       {starterPrompts.map((prompt, index) => (
                         <Button
                           key={index}
@@ -414,7 +414,12 @@ export default function AttemptMessages({
                     {/* User message */}
                     <div className="flex justify-end mb-3">
                       <div className="max-w-[80%]">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                        <div 
+                          className="bg-primary text-primary-foreground rounded-lg p-3"
+                          data-testid={`message-${group.userMessage.id}`}
+                          data-message-id={group.userMessage.id}
+                          data-message-type="user"
+                        >
                           <Markdown>{group.userMessage.content}</Markdown>
                         </div>
                       </div>
@@ -435,7 +440,12 @@ export default function AttemptMessages({
                                 {/* Show loading state for empty/incomplete messages, otherwise show content */}
                                 {!currentResponse.completed &&
                                 currentResponse.content === "" ? (
-                                  <div className="bg-muted rounded-lg p-3">
+                                  <div 
+                                    className="bg-muted rounded-lg p-3"
+                                    data-testid={`message-${currentResponse.id}`}
+                                    data-message-id={currentResponse.id}
+                                    data-message-type="assistant"
+                                  >
                                     <div className="flex items-center">
                                       <LoadingDots />
                                     </div>
@@ -443,7 +453,12 @@ export default function AttemptMessages({
                                 ) : currentResponse.completed &&
                                   currentResponse.content === "" ? (
                                   // Show "No response" for completed messages with empty content
-                                  <div className="bg-muted rounded-lg p-3">
+                                  <div 
+                                    className="bg-muted rounded-lg p-3"
+                                    data-testid={`message-${currentResponse.id}`}
+                                    data-message-id={currentResponse.id}
+                                    data-message-type="assistant"
+                                  >
                                     <span className="text-gray-500 italic">
                                       No response
                                     </span>
@@ -453,7 +468,12 @@ export default function AttemptMessages({
                                     "Error:"
                                   ) ? (
                                   // Show error messages in red with retry button (only if no successful responses exist)
-                                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
+                                  <div 
+                                    className="bg-red-50 border border-red-200 rounded-lg p-3 relative"
+                                    data-testid={`message-${currentResponse.id}`}
+                                    data-message-id={currentResponse.id}
+                                    data-message-type="assistant"
+                                  >
                                     <div className="text-red-700 pr-12">
                                       <Markdown>
                                         {currentResponse.content}
@@ -538,7 +558,12 @@ export default function AttemptMessages({
                                     })()}
                                   </div>
                                 ) : (
-                                  <div className="bg-muted rounded-lg p-3 relative">
+                                  <div 
+                                    className="bg-muted rounded-lg p-3 relative"
+                                    data-testid={`message-${currentResponse.id}`}
+                                    data-message-id={currentResponse.id}
+                                    data-message-type="assistant"
+                                  >
                                     <Markdown>
                                       {currentResponse.content}
                                     </Markdown>

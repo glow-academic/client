@@ -447,7 +447,11 @@ export function TourProvider({ children }: TourProviderProps) {
     const isLastStep = state.currentStep + 1 === state.steps.length;
 
     return (
-      <aside className="tour-sidebar">
+      <aside 
+        className="tour-sidebar"
+        data-testid="tour-sidebar"
+        data-current-step={state.currentStep}
+      >
         <div className="tour-sidebar-content">
           <header className="tour-sidebar-header">
             <div className="flex items-center justify-between">
@@ -460,6 +464,7 @@ export function TourProvider({ children }: TourProviderProps) {
                 onClick={closeTour}
                 className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
                 aria-label="Close tour"
+                data-testid="tour-close-button"
               >
                 ✕
               </button>
@@ -558,6 +563,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     state.isNavigating
                   }
                   className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  data-testid="tour-prev-button"
                 >
                   Back
                 </button>
@@ -588,6 +594,7 @@ export function TourProvider({ children }: TourProviderProps) {
                       }}
                       disabled={nextDisabled}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex-1"
+                      data-testid="tour-next-button"
                     >
                       {state.isNavigating
                         ? getNavigatingText(state.currentStep)

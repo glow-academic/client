@@ -9,8 +9,7 @@ import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
@@ -24,11 +23,16 @@ type UpdateChatCreatedAtOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch (prevents duplicate requests) ---- */
-const getAttemptFull = cache(
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes attemptId for per-attempt caching.
+ * Tags allow revalidateTag("attempts") and revalidateTag(`attempt:${attemptId}`) to invalidate.
+ */
+const getAttemptFull = unstable_cache(
   async (input: AttemptFullIn): Promise<AttemptFullOut> => {
     return api.post("/attempts/full", input);
   },
+  ["attempts:full"],
+  { tags: ["attempts"] }
 );
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -62,6 +66,10 @@ export async function updateChatCreatedAt(
   "use server";
   const out = await api.post("/attempts/chats/update-created-at", input);
   revalidateTag("attempts");
+  const attemptId = input.body?.attemptId;
+  if (attemptId) {
+    revalidateTag(`attempt:${attemptId}`);
+  }
   return out;
 }
 

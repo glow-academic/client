@@ -11,16 +11,23 @@ import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PracticeIn = InputOf<"/api/v3/practice", "post">;
 type PracticeOut = OutputOf<"/api/v3/practice", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getPractice = cache(async (input: PracticeIn): Promise<PracticeOut> => {
-  return api.post("/practice", input);
-});
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes input for per-request caching.
+ * Tags allow revalidateTag("practice") to invalidate.
+ */
+const getPractice = unstable_cache(
+  async (input: PracticeIn): Promise<PracticeOut> => {
+    return api.post("/practice", input);
+  },
+  ["practice"],
+  { tags: ["practice"] }
+);
 
 export const metadata: Metadata = {
   title: "Practice",

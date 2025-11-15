@@ -446,7 +446,11 @@ export default function AttemptChat({
     const infiniteLimitMinutes =
       simulationContext?.simulation?.timeLimit ?? null;
     return (
-      <div className="h-[calc(100vh-4rem)]">
+      <div 
+        className="h-[calc(100vh-4rem)]"
+        data-testid="attempt-chat-container"
+        data-attempt-id={simulationContext?.attemptId || ""}
+      >
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel
@@ -1073,7 +1077,11 @@ export default function AttemptChat({
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)]">
+    <div 
+      className="h-[calc(100vh-4rem)]"
+      data-testid="attempt-chat-container"
+      data-attempt-id={simulationContext?.attemptId || ""}
+    >
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel

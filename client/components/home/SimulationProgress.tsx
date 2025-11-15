@@ -11,6 +11,7 @@ export enum ViewMode {
 }
 
 interface SimulationProgressProps {
+  id: string;
   viewMode: ViewMode;
   cohortName?: string;
   simulationName: string;
@@ -23,6 +24,7 @@ interface SimulationProgressProps {
 }
 
 export default function SimulationProgress({
+  id,
   viewMode,
   cohortName,
   simulationName,
@@ -95,7 +97,8 @@ export default function SimulationProgress({
   return (
     <div
       className={`flex items-center space-x-4 p-3 rounded-lg border ${statusInfo.bgColor} ${statusInfo.borderColor}`}
-      data-testid="simulation-progress"
+      data-testid={`simulation-progress-${id}`}
+      data-simulation-id={id}
     >
       {/* Title and Cohort Name */}
       <div className="min-w-0 flex-shrink-0 w-64">

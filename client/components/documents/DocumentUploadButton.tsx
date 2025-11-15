@@ -15,7 +15,7 @@ export function DocumentUploadButton() {
   };
 
   return (
-    <Button onClick={handleClick} size="sm">
+    <Button onClick={handleClick} size="sm" data-testid="document-upload-button">
       <Upload className="h-4 w-4 mr-2" />
       Upload Document(s)
     </Button>

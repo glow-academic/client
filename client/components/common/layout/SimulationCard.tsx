@@ -162,8 +162,9 @@ export default function SimulationCard({
     <div className="relative h-full">
       <Card
         data-testid={
-          type === "default" ? "permanent-simulation-card" : "simulation-card"
+          type === "default" ? "permanent-simulation-card" : `simulation-card-${id}`
         }
+        data-simulation-id={id}
         className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full"
       >
         {/* Background Pattern */}

@@ -87,7 +87,7 @@ export function Profile({ className }: ProfileProps) {
   const roleInfo = getRoleInfo(activeProfile.role as ProfileRole);
 
   return (
-    <div className={className}>
+    <div className={className} data-testid="profile-page">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
@@ -102,15 +102,15 @@ export function Profile({ className }: ProfileProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <CardTitle className="text-2xl">
+              <CardTitle className="text-2xl" data-testid="profile-name">
                 {activeProfile.firstName + " " + activeProfile.lastName}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2 mt-1">
+              <CardDescription className="flex items-center gap-2 mt-1" data-testid="profile-email">
                 <Mail className="h-4 w-4" />
                 {activeProfile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
               </CardDescription>
             </div>
-            <Badge variant={roleInfo.color}>{roleInfo.label}</Badge>
+            <Badge variant={roleInfo.color} data-testid="profile-role">{roleInfo.label}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

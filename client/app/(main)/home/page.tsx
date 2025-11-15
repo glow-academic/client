@@ -12,19 +12,27 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/api/v3/home", "post">;
 type HomeOut = OutputOf<"/api/v3/home", "post">;
 
-/** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getHome = cache(async (input: HomeIn): Promise<HomeOut> => {
-  return api.post("/home", input);
-});
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes input for per-request caching.
+ * Tags allow revalidateTag("home") to invalidate.
+ */
+const getHome = unstable_cache(
+  async (input: HomeIn): Promise<HomeOut> => {
+    return api.post("/home", input);
+  },
+  ["home"],
+  { tags: ["home"] }
+);
 
 /** ---- Inline filters function for home page ---- */
-const getHomeFilters = cache(async (searchParams?: URLSearchParams) => {
+const getHomeFilters = unstable_cache(
+  async (searchParams?: URLSearchParams) => {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
@@ -66,7 +74,10 @@ const getHomeFilters = cache(async (searchParams?: URLSearchParams) => {
   }
 
   return defaults;
-});
+  },
+  ["home:filters"],
+  { tags: ["home"] }
+);
 
 export const metadata: Metadata = {
   title: "Home",

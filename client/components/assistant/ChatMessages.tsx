@@ -372,7 +372,7 @@ export default function ChatMessages({
   const timeline = createTimeline();
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full" data-testid="assistant-messages-container">
       <ScrollArea
         className="h-full"
         ref={scrollAreaRef}
@@ -406,6 +406,9 @@ export default function ChatMessages({
                         ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
                         : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
                     }`}
+                    data-testid={`assistant-message-${message.id}`}
+                    data-message-id={message.id}
+                    data-message-type={message.role}
                   >
                     {message.role === "assistant" &&
                     !message.completed &&

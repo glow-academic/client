@@ -513,7 +513,7 @@ export function UploadClassificationDialog({
 
   return (
     <Dialog open={open} onOpenChange={(val) => (!val ? onClose() : undefined)}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-3xl" data-testid="document-classification-dialog">
         <DialogHeader>
           <DialogTitle>Classify Documents Before Upload</DialogTitle>
           <DialogDescription>
@@ -526,23 +526,27 @@ export function UploadClassificationDialog({
         {files.length > 1 && (
           <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-md border flex-wrap">
             <span className="text-xs text-muted-foreground">Defaults →</span>
-            <DepartmentPicker
-              mapping={departmentMapping}
-              validIds={validDepartmentIds}
-              selectedIds={selectedDepartmentIds}
-              onSelect={setSelectedDepartmentIds}
-              placeholder="Dept"
-              multiSelect={true}
-              compact={true}
-              buttonClassName="h-7 px-2 text-xs"
-            />
-            <DocumentTypePicker
-              selectedType={globalDefaultType}
-              onSelect={applyTypeToAll}
-              placeholder="Type"
-              compact={true}
-            />
-            <div className="flex-1 min-w-[120px]">
+            <div data-testid="document-department-selector">
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={validDepartmentIds}
+                selectedIds={selectedDepartmentIds}
+                onSelect={setSelectedDepartmentIds}
+                placeholder="Dept"
+                multiSelect={true}
+                compact={true}
+                buttonClassName="h-7 px-2 text-xs"
+              />
+            </div>
+            <div data-testid="document-type-selector">
+              <DocumentTypePicker
+                selectedType={globalDefaultType}
+                onSelect={applyTypeToAll}
+                placeholder="Type"
+                compact={true}
+              />
+            </div>
+            <div className="flex-1 min-w-[120px]" data-testid="document-parameter-selector">
               <ParameterItemPicker
                 mapping={parameterItemMapping}
                 validIds={filteredValidParameterItemIds}
@@ -840,6 +844,7 @@ export function UploadClassificationDialog({
                   onConfirm(perFileWithDepartment, zipDefaultsWithDepartment);
                 }}
                 disabled={!canSubmit}
+                data-testid="document-classify-submit"
               >
                 Start Upload
               </Button>

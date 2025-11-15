@@ -69,14 +69,19 @@ export default function ChatWidget({ up }: { up: boolean }) {
   return (
     <Card
       className={`fixed bottom-2 right-2 w-96 h-[550px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-0 rounded-2xl gap-0 ${up ? "top-2 right-2" : "bottom-2 right-2"}`}
+      data-testid="assistant-chat-widget"
     >
-      <CardHeader className="border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl rounded-b-none h-15 p-5 gap-5">
+      <CardHeader 
+        className="border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl rounded-b-none h-15 p-5 gap-5"
+        data-testid="assistant-chat-header"
+      >
         <div className="flex items-center gap-2 flex-1 min-w-0 relative z-10">
           <div className="w-full">
             <Select
               value={currentChatId || "new"}
               onValueChange={handleChatSelect}
               disabled={isLoadingChats}
+              data-testid="assistant-chat-selector"
             >
               <SelectTrigger className="w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-none p-2 h-auto focus:ring-0 bg-white dark:bg-gray-900">
                 <SelectValue>
@@ -100,7 +105,11 @@ export default function ChatWidget({ up }: { up: boolean }) {
                           new Date(a.createdAt).getTime(),
                       )
                       .map((pastChat) => (
-                        <SelectItem key={pastChat.id} value={pastChat.id}>
+                        <SelectItem 
+                          key={pastChat.id} 
+                          value={pastChat.id}
+                          data-testid={`assistant-chat-item-${pastChat.id}`}
+                        >
                           <span className="truncate">{pastChat.title}</span>
                         </SelectItem>
                       ))}
@@ -120,6 +129,7 @@ export default function ChatWidget({ up }: { up: boolean }) {
                     size="icon"
                     onClick={() => setCurrentChatId(undefined)}
                     className="h-7 w-7 hover:bg-white/50 dark:hover:bg-gray-800/50 relative z-10"
+                    data-testid="assistant-new-chat-button"
                   >
                     <Edit className="h-3 w-3" />
                   </Button>

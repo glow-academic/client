@@ -213,7 +213,7 @@ export function PracticeCustomizeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" data-testid="practice-customize-dialog">
         <DialogHeader>
           <DialogTitle>Customize Practice Session</DialogTitle>
           <DialogDescription className="hidden">
@@ -248,6 +248,7 @@ export function PracticeCustomizeDialog({
                   id="infinite-mode"
                   checked={isInfiniteMode}
                   onCheckedChange={setIsInfiniteMode}
+                  data-testid="practice-mode-switch"
                 />
               </div>
               <p className="text-xs text-muted-foreground pl-5">
@@ -260,7 +261,7 @@ export function PracticeCustomizeDialog({
 
           {isInfiniteMode ? (
             <div className="grid gap-4">
-              <div className="grid gap-2">
+              <div className="grid gap-2" data-testid="practice-simulation-picker">
                 <SimulationPicker
                   simulationMapping={simulationMapping}
                   validSimulationIds={validSimulationIds}
@@ -290,12 +291,13 @@ export function PracticeCustomizeDialog({
                   placeholder="e.g. 15"
                   value={infiniteTimeLimit}
                   onChange={(e) => setInfiniteTimeLimit(e.target.value)}
+                  data-testid="practice-time-limit-input"
                 />
               </div>
             </div>
           ) : (
             <div className="grid gap-6">
-              <div className="grid gap-2">
+              <div className="grid gap-2" data-testid="practice-persona-picker">
                 <PersonaPicker
                   mapping={personaMapping}
                   validIds={validPersonaIds}
@@ -306,7 +308,7 @@ export function PracticeCustomizeDialog({
                   description="Choose the target persona you'll practice with in focus mode."
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2" data-testid="practice-parameter-selector">
                 <ParameterSelector
                   parameterMapping={
                     parameterMapping as Parameters<
@@ -340,6 +342,7 @@ export function PracticeCustomizeDialog({
               onClick={handleStartAttempt}
               disabled={isStartingAttempt}
               className="min-w-[120px]"
+              data-testid="practice-start-button"
             >
               {isStartingAttempt ? "Starting..." : "Start Practice"}
             </Button>

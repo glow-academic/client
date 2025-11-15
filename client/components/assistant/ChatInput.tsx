@@ -133,6 +133,7 @@ export default function ChatInput({
           disabled={isSendingMessage}
           className="flex-1 resize-none overflow-y-auto pr-12 text-sm max-h-24"
           rows={1}
+          data-testid="assistant-chat-input"
         />
         <div className="absolute bottom-1 right-1 flex flex-col gap-2">
           {isSendingMessage ? (
@@ -143,6 +144,7 @@ export default function ChatInput({
               className="shrink-0 h-7 w-7 p-0 bg-red-600 hover:bg-red-700"
               variant="destructive"
               title="Stop"
+              data-testid="assistant-stop-button"
             >
               <Square className="h-4 w-4" />
             </Button>
@@ -153,6 +155,7 @@ export default function ChatInput({
               title={buttonTitle}
               size="icon"
               className="shrink-0 h-7 w-7 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
+              data-testid="assistant-send-button"
             >
               <Send className="h-4 w-4" />
             </Button>

@@ -72,16 +72,17 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
 
   return (
     <Dialog open={true} onOpenChange={() => close()}>
-      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 [&>button]:hidden gap-0 rounded-t-2xl">
+      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 [&>button]:hidden gap-0 rounded-t-2xl" data-testid="assistant-chat-dialog">
         <DialogDescription hidden>
           This dialog shows the chat history and allows you to add new messages.
         </DialogDescription>
-        <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl">
+        <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl" data-testid="assistant-chat-header">
           <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
             <Select
               value={currentChatId || "new"}
               onValueChange={handleChatSelect}
               disabled={isLoadingChats}
+              data-testid="assistant-chat-selector"
             >
               <SelectTrigger className="w-[250px] border border-gray-300 dark:border-gray-700 rounded-md shadow-none p-2 h-auto focus:ring-0 bg-white dark:bg-gray-900">
                 <SelectValue>
@@ -105,7 +106,11 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                           new Date(a.createdAt).getTime(),
                       )
                       .map((pastChat) => (
-                        <SelectItem key={pastChat.id} value={pastChat.id}>
+                        <SelectItem 
+                          key={pastChat.id} 
+                          value={pastChat.id}
+                          data-testid={`assistant-chat-item-${pastChat.id}`}
+                        >
                           <span className="truncate">{pastChat.title}</span>
                         </SelectItem>
                       ))}
@@ -124,6 +129,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                       size="icon"
                       onClick={() => setCurrentChatId(undefined)}
                       className="h-8 w-8 relative z-10"
+                      data-testid="assistant-new-chat-button"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

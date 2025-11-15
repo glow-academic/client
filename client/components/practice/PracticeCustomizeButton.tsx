@@ -56,7 +56,7 @@ export function PracticeCustomizeButton() {
   };
 
   return (
-    <Button onClick={handleClick} size="sm">
+    <Button onClick={handleClick} size="sm" data-testid="practice-customize-button">
       <SlidersHorizontal className="h-4 w-4 mr-2" />
       Customize
     </Button>

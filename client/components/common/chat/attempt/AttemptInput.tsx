@@ -287,6 +287,7 @@ export default function AttemptInput({
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}
               maxLength={MAX_INPUT_CHARS}
+              data-testid="attempt-chat-input"
               // Block paste/drop at the earliest stage
               onBeforeInput={pastePrevention.handleBeforeInput}
               onPaste={pastePrevention.handlePaste}
@@ -387,6 +388,11 @@ export default function AttemptInput({
                       simulationContext?.isSendingMessage
                         ? handleStopMessage
                         : (e) => handleSendMessage(e)
+                    }
+                    data-testid={
+                      simulationContext?.isSendingMessage
+                        ? "attempt-stop-button"
+                        : "attempt-send-button"
                     }
                   >
                     {simulationContext?.isSendingMessage ? (

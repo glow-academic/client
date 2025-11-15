@@ -885,7 +885,7 @@ export default function CSVImportStaffModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" data-testid="csv-upload-modal">
         <DialogHeader>
           <DialogTitle>Import Staff from CSV</DialogTitle>
         </DialogHeader>
@@ -947,7 +947,7 @@ export default function CSVImportStaffModal({
 
           {/* Stage 1: Upload */}
           {stage === "upload" && (
-            <div className="space-y-6">
+            <div className="space-y-6" data-testid="csv-upload-stage-upload">
               {/* Dropzone */}
               <div
                 {...getRootProps()}
@@ -958,7 +958,7 @@ export default function CSVImportStaffModal({
                     : "border-muted-foreground/25 hover:border-primary/50",
                 )}
               >
-                <input {...getInputProps()} />
+                <input {...getInputProps()} data-testid="csv-file-input" />
                 <div className="space-y-3">
                   <p className="text-muted-foreground">
                     Upload your .csv file or{" "}
@@ -1035,9 +1035,9 @@ export default function CSVImportStaffModal({
 
           {/* Stage 2: Mapping */}
           {stage === "mapping" && (
-            <div className="space-y-4">
+            <div className="space-y-4" data-testid="csv-upload-stage-mapping">
               {/* Mapping Table */}
-              <div className="rounded-md border">
+              <div className="rounded-md border" data-testid="csv-column-mapping-table">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1067,7 +1067,7 @@ export default function CSVImportStaffModal({
                       const isIncluded = includedColumns[header] !== false;
 
                       return (
-                        <TableRow key={header}>
+                        <TableRow key={header} data-testid={`csv-column-mapping-${header}`}>
                           <TableCell className="font-medium">
                             {header}
                           </TableCell>
@@ -1120,7 +1120,7 @@ export default function CSVImportStaffModal({
 
           {/* Stage 3: Review */}
           {stage === "review" && (
-            <div className="space-y-4">
+            <div className="space-y-4" data-testid="csv-upload-stage-review">
               <div className="flex items-center justify-between">
                 {hasErrors && (
                   <div className="flex items-center gap-3">
@@ -1141,7 +1141,7 @@ export default function CSVImportStaffModal({
                 )}
               </div>
 
-              <div className="rounded-md border max-h-96 overflow-auto">
+              <div className="rounded-md border max-h-96 overflow-auto" data-testid="csv-review-table">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1200,7 +1200,7 @@ export default function CSVImportStaffModal({
                           );
 
                         return (
-                          <TableRow key={index}>
+                          <TableRow key={index} data-testid={`csv-review-row-${index}`}>
                             <TableCell>{row.row_index}</TableCell>
                             <TableCell
                               className={
@@ -1337,6 +1337,7 @@ export default function CSVImportStaffModal({
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting || validRowCount === 0}
+                  data-testid="csv-submit-button"
                 >
                   {isSubmitting
                     ? "Processing..."

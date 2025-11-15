@@ -78,6 +78,8 @@ function GuideButton() {
           variant={variant}
           size="sm"
           className="shadow-lg hover:shadow-xl transition-all duration-200"
+          data-testid="tour-guide-button"
+          data-tour-state={buttonState}
         >
           {icon}
           <span className="ml-2">{text}</span>
