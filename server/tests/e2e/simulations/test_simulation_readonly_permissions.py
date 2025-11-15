@@ -109,9 +109,7 @@ def test_simulation_readonly_permissions(page: Page, base_url: str) -> None:
         simulation_card = page.locator(
             f"[data-testid='simulation-card'][data-simulation-id='{simulation_id}']"
         )
-        expect(
-            simulation_card.get_by_test_id("btn-delete-simulation")
-        ).to_have_count(0)
+        expect(simulation_card.get_by_test_id("btn-delete-simulation")).to_have_count(0)
 
     # Verify duplicate button visibility matches can_duplicate flag
     if readonly_simulation.get("can_duplicate"):
@@ -122,4 +120,3 @@ def test_simulation_readonly_permissions(page: Page, base_url: str) -> None:
         expect(
             simulation_card.get_by_test_id("btn-duplicate-simulation")
         ).to_have_count(0)
-

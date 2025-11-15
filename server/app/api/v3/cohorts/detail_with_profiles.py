@@ -54,21 +54,21 @@ async def get_cohort_detail_with_profiles(
 ) -> CohortDetailWithProfilesResponse:
     """Get cohort detail with available profiles in one call."""
     tags = ["cohorts"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return CohortDetailWithProfilesResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql_query = load_sql("sql/v3/cohorts/get_cohort_with_profiles_complete.sql")
@@ -99,7 +99,14 @@ async def get_cohort_detail_with_profiles(
                 for p in prof_data:
                     if isinstance(p, dict):
                         last_active_val = p.get("lastActive")
-                        last_active = last_active_val.isoformat() if (last_active_val is not None and isinstance(last_active_val, datetime)) else None
+                        last_active = (
+                            last_active_val.isoformat()
+                            if (
+                                last_active_val is not None
+                                and isinstance(last_active_val, datetime)
+                            )
+                            else None
+                        )
                         available_profiles.append(
                             StaffItem(
                                 profile_id=p.get("profile_id", ""),
@@ -147,7 +154,9 @@ async def get_cohort_detail_with_profiles(
         }
 
         # Convert UUID arrays to string arrays
-        current_profile_ids = [str(pid) for pid in (row.get("current_profile_ids") or [])]
+        current_profile_ids = [
+            str(pid) for pid in (row.get("current_profile_ids") or [])
+        ]
 
         response_data = CohortDetailWithProfilesResponse(
             cohort_id=row["cohort_id"],
@@ -159,7 +168,7 @@ async def get_cohort_detail_with_profiles(
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -169,7 +178,7 @@ async def get_cohort_detail_with_profiles(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -182,4 +191,3 @@ async def get_cohort_detail_with_profiles(
             sql_params=sql_params,
             request=request,
         )
-

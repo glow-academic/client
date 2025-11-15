@@ -86,4 +86,3 @@ def test_agent_delete_confirm_and_cancel(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

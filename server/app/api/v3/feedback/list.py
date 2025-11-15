@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class FeedbackListRequest(BaseModel):
     profileId: str
@@ -42,21 +43,21 @@ async def list_feedback(
 ) -> FeedbackListResponse:
     """Get list of feedback with author information."""
     tags = ["feedback"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return FeedbackListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/feedback/get_feedback_list.sql")
         sql_params = ()  # No parameters for this query
@@ -69,7 +70,9 @@ async def list_feedback(
                     feedback_id=row["feedback_id"],
                     type=row["type"],
                     message=row["message"],
-                    created_at=row["created_at"].isoformat() if row["created_at"] else "",
+                    created_at=row["created_at"].isoformat()
+                    if row["created_at"]
+                    else "",
                     author_name=row["author_name"],
                     author_alias=row["author_alias"],
                     author_profile_id=row["author_profile_id"],
@@ -77,7 +80,7 @@ async def list_feedback(
             )
 
         response_data = FeedbackListResponse(feedback=feedback_items)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -87,7 +90,7 @@ async def list_feedback(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -100,4 +103,3 @@ async def list_feedback(
             sql_params=sql_params,
             request=http_request,
         )
-

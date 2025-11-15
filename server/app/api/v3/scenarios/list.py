@@ -7,12 +7,20 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (CohortMapping, CohortMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              ObjectiveMapping, ObjectiveMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              SimulationMapping, SimulationMappingItem)
+from app.utils.schema import (
+    CohortMapping,
+    CohortMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ObjectiveMapping,
+    ObjectiveMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -74,14 +82,14 @@ async def get_scenarios_list(
 ) -> ScenariosListResponse:
     """Get scenarios list with all relationships."""
     tags = ["scenarios"]  # From router tags
-    
+
     # Check for cache bypass header (for testing)
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
@@ -89,10 +97,10 @@ async def get_scenarios_list(
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
             return ScenariosListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string
         sql_query = load_sql("sql/v3/scenarios/list_scenarios.sql")
@@ -242,10 +250,15 @@ async def get_scenarios_list(
             )
 
         # Build facet options
-        persona_options = [{"value": pid, "label": p.name} for (pid, p) in persona_mapping.items()]
-        simulation_options = [{"value": sid, "label": s.name} for (sid, s) in simulation_mapping.items()]
+        persona_options = [
+            {"value": pid, "label": p.name} for (pid, p) in persona_mapping.items()
+        ]
+        simulation_options = [
+            {"value": sid, "label": s.name} for (sid, s) in simulation_mapping.items()
+        ]
         department_options = [
-            {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
+            {"value": did, "label": d.name or did}
+            for (did, d) in department_mapping.items()
         ]
 
         response_data = ScenariosListResponse(
@@ -260,7 +273,7 @@ async def get_scenarios_list(
             simulation_options=simulation_options,
             department_options=department_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -270,7 +283,7 @@ async def get_scenarios_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -283,4 +296,3 @@ async def get_scenarios_list(
             sql_params=sql_params,
             request=request,
         )
-

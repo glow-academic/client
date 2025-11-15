@@ -117,4 +117,3 @@ async def test_duplicate_simulation_without_departments(
         new_simulation_id,
     )
     assert len(dept_links) == 0
-

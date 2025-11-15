@@ -5,10 +5,12 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.personas.helpers import (create_persona_api,
-                                               delete_persona_api,
-                                               fetch_personas_list,
-                                               generate_unique_persona_name)
+from server.tests.e2e.personas.helpers import (
+    create_persona_api,
+    delete_persona_api,
+    fetch_personas_list,
+    generate_unique_persona_name,
+)
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -30,7 +32,10 @@ def test_personas_list_filters_and_empty_state(page: Page, base_url: str) -> Non
 
     first_card = cards.first
     persona_label = first_card.get_attribute("aria-label") or ""
-    search_name = persona_label.replace("persona card ", "").strip() or first_card.inner_text().splitlines()[0].strip()
+    search_name = (
+        persona_label.replace("persona card ", "").strip()
+        or first_card.inner_text().splitlines()[0].strip()
+    )
 
     search_input = page.get_by_test_id("personas-search")
     search_input.wait_for(state="visible", timeout=10000)
@@ -38,12 +43,7 @@ def test_personas_list_filters_and_empty_state(page: Page, base_url: str) -> Non
     page.wait_for_timeout(250)
     filtered_count = cards.count()
     assert filtered_count <= initial_count
-    assert (
-        grid.get_by_test_id("persona-card")
-        .filter(has_text=search_name)
-        .count()
-        > 0
-    )
+    assert grid.get_by_test_id("persona-card").filter(has_text=search_name).count() > 0
 
     search_input.fill("")
     page.wait_for_timeout(250)
@@ -134,4 +134,3 @@ def test_personas_pagination_persists_filters(page: Page, base_url: str) -> None
                 )
             except Exception:
                 pass
-

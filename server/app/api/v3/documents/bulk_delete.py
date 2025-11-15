@@ -38,10 +38,10 @@ async def bulk_delete_documents(
 ) -> BulkDeleteDocumentsResponse:
     """Bulk delete documents."""
     tags = ["documents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/documents/bulk_delete_documents.sql")
         sql_params = ([uuid.UUID(did) for did in request.documentIds],)
@@ -51,11 +51,11 @@ async def bulk_delete_documents(
             success=True,
             message=f"Deleted {len(request.documentIds)} document(s) successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -68,4 +68,3 @@ async def bulk_delete_documents(
             sql_params=sql_params,
             request=http_request,
         )
-

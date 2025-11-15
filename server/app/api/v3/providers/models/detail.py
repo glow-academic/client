@@ -50,28 +50,30 @@ async def get_model_detail(
 ) -> ModelDetailResponse:
     """Get detailed model information."""
     tags = ["providers"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ModelDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/providers/get_model_detail_complete.sql")
         sql_params = (request.modelId,)
         model = await conn.fetchrow(sql_query, request.modelId)
 
         if not model:
-            raise HTTPException(status_code=404, detail=f"Model not found: {request.modelId}")
+            raise HTTPException(
+                status_code=404, detail=f"Model not found: {request.modelId}"
+            )
 
         # Parse valid_provider_ids from array
         valid_provider_ids: list[str] = []
@@ -104,7 +106,7 @@ async def get_model_detail(
             valid_provider_ids=valid_provider_ids,
             provider_mapping=provider_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -114,7 +116,7 @@ async def get_model_detail(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -127,4 +129,3 @@ async def get_model_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

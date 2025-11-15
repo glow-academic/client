@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class DeleteModelRequest(BaseModel):
     """Request to delete model."""
@@ -37,10 +38,10 @@ async def delete_model(
 ) -> DeleteModelResponse:
     """Delete a model if not in use."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Delete model with usage checks and name fetch (single query)
@@ -69,11 +70,11 @@ async def delete_model(
                 success=True,
                 message=f"Model '{model_name}' deleted successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -88,4 +89,3 @@ async def delete_model(
             sql_params=sql_params,
             request=http_request,
         )
-

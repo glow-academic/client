@@ -83,4 +83,3 @@ def test_practice_infinite_mode(page: Page, base_url: str) -> None:
     # Verify infinite mode indicator is present (if displayed)
     # This might be shown as a badge or icon on the attempt page
     # The exact test ID would need to be verified from the component
-

@@ -7,17 +7,26 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              ScenarioMapping, ScenarioMappingItem,
-                              SimulationMapping, SimulationMappingItem,
-                              StandardGroupsMapping, StandardsMapping)
+from app.utils.schema import (
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+    StandardGroupsMapping,
+    StandardsMapping,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/practice", tags=["practice"])
+
 
 # Inline schemas
 class AttemptHistoryRow(BaseModel):
@@ -126,26 +135,26 @@ async def get_practice_overview(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PracticeOverviewResponse:
     """Get practice overview data with history and all entity mappings.
-    
+
     Practice uses simplified filters: only profileId and departmentIds.
     No cohort/role/date filtering for personal practice.
     """
     tags = ["practice"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return PracticeOverviewResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Validate that profile_id is provided (required for practice)
         if not filters.profileId:
@@ -197,7 +206,7 @@ async def get_practice_overview(
                         dept_ids = None
                     elif not isinstance(dept_ids, list):
                         dept_ids = [dept_ids] if dept_ids else None
-                    
+
                     simulation_mapping[str(sim_id)] = SimulationMappingItem(
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
@@ -225,10 +234,14 @@ async def get_practice_overview(
                 if isinstance(scenario_data, dict):
                     persona_ids = []
                     if scenario_data.get("persona_ids"):
-                        persona_ids = scenario_data["persona_ids"] if isinstance(scenario_data["persona_ids"], list) else [scenario_data["persona_ids"]]
+                        persona_ids = (
+                            scenario_data["persona_ids"]
+                            if isinstance(scenario_data["persona_ids"], list)
+                            else [scenario_data["persona_ids"]]
+                        )
                     elif scenario_data.get("persona_id"):
                         persona_ids = [str(scenario_data["persona_id"])]
-                    
+
                     scenario_mapping[str(scenario_id)] = ScenarioMappingItem(
                         name=scenario_data.get("name", ""),
                         description=scenario_data.get("description", ""),
@@ -278,7 +291,7 @@ async def get_practice_overview(
             parameter_mapping=parameter_mapping,  # type: ignore[arg-type]
             parameter_item_mapping=parameter_item_mapping,  # type: ignore[arg-type]
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -288,7 +301,7 @@ async def get_practice_overview(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -303,4 +316,3 @@ async def get_practice_overview(
             sql_params=sql_params,
             request=request,
         )
-

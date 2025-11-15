@@ -113,4 +113,3 @@ async def test_delete_persona_prompt_department(
         prompt_id,
     )
     assert dept_prompt_link is None
-

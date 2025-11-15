@@ -51,9 +51,9 @@ def test_document_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
         if document_card.count() == 0:
             # Switch to list view if needed
             toolbar = page.get_by_test_id("documents-toolbar")
-            list_button = toolbar.get_by_role("button").filter(
-                has=page.locator("svg")
-            ).first
+            list_button = (
+                toolbar.get_by_role("button").filter(has=page.locator("svg")).first
+            )
             if list_button.count() > 0:
                 list_button.click()
                 page.wait_for_timeout(250)
@@ -119,10 +119,10 @@ def test_document_delete_non_deletable_shows_warning(page: Page, base_url: str) 
     # Find a document that is used in scenarios (can_delete = false)
     # Look for documents without delete button or with disabled delete button
     delete_buttons = page.get_by_test_id("btn-delete-document")
-    
+
     # Check if any delete buttons are disabled
     disabled_delete_buttons = delete_buttons.filter(has=page.locator("[disabled]"))
-    
+
     if disabled_delete_buttons.count() > 0:
         # Try to click disabled button (should not work)
         disabled_button = disabled_delete_buttons.first
@@ -131,4 +131,3 @@ def test_document_delete_non_deletable_shows_warning(page: Page, base_url: str) 
         # If no disabled buttons, check for documents without delete buttons
         # Documents in use may not have delete buttons at all
         pytest.skip("No non-deletable documents found for testing")
-

@@ -37,19 +37,26 @@ async def remove_profiles_from_department(
 ) -> RemoveProfilesFromDepartmentResponse:
     """Remove profiles from department (set active = false in junction table)."""
     tags = ["departments"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Remove profiles (fetch department title and remove in single query)
-            sql_query = load_sql("sql/v3/departments/remove_department_profiles_complete.sql")
+            sql_query = load_sql(
+                "sql/v3/departments/remove_department_profiles_complete.sql"
+            )
             sql_params = (request.departmentId, request.profileIds)
-            result_row = await conn.fetchrow(sql_query, request.departmentId, request.profileIds)
+            result_row = await conn.fetchrow(
+                sql_query, request.departmentId, request.profileIds
+            )
 
             if not result_row or not result_row.get("department_title"):
-                raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Department {request.departmentId} not found",
+                )
 
             department_title = result_row["department_title"]
             removed_count = result_row.get("removed_count", len(request.profileIds))
@@ -58,11 +65,11 @@ async def remove_profiles_from_department(
             success=True,
             message=f"Removed {removed_count} profile(s) from department '{department_title}' successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -75,4 +82,3 @@ async def remove_profiles_from_department(
             sql_params=sql_params,
             request=http_request,
         )
-

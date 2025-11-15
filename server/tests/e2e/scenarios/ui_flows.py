@@ -54,4 +54,3 @@ def create_scenario_via_ui(
         raise AssertionError("Created scenario card missing data-scenario-id attribute")
 
     return scenario_name, scenario_id
-

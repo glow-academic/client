@@ -68,9 +68,7 @@ async def test_continue_simulation_attempt_not_found(
 ) -> None:
     """Test continue_simulation with non-existent attempt_id."""
     # Get an existing chat_id
-    chat_row = await db.fetchrow(
-        "SELECT id FROM simulation_chats LIMIT 1"
-    )
+    chat_row = await db.fetchrow("SELECT id FROM simulation_chats LIMIT 1")
     if not chat_row:
         pytest.skip("No simulation chats found in test database")
     chat_id = str(chat_row["id"])
@@ -89,4 +87,3 @@ async def test_continue_simulation_attempt_not_found(
     error_events = mock_sio.get_events("simulation_error")
     assert len(error_events) >= 1
     assert "Attempt not found" in error_events[0]["message"]
-

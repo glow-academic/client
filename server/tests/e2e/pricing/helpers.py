@@ -90,7 +90,7 @@ def fetch_pricing_data(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    
+
     # Build default filters if not provided
     if filters is None:
         # Get profile context to determine default date range
@@ -106,8 +106,9 @@ def fetch_pricing_data(
             effective_profile_id=resolved_effective,
             bypass_cache=True,
         )
-        
+
         from datetime import datetime, timedelta
+
         earliest_date = profile_context.get("earliestAttemptDate")
         if earliest_date:
             start_date = datetime.fromisoformat(earliest_date.replace("Z", "+00:00"))
@@ -115,10 +116,10 @@ def fetch_pricing_data(
         else:
             start_date = datetime.now() - timedelta(days=30)
             start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         end_date = datetime.now()
         end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999000)
-        
+
         filters = {
             "startDate": start_date.isoformat(),
             "endDate": end_date.isoformat(),
@@ -127,7 +128,7 @@ def fetch_pricing_data(
             "simulationFilters": ["general"],
             "departmentIds": [],
         }
-    
+
     return _post_json(
         request,
         "/api/v3/pricing",
@@ -151,26 +152,25 @@ def verify_pricing_ssr(page: Page) -> None:
     # Verify data-page attribute
     page_container = page.locator('[data-page="pricing-index"]')
     expect(page_container).to_be_visible()
-    
+
     # Verify main container
     container = page.get_by_test_id("pricing-container")
     expect(container).to_be_visible()
-    
+
     # Verify summary cards
     total_spend_card = page.get_by_test_id("pricing-card-total-spend")
     expect(total_spend_card).to_be_visible()
-    
+
     run_count_card = page.get_by_test_id("pricing-card-run-count")
     expect(run_count_card).to_be_visible()
-    
+
     avg_cost_card = page.get_by_test_id("pricing-card-avg-cost")
     expect(avg_cost_card).to_be_visible()
-    
+
     # Verify chart
     chart = page.get_by_test_id("pricing-chart")
     expect(chart).to_be_visible()
-    
+
     # Verify runs table
     runs_table = page.get_by_test_id("pricing-runs-table")
     expect(runs_table).to_be_visible()
-

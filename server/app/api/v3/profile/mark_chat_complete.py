@@ -35,10 +35,10 @@ async def mark_chat_complete(
 ) -> MarkTourStepResponse:
     """Mark chat tour step as complete."""
     tags = ["profile"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Mark chat complete with existence check in a single SQL file
         sql_query = load_sql("sql/v3/profile/mark_chat_complete.sql")
@@ -53,11 +53,11 @@ async def mark_chat_complete(
             success=True,
             message=f"Profile {profile_id} chat marked complete",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -70,4 +70,3 @@ async def mark_chat_complete(
             sql_params=sql_params,
             request=http_request,
         )
-

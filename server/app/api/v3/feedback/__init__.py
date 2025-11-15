@@ -12,4 +12,3 @@ router = APIRouter(prefix="/feedback", tags=["feedback"])
 router.include_router(list_router)
 router.include_router(create_router)
 router.include_router(bulk_delete_router)
-

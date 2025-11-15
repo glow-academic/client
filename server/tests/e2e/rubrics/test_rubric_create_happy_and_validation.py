@@ -101,4 +101,3 @@ def test_rubric_create_validation_and_success(page: Page, base_url: str) -> None
                 )
             except Exception:
                 pass
-

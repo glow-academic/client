@@ -21,7 +21,7 @@ def test_cohorts_list_filters_and_empty_state(page: Page, base_url: str) -> None
     """Ensure cohort list SSR renders and search/filter flows work."""
     page.goto(f"{base_url}/cohorts")
     page.wait_for_load_state("networkidle")
-    
+
     # Wait for the grid to be visible
     page.wait_for_selector("[data-testid='cohorts-grid']", timeout=15000)
 
@@ -48,10 +48,7 @@ def test_cohorts_list_filters_and_empty_state(page: Page, base_url: str) -> None
     assert filtered_count <= initial_count
     if filtered_count > 0:
         assert (
-            grid.get_by_test_id("cohort-card")
-            .filter(has_text=search_name)
-            .count()
-            > 0
+            grid.get_by_test_id("cohort-card").filter(has_text=search_name).count() > 0
         )
 
     search_input.fill("")
@@ -135,9 +132,7 @@ def test_cohorts_list_filters_and_empty_state(page: Page, base_url: str) -> None
     search_input.fill("zzzz-no-match-zzzz")
     page.wait_for_timeout(500)
     expect(cards).to_have_count(0)
-    expect(
-        page.get_by_text("No cohorts match the current filters.")
-    ).to_be_visible()
+    expect(page.get_by_text("No cohorts match the current filters.")).to_be_visible()
 
     search_input.fill("")
     page.wait_for_timeout(500)
@@ -196,4 +191,3 @@ def test_cohorts_pagination_persists_filters(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

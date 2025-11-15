@@ -35,6 +35,8 @@ def _get_monaco_value(page: Page) -> str:
         )
         or ""
     )
+
+
 def _set_monaco_value(page: Page, value: str) -> None:
     page.wait_for_function(
         """() => {
@@ -210,5 +212,3 @@ def test_persona_edit_update_prompt_branching(page: Page, base_url: str) -> None
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
         )
-
-

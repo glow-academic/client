@@ -409,4 +409,3 @@ def test_staff_delete_select_all(page: Page, base_url: str) -> None:
 
             # Verify selection cleared (or still selected depending on implementation)
             # Some implementations keep selection after cancel
-

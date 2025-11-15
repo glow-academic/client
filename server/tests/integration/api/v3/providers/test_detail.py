@@ -81,4 +81,3 @@ async def test_get_provider_detail_not_found(
     assert response.status_code == 404
     data = response.json()
     assert "not found" in data["detail"].lower()
-

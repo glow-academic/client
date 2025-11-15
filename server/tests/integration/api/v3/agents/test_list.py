@@ -149,7 +149,7 @@ async def test_list_agents_can_delete_default(
         "SELECT 'Default Agent', 'Test', 0.7, id, 'none', true "
         "FROM models WHERE active = true LIMIT 1 RETURNING id"
     )
-    
+
     # Link it to a department (this prevents deletion)
     await db.execute(
         "INSERT INTO agent_departments(agent_id, department_id) "
@@ -257,4 +257,3 @@ async def test_list_agents_can_duplicate(
     # All agents should have can_duplicate = true
     for agent in data["agents"]:
         assert agent["can_duplicate"] is True
-

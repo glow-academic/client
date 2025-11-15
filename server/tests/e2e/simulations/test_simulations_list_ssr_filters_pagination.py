@@ -43,10 +43,7 @@ def test_simulations_list_filters_and_empty_state(page: Page, base_url: str) -> 
     filtered_count = cards.count()
     assert filtered_count <= initial_count
     assert (
-        grid.get_by_test_id("simulation-card")
-        .filter(has_text=search_name)
-        .count()
-        > 0
+        grid.get_by_test_id("simulation-card").filter(has_text=search_name).count() > 0
     )
 
     search_input.fill("")
@@ -195,4 +192,3 @@ def test_simulations_list_pagination(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

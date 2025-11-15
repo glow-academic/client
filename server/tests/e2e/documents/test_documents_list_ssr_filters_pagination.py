@@ -46,8 +46,10 @@ def test_documents_list_filters_and_empty_state(page: Page, base_url: str) -> No
     if not document_name:
         # Try getting name from aria-label or data attribute
         document_name = (
-            first_item.get_attribute("aria-label") or "Test Document"
-        ).replace("document card ", "").strip()
+            (first_item.get_attribute("aria-label") or "Test Document")
+            .replace("document card ", "")
+            .strip()
+        )
 
     search_input = page.get_by_test_id("documents-search")
     search_input.wait_for(state="visible", timeout=10000)
@@ -131,9 +133,7 @@ def test_documents_list_filters_and_empty_state(page: Page, base_url: str) -> No
     search_input.fill("zzzz-no-match-zzzz")
     page.wait_for_timeout(250)
     expect(cards_or_rows).to_have_count(0)
-    expect(
-        page.get_by_text("No documents match the current filters.")
-    ).to_be_visible()
+    expect(page.get_by_text("No documents match the current filters.")).to_be_visible()
 
     search_input.fill("")
     page.wait_for_timeout(250)
@@ -216,17 +216,17 @@ def test_documents_view_mode_switching(page: Page, base_url: str) -> None:
 
     # Find view mode toggle buttons
     toolbar = page.get_by_test_id("documents-toolbar")
-    list_button = toolbar.get_by_role("button").filter(has_text=re.compile("List", re.I))
-    grid_button = toolbar.get_by_role("button").filter(has_text=re.compile("Grid", re.I))
+    list_button = toolbar.get_by_role("button").filter(
+        has_text=re.compile("List", re.I)
+    )
+    grid_button = toolbar.get_by_role("button").filter(
+        has_text=re.compile("Grid", re.I)
+    )
 
     if list_button.count() == 0 or grid_button.count() == 0:
         # Try finding by icon
-        list_button = toolbar.locator("button").filter(
-            has=page.locator("svg")
-        ).first
-        grid_button = toolbar.locator("button").filter(
-            has=page.locator("svg")
-        ).nth(1)
+        list_button = toolbar.locator("button").filter(has=page.locator("svg")).first
+        grid_button = toolbar.locator("button").filter(has=page.locator("svg")).nth(1)
 
     if list_button.count() > 0 and grid_button.count() > 0:
         # Switch to grid view
@@ -240,4 +240,3 @@ def test_documents_view_mode_switching(page: Page, base_url: str) -> None:
         page.wait_for_timeout(250)
         list_view = page.get_by_test_id("documents-list")
         expect(list_view).to_be_visible()
-

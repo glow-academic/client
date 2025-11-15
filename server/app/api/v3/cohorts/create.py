@@ -43,14 +43,14 @@ async def create_cohort(
 ) -> CreateCohortResponse:
     """Create a new cohort."""
     tags = ["cohorts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
-        
+
         # Single consolidated query: creates cohort and all relationships using arrays
         sql_query = load_sql("sql/v3/cohorts/create_cohort_complete.sql")
         sql_params = (
@@ -75,11 +75,11 @@ async def create_cohort(
             cohortId=cohort_id,
             message="Cohort created successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -92,4 +92,3 @@ async def create_cohort(
             sql_params=sql_params,
             request=http_request,
         )
-

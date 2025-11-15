@@ -90,9 +90,7 @@ def test_parameter_edit_update_basic_fields(page: Page, base_url: str) -> None:
         page.wait_for_timeout(250)
 
         parameter_card = (
-            page.get_by_test_id("parameter-card")
-            .filter(has_text=updated_name)
-            .first
+            page.get_by_test_id("parameter-card").filter(has_text=updated_name).first
         )
         expect(parameter_card).to_be_visible()
     finally:
@@ -151,9 +149,7 @@ def test_parameter_edit_add_remove_items(page: Page, base_url: str) -> None:
             delete_item_buttons.first.click()
             page.wait_for_timeout(250)
             # Verify item removed (count decreased)
-            remaining_delete_buttons = page.get_by_test_id(
-                "btn-delete-parameter-item"
-            )
+            remaining_delete_buttons = page.get_by_test_id("btn-delete-parameter-item")
             # The count should be less than before
 
         # Submit changes
@@ -175,4 +171,3 @@ def test_parameter_edit_add_remove_items(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

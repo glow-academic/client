@@ -36,9 +36,10 @@ async def test_get_rubric_detail_default(
 
     # Check that it returns actual data
     assert data["name"] is not None
-    assert data["department_ids"] is not None  # Changed from department_id to department_ids
+    assert (
+        data["department_ids"] is not None
+    )  # Changed from department_id to department_ids
     assert isinstance(data["standard_group_ids"], list)
     assert isinstance(data["standard_groups_detail"], dict)
     assert isinstance(data["department_mapping"], dict)
     assert isinstance(data["valid_department_ids"], list)
-

@@ -37,7 +37,7 @@ async def decrypt_provider_key(
     """Decrypt provider API key for authorized users."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Get provider detail to verify access and get encrypted key
         sql_query = load_sql("sql/v3/providers/get_provider_detail_complete.sql")
@@ -68,4 +68,3 @@ async def decrypt_provider_key(
             sql_params=sql_params,
             request=http_request,
         )
-

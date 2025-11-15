@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 
+
 # Inline schemas
 class DebugInfoItem(BaseModel):
     """Debug information item."""
@@ -81,40 +82,41 @@ async def get_pricing(
 ) -> PricingAnalyticsResponse:
     """Get pricing metrics with model usage and cost analysis."""
     tags = ["pricing"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return PricingAnalyticsResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Build parameters for consolidated SQL file (role check happens in SQL)
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
-        
+
         # Convert string UUIDs to UUID objects for asyncpg array parameters
         import uuid
+
         department_ids = None
         if filters.departmentIds:
             department_ids = [uuid.UUID(d) for d in filters.departmentIds]
-        
+
         cohort_ids = None
         if filters.cohortIds:
             cohort_ids = [uuid.UUID(c) for c in filters.cohortIds]
-        
+
         profile_uuid = None
         if filters.profileId:
             profile_uuid = uuid.UUID(filters.profileId)
-        
+
         roles = filters.roles or None
 
         # Execute consolidated SQL query with all filter logic (including role check)
@@ -194,7 +196,7 @@ async def get_pricing(
             agent_mapping=agent_mapping,
             persona_mapping=persona_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -204,7 +206,7 @@ async def get_pricing(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -217,4 +219,3 @@ async def get_pricing(
             sql_params=sql_params,
             request=request,
         )
-

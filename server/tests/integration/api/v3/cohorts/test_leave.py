@@ -71,4 +71,3 @@ async def test_leave_cohort_not_member(
     data = response.json()
 
     assert data["success"] is True
-

@@ -58,4 +58,3 @@ async def test_get_persona_detail_default_not_found(
 
     assert response.status_code == 404
     assert "failed to fetch" in response.json()["detail"].lower()
-

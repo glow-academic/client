@@ -45,9 +45,7 @@ async def test_start_assistant_success(
 
     # Verify chat was created in database
     chat_id = started_events[0]["chat_id"]
-    chat_row = await db.fetchrow(
-        "SELECT * FROM assistant_chats WHERE id = $1", chat_id
-    )
+    chat_row = await db.fetchrow("SELECT * FROM assistant_chats WHERE id = $1", chat_id)
     assert chat_row is not None
     assert chat_row["profile_id"] == profile_id
 
@@ -142,4 +140,3 @@ async def test_start_assistant_profile_not_found(
     # Verify no chat was created
     started_events = mock_sio.get_events("assistant_started")
     assert len(started_events) == 0
-

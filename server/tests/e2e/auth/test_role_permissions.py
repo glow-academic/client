@@ -24,27 +24,29 @@ def test_admin_access(page: Page, base_url: str) -> None:
         pathname="/management/staff",
         bypass_cache=True,
     )
-    
+
     admin_role = context.get("effectiveProfile", {}).get("role", "")
-    assert admin_role in ["admin", "superadmin"], "Test profile should be admin or superadmin"
-    
+    assert admin_role in ["admin", "superadmin"], (
+        "Test profile should be admin or superadmin"
+    )
+
     # Navigate to admin pages
     page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
-    
+
     # Verify admin can access staff management page
     expect(page).to_have_url(re.compile(r".*/management/staff.*"))
-    
+
     # Verify staff table is visible
     staff_table = page.get_by_test_id("staff-table")
     staff_table.wait_for(state="visible", timeout=15000)
     expect(staff_table).to_be_visible()
-    
+
     # Verify admin can access other management pages
     page.goto(f"{base_url}/create/personas")
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(re.compile(r".*/create/personas.*"))
-    
+
     # Verify personas page loads
     personas_grid = page.get_by_test_id("personas-grid")
     personas_grid.wait_for(state="visible", timeout=15000)
@@ -58,16 +60,16 @@ def test_guest_access(page: Page, base_url: str) -> None:
     page.goto(f"{base_url}/practice")
     page.wait_for_load_state("networkidle")
     expect(page).to_have_url(re.compile(r".*practice.*"))
-    
+
     # Verify practice page loads
     practice_grid = page.get_by_test_id("practice-simulation-grid")
     practice_grid.wait_for(state="visible", timeout=15000)
     expect(practice_grid).to_be_visible()
-    
+
     # Guest should NOT be able to access admin pages
     page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
-    
+
     # Should be redirected away or see access denied
     current_url = page.url
     if "/management/staff" in current_url:
@@ -82,12 +84,14 @@ def test_guest_access(page: Page, base_url: str) -> None:
             pass
     else:
         # Redirected away from admin page
-        assert "/practice" in current_url or "/home" in current_url or "/" in current_url
-    
+        assert (
+            "/practice" in current_url or "/home" in current_url or "/" in current_url
+        )
+
     # Guest should NOT be able to access create pages
     page.goto(f"{base_url}/create/personas")
     page.wait_for_load_state("networkidle")
-    
+
     current_url = page.url
     if "/create/personas" not in current_url:
         # Redirected away
@@ -105,7 +109,7 @@ def test_role_based_redirects(page: Page, base_url: str) -> None:
     # Admin should redirect to home (or stay on requested page)
     page.goto(f"{base_url}/")
     page.wait_for_load_state("networkidle")
-    
+
     # Admin might stay on login page or redirect to home
     # If authenticated via test headers, should go to home
     current_url = page.url
@@ -123,7 +127,7 @@ def test_guest_role_based_redirects(page: Page, base_url: str) -> None:
     # Guest should redirect to practice
     page.goto(f"{base_url}/")
     page.wait_for_load_state("networkidle")
-    
+
     # Guest accessing root should go to practice
     current_url = page.url
     # May redirect to practice or show login page
@@ -147,4 +151,3 @@ def test_home_page_authenticated(page: Page, base_url: str) -> None:
     simulation_progress = page.get_by_test_id("simulation-progress")
     simulation_progress.first.wait_for(state="visible", timeout=15000)
     expect(simulation_progress.first).to_be_visible()
-

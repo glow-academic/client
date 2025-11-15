@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class DuplicateModelRequest(BaseModel):
     """Request to duplicate model."""
@@ -38,10 +39,10 @@ async def duplicate_model(
 ) -> DuplicateModelResponse:
     """Duplicate a model."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Get original model data
@@ -78,11 +79,11 @@ async def duplicate_model(
                 modelId=new_model_id,
                 message=f"Model '{model['name']}' duplicated successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -97,4 +98,3 @@ async def duplicate_model(
             sql_params=sql_params,
             request=http_request,
         )
-

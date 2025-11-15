@@ -44,12 +44,7 @@ def test_staff_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     page.wait_for_timeout(250)
     filtered_count = rows.count()
     assert filtered_count <= initial_count
-    assert (
-        table.get_by_test_id("staff-row")
-        .filter(has_text=staff_name)
-        .count()
-        > 0
-    )
+    assert table.get_by_test_id("staff-row").filter(has_text=staff_name).count() > 0
 
     search_input.fill("")
     page.wait_for_timeout(250)
@@ -192,4 +187,3 @@ def test_staff_pagination_persists_filters(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

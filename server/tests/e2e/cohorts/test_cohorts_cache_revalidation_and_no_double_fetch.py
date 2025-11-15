@@ -66,9 +66,9 @@ def test_cohorts_cache_revalidation_and_no_double_fetch(
     page.goto(f"{base_url}/cohorts/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
-    assert (
-        detail_counter["total"] <= 1
-    ), "Default cohort detail endpoint fetched more than once"
+    assert detail_counter["total"] <= 1, (
+        "Default cohort detail endpoint fetched more than once"
+    )
 
     cohort_name = generate_unique_cohort_name("Cache Cohort")
 
@@ -95,9 +95,7 @@ def test_cohorts_cache_revalidation_and_no_double_fetch(
         bypass_cache=True,
     )
     created_entry = next(
-        c
-        for c in cohorts_data.get("cohorts", [])
-        if c.get("name") == cohort_name
+        c for c in cohorts_data.get("cohorts", []) if c.get("name") == cohort_name
     )
     cohort_id = created_entry["cohort_id"]
 
@@ -119,9 +117,7 @@ def test_cohorts_cache_revalidation_and_no_double_fetch(
     assert new_ids, "Duplicate cohort card did not appear in UI"
     copy_id = new_ids.pop()
 
-    copy_card = page.locator(
-        f"[data-testid='cohort-card'][data-cohort-id='{copy_id}']"
-    )
+    copy_card = page.locator(f"[data-testid='cohort-card'][data-cohort-id='{copy_id}']")
     expect(copy_card).to_be_visible()
     copy_name = copy_card.inner_text().splitlines()[0].strip()
 
@@ -178,9 +174,7 @@ def test_cohorts_cache_revalidation_and_no_double_fetch(
     # Cleanup: Delete copy if it still exists
     search_input.fill(copy_name)
     page.wait_for_timeout(250)
-    copy_card = page.locator(
-        f"[data-testid='cohort-card'][data-cohort-id='{copy_id}']"
-    )
+    copy_card = page.locator(f"[data-testid='cohort-card'][data-cohort-id='{copy_id}']")
     if copy_card.count() > 0:
         delete_button = copy_card.get_by_test_id(f"delete-{copy_id}")
         if delete_button.count() > 0:
@@ -197,4 +191,3 @@ def test_cohorts_cache_revalidation_and_no_double_fetch(
                 profile_id=ADMIN_PROFILE_ID,
                 effective_profile_id=ADMIN_PROFILE_ID,
             )
-

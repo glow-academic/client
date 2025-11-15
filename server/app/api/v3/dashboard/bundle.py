@@ -8,23 +8,33 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (AnalyticsFilters, DataPoint, Method,
-                              MetricResponse, ParameterItemMapping,
-                              ParameterItemMappingItem, ParameterMapping,
-                              ParameterMappingItem, RubricMapping,
-                              RubricMappingItem, SimulationFilter,
-                              SimulationMapping, SimulationMappingItem,
-                              TrendData)
+from app.utils.schema import (
+    AnalyticsFilters,
+    DataPoint,
+    Method,
+    MetricResponse,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    SimulationFilter,
+    SimulationMapping,
+    SimulationMappingItem,
+    TrendData,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
+
 # AttemptHistoryRow schema
 class AttemptHistoryRow(BaseModel):
     """Attempt history row."""
-    
+
     model_config = ConfigDict(populate_by_name=True)
 
     attemptId: str
@@ -49,9 +59,11 @@ class AttemptHistoryRow(BaseModel):
     showContinue: bool
     practiceSimulation: bool
     passPct: int | None = None
-    department_ids: list[str] | None = Field(None, alias="department_id")  # Simulation's department associations
+    department_ids: list[str] | None = Field(
+        None, alias="department_id"
+    )  # Simulation's department associations
     cohortNames: list[str]
-    
+
     @field_validator("department_ids", mode="before")
     @classmethod
     def convert_department_id(cls, v: Any) -> list[str] | None:
@@ -66,6 +78,7 @@ class AttemptHistoryRow(BaseModel):
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]
+
 
 # Inline schemas
 class RubricHeatmapCell(BaseModel):
@@ -184,7 +197,7 @@ class PersonaPerformanceResponse(BaseModel):
 
 class AttemptImprovementData(BaseModel):
     """Attempt improvement data."""
-    
+
     model_config = ConfigDict(populate_by_name=True)
 
     attempt: str
@@ -417,16 +430,36 @@ class DashboardHeaderMetrics(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    average_score: MetricResponse = Field(alias="averageScore", serialization_alias="averageScore")
-    completion_percentage: MetricResponse = Field(alias="completionPercentage", serialization_alias="completionPercentage")
-    first_attempt_pass_rate: MetricResponse = Field(alias="firstAttemptPassRate", serialization_alias="firstAttemptPassRate")
-    highest_score: MetricResponse = Field(alias="highestScore", serialization_alias="highestScore")
-    messages_per_session: MetricResponse = Field(alias="messagesPerSession", serialization_alias="messagesPerSession")
-    persona_response_times: MetricResponse = Field(alias="personaResponseTimes", serialization_alias="personaResponseTimes")
-    session_efficiency: MetricResponse = Field(alias="sessionEfficiency", serialization_alias="sessionEfficiency")
-    stagnation_rate: MetricResponse = Field(alias="stagnationRate", serialization_alias="stagnationRate")
-    time_spent: MetricResponse = Field(alias="timeSpent", serialization_alias="timeSpent")
-    total_attempts: MetricResponse = Field(alias="totalAttempts", serialization_alias="totalAttempts")
+    average_score: MetricResponse = Field(
+        alias="averageScore", serialization_alias="averageScore"
+    )
+    completion_percentage: MetricResponse = Field(
+        alias="completionPercentage", serialization_alias="completionPercentage"
+    )
+    first_attempt_pass_rate: MetricResponse = Field(
+        alias="firstAttemptPassRate", serialization_alias="firstAttemptPassRate"
+    )
+    highest_score: MetricResponse = Field(
+        alias="highestScore", serialization_alias="highestScore"
+    )
+    messages_per_session: MetricResponse = Field(
+        alias="messagesPerSession", serialization_alias="messagesPerSession"
+    )
+    persona_response_times: MetricResponse = Field(
+        alias="personaResponseTimes", serialization_alias="personaResponseTimes"
+    )
+    session_efficiency: MetricResponse = Field(
+        alias="sessionEfficiency", serialization_alias="sessionEfficiency"
+    )
+    stagnation_rate: MetricResponse = Field(
+        alias="stagnationRate", serialization_alias="stagnationRate"
+    )
+    time_spent: MetricResponse = Field(
+        alias="timeSpent", serialization_alias="timeSpent"
+    )
+    total_attempts: MetricResponse = Field(
+        alias="totalAttempts", serialization_alias="totalAttempts"
+    )
 
 
 class DashboardPrimaryMetrics(BaseModel):
@@ -434,9 +467,15 @@ class DashboardPrimaryMetrics(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    growth_data: GrowthDataResponse = Field(alias="growthData", serialization_alias="growthData")
-    persona_performance: PersonaPerformanceResponse = Field(alias="personaPerformance", serialization_alias="personaPerformance")
-    rubric_heatmap: RubricHeatmapResponse = Field(alias="rubricHeatmap", serialization_alias="rubricHeatmap")
+    growth_data: GrowthDataResponse = Field(
+        alias="growthData", serialization_alias="growthData"
+    )
+    persona_performance: PersonaPerformanceResponse = Field(
+        alias="personaPerformance", serialization_alias="personaPerformance"
+    )
+    rubric_heatmap: RubricHeatmapResponse = Field(
+        alias="rubricHeatmap", serialization_alias="rubricHeatmap"
+    )
 
 
 class DashboardSecondaryMetrics(BaseModel):
@@ -444,9 +483,15 @@ class DashboardSecondaryMetrics(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    attempt_improvement: AttemptImprovementResponse = Field(alias="attemptImprovement", serialization_alias="attemptImprovement")
-    cohort_performance: CohortPerformanceResponse = Field(alias="cohortPerformance", serialization_alias="cohortPerformance")
-    skill_performance: SkillPerformanceResponse = Field(alias="skillPerformance", serialization_alias="skillPerformance")
+    attempt_improvement: AttemptImprovementResponse = Field(
+        alias="attemptImprovement", serialization_alias="attemptImprovement"
+    )
+    cohort_performance: CohortPerformanceResponse = Field(
+        alias="cohortPerformance", serialization_alias="cohortPerformance"
+    )
+    skill_performance: SkillPerformanceResponse = Field(
+        alias="skillPerformance", serialization_alias="skillPerformance"
+    )
 
 
 class DashboardFooterMetrics(BaseModel):
@@ -454,10 +499,18 @@ class DashboardFooterMetrics(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    scenario_performance: ScenarioPerformanceResponse = Field(alias="scenarioPerformance", serialization_alias="scenarioPerformance")
-    scenario_stats: ScenarioStatsResponse = Field(alias="scenarioStats", serialization_alias="scenarioStats")
-    simulation_performance: SimulationPerformanceResponse = Field(alias="simulationPerformance", serialization_alias="simulationPerformance")
-    simulation_composition: SimulationCompositionResponse = Field(alias="simulationComposition", serialization_alias="simulationComposition")
+    scenario_performance: ScenarioPerformanceResponse = Field(
+        alias="scenarioPerformance", serialization_alias="scenarioPerformance"
+    )
+    scenario_stats: ScenarioStatsResponse = Field(
+        alias="scenarioStats", serialization_alias="scenarioStats"
+    )
+    simulation_performance: SimulationPerformanceResponse = Field(
+        alias="simulationPerformance", serialization_alias="simulationPerformance"
+    )
+    simulation_composition: SimulationCompositionResponse = Field(
+        alias="simulationComposition", serialization_alias="simulationComposition"
+    )
 
 
 class DashboardInsights(BaseModel):
@@ -521,7 +574,7 @@ def _parse_metric(metric_data: dict[str, Any]) -> MetricResponse:
                         count=td.get("count", 0),
                     )
                 )
-    
+
     # Parse dataPoints
     data_points_raw = metric_data.get("dataPoints", [])
     data_points: list[DataPoint] = []
@@ -532,7 +585,7 @@ def _parse_metric(metric_data: dict[str, Any]) -> MetricResponse:
                 profile_id = dp.get("profileId")
                 if profile_id is None:
                     profile_id = ""
-                
+
                 data_points.append(
                     DataPoint(
                         profileId=profile_id,
@@ -544,7 +597,7 @@ def _parse_metric(metric_data: dict[str, Any]) -> MetricResponse:
                         count=dp.get("count"),
                     )
                 )
-    
+
     return MetricResponse(
         hasData=metric_data.get("hasData", False),
         method=Method(metric_data.get("method", "avg")),
@@ -571,9 +624,7 @@ def _parse_window_average(avg_data: dict[str, Any]) -> GrowthWindowAverage:
 # ==============================================================
 
 
-def _compute_growth_insight(
-    window_averages: GrowthWindowAverages
-) -> str | None:
+def _compute_growth_insight(window_averages: GrowthWindowAverages) -> str | None:
     """Compute actionable insight for growth data."""
     current = window_averages.averageScore.last
     previous = window_averages.averageScore.prev
@@ -589,7 +640,9 @@ def _compute_growth_insight(
         if improvement > 5:
             return f"Scores improved {improvement:.1f}% - consider advanced challenges."
         if improvement > 2:
-            return f"Steady improvement of {improvement:.1f}% - continue current approach."
+            return (
+                f"Steady improvement of {improvement:.1f}% - continue current approach."
+            )
         if improvement < -2:
             return f"Slight decline of {abs(improvement):.1f}% - adjust study strategy."
 
@@ -612,9 +665,7 @@ def _compute_persona_insight(
         return None
 
     recent_avg = sum(item.score or 0 for item in recent_scores) / len(recent_scores)
-    earlier_avg = sum(item.score or 0 for item in earlier_scores) / len(
-        earlier_scores
-    )
+    earlier_avg = sum(item.score or 0 for item in earlier_scores) / len(earlier_scores)
     improvement = recent_avg - earlier_avg
 
     if improvement > 5:
@@ -629,9 +680,7 @@ def _compute_persona_insight(
     return None
 
 
-def _compute_rubric_heatmap_insight(
-    matrices: list[RubricMatrixPackage]
-) -> str | None:
+def _compute_rubric_heatmap_insight(matrices: list[RubricMatrixPackage]) -> str | None:
     """Compute actionable insight from rubric heatmap data."""
     if len(matrices) == 0:
         return None
@@ -650,14 +699,10 @@ def _compute_rubric_heatmap_insight(
             if i != j and cell and cell.dataPoints > 0:
                 correlation = cell.correlation
                 row_group = (
-                    matrix.standardGroups[i]
-                    if i < len(matrix.standardGroups)
-                    else None
+                    matrix.standardGroups[i] if i < len(matrix.standardGroups) else None
                 )
                 col_group = (
-                    matrix.standardGroups[j]
-                    if j < len(matrix.standardGroups)
-                    else None
+                    matrix.standardGroups[j] if j < len(matrix.standardGroups) else None
                 )
 
                 if row_group and col_group:
@@ -679,7 +724,7 @@ def _compute_rubric_heatmap_insight(
 
 
 def _compute_attempt_improvement_insight(
-    chart_data: list[AttemptImprovementData]
+    chart_data: list[AttemptImprovementData],
 ) -> str | None:
     """Compute actionable insight from attempt improvement data."""
     if len(chart_data) < 2:
@@ -701,9 +746,7 @@ def _compute_attempt_improvement_insight(
     return None
 
 
-def _compute_cohort_insights(
-    cohort_data: list[CohortData]
-) -> dict[str, str | None]:
+def _compute_cohort_insights(cohort_data: list[CohortData]) -> dict[str, str | None]:
     """Compute actionable insights for cohorts."""
     insights: dict[str, str | None] = {}
 
@@ -711,9 +754,7 @@ def _compute_cohort_insights(
         return insights
 
     sorted_cohorts = sorted(cohort_data, key=lambda c: c.passRate, reverse=True)
-    avg_pass_rate = sum(cohort.passRate for cohort in cohort_data) / len(
-        cohort_data
-    )
+    avg_pass_rate = sum(cohort.passRate for cohort in cohort_data) / len(cohort_data)
     high_performers = [c for c in cohort_data if c.passRate >= 90]
     all_high_performers = len(high_performers) == len(cohort_data)
 
@@ -753,9 +794,7 @@ def _compute_cohort_insights(
     return insights
 
 
-def _compute_skill_performance_insight(
-    radar_data: list[SkillRadarData]
-) -> str | None:
+def _compute_skill_performance_insight(radar_data: list[SkillRadarData]) -> str | None:
     """Compute actionable insight from skill performance radar data."""
     if len(radar_data) == 0:
         return None
@@ -786,7 +825,7 @@ def _compute_skill_performance_insight(
 
 
 def _compute_scenario_performance_insight(
-    attribute_attempt_facts: list[ScenarioAttributeAttemptFact]
+    attribute_attempt_facts: list[ScenarioAttributeAttemptFact],
 ) -> str | None:
     """Compute actionable insight from scenario performance data."""
     if len(attribute_attempt_facts) == 0:
@@ -822,7 +861,7 @@ def _compute_scenario_performance_insight(
 
 
 def _compute_scenario_stats_insight(
-    numeric_attempt_facts: list[NumericAttemptFact]
+    numeric_attempt_facts: list[NumericAttemptFact],
 ) -> str | None:
     """Compute actionable insight from scenario stats data."""
     if len(numeric_attempt_facts) == 0:
@@ -868,7 +907,7 @@ def _compute_scenario_stats_insight(
 
 
 def _compute_simulation_performance_insight(
-    scenario_facts: list[ScenarioFact]
+    scenario_facts: list[ScenarioFact],
 ) -> str | None:
     """Compute actionable insight from simulation performance data."""
     if len(scenario_facts) == 0:
@@ -891,22 +930,18 @@ def _compute_simulation_performance_insight(
 
 
 def _compute_simulation_composition_insight(
-    simulation_facts: list[SimulationFact]
+    simulation_facts: list[SimulationFact],
 ) -> str | None:
     """Compute actionable insight from simulation composition data."""
     if not simulation_facts or len(simulation_facts) == 0:
         return None
 
-    avg_score = sum(sim.avgScore for sim in simulation_facts) / len(
-        simulation_facts
-    )
+    avg_score = sum(sim.avgScore for sim in simulation_facts) / len(simulation_facts)
     avg_completion = sum(sim.completionRate for sim in simulation_facts) / len(
         simulation_facts
     )
 
-    sorted_by_score = sorted(
-        simulation_facts, key=lambda s: s.avgScore, reverse=True
-    )
+    sorted_by_score = sorted(simulation_facts, key=lambda s: s.avgScore, reverse=True)
     top_performer = sorted_by_score[0] if sorted_by_score else None
     bottom_performer = sorted_by_score[-1] if sorted_by_score else None
 
@@ -936,22 +971,12 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     header_data = data.get("header", {})
     header = DashboardHeaderMetrics(
         averageScore=_parse_metric(header_data.get("averageScore", {})),
-        completionPercentage=_parse_metric(
-            header_data.get("completionPercentage", {})
-        ),
-        firstAttemptPassRate=_parse_metric(
-            header_data.get("firstAttemptPassRate", {})
-        ),
+        completionPercentage=_parse_metric(header_data.get("completionPercentage", {})),
+        firstAttemptPassRate=_parse_metric(header_data.get("firstAttemptPassRate", {})),
         highestScore=_parse_metric(header_data.get("highestScore", {})),
-        messagesPerSession=_parse_metric(
-            header_data.get("messagesPerSession", {})
-        ),
-        personaResponseTimes=_parse_metric(
-            header_data.get("personaResponseTimes", {})
-        ),
-        sessionEfficiency=_parse_metric(
-            header_data.get("sessionEfficiency", {})
-        ),
+        messagesPerSession=_parse_metric(header_data.get("messagesPerSession", {})),
+        personaResponseTimes=_parse_metric(header_data.get("personaResponseTimes", {})),
+        sessionEfficiency=_parse_metric(header_data.get("sessionEfficiency", {})),
         stagnationRate=_parse_metric(header_data.get("stagnationRate", {})),
         timeSpent=_parse_metric(header_data.get("timeSpent", {})),
         totalAttempts=_parse_metric(header_data.get("totalAttempts", {})),
@@ -1152,9 +1177,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             )
         )
     scenario_stats = ScenarioStatsResponse(
-        validNumericParameterIds=scenario_stats_raw.get(
-            "validNumericParameterIds", []
-        ),
+        validNumericParameterIds=scenario_stats_raw.get("validNumericParameterIds", []),
         numericAttemptFacts=numeric_attempt_facts,
         numericScenarioFacts=scenario_stats_raw.get("numericScenarioFacts", []),
     )
@@ -1226,7 +1249,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             dept_ids = None
         elif not isinstance(dept_ids, list):
             dept_ids = [dept_ids] if dept_ids else None
-        
+
         simulation_mapping[sim_id] = SimulationMappingItem(
             name=sim_data.get("name", ""),
             description=sim_data.get("description", ""),
@@ -1272,9 +1295,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             )
             for persona_data in persona_performance.chartData
         },
-        rubric_heatmap=_compute_rubric_heatmap_insight(
-            rubric_heatmap.matrices
-        ),
+        rubric_heatmap=_compute_rubric_heatmap_insight(rubric_heatmap.matrices),
         attempt_improvement=_compute_attempt_improvement_insight(
             attempt_improvement.chartData
         ),
@@ -1330,21 +1351,21 @@ async def get_dashboard(
 ) -> DashboardBundleResponse:
     """Get complete dashboard bundle with all metrics, history, insights, and mappings."""
     tags = ["dashboard"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DashboardBundleResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
@@ -1354,14 +1375,25 @@ async def get_dashboard(
         cohort_ids = filters.cohortIds or []
         roles = filters.roles or []
         sim_filters = (
-            [f.value if isinstance(f, SimulationFilter) else f for f in filters.simulationFilters]
+            [
+                f.value if isinstance(f, SimulationFilter) else f
+                for f in filters.simulationFilters
+            ]
             if filters.simulationFilters
             else ["general"]
         )
         profile_id = filters.profileId
         department_ids = filters.departmentIds or []
 
-        sql_params = (start_dt, end_dt, cohort_ids, roles, sim_filters, profile_id, department_ids)
+        sql_params = (
+            start_dt,
+            end_dt,
+            cohort_ids,
+            roles,
+            sim_filters,
+            profile_id,
+            department_ids,
+        )
 
         # Execute query
         result = await conn.fetchrow(sql_query, *sql_params)
@@ -1384,7 +1416,7 @@ async def get_dashboard(
         # This manually parses the SQL result to match the expected response structure
         # The parsing function handles missing keys gracefully with .get() defaults
         response_data = _parse_dashboard_bundle(data)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -1394,7 +1426,7 @@ async def get_dashboard(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise

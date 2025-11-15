@@ -88,4 +88,3 @@ def delete_staff_via_ui(page: Page, base_url: str, profile_id: str) -> None:
 
     page.wait_for_timeout(500)
     expect(staff_row).to_have_count(0)
-

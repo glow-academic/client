@@ -10,7 +10,10 @@ from server.tests.e2e.providers.helpers import (
     fetch_provider_detail,
     generate_unique_provider_name,
 )
-from server.tests.e2e.providers.ui_flows import create_provider_via_ui, edit_provider_via_ui
+from server.tests.e2e.providers.ui_flows import (
+    create_provider_via_ui,
+    edit_provider_via_ui,
+)
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -61,7 +64,9 @@ def test_provider_edit_navigation(page: Page, base_url: str) -> None:
 
         description_input = page.get_by_test_id("input-provider-description")
         description_input.wait_for(state="visible", timeout=10000)
-        expect(description_input).to_have_value("Provider created for edit navigation test.")
+        expect(description_input).to_have_value(
+            "Provider created for edit navigation test."
+        )
 
     finally:
         # Cleanup
@@ -222,4 +227,3 @@ def test_provider_update_api_key_flow(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

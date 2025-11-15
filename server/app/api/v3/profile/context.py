@@ -7,9 +7,11 @@ import asyncpg
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
-from app.utils.permissions import (ProfileRole,
-                                   get_available_subsections_for_role,
-                                   get_redirect_path_for_role)
+from app.utils.permissions import (
+    ProfileRole,
+    get_available_subsections_for_role,
+    get_redirect_path_for_role,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -99,15 +101,18 @@ async def get_profile_context(
     """Get consolidated profile context (profile, departments, cohorts, breadcrumbs)."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"Request: {request}")
         # Get all context data with guest-profile-id resolution and emulation validation in single query
         sql_query = load_sql("sql/v3/profile/get_profile_context_complete.sql")
         sql_params = (request.actualProfileId, request.effectiveProfileId)
-        result = await conn.fetchrow(sql_query, request.actualProfileId, request.effectiveProfileId)
+        result = await conn.fetchrow(
+            sql_query, request.actualProfileId, request.effectiveProfileId
+        )
 
         if not result:
             # Check if it's an authorization failure (profiles differ) or not found
@@ -312,4 +317,3 @@ async def get_profile_context(
             sql_params=sql_params,
             request=http_request,
         )
-

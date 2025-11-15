@@ -75,9 +75,7 @@ async def test_update_parameter(
     assert parameter["practice_parameter"] is True
 
     # Verify old item was deleted and new items were created
-    old_item = await db.fetchrow(
-        "SELECT * FROM parameter_items WHERE id = $1", item_id
-    )
+    old_item = await db.fetchrow("SELECT * FROM parameter_items WHERE id = $1", item_id)
     assert old_item is None  # Old item should be deleted
 
     new_items = await db.fetch(
@@ -114,4 +112,3 @@ async def test_update_parameter_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

@@ -17,11 +17,11 @@ def test_document_readonly_no_edit_button(page: Page, base_url: str) -> None:
 
     # Find documents - check for edit buttons
     edit_buttons = page.get_by_test_id("btn-edit-document")
-    
+
     # Find documents without edit buttons (read-only)
     # Documents with can_edit=false may not have edit buttons
     # or may have view/preview buttons instead
-    
+
     # Check if there are any documents at all
     document_cards = page.get_by_test_id("document-card")
     if document_cards.count() == 0:
@@ -34,11 +34,11 @@ def test_document_readonly_no_edit_button(page: Page, base_url: str) -> None:
                 pytest.skip("No documents found for permission testing")
         else:
             pytest.skip("No documents found for permission testing")
-    
+
     # Verify that if edit buttons exist, they're only on editable documents
     # Documents without edit buttons should have preview/view buttons
     preview_buttons = page.get_by_test_id("btn-preview-document")
-    
+
     # At least some action buttons should exist
     total_action_buttons = edit_buttons.count() + preview_buttons.count()
     assert total_action_buttons > 0, "No action buttons found on documents"
@@ -51,16 +51,14 @@ def test_document_readonly_no_delete_button(page: Page, base_url: str) -> None:
 
     # Find delete buttons
     delete_buttons = page.get_by_test_id("btn-delete-document")
-    
+
     if delete_buttons.count() == 0:
         # No delete buttons visible - this is acceptable if all documents are non-deletable
         pytest.skip("No delete buttons found - all documents may be non-deletable")
-    
+
     # Check for disabled delete buttons (non-deletable documents)
-    disabled_delete_buttons = delete_buttons.filter(
-        has=page.locator("[disabled]")
-    )
-    
+    disabled_delete_buttons = delete_buttons.filter(has=page.locator("[disabled]"))
+
     # Verify that disabled buttons exist for non-deletable documents
     # or that delete buttons are only on deletable documents
     if disabled_delete_buttons.count() > 0:
@@ -81,7 +79,7 @@ def test_document_readonly_can_preview(page: Page, base_url: str) -> None:
 
     # Find preview buttons
     preview_buttons = page.get_by_test_id("btn-preview-document")
-    
+
     if preview_buttons.count() == 0:
         # Try finding preview in grid view cards (click on card itself)
         document_cards = page.get_by_test_id("document-card")
@@ -99,14 +97,13 @@ def test_document_readonly_can_preview(page: Page, base_url: str) -> None:
     # Click preview button
     preview_button = preview_buttons.first
     preview_button.click()
-    
+
     # Wait for preview dialog or viewer to open
     page.wait_for_timeout(500)
-    
+
     # Preview should show document content
     # Look for close button or document viewer
     close_button = page.get_by_role("button", name="Close")
     if close_button.count() > 0:
         expect(close_button).to_be_visible()
         close_button.click()
-

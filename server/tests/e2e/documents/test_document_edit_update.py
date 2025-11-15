@@ -52,9 +52,9 @@ def test_document_edit_update_fields(page: Page, base_url: str) -> None:
         if document_card.count() == 0:
             # Switch to list view if needed
             toolbar = page.get_by_test_id("documents-toolbar")
-            list_button = toolbar.get_by_role("button").filter(
-                has=page.locator("svg")
-            ).first
+            list_button = (
+                toolbar.get_by_role("button").filter(has=page.locator("svg")).first
+            )
             if list_button.count() > 0:
                 list_button.click()
                 page.wait_for_timeout(250)
@@ -75,9 +75,11 @@ def test_document_edit_update_fields(page: Page, base_url: str) -> None:
             name_input.fill(updated_name)
 
         # Update type
-        type_select = page.locator('[role="combobox"]').filter(
-            has_text="Type"
-        ).or_(page.locator('select[id="type"]'))
+        type_select = (
+            page.locator('[role="combobox"]')
+            .filter(has_text="Type")
+            .or_(page.locator('select[id="type"]'))
+        )
         if type_select.count() > 0:
             type_select.click()
             type_option = page.get_by_role("option").filter(has_text="Project")
@@ -194,4 +196,3 @@ def test_document_edit_cancel(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

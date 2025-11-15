@@ -39,10 +39,10 @@ async def add_profiles_to_cohort(
 ) -> AddProfilesToCohortResponse:
     """Add profiles to cohort."""
     tags = ["cohorts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Add all profiles to cohort (track primary operation - first profile)
         sql_query = load_sql("sql/v3/cohorts/insert_cohort_profile.sql")
@@ -57,11 +57,11 @@ async def add_profiles_to_cohort(
             success=True,
             message=f"Added {len(request.profileIds)} profile(s) to cohort",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -74,4 +74,3 @@ async def add_profiles_to_cohort(
             sql_params=sql_params,
             request=http_request,
         )
-

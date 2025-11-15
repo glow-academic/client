@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class BulkArchiveAttemptsRequest(BaseModel):
     archived: bool
@@ -35,10 +36,10 @@ async def bulk_archive_attempts(
 ) -> BulkArchiveAttemptsResponse:
     """Bulk archive or unarchive simulation attempts."""
     tags = ["attempts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Bulk archive attempts with count return in a single SQL file
         sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_complete.sql")
@@ -58,11 +59,11 @@ async def bulk_archive_attempts(
             message=f"{count} simulation attempt(s) {action} successfully",
             count=count,
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -75,4 +76,3 @@ async def bulk_archive_attempts(
             sql_params=sql_params,
             request=http_request,
         )
-

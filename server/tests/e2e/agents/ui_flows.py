@@ -84,7 +84,9 @@ def create_agent_via_ui(
     model_picker.click()
     if model_id:
         # Try to find specific model option
-        model_option = page.locator(f"[data-testid='model-option'][data-model-id='{model_id}']")
+        model_option = page.locator(
+            f"[data-testid='model-option'][data-model-id='{model_id}']"
+        )
         if model_option.count() > 0:
             model_option.first.click()
         else:
@@ -176,4 +178,3 @@ def create_agent_via_ui(
         raise AssertionError("Created agent card missing data-agent-id attribute")
 
     return agent_name, agent_id
-

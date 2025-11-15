@@ -38,10 +38,10 @@ async def duplicate_rubric(
 ) -> DuplicateRubricResponse:
     """Duplicate a rubric with entire hierarchy."""
     tags = ["rubrics"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Duplicate rubric with departments, standard groups, and standards in a single SQL file
         sql_query = load_sql("sql/v3/rubrics/duplicate_rubric_complete.sql")
@@ -65,11 +65,11 @@ async def duplicate_rubric(
             rubricId=rubric_id,
             message=f"Rubric '{original_name}' duplicated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -82,4 +82,3 @@ async def duplicate_rubric(
             sql_params=sql_params,
             request=http_request,
         )
-

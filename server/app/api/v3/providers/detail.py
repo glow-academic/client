@@ -36,28 +36,30 @@ async def get_provider_detail(
 ) -> ProviderDetailResponse:
     """Get detailed provider information."""
     tags = ["providers"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ProviderDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/providers/get_provider_detail_complete.sql")
         sql_params = (request.providerId,)
         provider = await conn.fetchrow(sql_query, request.providerId)
 
         if not provider:
-            raise HTTPException(status_code=404, detail=f"Provider not found: {request.providerId}")
+            raise HTTPException(
+                status_code=404, detail=f"Provider not found: {request.providerId}"
+            )
 
         response_data = ProviderDetailResponse(
             name=provider["name"],
@@ -65,7 +67,7 @@ async def get_provider_detail(
             api_key=provider["api_key"],  # Returned encrypted
             base_url=provider["base_url"],
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -75,7 +77,7 @@ async def get_provider_detail(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -88,4 +90,3 @@ async def get_provider_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

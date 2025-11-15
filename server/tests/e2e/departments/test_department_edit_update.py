@@ -81,9 +81,7 @@ def test_department_edit_update_fields(page: Page, base_url: str) -> None:
         page.wait_for_timeout(250)
 
         department_card = (
-            page.get_by_test_id("department-card")
-            .filter(has_text=updated_title)
-            .first
+            page.get_by_test_id("department-card").filter(has_text=updated_title).first
         )
         expect(department_card).to_be_visible()
     finally:
@@ -98,4 +96,3 @@ def test_department_edit_update_fields(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

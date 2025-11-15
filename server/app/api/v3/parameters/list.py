@@ -14,6 +14,7 @@ from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import ScenarioMapping, ScenarioMappingItem
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class ParametersFilters(BaseModel):
     profileId: str
@@ -74,21 +75,21 @@ async def get_parameters_list(
 ) -> ParametersListResponse:
     """Get parameters list with item counts and permissions."""
     tags = ["parameters"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ParametersListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/parameters/list_parameters.sql")
         sql_params = (filters.profileId,)
@@ -115,7 +116,9 @@ async def get_parameters_list(
                             persona_ids=sdata.get("persona_ids", []),
                             persona_mapping=sdata.get("persona_mapping", {}),
                             document_mapping=sdata.get("document_mapping", {}),
-                            parameter_item_mapping=sdata.get("parameter_item_mapping", {}),
+                            parameter_item_mapping=sdata.get(
+                                "parameter_item_mapping", {}
+                            ),
                             parameter_item_ids=sdata.get("parameter_item_ids", []),
                             document_ids=sdata.get("document_ids", []),
                         )
@@ -139,7 +142,9 @@ async def get_parameters_list(
                         if isinstance(item_data, dict):
                             sample_items.append(
                                 ParameterSampleItem(
-                                    parameter_item_id=item_data.get("parameter_item_id", ""),
+                                    parameter_item_id=item_data.get(
+                                        "parameter_item_id", ""
+                                    ),
                                     name=item_data.get("name", ""),
                                     description=item_data.get("description", ""),
                                     value=item_data.get("value", ""),
@@ -180,7 +185,7 @@ async def get_parameters_list(
             department_mapping=department_mapping,
             scenario_options=scenario_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -190,7 +195,7 @@ async def get_parameters_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -203,4 +208,3 @@ async def get_parameters_list(
             sql_params=sql_params,
             request=http_request,
         )
-

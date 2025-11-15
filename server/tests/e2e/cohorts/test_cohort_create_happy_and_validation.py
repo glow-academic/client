@@ -30,7 +30,7 @@ def test_cohort_create_validation_and_success(page: Page, base_url: str) -> None
     """Validate required fields and create a cohort successfully."""
     page.goto(f"{base_url}/cohorts/new")
     page.wait_for_load_state("networkidle")
-    
+
     # Wait for the page container to be visible
     page.wait_for_selector("[data-page='cohort-new']", timeout=15000)
 
@@ -77,7 +77,7 @@ def test_cohort_create_validation_and_success(page: Page, base_url: str) -> None
 
     page.wait_for_url(f"{base_url}/cohorts", timeout=20000)
     page.wait_for_load_state("networkidle")
-    
+
     # Wait for the grid to be visible
     page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
 
@@ -86,9 +86,7 @@ def test_cohort_create_validation_and_success(page: Page, base_url: str) -> None
     search_input.fill(cohort_name)
     page.wait_for_timeout(500)
 
-    cohort_card = (
-        page.get_by_test_id("cohort-card").filter(has_text=cohort_name).first
-    )
+    cohort_card = page.get_by_test_id("cohort-card").filter(has_text=cohort_name).first
     expect(cohort_card).to_be_visible()
 
     cohort_id = cohort_card.get_attribute("data-cohort-id")
@@ -115,4 +113,3 @@ def test_cohort_create_validation_and_success(page: Page, base_url: str) -> None
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
         )
-

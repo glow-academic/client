@@ -65,9 +65,9 @@ def test_practice_simulation_workflow(page: Page, base_url: str) -> None:
     # Find and click the send button
     send_button = chat_input.locator("..").get_by_role("button", name="Send")
     if send_button.count() == 0:
-        send_button = page.locator("button[type='submit']").filter(
-            has=page.locator("svg")
-        ).first
+        send_button = (
+            page.locator("button[type='submit']").filter(has=page.locator("svg")).first
+        )
     send_button.click()
 
     # Wait for message to appear
@@ -81,12 +81,11 @@ def test_practice_simulation_workflow(page: Page, base_url: str) -> None:
     message_with_content.wait_for(state="visible", timeout=30000)
 
     # Wait for response message
-    response_message = messages_container.locator(
-        "[data-testid^='message-']"
-    ).filter(has_not=page.get_by_text(test_message))
+    response_message = messages_container.locator("[data-testid^='message-']").filter(
+        has_not=page.get_by_text(test_message)
+    )
     response_message.wait_for(state="visible", timeout=60000)
 
     # Verify we have at least 2 messages
     all_messages = messages_container.locator("[data-testid^='message-']")
     expect(all_messages).to_have_count(2, timeout=60000)
-

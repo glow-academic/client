@@ -74,4 +74,3 @@ def _resolve_profile_ids(
     )
     _PROFILE_RESOLUTION_CACHE[cache_key] = (resolved_actual, resolved_effective)
     return resolved_actual, resolved_effective
-

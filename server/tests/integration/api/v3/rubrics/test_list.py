@@ -15,7 +15,9 @@ async def test_list_rubrics(
     profile_id = await get_superadmin_alias(db)
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -72,7 +74,9 @@ async def test_list_rubrics_permissions_superadmin(
     profile_id = await get_superadmin_alias(db)
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -111,7 +115,9 @@ async def test_list_rubrics_can_edit_with_active_simulation(
     )
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -150,7 +156,9 @@ async def test_list_rubrics_can_delete_with_simulation_links(
     )
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -182,7 +190,9 @@ async def test_list_rubrics_can_delete_allowed(
     )
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -201,4 +211,3 @@ async def test_list_rubrics_can_delete_allowed(
     assert deletable_rubric["can_edit"] is True
     assert deletable_rubric["can_duplicate"] is True
     assert deletable_rubric["can_delete"] is True
-

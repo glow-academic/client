@@ -15,4 +15,3 @@ router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(delete_router)
 router.include_router(duplicate_router)
-

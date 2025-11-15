@@ -39,25 +39,36 @@ async def update_department(
 ) -> UpdateDepartmentResponse:
     """Update a department."""
     tags = ["departments"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             sql_query = load_sql("sql/v3/departments/update_department.sql")
-            sql_params = (request.departmentId, request.title, request.description, request.active)
-            await conn.execute(sql_query, request.departmentId, request.title, request.description, request.active)
+            sql_params = (
+                request.departmentId,
+                request.title,
+                request.description,
+                request.active,
+            )
+            await conn.execute(
+                sql_query,
+                request.departmentId,
+                request.title,
+                request.description,
+                request.active,
+            )
 
         result = UpdateDepartmentResponse(
             success=True,
             message="Department updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -70,4 +81,3 @@ async def update_department(
             sql_params=sql_params,
             request=http_request,
         )
-

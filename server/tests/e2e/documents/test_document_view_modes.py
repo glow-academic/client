@@ -20,12 +20,12 @@ def test_document_list_view_selection(page: Page, base_url: str) -> None:
     # Ensure we're in list view
     toolbar = page.get_by_test_id("documents-toolbar")
     list_view = page.get_by_test_id("documents-list")
-    
+
     if list_view.count() == 0:
         # Switch to list view
-        list_button = toolbar.get_by_role("button").filter(
-            has=page.locator("svg")
-        ).first
+        list_button = (
+            toolbar.get_by_role("button").filter(has=page.locator("svg")).first
+        )
         if list_button.count() > 0:
             list_button.click()
             page.wait_for_timeout(250)
@@ -48,11 +48,11 @@ def test_document_list_view_selection(page: Page, base_url: str) -> None:
         # Verify bulk edit/delete buttons appear
         bulk_edit_button = page.get_by_test_id("btn-bulk-edit")
         bulk_delete_button = page.get_by_test_id("btn-bulk-delete")
-        
+
         # At least one bulk button should be visible
-        assert (
-            bulk_edit_button.count() > 0 or bulk_delete_button.count() > 0
-        ), "Bulk operation buttons should appear when documents are selected"
+        assert bulk_edit_button.count() > 0 or bulk_delete_button.count() > 0, (
+            "Bulk operation buttons should appear when documents are selected"
+        )
 
         # Deselect all
         select_all_checkbox = checkboxes.filter(
@@ -76,10 +76,10 @@ def test_document_grid_view_no_selection(page: Page, base_url: str) -> None:
 
     # Switch to grid view
     toolbar = page.get_by_test_id("documents-toolbar")
-    grid_button = toolbar.get_by_role("button").filter(
-        has=page.locator("svg")
-    ).nth(1)  # Second button is usually grid
-    
+    grid_button = (
+        toolbar.get_by_role("button").filter(has=page.locator("svg")).nth(1)
+    )  # Second button is usually grid
+
     if grid_button.count() > 0:
         grid_button.click()
         page.wait_for_timeout(250)
@@ -93,14 +93,14 @@ def test_document_grid_view_no_selection(page: Page, base_url: str) -> None:
         row_checkboxes = checkboxes.filter(
             has_not=page.locator("[aria-label='Select all']")
         )
-        assert (
-            row_checkboxes.count() == 0
-        ), "Grid view should not have row-level checkboxes"
+        assert row_checkboxes.count() == 0, (
+            "Grid view should not have row-level checkboxes"
+        )
 
         # Verify bulk operations not available
         bulk_edit_button = page.get_by_test_id("btn-bulk-edit")
         bulk_delete_button = page.get_by_test_id("btn-bulk-delete")
-        
+
         # Bulk buttons should not be visible in grid view
         if bulk_edit_button.count() > 0:
             expect(bulk_edit_button).not_to_be_visible()
@@ -114,11 +114,11 @@ def test_document_grid_view_no_selection(page: Page, base_url: str) -> None:
             # Cards should have action buttons (edit, delete, preview)
             edit_button = first_card.get_by_test_id("btn-edit-document")
             preview_button = first_card.get_by_test_id("btn-preview-document")
-            
+
             # At least one action button should be present
-            assert (
-                edit_button.count() > 0 or preview_button.count() > 0
-            ), "Document cards should have action buttons"
+            assert edit_button.count() > 0 or preview_button.count() > 0, (
+                "Document cards should have action buttons"
+            )
 
 
 def test_document_view_mode_persistence(page: Page, base_url: str) -> None:
@@ -128,10 +128,8 @@ def test_document_view_mode_persistence(page: Page, base_url: str) -> None:
 
     # Switch to grid view
     toolbar = page.get_by_test_id("documents-toolbar")
-    grid_button = toolbar.get_by_role("button").filter(
-        has=page.locator("svg")
-    ).nth(1)
-    
+    grid_button = toolbar.get_by_role("button").filter(has=page.locator("svg")).nth(1)
+
     if grid_button.count() > 0:
         grid_button.click()
         page.wait_for_timeout(250)
@@ -149,7 +147,6 @@ def test_document_view_mode_persistence(page: Page, base_url: str) -> None:
 
         # View mode may persist (if implemented) or reset to default (list)
         # Both behaviors are acceptable
-        assert (
-            grid_view_after.count() > 0 or list_view_after.count() > 0
-        ), "Either grid or list view should be visible after reload"
-
+        assert grid_view_after.count() > 0 or list_view_after.count() > 0, (
+            "Either grid or list view should be visible after reload"
+        )

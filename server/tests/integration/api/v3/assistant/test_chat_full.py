@@ -79,7 +79,9 @@ async def test_get_assistant_chat_full(
     tool_call_found = any(tc["id"] == str(tool_call_id) for tc in data["toolCalls"])
     assert tool_call_found is True
 
-    test_tool_call = next(tc for tc in data["toolCalls"] if tc["id"] == str(tool_call_id))
+    test_tool_call = next(
+        tc for tc in data["toolCalls"] if tc["id"] == str(tool_call_id)
+    )
     assert "id" in test_tool_call
     assert "createdAt" in test_tool_call
     assert "updatedAt" in test_tool_call
@@ -144,4 +146,3 @@ async def test_get_assistant_chat_full_empty(
     assert len(data["messages"]) == 0
     assert isinstance(data["toolCalls"], list)
     assert len(data["toolCalls"]) == 0
-

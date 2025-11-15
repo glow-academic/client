@@ -7,8 +7,11 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMappingItem, StandardGroupMappingItem,
-                              StandardMappingItem)
+from app.utils.schema import (
+    DepartmentMappingItem,
+    StandardGroupMappingItem,
+    StandardMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -59,21 +62,21 @@ async def get_rubrics_list(
 ) -> RubricsListResponse:
     """Get rubrics list with hierarchical structure and permissions."""
     tags = ["rubrics"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return RubricsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/rubrics/list_rubrics.sql")
         sql_params = (filters.profileId,)
@@ -175,7 +178,7 @@ async def get_rubrics_list(
             standards_mapping=standards_mapping,
             department_mapping=department_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -185,7 +188,7 @@ async def get_rubrics_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -198,4 +201,3 @@ async def get_rubrics_list(
             sql_params=sql_params,
             request=request,
         )
-

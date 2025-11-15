@@ -37,10 +37,10 @@ async def delete_scenario(
 ) -> DeleteScenarioResponse:
     """Delete a scenario."""
     tags = ["scenarios"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete scenario with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/delete_scenario_complete.sql")
@@ -66,11 +66,11 @@ async def delete_scenario(
             success=True,
             message=f"Scenario '{result['name']}' deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -85,4 +85,3 @@ async def delete_scenario(
             sql_params=sql_params,
             request=http_request,
         )
-

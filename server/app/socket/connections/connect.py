@@ -6,10 +6,13 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from app.main import sio
-from app.utils.websocket_utils import (add_guest_socket,
-                                       cleanup_profile_connection,
-                                       get_socket_owner, increment_guest_count,
-                                       set_socket_owner)
+from app.utils.websocket_utils import (
+    add_guest_socket,
+    cleanup_profile_connection,
+    get_socket_owner,
+    increment_guest_count,
+    set_socket_owner,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +94,9 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
             if pool:
                 async with pool.acquire() as conn:
                     async with conn.transaction():
-                        sql = load_sql("sql/v3/profile/update_profile_to_active_complete.sql")
+                        sql = load_sql(
+                            "sql/v3/profile/update_profile_to_active_complete.sql"
+                        )
                         last_active = datetime.now(UTC)
                         await conn.fetchrow(sql, profile_id, last_active)
                     logger.info(f"Updated profile {profile_id} to active in database")
@@ -118,7 +123,9 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                     async with pool.acquire() as conn:
                         async with conn.transaction():
                             # Find and update default guest profile
-                            sql = load_sql("sql/v3/profile/update_default_guest_profile_to_active_complete.sql")
+                            sql = load_sql(
+                                "sql/v3/profile/update_default_guest_profile_to_active_complete.sql"
+                            )
                             await conn.fetchrow(sql, datetime.now(UTC))
                         logger.info(
                             "Marked default guest profile active (guest connection added)"
@@ -145,4 +152,3 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         f"Client connected successfully: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
     )
     return True
-

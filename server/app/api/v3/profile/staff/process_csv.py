@@ -66,18 +66,18 @@ async def process_csv(
 ) -> ProcessCSVResponse:
     """Process CSV file and map columns to target fields."""
     tags = ["staff"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ProcessCSVResponse.model_validate(cached["data"])
-    
+
     try:
         # Parse CSV content
         csv_file = StringIO(request.csv_content)
@@ -127,20 +127,26 @@ async def process_csv(
                 elif field == "cohort":
                     # Support comma-separated values for multiple cohorts
                     if value:
-                        cohort_values = [c.strip() for c in value.split(",") if c.strip()]
+                        cohort_values = [
+                            c.strip() for c in value.split(",") if c.strip()
+                        ]
                         cohort_ids.extend(cohort_values)
 
             # Validate required fields
             if not firstName:
                 errors.append(
                     CSVRowError(
-                        row_index=row_index, field="firstName", message="First name is required"
+                        row_index=row_index,
+                        field="firstName",
+                        message="First name is required",
                     )
                 )
             if not lastName:
                 errors.append(
                     CSVRowError(
-                        row_index=row_index, field="lastName", message="Last name is required"
+                        row_index=row_index,
+                        field="lastName",
+                        message="Last name is required",
                     )
                 )
             if not alias:
@@ -167,8 +173,10 @@ async def process_csv(
                 )
             )
 
-        response_data = ProcessCSVResponse(success=True, rows=rows, headers=list(headers))
-        
+        response_data = ProcessCSVResponse(
+            success=True, rows=rows, headers=list(headers)
+        )
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -178,7 +186,7 @@ async def process_csv(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -193,4 +201,3 @@ async def process_csv(
             sql_params=None,
             request=http_request,
         )
-

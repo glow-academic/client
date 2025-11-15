@@ -44,13 +44,13 @@ async def create_agent(
 ) -> CreateAgentResponse:
     """Create a new agent."""
     tags = ["agents"]  # From router tags
-    
+
     # Validate model_id is not empty and is a valid UUID
     if not request.model_id or not request.model_id.strip():
         raise HTTPException(
             status_code=400, detail="model_id is required and cannot be empty"
         )
-    
+
     # Validate model_id is a valid UUID format
     try:
         uuid.UUID(request.model_id.strip())
@@ -59,10 +59,10 @@ async def create_agent(
             status_code=400,
             detail=f"model_id must be a valid UUID, got: {request.model_id!r}",
         )
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with conn.transaction():
             # Ensure department_ids is always an array (empty array if None)
@@ -94,11 +94,11 @@ async def create_agent(
             agentId=agent_id,
             message="Agent created successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -111,4 +111,3 @@ async def create_agent(
             sql_params=sql_params,
             request=http_request,
         )
-

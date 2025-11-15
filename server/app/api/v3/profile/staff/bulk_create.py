@@ -39,7 +39,7 @@ async def bulk_create_profile(
     """Bulk create profiles."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Prepare arrays for bulk operation (maintain parallel structure)
         profile_ids = [str(uuid.uuid4()) for _ in request.profiles]
@@ -48,7 +48,9 @@ async def bulk_create_profile(
         aliases = [p.alias for p in request.profiles]
         roles = [p.role for p in request.profiles]
         # Department IDs must be parallel array (use None/null for profiles without departments)
-        department_ids = [p.department_id if p.department_id else None for p in request.profiles]
+        department_ids = [
+            p.department_id if p.department_id else None for p in request.profiles
+        ]
 
         # Single consolidated query: validates aliases, creates all profiles, and inserts departments
         sql_query = load_sql("sql/v3/profile/staff/bulk_create_profile_complete.sql")
@@ -65,9 +67,7 @@ async def bulk_create_profile(
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
-                raise HTTPException(
-                    status_code=500, detail="Failed to create profiles"
-                )
+                raise HTTPException(status_code=500, detail="Failed to create profiles")
 
             # Check if any aliases already exist
             existing_aliases = result.get("existing_aliases", [])
@@ -80,9 +80,7 @@ async def bulk_create_profile(
             # Get created profile IDs
             created_ids = result.get("profile_ids", [])
             if not created_ids:
-                raise HTTPException(
-                    status_code=500, detail="Failed to create profiles"
-                )
+                raise HTTPException(status_code=500, detail="Failed to create profiles")
 
             profile_ids = [str(pid) for pid in created_ids]
 
@@ -91,12 +89,12 @@ async def bulk_create_profile(
             profileIds=profile_ids,
             message=f"{len(profile_ids)} staff members created successfully",
         )
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -109,4 +107,3 @@ async def bulk_create_profile(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -19,7 +19,9 @@ def stable_dumps(obj: Any) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"))
 
 
-def cache_key(path: str, body: dict[str, Any] | None = None, user_ctx: str | None = None) -> str:
+def cache_key(
+    path: str, body: dict[str, Any] | None = None, user_ctx: str | None = None
+) -> str:
     """Generate stable cache key from path, body, and user context."""
     payload = stable_dumps({"p": path, "b": body or {}, "u": user_ctx or ""})
     hash_digest = hashlib.sha1(payload.encode()).hexdigest()
@@ -83,7 +85,9 @@ async def invalidate_tags(tags: Iterable[str]) -> None:
             keys = await redis_client.smembers(set_name)
             if keys:
                 # Delete all cached responses
-                key_list = [k.decode("utf-8") if isinstance(k, bytes) else k for k in keys]
+                key_list = [
+                    k.decode("utf-8") if isinstance(k, bytes) else k for k in keys
+                ]
                 pipe.delete(*key_list)
             # Delete tag set
             pipe.delete(set_name)
@@ -99,12 +103,12 @@ async def get_cached_response(
     user_ctx: str | None = None,
 ) -> dict[str, Any] | None:
     """Get cached response if available.
-    
+
     Args:
         request: FastAPI Request object
         tags: List of cache tags
         user_ctx: Optional user context for per-user caching
-    
+
     Returns:
         Cached response data or None
     """
@@ -113,7 +117,7 @@ async def get_cached_response(
         # Request body is already consumed by FastAPI, need to get from parsed model
         # For now, use empty dict - will be handled by route handler
         body_dict = {}
-    
+
     cache_key_val = cache_key(request.url.path, body_dict, user_ctx)
     return await get_cached(cache_key_val)
 
@@ -126,7 +130,7 @@ async def set_cached_response(
     user_ctx: str | None = None,
 ) -> None:
     """Cache response data.
-    
+
     Args:
         request: FastAPI Request object
         data: Response data to cache
@@ -139,7 +143,6 @@ async def set_cached_response(
         # Request body is already consumed by FastAPI, need to get from parsed model
         # For now, use empty dict - will be handled by route handler
         body_dict = {}
-    
+
     cache_key_val = cache_key(request.url.path, body_dict, user_ctx)
     await set_cached(cache_key_val, {"data": data}, ttl, tags)
-

@@ -18,4 +18,3 @@ router.include_router(bulk_delete_router)
 router.include_router(health_router)
 router.include_router(recent_router)
 router.include_router(assistant_usage_router)
-

@@ -90,7 +90,7 @@ async def tus_creation(
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":
         chunk = await request.body()
-        
+
         # Read current info
         info = {}
         with open(os.path.join(upload_dir, "info")) as f:
@@ -233,4 +233,3 @@ async def tus_options_upload_id(upload_id: str, request: Request) -> Response:
             "Access-Control-Max-Age": "86400",
         }
     )
-

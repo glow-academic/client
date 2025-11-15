@@ -5,10 +5,12 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.providers.helpers import (create_model_api,
-                                                create_provider_api,
-                                                delete_model_api,
-                                                delete_provider_api)
+from server.tests.e2e.providers.helpers import (
+    create_model_api,
+    create_provider_api,
+    delete_model_api,
+    delete_provider_api,
+)
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -71,9 +73,9 @@ def test_models_display_in_provider_groups(page: Page, base_url: str) -> None:
 
         # Verify model has correct provider_id attribute
         model_provider_id = model_card.get_attribute("data-provider-id")
-        assert (
-            model_provider_id == provider_id
-        ), "Model should have correct provider_id attribute"
+        assert model_provider_id == provider_id, (
+            "Model should have correct provider_id attribute"
+        )
 
         # Verify "Create New Model" card exists for provider
         # (This is harder to test directly, but we can verify the provider group structure)
@@ -172,11 +174,18 @@ def test_create_model_card_navigation(page: Page, base_url: str) -> None:
 
         # Find the "Create New Model" card within this provider group
         # It should be a card with dashed border that contains "Create New Model" text
-        create_card = provider_card.locator("..").get_by_text("Create New Model").locator("..").locator("..")
+        create_card = (
+            provider_card.locator("..")
+            .get_by_text("Create New Model")
+            .locator("..")
+            .locator("..")
+        )
         if create_card.count() == 0:
             # Try alternative selector - look for card with "Create New Model" text
-            create_card = page.get_by_text("Create New Model").locator("..").locator("..")
-        
+            create_card = (
+                page.get_by_text("Create New Model").locator("..").locator("..")
+            )
+
         if create_card.count() > 0:
             create_card.first.click()
             page.wait_for_url(
@@ -201,4 +210,3 @@ def test_create_model_card_navigation(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

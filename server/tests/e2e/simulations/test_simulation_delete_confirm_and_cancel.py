@@ -62,4 +62,3 @@ def test_simulation_delete_cancel_then_confirm(page: Page, base_url: str) -> Non
 
     page.wait_for_timeout(500)
     expect(simulation_card).to_have_count(0)
-

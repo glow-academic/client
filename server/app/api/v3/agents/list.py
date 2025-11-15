@@ -7,8 +7,12 @@ import asyncpg
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -52,34 +56,34 @@ async def list_agents(
 ) -> AgentsListResponse:
     """Get list of agents with permissions."""
     tags = ["agents"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return AgentsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string
         sql_query = load_sql("sql/v3/agents/get_agents_list_complete.sql")
         sql_params = (request.profileId,)
-        
+
         # Execute query
         rows = await conn.fetch(sql_query, request.profileId)
-        
+
         # Build model mapping and department mapping from the single result set
         model_mapping: ModelMapping = {}
         department_mapping: dict[str, DepartmentMappingItem] = {}
         agents: list[AgentItem] = []
-        
+
         for row in rows:
             # Add to model mapping if we have model info
             model_id = row["model_id"]
@@ -88,12 +92,12 @@ async def list_agents(
                     name=row["model_name"] or "",
                     description=row["model_description"] or "",
                 )
-            
+
             # Parse department_ids
             dept_ids = None
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
-            
+
             # Parse department_mapping from first row (same for all agents)
             if not department_mapping and row.get("department_mapping"):
                 dm = row["department_mapping"]
@@ -105,21 +109,23 @@ async def list_agents(
                             department_mapping[did] = DepartmentMappingItem(
                                 name=ddata["name"], description=ddata["description"]
                             )
-            
+
             # Format updated_at
             updated_at = row["updated_at"]
             if hasattr(updated_at, "isoformat"):
                 updated_at = updated_at.isoformat()
             elif not isinstance(updated_at, str):
                 updated_at = str(updated_at)
-            
+
             agents.append(
                 AgentItem(
                     agent_id=row["agent_id"],
                     name=row["name"],
                     description=row["description"],
                     reasoning=row["reasoning"],
-                    temperature=float(row["temperature"]) if row["temperature"] is not None else 0.0,
+                    temperature=float(row["temperature"])
+                    if row["temperature"] is not None
+                    else 0.0,
                     model_id=row["model_id"],
                     role=row.get("role", "assistant"),
                     department_ids=dept_ids,
@@ -129,13 +135,13 @@ async def list_agents(
                     can_delete=row["can_delete"],
                 )
             )
-        
+
         response_data = AgentsListResponse(
             agents=agents,
             model_mapping=model_mapping,
             department_mapping=department_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -145,7 +151,7 @@ async def list_agents(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -158,4 +164,3 @@ async def list_agents(
             sql_params=sql_params,
             request=http_request,
         )
-

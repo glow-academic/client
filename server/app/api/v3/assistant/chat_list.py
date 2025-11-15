@@ -34,21 +34,21 @@ async def get_assistant_chats_list(
 ) -> AssistantChatListResponse:
     """Get all chats for a profile (for new chat state without chat_id)."""
     tags = ["assistant"]  # From router tags
-    
+
     # Generate cache key from path and body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return AssistantChatListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         profile_id_str = request_body.profileId
 
@@ -69,7 +69,7 @@ async def get_assistant_chats_list(
         ]
 
         response_data = AssistantChatListResponse(allChats=all_chats)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -79,7 +79,7 @@ async def get_assistant_chats_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -92,4 +92,3 @@ async def get_assistant_chats_list(
             sql_params=sql_params,
             request=http_request,
         )
-

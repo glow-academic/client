@@ -36,18 +36,16 @@ async def bulk_delete_profile(
     """Bulk delete profiles."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Single consolidated query: checks defaults and deletes non-default profiles
         sql_query = load_sql("sql/v3/profile/staff/bulk_delete_profiles_complete.sql")
         sql_params = (request.profileIds,)
-        
+
         result = await conn.fetchrow(sql_query, request.profileIds)
 
         if not result:
-            raise HTTPException(
-                status_code=500, detail="Failed to delete profiles"
-            )
+            raise HTTPException(status_code=500, detail="Failed to delete profiles")
 
         deleted_count = result.get("deleted_count", 0)
         default_ids = result.get("default_profile_ids", [])
@@ -63,12 +61,12 @@ async def bulk_delete_profile(
             message += f" ({len(default_ids)} default profiles skipped)"
 
         result_data = BulkDeleteStaffResponse(success=True, message=message)
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -81,4 +79,3 @@ async def bulk_delete_profile(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -168,4 +168,3 @@ async def test_delete_agent_prompt_last_default(
     )
     assert prompt_link is not None
     assert prompt_link["active"] is False
-

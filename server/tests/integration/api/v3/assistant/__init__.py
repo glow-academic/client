@@ -1,2 +1,1 @@
 """Assistant route tests."""
-

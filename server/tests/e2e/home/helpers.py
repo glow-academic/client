@@ -95,13 +95,13 @@ def fetch_home_data(
         effective_profile_id=effective_profile_id,
         pathname="/home",
     )
-    
+
     # Default to last 30 days if dates not provided
     if not end_date:
         end_date = datetime.now().isoformat()
     if not start_date:
         start_date = (datetime.now() - timedelta(days=30)).isoformat()
-    
+
     payload: Dict[str, Any] = {
         "profileId": resolved_effective,
         "startDate": start_date,
@@ -111,7 +111,7 @@ def fetch_home_data(
         payload["cohortIds"] = cohort_ids
     if department_ids:
         payload["departmentIds"] = department_ids
-    
+
     return _post_json(
         request,
         "/api/v3/home",
@@ -145,4 +145,3 @@ def fetch_attempt_full(
         effective_profile_id=resolved_effective,
         bypass_cache=bypass_cache,
     )
-

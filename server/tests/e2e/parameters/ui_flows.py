@@ -70,9 +70,7 @@ def create_parameter_via_ui(
     page.wait_for_timeout(500)
 
     parameter_card = (
-        page.get_by_test_id("parameter-card")
-        .filter(has_text=parameter_name)
-        .first
+        page.get_by_test_id("parameter-card").filter(has_text=parameter_name).first
     )
     parameter_card.wait_for(state="visible", timeout=10000)
 
@@ -83,4 +81,3 @@ def create_parameter_via_ui(
         )
 
     return parameter_name, parameter_id
-

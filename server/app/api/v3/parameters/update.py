@@ -54,10 +54,10 @@ async def update_parameter(
 ) -> UpdateParameterResponse:
     """Update an existing parameter (replace all items)."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Check if parameter exists
@@ -69,6 +69,7 @@ async def update_parameter(
 
             # Prepare items as JSONB array
             import json
+
             items_data = []
             for item in request.parameter_items:
                 item_dict = {
@@ -80,7 +81,7 @@ async def update_parameter(
                 if item.department_ids is not None:
                     item_dict["department_ids"] = item.department_ids  # type: ignore
                 items_data.append(item_dict)
-            
+
             items_json = json.dumps(items_data)
 
             # Update parameter with items and department links in single SQL (DHH style)
@@ -121,4 +122,3 @@ async def update_parameter(
             sql_params=sql_params,
             request=http_request,
         )
-

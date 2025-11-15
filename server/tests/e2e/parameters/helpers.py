@@ -301,4 +301,3 @@ def find_editable_parameter(
         if require_department_specific is False and not is_dept_specific:
             return parameter
     raise ValueError("No matching editable parameter found in parameter list")
-

@@ -52,9 +52,7 @@ def create_department_via_ui(
     page.wait_for_timeout(500)
 
     department_card = (
-        page.get_by_test_id("department-card")
-        .filter(has_text=department_title)
-        .first
+        page.get_by_test_id("department-card").filter(has_text=department_title).first
     )
     expect(department_card).to_be_visible()
 
@@ -65,4 +63,3 @@ def create_department_via_ui(
         )
 
     return department_title, department_id
-

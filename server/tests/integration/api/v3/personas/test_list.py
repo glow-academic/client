@@ -71,4 +71,3 @@ async def test_list_personas_empty(
     assert response.status_code == 200
     data = response.json()
     assert data["personas"] == []
-

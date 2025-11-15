@@ -119,4 +119,3 @@ async def test_remove_profiles_from_department_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

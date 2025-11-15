@@ -15,7 +15,9 @@ async def test_create_rubric(
     profile_id = await get_superadmin_alias(db)
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -214,4 +216,3 @@ async def test_create_rubric_minimal(
     assert rubric is not None
     assert rubric["name"] == "Minimal Rubric"
     assert rubric["description"] == ""
-

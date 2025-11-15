@@ -39,16 +39,18 @@ async def update_profile(
 ) -> ProfileDetailResponse:
     """Update profile fields (simple auth version)."""
     tags = ["profile"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Process lastLogin ISO string to datetime if present
         last_login_dt = None
         if request.lastLogin:
             try:
-                last_login_dt = datetime.fromisoformat(request.lastLogin.replace("Z", "+00:00"))
+                last_login_dt = datetime.fromisoformat(
+                    request.lastLogin.replace("Z", "+00:00")
+                )
                 if last_login_dt.tzinfo is None:
                     last_login_dt = last_login_dt.replace(tzinfo=UTC)
             except (ValueError, AttributeError):
@@ -58,7 +60,9 @@ async def update_profile(
         last_active_dt = None
         if request.lastActive:
             try:
-                last_active_dt = datetime.fromisoformat(request.lastActive.replace("Z", "+00:00"))
+                last_active_dt = datetime.fromisoformat(
+                    request.lastActive.replace("Z", "+00:00")
+                )
                 if last_active_dt.tzinfo is None:
                     last_active_dt = last_active_dt.replace(tzinfo=UTC)
             except (ValueError, AttributeError):
@@ -119,11 +123,11 @@ async def update_profile(
         )
 
         result_data = ProfileDetailResponse(profile=profile)
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -136,4 +140,3 @@ async def update_profile(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -192,7 +192,9 @@ def create_persona_api(
         "model_id": model_id or defaults.get("model_id"),
         "reasoning": reasoning or defaults.get("reasoning"),
         "temperature": float(
-            temperature if temperature is not None else defaults.get("temperature") or 0.0
+            temperature
+            if temperature is not None
+            else defaults.get("temperature") or 0.0
         ),
         "system_prompt": system_prompt,
         "prompt_id": None,
@@ -252,5 +254,3 @@ def find_editable_persona(
         if require_department_specific is False and not is_dept_specific:
             return persona
     raise ValueError("No matching editable persona found in persona list")
-
-

@@ -17,7 +17,7 @@ async def emit_grading_progress(
     chat_id: uuid.UUID,
 ) -> None:
     """Helper to emit grading progress via Socket.IO if available.
-    
+
     Args:
         event_data: Dictionary containing event data to emit
         sio_instance: Socket.IO server instance
@@ -41,7 +41,7 @@ async def emit_hint_progress(
     chat_id: uuid.UUID,
 ) -> None:
     """Helper to emit hint generation progress via Socket.IO if available.
-    
+
     Args:
         event_data: Dictionary containing event data to emit
         sio_instance: Socket.IO server instance
@@ -56,4 +56,3 @@ async def emit_hint_progress(
             )
         except Exception as e:
             logger.warning(f"Failed to emit hint progress: {e}")
-

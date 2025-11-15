@@ -26,7 +26,9 @@ def test_scenario_readonly_permissions(page: Page, base_url: str) -> None:
         pytest.skip("No read-only scenario available in current dataset")
 
     scenario_id = readonly_scenario["scenario_id"]
-    scenario_title = readonly_scenario.get("title") or readonly_scenario.get("name") or ""
+    scenario_title = (
+        readonly_scenario.get("title") or readonly_scenario.get("name") or ""
+    )
 
     page.goto(f"{base_url}/create/scenarios")
     page.wait_for_load_state("networkidle")
@@ -52,7 +54,9 @@ def test_scenario_readonly_permissions(page: Page, base_url: str) -> None:
     page.wait_for_load_state("networkidle")
 
     # Verify page attributes
-    page_container = page.locator(f"[data-page='scenario-edit'][data-scenario-id='{scenario_id}']")
+    page_container = page.locator(
+        f"[data-page='scenario-edit'][data-scenario-id='{scenario_id}']"
+    )
     expect(page_container).to_be_visible()
 
     # Verify form inputs are disabled
@@ -74,4 +78,3 @@ def test_scenario_readonly_permissions(page: Page, base_url: str) -> None:
     # Verify submit button is disabled
     submit_button = page.get_by_test_id("btn-submit-scenario")
     expect(submit_button).to_be_disabled()
-

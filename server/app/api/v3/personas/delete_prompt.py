@@ -39,24 +39,26 @@ async def delete_persona_prompt(
 ) -> DeletePersonaPromptResponse:
     """Delete a persona prompt."""
     tags = ["personas"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             sql_query = load_sql("sql/v3/personas/delete_persona_prompt.sql")
             sql_params = (request.personaId, request.promptId, request.departmentId)
-            await conn.execute(sql_query, request.personaId, request.promptId, request.departmentId)
+            await conn.execute(
+                sql_query, request.personaId, request.promptId, request.departmentId
+            )
 
             result_data = DeletePersonaPromptResponse(
                 success=True, message="Prompt deleted successfully"
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -71,4 +73,3 @@ async def delete_persona_prompt(
             sql_params=sql_params,
             request=http_request,
         )
-

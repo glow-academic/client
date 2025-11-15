@@ -73,29 +73,34 @@ async def get_department_detail(
 ) -> DepartmentDetailResponse:
     """Get department detail with permissions, stats, and staff list."""
     tags = ["departments"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DepartmentDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
         sql_query = load_sql("sql/v3/departments/get_department_detail_with_staff.sql")
         sql_params = (request_body.departmentId, request_body.profileId, campus_domain)
-        dept_row = await conn.fetchrow(sql_query, request_body.departmentId, request_body.profileId, campus_domain)
+        dept_row = await conn.fetchrow(
+            sql_query, request_body.departmentId, request_body.profileId, campus_domain
+        )
 
         if not dept_row:
-            raise HTTPException(status_code=404, detail=f"Department {request_body.departmentId} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Department {request_body.departmentId} not found",
+            )
 
         # Parse staff list from JSONB
         staff_list: list[StaffItem] = []
@@ -105,9 +110,11 @@ async def get_department_detail(
         if staff_data and isinstance(staff_data, list):
             for staff_row in staff_data:
                 if isinstance(staff_row, dict):
-                    cohort_ids = [str(cid) for cid in (staff_row.get("cohort_ids") or [])]
+                    cohort_ids = [
+                        str(cid) for cid in (staff_row.get("cohort_ids") or [])
+                    ]
                     department_ids = staff_row.get("department_ids") or []
-                    
+
                     last_active = None
                     if staff_row.get("lastActive"):
                         last_active_val = staff_row["lastActive"]
@@ -135,7 +142,9 @@ async def get_department_detail(
                             requests_per_day=staff_row.get("requests_per_day"),
                             total_requests=staff_row.get("total_requests", 0),
                             default_profile=staff_row["default_profile"],
-                            requests_in_last_day=staff_row.get("requests_in_last_day", 0),
+                            requests_in_last_day=staff_row.get(
+                                "requests_in_last_day", 0
+                            ),
                             can_edit=staff_row["can_edit"],
                             can_delete=staff_row["can_delete"],
                         )
@@ -181,7 +190,7 @@ async def get_department_detail(
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -191,7 +200,7 @@ async def get_department_detail(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -204,4 +213,3 @@ async def get_department_detail(
             sql_params=sql_params,
             request=request,
         )
-

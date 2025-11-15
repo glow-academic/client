@@ -263,7 +263,9 @@ def test_staff_bulk_edit_keep_current(page: Page, base_url: str) -> None:
         bulk_edit_dialog.wait_for(state="visible", timeout=10000)
 
         # Verify "Keep Current" button exists and is selected by default
-        keep_current_button = bulk_edit_dialog.get_by_role("button", name="Keep Current")
+        keep_current_button = bulk_edit_dialog.get_by_role(
+            "button", name="Keep Current"
+        )
         expect(keep_current_button).to_be_visible()
 
         # Change to specific role
@@ -372,4 +374,3 @@ def test_staff_bulk_edit_partial_selection(page: Page, base_url: str) -> None:
         cancel_button.click()
 
         page.wait_for_timeout(250)
-

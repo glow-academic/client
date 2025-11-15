@@ -71,7 +71,7 @@ async def test_delete_parameter_in_use(
         "INSERT INTO scenarios(name, active) "
         "VALUES ('Test Scenario', true) RETURNING id"
     )
-    
+
     # Create problem statement for scenario
     problem_statement_id = await db.fetchval(
         "INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active) "
@@ -113,4 +113,3 @@ async def test_delete_parameter_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

@@ -39,9 +39,7 @@ def test_simulation_duplicate_refreshes_list(page: Page, base_url: str) -> None:
         profile_id=ADMIN_PROFILE_ID,
     )
     simulations = data.get("simulations", [])
-    duplicatable_sim = next(
-        (s for s in simulations if s.get("can_duplicate")), None
-    )
+    duplicatable_sim = next((s for s in simulations if s.get("can_duplicate")), None)
     if not duplicatable_sim:
         pytest.skip("No duplicatable simulation available")
 
@@ -76,9 +74,7 @@ def test_simulation_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     # Find the duplicate (should have similar name or be in the list)
     # The duplicate will have a different ID
     duplicated_sims = [
-        s
-        for s in new_ids
-        if s != simulation_id and s not in initial_ids
+        s for s in new_ids if s != simulation_id and s not in initial_ids
     ]
     assert len(duplicated_sims) > 0
 
@@ -93,4 +89,3 @@ def test_simulation_duplicate_refreshes_list(page: Page, base_url: str) -> None:
         )
     except Exception:
         pass
-

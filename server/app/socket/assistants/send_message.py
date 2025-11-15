@@ -10,8 +10,12 @@ from typing import Any
 
 import socketio  # type: ignore
 from agents import Runner, trace
-from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
-                          TResponseInputItem)
+from agents.items import (
+    ReasoningItem,
+    ToolCallItem,
+    ToolCallOutputItem,
+    TResponseInputItem,
+)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.main import get_pool
 from app.main import sio
@@ -20,8 +24,7 @@ from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 from dotenv import load_dotenv
-from openai.types.responses import (ResponseFunctionToolCall,
-                                    ResponseTextDeltaEvent)
+from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
 
 load_dotenv()
 
@@ -43,7 +46,9 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Missing department_id"}, room=sid
+                "assistant_error",
+                {"success": False, "message": "Missing department_id"},
+                room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Missing department_id")
             return
@@ -51,9 +56,13 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
         if not chat_id or not message:
             logger.error(f"Missing chat_id or message in request from {sid}")
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Missing chat_id or message"}, room=sid
+                "assistant_error",
+                {"success": False, "message": "Missing chat_id or message"},
+                room=sid,
             )
-            logger.error(f"Emitted assistant error to {sid}: Missing chat_id or message")
+            logger.error(
+                f"Emitted assistant error to {sid}: Missing chat_id or message"
+            )
             return
 
         logger.info(
@@ -62,7 +71,7 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
 
         # Process the message via WebSocket
         chat_id_uuid = uuid.UUID(chat_id)
-        
+
         # Get connection from pool
         pool = get_pool()
         if not pool:
@@ -83,6 +92,7 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
 
                 # 1. Add the user message to the chat
                 from datetime import UTC, datetime
+
                 sql = load_sql("sql/v3/assistant/create_message.sql")
                 user_message_row = await conn.fetchrow(
                     sql, chat_id_uuid, "user", message, True, datetime.now(UTC)
@@ -119,14 +129,20 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                     cache_tools_list=True,
                 ) as domain_server:
                     mcp_servers = [domain_server]
-                    
+
                     # Get all context data, messages, and tool_calls in single consolidated SQL query
-                    sql = load_sql("sql/v3/agents/get_assistant_run_context_complete.sql")
-                    context_row = await conn.fetchrow(sql, str(chat_id_uuid), str(department_id))
-                    
+                    sql = load_sql(
+                        "sql/v3/agents/get_assistant_run_context_complete.sql"
+                    )
+                    context_row = await conn.fetchrow(
+                        sql, str(chat_id_uuid), str(department_id)
+                    )
+
                     if not context_row:
-                        raise ValueError(f"Chat {chat_id_uuid} not found or no assistant agent configured")
-                    
+                        raise ValueError(
+                            f"Chat {chat_id_uuid} not found or no assistant agent configured"
+                        )
+
                     # Parse JSONB arrays for messages and tool_calls (asyncpg returns JSONB as list/dict)
                     def parse_jsonb(data: Any) -> list[dict[str, Any]]:
                         if isinstance(data, str):
@@ -135,10 +151,10 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         if isinstance(data, list):
                             return data
                         return []
-                    
+
                     messages = parse_jsonb(context_row["messages"])
                     tool_calls = parse_jsonb(context_row["tool_calls"])
-                    
+
                     # Build context dict from SQL result
                     context_dict = {
                         "chat_id": context_row["chat_id"],
@@ -151,7 +167,9 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         "agent_id": context_row["agent_id"],
                         "agent_name": context_row["agent_name"],
                         "system_prompt": context_row["system_prompt"],
-                        "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                        "temperature": float(context_row["temperature"])
+                        if context_row["temperature"] is not None
+                        else 0.0,
                         "reasoning": context_row["reasoning"],
                         "model_id": context_row["model_id"],
                         "model_name": context_row["model_name"],
@@ -164,21 +182,23 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         "tool_calls": tool_calls,
                         "req_per_day": context_row["req_per_day"],
                         "runs_today_count": context_row["runs_today_count"],
-                        "earliest_run_created_at": context_row["earliest_run_created_at"],
+                        "earliest_run_created_at": context_row[
+                            "earliest_run_created_at"
+                        ],
                     }
-                    
+
                     # Create a simple object-like context for compatibility
                     class SimpleContext:  # type: ignore
                         def __init__(self, d: dict[str, Any]) -> None:
                             for k, v in d.items():
                                 setattr(self, k, v)
-                        
+
                         @property
                         def user_name(self) -> str:
                             first = getattr(self, "user_first_name", "") or ""
                             last = getattr(self, "user_last_name", "") or ""
                             return f"{first} {last}".strip() or "User"
-                        
+
                         @property
                         def user_role_display(self) -> str:
                             role = getattr(self, "user_role", "guest")
@@ -190,7 +210,7 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                 "guest": "Guest",
                             }
                             return role_mapping.get(role, role.capitalize())
-                    
+
                     context: Any = SimpleContext(context_dict)
 
                     input_items: list[TResponseInputItem] = []
@@ -229,16 +249,21 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                     profile_id_uuid = final_profile_id if final_profile_id else None
                     if not profile_id_uuid:
                         raise ValueError("Profile not found. Please contact support.")
-                    
+
                     req_per_day = context_dict["req_per_day"]
                     runs_today_count = context_dict["runs_today_count"]
-                    
+
                     if req_per_day is not None and runs_today_count >= req_per_day:
                         from datetime import timedelta
                         from zoneinfo import ZoneInfo
-                        earliest_run_created_at = context_dict["earliest_run_created_at"]
+
+                        earliest_run_created_at = context_dict[
+                            "earliest_run_created_at"
+                        ]
                         if earliest_run_created_at:
-                            next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                            next_allowed_utc = earliest_run_created_at + timedelta(
+                                days=1
+                            )
                             eastern_tz = ZoneInfo("America/New_York")
                             next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
                             error_message = (
@@ -251,7 +276,9 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         raise ValueError(error_message)
 
                     # Create model run with all junction records using SQL file
-                    sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+                    sql_create_run = load_sql(
+                        "sql/v3/model_runs/create_model_run_complete.sql"
+                    )
                     model_run_row = await conn.fetchrow(
                         sql_create_run,
                         str(department_id),
@@ -282,30 +309,42 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                 if isinstance(event.data, ResponseTextDeltaEvent):
                                     chunk = event.data.delta
                                     token = chunk
-                                    
+
                                     logger.info(
                                         f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})"
                                     )
 
                                     # Check if this is a tool call token
-                                    if token.startswith("<tool_call_start>") and token.endswith(
-                                        "</tool_call_start>"
-                                    ):
-                                        logger.info(f"Received tool call start token: {token}")
+                                    if token.startswith(
+                                        "<tool_call_start>"
+                                    ) and token.endswith("</tool_call_start>"):
+                                        logger.info(
+                                            f"Received tool call start token: {token}"
+                                        )
 
                                         # If we have accumulated content, complete the current message and create a new one
-                                        if accumulated_content.strip() and current_message:
+                                        if (
+                                            accumulated_content.strip()
+                                            and current_message
+                                        ):
                                             # Complete current message
-                                            sql = load_sql("sql/v3/assistant/complete_message.sql")
+                                            sql = load_sql(
+                                                "sql/v3/assistant/complete_message.sql"
+                                            )
                                             await conn.execute(
-                                                sql, accumulated_content, True, current_message["id"]
+                                                sql,
+                                                accumulated_content,
+                                                True,
+                                                current_message["id"],
                                             )
 
                                             # Emit completion for current message
                                             await sio.emit(
                                                 "message_complete",
                                                 {
-                                                    "message_id": str(current_message["id"]),
+                                                    "message_id": str(
+                                                        current_message["id"]
+                                                    ),
                                                     "chat_id": str(chat_id_uuid),
                                                     "final_content": accumulated_content,
                                                 },
@@ -317,30 +356,46 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             current_message = None
 
                                         # Extract tool call data
-                                        tool_call_json = token.replace("<tool_call_start>", "").replace(
-                                            "</tool_call_start>", ""
-                                        )
+                                        tool_call_json = token.replace(
+                                            "<tool_call_start>", ""
+                                        ).replace("</tool_call_start>", "")
                                         try:
                                             tool_call_data = json.loads(tool_call_json)
 
                                             # Determine tool type based on tool name
-                                            tool_name = tool_call_data.get("name", "unknown")
+                                            tool_name = tool_call_data.get(
+                                                "name", "unknown"
+                                            )
                                             tool_type = "read"  # Default to read
 
                                             # Map tool names to types based on their operation
                                             if any(
                                                 keyword in tool_name.lower()
-                                                    for keyword in ["create", "add", "insert", "new"]
+                                                for keyword in [
+                                                    "create",
+                                                    "add",
+                                                    "insert",
+                                                    "new",
+                                                ]
                                             ):
                                                 tool_type = "create"
                                             elif any(
                                                 keyword in tool_name.lower()
-                                                    for keyword in ["update", "edit", "modify", "change"]
+                                                for keyword in [
+                                                    "update",
+                                                    "edit",
+                                                    "modify",
+                                                    "change",
+                                                ]
                                             ):
                                                 tool_type = "update"
                                             elif any(
                                                 keyword in tool_name.lower()
-                                                    for keyword in ["delete", "remove", "drop"]
+                                                for keyword in [
+                                                    "delete",
+                                                    "remove",
+                                                    "drop",
+                                                ]
                                             ):
                                                 tool_type = "delete"
                                             # Otherwise defaults to 'read' for find, get, list, etc.
@@ -348,17 +403,24 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             # Save tool call to database (without associating to a message)
                                             import json as json_module
                                             from datetime import UTC, datetime
-                                            sql = load_sql("sql/v3/assistant/create_tool_call.sql")
+
+                                            sql = load_sql(
+                                                "sql/v3/assistant/create_tool_call.sql"
+                                            )
                                             tool_call_row = await conn.fetchrow(
                                                 sql,
                                                 chat_id_uuid,
                                                 tool_name,
                                                 tool_type,
-                                                json_module.dumps(tool_call_data.get("arguments", {})),
+                                                json_module.dumps(
+                                                    tool_call_data.get("arguments", {})
+                                                ),
                                                 datetime.now(UTC),
                                             )
                                             if not tool_call_row:
-                                                logger.error("Failed to create tool call record")
+                                                logger.error(
+                                                    "Failed to create tool call record"
+                                                )
                                                 continue
                                             tool_call = {"id": tool_call_row["id"]}
                                             logger.info(
@@ -368,13 +430,17 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             # Store the tool call for later result matching
                                             tool_call_id = tool_call_data.get("id")
                                             if tool_call_id:
-                                                active_tool_calls[tool_call_id] = tool_call
+                                                active_tool_calls[tool_call_id] = (
+                                                    tool_call
+                                                )
 
                                             # Emit tool call created event (frontend will refetch tool calls)
                                             await sio.emit(
                                                 "tool_call_created",
                                                 {
-                                                    "tool_call_id": str(tool_call["id"]),
+                                                    "tool_call_id": str(
+                                                        tool_call["id"]
+                                                    ),
                                                     "chat_id": str(chat_id_uuid),
                                                     "tool_name": tool_name,
                                                     "tool_type": tool_type,
@@ -387,28 +453,44 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                                 f"Failed to parse tool call JSON: {tool_call_json}"
                                             )
 
-                                    elif token.startswith("<tool_call_result>") and token.endswith(
-                                        "</tool_call_result>"
-                                    ):
-                                        logger.info(f"Received tool call result token: {token}")
-                                        # Extract tool call result data
-                                        tool_result_json = token.replace("<tool_call_result>", "").replace(
-                                            "</tool_call_result>", ""
+                                    elif token.startswith(
+                                        "<tool_call_result>"
+                                    ) and token.endswith("</tool_call_result>"):
+                                        logger.info(
+                                            f"Received tool call result token: {token}"
                                         )
+                                        # Extract tool call result data
+                                        tool_result_json = token.replace(
+                                            "<tool_call_result>", ""
+                                        ).replace("</tool_call_result>", "")
                                         try:
-                                            tool_result_data = json.loads(tool_result_json)
+                                            tool_result_data = json.loads(
+                                                tool_result_json
+                                            )
                                             tool_call_id = tool_result_data.get("id")
 
                                             # Update the corresponding tool call record with the result
                                             import json as json_module
+
                                             tool_call_record = None
-                                            if tool_call_id and tool_call_id in active_tool_calls:
-                                                tool_call_record = active_tool_calls[tool_call_id]
-                                                sql = load_sql("sql/v3/assistant/complete_tool_call.sql")
+                                            if (
+                                                tool_call_id
+                                                and tool_call_id in active_tool_calls
+                                            ):
+                                                tool_call_record = active_tool_calls[
+                                                    tool_call_id
+                                                ]
+                                                sql = load_sql(
+                                                    "sql/v3/assistant/complete_tool_call.sql"
+                                                )
                                                 await conn.execute(
                                                     sql,
                                                     tool_call_record["id"],
-                                                    json_module.dumps(tool_result_data.get("result", {})),
+                                                    json_module.dumps(
+                                                        tool_result_data.get(
+                                                            "result", {}
+                                                        )
+                                                    ),
                                                     True,  # completed = True
                                                 )
                                                 logger.info(
@@ -422,11 +504,15 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             await sio.emit(
                                                 "tool_call_completed",
                                                 {
-                                                    "tool_call_id": str(tool_call_record["id"])
+                                                    "tool_call_id": str(
+                                                        tool_call_record["id"]
+                                                    )
                                                     if tool_call_record
                                                     else None,
                                                     "chat_id": str(chat_id_uuid),
-                                                    "tool_name": tool_result_data.get("name"),
+                                                    "tool_name": tool_result_data.get(
+                                                        "name"
+                                                    ),
                                                 },
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
@@ -443,38 +529,60 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                         # Create assistant message if we don't have one yet
                                         if not current_message:
                                             from datetime import UTC, datetime
-                                            sql = load_sql("sql/v3/assistant/create_message.sql")
+
+                                            sql = load_sql(
+                                                "sql/v3/assistant/create_message.sql"
+                                            )
                                             assistant_message_row = await conn.fetchrow(
-                                                sql, chat_id_uuid, "assistant", "", False, datetime.now(UTC)
+                                                sql,
+                                                chat_id_uuid,
+                                                "assistant",
+                                                "",
+                                                False,
+                                                datetime.now(UTC),
                                             )
                                             current_message = {
                                                 "id": assistant_message_row["id"],
-                                                "created_at": assistant_message_row["created_at"],
+                                                "created_at": assistant_message_row[
+                                                    "created_at"
+                                                ],
                                             }
 
                                             # Emit new placeholder message
                                             await sio.emit(
                                                 "assistant_new_message",
                                                 {
-                                                    "message_id": str(current_message["id"]),
+                                                    "message_id": str(
+                                                        current_message["id"]
+                                                    ),
                                                     "chat_id": str(chat_id_uuid),
                                                     "role": "assistant",
                                                     "content": "",
                                                     "completed": False,
-                                                    "created_at": current_message["created_at"].isoformat(),
+                                                    "created_at": current_message[
+                                                        "created_at"
+                                                    ].isoformat(),
                                                 },
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
 
                                         # Update the database with accumulated content
-                                        sql = load_sql("sql/v3/assistant/update_message_content.sql")
-                                        await conn.execute(sql, accumulated_content, current_message["id"])
+                                        sql = load_sql(
+                                            "sql/v3/assistant/update_message_content.sql"
+                                        )
+                                        await conn.execute(
+                                            sql,
+                                            accumulated_content,
+                                            current_message["id"],
+                                        )
 
                                         # Emit token update to connected clients
                                         await sio.emit(
                                             "assistant_message_token",
                                             {
-                                                "message_id": str(current_message["id"]),
+                                                "message_id": str(
+                                                    current_message["id"]
+                                                ),
                                                 "chat_id": str(chat_id_uuid),
                                                 "token": token,
                                                 "accumulated_content": accumulated_content,
@@ -482,11 +590,14 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             room=f"assistant_{chat_id_uuid}",
                                         )
                     except Exception as stream_error:
-                        logger.error(f"Error processing stream: {stream_error}", exc_info=True)
+                        logger.error(
+                            f"Error processing stream: {stream_error}", exc_info=True
+                        )
                         raise
                     finally:
                         # Clean up active run
                         from app.utils.websocket_utils import remove_active_run
+
                         await remove_active_run(chat_id_str)
 
                 # 4. Mark current message as completed (if we have one)
@@ -546,7 +657,10 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")
         await sio.emit(
-            "assistant_error", {"success": False, "message": f"Failed to send message: {str(e)}"}, room=sid
+            "assistant_error",
+            {"success": False, "message": f"Failed to send message: {str(e)}"},
+            room=sid,
         )
-        logger.error(f"Emitted assistant error to {sid}: Failed to send message: {str(e)}")
-
+        logger.error(
+            f"Emitted assistant error to {sid}: Failed to send message: {str(e)}"
+        )

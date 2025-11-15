@@ -64,7 +64,7 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         edit_button = page.get_by_test_id("btn-edit-rubric")
         edit_button.wait_for(state="visible", timeout=10000)
         edit_button.click()
-        
+
         # Wait for edit mode to activate - save button appears when in edit mode
         save_button = page.get_by_test_id("btn-save-rubric")
         save_button.wait_for(state="visible", timeout=10000)
@@ -160,9 +160,7 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
         page.wait_for_timeout(500)
 
         updated_card = (
-            page.get_by_test_id("rubric-card")
-            .filter(has_text=updated_name)
-            .first
+            page.get_by_test_id("rubric-card").filter(has_text=updated_name).first
         )
         expect(updated_card).to_be_visible()
 
@@ -173,4 +171,3 @@ def test_rubric_edit_update_metadata(page: Page, base_url: str) -> None:
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
         )
-

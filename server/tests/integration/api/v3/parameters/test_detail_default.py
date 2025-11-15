@@ -12,7 +12,7 @@ async def test_get_parameter_detail_default(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test getting default parameter detail.
-    
+
     Note: This test may fail if the SQL file has issues with non-existent columns.
     The SQL references p.department_id and p.default_parameter which don't exist in the schema.
     """
@@ -30,7 +30,9 @@ async def test_get_parameter_detail_default(
         data = response.json()
         assert "detail" in data
         # Skip this test if SQL is broken
-        pytest.skip("SQL file has issues with non-existent columns (p.department_id, p.default_parameter)")
+        pytest.skip(
+            "SQL file has issues with non-existent columns (p.department_id, p.default_parameter)"
+        )
 
     assert response.status_code == 200
     data = response.json()
@@ -55,7 +57,7 @@ async def test_get_parameter_detail_default_not_found(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test parameter detail-default raises error when no default parameter exists.
-    
+
     Note: This test may fail if the SQL file has issues with non-existent columns.
     The SQL references p.department_id and p.default_parameter which don't exist in the schema.
     """
@@ -75,10 +77,14 @@ async def test_get_parameter_detail_default_not_found(
         data = response.json()
         assert "detail" in data
         # Skip this test if SQL is broken
-        pytest.skip("SQL file has issues with non-existent columns (p.department_id, p.default_parameter)")
+        pytest.skip(
+            "SQL file has issues with non-existent columns (p.department_id, p.default_parameter)"
+        )
 
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
-    assert "not found" in data["detail"].lower() or "no default parameter" in data["detail"].lower()
-
+    assert (
+        "not found" in data["detail"].lower()
+        or "no default parameter" in data["detail"].lower()
+    )

@@ -44,10 +44,7 @@ def test_departments_list_filters_and_empty_state(page: Page, base_url: str) -> 
     filtered_count = cards.count()
     assert filtered_count <= initial_count
     assert (
-        grid.get_by_test_id("department-card")
-        .filter(has_text=search_title)
-        .count()
-        > 0
+        grid.get_by_test_id("department-card").filter(has_text=search_title).count() > 0
     )
 
     search_input.fill("")
@@ -163,4 +160,3 @@ def test_departments_pagination_persists_filters(page: Page, base_url: str) -> N
                 )
             except Exception:
                 pass
-

@@ -61,4 +61,3 @@ async def test_update_department_not_found(
     # But let's verify the department wasn't created
     dept = await db.fetchrow("SELECT * FROM departments WHERE id = $1", fake_dept_id)
     assert dept is None
-

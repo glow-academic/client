@@ -83,4 +83,3 @@ async def test_add_profiles_to_cohort_empty_list(
 
     assert data["success"] is True
     assert "Added 0 profile(s)" in data["message"]
-

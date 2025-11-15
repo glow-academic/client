@@ -64,30 +64,32 @@ async def create_rubric(
 ) -> CreateRubricResponse:
     """Create a new rubric with nested structure."""
     tags = ["rubrics"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Convert standard groups to JSONB array for SQL
-        standard_groups_json = json.dumps([
-            {
-                "name": group.name,
-                "short_name": group.short_name,
-                "description": group.description,
-                "points": group.points,
-                "passPoints": group.passPoints,
-                "standards": [
-                    {
-                        "name": standard.name,
-                        "description": standard.description,
-                        "points": standard.points,
-                    }
-                    for standard in group.standards
-                ]
-            }
-            for group in request.standard_groups
-        ])
+        standard_groups_json = json.dumps(
+            [
+                {
+                    "name": group.name,
+                    "short_name": group.short_name,
+                    "description": group.description,
+                    "points": group.points,
+                    "passPoints": group.passPoints,
+                    "standards": [
+                        {
+                            "name": standard.name,
+                            "description": standard.description,
+                            "points": standard.points,
+                        }
+                        for standard in group.standards
+                    ],
+                }
+                for group in request.standard_groups
+            ]
+        )
 
         # Ensure department_ids is always an array (empty if None)
         department_ids = request.department_ids if request.department_ids else []
@@ -115,11 +117,11 @@ async def create_rubric(
             rubricId=rubric_id,
             message="Rubric created successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -132,4 +134,3 @@ async def create_rubric(
             sql_params=sql_params,
             request=http_request,
         )
-

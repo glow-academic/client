@@ -39,21 +39,21 @@ async def get_assistant_chat_full(
 ) -> AssistantChatFullResponse:
     """Get complete assistant chat data with all related entities."""
     tags = ["assistant"]  # From router tags
-    
+
     # Generate cache key from path and body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return AssistantChatFullResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         chat_id_str = request_body.chatId
         profile_id_str = request_body.profileId
@@ -64,7 +64,9 @@ async def get_assistant_chat_full(
         result_row = await conn.fetchrow(sql_query, chat_id_str, profile_id_str)
 
         if not result_row or not result_row["chat"]:
-            raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id_str} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Assistant chat {chat_id_str} not found"
+            )
 
         # Parse JSONB data from SQL (asyncpg returns JSONB as dict/list, but handle string case for safety)
         def parse_jsonb(data: Any) -> Any:
@@ -74,8 +76,10 @@ async def get_assistant_chat_full(
 
         chat_data = parse_jsonb(result_row["chat"])
         if not chat_data:
-            raise HTTPException(status_code=404, detail=f"Assistant chat {chat_id_str} not found")
-        
+            raise HTTPException(
+                status_code=404, detail=f"Assistant chat {chat_id_str} not found"
+            )
+
         all_chats_data = parse_jsonb(result_row["all_chats"]) or []
         messages_data = parse_jsonb(result_row["messages"]) or []
         tool_calls_data = parse_jsonb(result_row["tool_calls"]) or []
@@ -88,7 +92,9 @@ async def get_assistant_chat_full(
                 "updatedAt": str(chat_data["updated_at"]),
                 "profileId": str(chat_data["profile_id"]),
                 "title": str(chat_data["title"]),
-                "traceId": str(chat_data.get("trace_id", "")) if chat_data.get("trace_id") else None,
+                "traceId": str(chat_data.get("trace_id", ""))
+                if chat_data.get("trace_id")
+                else None,
             },
             "allChats": [
                 {
@@ -97,7 +103,9 @@ async def get_assistant_chat_full(
                     "updatedAt": str(chat["updated_at"]),
                     "profileId": str(chat["profile_id"]),
                     "title": str(chat["title"]),
-                    "traceId": str(chat.get("trace_id", "")) if chat.get("trace_id") else None,
+                    "traceId": str(chat.get("trace_id", ""))
+                    if chat.get("trace_id")
+                    else None,
                 }
                 for chat in all_chats_data
             ],
@@ -130,7 +138,7 @@ async def get_assistant_chat_full(
         }
 
         response_data = AssistantChatFullResponse(**result)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -140,7 +148,7 @@ async def get_assistant_chat_full(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -153,4 +161,3 @@ async def get_assistant_chat_full(
             sql_params=sql_params,
             request=http_request,
         )
-

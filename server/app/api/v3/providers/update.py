@@ -15,7 +15,7 @@ from pydantic import BaseModel
 # Inline request/response schemas
 class UpdateProviderRequest(BaseModel):
     """Request to update provider.
-    
+
     Note: Providers are global (not department-specific).
     """
 
@@ -45,10 +45,10 @@ async def update_provider(
 ) -> UpdateProviderResponse:
     """Update an existing provider."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Encrypt API key if provided
         encrypted_api_key = None
@@ -80,11 +80,11 @@ async def update_provider(
             success=True,
             message=f"Provider '{request.name}' updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -99,4 +99,3 @@ async def update_provider(
             sql_params=sql_params,
             request=http_request,
         )
-

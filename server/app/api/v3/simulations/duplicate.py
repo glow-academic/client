@@ -38,10 +38,10 @@ async def duplicate_simulation(
 ) -> DuplicateSimulationResponse:
     """Duplicate a simulation."""
     tags = ["simulations"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Use single comprehensive SQL file (DHH style)
         sql_query = load_sql("sql/v3/simulations/duplicate_simulation.sql")
@@ -49,7 +49,9 @@ async def duplicate_simulation(
         new_simulation_row = await conn.fetchrow(sql_query, request.simulationId)
 
         if not new_simulation_row:
-            raise HTTPException(status_code=404, detail=f"Simulation {request.simulationId} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Simulation {request.simulationId} not found"
+            )
 
         new_simulation_id = new_simulation_row["simulation_id"]
 
@@ -63,11 +65,11 @@ async def duplicate_simulation(
             simulationId=new_simulation_id,
             message=f"Simulation '{original_title}' duplicated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -80,4 +82,3 @@ async def duplicate_simulation(
             sql_params=sql_params,
             request=http_request,
         )
-

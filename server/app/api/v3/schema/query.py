@@ -53,7 +53,9 @@ async def query_data(
 
     pool = get_pool()
     if not pool:
-        raise HTTPException(status_code=500, detail="Database connection pool not available")
+        raise HTTPException(
+            status_code=500, detail="Database connection pool not available"
+        )
 
     try:
         async with pool.acquire() as conn:
@@ -70,4 +72,3 @@ async def query_data(
         # Return a concise version of the error to the model.
         # The full error is still logged for developers.
         raise HTTPException(status_code=500, detail=f"Error: {e}")
-

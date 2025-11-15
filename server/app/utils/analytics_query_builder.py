@@ -1,5 +1,4 @@
-"""Analytics query builder utilities for v3 API.
-"""
+"""Analytics query builder utilities for v3 API."""
 
 from datetime import datetime
 from typing import Any
@@ -84,4 +83,3 @@ def build_base_filter(
 
 # Removed get_profile_role_query - use load_sql("sql/v3/profile/get_profile_role.sql") directly
 # The query takes $1=profile_id parameter
-

@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class BulkDeleteLogsRequest(BaseModel):
     profileId: str
@@ -35,10 +36,10 @@ async def bulk_delete_logs(
 ) -> BulkDeleteLogsResponse:
     """Bulk delete logs. Only superadmin can delete logs."""
     tags = ["logs"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         if not request.ids:
             return BulkDeleteLogsResponse(
@@ -69,11 +70,11 @@ async def bulk_delete_logs(
             deleted_count=deleted_count,
             message=f"Successfully deleted {deleted_count} log(s)",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -86,4 +87,3 @@ async def bulk_delete_logs(
             sql_params=sql_params,
             request=http_request,
         )
-

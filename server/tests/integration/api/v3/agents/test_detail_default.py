@@ -125,4 +125,3 @@ async def test_get_agent_detail_default_includes_departments(
         dept_info = data["department_mapping"][dept_id]
         assert "name" in dept_info
         assert "description" in dept_info
-

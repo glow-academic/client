@@ -52,9 +52,7 @@ async def test_stop_simulation_success(
 ) -> None:
     """Test stop_simulation with valid chat_id (may not have active run)."""
     # Get an existing chat_id from the database
-    chat_row = await db.fetchrow(
-        "SELECT id FROM simulation_chats LIMIT 1"
-    )
+    chat_row = await db.fetchrow("SELECT id FROM simulation_chats LIMIT 1")
     if not chat_row:
         pytest.skip("No simulation chats found in test database")
     chat_id = str(chat_row["id"])
@@ -70,4 +68,3 @@ async def test_stop_simulation_success(
     stopped_events = mock_sio.get_events("simulation_stopped")
     assert len(stopped_events) >= 1
     assert "chat_id" in stopped_events[0]
-

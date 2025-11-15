@@ -1,2 +1,1 @@
 """Personas route tests."""
-

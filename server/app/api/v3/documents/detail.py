@@ -49,25 +49,32 @@ async def get_document_detail(
 ) -> DocumentDetailResponse:
     """Get document detail information."""
     tags = ["documents"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DocumentDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/documents/get_document_detail_complete.sql")
-        sql_params = (uuid.UUID(request_body.documentId), uuid.UUID(request_body.profileId))
-        row = await conn.fetchrow(sql_query, uuid.UUID(request_body.documentId), uuid.UUID(request_body.profileId))
+        sql_params = (
+            uuid.UUID(request_body.documentId),
+            uuid.UUID(request_body.profileId),
+        )
+        row = await conn.fetchrow(
+            sql_query,
+            uuid.UUID(request_body.documentId),
+            uuid.UUID(request_body.profileId),
+        )
 
         if not row:
             raise HTTPException(status_code=404, detail="Document not found")
@@ -87,7 +94,9 @@ async def get_document_detail(
                         department_mapping[did] = DepartmentMappingItem(
                             name=ddata.get("name", ""),
                             description=ddata.get("description", ""),
-                            parameter_ids=param_ids if isinstance(param_ids, list) else None,
+                            parameter_ids=param_ids
+                            if isinstance(param_ids, list)
+                            else None,
                         )
 
         parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
@@ -107,8 +116,12 @@ async def get_document_detail(
                         )
 
         # Convert arrays
-        valid_department_ids = [str(did) for did in (row.get("valid_department_ids") or [])]
-        valid_parameter_item_ids = [str(pid) for pid in (row.get("valid_parameter_item_ids") or [])]
+        valid_department_ids = [
+            str(did) for did in (row.get("valid_department_ids") or [])
+        ]
+        valid_parameter_item_ids = [
+            str(pid) for pid in (row.get("valid_parameter_item_ids") or [])
+        ]
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
@@ -128,7 +141,7 @@ async def get_document_detail(
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -138,7 +151,7 @@ async def get_document_detail(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -151,4 +164,3 @@ async def get_document_detail(
             sql_params=sql_params,
             request=request,
         )
-

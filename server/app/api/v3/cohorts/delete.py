@@ -38,10 +38,10 @@ async def delete_cohort(
 ) -> DeleteCohortResponse:
     """Delete a cohort."""
     tags = ["cohorts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete cohort with usage check (single query)
         sql_query = load_sql("sql/v3/cohorts/delete_cohort_complete.sql")
@@ -53,18 +53,18 @@ async def delete_cohort(
                 status_code=400,
                 detail=f"Cannot delete cohort: in use by {result['usage_count']} attempt(s)",
             )
-        
+
         # Note: DELETE is idempotent - deleting non-existent entity is considered success
 
         result = DeleteCohortResponse(
             success=True,
             message="Cohort deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -77,4 +77,3 @@ async def delete_cohort(
             sql_params=sql_params,
             request=http_request,
         )
-

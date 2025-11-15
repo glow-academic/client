@@ -3,8 +3,10 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_alias)
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -62,9 +64,7 @@ async def test_create_cohort(
     assert data["message"] == "Cohort created successfully"
 
     # Verify cohort was created in database
-    cohort = await db.fetchrow(
-        "SELECT * FROM cohorts WHERE id = $1", data["cohortId"]
-    )
+    cohort = await db.fetchrow("SELECT * FROM cohorts WHERE id = $1", data["cohortId"])
     assert cohort is not None
     assert cohort["title"] == "Test Cohort"
     assert cohort["description"] == "Test Description"
@@ -118,10 +118,7 @@ async def test_create_cohort_minimal(
     assert "cohortId" in data
 
     # Verify cohort was created
-    cohort = await db.fetchrow(
-        "SELECT * FROM cohorts WHERE id = $1", data["cohortId"]
-    )
+    cohort = await db.fetchrow("SELECT * FROM cohorts WHERE id = $1", data["cohortId"])
     assert cohort is not None
     assert cohort["title"] == "Minimal Cohort"
     assert cohort["description"] == ""  # Empty string, not None
-

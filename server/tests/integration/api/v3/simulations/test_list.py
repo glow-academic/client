@@ -111,4 +111,3 @@ async def test_list_simulations_permissions_non_superadmin(
         assert sim["can_edit"] is False
         assert sim["can_delete"] is False
         # Duplicate might still be allowed depending on business logic
-

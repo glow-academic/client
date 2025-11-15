@@ -104,4 +104,3 @@ def create_simulation_via_ui(
         )
 
     return simulation_name, simulation_id
-

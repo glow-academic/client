@@ -6,10 +6,13 @@ import uuid
 from typing import Any
 
 import pytest
-from app.utils.agent_helpers import (build_guardrail_agent, build_hint_agent,
-                                     get_input_guardrails,
-                                     get_output_guardrails,
-                                     run_guardrail_evaluation)
+from app.utils.agent_helpers import (
+    build_guardrail_agent,
+    build_hint_agent,
+    get_input_guardrails,
+    get_output_guardrails,
+    run_guardrail_evaluation,
+)
 from app.utils.agent_tools import create_guardrail_tools, create_hint_tools
 
 
@@ -97,4 +100,3 @@ class TestGet_Output_Guardrails:
         # This will fail at runtime without proper DB setup, but tests structure
         guardrails = get_output_guardrails(chat_id, department_id, input_items, conn)
         assert isinstance(guardrails, list)
-

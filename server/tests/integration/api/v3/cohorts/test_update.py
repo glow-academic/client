@@ -3,8 +3,10 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_alias)
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -79,4 +81,3 @@ async def test_update_cohort_not_found(
     # But let's verify the cohort wasn't created
     cohort = await db.fetchrow("SELECT * FROM cohorts WHERE id = $1", fake_cohort_id)
     assert cohort is None
-

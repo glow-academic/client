@@ -50,13 +50,13 @@ async def test_delete_department_in_use(
             "INSERT INTO rubrics(name, description, points, pass_points, active) "
             "VALUES ('Test Rubric', 'Test', 100, 70, true) RETURNING id"
         )
-    
+
     simulation_id = await db.fetchval(
         "INSERT INTO simulations(title, description, active, practice_simulation, rubric_id) "
         "VALUES ('Test Simulation', 'Test', true, false, $1) RETURNING id",
         rubric_id,
     )
-    
+
     # Link simulation to department
     await db.execute(
         "INSERT INTO simulation_departments(simulation_id, department_id, active) "
@@ -92,4 +92,3 @@ async def test_delete_department_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

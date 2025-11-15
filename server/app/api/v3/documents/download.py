@@ -25,7 +25,7 @@ async def download_document(
     """Download a document by ID."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/documents/get_document_file_info.sql")
         sql_params = (document_id,)
@@ -43,9 +43,7 @@ async def download_document(
 
         # Properly encode filename for HTTP headers
         encoded_filename = urllib.parse.quote(result["name"], safe="")
-        content_disposition = (
-            f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
-        )
+        content_disposition = f"inline; filename=\"{encoded_filename}\"; filename*=UTF-8''{encoded_filename}"
 
         return FileResponse(
             path=file_path,
@@ -66,4 +64,3 @@ async def download_document(
             sql_params=sql_params,
             request=http_request,
         )
-

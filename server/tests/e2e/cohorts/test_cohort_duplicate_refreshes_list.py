@@ -60,4 +60,3 @@ def test_cohort_duplicate_refreshes_list(page: Page, base_url: str) -> None:
         confirm_button.click()
         page.wait_for_timeout(500)
         expect(copy_card).to_have_count(0)
-

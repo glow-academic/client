@@ -24,7 +24,6 @@ def test_persona_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     page.goto(f"{base_url}/create/personas")
     page.wait_for_load_state("networkidle")
 
-
     cards = page.get_by_test_id("persona-card")
     initial_count = cards.count()
     if initial_count == 0:
@@ -56,4 +55,3 @@ def test_persona_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     confirm_button.click()
     page.wait_for_timeout(500)
     expect(copy_card).to_have_count(0)
-

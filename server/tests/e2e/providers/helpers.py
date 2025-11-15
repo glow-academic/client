@@ -455,4 +455,3 @@ def find_editable_model(
         if model.get("can_edit"):
             return model
     raise ValueError("No editable model found in models list")
-

@@ -43,14 +43,14 @@ async def update_cohort(
 ) -> UpdateCohortResponse:
     """Update an existing cohort."""
     tags = ["cohorts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
-        
+
         # Single consolidated query: updates cohort and department relationships
         sql_query = load_sql("sql/v3/cohorts/update_cohort_complete.sql")
         sql_params = (
@@ -74,11 +74,11 @@ async def update_cohort(
             success=True,
             message="Cohort updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -91,4 +91,3 @@ async def update_cohort(
             sql_params=sql_params,
             request=http_request,
         )
-

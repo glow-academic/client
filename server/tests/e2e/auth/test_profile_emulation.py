@@ -27,15 +27,15 @@ def test_profile_emulation_authorization(page: Page, base_url: str) -> None:
         effective_profile_id=ADMIN_PROFILE_ID,
         bypass_cache=True,
     )
-    
+
     assert admin_detail is not None
     admin_role = admin_detail.get("profile", {}).get("role", "")
-    
+
     # Admin should be able to emulate other profiles
     # Find a TA profile to test emulation
     # Try to find a TA profile by searching staff list or using a known alias
     # For now, we'll test authorization API directly
-    
+
     # Test self-emulation (should be allowed)
     self_auth = authorize_emulation(
         page.context.request,
@@ -44,7 +44,7 @@ def test_profile_emulation_authorization(page: Page, base_url: str) -> None:
         bypass_cache=True,
     )
     assert self_auth.get("allowed") is True, "Self-emulation should be allowed"
-    
+
     # Test unauthorized emulation (try to emulate a profile that doesn't exist)
     # This should fail gracefully
     invalid_profile_id = "00000000-0000-0000-0000-000000000000"
@@ -56,7 +56,10 @@ def test_profile_emulation_authorization(page: Page, base_url: str) -> None:
             bypass_cache=True,
         )
         # If it doesn't raise, check the result
-        assert invalid_auth.get("allowed") is False or invalid_auth.get("reason") is not None
+        assert (
+            invalid_auth.get("allowed") is False
+            or invalid_auth.get("reason") is not None
+        )
     except Exception:
         # Expected to fail for invalid profile
         pass
@@ -72,11 +75,11 @@ def test_profile_emulation_context(page: Page, base_url: str) -> None:
         pathname="/home",
         bypass_cache=True,
     )
-    
+
     assert context_self is not None
     assert context_self.get("effectiveProfile") is not None
     assert context_self["effectiveProfile"]["id"] == ADMIN_PROFILE_ID
-    
+
     # Test with emulation (same profile for now, but structure supports different)
     # In a real scenario, we would emulate a different profile
     # For now, verify the API accepts different effective_profile_id
@@ -87,7 +90,7 @@ def test_profile_emulation_context(page: Page, base_url: str) -> None:
         pathname="/home",
         bypass_cache=True,
     )
-    
+
     assert context_emulated is not None
     assert context_emulated.get("effectiveProfile") is not None
 
@@ -97,10 +100,10 @@ def test_profile_emulation_switch(page: Page, base_url: str) -> None:
     # Navigate to home page with admin profile
     page.goto(f"{base_url}/home")
     page.wait_for_load_state("networkidle")
-    
+
     # Verify we're authenticated as admin
     expect(page).to_have_url(re.compile(r".*/home.*"))
-    
+
     # Get profile context to verify current profile
     context = fetch_profile_context(
         page.context.request,
@@ -109,11 +112,11 @@ def test_profile_emulation_switch(page: Page, base_url: str) -> None:
         pathname="/home",
         bypass_cache=True,
     )
-    
+
     assert context is not None
     effective_profile = context.get("effectiveProfile", {})
     assert effective_profile.get("id") == ADMIN_PROFILE_ID
-    
+
     # Note: In E2E tests, we can't easily switch effective profile mid-test
     # because the page fixture sets headers at creation time
     # This test verifies the API supports emulation
@@ -124,7 +127,7 @@ def test_profile_emulation_api_support(page: Page, base_url: str) -> None:
     """Test that API endpoints support profile emulation."""
     # Test that profile context API accepts different effective_profile_id
     # This verifies the emulation infrastructure works
-    
+
     # Get context with same profile (baseline)
     context1 = fetch_profile_context(
         page.context.request,
@@ -133,14 +136,14 @@ def test_profile_emulation_api_support(page: Page, base_url: str) -> None:
         pathname="/home",
         bypass_cache=True,
     )
-    
+
     assert context1 is not None
-    
+
     # Verify API accepts emulation parameters
     # The API should handle effective_profile_id correctly
     effective_id = context1.get("effectiveProfile", {}).get("id")
     assert effective_id == ADMIN_PROFILE_ID
-    
+
     # Test authorization endpoint
     auth_result = authorize_emulation(
         page.context.request,
@@ -148,7 +151,6 @@ def test_profile_emulation_api_support(page: Page, base_url: str) -> None:
         target_profile_id=ADMIN_PROFILE_ID,
         bypass_cache=True,
     )
-    
+
     assert auth_result is not None
     assert "allowed" in auth_result
-

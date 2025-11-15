@@ -50,11 +50,10 @@ async def authorize_emulation(
         result_data = AuthorizeEmulationResponse(
             allowed=False, reason="You do not have permission to emulate this profile"
         )
-    
+
     # Invalidate cache after authorization check (may affect profile context)
     tags = ["profile"]  # From router tags
     await invalidate_tags(tags)
     response.headers["X-Invalidate-Tags"] = ",".join(tags)
-    
-    return result_data
 
+    return result_data

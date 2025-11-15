@@ -45,9 +45,9 @@ def test_assistant_chat_workflow(page: Page, base_url: str) -> None:
     send_button = chat_input.locator("..").get_by_role("button", name="Send")
     if send_button.count() == 0:
         # Try alternative: look for submit button
-        send_button = page.locator("button[type='submit']").filter(
-            has=page.locator("svg")
-        ).first
+        send_button = (
+            page.locator("button[type='submit']").filter(has=page.locator("svg")).first
+        )
     send_button.click()
 
     # Wait for message to appear
@@ -129,4 +129,3 @@ def test_assistant_chat_workflow(page: Page, base_url: str) -> None:
 
             # Verify chat switched (messages should change)
             # The messages container should show different messages
-

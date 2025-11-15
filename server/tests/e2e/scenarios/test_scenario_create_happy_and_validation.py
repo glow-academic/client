@@ -43,7 +43,7 @@ def test_scenario_create_validation_and_success(page: Page, base_url: str) -> No
     # Fill out required fields
     scenario_name = generate_unique_scenario_name()
     title_input.fill(scenario_name)
-    
+
     problem_statement_input = page.get_by_test_id("input-scenario-problem-statement")
     problem_statement_input.wait_for(state="visible", timeout=20000)
     problem_statement_input.fill("Scenario created via E2E test.")
@@ -104,4 +104,3 @@ def test_scenario_create_validation_and_success(page: Page, base_url: str) -> No
         else:
             # Fallback: delete via API
             delete_scenario_api(page.context.request, scenario_id)
-

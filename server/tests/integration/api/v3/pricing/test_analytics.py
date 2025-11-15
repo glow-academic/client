@@ -187,9 +187,7 @@ async def test_pricing_analytics_cohort_filter(
     admin_id = await get_superadmin_alias(db)
 
     # Get a cohort ID from CS department
-    cohort_id = await db.fetchval(
-        "SELECT id FROM cohorts WHERE active = true LIMIT 1"
-    )
+    cohort_id = await db.fetchval("SELECT id FROM cohorts WHERE active = true LIMIT 1")
 
     if cohort_id:
         response = await client.post(
@@ -288,4 +286,3 @@ async def test_pricing_analytics_debug_info(
             assert "id" in debug
             assert "created_at" in debug
             assert "content" in debug
-

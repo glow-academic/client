@@ -48,9 +48,9 @@ def test_document_bulk_delete_multiple(page: Page, base_url: str) -> None:
 
         # Switch to list view for selection
         toolbar = page.get_by_test_id("documents-toolbar")
-        list_button = toolbar.get_by_role("button").filter(
-            has=page.locator("svg")
-        ).first
+        list_button = (
+            toolbar.get_by_role("button").filter(has=page.locator("svg")).first
+        )
         if list_button.count() > 0:
             list_button.click()
             page.wait_for_timeout(250)
@@ -128,9 +128,9 @@ def test_document_bulk_delete_mixed_permissions(page: Page, base_url: str) -> No
 
         # Switch to list view
         toolbar = page.get_by_test_id("documents-toolbar")
-        list_button = toolbar.get_by_role("button").filter(
-            has=page.locator("svg")
-        ).first
+        list_button = (
+            toolbar.get_by_role("button").filter(has=page.locator("svg")).first
+        )
         if list_button.count() > 0:
             list_button.click()
             page.wait_for_timeout(250)
@@ -155,7 +155,7 @@ def test_document_bulk_delete_mixed_permissions(page: Page, base_url: str) -> No
                 # Verify dialog shows breakdown if mixed permissions
                 # (deletable vs non-deletable)
                 dialog_text = delete_dialog.inner_text()
-                
+
                 # Click Confirm
                 confirm_button = page.get_by_test_id("btn-confirm-delete")
                 if confirm_button.is_enabled():
@@ -182,9 +182,7 @@ def test_document_bulk_delete_all_non_deletable(page: Page, base_url: str) -> No
 
     # Switch to list view
     toolbar = page.get_by_test_id("documents-toolbar")
-    list_button = toolbar.get_by_role("button").filter(
-        has=page.locator("svg")
-    ).first
+    list_button = toolbar.get_by_role("button").filter(has=page.locator("svg")).first
     if list_button.count() > 0:
         list_button.click()
         page.wait_for_timeout(250)
@@ -215,4 +213,3 @@ def test_document_bulk_delete_all_non_deletable(page: Page, base_url: str) -> No
                 # Button might be enabled if document is deletable
                 # This is acceptable - test verifies the UI state
                 pass
-

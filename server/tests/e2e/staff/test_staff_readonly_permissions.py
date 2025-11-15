@@ -153,4 +153,3 @@ def test_staff_cannot_delete_default_profile(page: Page, base_url: str) -> None:
                 expect(dialog.get_by_text("default profile")).to_be_visible()
                 cancel_button = page.get_by_test_id("btn-cancel-delete")
                 cancel_button.click()
-

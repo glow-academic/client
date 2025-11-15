@@ -81,7 +81,7 @@ class TestCreate_Classification_Function:
         classification_progress.clear()
 
         tool = create_classification_function("homeworks", "Assignments")
-        
+
         # Call the tool function (it's async, but we can test the structure)
         # The actual function would be called by the agent
         assert "homeworks" not in classification_results
@@ -164,13 +164,11 @@ class TestCreate_Grading_Function:
             }
         ]
         chat_id = uuid.uuid4()
-        
+
         async def mock_emit(event_data: dict[str, Any]) -> None:
             pass
 
-        tool = create_grading_function(
-            standard_group, standards, chat_id, 1, mock_emit
-        )
+        tool = create_grading_function(standard_group, standards, chat_id, 1, mock_emit)
         assert tool is not None
 
 
@@ -184,7 +182,7 @@ class TestCreate_Summary_Function:
         grading_progress.clear()
 
         chat_id = uuid.uuid4()
-        
+
         async def mock_emit(event_data: dict[str, Any]) -> None:
             pass
 
@@ -224,7 +222,7 @@ class TestCreate_Grading_Tools:
             }
         ]
         chat_id = uuid.uuid4()
-        
+
         async def mock_emit(event_data: dict[str, Any]) -> None:
             pass
 
@@ -274,4 +272,3 @@ class TestCreate_Guardrail_Tools:
         """Test that guardrail tools are created."""
         tools = create_guardrail_tools()
         assert len(tools) == 2  # evaluation + debug_info
-

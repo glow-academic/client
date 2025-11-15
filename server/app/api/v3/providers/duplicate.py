@@ -38,10 +38,10 @@ async def duplicate_provider(
 ) -> DuplicateProviderResponse:
     """Duplicate a provider with all its models."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Use the duplicate_provider.sql which handles everything in one query
@@ -51,10 +51,14 @@ async def duplicate_provider(
                 result = await conn.fetchrow(sql_query, request.providerId)
             except Exception as sql_error:
                 # If SQL fails (e.g., provider doesn't exist), return 400
-                raise ValueError(f"Provider not found: {request.providerId}") from sql_error
+                raise ValueError(
+                    f"Provider not found: {request.providerId}"
+                ) from sql_error
 
             if not result:
-                raise ValueError(f"Provider not found or failed to duplicate: {request.providerId}")
+                raise ValueError(
+                    f"Provider not found or failed to duplicate: {request.providerId}"
+                )
 
             new_provider_id = str(result["provider_id"])
 
@@ -63,11 +67,11 @@ async def duplicate_provider(
                 providerId=new_provider_id,
                 message="Provider duplicated successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -82,4 +86,3 @@ async def duplicate_provider(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -37,10 +37,10 @@ async def delete_provider(
 ) -> DeleteProviderResponse:
     """Delete a provider if no models are in use."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete provider with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/providers/delete_provider_complete.sql")
@@ -73,11 +73,11 @@ async def delete_provider(
             success=True,
             message=f"Provider '{provider_name}' deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -92,4 +92,3 @@ async def delete_provider(
             sql_params=sql_params,
             request=http_request,
         )
-

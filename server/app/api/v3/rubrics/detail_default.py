@@ -39,28 +39,30 @@ async def get_rubric_detail_default(
 ) -> RubricDetailResponse:
     """Get default rubric detail information."""
     tags = ["rubrics"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return RubricDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/rubrics/get_rubric_detail_default_complete.sql")
         sql_params = (uuid.UUID(request_body.profileId),)
         row = await conn.fetchrow(sql_query, uuid.UUID(request_body.profileId))
 
         if not row:
-            raise HTTPException(status_code=404, detail="No rubrics found for user's departments")
+            raise HTTPException(
+                status_code=404, detail="No rubrics found for user's departments"
+            )
 
         # Parse standard groups from JSONB (same as detail.py)
         standard_groups_detail: dict[str, StandardGroupDetail] = {}
@@ -117,7 +119,9 @@ async def get_rubric_detail_default(
         can_edit = user_role in ("admin", "superadmin")
 
         # Convert arrays
-        valid_department_ids = [str(did) for did in (row.get("valid_department_ids") or [])]
+        valid_department_ids = [
+            str(did) for did in (row.get("valid_department_ids") or [])
+        ]
         # department_ids can be an empty array, so check for None specifically
         dept_ids = None
         if row.get("department_ids") is not None:
@@ -138,7 +142,7 @@ async def get_rubric_detail_default(
             standards_mapping=standards_mapping,
             department_mapping=department_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -148,7 +152,7 @@ async def get_rubric_detail_default(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -161,4 +165,3 @@ async def get_rubric_detail_default(
             sql_params=sql_params,
             request=request,
         )
-

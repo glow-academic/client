@@ -7,11 +7,18 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              ScenarioMapping, ScenarioMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -133,24 +140,26 @@ async def get_simulation_detail_default(
 ) -> SimulationDetailResponse:
     """Get default simulation details based on profile."""
     tags = ["simulations"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_data.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return SimulationDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string
-        sql_query = load_sql("sql/v3/simulations/get_simulation_detail_default_complete.sql")
+        sql_query = load_sql(
+            "sql/v3/simulations/get_simulation_detail_default_complete.sql"
+        )
         sql_params = (request_data.profileId,)
 
         # Execute query
@@ -370,7 +379,9 @@ async def get_simulation_detail_default(
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
             time_limit=result.get("time_limit"),
-            rubric_id=str(result.get("rubric_id", "")) if result.get("rubric_id") else "",
+            rubric_id=str(result.get("rubric_id", ""))
+            if result.get("rubric_id")
+            else "",
             valid_rubric_ids=valid_rubric_ids,
             scenario_ids=scenario_ids,
             valid_scenario_ids=valid_scenario_ids,
@@ -390,7 +401,7 @@ async def get_simulation_detail_default(
             department_mapping=department_mapping,
             parameter_item_mapping=parameter_item_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -400,7 +411,7 @@ async def get_simulation_detail_default(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -415,4 +426,3 @@ async def get_simulation_detail_default(
             sql_params=sql_params,
             request=http_request,
         )
-

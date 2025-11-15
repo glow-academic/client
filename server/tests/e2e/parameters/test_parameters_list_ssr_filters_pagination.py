@@ -48,10 +48,7 @@ def test_parameters_list_filters_and_empty_state(page: Page, base_url: str) -> N
     filtered_count = cards.count()
     assert filtered_count <= initial_count
     assert (
-        grid.get_by_test_id("parameter-card")
-        .filter(has_text=search_name)
-        .count()
-        > 0
+        grid.get_by_test_id("parameter-card").filter(has_text=search_name).count() > 0
     )
 
     search_input.fill("")
@@ -106,9 +103,7 @@ def test_parameters_list_filters_and_empty_state(page: Page, base_url: str) -> N
     search_input.fill("zzzz-no-match-zzzz")
     page.wait_for_timeout(250)
     expect(cards).to_have_count(0)
-    expect(
-        page.get_by_text("No parameters match the current filters.")
-    ).to_be_visible()
+    expect(page.get_by_text("No parameters match the current filters.")).to_be_visible()
 
     search_input.fill("")
     page.wait_for_timeout(250)
@@ -174,4 +169,3 @@ def test_parameters_pagination_persists_filters(page: Page, base_url: str) -> No
                 )
             except Exception:
                 pass
-

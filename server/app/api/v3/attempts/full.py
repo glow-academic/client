@@ -205,7 +205,7 @@ class AggregatedResults(BaseModel):
 
 class AttemptFullResponse(BaseModel):
     """Response containing complete attempt data with all nested structures."""
-    
+
     attempt: AttemptItem
     simulation: SimulationItem
     attemptProfiles: list[AttemptProfileItem]
@@ -236,21 +236,21 @@ async def get_attempt_full(
 ) -> AttemptFullResponse:
     """Get complete attempt data with all related entities and computed values."""
     tags = ["attempts"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return AttemptFullResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/attempts/get_attempt_full_complete.sql")
         sql_params = (request.attemptId,)
@@ -274,55 +274,89 @@ async def get_attempt_full(
         attempt_profiles_data = parse_jsonb(result["attemptProfiles"])
         chats_data = parse_jsonb(result["chats"])
         scenario_documents_data = parse_jsonb(result["scenarioDocuments"])
-        aggregated_results_data = parse_jsonb(result["aggregatedResults"]) if result.get("aggregatedResults") else None
+        aggregated_results_data = (
+            parse_jsonb(result["aggregatedResults"])
+            if result.get("aggregatedResults")
+            else None
+        )
         timer_data = parse_jsonb(result["timer"])
-        rubric_structure_data = parse_jsonb(result["rubricStructure"]) if result.get("rubricStructure") else None
+        rubric_structure_data = (
+            parse_jsonb(result["rubricStructure"])
+            if result.get("rubricStructure")
+            else None
+        )
         all_simulation_scenarios_data = parse_jsonb(result["allSimulationScenarios"])
 
         # Construct strongly typed models
         attempt = AttemptItem(**attempt_data)
         simulation = SimulationItem(**simulation_data)
         attempt_profiles = [AttemptProfileItem(**ap) for ap in attempt_profiles_data]
-        
+
         # Construct chats with nested structures
         chats = []
         for chat_data in chats_data:
             chat_item = ChatItem(**chat_data["chat"])
-            scenario = ScenarioItem(**chat_data["scenario"]) if chat_data.get("scenario") else None
+            scenario = (
+                ScenarioItem(**chat_data["scenario"])
+                if chat_data.get("scenario")
+                else None
+            )
             messages = [MessageItem(**m) for m in chat_data.get("messages", [])]
             hints = [HintsByMessage(**h) for h in chat_data.get("hints", [])]
-            grading_state = GradingState(**chat_data["gradingState"]) if chat_data.get("gradingState") else None
-            dynamic_rubric = DynamicRubric(**chat_data["dynamicRubric"]) if chat_data.get("dynamicRubric") else None
-            previous_chats = [PreviousChat(**pc) for pc in chat_data.get("previousChats", [])]
-            
-            chats.append(ChatData(
-                chat=chat_item,
-                scenario=scenario,
-                messages=messages,
-                hints=hints,
-                gradingState=grading_state,
-                dynamicRubric=dynamic_rubric,
-                previousChats=previous_chats,
-            ))
-        
-        scenario_documents = [ScenarioDocumentItem(**sd) for sd in scenario_documents_data]
-        aggregated_results = AggregatedResults(**aggregated_results_data) if aggregated_results_data else None
+            grading_state = (
+                GradingState(**chat_data["gradingState"])
+                if chat_data.get("gradingState")
+                else None
+            )
+            dynamic_rubric = (
+                DynamicRubric(**chat_data["dynamicRubric"])
+                if chat_data.get("dynamicRubric")
+                else None
+            )
+            previous_chats = [
+                PreviousChat(**pc) for pc in chat_data.get("previousChats", [])
+            ]
+
+            chats.append(
+                ChatData(
+                    chat=chat_item,
+                    scenario=scenario,
+                    messages=messages,
+                    hints=hints,
+                    gradingState=grading_state,
+                    dynamicRubric=dynamic_rubric,
+                    previousChats=previous_chats,
+                )
+            )
+
+        scenario_documents = [
+            ScenarioDocumentItem(**sd) for sd in scenario_documents_data
+        ]
+        aggregated_results = (
+            AggregatedResults(**aggregated_results_data)
+            if aggregated_results_data
+            else None
+        )
         timer = TimerItem(**timer_data)
-        
+
         rubric_structure = None
         if rubric_structure_data:
             # Handle nested mappings for rubric structure
             standard_groups_mapping = {
                 k: StandardGroupMappingItem(**v)
-                for k, v in rubric_structure_data.get("standardGroupsMapping", {}).items()
+                for k, v in rubric_structure_data.get(
+                    "standardGroupsMapping", {}
+                ).items()
             }
             rubric_structure = RubricStructure(
                 standardGroups=rubric_structure_data.get("standardGroups", {}),
                 standardGroupsMapping=standard_groups_mapping,
                 standardsMapping=rubric_structure_data.get("standardsMapping", {}),
             )
-        
-        all_simulation_scenarios = [AllSimulationScenarioItem(**s) for s in all_simulation_scenarios_data]
+
+        all_simulation_scenarios = [
+            AllSimulationScenarioItem(**s) for s in all_simulation_scenarios_data
+        ]
 
         # Access result fields defensively (asyncpg may lowercase column names)
         # Try both camelCase and snake_case versions
@@ -335,11 +369,11 @@ async def get_attempt_full(
             if key_lower in result:
                 return result[key_lower]
             # Try snake_case version
-            key_snake = re.sub(r'([A-Z])', r'_\1', key).lower()
+            key_snake = re.sub(r"([A-Z])", r"_\1", key).lower()
             if key_snake in result:
                 return result[key_snake]
             return default
-        
+
         response_data = AttemptFullResponse(
             attempt=attempt,
             simulation=simulation,
@@ -358,7 +392,7 @@ async def get_attempt_full(
             rubricStructure=rubric_structure,
             allSimulationScenarios=all_simulation_scenarios,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -368,7 +402,7 @@ async def get_attempt_full(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -381,4 +415,3 @@ async def get_attempt_full(
             sql_params=sql_params,
             request=http_request,
         )
-

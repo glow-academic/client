@@ -322,4 +322,3 @@ def test_staff_edit_unlimited_requests(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

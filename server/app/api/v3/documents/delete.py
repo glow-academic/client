@@ -38,10 +38,10 @@ async def delete_document(
 ) -> DeleteDocumentResponse:
     """Delete a document."""
     tags = ["documents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/documents/delete_document.sql")
         sql_params = (uuid.UUID(request.documentId),)
@@ -51,11 +51,11 @@ async def delete_document(
             success=True,
             message="Document deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -68,4 +68,3 @@ async def delete_document(
             sql_params=sql_params,
             request=http_request,
         )
-

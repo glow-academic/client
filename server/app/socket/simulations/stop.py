@@ -23,7 +23,9 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
 
         if not chat_id:
             await sio.emit(
-                "simulation_error", {"success": False, "message": "Missing chat_id"}, room=sid
+                "simulation_error",
+                {"success": False, "message": "Missing chat_id"},
+                room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing chat_id")
             return
@@ -32,9 +34,13 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
         pool = get_pool()
         if not pool:
             await sio.emit(
-                "simulation_error", {"success": False, "message": "Database connection pool not available"}, room=sid
+                "simulation_error",
+                {"success": False, "message": "Database connection pool not available"},
+                room=sid,
             )
-            logger.error(f"Emitted error to {sid}: Database connection pool not available")
+            logger.error(
+                f"Emitted error to {sid}: Database connection pool not available"
+            )
             return
 
         async with pool.acquire() as conn:
@@ -49,7 +55,7 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
             # Stop simulation and mark message complete using SQL
             sql = load_sql("sql/v3/simulations/stop_simulation_run_complete.sql")
             row = await conn.fetchrow(sql, chat_id)
-            
+
             if not row:
                 result = {
                     "success": False,
@@ -103,7 +109,8 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error stopping simulation for {sid}: {str(e)}")
         await sio.emit(
-            "simulation_error", {"success": False, "message": f"Failed to stop simulation: {str(e)}"}, room=sid
+            "simulation_error",
+            {"success": False, "message": f"Failed to stop simulation: {str(e)}"},
+            room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to stop simulation: {str(e)}")
-

@@ -4,6 +4,7 @@
 # Batch F: Supporting Resources
 # ============================================================================
 from app.api.v3.agents import router as agents_router
+
 # ============================================================================
 # Batch E: Analytics & Dashboard Routes
 # ============================================================================
@@ -12,12 +13,14 @@ from app.api.v3.assistant import router as assistant_router
 from app.api.v3.attempts import router as attempts_router
 from app.api.v3.cohorts import router as cohorts_router
 from app.api.v3.dashboard.bundle import router as dashboard_router
+
 # ============================================================================
 # Batch C: Secondary Resources (Complete CRUD)
 # ============================================================================
 from app.api.v3.departments import router as departments_router
 from app.api.v3.documents import router as documents_router
 from app.api.v3.feedback import router as feedback_router
+
 # ============================================================================
 # Batch G: Utility Routes
 # ============================================================================
@@ -28,6 +31,7 @@ from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
 from app.api.v3.practice.overview import router as practice_router
 from app.api.v3.pricing.analytics import router as pricing_router
+
 # ============================================================================
 # Batch B: Profile Routes
 # ============================================================================
@@ -35,6 +39,7 @@ from app.api.v3.profile import router as profile_router
 from app.api.v3.providers import router as providers_router
 from app.api.v3.reports.bundle import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
+
 # ============================================================================
 # Batch C: Core Content Resources (Complete CRUD)
 # ============================================================================

@@ -35,13 +35,15 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     expect(scenario_card).to_be_visible()
     duplicate_button = scenario_card.get_by_test_id("btn-duplicate-scenario")
     expect(duplicate_button).to_be_enabled()
-    
+
     # Wait for duplicate API response
-    with page.expect_response(lambda response: "/api/v3/scenarios/duplicate" in response.url) as response_info:
+    with page.expect_response(
+        lambda response: "/api/v3/scenarios/duplicate" in response.url
+    ) as response_info:
         duplicate_button.click()
     response = response_info.value
     assert response.ok, f"Duplicate API call failed with status {response.status}"
-    
+
     # Wait for toast to appear (with flexible text matching)
     try:
         toast = page.get_by_role("alert").filter(has_text="duplicated")
@@ -49,14 +51,14 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     except Exception:
         # Fallback: just wait a bit if toast doesn't appear
         page.wait_for_timeout(1000)
-    
+
     # Wait for router.refresh() to complete - wait for network idle after the mutation
     page.wait_for_load_state("networkidle")
-    
+
     # Wait for grid to be visible and retry getting IDs in case refresh is still in progress
     grid = page.get_by_test_id("scenarios-grid")
     grid.wait_for(state="visible", timeout=10000)
-    
+
     # Retry getting IDs a few times in case refresh is still in progress
     new_ids = _get_scenario_ids(page)
     retries = 0
@@ -64,7 +66,7 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
         page.wait_for_timeout(500)
         new_ids = _get_scenario_ids(page)
         retries += 1
-    
+
     diff_ids = new_ids - existing_ids
     assert diff_ids, "Duplicate scenario ID not found in UI"
     new_scenario_id = diff_ids.pop()
@@ -81,4 +83,3 @@ def test_scenario_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     confirm_button.click()
     page.wait_for_timeout(500)
     expect(copy_card).to_have_count(0)
-

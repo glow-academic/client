@@ -4,8 +4,7 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg
-from app.api.v3.profile.staff.create_or_update_staff import \
-    CreateOrUpdateStaffRequest
+from app.api.v3.profile.staff.create_or_update_staff import CreateOrUpdateStaffRequest
 from app.main import get_db, transaction
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
@@ -33,7 +32,9 @@ class BulkCreateOrUpdateStaffResponse(BaseModel):
     message: str
 
 
-@router.post("/bulk-create-or-update-staff", response_model=BulkCreateOrUpdateStaffResponse)
+@router.post(
+    "/bulk-create-or-update-staff", response_model=BulkCreateOrUpdateStaffResponse
+)
 async def bulk_create_or_update_staff(
     request: BulkCreateOrUpdateStaffRequest,
     http_request: Request,
@@ -43,22 +44,32 @@ async def bulk_create_or_update_staff(
     """Bulk create or update staff members."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         profile_ids: list[str] = []
         created_count = 0
         updated_count = 0
 
         # Load consolidated SQL query with role validation built-in
-        create_or_update_sql = load_sql("sql/v3/profile/staff/create_or_update_staff_complete.sql")
+        create_or_update_sql = load_sql(
+            "sql/v3/profile/staff/create_or_update_staff_complete.sql"
+        )
         sql_query = create_or_update_sql  # Track primary query
 
         async with transaction(conn):
             for profile_req in request.profiles:
                 # Convert string UUIDs to UUID arrays
-                dept_uuids = [uuid.UUID(d) for d in profile_req.department_ids] if profile_req.department_ids else []
-                cohort_uuids = [uuid.UUID(c) for c in profile_req.cohort_ids] if profile_req.cohort_ids else []
-                
+                dept_uuids = (
+                    [uuid.UUID(d) for d in profile_req.department_ids]
+                    if profile_req.department_ids
+                    else []
+                )
+                cohort_uuids = (
+                    [uuid.UUID(c) for c in profile_req.cohort_ids]
+                    if profile_req.cohort_ids
+                    else []
+                )
+
                 # Single consolidated query for create/update with departments, cohorts, and role validation
                 profile_id_new = uuid.uuid4()
                 sql_params = (
@@ -70,16 +81,18 @@ async def bulk_create_or_update_staff(
                     True,  # active
                     dept_uuids,
                     cohort_uuids,
-                    uuid.UUID(request.currentProfileId),  # current_profile_id for role validation
+                    uuid.UUID(
+                        request.currentProfileId
+                    ),  # current_profile_id for role validation
                 )
                 result = await conn.fetchrow(create_or_update_sql, *sql_params)
-                
+
                 if not result:
                     raise HTTPException(
                         status_code=500,
-                        detail=f"Failed to create or update staff profile: {profile_req.alias}"
+                        detail=f"Failed to create or update staff profile: {profile_req.alias}",
                     )
-                
+
                 # Check for role validation error
                 validation_error = result.get("validation_error")
                 if validation_error:
@@ -87,15 +100,15 @@ async def bulk_create_or_update_staff(
                         status_code=403,
                         detail=validation_error,
                     )
-                
+
                 profile_id = result["profile_id"]
                 created = result["created"]
-                
+
                 if created:
                     created_count += 1
                 else:
                     updated_count += 1
-                
+
                 profile_ids.append(str(profile_id))
 
         result_data = BulkCreateOrUpdateStaffResponse(
@@ -105,12 +118,12 @@ async def bulk_create_or_update_staff(
             updated_count=updated_count,
             message=f"{created_count} created, {updated_count} updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -123,4 +136,3 @@ async def bulk_create_or_update_staff(
             sql_params=sql_params,
             request=http_request,
         )
-

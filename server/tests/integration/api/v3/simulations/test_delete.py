@@ -41,7 +41,9 @@ async def test_delete_simulation(
     assert "deleted successfully" in data["message"].lower()
 
     # Verify simulation was deleted
-    simulation = await db.fetchrow("SELECT * FROM simulations WHERE id = $1", simulation_id)
+    simulation = await db.fetchrow(
+        "SELECT * FROM simulations WHERE id = $1", simulation_id
+    )
     assert simulation is None
 
 
@@ -86,7 +88,9 @@ async def test_delete_simulation_in_use(
     assert "in use by" in data["detail"].lower()
 
     # Verify simulation was not deleted
-    simulation = await db.fetchrow("SELECT * FROM simulations WHERE id = $1", simulation_id)
+    simulation = await db.fetchrow(
+        "SELECT * FROM simulations WHERE id = $1", simulation_id
+    )
     assert simulation is not None
 
 
@@ -107,4 +111,3 @@ async def test_delete_simulation_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

@@ -8,8 +8,11 @@ import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.main import get_db
-from app.utils.agent_tools import (create_scenario_tools, scenario_progress,
-                                   scenario_results)
+from app.utils.agent_tools import (
+    create_scenario_tools,
+    scenario_progress,
+    scenario_results,
+)
 from app.utils.agents import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
@@ -57,7 +60,7 @@ async def generate_scenario_ai(
     """Generate AI scenario content (title, description, objectives)."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(request.departmentId)
@@ -84,11 +87,13 @@ async def generate_scenario_ai(
         # Clear previous results
         scenario_results.clear()
         scenario_progress.clear()
-        
+
         # Get all context data in a single optimized query using SQL file
         doc_ids_str = [str(d) for d in document_ids] if document_ids else []
-        param_ids_str = [str(p) for p in parameter_item_ids] if parameter_item_ids else []
-        
+        param_ids_str = (
+            [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+        )
+
         sql = load_sql("sql/v3/agents/get_scenario_run_context.sql")
         context_row = await conn.fetchrow(
             sql,
@@ -97,10 +102,12 @@ async def generate_scenario_ai(
             doc_ids_str,
             param_ids_str,
         )
-        
+
         if not context_row:
-            raise ValueError(f"No scenario agent configured for department {department_id}")
-        
+            raise ValueError(
+                f"No scenario agent configured for department {department_id}"
+            )
+
         # Parse JSON arrays
         documents = (
             json.loads(context_row["documents"])
@@ -112,12 +119,14 @@ async def generate_scenario_ai(
             if isinstance(context_row["parameter_items"], str)
             else context_row["parameter_items"]
         )
-        
+
         context = {
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+            "temperature": float(context_row["temperature"])
+            if context_row["temperature"] is not None
+            else 0.0,
             "reasoning": context_row["reasoning"],
             "model_id": context_row["model_id"],
             "model_name": context_row["model_name"],
@@ -130,7 +139,9 @@ async def generate_scenario_ai(
                 "id": context_row["persona_id"],
                 "name": context_row["persona_name"],
                 "description": context_row["persona_description"],
-            } if context_row["persona_id"] else None,
+            }
+            if context_row["persona_id"]
+            else None,
             "documents": documents,
             "parameter_items": parameter_items,
             "default_guest_profile_id": context_row["guest_profile_id"],
@@ -138,7 +149,7 @@ async def generate_scenario_ai(
             "runs_today_count": context_row["runs_today_count"],
             "earliest_run_created_at": context_row["earliest_run_created_at"],
         }
-        
+
         # Format persona info if persona was provided
         if persona_id is None or context["persona"] is None:
             persona_info = None
@@ -146,25 +157,27 @@ async def generate_scenario_ai(
         else:
             persona_info = format_persona_info(context["persona"])
             show_images = False
-        
+
         # Format document info if documents were provided
         if not document_ids or len(document_ids) == 0:
             document_info = None
         else:
             document_info = format_document_info(context["documents"], show_images)
-        
+
         # Format parameter item info if parameter items were provided
         if not parameter_item_ids or len(parameter_item_ids) == 0:
             parameter_item_info = None
         else:
             parameter_item_info = format_parameter_item_info(context["parameter_items"])
-        
+
         # Create scenario generation tools
         group_id = None
         objectives_enabled = request.objectivesEnabled
-        scenario_tools = create_scenario_tools(group_id, objectives_enabled=objectives_enabled)
+        scenario_tools = create_scenario_tools(
+            group_id, objectives_enabled=objectives_enabled
+        )
         scenario_tools.append(debug_info_tool)
-        
+
         # Create tool use behavior to check when all required tools are called
         def tool_use_behavior(
             tool_context: Any, tool_results: list[Any]
@@ -172,13 +185,13 @@ async def generate_scenario_ai(
             required_tools = ["title_description"]
             if objectives_enabled:
                 required_tools.append("objectives")
-            
+
             completed_required = all(
                 scenario_progress.get(tool, False) for tool in required_tools
             )
-            
+
             return ToolsToFinalOutputResult(is_final_output=completed_required)
-        
+
         scenario_agent_generic = GenericAgent(
             agent_name=context["agent_name"],
             system_prompt=context["system_prompt"],
@@ -193,15 +206,15 @@ async def generate_scenario_ai(
             tool_use_behavior=tool_use_behavior,
             custom_model=context["custom_model"],
         )
-        
+
         agent_instance = scenario_agent_generic.agent()
-        
+
         input_items: list[TResponseInputItem | None] = [
             persona_info,
             document_info,
             parameter_item_info,
         ]
-        
+
         # Add user instructions as first input item if provided
         if request.userInstructions and request.userInstructions.strip():
             user_instructions_item: TResponseInputItem = {
@@ -209,28 +222,29 @@ async def generate_scenario_ai(
                 "content": f"User instructions for scenario generation: {request.userInstructions.strip()}",
             }
             input_items.insert(0, user_instructions_item)
-        
+
         clean_input_items = [item for item in input_items if item is not None]
-        
+
         # Generate a trace id for the scenario
         scenario_trace_id = gen_trace_id()
-        
+
         # Use default guest profile from context if no profile_id provided
         final_profile_id = (
             profile_id if profile_id else context["default_guest_profile_id"]
         )
-        
+
         # Check rate limit
         profile_id_uuid = final_profile_id if final_profile_id else None
         if not profile_id_uuid:
             raise ValueError("Profile not found. Please contact support.")
-        
+
         req_per_day = context["req_per_day"]
         runs_today_count = context["runs_today_count"]
-        
+
         if req_per_day is not None and runs_today_count >= req_per_day:
             from datetime import timedelta
             from zoneinfo import ZoneInfo
+
             earliest_run_created_at = context["earliest_run_created_at"]
             if earliest_run_created_at:
                 next_allowed_utc = earliest_run_created_at + timedelta(days=1)
@@ -244,7 +258,7 @@ async def generate_scenario_ai(
             else:
                 error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
             raise ValueError(error_message)
-        
+
         # Create model run with all junction records using SQL file
         sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
         model_run_row = await conn.fetchrow(
@@ -256,19 +270,23 @@ async def generate_scenario_ai(
             final_profile_id,
         )
         model_run_id = uuid.UUID(model_run_row["model_run_id"])
-        
-        with trace("Scenario Agent", group_id=str(group_id) if group_id else None, trace_id=scenario_trace_id):
+
+        with trace(
+            "Scenario Agent",
+            group_id=str(group_id) if group_id else None,
+            trace_id=scenario_trace_id,
+        ):
             result = await Runner.run(
                 agent_instance,
                 input=clean_input_items,
                 context=DebugContext(conn=conn, model_run_id=model_run_id),
             )
-        
+
         # Extract results from the global storage
         scenario_result = scenario_results
-        
+
         usage = result.context_wrapper.usage
-        
+
         # Update model run with token usage using SQL file
         sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
         await conn.execute(
@@ -277,11 +295,11 @@ async def generate_scenario_ai(
             usage.input_tokens,
             usage.output_tokens,
         )
-        
+
         # Get result values
         title = scenario_result.get("title", "")
         description = scenario_result.get("description", "")
-        objectives = scenario_result.get('objectives', []) if objectives_enabled else []
+        objectives = scenario_result.get("objectives", []) if objectives_enabled else []
 
         # Limit objectives to maximum 3
         limited_objectives = objectives[:3] if objectives else []
@@ -306,4 +324,3 @@ async def generate_scenario_ai(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -43,7 +43,7 @@ def test_cohort_edit_updates_fields(page: Page, base_url: str) -> None:
         # Navigate to edit page
         page.goto(f"{base_url}/cohorts/e/{cohort_id}")
         page.wait_for_load_state("networkidle")
-        
+
         # Wait for the page container to be visible
         page.wait_for_selector("[data-page='cohort-edit']", timeout=15000)
 
@@ -77,7 +77,7 @@ def test_cohort_edit_updates_fields(page: Page, base_url: str) -> None:
         # Verify changes persisted by navigating back to list
         page.goto(f"{base_url}/cohorts")
         page.wait_for_load_state("networkidle")
-        
+
         # Wait for the grid to be visible
         page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
 
@@ -85,9 +85,7 @@ def test_cohort_edit_updates_fields(page: Page, base_url: str) -> None:
         search_input.fill(new_name)
         page.wait_for_timeout(500)
 
-        cohort_card = (
-            page.get_by_test_id("cohort-card").filter(has_text=new_name).first
-        )
+        cohort_card = page.get_by_test_id("cohort-card").filter(has_text=new_name).first
         expect(cohort_card).to_be_visible()
     finally:
         if cohort_id:
@@ -118,7 +116,7 @@ def test_cohort_edit_simulation_management(page: Page, base_url: str) -> None:
         # Navigate to edit page
         page.goto(f"{base_url}/cohorts/e/{cohort_id}")
         page.wait_for_load_state("networkidle")
-        
+
         # Wait for the page container to be visible
         page.wait_for_selector("[data-page='cohort-edit']", timeout=15000)
 
@@ -172,4 +170,3 @@ def test_cohort_edit_simulation_management(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

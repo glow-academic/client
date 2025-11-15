@@ -51,32 +51,33 @@ async def update_scenario(
 ) -> UpdateScenarioResponse:
     """Update an existing scenario."""
     tags = ["scenarios"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Prepare data for consolidated SQL
         # Filter out composite objective IDs (references to existing objectives)
         filtered_objective_ids = [
-            obj_id for obj_id in request.objective_ids
+            obj_id
+            for obj_id in request.objective_ids
             if not ("_" in obj_id and len(obj_id.split("_")) == 2)
         ]
-        
+
         # Flatten parameters dict into array of parameter_item_ids
         parameter_item_ids = [
             param_item_id
             for param_item_ids in request.parameters.values()
             for param_item_id in param_item_ids
         ]
-        
+
         # Ensure arrays are not None (use empty arrays)
         department_ids = request.department_ids or []
         persona_ids = request.persona_ids or []
         document_ids = request.document_ids or []
         objective_ids = filtered_objective_ids or []
         parameter_item_ids = parameter_item_ids or []
-        
+
         # Update scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/update_scenario_complete.sql")
         sql_params = (
@@ -107,11 +108,11 @@ async def update_scenario(
             success=True,
             message=f"Scenario '{result['name']}' updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -126,4 +127,3 @@ async def update_scenario(
             sql_params=sql_params,
             request=http_request,
         )
-

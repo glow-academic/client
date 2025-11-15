@@ -101,4 +101,3 @@ def test_rubric_readonly_permissions(page: Page, base_url: str) -> None:
     # Verify save button is not visible
     save_button = page.get_by_test_id("btn-save-rubric")
     expect(save_button).to_have_count(0)
-

@@ -147,4 +147,3 @@ def test_agents_cache_revalidation_and_no_double_fetch(
                 )
             except Exception:
                 pass
-

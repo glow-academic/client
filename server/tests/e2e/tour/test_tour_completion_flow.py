@@ -31,7 +31,7 @@ def test_tour_completion_flow(page: Page, base_url: str) -> None:
     # Verify tour is visible (might be a modal or overlay)
     # Tour step content might be in a specific container
     # For now, we'll verify by checking if we can see tour navigation buttons
-    
+
     # Look for next button or step indicator
     # The exact selectors depend on the tour implementation
     # Try to find tour navigation buttons
@@ -84,7 +84,7 @@ def test_tour_completion_flow(page: Page, base_url: str) -> None:
     starter_prompts = page.locator("button").filter(
         has=page.locator("[class*='outline'][class*='h-auto'][class*='p-4']")
     )
-    
+
     if starter_prompts.count() > 0:
         # Click first starter prompt
         starter_prompts.first.click()
@@ -100,7 +100,7 @@ def test_tour_completion_flow(page: Page, base_url: str) -> None:
     # Wait for response
     messages_container = page.get_by_test_id("attempt-messages-container")
     messages_container.wait_for(state="visible", timeout=10000)
-    
+
     # Wait for response message to appear
     page.wait_for_timeout(5000)  # Give time for response
 
@@ -124,4 +124,3 @@ def test_tour_completion_flow(page: Page, base_url: str) -> None:
     # Verify tour is closed (guide button should be visible again)
     guide_button = page.get_by_test_id("tour-guide-button")
     expect(guide_button).to_be_visible()
-

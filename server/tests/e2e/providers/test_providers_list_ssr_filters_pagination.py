@@ -88,12 +88,7 @@ def test_providers_search_filters_results(page: Page, base_url: str) -> None:
     filtered_cards = grid.get_by_test_id("model-card")
     filtered_count = filtered_cards.count()
     assert filtered_count <= initial_count
-    assert (
-        grid.get_by_test_id("model-card")
-        .filter(has_text=model_name)
-        .count()
-        > 0
-    )
+    assert grid.get_by_test_id("model-card").filter(has_text=model_name).count() > 0
 
     # Clear search
     search_input.fill("")
@@ -222,4 +217,3 @@ def test_providers_empty_state_displays(page: Page, base_url: str) -> None:
     # Clear search
     search_input.fill("")
     page.wait_for_timeout(250)
-

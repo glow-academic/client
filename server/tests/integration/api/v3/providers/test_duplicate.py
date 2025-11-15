@@ -136,4 +136,3 @@ async def test_duplicate_provider_not_found(
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-

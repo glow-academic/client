@@ -112,4 +112,3 @@ def delete_document_via_ui(
         cancel_button = page.get_by_test_id("btn-cancel-delete")
         cancel_button.click()
         expect(delete_dialog).not_to_be_visible()
-

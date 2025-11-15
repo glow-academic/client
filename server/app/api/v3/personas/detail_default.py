@@ -6,9 +6,14 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -106,7 +111,7 @@ async def get_persona_detail_default(
     """Get default persona structure for creation mode."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL query
         sql_query = load_sql("sql/v3/personas/get_persona_detail_default_complete.sql")
@@ -274,4 +279,3 @@ async def get_persona_detail_default(
             sql_params=sql_params,
             request=http_request,
         )
-

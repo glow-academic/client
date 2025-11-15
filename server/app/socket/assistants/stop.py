@@ -24,7 +24,9 @@ async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
 
         if not chat_id:
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Missing chat_id"}, room=sid
+                "assistant_error",
+                {"success": False, "message": "Missing chat_id"},
+                room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Missing chat_id")
             return
@@ -33,7 +35,9 @@ async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
         pool = get_pool()
         if not pool:
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Database not available"}, room=sid
+                "assistant_error",
+                {"success": False, "message": "Database not available"},
+                room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Database not available")
             return
@@ -44,7 +48,9 @@ async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
             chat_row = await conn.fetchrow(sql, chat_id)
             if not chat_row:
                 await sio.emit(
-                    "assistant_error", {"success": False, "message": "Chat not found"}, room=sid
+                    "assistant_error",
+                    {"success": False, "message": "Chat not found"},
+                    room=sid,
                 )
                 logger.error(f"Emitted assistant error to {sid}: Chat not found")
                 return
@@ -81,7 +87,10 @@ async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error stopping assistant for {sid}: {str(e)}")
         await sio.emit(
-            "assistant_error", {"success": False, "message": f"Failed to stop assistant: {str(e)}"}, room=sid
+            "assistant_error",
+            {"success": False, "message": f"Failed to stop assistant: {str(e)}"},
+            room=sid,
         )
-        logger.error(f"Emitted assistant error to {sid}: Failed to stop assistant: {str(e)}")
-
+        logger.error(
+            f"Emitted assistant error to {sid}: Failed to stop assistant: {str(e)}"
+        )

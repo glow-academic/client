@@ -24,6 +24,7 @@ def _set_request_counter(
             counts["total"] += 1
 
     page.on("request", _handle)
+
     def stop() -> None:
         page.remove_listener("request", _handle)
 
@@ -32,28 +33,26 @@ def _set_request_counter(
 
 def test_pricing_no_double_fetch(page: Page, base_url: str) -> None:
     """Ensure pricing endpoint is called only once on initial load."""
-    pricing_counter, stop_counter = _set_request_counter(
-        page, "/api/v3/pricing"
-    )
+    pricing_counter, stop_counter = _set_request_counter(page, "/api/v3/pricing")
     page.goto(f"{base_url}/analytics/pricing")
     wait_for_pricing_load(page)
     stop_counter()
-    
+
     # Allow for some flexibility - should be 1-2 calls max (initial + potential retry)
-    assert (
-        pricing_counter["total"] <= 2
-    ), f"Pricing endpoint fetched {pricing_counter['total']} times, expected 1-2"
+    assert pricing_counter["total"] <= 2, (
+        f"Pricing endpoint fetched {pricing_counter['total']} times, expected 1-2"
+    )
 
 
 def test_pricing_cache_tags(page: Page, base_url: str) -> None:
     """Verify cache tags are set correctly for pricing."""
     page.goto(f"{base_url}/analytics/pricing")
     wait_for_pricing_load(page)
-    
+
     # Verify page renders correctly
     container = page.get_by_test_id("pricing-container")
     expect(container).to_be_visible()
-    
+
     # Cache tags are set server-side and visible in response headers
     # We verify the page loads correctly which indicates cache is working
 
@@ -63,32 +62,31 @@ def test_pricing_ssr_cache_behavior(page: Page, base_url: str) -> None:
     # Load page first time
     page.goto(f"{base_url}/analytics/pricing")
     wait_for_pricing_load(page)
-    
+
     container = page.get_by_test_id("pricing-container")
     expect(container).to_be_visible()
-    
+
     # Fetch data to verify structure
     first_load_data = fetch_pricing_data(
         page.context.request,
         profile_id=ADMIN_PROFILE_ID,
         bypass_cache=False,
     )
-    
+
     # Reload page
     page.reload()
     wait_for_pricing_load(page)
-    
+
     # Verify container still visible after reload
     expect(container).to_be_visible()
-    
+
     # Fetch data again (should be cached)
     second_load_data = fetch_pricing_data(
         page.context.request,
         profile_id=ADMIN_PROFILE_ID,
         bypass_cache=False,
     )
-    
+
     # Verify data structure matches (cache should return same data)
     assert first_load_data is not None
     assert second_load_data is not None
-

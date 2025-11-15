@@ -238,4 +238,3 @@ def find_editable_rubric(
         if require_department_specific is False and not is_dept_specific:
             return rubric
     raise ValueError("No matching editable rubric found in rubric list")
-

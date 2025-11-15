@@ -47,21 +47,21 @@ async def get_document_detail_bulk(
 ) -> DocumentDetailBulkResponse:
     """Get bulk document detail information."""
     tags = ["documents"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DocumentDetailBulkResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/documents/get_document_detail_bulk_complete.sql")
         sql_params = (
@@ -82,7 +82,7 @@ async def get_document_detail_bulk(
         # If types is NULL or empty, no documents were found
         if not types or (isinstance(types, list) and len(types) == 0):
             raise HTTPException(status_code=404, detail="No documents found")
-        
+
         common_type = types[0] if len(types) == 1 else None
 
         # Parse department IDs from array
@@ -103,7 +103,9 @@ async def get_document_detail_bulk(
                         department_mapping[did] = DepartmentMappingItem(
                             name=ddata.get("name", ""),
                             description=ddata.get("description", ""),
-                            parameter_ids=param_ids if isinstance(param_ids, list) else None,
+                            parameter_ids=param_ids
+                            if isinstance(param_ids, list)
+                            else None,
                         )
 
         parameter_item_mapping: dict[str, ParameterItemMappingItem] = {}
@@ -123,8 +125,12 @@ async def get_document_detail_bulk(
                         )
 
         # Convert arrays
-        valid_department_ids = [str(did) for did in (row.get("valid_department_ids") or [])]
-        valid_parameter_item_ids = [str(pid) for pid in (row.get("valid_parameter_item_ids") or [])]
+        valid_department_ids = [
+            str(did) for did in (row.get("valid_department_ids") or [])
+        ]
+        valid_parameter_item_ids = [
+            str(pid) for pid in (row.get("valid_parameter_item_ids") or [])
+        ]
 
         # Document type options
         document_type_options = ["homework", "exam", "lab", "project"]
@@ -139,7 +145,7 @@ async def get_document_detail_bulk(
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -149,7 +155,7 @@ async def get_document_detail_bulk(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -162,4 +168,3 @@ async def get_document_detail_bulk(
             sql_params=sql_params,
             request=request,
         )
-

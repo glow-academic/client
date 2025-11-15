@@ -44,12 +44,18 @@ async def create_or_update_staff(
     """Create or update a staff member based on alias."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Convert string UUIDs to UUID arrays
-        dept_uuids = [uuid.UUID(d) for d in request.department_ids] if request.department_ids else []
-        cohort_uuids = [uuid.UUID(c) for c in request.cohort_ids] if request.cohort_ids else []
-        
+        dept_uuids = (
+            [uuid.UUID(d) for d in request.department_ids]
+            if request.department_ids
+            else []
+        )
+        cohort_uuids = (
+            [uuid.UUID(c) for c in request.cohort_ids] if request.cohort_ids else []
+        )
+
         # Single consolidated query for create/update with departments and cohorts
         sql_query = load_sql("sql/v3/profile/staff/create_or_update_staff_complete.sql")
         profile_id_new = uuid.uuid4()
@@ -64,16 +70,15 @@ async def create_or_update_staff(
             cohort_uuids,
             None,  # current_profile_id (no role validation for single create/update)
         )
-        
+
         async with transaction(conn):
             result = await conn.fetchrow(sql_query, *sql_params)
-            
+
             if not result:
                 raise HTTPException(
-                    status_code=500,
-                    detail="Failed to create or update staff profile"
+                    status_code=500, detail="Failed to create or update staff profile"
                 )
-            
+
             profile_id = result["profile_id"]
             created = result["created"]
             message = (
@@ -85,12 +90,12 @@ async def create_or_update_staff(
         result_data = CreateOrUpdateStaffResponse(
             success=True, profileId=profile_id, created=created, message=message
         )
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -103,4 +108,3 @@ async def create_or_update_staff(
             sql_params=sql_params,
             request=http_request,
         )
-

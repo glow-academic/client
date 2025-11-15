@@ -70,4 +70,3 @@ def test_parameter_readonly_permissions(page: Page, base_url: str) -> None:
     submit_button = page.get_by_test_id("btn-submit-parameter")
     if submit_button.count():
         expect(submit_button).to_be_disabled()
-

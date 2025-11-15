@@ -109,4 +109,3 @@ async def test_remove_profiles_from_cohort_empty_list(
 
     assert data["success"] is True
     assert "Removed 0 profile(s)" in data["message"]
-

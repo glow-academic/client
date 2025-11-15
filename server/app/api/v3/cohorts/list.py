@@ -12,7 +12,11 @@ from pydantic import BaseModel
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import DepartmentMappingItem, ProfileMappingItem, SimulationMappingItem
+from app.utils.schema import (
+    DepartmentMappingItem,
+    ProfileMappingItem,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
 
 
@@ -69,7 +73,9 @@ def disambiguate_profiles(pmap: dict[str, ProfileMappingItem]) -> list[dict[str,
     return out
 
 
-def disambiguate_simulations(smap: dict[str, SimulationMappingItem]) -> list[dict[str, str]]:
+def disambiguate_simulations(
+    smap: dict[str, SimulationMappingItem],
+) -> list[dict[str, str]]:
     """Build simulation options with disambiguation for duplicate names."""
     names = Counter([v.name for v in smap.values()])
     out = []
@@ -91,21 +97,21 @@ async def get_cohorts_list(
 ) -> CohortsListResponse:
     """Get cohorts list with permissions and relationships."""
     tags = ["cohorts"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return CohortsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql_query = load_sql("sql/v3/cohorts/list_cohorts.sql")
@@ -170,7 +176,9 @@ async def get_cohorts_list(
                                 name=sdata.get("name", ""),
                                 description=sdata.get("description", ""),
                                 time_limit=sdata.get("time_limit"),
-                                department_ids=dept_ids_val if isinstance(dept_ids_val, list) else None,
+                                department_ids=dept_ids_val
+                                if isinstance(dept_ids_val, list)
+                                else None,
                             )
 
             if not department_mapping and row["department_mapping"]:
@@ -189,7 +197,8 @@ async def get_cohorts_list(
         profile_options = disambiguate_profiles(profile_mapping)
         simulation_options = disambiguate_simulations(simulation_mapping)
         department_options = [
-            {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
+            {"value": did, "label": d.name or did}
+            for (did, d) in department_mapping.items()
         ]
 
         response_data = CohortsListResponse(
@@ -201,7 +210,7 @@ async def get_cohorts_list(
             simulation_options=simulation_options,
             department_options=department_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -211,7 +220,7 @@ async def get_cohorts_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -224,4 +233,3 @@ async def get_cohorts_list(
             sql_params=sql_params,
             request=request,
         )
-

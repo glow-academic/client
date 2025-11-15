@@ -39,24 +39,26 @@ async def leave_cohort(
 ) -> LeaveCohortResponse:
     """Remove profile from cohort (leave cohort)."""
     tags = ["cohorts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/cohorts/leave_cohort.sql")
         sql_params = (uuid.UUID(request.cohortId), uuid.UUID(request.profileId))
-        await conn.execute(sql_query, uuid.UUID(request.cohortId), uuid.UUID(request.profileId))
+        await conn.execute(
+            sql_query, uuid.UUID(request.cohortId), uuid.UUID(request.profileId)
+        )
 
         result = LeaveCohortResponse(
             success=True,
             message="Successfully left cohort",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -69,4 +71,3 @@ async def leave_cohort(
             sql_params=sql_params,
             request=http_request,
         )
-

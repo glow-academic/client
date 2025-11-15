@@ -61,17 +61,17 @@ def test_cohort_leave_cancel_then_confirm(page: Page, base_url: str) -> None:
     try:
         page.goto(f"{base_url}/cohorts")
         page.wait_for_load_state("networkidle")
-        
+
         # Wait for the grid to be visible
         page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
-        
+
         # If we created a new cohort, search for it to ensure it appears
         if should_cleanup and cohort_name:
             # Refresh the page to ensure the new cohort appears
             page.reload()
             page.wait_for_load_state("networkidle")
             page.wait_for_selector("[data-testid='cohorts-grid']", timeout=10000)
-            
+
             search_input = page.get_by_test_id("cohorts-search")
             search_input.wait_for(state="visible", timeout=10000)
             search_input.fill(cohort_name)
@@ -126,4 +126,3 @@ def test_cohort_leave_cancel_then_confirm(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

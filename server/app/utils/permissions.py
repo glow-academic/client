@@ -1,5 +1,4 @@
-"""Permissions utilities for v3 API.
-"""
+"""Permissions utilities for v3 API."""
 
 from typing import Literal
 
@@ -39,6 +38,7 @@ class SectionPermission(BaseModel):
 
     class Config:
         populate_by_name = True
+
 
 # Centralized route permissions configuration
 ROUTE_PERMISSIONS: list[SectionPermission] = [
@@ -406,7 +406,7 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
 def get_available_subsections_for_role(role: ProfileRole) -> list[str]:
     """
     Get all available subsections for a role (including individual route sections).
-    
+
     This extracts subsections from ROUTE_PERMISSIONS, matching the behavior
     of PermissionsService.get_available_subsections_for_role in v2.
 
@@ -453,4 +453,3 @@ def get_redirect_path_for_role(role: ProfileRole) -> str:
         "superadmin": "/home",  # Superadmins start at home
     }
     return redirect_map.get(role, "/home")  # Default fallback to home
-

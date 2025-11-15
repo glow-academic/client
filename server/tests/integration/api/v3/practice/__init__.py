@@ -1,2 +1,1 @@
 """Practice route tests."""
-

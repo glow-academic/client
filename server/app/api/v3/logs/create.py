@@ -13,6 +13,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas (simplified - actual schemas are more complex)
 class CorrelationData(BaseModel):
     correlationId: str | None = None
@@ -80,10 +81,10 @@ async def create_log(
 ) -> CreateLogResponse:
     """Create a new log entry."""
     tags = ["logs"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Extract correlation_id from correlation object
         correlation_id = "default.correlation"
@@ -131,11 +132,11 @@ async def create_log(
         log_id = result["id"] if result else None
 
         result_data = CreateLogResponse(success=True, log_id=log_id)
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -148,4 +149,3 @@ async def create_log(
             sql_params=sql_params,
             request=http_request,
         )
-

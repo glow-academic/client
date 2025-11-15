@@ -39,7 +39,7 @@ async def duplicate_cohort(
     """Duplicate a cohort with relationships."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Single consolidated query: gets original, creates duplicate, and copies relationships
         sql_query = load_sql("sql/v3/cohorts/duplicate_cohort_complete.sql")
@@ -58,12 +58,12 @@ async def duplicate_cohort(
             cohortId=new_cohort_id,
             message=f"Cohort '{result['original_title']}' duplicated successfully",
         )
-        
+
         # Invalidate cache after mutation
         tags = ["cohorts"]  # From router tags
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_response
     except HTTPException:
         raise
@@ -76,4 +76,3 @@ async def duplicate_cohort(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -48,10 +48,10 @@ async def upload_init(
 ) -> UploadInitResponse:
     """Initialize a document upload."""
     tags = ["documents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Generate upload ID
         upload_id = str(uuid.uuid4())
@@ -78,24 +78,24 @@ async def upload_init(
 
         # Get app prefix from environment
         app_prefix = os.getenv("APP_PREFIX", "").strip("/")
-        
+
         # Generate location path
         if app_prefix:
             location_v3 = f"/{app_prefix}/api/v3/documents/upload/{upload_id}"
         else:
             location_v3 = f"/api/v3/documents/upload/{upload_id}"
-        
+
         result_data = UploadInitResponse(
             success=True,
             uploadId=upload_id,
             location=location_v3,
             message="Upload initialized successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -108,4 +108,3 @@ async def upload_init(
             sql_params=sql_params,
             request=http_request,
         )
-

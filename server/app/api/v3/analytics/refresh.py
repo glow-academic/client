@@ -15,6 +15,7 @@ router = APIRouter()
 
 class RefreshRequest(BaseModel):
     """Request to refresh analytics (no parameters needed)."""
+
     pass
 
 
@@ -35,25 +36,25 @@ async def refresh_analytics(
 ) -> RefreshResponse:
     """Refresh the analytics materialized view."""
     tags = ["analytics"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
         sql_params = ()  # No parameters for this query
         await conn.execute(sql_query)
-        
+
         result_data = RefreshResponse(
             success=True,
             message="Analytics materialized view refreshed successfully",
             status="success",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise

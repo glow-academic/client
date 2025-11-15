@@ -109,9 +109,7 @@ def test_agent_create_validation_and_success(page: Page, base_url: str) -> None:
     search_input.fill(agent_name)
     page.wait_for_timeout(250)
 
-    agent_card = (
-        page.get_by_test_id("agent-card").filter(has_text=agent_name).first
-    )
+    agent_card = page.get_by_test_id("agent-card").filter(has_text=agent_name).first
     expect(agent_card).to_be_visible()
 
     delete_button = agent_card.get_by_test_id("btn-delete-agent")
@@ -122,7 +120,6 @@ def test_agent_create_validation_and_success(page: Page, base_url: str) -> None:
     confirm_button.click()
     page.wait_for_timeout(500)
 
-    expect(
-        page.get_by_test_id("agent-card").filter(has_text=agent_name)
-    ).to_have_count(0)
-
+    expect(page.get_by_test_id("agent-card").filter(has_text=agent_name)).to_have_count(
+        0
+    )

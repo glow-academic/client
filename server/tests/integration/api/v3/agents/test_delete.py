@@ -88,4 +88,3 @@ async def test_delete_agent_not_found(
 
     # Should succeed (no error from SQL DELETE on non-existent row)
     assert response.status_code == 200
-

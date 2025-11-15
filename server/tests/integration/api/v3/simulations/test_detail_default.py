@@ -3,8 +3,10 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_alias)
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -89,4 +91,3 @@ async def test_get_simulation_detail_default_includes_rubrics(
 
     # Verify rubric_mapping contains rubrics
     assert len(data["rubric_mapping"]) >= 0
-

@@ -40,7 +40,7 @@ async def update_profile(
     """Update a profile."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Single consolidated query: checks existence, updates profile, department, and request limit
         sql_query = load_sql("sql/v3/profile/staff/update_profile_complete.sql")
@@ -63,12 +63,12 @@ async def update_profile(
         result_data = UpdateStaffResponse(
             success=True, message=f"Staff '{result['name']}' updated successfully"
         )
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -81,4 +81,3 @@ async def update_profile(
             sql_params=sql_params,
             request=http_request,
         )
-

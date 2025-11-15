@@ -20,9 +20,13 @@ router = APIRouter()
 class SearchStaffRequest(BaseModel):
     """Request for staff search."""
 
-    query: str | None = None  # Search term (first_name, last_name, alias). Empty/None returns all profiles (up to limit)
+    query: str | None = (
+        None  # Search term (first_name, last_name, alias). Empty/None returns all profiles (up to limit)
+    )
     cohortIds: list[str] | None = None  # Cohort IDs to EXCLUDE profiles from (optional)
-    departmentIds: list[str] | None = None  # Department IDs to EXCLUDE profiles from (optional)
+    departmentIds: list[str] | None = (
+        None  # Department IDs to EXCLUDE profiles from (optional)
+    )
     limit: int = 200  # Maximum number of results
     profileId: str  # Current user's profile ID for permissions
 
@@ -44,22 +48,22 @@ async def search_staff(
 ) -> SearchStaffResponse:
     """Search staff with query and filters."""
     tags = ["staff"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return SearchStaffResponse.model_validate(cached["data"])
-    
+
     try:
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
-        
+
         # Build dynamic SQL query (similar to staff_queries.search_staff)
         # Start with current_profile_id (used in CTEs)
         params: list[Any] = [request.profileId]
@@ -67,7 +71,7 @@ async def search_staff(
 
         # Build search WHERE clause
         search_conditions = []
-        
+
         # Search query filter (if provided)
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
@@ -248,7 +252,7 @@ async def search_staff(
         CROSS JOIN department_mapping_data dmd
         CROSS JOIN staff_aggregated sa
         """
-        
+
         result = await conn.fetchrow(sql_query, *params)
 
         if not result:
@@ -258,7 +262,7 @@ async def search_staff(
                 department_mapping={},
                 cohort_mapping={},
             )
-            
+
             # Cache response
             await set_cached(
                 cache_key_val,
@@ -268,7 +272,7 @@ async def search_staff(
             )
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "0"
-            
+
             return response_data
 
         # Parse staff JSONB array
@@ -281,8 +285,10 @@ async def search_staff(
                 if isinstance(item, dict):
                     # Convert UUID arrays to string arrays
                     cohort_ids = [str(cid) for cid in (item.get("cohort_ids") or [])]
-                    department_ids = [str(did) for did in (item.get("department_ids") or [])]
-                    
+                    department_ids = [
+                        str(did) for did in (item.get("department_ids") or [])
+                    ]
+
                     staff.append(
                         StaffItem(
                             profile_id=str(item.get("profile_id", "")),
@@ -337,7 +343,7 @@ async def search_staff(
             department_mapping=department_mapping,
             cohort_mapping=cohort_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -347,7 +353,7 @@ async def search_staff(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -360,4 +366,3 @@ async def search_staff(
             sql_params=None,  # Dynamic params
             request=http_request,
         )
-

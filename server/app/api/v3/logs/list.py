@@ -12,6 +12,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class LogsListRequest(BaseModel):
     profileId: str
@@ -75,7 +76,10 @@ router = APIRouter()
 
 def _parse_jsonb_to_model(
     data: Any,
-    model_class: type[ActorData] | type[SubjectData] | type[ContextData] | type[ErrorData],
+    model_class: type[ActorData]
+    | type[SubjectData]
+    | type[ContextData]
+    | type[ErrorData],
 ) -> ActorData | SubjectData | ContextData | ErrorData:
     """Parse JSONB data to Pydantic model."""
     if isinstance(data, dict):
@@ -92,21 +96,21 @@ async def list_logs(
 ) -> LogsListResponse:
     """Get list of logs with actor information and all JSONB fields."""
     tags = ["logs"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return LogsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/logs/get_logs_list.sql")
         sql_params = ()  # No parameters for this query
@@ -130,14 +134,18 @@ async def list_logs(
                     context=cast(
                         ContextData, _parse_jsonb_to_model(row["context"], ContextData)
                     ),
-                    error=cast(ErrorData, _parse_jsonb_to_model(row["error"], ErrorData)),
-                    created_at=row["created_at"].isoformat() if row["created_at"] else "",
+                    error=cast(
+                        ErrorData, _parse_jsonb_to_model(row["error"], ErrorData)
+                    ),
+                    created_at=row["created_at"].isoformat()
+                    if row["created_at"]
+                    else "",
                     actor_name=row["actor_name"],
                 )
             )
 
         response_data = LogsListResponse(logs=log_items)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -147,7 +155,7 @@ async def list_logs(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -160,4 +168,3 @@ async def list_logs(
             sql_params=sql_params,
             request=http_request,
         )
-

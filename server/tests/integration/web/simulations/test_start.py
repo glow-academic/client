@@ -91,5 +91,6 @@ async def test_start_simulation_guest_profile(
 
     # Should still succeed - guest profile should be resolved
     started_events = mock_sio.get_events("simulation_started")
-    assert len(started_events) >= 0  # May or may not succeed depending on guest profile setup
-
+    assert (
+        len(started_events) >= 0
+    )  # May or may not succeed depending on guest profile setup

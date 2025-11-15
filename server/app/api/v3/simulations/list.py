@@ -7,10 +7,16 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (CohortMapping, CohortMappingItem,
-                              DepartmentMapping, DepartmentMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              ScenarioMapping, ScenarioMappingItem)
+from app.utils.schema import (
+    CohortMapping,
+    CohortMappingItem,
+    DepartmentMapping,
+    DepartmentMappingItem,
+    RubricMapping,
+    RubricMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -68,21 +74,21 @@ async def get_simulations_list(
 ) -> SimulationsListResponse:
     """Get simulations list with permissions and relationships."""
     tags = ["simulations"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return SimulationsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string
         sql_query = load_sql("sql/v3/simulations/list_simulations.sql")
@@ -115,7 +121,9 @@ async def get_simulations_list(
                             persona_ids=sdata.get("persona_ids", []),
                             persona_mapping=sdata.get("persona_mapping", {}),
                             document_mapping=sdata.get("document_mapping", {}),
-                            parameter_item_mapping=sdata.get("parameter_item_mapping", {}),
+                            parameter_item_mapping=sdata.get(
+                                "parameter_item_mapping", {}
+                            ),
                             parameter_item_ids=sdata.get("parameter_item_ids", []),
                             document_ids=sdata.get("document_ids", []),
                         )
@@ -205,7 +213,7 @@ async def get_simulations_list(
             cohort_options=cohort_options,
             department_options=department_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -215,7 +223,7 @@ async def get_simulations_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -228,4 +236,3 @@ async def get_simulations_list(
             sql_params=sql_params,
             request=request,
         )
-

@@ -85,7 +85,9 @@ async def test_get_rubric_detail_with_department_mapping(
     )
 
     # Link to a department
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     await db.execute(
@@ -156,4 +158,3 @@ async def test_get_rubric_detail_with_standard_groups(
         assert "name" in group_item
         assert len(group_item["name"]) > 0
         assert "description" in group_item
-

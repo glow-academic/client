@@ -72,4 +72,3 @@ async def test_get_assistant_chats_list_empty(
     assert "allChats" in data
     assert isinstance(data["allChats"], list)
     assert len(data["allChats"]) == 0
-

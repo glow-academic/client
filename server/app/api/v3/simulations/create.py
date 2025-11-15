@@ -52,16 +52,16 @@ async def create_simulation(
 ) -> CreateSimulationResponse:
     """Create a new simulation."""
     tags = ["simulations"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Extract scenario IDs and active flags for SQL
             scenario_ids: list[str] = []
             scenario_active_flags: list[bool] = []
-            
+
             for scenario_item in request.scenario_ids:
                 if isinstance(scenario_item, str):
                     scenario_ids.append(scenario_item)
@@ -73,7 +73,9 @@ async def create_simulation(
             # Ensure arrays are always arrays (empty arrays if None/empty)
             dept_ids = request.department_ids if request.department_ids else []
             scenario_ids_array = scenario_ids if scenario_ids else []
-            scenario_flags_array = scenario_active_flags if scenario_active_flags else []
+            scenario_flags_array = (
+                scenario_active_flags if scenario_active_flags else []
+            )
 
             # Create simulation with departments, time limit, and scenarios in single SQL (DHH style)
             sql_query = load_sql("sql/v3/simulations/create_simulation_complete.sql")
@@ -100,11 +102,11 @@ async def create_simulation(
                 simulationId=simulation_id,
                 message=f"Simulation '{request.title}' created successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -119,4 +121,3 @@ async def create_simulation(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -84,5 +84,7 @@ async def test_get_document_detail_bulk_not_found(
     assert response.status_code == 404
     data = response.json()
     assert "detail" in data
-    assert "no documents found" in data["detail"].lower() or "not found" in data["detail"].lower()
-
+    assert (
+        "no documents found" in data["detail"].lower()
+        or "not found" in data["detail"].lower()
+    )

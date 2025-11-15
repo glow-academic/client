@@ -10,4 +10,3 @@ router = APIRouter(prefix="/schema", tags=["schema"])
 # Include endpoint routers
 router.include_router(list_router)
 router.include_router(query_router)
-

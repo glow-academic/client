@@ -28,7 +28,7 @@ def test_assistant_chat_stop(page: Page, base_url: str) -> None:
     # Send a message that might trigger a long response
     chat_input = page.get_by_test_id("assistant-chat-input")
     chat_input.wait_for(state="visible", timeout=10000)
-    
+
     # Send a message that might take time to generate
     test_message = "Write a detailed explanation of how machine learning works."
     chat_input.fill(test_message)
@@ -36,9 +36,9 @@ def test_assistant_chat_stop(page: Page, base_url: str) -> None:
     # Find and click send button
     send_button = chat_input.locator("..").get_by_role("button", name="Send")
     if send_button.count() == 0:
-        send_button = page.locator("button[type='submit']").filter(
-            has=page.locator("svg")
-        ).first
+        send_button = (
+            page.locator("button[type='submit']").filter(has=page.locator("svg")).first
+        )
     send_button.click()
 
     # Wait a moment for response to start
@@ -52,7 +52,7 @@ def test_assistant_chat_stop(page: Page, base_url: str) -> None:
         stop_button = page.locator("button").filter(has_text="Stop")
         if stop_button.count() == 0:
             stop_button = page.locator("button[aria-label='Stop']")
-    
+
     if stop_button.count() > 0:
         # Click stop button
         stop_button.first.click()
@@ -64,11 +64,12 @@ def test_assistant_chat_stop(page: Page, base_url: str) -> None:
         messages_container = page.get_by_test_id("assistant-messages-container")
         if messages_container.count() > 0:
             # Check for incomplete message indicator
-            incomplete_indicator = messages_container.get_by_text("Stopped", exact=False).or_(
-                messages_container.get_by_text("Incomplete", exact=False)
-            )
+            incomplete_indicator = messages_container.get_by_text(
+                "Stopped", exact=False
+            ).or_(messages_container.get_by_text("Incomplete", exact=False))
             # Note: The exact UI for stopped messages depends on implementation
     else:
         # If no stop button found, skip test
-        pytest.skip("Stop button not found - may not be implemented or message completed too quickly")
-
+        pytest.skip(
+            "Stop button not found - may not be implemented or message completed too quickly"
+        )

@@ -97,4 +97,3 @@ async def test_get_profile_detail_guest_profile_id_not_found(
 
     # Should return 404 if no default guest profile exists
     assert response.status_code == 404
-

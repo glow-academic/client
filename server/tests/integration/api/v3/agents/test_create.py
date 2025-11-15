@@ -15,9 +15,7 @@ async def test_create_agent(
     profile_id = await get_superadmin_alias(db)
 
     # Get a model ID for the agent
-    model_id = await db.fetchval(
-        "SELECT id FROM models WHERE active = true LIMIT 1"
-    )
+    model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
     assert model_id is not None
 
     # Get a department ID
@@ -48,9 +46,7 @@ async def test_create_agent(
     assert data["message"] == "Agent created successfully"
 
     # Verify agent was created in database
-    agent = await db.fetchrow(
-        "SELECT * FROM agents WHERE id = $1", data["agentId"]
-    )
+    agent = await db.fetchrow("SELECT * FROM agents WHERE id = $1", data["agentId"])
     assert agent is not None
     assert agent["name"] == "Test Agent"
     assert agent["description"] == "Test Description"
@@ -87,9 +83,7 @@ async def test_create_agent_with_existing_prompt(
         "INSERT INTO prompts(system_prompt) VALUES ('Existing prompt') RETURNING id"
     )
 
-    model_id = await db.fetchval(
-        "SELECT id FROM models WHERE active = true LIMIT 1"
-    )
+    model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
 
     response = await client.post(
         "/api/v3/agents/create",
@@ -127,9 +121,7 @@ async def test_create_agent_without_departments(
     """Test creating an agent without department links (cross-department)."""
     profile_id = await get_superadmin_alias(db)
 
-    model_id = await db.fetchval(
-        "SELECT id FROM models WHERE active = true LIMIT 1"
-    )
+    model_id = await db.fetchval("SELECT id FROM models WHERE active = true LIMIT 1")
 
     response = await client.post(
         "/api/v3/agents/create",
@@ -186,4 +178,3 @@ async def test_create_agent_invalid_model(
 
     # Should fail due to foreign key constraint or validation
     assert response.status_code in [400, 422, 500]
-

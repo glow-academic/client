@@ -8,8 +8,7 @@ import asyncpg
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
-                              TrendData)
+from app.utils.schema import CohortMappingItem, DepartmentMappingItem, TrendData
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -52,7 +51,9 @@ class StaffListResponse(BaseModel):
     staff: list[StaffItem]
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
-    trend_data: dict[str, list[TrendData]]  # Keys: active, admin, instructional, ta, total_requests
+    trend_data: dict[
+        str, list[TrendData]
+    ]  # Keys: active, admin, instructional, ta, total_requests
     # UI-ready facet options (precomputed on server)
     role_options: list[dict[str, str]]  # Array of {value, label}
     cohort_options: list[dict[str, str]]  # Array of {value, label}
@@ -68,21 +69,21 @@ async def get_profile_list(
 ) -> StaffListResponse:
     """Get profile/staff list with permissions and relationships."""
     tags = ["staff"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return StaffListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Get campus email domain from environment
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
@@ -93,9 +94,11 @@ async def get_profile_list(
 
         # Execute query
         result = await conn.fetch(sql_query, filters.profileId, campus_domain)
-        
+
         # Get current user's role from first row (same for all rows)
-        current_user_role = result[0]["current_user_role"] if result and len(result) > 0 else "guest"
+        current_user_role = (
+            result[0]["current_user_role"] if result and len(result) > 0 else "guest"
+        )
 
         # Build response
         staff = []
@@ -231,7 +234,7 @@ async def get_profile_list(
             cohort_options=cohort_options,
             last_active_options=last_active_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -241,7 +244,7 @@ async def get_profile_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -254,4 +257,3 @@ async def get_profile_list(
             sql_params=sql_params,
             request=request,
         )
-

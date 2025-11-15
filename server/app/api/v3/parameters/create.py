@@ -54,14 +54,15 @@ async def create_parameter(
 ) -> CreateParameterResponse:
     """Create a new parameter with nested items."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Prepare items as JSONB array
             import json
+
             items_data = []
             for item in request.parameter_items:
                 item_dict = {
@@ -73,7 +74,7 @@ async def create_parameter(
                 if item.department_ids is not None:
                     item_dict["department_ids"] = item.department_ids  # type: ignore
                 items_data.append(item_dict)
-            
+
             items_json = json.dumps(items_data)
 
             # Create parameter with items and department links in single SQL (DHH style)
@@ -117,4 +118,3 @@ async def create_parameter(
             sql_params=sql_params,
             request=http_request,
         )
-

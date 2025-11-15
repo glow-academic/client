@@ -1,2 +1,1 @@
 """WebSocket integration tests."""
-

@@ -156,13 +156,14 @@ async def test_get_practice_overview_filters_practice_simulations(
         data = response.json()
 
         # Check that only practice simulations are returned
-        simulation_ids = [
-            item["id"] for item in data.get("items", [])
-        ]
+        simulation_ids = [item["id"] for item in data.get("items", [])]
         simulation_mapping_ids = list(data.get("simulation_mapping", {}).keys())
 
         # Practice simulation should be included
-        assert str(practice_sim_id) in simulation_ids or str(practice_sim_id) in simulation_mapping_ids
+        assert (
+            str(practice_sim_id) in simulation_ids
+            or str(practice_sim_id) in simulation_mapping_ids
+        )
 
         # Regular simulation should NOT be included
         assert str(regular_sim_id) not in simulation_ids
@@ -260,4 +261,3 @@ async def test_get_practice_overview_filters_practice_parameters(
                 f"Parameter item {item['name']} (id: {item['id']}) "
                 f"belongs to a parameter with practice_parameter = {item['practice_parameter']}, expected True"
             )
-

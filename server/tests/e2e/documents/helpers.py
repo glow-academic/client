@@ -171,11 +171,11 @@ def create_document_api(
 ) -> str:
     """
     Create a document via the API using upload flow.
-    
+
     Note: For E2E tests, this uses the upload endpoints. The file_path parameter
     is optional - if not provided, a test file path will be generated.
     For actual file uploads, you would need to implement the full TUS protocol.
-    
+
     This is a simplified version for E2E tests - in practice, you may want to
     use existing documents from the test database or implement full file upload.
     """
@@ -184,16 +184,16 @@ def create_document_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    
+
     # Generate unique file ID
     file_id = str(uuid.uuid4())
-    
+
     # Use provided file_path or generate one
     if not file_path:
         # Generate a test file path (document will be created with this path)
         # In real E2E, you'd upload an actual file
         file_path = f"test_{file_id}.pdf"
-    
+
     # Initialize upload
     init_response = _post_json(
         request,
@@ -207,16 +207,16 @@ def create_document_api(
         effective_profile_id=resolved_effective,
         bypass_cache=False,
     )
-    
+
     upload_id = init_response.get("uploadId")
     if not upload_id:
         raise ValueError("Upload init response missing uploadId")
-    
+
     # Note: In a real implementation, you would upload the file content here
     # using the TUS protocol. For E2E tests, we'll try to finalize with
     # the test flag, but this may require the file to actually exist.
     # For now, this is a placeholder that structures the API calls correctly.
-    
+
     # Finalize upload (this will create the document)
     # Note: This requires the file to exist in the upload directory
     # For E2E tests, you may need to ensure test files are available
@@ -238,13 +238,13 @@ def create_document_api(
         effective_profile_id=resolved_effective,
         bypass_cache=False,
     )
-    
+
     document_id = finalize_response.get("documentId")
     if not document_id:
         raise ValueError(
             f"Upload finalize response missing documentId. Response: {finalize_response}"
         )
-    
+
     # Update document type and active status if needed
     # (upload sets defaults, we may need to update)
     update_payload: Dict[str, Any] = {
@@ -254,7 +254,7 @@ def create_document_api(
         update_payload["department_id"] = department_ids[0] if department_ids else None
     if parameter_item_ids:
         update_payload["parameter_item_ids"] = parameter_item_ids
-    
+
     update_document_api(
         request,
         document_id,
@@ -262,7 +262,7 @@ def create_document_api(
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
     )
-    
+
     return str(document_id)
 
 
@@ -280,7 +280,7 @@ def update_document_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    
+
     # Fetch current document to merge updates
     current = fetch_document_detail(
         request,
@@ -289,17 +289,20 @@ def update_document_api(
         effective_profile_id=resolved_effective,
         bypass_cache=True,
     )
-    
+
     # Build payload with required fields
     # Note: update endpoint only supports type, department_id, and parameter_item_ids
     # Name and active status updates would need to be done via SQL or different endpoint
     payload: Dict[str, Any] = {
         "documentId": document_id,
         "type": updates.get("type", current.get("type", "homework")),
-        "department_id": updates.get("department_id") or (current.get("department_ids") or [None])[0],
-        "parameter_item_ids": updates.get("parameter_item_ids", current.get("parameter_item_ids", [])),
+        "department_id": updates.get("department_id")
+        or (current.get("department_ids") or [None])[0],
+        "parameter_item_ids": updates.get(
+            "parameter_item_ids", current.get("parameter_item_ids", [])
+        ),
     }
-    
+
     _post_json(
         request,
         "/api/v3/documents/update",
@@ -324,14 +327,14 @@ def bulk_update_documents_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    
+
     payload: Dict[str, Any] = {
         "documentIds": document_ids,
         "type": updates.get("type", "__keep__"),
         "department_id": updates.get("department_id"),
         "parameter_item_ids": updates.get("parameter_item_ids", []),
     }
-    
+
     _post_json(
         request,
         "/api/v3/documents/bulk-update",
@@ -424,13 +427,12 @@ def find_existing_document(
         bypass_cache=True,
     )
     documents = data.get("documents", [])
-    
+
     for document in documents:
         if can_edit is not None and document.get("can_edit") != can_edit:
             continue
         if can_delete is not None and document.get("can_delete") != can_delete:
             continue
         return document
-    
-    return None
 
+    return None

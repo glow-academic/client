@@ -8,8 +8,12 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMappingItem, ParameterItemMappingItem,
-                              ParameterMappingItem, ScenarioMappingItem)
+from app.utils.schema import (
+    DepartmentMappingItem,
+    ParameterItemMappingItem,
+    ParameterMappingItem,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -58,7 +62,9 @@ class DocumentsListResponse(BaseModel):
 router = APIRouter()
 
 
-def disambiguate_scenarios(smap: dict[str, ScenarioMappingItem]) -> list[dict[str, str]]:
+def disambiguate_scenarios(
+    smap: dict[str, ScenarioMappingItem],
+) -> list[dict[str, str]]:
     """Build scenario options with disambiguation for duplicate names."""
     names = Counter([v.name for v in smap.values()])
     out = []
@@ -80,21 +86,21 @@ async def get_documents_list(
 ) -> DocumentsListResponse:
     """Get documents list with tags and scenarios."""
     tags = ["documents"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DocumentsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/documents/list_documents.sql")
         sql_params = (filters.profileId,)
@@ -155,14 +161,14 @@ async def get_documents_list(
                         # Parse optional ID arrays (replicate v2 logic)
                         parameter_ids = ddata.get("parameter_ids")
                         parameter_item_ids = ddata.get("parameter_item_ids")
-                        
+
                         def to_str_list(value: Any) -> list[str] | None:
                             if value is None:
                                 return None
                             if isinstance(value, list):
                                 return [str(v) for v in value if v]
                             return None
-                        
+
                         department_mapping[did] = DepartmentMappingItem(
                             name=ddata.get("name", ""),
                             description=ddata.get("description", ""),
@@ -193,13 +199,15 @@ async def get_documents_list(
 
             # Handle extension (replicate v2 logic)
             extension = row.get("extension") or ""
-            
+
             documents.append(
                 DocumentItem(
                     document_id=str(row["document_id"]),
                     name=row["name"],
                     type=row["type"],
-                    updated_at=row["updated_at"].isoformat() if row["updated_at"] else "",
+                    updated_at=row["updated_at"].isoformat()
+                    if row["updated_at"]
+                    else "",
                     mime_type=row.get("mime_type"),
                     active=row["active"],
                     file_path=row.get("file_path"),
@@ -226,7 +234,8 @@ async def get_documents_list(
         ]
         scenario_options = disambiguate_scenarios(scenario_mapping)
         department_options = [
-            {"value": did, "label": d.name or did} for (did, d) in department_mapping.items()
+            {"value": did, "label": d.name or did}
+            for (did, d) in department_mapping.items()
         ]
 
         response_data = DocumentsListResponse(
@@ -239,7 +248,7 @@ async def get_documents_list(
             scenario_options=scenario_options,
             department_options=department_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -249,7 +258,7 @@ async def get_documents_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -262,4 +271,3 @@ async def get_documents_list(
             sql_params=sql_params,
             request=request,
         )
-

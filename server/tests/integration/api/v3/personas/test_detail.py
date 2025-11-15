@@ -74,4 +74,3 @@ async def test_get_persona_detail_not_found(
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
-

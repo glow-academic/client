@@ -3,8 +3,10 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_alias)
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -73,4 +75,3 @@ async def test_get_cohort_detail_with_profiles_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

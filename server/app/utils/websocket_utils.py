@@ -5,8 +5,12 @@ import logging
 import uuid
 from typing import Any
 
-from app.main import (get_active_results_dict, get_redis_client,
-                      get_sio_instance, get_socket_owner_dict)
+from app.main import (
+    get_active_results_dict,
+    get_redis_client,
+    get_sio_instance,
+    get_socket_owner_dict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +282,9 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
         if pool:
             async with pool.acquire() as conn:
                 async with conn.transaction():
-                    sql = load_sql("sql/v3/profile/update_profile_to_inactive_complete.sql")
+                    sql = load_sql(
+                        "sql/v3/profile/update_profile_to_inactive_complete.sql"
+                    )
                     last_active = datetime.now(UTC)
                     await conn.fetchrow(sql, profile_id, last_active)
             logger.info(f"Updated profile {profile_id} to inactive in database")
@@ -427,4 +433,3 @@ async def is_run_cancelled(run_id: str) -> bool:
     except Exception as e:
         logger.error(f"Redis error checking run cancellation for {run_id}: {e}")
         return False
-

@@ -43,12 +43,7 @@ def test_rubrics_list_filters_and_empty_state(page: Page, base_url: str) -> None
     page.wait_for_timeout(250)
     filtered_count = cards.count()
     assert filtered_count <= initial_count
-    assert (
-        grid.get_by_test_id("rubric-card")
-        .filter(has_text=rubric_name)
-        .count()
-        > 0
-    )
+    assert grid.get_by_test_id("rubric-card").filter(has_text=rubric_name).count() > 0
 
     search_input.fill("")
     page.wait_for_timeout(250)
@@ -129,9 +124,7 @@ def test_rubrics_list_filters_and_empty_state(page: Page, base_url: str) -> None
     search_input.fill("zzzz-no-match-zzzz")
     page.wait_for_timeout(250)
     expect(cards).to_have_count(0)
-    expect(
-        page.get_by_text("No rubrics match the current filters.")
-    ).to_be_visible()
+    expect(page.get_by_text("No rubrics match the current filters.")).to_be_visible()
 
     search_input.fill("")
     page.wait_for_timeout(250)
@@ -190,4 +183,3 @@ def test_rubrics_pagination_persists_filters(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

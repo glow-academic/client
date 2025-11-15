@@ -53,21 +53,21 @@ async def get_departments_list(
 ) -> DepartmentsListResponse:
     """Get list of departments with computed fields."""
     tags = ["departments"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DepartmentsListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/departments/get_departments_list.sql")
         sql_params = (filters.profileId,)
@@ -91,7 +91,7 @@ async def get_departments_list(
             )
 
         response_data = DepartmentsListResponse(departments=departments)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -101,7 +101,7 @@ async def get_departments_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -114,4 +114,3 @@ async def get_departments_list(
             sql_params=sql_params,
             request=request,
         )
-

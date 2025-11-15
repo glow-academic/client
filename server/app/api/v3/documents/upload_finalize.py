@@ -62,7 +62,7 @@ async def upload_finalize(
 ) -> UploadFinalizeResponse:
     """Finalize a document upload and process the file."""
     tags = ["documents"]  # From router tags
-    
+
     try:
         # Validate department_ids is provided
         department_ids = request.departmentIds
@@ -72,7 +72,7 @@ async def upload_finalize(
                 message="departmentIds is required - must be provided from frontend",
                 status="error",
             )
-        
+
         # Find the upload directory
         upload_dir = None
         for dir_name in os.listdir(TUS_UPLOADS_DIR):
@@ -107,7 +107,7 @@ async def upload_finalize(
             from app.utils.csv import parse_csv_file
 
             logger.info(f"Processing CSV upload: fileId={request.fileId}")
-            
+
             # Parse the CSV file
             parse_result = parse_csv_file(file_path)
 
@@ -117,7 +117,7 @@ async def upload_finalize(
                     shutil.rmtree(upload_dir)
                 except Exception as e:
                     logger.warning(f"Failed to clean up upload directory: {str(e)}")
-                
+
                 return UploadFinalizeResponse(
                     success=False,
                     message=parse_result.get("error", "Failed to parse CSV file"),
@@ -131,7 +131,9 @@ async def upload_finalize(
             users_skipped = []
 
             # Load consolidated SQL query (check + insert in one query)
-            insert_profile_sql = load_sql("sql/v3/profile/insert_profile_if_not_exists.sql")
+            insert_profile_sql = load_sql(
+                "sql/v3/profile/insert_profile_if_not_exists.sql"
+            )
 
             # Process each user within a transaction
             try:
@@ -155,11 +157,16 @@ async def upload_finalize(
 
                             if result:
                                 # Profile was inserted
-                                users_created.append({"name": name, "username": username})
+                                users_created.append(
+                                    {"name": name, "username": username}
+                                )
                             else:
                                 # Profile already exists (ON CONFLICT DO NOTHING)
                                 users_skipped.append(
-                                    {"username": username, "reason": "User already exists"}
+                                    {
+                                        "username": username,
+                                        "reason": "User already exists",
+                                    }
                                 )
 
                         except Exception as e:
@@ -175,9 +182,7 @@ async def upload_finalize(
                 # Build success message
                 message_parts = [f"Created {len(users_created)} users"]
                 if len(users_skipped) > 0:
-                    message_parts.append(
-                        f"skipped {len(users_skipped)} existing users"
-                    )
+                    message_parts.append(f"skipped {len(users_skipped)} existing users")
                 if errors:
                     message_parts.append(f"{len(errors)} errors encountered")
 
@@ -203,13 +208,15 @@ async def upload_finalize(
 
             except Exception as e:
                 logger.error(f"Database error processing CSV: {str(e)}")
-                
+
                 # Clean up upload directory
                 try:
                     shutil.rmtree(upload_dir)
                 except Exception as cleanup_error:
-                    logger.warning(f"Failed to clean up upload directory: {str(cleanup_error)}")
-                
+                    logger.warning(
+                        f"Failed to clean up upload directory: {str(cleanup_error)}"
+                    )
+
                 return UploadFinalizeResponse(
                     success=False,
                     message=f"Database error: {str(e)}",
@@ -222,9 +229,7 @@ async def upload_finalize(
             extracted_documents = []
 
             with zipfile.ZipFile(file_path, "r") as zip_ref:
-                extract_dir = os.path.join(
-                    TUS_UPLOADS_DIR, f"extract_{request.fileId}"
-                )
+                extract_dir = os.path.join(TUS_UPLOADS_DIR, f"extract_{request.fileId}")
                 os.makedirs(extract_dir, exist_ok=True)
                 zip_ref.extractall(extract_dir)
 
@@ -246,7 +251,11 @@ async def upload_finalize(
                         content_type = get_content_type(filename)
 
                         # Insert document with department links in single query
-                        dept_uuids = [uuid.UUID(d) for d in department_ids] if department_ids else []
+                        dept_uuids = (
+                            [uuid.UUID(d) for d in department_ids]
+                            if department_ids
+                            else []
+                        )
                         sql = load_sql("sql/v3/documents/insert_document_complete.sql")
                         await conn.execute(
                             sql,
@@ -306,9 +315,12 @@ async def upload_finalize(
 
         # Insert document with department and parameter item links (single query)
         import uuid as uuid_lib
+
         param_item_uuids = [uuid_lib.UUID(p) for p in (request.parameterItemIds or [])]
-        dept_uuids = [uuid_lib.UUID(d) for d in department_ids] if department_ids else []
-        
+        dept_uuids = (
+            [uuid_lib.UUID(d) for d in department_ids] if department_ids else []
+        )
+
         sql = load_sql("sql/v3/documents/insert_document_complete.sql")
         await conn.execute(
             sql,
@@ -329,9 +341,7 @@ async def upload_finalize(
         # Auto-classify if requested
         if request.autoClassify:
             try:
-                logger.info(
-                    f"Auto-classification requested for document {document_id}"
-                )
+                logger.info(f"Auto-classification requested for document {document_id}")
             except Exception as e:
                 logger.error(f"Auto-classification failed: {str(e)}")
 
@@ -355,4 +365,3 @@ async def upload_finalize(
             message=f"Failed to finalize upload: {str(e)}",
             status="error",
         )
-

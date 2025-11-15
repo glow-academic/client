@@ -41,10 +41,10 @@ async def bulk_update_documents(
 ) -> BulkUpdateDocumentsResponse:
     """Bulk update documents."""
     tags = ["documents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Bulk update documents with department links and parameter items in a single transaction
@@ -69,11 +69,11 @@ async def bulk_update_documents(
             success=True,
             message=f"Updated {len(request.documentIds)} document(s) successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -86,4 +86,3 @@ async def bulk_update_documents(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -107,4 +107,3 @@ def test_provider_duplicate_refreshes_list_state(page: Page, base_url: str) -> N
         )
     except Exception:
         pass
-

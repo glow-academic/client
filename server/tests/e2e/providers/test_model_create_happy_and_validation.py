@@ -191,9 +191,11 @@ def test_model_create_with_custom_settings(page: Page, base_url: str) -> None:
         search_input.fill(model_name)
         page.wait_for_timeout(500)
 
-        model_card = page.locator(
-            f"[data-testid='model-card']"
-        ).filter(has_text=model_name).first
+        model_card = (
+            page.locator(f"[data-testid='model-card']")
+            .filter(has_text=model_name)
+            .first
+        )
         expect(model_card).to_be_visible()
 
         model_id = model_card.get_attribute("data-model-id")
@@ -204,9 +206,7 @@ def test_model_create_with_custom_settings(page: Page, base_url: str) -> None:
         edit_button = model_card.get_by_test_id("btn-edit-model")
         edit_button.click()
 
-        page.wait_for_url(
-            f"{base_url}/system/providers/p/{provider_id}/m/{model_id}"
-        )
+        page.wait_for_url(f"{base_url}/system/providers/p/{provider_id}/m/{model_id}")
         page.wait_for_load_state("networkidle")
 
         # Verify custom_model is checked
@@ -241,4 +241,3 @@ def test_model_create_with_custom_settings(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

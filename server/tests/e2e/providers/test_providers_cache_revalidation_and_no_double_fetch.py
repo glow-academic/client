@@ -227,9 +227,7 @@ def test_providers_list_cache_revalidation_on_delete(page: Page, base_url: str) 
 
 def test_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
     """Verify no duplicate API requests when navigating away and back."""
-    list_counter, stop_counter = _set_request_counter(
-        page, "/api/v3/providers/list"
-    )
+    list_counter, stop_counter = _set_request_counter(page, "/api/v3/providers/list")
 
     # First navigation
     page.goto(f"{base_url}/system/providers")
@@ -255,9 +253,9 @@ def test_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
 
     # Should have at most 2 requests (initial + return navigation)
     # Cache should prevent duplicate fetches
-    assert (
-        list_counter["total"] <= initial_count + 1
-    ), f"Providers list endpoint fetched {list_counter['total']} times, expected <= {initial_count + 1}"
+    assert list_counter["total"] <= initial_count + 1, (
+        f"Providers list endpoint fetched {list_counter['total']} times, expected <= {initial_count + 1}"
+    )
 
 
 def test_model_cache_revalidation_on_create(page: Page, base_url: str) -> None:
@@ -320,4 +318,3 @@ def test_model_cache_revalidation_on_create(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

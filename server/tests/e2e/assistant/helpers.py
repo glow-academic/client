@@ -123,4 +123,3 @@ def fetch_assistant_chat_full(
         effective_profile_id=resolved_effective,
         bypass_cache=bypass_cache,
     )
-

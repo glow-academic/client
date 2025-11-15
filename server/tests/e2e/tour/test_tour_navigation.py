@@ -27,8 +27,10 @@ def test_tour_navigation_back_forward(page: Page, base_url: str) -> None:
 
     # Find navigation buttons
     next_button = page.locator("button").filter(has_text="Next")
-    prev_button = page.locator("button").filter(has_text="Previous").or_(
-        page.locator("button").filter(has_text="Back")
+    prev_button = (
+        page.locator("button")
+        .filter(has_text="Previous")
+        .or_(page.locator("button").filter(has_text="Back"))
     )
 
     # Move forward to step 1
@@ -55,8 +57,10 @@ def test_tour_navigation_back_forward(page: Page, base_url: str) -> None:
             page.wait_for_url(re.compile(r".*/leaderboard"), timeout=10000)
 
     # Close tour
-    close_button = page.locator("button").filter(has_text="Close").or_(
-        page.locator("button[aria-label='Close']")
+    close_button = (
+        page.locator("button")
+        .filter(has_text="Close")
+        .or_(page.locator("button[aria-label='Close']"))
     )
     if close_button.count() > 0:
         close_button.first.click()
@@ -65,4 +69,3 @@ def test_tour_navigation_back_forward(page: Page, base_url: str) -> None:
     # Verify tour is closed
     guide_button = page.get_by_test_id("tour-guide-button")
     expect(guide_button).to_be_visible()
-

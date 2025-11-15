@@ -3,8 +3,7 @@
 from app.api.v3.parameters.create import router as create_router
 from app.api.v3.parameters.delete import router as delete_router
 from app.api.v3.parameters.detail import router as detail_router
-from app.api.v3.parameters.detail_default import \
-    router as detail_default_router
+from app.api.v3.parameters.detail_default import router as detail_default_router
 from app.api.v3.parameters.duplicate import router as duplicate_router
 from app.api.v3.parameters.items import router as items_router
 from app.api.v3.parameters.list import router as list_router
@@ -22,4 +21,3 @@ router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(items_router)
-

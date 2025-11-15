@@ -84,7 +84,9 @@ def test_parameter_create_validation_and_success(page: Page, base_url: str) -> N
                 item_description_textarea.fill("Test item description")
 
             # If numerical, fill value
-            numerical_switch_state = numerical_switch.is_checked() if numerical_switch.count() else False
+            numerical_switch_state = (
+                numerical_switch.is_checked() if numerical_switch.count() else False
+            )
             if numerical_switch_state:
                 item_value_input = page.locator("table input[type='number']").first
                 if item_value_input.count():
@@ -101,9 +103,7 @@ def test_parameter_create_validation_and_success(page: Page, base_url: str) -> N
     page.wait_for_timeout(250)
 
     parameter_card = (
-        page.get_by_test_id("parameter-card")
-        .filter(has_text=parameter_name)
-        .first
+        page.get_by_test_id("parameter-card").filter(has_text=parameter_name).first
     )
     expect(parameter_card).to_be_visible()
 
@@ -141,4 +141,3 @@ def test_parameter_create_validation_and_success(page: Page, base_url: str) -> N
                         break
         except Exception:
             pass
-

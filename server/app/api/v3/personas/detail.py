@@ -6,9 +6,14 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -112,7 +117,7 @@ async def get_persona_detail(
     """Get detailed persona information."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string
         sql_query = load_sql("sql/v3/personas/get_persona_detail_complete.sql")
@@ -161,9 +166,7 @@ async def get_persona_detail(
         # Get usage and permissions
         scenario_count = int(result.get("usage_count", 0))
         in_use = scenario_count > 0
-        total_scenario_links = int(
-            result.get("total_scenario_links", scenario_count)
-        )
+        total_scenario_links = int(result.get("total_scenario_links", scenario_count))
         user_role = str(result.get("user_role", "")).lower()
         has_department_links = bool(department_ids)
 
@@ -231,7 +234,9 @@ async def get_persona_detail(
 
         # Parse department_prompt_links
         department_prompt_links: dict[str, str] = {}
-        department_prompt_links_data = parse_jsonb(result.get("department_prompt_links"))
+        department_prompt_links_data = parse_jsonb(
+            result.get("department_prompt_links")
+        )
         if isinstance(department_prompt_links_data, dict):
             department_prompt_links = {
                 str(dept_id): str(prompt_id_val)
@@ -354,4 +359,3 @@ async def get_persona_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

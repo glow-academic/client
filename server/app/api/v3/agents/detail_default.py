@@ -7,9 +7,14 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -56,21 +61,21 @@ async def get_agent_detail_default(
 ) -> AgentDetailResponse:
     """Get default agent detail metadata for creating new agents."""
     tags = ["agents"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return AgentDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/agents/get_agent_detail_default_complete.sql")
         sql_params = (request.profileId,)
@@ -104,8 +109,12 @@ async def get_agent_detail_default(
 
             # Parse valid_department_ids from array
             valid_department_ids_raw = result.get("valid_department_ids")
-            if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):
-                valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
+            if valid_department_ids_raw and isinstance(
+                valid_department_ids_raw, (list, tuple)
+            ):
+                valid_department_ids = [
+                    str(did) for did in valid_department_ids_raw if did
+                ]
 
             # Parse department_mapping from JSONB
             department_mapping_data = result.get("department_mapping")
@@ -121,7 +130,9 @@ async def get_agent_detail_default(
 
         # Build reasoning_mapping
         reasoning_mapping = {
-            "none": ReasoningMappingItem(name="None", description="No extended reasoning"),
+            "none": ReasoningMappingItem(
+                name="None", description="No extended reasoning"
+            ),
             "minimal": ReasoningMappingItem(
                 name="Minimal", description="Basic reasoning for straightforward tasks"
             ),
@@ -132,7 +143,8 @@ async def get_agent_detail_default(
                 name="Medium", description="Balanced reasoning for moderate complexity"
             ),
             "high": ReasoningMappingItem(
-                name="High", description="Deep reasoning for complex, multi-step problems"
+                name="High",
+                description="Deep reasoning for complex, multi-step problems",
             ),
         }
 
@@ -159,7 +171,7 @@ async def get_agent_detail_default(
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -169,7 +181,7 @@ async def get_agent_detail_default(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -182,4 +194,3 @@ async def get_agent_detail_default(
             sql_params=sql_params,
             request=http_request,
         )
-

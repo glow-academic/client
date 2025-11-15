@@ -35,8 +35,12 @@ async def test_bulk_delete_documents(
     assert "2 document(s)" in data["message"]
 
     # Verify documents are deleted
-    exists1 = await db.fetchval("SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", doc1_id)
-    exists2 = await db.fetchval("SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", doc2_id)
+    exists1 = await db.fetchval(
+        "SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", doc1_id
+    )
+    exists2 = await db.fetchval(
+        "SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", doc2_id
+    )
     assert exists1 is False
     assert exists2 is False
 
@@ -56,4 +60,3 @@ async def test_bulk_delete_documents_empty_list(
     assert data is not None
     assert data["success"] is True
     assert "0 document(s)" in data["message"]
-

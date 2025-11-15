@@ -39,7 +39,7 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         search_input = page.get_by_test_id("scenarios-search")
         search_input.wait_for(state="visible", timeout=10000)
         search_input.fill(scenario_name)
-        
+
         # Wait for search to filter - check that cards are filtered
         page.wait_for_timeout(500)
         # Wait for the specific scenario card to appear in filtered results
@@ -58,7 +58,9 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         page.wait_for_load_state("networkidle")
 
         # Verify page attributes
-        page_container = page.locator(f"[data-page='scenario-edit'][data-scenario-id='{scenario_id}']")
+        page_container = page.locator(
+            f"[data-page='scenario-edit'][data-scenario-id='{scenario_id}']"
+        )
         expect(page_container).to_be_visible()
 
         # Verify form fields are pre-populated
@@ -66,7 +68,9 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         title_input.wait_for(state="visible", timeout=15000)
         expect(title_input).to_have_value(scenario_name)
 
-        problem_statement_input = page.get_by_test_id("input-scenario-problem-statement")
+        problem_statement_input = page.get_by_test_id(
+            "input-scenario-problem-statement"
+        )
         problem_statement_input.wait_for(state="visible", timeout=15000)
         expect(problem_statement_input).to_have_value("Original problem statement")
 
@@ -95,10 +99,11 @@ def test_scenario_edit_update_fields(page: Page, base_url: str) -> None:
         search_input.fill(new_name)
         page.wait_for_timeout(250)
 
-        updated_card = page.get_by_test_id("scenario-card").filter(has_text=new_name).first
+        updated_card = (
+            page.get_by_test_id("scenario-card").filter(has_text=new_name).first
+        )
         expect(updated_card).to_be_visible()
 
     finally:
         # Cleanup
         delete_scenario_api(page.context.request, scenario_id)
-

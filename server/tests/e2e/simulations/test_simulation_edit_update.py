@@ -96,7 +96,9 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         submit_button.click()
 
         # Wait for toast notification, then navigation
-        toast = page.get_by_role("alert").filter(has_text="Simulation updated successfully!")
+        toast = page.get_by_role("alert").filter(
+            has_text="Simulation updated successfully!"
+        )
         try:
             toast.wait_for(state="visible", timeout=5000)
         except Exception:
@@ -110,9 +112,7 @@ def test_simulation_edit_update_fields(page: Page, base_url: str) -> None:
         page.wait_for_timeout(500)
 
         simulation_card = (
-            page.get_by_test_id("simulation-card")
-            .filter(has_text=updated_name)
-            .first
+            page.get_by_test_id("simulation-card").filter(has_text=updated_name).first
         )
         expect(simulation_card).to_be_visible()
 
@@ -178,9 +178,7 @@ def test_simulation_edit_scenario_management(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(
-            f"{base_url}/create/simulations/s/{simulation_id}", timeout=20000
-        )
+        page.goto(f"{base_url}/create/simulations/s/{simulation_id}", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         # Verify scenarios render in grid
@@ -229,4 +227,3 @@ def test_simulation_edit_scenario_management(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

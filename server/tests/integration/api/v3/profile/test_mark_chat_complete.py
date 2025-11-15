@@ -32,7 +32,9 @@ async def test_mark_chat_complete(
     assert "chat marked complete" in data["message"].lower()
 
     # Verify in database
-    profile = await db.fetchrow("SELECT viewed_chat FROM profiles WHERE id = $1", profile_id)
+    profile = await db.fetchrow(
+        "SELECT viewed_chat FROM profiles WHERE id = $1", profile_id
+    )
     assert profile is not None
     assert profile["viewed_chat"] is True
 
@@ -75,7 +77,8 @@ async def test_mark_chat_complete_guest_profile_id(
     assert data["success"] is True
 
     # Verify in database
-    profile = await db.fetchrow("SELECT viewed_chat FROM profiles WHERE id = $1", guest_id)
+    profile = await db.fetchrow(
+        "SELECT viewed_chat FROM profiles WHERE id = $1", guest_id
+    )
     assert profile is not None
     assert profile["viewed_chat"] is True
-

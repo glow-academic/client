@@ -33,29 +33,31 @@ async def delete_agent(
 ) -> DeleteAgentResponse:
     """Delete an agent."""
     tags = ["agents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete agent with usage check (single query)
         sql_query = load_sql("sql/v3/agents/delete_agent_complete.sql")
         sql_params = (request.agentId,)
         result = await conn.fetchrow(sql_query, request.agentId)
-        
+
         if result and result["usage_count"] > 0:
             raise HTTPException(
                 status_code=400, detail="Cannot delete agent: agent is in use"
             )
-        
+
         # Note: DELETE is idempotent - deleting non-existent entity is considered success
 
-        result_data = DeleteAgentResponse(success=True, message="Agent deleted successfully")
-        
+        result_data = DeleteAgentResponse(
+            success=True, message="Agent deleted successfully"
+        )
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -68,4 +70,3 @@ async def delete_agent(
             sql_params=sql_params,
             request=http_request,
         )
-

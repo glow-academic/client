@@ -3,12 +3,15 @@
 import logging
 
 from app.main import sio
-from app.utils.websocket_utils import (cleanup_profile_connection,
-                                       decrement_guest_count,
-                                       find_chats_by_socket,
-                                       find_profile_by_socket, is_guest_socket,
-                                       remove_active_connection,
-                                       remove_guest_socket)
+from app.utils.websocket_utils import (
+    cleanup_profile_connection,
+    decrement_guest_count,
+    find_chats_by_socket,
+    find_profile_by_socket,
+    is_guest_socket,
+    remove_active_connection,
+    remove_guest_socket,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +45,12 @@ async def disconnect(sid: str) -> None:
                 async with pool.acquire() as conn:
                     async with conn.transaction():
                         # Update default guest profile: refresh last_active, set active False only when all guests are gone
-                        sql = load_sql("sql/v3/profile/update_default_guest_profile_activity_complete.sql")
-                        await conn.fetchrow(sql, datetime.now(UTC), remaining_guests > 0)
+                        sql = load_sql(
+                            "sql/v3/profile/update_default_guest_profile_activity_complete.sql"
+                        )
+                        await conn.fetchrow(
+                            sql, datetime.now(UTC), remaining_guests > 0
+                        )
                     logger.info(
                         f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
                     )
@@ -56,4 +63,3 @@ async def disconnect(sid: str) -> None:
     chat_ids = await find_chats_by_socket(sid)
     for chat_id in chat_ids:
         await remove_active_connection(chat_id)
-

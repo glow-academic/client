@@ -7,9 +7,14 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    ModelMapping,
+    ModelMappingItem,
+    ReasoningMapping,
+    ReasoningMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -76,28 +81,30 @@ async def get_agent_detail(
 ) -> AgentDetailResponse:
     """Get agent detail with debug info and metadata."""
     tags = ["agents"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return AgentDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/agents/get_agent_detail_complete.sql")
         sql_params = (request.agentId, request.profileId)
         result = await conn.fetchrow(sql_query, request.agentId, request.profileId)
 
         if not result:
-            raise HTTPException(status_code=404, detail=f"Agent {request.agentId} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Agent {request.agentId} not found"
+            )
 
         # Parse debug_info from JSONB
         debug_info: list[DebugInfoItem] = []
@@ -110,7 +117,9 @@ async def get_agent_detail(
                     created_at_value = item.get("created_at")
                     debug_info.append(
                         DebugInfoItem(
-                            created_at=created_at_value.isoformat() if created_at_value else "",
+                            created_at=created_at_value.isoformat()
+                            if created_at_value
+                            else "",
                             model_id=item.get("model_id", ""),
                             content=item.get("content", ""),
                         )
@@ -146,7 +155,9 @@ async def get_agent_detail(
         # Parse valid_department_ids from array
         valid_department_ids_raw = result.get("valid_department_ids")
         valid_department_ids: list[str] = []
-        if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):
+        if valid_department_ids_raw and isinstance(
+            valid_department_ids_raw, (list, tuple)
+        ):
             valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
 
         # Parse department_mapping from JSONB
@@ -193,7 +204,9 @@ async def get_agent_detail(
         department_prompt_links_data = result.get("department_prompt_links")
         if isinstance(department_prompt_links_data, str):
             department_prompt_links_data = json.loads(department_prompt_links_data)
-        if department_prompt_links_data and isinstance(department_prompt_links_data, dict):
+        if department_prompt_links_data and isinstance(
+            department_prompt_links_data, dict
+        ):
             department_prompt_links = {
                 str(dept_id): str(prompt_id)
                 for dept_id, prompt_id in department_prompt_links_data.items()
@@ -201,7 +214,9 @@ async def get_agent_detail(
 
         # Build reasoning_mapping
         reasoning_mapping = {
-            "none": ReasoningMappingItem(name="None", description="No extended reasoning"),
+            "none": ReasoningMappingItem(
+                name="None", description="No extended reasoning"
+            ),
             "minimal": ReasoningMappingItem(
                 name="Minimal", description="Basic reasoning for straightforward tasks"
             ),
@@ -212,7 +227,8 @@ async def get_agent_detail(
                 name="Medium", description="Balanced reasoning for moderate complexity"
             ),
             "high": ReasoningMappingItem(
-                name="High", description="Deep reasoning for complex, multi-step problems"
+                name="High",
+                description="Deep reasoning for complex, multi-step problems",
             ),
         }
 
@@ -221,7 +237,9 @@ async def get_agent_detail(
             description=result["description"],
             system_prompt=result["system_prompt"],
             prompt_id=prompt_id,
-            temperature=float(result["temperature"]) if result["temperature"] is not None else 0.0,
+            temperature=float(result["temperature"])
+            if result["temperature"] is not None
+            else 0.0,
             model_id=result["model_id"],
             reasoning=result["reasoning"],
             active=result["active"],
@@ -239,7 +257,7 @@ async def get_agent_detail(
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -249,7 +267,7 @@ async def get_agent_detail(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -262,4 +280,3 @@ async def get_agent_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

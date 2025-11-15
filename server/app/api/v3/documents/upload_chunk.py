@@ -45,10 +45,10 @@ async def upload_chunk(
 ) -> UploadChunkResponse:
     """Upload a chunk of data."""
     tags = ["documents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         upload_dir = os.path.join(TUS_UPLOADS_DIR, request.uploadId)
 
@@ -70,7 +70,9 @@ async def upload_chunk(
         try:
             chunk_data = base64.b64decode(request.chunk)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid base64 chunk data: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid base64 chunk data: {str(e)}"
+            )
 
         # Append to file
         with open(os.path.join(upload_dir, "file"), "ab") as f:
@@ -86,11 +88,11 @@ async def upload_chunk(
             offset=new_offset,
             message="Chunk uploaded successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -103,4 +105,3 @@ async def upload_chunk(
             sql_params=sql_params,
             request=http_request,
         )
-

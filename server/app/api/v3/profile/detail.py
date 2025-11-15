@@ -54,7 +54,7 @@ async def get_profile_detail(
     """Get profile by ID (simple auth version without permissions)."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Get profile with guest-profile-id resolution in a single SQL file
         sql_query = load_sql("sql/v3/profile/get_profile.sql")
@@ -96,4 +96,3 @@ async def get_profile_detail(
             sql_params=sql_params,
             request=http_request,
         )
-

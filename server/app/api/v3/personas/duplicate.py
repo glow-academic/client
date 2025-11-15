@@ -38,10 +38,10 @@ async def duplicate_persona(
 ) -> DuplicatePersonaResponse:
     """Duplicate a persona."""
     tags = ["personas"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Duplicate persona (fetch and duplicate in single query)
@@ -60,11 +60,11 @@ async def duplicate_persona(
                 personaId=persona_id,
                 message=f"Persona '{original_name}' duplicated successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -79,4 +79,3 @@ async def duplicate_persona(
             sql_params=sql_params,
             request=http_request,
         )
-

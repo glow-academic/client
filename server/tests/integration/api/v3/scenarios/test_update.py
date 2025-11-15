@@ -61,9 +61,7 @@ async def test_update_scenario(
     assert data["message"] == "Scenario 'Updated Scenario' updated successfully"
 
     # Verify scenario was updated
-    scenario = await db.fetchrow(
-        "SELECT * FROM scenarios WHERE id = $1", scenario_id
-    )
+    scenario = await db.fetchrow("SELECT * FROM scenarios WHERE id = $1", scenario_id)
     assert scenario is not None
     assert scenario["name"] == "Updated Scenario"
     assert scenario["active"] is False
@@ -118,4 +116,3 @@ async def test_update_scenario_not_found(
     assert response.status_code == 404
     data = response.json()
     assert "not found" in data["detail"].lower()
-

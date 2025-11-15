@@ -63,5 +63,3 @@ def test_persona_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
 
     page.wait_for_timeout(500)
     expect(persona_card).to_have_count(0)
-
-

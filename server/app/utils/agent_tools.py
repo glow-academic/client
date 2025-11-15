@@ -169,7 +169,7 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
         """
         # Limit to maximum 3 objectives
         objectives = objectives[:3]
-        
+
         if len(objectives) < 1 or len(objectives) > 3:
             logger.warning(
                 f"Objectives count ({len(objectives)}) outside recommended range of 1-3"
@@ -184,7 +184,9 @@ def create_objectives_function(group_id: uuid.UUID | None) -> Any:
     return function_tool(set_objectives)
 
 
-def create_scenario_tools(group_id: uuid.UUID | None, objectives_enabled: bool = True) -> list[Any]:
+def create_scenario_tools(
+    group_id: uuid.UUID | None, objectives_enabled: bool = True
+) -> list[Any]:
     """Create all scenario generation function tools."""
     tools = []
 
@@ -219,7 +221,11 @@ def create_safe_field_name(short_name: str) -> str:
 
 
 def create_grading_function(
-    standard_group: Any, standards: list[Any], chat_id: uuid.UUID, total_standard_groups: int, emit_progress_func: Any
+    standard_group: Any,
+    standards: list[Any],
+    chat_id: uuid.UUID,
+    total_standard_groups: int,
+    emit_progress_func: Any,
 ) -> Any:
     """Create a function tool for grading a specific standard group."""
     safe_name = create_safe_field_name(standard_group["short_name"])
@@ -332,14 +338,19 @@ def create_summary_function(chat_id: uuid.UUID, emit_progress_func: Any) -> Any:
 
 
 def create_grading_tools(
-    standard_groups: list[Any], standards: list[Any], chat_id: uuid.UUID, emit_progress_func: Any
+    standard_groups: list[Any],
+    standards: list[Any],
+    chat_id: uuid.UUID,
+    emit_progress_func: Any,
 ) -> list[Any]:
     """Create all grading function tools for the standard groups."""
     tools = []
     total_standard_groups = len(standard_groups)
 
     for group in standard_groups:
-        tool = create_grading_function(group, standards, chat_id, total_standard_groups, emit_progress_func)
+        tool = create_grading_function(
+            group, standards, chat_id, total_standard_groups, emit_progress_func
+        )
         tools.append(tool)
         logger.info(f"Created grading tool for: {group['name']}")
 
@@ -444,4 +455,3 @@ def create_guardrail_tools() -> list[Any]:
 
     logger.info(f"Created {len(tools)} guardrail tools")
     return tools
-

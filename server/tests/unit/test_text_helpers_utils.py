@@ -10,7 +10,6 @@ import pytest
 from app.utils.text_helpers import *  # type: ignore
 
 
-
 class TestNormalize_Text:
     """Tests for normalize_text function."""
 

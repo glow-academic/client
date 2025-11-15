@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class UpdateModelRequest(BaseModel):
     """Request to update model."""
@@ -44,10 +45,10 @@ async def update_model(
 ) -> UpdateModelResponse:
     """Update an existing model."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Check if model exists
@@ -85,11 +86,11 @@ async def update_model(
                 success=True,
                 message=f"Model '{request.name}' updated successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -104,4 +105,3 @@ async def update_model(
             sql_params=sql_params,
             request=http_request,
         )
-

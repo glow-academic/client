@@ -79,4 +79,3 @@ def test_cohort_readonly_permissions(page: Page, base_url: str) -> None:
     # Verify submit button is disabled
     submit_button = page.get_by_test_id("btn-submit-cohort")
     expect(submit_button).to_be_disabled()
-

@@ -134,4 +134,3 @@ async def test_delete_provider_not_found(
     assert response.status_code == 400
     data = response.json()
     assert "not found" in data["detail"].lower()
-

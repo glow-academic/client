@@ -103,9 +103,7 @@ def test_parameters_cache_revalidation_and_no_double_fetch(
         page.wait_for_timeout(250)
 
         parameter_card = (
-            page.get_by_test_id("parameter-card")
-            .filter(has_text=parameter_name)
-            .first
+            page.get_by_test_id("parameter-card").filter(has_text=parameter_name).first
         )
         expect(parameter_card).to_be_visible()
     finally:
@@ -120,4 +118,3 @@ def test_parameters_cache_revalidation_and_no_double_fetch(
                 )
             except Exception:
                 pass
-

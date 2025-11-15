@@ -64,4 +64,3 @@ async def test_send_simulation_message_chat_not_found(
     error_events = mock_sio.get_events("simulation_error")
     # May or may not emit depending on when error occurs
     # Note: This test may need adjustment based on actual error handling
-

@@ -46,21 +46,21 @@ async def get_cohort_detail_default(
 ) -> CohortDetailResponse:
     """Get default cohort detail with staff, simulations, and mappings."""
     tags = ["cohorts"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return CohortDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql_query = load_sql("sql/v3/cohorts/get_cohort_detail_default_complete.sql")
@@ -68,7 +68,9 @@ async def get_cohort_detail_default(
         row = await conn.fetchrow(sql_query, request_body.profileId, campus_domain)
 
         if not row:
-            raise HTTPException(status_code=404, detail="No cohort found for user's departments")
+            raise HTTPException(
+                status_code=404, detail="No cohort found for user's departments"
+            )
 
         # Parse simulations list from JSONB (same as detail.py)
         simulations: list[SimulationInCohort] = []
@@ -80,7 +82,11 @@ async def get_cohort_detail_default(
                 for sim in sim_data:
                     if isinstance(sim, dict):
                         last_used_val = sim.get("last_used")
-                        last_used = last_used_val.isoformat() if isinstance(last_used_val, datetime) else None
+                        last_used = (
+                            last_used_val.isoformat()
+                            if isinstance(last_used_val, datetime)
+                            else None
+                        )
                         simulations.append(
                             SimulationInCohort(
                                 simulation_id=sim.get("simulation_id", ""),
@@ -105,7 +111,11 @@ async def get_cohort_detail_default(
                 for s in staff_data:
                     if isinstance(s, dict):
                         last_active_val = s.get("lastActive")
-                        last_active = last_active_val.isoformat() if isinstance(last_active_val, datetime) else None
+                        last_active = (
+                            last_active_val.isoformat()
+                            if isinstance(last_active_val, datetime)
+                            else None
+                        )
                         staff.append(
                             StaffItem(
                                 profile_id=s.get("profile_id", ""),
@@ -206,8 +216,12 @@ async def get_cohort_detail_default(
         profile_ids = [str(pid) for pid in (row.get("profile_ids") or [])]
         simulation_ids = [str(sid) for sid in (row.get("simulation_ids") or [])]
         valid_profile_ids = [str(pid) for pid in (row.get("valid_profile_ids") or [])]
-        valid_simulation_ids = [str(sid) for sid in (row.get("valid_simulation_ids") or [])]
-        valid_department_ids = [str(did) for did in (row.get("valid_department_ids") or [])]
+        valid_simulation_ids = [
+            str(sid) for sid in (row.get("valid_simulation_ids") or [])
+        ]
+        valid_department_ids = [
+            str(did) for did in (row.get("valid_department_ids") or [])
+        ]
         dept_ids = None
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
@@ -230,7 +244,7 @@ async def get_cohort_detail_default(
             cohort_mapping=cohort_mapping,
             department_mapping_for_staff=department_mapping_for_staff,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -240,7 +254,7 @@ async def get_cohort_detail_default(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -253,4 +267,3 @@ async def get_cohort_detail_default(
             sql_params=sql_params,
             request=request,
         )
-

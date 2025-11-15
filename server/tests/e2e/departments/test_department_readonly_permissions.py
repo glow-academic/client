@@ -70,4 +70,3 @@ def test_department_readonly_permissions(page: Page, base_url: str) -> None:
     active_switch = page.get_by_test_id("switch-department-active")
     if active_switch.is_visible():
         expect(active_switch).to_be_disabled()
-

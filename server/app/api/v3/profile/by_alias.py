@@ -29,7 +29,7 @@ async def get_profile_by_alias(
     """Get profile by alias (for auth operations)."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string
         sql_query = load_sql("sql/v3/profile/get_profile_by_alias.sql")
@@ -73,4 +73,3 @@ async def get_profile_by_alias(
             sql_params=sql_params,
             request=http_request,
         )
-

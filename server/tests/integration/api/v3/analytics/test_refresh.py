@@ -22,4 +22,3 @@ async def test_refresh_analytics(
     assert data["success"] is True
     assert data["status"] == "success"
     assert "refreshed successfully" in data["message"].lower()
-

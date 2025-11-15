@@ -238,4 +238,3 @@ async def test_list_providers_permissions_non_superadmin(
     # TA should not have edit permissions
     for provider in data["providers"]:
         assert provider["can_edit"] is False
-

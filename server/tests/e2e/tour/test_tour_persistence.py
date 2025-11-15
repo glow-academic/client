@@ -48,9 +48,10 @@ def test_tour_persistence(page: Page, base_url: str) -> None:
         # The exact persistence behavior depends on implementation
 
     # Close tour if still open
-    close_button = page.locator("button").filter(has_text="Close").or_(
-        page.locator("button[aria-label='Close']")
+    close_button = (
+        page.locator("button")
+        .filter(has_text="Close")
+        .or_(page.locator("button[aria-label='Close']"))
     )
     if close_button.count() > 0:
         close_button.first.click()
-

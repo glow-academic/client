@@ -147,4 +147,3 @@ async def test_bulk_update_documents_empty_list(
         assert data is not None
         assert data["success"] is True
         assert "0 document(s)" in data["message"]
-

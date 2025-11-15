@@ -102,4 +102,3 @@ async def test_duplicate_scenario_without_departments(
         new_scenario_id,
     )
     assert len(dept_links) == 0
-

@@ -36,9 +36,7 @@ def test_agent_readonly_permissions(page: Page, base_url: str) -> None:
     search_input.fill(agent_name)
     page.wait_for_timeout(250)
 
-    agent_card = page.locator(
-        f"[data-testid='agent-card'][data-agent-id='{agent_id}']"
-    )
+    agent_card = page.locator(f"[data-testid='agent-card'][data-agent-id='{agent_id}']")
     expect(agent_card).to_be_visible()
 
     expect(agent_card.get_by_test_id("btn-edit-agent")).to_have_count(0)
@@ -83,4 +81,3 @@ def test_agent_readonly_permissions(page: Page, base_url: str) -> None:
     temperature_slider = page.get_by_test_id("temperature-slider")
     slider_thumb = temperature_slider.locator('[role="slider"]').first
     expect(slider_thumb).to_be_disabled()
-

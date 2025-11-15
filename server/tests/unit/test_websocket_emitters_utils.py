@@ -71,4 +71,3 @@ class TestEmitHintProgress:
 
         # Should not raise an error
         await emit_hint_progress(event_data, None, chat_id)
-

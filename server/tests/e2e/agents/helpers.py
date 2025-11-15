@@ -187,7 +187,7 @@ def create_agent_api(
     default_model_id = defaults.get("model_id") or ""
     if not default_model_id and defaults.get("valid_model_ids"):
         default_model_id = defaults["valid_model_ids"][0]
-    
+
     payload = {
         "name": name,
         "description": description,
@@ -197,7 +197,9 @@ def create_agent_api(
         "role": role or defaults.get("role") or "assistant",
         "reasoning": reasoning or defaults.get("reasoning"),
         "temperature": float(
-            temperature if temperature is not None else defaults.get("temperature") or 0.7
+            temperature
+            if temperature is not None
+            else defaults.get("temperature") or 0.7
         ),
         "active": active if active is not None else True,
         "prompt_id": prompt_id,
@@ -257,4 +259,3 @@ def find_editable_agent(
         if require_department_specific is False and not is_dept_specific:
             return agent
     raise ValueError("No matching editable agent found in agent list")
-

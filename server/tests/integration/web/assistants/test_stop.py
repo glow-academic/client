@@ -98,4 +98,3 @@ async def test_stop_assistant_no_active_run(
     assert len(stopped_events) == 1
     assert stopped_events[0]["chat_id"] == chat_id_str
     # The handler should still emit the event even if no active run was found
-

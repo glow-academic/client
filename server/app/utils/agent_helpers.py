@@ -9,13 +9,20 @@ import uuid
 from typing import Any
 
 import asyncpg  # type: ignore
-from agents import (Agent, GuardrailFunctionOutput, InputGuardrail,
-                    OutputGuardrail, RunContextWrapper, Runner, TContext,
-                    ToolsToFinalOutputResult, trace)
+from agents import (
+    Agent,
+    GuardrailFunctionOutput,
+    InputGuardrail,
+    OutputGuardrail,
+    RunContextWrapper,
+    Runner,
+    TContext,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
 from app.main import get_db
-from app.utils.agent_tools import (guardrail_progress, guardrail_results,
-                                   hint_progress)
+from app.utils.agent_tools import guardrail_progress, guardrail_results, hint_progress
 from app.utils.agents import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
@@ -34,6 +41,7 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
     Returns:
         GenericAgent instance configured for hint generation
     """
+
     # Create tool use behavior - require all 3 hint tools to be called
     def tool_use_behavior(
         tool_context: Any, tool_results: list[Any]
@@ -71,7 +79,9 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
     )
 
 
-def build_guardrail_agent(context: dict[str, Any], guardrail_tools: list[Any]) -> GenericAgent:
+def build_guardrail_agent(
+    context: dict[str, Any], guardrail_tools: list[Any]
+) -> GenericAgent:
     """Create the internal agent that powers the guardrail from context data.
 
     Args:
@@ -81,6 +91,7 @@ def build_guardrail_agent(context: dict[str, Any], guardrail_tools: list[Any]) -
     Returns:
         GenericAgent configured for guardrail evaluation
     """
+
     # Create tool use behavior to wait for evaluation tool to be called
     def tool_use_behavior(
         tool_context: Any, tool_results: list[Any]
@@ -131,21 +142,25 @@ async def run_guardrail_evaluation(
 
     # Build guardrail agent from context
     from app.utils.agent_tools import create_guardrail_tools
+
     guardrail_tools = create_guardrail_tools()
     guardrail_agent = build_guardrail_agent(context, guardrail_tools)
 
     # Check rate limit (already included in context query)
-    profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+    profile_id_uuid = (
+        uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+    )
     if not profile_id_uuid:
         raise ValueError("Profile not found. Please contact support.")
-    
+
     req_per_day = context["req_per_day"]
     runs_today_count = context["runs_today_count"]
-    
+
     if req_per_day is not None and runs_today_count >= req_per_day:
         # Rate limit exceeded - format error message
         from datetime import timedelta
         from zoneinfo import ZoneInfo
+
         earliest_run_created_at = context["earliest_run_created_at"]
         if earliest_run_created_at:
             next_allowed_utc = earliest_run_created_at + timedelta(days=1)
@@ -226,16 +241,22 @@ def get_input_guardrails(
     ) -> GuardrailFunctionOutput:
         # Get all context data with single query using SQL file
         sql = load_sql("sql/v3/agents/get_guardrail_run_context.sql")
-        context_row = await conn.fetchrow(sql, str(chat_id), str(department_id), "input")
-        
+        context_row = await conn.fetchrow(
+            sql, str(chat_id), str(department_id), "input"
+        )
+
         if not context_row:
-            raise ValueError(f"Chat {chat_id} not found or no input guardrail agent configured")
-        
+            raise ValueError(
+                f"Chat {chat_id} not found or no input guardrail agent configured"
+            )
+
         context = {
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+            "temperature": float(context_row["temperature"])
+            if context_row["temperature"] is not None
+            else 0.0,
             "reasoning": context_row["reasoning"],
             "model_id": context_row["model_id"],
             "model_name": context_row["model_name"],
@@ -296,16 +317,22 @@ def get_output_guardrails(
     ) -> GuardrailFunctionOutput:
         # Get all context data with single query using SQL file
         sql = load_sql("sql/v3/agents/get_guardrail_run_context.sql")
-        context_row = await conn.fetchrow(sql, str(chat_id), str(department_id), "output")
-        
+        context_row = await conn.fetchrow(
+            sql, str(chat_id), str(department_id), "output"
+        )
+
         if not context_row:
-            raise ValueError(f"Chat {chat_id} not found or no output guardrail agent configured")
-        
+            raise ValueError(
+                f"Chat {chat_id} not found or no output guardrail agent configured"
+            )
+
         context = {
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
             "system_prompt": context_row["system_prompt"],
-            "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+            "temperature": float(context_row["temperature"])
+            if context_row["temperature"] is not None
+            else 0.0,
             "reasoning": context_row["reasoning"],
             "model_id": context_row["model_id"],
             "model_name": context_row["model_name"],
@@ -351,4 +378,3 @@ def get_output_guardrails(
 
     output_guard = OutputGuardrail(_output_guard)
     return [output_guard]
-

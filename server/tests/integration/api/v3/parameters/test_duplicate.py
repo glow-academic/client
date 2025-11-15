@@ -72,7 +72,9 @@ async def test_duplicate_parameter(
     assert duplicated_parameter["name"] == "Original Parameter Copy"
     assert duplicated_parameter["description"] == "Original Description"
     assert duplicated_parameter["numerical"] is False
-    assert duplicated_parameter["active"] is False  # Duplicated parameters are inactive by default
+    assert (
+        duplicated_parameter["active"] is False
+    )  # Duplicated parameters are inactive by default
 
     # Verify items were duplicated
     duplicated_items = await db.fetch(
@@ -160,4 +162,3 @@ async def test_duplicate_parameter_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

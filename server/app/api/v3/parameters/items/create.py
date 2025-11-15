@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class CreateParameterItemRequest(BaseModel):
     """Request to create a single parameter item."""
@@ -41,10 +42,10 @@ async def create_parameter_item(
 ) -> CreateParameterItemResponse:
     """Create a single parameter item (for inline creation from pickers)."""
     tags = ["parameters", "agents"]  # Parameter items used in scenario context
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Verify parameter exists
@@ -91,4 +92,3 @@ async def create_parameter_item(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -27,4 +27,3 @@ router.include_router(delete_prompt_router)
 router.include_router(overview_router)
 router.include_router(search_router)
 router.include_router(response_times_router)
-

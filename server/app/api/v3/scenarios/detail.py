@@ -7,13 +7,22 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              DocumentMapping, DocumentMappingItem,
-                              ObjectiveMapping, ObjectiveMappingItem,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              PersonaMapping, PersonaMappingItem,
-                              SimulationMapping, SimulationMappingItem)
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+    DocumentMapping,
+    DocumentMappingItem,
+    ObjectiveMapping,
+    ObjectiveMappingItem,
+    ParameterItemMapping,
+    ParameterItemMappingItem,
+    ParameterMapping,
+    ParameterMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -136,30 +145,34 @@ async def get_scenario_detail(
 ) -> ScenarioDetailResponse:
     """Get detailed scenario information."""
     tags = ["scenarios"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_data.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ScenarioDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Load SQL string (persona query is now merged into main query)
         sql_query = load_sql("sql/v3/scenarios/get_scenario_detail_complete.sql")
         sql_params = (request_data.scenarioId, request_data.profileId)
 
         # Execute query
-        scenario = await conn.fetchrow(sql_query, request_data.scenarioId, request_data.profileId)
+        scenario = await conn.fetchrow(
+            sql_query, request_data.scenarioId, request_data.profileId
+        )
         if not scenario:
-            raise HTTPException(status_code=404, detail=f"Scenario not found: {request_data.scenarioId}")
+            raise HTTPException(
+                status_code=404, detail=f"Scenario not found: {request_data.scenarioId}"
+            )
 
         # Get persona_ids from query result (already included in main query)
         persona_ids = scenario.get("persona_ids", [])
@@ -193,7 +206,9 @@ async def get_scenario_detail(
             for param_id, param_detail in params_data.items():
                 if isinstance(param_detail, dict):
                     param_item_ids = param_detail.get("parameter_item_ids", [])
-                    valid_param_item_ids = param_detail.get("valid_parameter_item_ids", [])
+                    valid_param_item_ids = param_detail.get(
+                        "valid_parameter_item_ids", []
+                    )
                     if not isinstance(param_item_ids, list):
                         param_item_ids = []
                     if not isinstance(valid_param_item_ids, list):
@@ -292,6 +307,7 @@ async def get_scenario_detail(
         if isinstance(dept_mapping_data, dict):
             for did, ddata in dept_mapping_data.items():
                 if isinstance(ddata, dict):
+
                     def to_str_list(value: Any) -> list[str] | None:
                         if value is None:
                             return None
@@ -347,7 +363,11 @@ async def get_scenario_detail(
                             can_edit=doc.get("can_edit", True),
                             can_delete=doc.get("can_delete", True),
                             active=doc.get("active", True),
-                            department_ids=[str(d) for d in doc.get("department_ids", [])] if doc.get("department_ids") else None,
+                            department_ids=[
+                                str(d) for d in doc.get("department_ids", [])
+                            ]
+                            if doc.get("department_ids")
+                            else None,
                             file_path=doc.get("file_path", ""),
                             mime_type=doc.get("mime_type", ""),
                             parameter_item_ids=doc.get("parameter_item_ids", []),
@@ -416,7 +436,7 @@ async def get_scenario_detail(
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -426,7 +446,7 @@ async def get_scenario_detail(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -441,4 +461,3 @@ async def get_scenario_detail(
             sql_params=sql_params,
             request=request,
         )
-

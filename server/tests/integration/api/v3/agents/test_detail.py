@@ -213,4 +213,3 @@ async def test_get_agent_detail_optimization(
     # Verify all valid_model_ids have entries in model_mapping
     for model_id in data["valid_model_ids"]:
         assert model_id in data["model_mapping"]
-

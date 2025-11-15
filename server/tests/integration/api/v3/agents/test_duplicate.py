@@ -141,4 +141,3 @@ async def test_duplicate_agent_not_found(
     assert response.status_code == 500
     data = response.json()
     assert "detail" in data
-

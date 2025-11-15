@@ -99,4 +99,3 @@ async def test_create_provider_minimal(
     )
     assert provider is not None
     assert provider["name"] == "Minimal Provider"
-

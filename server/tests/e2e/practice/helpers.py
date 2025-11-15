@@ -91,13 +91,13 @@ def fetch_practice_data(
         effective_profile_id=effective_profile_id,
         pathname="/practice",
     )
-    
+
     payload: Dict[str, Any] = {
         "profileId": resolved_effective,
     }
     if department_ids:
         payload["departmentIds"] = department_ids
-    
+
     return _post_json(
         request,
         "/api/v3/practice",
@@ -106,4 +106,3 @@ def fetch_practice_data(
         effective_profile_id=resolved_effective,
         bypass_cache=bypass_cache,
     )
-

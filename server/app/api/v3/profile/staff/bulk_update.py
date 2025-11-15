@@ -19,7 +19,9 @@ class BulkUpdateStaffRequest(BaseModel):
 
     profileIds: list[str]
     role: str | None = None
-    requests_per_day: int | None | str = None  # int for limit, None for unlimited, "__keep__" to not update
+    requests_per_day: int | None | str = (
+        None  # int for limit, None for unlimited, "__keep__" to not update
+    )
     default_profile: bool | None = None
     currentProfileId: str  # Current user's profile ID for permission validation
     active: bool | None = None
@@ -42,16 +44,22 @@ async def bulk_update_profile(
     """Bulk update profiles."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Convert profile IDs to UUID array
         profile_uuids = [uuid.UUID(p) for p in request.profileIds]
-        
+
         # Handle requests_per_day: "__keep__" means skip, None means unlimited (-1 in SQL), int means limit
         requests_per_day_value = None
-        if isinstance(request.requests_per_day, str) and request.requests_per_day == "__keep__":
+        if (
+            isinstance(request.requests_per_day, str)
+            and request.requests_per_day == "__keep__"
+        ):
             requests_per_day_value = None  # Skip update
-        elif isinstance(request.requests_per_day, str) and request.requests_per_day != "__keep__":
+        elif (
+            isinstance(request.requests_per_day, str)
+            and request.requests_per_day != "__keep__"
+        ):
             try:
                 requests_per_day_value = int(request.requests_per_day)
             except (ValueError, TypeError):
@@ -60,7 +68,7 @@ async def bulk_update_profile(
             requests_per_day_value = request.requests_per_day
         elif request.requests_per_day is None:
             requests_per_day_value = -1  # None -> unlimited (NULL in DB)
-        
+
         # Single consolidated query for validation + update
         sql_query = load_sql("sql/v3/profile/staff/bulk_update_profile_complete.sql")
         sql_params = (
@@ -71,18 +79,15 @@ async def bulk_update_profile(
             request.active,
             requests_per_day_value,
         )
-        
+
         async with transaction(conn):
             result = await conn.fetchrow(sql_query, *sql_params)
-            
+
             if not result:
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to update profiles"
-                )
-            
+                raise HTTPException(status_code=500, detail="Failed to update profiles")
+
             updated_count = result["updated_count"]
-            
+
             # Check if all profiles were updated (validation might have filtered some out)
             if updated_count < len(request.profileIds):
                 raise HTTPException(
@@ -94,12 +99,12 @@ async def bulk_update_profile(
             success=True,
             message=f"{len(request.profileIds)} staff members updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -112,4 +117,3 @@ async def bulk_update_profile(
             sql_params=sql_params,
             request=http_request,
         )
-

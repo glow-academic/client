@@ -41,7 +41,7 @@ async def create_profile(
     """Create a new profile."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Generate new profile ID
         profile_id = str(uuid.uuid4())
@@ -60,14 +60,12 @@ async def create_profile(
             False,  # viewed_chat
             request.department_id,
         )
-        
+
         async with transaction(conn):
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
-                raise HTTPException(
-                    status_code=500, detail="Failed to create profile"
-                )
+                raise HTTPException(status_code=500, detail="Failed to create profile")
 
             # Check if alias already exists (returned from query)
             if result["alias_exists"]:
@@ -77,21 +75,19 @@ async def create_profile(
 
             # Verify profile was created
             if not result["id"]:
-                raise HTTPException(
-                    status_code=500, detail="Failed to create profile"
-                )
+                raise HTTPException(status_code=500, detail="Failed to create profile")
 
         result_data = CreateStaffResponse(
             success=True,
             profileId=str(result["id"]),
             message=f"Staff '{request.firstName} {request.lastName}' created successfully",
         )
-        
+
         # Invalidate cache after mutation
         tags = ["staff", "profile"]  # Staff operations also affect profile cache
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -104,4 +100,3 @@ async def create_profile(
             sql_params=sql_params,
             request=None,
         )
-

@@ -8,4 +8,3 @@ router = APIRouter(prefix="/items", tags=["parameters"])
 
 # Include endpoint routers
 router.include_router(create_router)
-

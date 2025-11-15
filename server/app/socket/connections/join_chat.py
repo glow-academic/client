@@ -27,4 +27,3 @@ async def join_chat(sid: str, data: dict[str, Any]) -> None:
         await sio.emit(
             "joined_chat", {"chat_id": chat_id, "chat_type": chat_type}, room=sid
         )
-

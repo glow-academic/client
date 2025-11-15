@@ -25,4 +25,3 @@ router.include_router(delete_router)
 router.include_router(overview_router)
 router.include_router(search_router)
 router.include_router(attempts_router)
-

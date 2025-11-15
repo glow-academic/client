@@ -61,7 +61,9 @@ async def scenario_overview(
 
     pool = get_pool()
     if not pool:
-        raise HTTPException(status_code=500, detail="Database connection pool not available")
+        raise HTTPException(
+            status_code=500, detail="Database connection pool not available"
+        )
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -115,4 +117,3 @@ async def scenario_overview(
             sql_params=sql_params,
             request=None,  # Tool endpoints don't have Request
         )
-

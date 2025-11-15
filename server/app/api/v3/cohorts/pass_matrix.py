@@ -59,7 +59,9 @@ async def cohort_pass_matrix(
 
     pool = get_pool()
     if not pool:
-        raise HTTPException(status_code=500, detail="Database connection pool not available")
+        raise HTTPException(
+            status_code=500, detail="Database connection pool not available"
+        )
 
     try:
         async with pool.acquire() as conn:
@@ -81,9 +83,7 @@ async def cohort_pass_matrix(
             if isinstance(simulations, str):
                 simulations = json.loads(simulations)
             student_results = (
-                cohort_data["student_results"]
-                if cohort_data["student_results"]
-                else {}
+                cohort_data["student_results"] if cohort_data["student_results"] else {}
             )
             if isinstance(student_results, str):
                 student_results = json.loads(student_results)
@@ -92,9 +92,7 @@ async def cohort_pass_matrix(
             matrix = []
             for student in members:
                 student_id = str(student["id"])
-                student_name = (
-                    f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
-                )
+                student_name = f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
                 if not student_name:
                     student_name = student["alias"] or "Unknown"
 
@@ -177,4 +175,3 @@ async def cohort_pass_matrix(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-

@@ -21,7 +21,7 @@ def test_profile_page_renders(page: Page, base_url: str) -> None:
     # Verify profile page loaded
     # Look for profile information elements
     # The exact test IDs depend on the profile component implementation
-    
+
     # Check for common profile fields
     # Profile name/display
     profile_name = page.locator("[data-testid='profile-name']").or_(
@@ -32,7 +32,7 @@ def test_profile_page_renders(page: Page, base_url: str) -> None:
 
     # Profile email or other identifying info
     # These selectors are placeholders - adjust based on actual component
-    
+
     # Verify profile data via API
     profile_data = fetch_profile_data(
         page.context.request,
@@ -40,12 +40,11 @@ def test_profile_page_renders(page: Page, base_url: str) -> None:
         effective_profile_id=ADMIN_PROFILE_ID,
         bypass_cache=True,
     )
-    
+
     assert profile_data is not None
     assert "actualProfile" in profile_data or "effectiveProfile" in profile_data
-    
+
     # Verify page is interactive (not just a loading state)
     # Check that some content is visible
     page_content = page.locator("main").or_(page.locator("body"))
     expect(page_content).to_be_visible()
-

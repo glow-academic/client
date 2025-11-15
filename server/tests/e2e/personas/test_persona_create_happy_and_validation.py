@@ -120,4 +120,3 @@ def test_persona_create_validation_and_success(page: Page, base_url: str) -> Non
     expect(
         page.get_by_test_id("persona-card").filter(has_text=persona_name)
     ).to_have_count(0)
-

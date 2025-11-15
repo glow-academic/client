@@ -72,9 +72,7 @@ def test_model_edit_navigation(page: Page, base_url: str) -> None:
         edit_button.click()
 
         # Verify URL changes
-        page.wait_for_url(
-            f"{base_url}/system/providers/p/{provider_id}/m/{model_id}"
-        )
+        page.wait_for_url(f"{base_url}/system/providers/p/{provider_id}/m/{model_id}")
         page.wait_for_load_state("networkidle")
 
         # Verify data-page attribute
@@ -179,9 +177,7 @@ def test_model_update_persists_changes(page: Page, base_url: str) -> None:
         edit_button = model_card.get_by_test_id("btn-edit-model")
         edit_button.click()
 
-        page.wait_for_url(
-            f"{base_url}/system/providers/p/{provider_id}/m/{model_id}"
-        )
+        page.wait_for_url(f"{base_url}/system/providers/p/{provider_id}/m/{model_id}")
         page.wait_for_load_state("networkidle")
 
         # Verify changes persisted
@@ -250,9 +246,7 @@ def test_model_pricing_validation(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(
-            f"{base_url}/system/providers/p/{provider_id}/m/{model_id}"
-        )
+        page.goto(f"{base_url}/system/providers/p/{provider_id}/m/{model_id}")
         page.wait_for_load_state("networkidle")
 
         container = page.locator("[data-page='model-edit']").first
@@ -304,4 +298,3 @@ def test_model_pricing_validation(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

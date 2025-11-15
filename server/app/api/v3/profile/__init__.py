@@ -29,4 +29,3 @@ router.include_router(search_router)
 router.include_router(simulation_report_router)
 # Include staff management routers
 router.include_router(staff_router)
-

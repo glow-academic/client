@@ -60,17 +60,13 @@ def create_provider_via_ui(
     page.wait_for_timeout(500)
 
     provider_card = (
-        page.get_by_test_id("provider-card")
-        .filter(has_text=provider_name)
-        .first
+        page.get_by_test_id("provider-card").filter(has_text=provider_name).first
     )
     expect(provider_card).to_be_visible()
 
     provider_id = provider_card.get_attribute("data-provider-id")
     if not provider_id:
-        raise AssertionError(
-            "Created provider card missing data-provider-id attribute"
-        )
+        raise AssertionError("Created provider card missing data-provider-id attribute")
 
     return provider_name, provider_id
 
@@ -120,11 +116,7 @@ def create_model_via_ui(
     search_input.fill(model_name)
     page.wait_for_timeout(500)
 
-    model_card = (
-        page.get_by_test_id("model-card")
-        .filter(has_text=model_name)
-        .first
-    )
+    model_card = page.get_by_test_id("model-card").filter(has_text=model_name).first
     expect(model_card).to_be_visible()
 
     model_id = model_card.get_attribute("data-model-id")
@@ -231,4 +223,3 @@ def edit_model_via_ui(
 
     page.wait_for_url(re.compile(r".*/system/providers.*"), timeout=20000)
     page.wait_for_load_state("networkidle")
-

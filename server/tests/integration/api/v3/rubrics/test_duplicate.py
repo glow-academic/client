@@ -21,7 +21,9 @@ async def test_duplicate_rubric(
     )
 
     # Link to a department
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     await db.execute(
@@ -61,7 +63,9 @@ async def test_duplicate_rubric(
 
     # Verify new rubric was created with same properties
     new_rubric = await db.fetchrow("SELECT * FROM rubrics WHERE id = $1", new_rubric_id)
-    original_rubric = await db.fetchrow("SELECT * FROM rubrics WHERE id = $1", rubric_id)
+    original_rubric = await db.fetchrow(
+        "SELECT * FROM rubrics WHERE id = $1", rubric_id
+    )
 
     assert new_rubric is not None
     assert new_rubric["name"] == original_rubric["name"] + " Copy"
@@ -142,4 +146,3 @@ async def test_duplicate_rubric_not_found(
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
-

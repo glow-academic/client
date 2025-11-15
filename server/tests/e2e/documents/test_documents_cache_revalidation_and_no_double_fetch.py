@@ -41,6 +41,7 @@ def _set_request_counter(
             counts["total"] += 1
 
     page.on("request", _handle)
+
     def stop() -> None:
         page.remove_listener("request", _handle)
 
@@ -121,7 +122,11 @@ def test_documents_cache_revalidation_after_update(page: Page, base_url: str) ->
             bypass_cache=True,
         )
         original_doc = next(
-            (d for d in data.get("documents", []) if d.get("document_id") == document_id),
+            (
+                d
+                for d in data.get("documents", [])
+                if d.get("document_id") == document_id
+            ),
             None,
         )
         if not original_doc:
@@ -147,7 +152,11 @@ def test_documents_cache_revalidation_after_update(page: Page, base_url: str) ->
             bypass_cache=True,
         )
         updated_doc = next(
-            (d for d in updated_data.get("documents", []) if d.get("document_id") == document_id),
+            (
+                d
+                for d in updated_data.get("documents", [])
+                if d.get("document_id") == document_id
+            ),
             None,
         )
         assert updated_doc is not None, "Document should still exist after update"
@@ -192,7 +201,7 @@ def test_documents_cache_revalidation_after_delete(page: Page, base_url: str) ->
 
         # Store document_id before deletion
         doc_id_to_check = document_id
-        
+
         # Delete document via API
         delete_document_api(
             page.context.request,
@@ -226,26 +235,23 @@ def test_documents_cache_revalidation_after_delete(page: Page, base_url: str) ->
 
 def test_documents_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
     """Ensure navigating away and back doesn't cause double-fetch of list."""
-    list_counter, stop_counter = _set_request_counter(
-        page, "/api/v3/documents/list"
-    )
-    
+    list_counter, stop_counter = _set_request_counter(page, "/api/v3/documents/list")
+
     page.goto(f"{base_url}/create/documents")
     page.wait_for_load_state("networkidle")
-    
+
     # Navigate away
     page.goto(f"{base_url}/create/personas")
     page.wait_for_load_state("networkidle")
-    
+
     # Navigate back
     page.goto(f"{base_url}/create/documents")
     page.wait_for_load_state("networkidle")
-    
+
     stop_counter()
-    
+
     # Should have at most 2 requests (initial load + return navigation)
     # Ideally should be 1 if cache is working perfectly
-    assert (
-        list_counter["total"] <= 2
-    ), f"Documents list endpoint fetched {list_counter['total']} times, expected <= 2"
-
+    assert list_counter["total"] <= 2, (
+        f"Documents list endpoint fetched {list_counter['total']} times, expected <= 2"
+    )

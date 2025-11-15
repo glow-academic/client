@@ -115,7 +115,9 @@ async def test_send_assistant_message_chat_not_found(
     assert len(error_events) >= 1
 
 
-@pytest.mark.skip(reason="Requires OpenAI monkeypatching - will be enabled after mocking setup")
+@pytest.mark.skip(
+    reason="Requires OpenAI monkeypatching - will be enabled after mocking setup"
+)
 async def test_send_assistant_message_success(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
@@ -172,7 +174,9 @@ async def test_send_assistant_message_success(
     # This will be empty until OpenAI is properly mocked
 
 
-@pytest.mark.skip(reason="Requires OpenAI monkeypatching - will be enabled after mocking setup")
+@pytest.mark.skip(
+    reason="Requires OpenAI monkeypatching - will be enabled after mocking setup"
+)
 async def test_send_assistant_message_tool_calls(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
@@ -213,4 +217,3 @@ async def test_send_assistant_message_tool_calls(
     tool_call_created = mock_sio.get_events("tool_call_created")
     tool_call_completed = mock_sio.get_events("tool_call_completed")
     # These will be empty until OpenAI is properly mocked
-

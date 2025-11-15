@@ -47,21 +47,21 @@ async def get_profile_detail_bulk(
 ) -> StaffDetailBulkResponse:
     """Get bulk profile detail information."""
     tags = ["staff"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return StaffDetailBulkResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Get profiles with JSONB department mapping (consolidated query)
         sql_query = load_sql("sql/v3/profile/staff/get_profiles_by_ids.sql")
@@ -77,7 +77,13 @@ async def get_profile_detail_bulk(
 
         # Check if requests_per_day are consistent
         req_per_days = list(
-            set([p["requests_per_day"] for p in profiles if p["requests_per_day"] is not None])
+            set(
+                [
+                    p["requests_per_day"]
+                    for p in profiles
+                    if p["requests_per_day"] is not None
+                ]
+            )
         )
         requests_per_day = req_per_days[0] if len(req_per_days) == 1 else None
 
@@ -133,7 +139,7 @@ async def get_profile_detail_bulk(
             role_options=role_options,
             department_mapping=department_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -143,7 +149,7 @@ async def get_profile_detail_bulk(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -156,4 +162,3 @@ async def get_profile_detail_bulk(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -181,7 +181,7 @@ def create_simulation_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    
+
     # Format scenario_ids - can be list of strings or list of dicts with scenario_id and active
     formatted_scenario_ids: list[str] | list[Dict[str, Any]] = []
     if scenario_ids:
@@ -189,7 +189,7 @@ def create_simulation_api(
     elif defaults.get("valid_scenario_ids"):
         # Use first valid scenario if available
         formatted_scenario_ids = [defaults["valid_scenario_ids"][0]]
-    
+
     payload = {
         "title": title,
         "description": description,
@@ -235,7 +235,7 @@ def update_simulation_api(
         profile_id=profile_id,
         effective_profile_id=effective_profile_id,
     )
-    
+
     # Fetch current simulation to merge updates
     current = fetch_simulation_detail(
         request,
@@ -244,19 +244,29 @@ def update_simulation_api(
         effective_profile_id=resolved_effective,
         bypass_cache=True,
     )
-    
+
     # Build payload with required fields (must provide all)
     payload: Dict[str, Any] = {
         "simulationId": simulation_id,
         "title": title if title is not None else current.get("name", ""),
-        "description": description if description is not None else current.get("description") or "",
-        "rubric_id": rubric_id if rubric_id is not None else current.get("rubric_id", ""),
-        "department_ids": department_ids if department_ids is not None else current.get("department_ids"),
+        "description": description
+        if description is not None
+        else current.get("description") or "",
+        "rubric_id": rubric_id
+        if rubric_id is not None
+        else current.get("rubric_id", ""),
+        "department_ids": department_ids
+        if department_ids is not None
+        else current.get("department_ids"),
         "active": active if active is not None else current.get("active", True),
-        "practice_simulation": practice_simulation if practice_simulation is not None else current.get("practice_simulation", False),
-        "time_limit": time_limit if time_limit is not None else current.get("time_limit"),
+        "practice_simulation": practice_simulation
+        if practice_simulation is not None
+        else current.get("practice_simulation", False),
+        "time_limit": time_limit
+        if time_limit is not None
+        else current.get("time_limit"),
     }
-    
+
     # Handle scenario_ids - convert to proper format
     if scenario_ids is not None:
         payload["scenario_ids"] = scenario_ids
@@ -269,7 +279,7 @@ def update_simulation_api(
         ]
     else:
         payload["scenario_ids"] = []
-    
+
     _post_json(
         request,
         "/api/v3/simulations/update",
@@ -348,4 +358,3 @@ def find_editable_simulation(
         if require_department_specific is False and not is_dept_specific:
             return simulation
     raise ValueError("No matching editable simulation found in simulation list")
-

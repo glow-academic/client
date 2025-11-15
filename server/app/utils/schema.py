@@ -45,7 +45,9 @@ class PersonaMappingItem(MappingItem):
 
     color: str
     icon: str
-    image_model: bool | None = None  # Optional: indicates if persona's model supports images
+    image_model: bool | None = (
+        None  # Optional: indicates if persona's model supports images
+    )
 
 
 class RubricMappingItem(MappingItem):
@@ -180,6 +182,7 @@ StandardsMapping = dict[str, StandardMappingItem]
 # ============================================================================
 # Analytics Schemas (used across multiple v3 routes)
 # ============================================================================
+
 
 # Enums
 class Method(str, Enum):

@@ -35,23 +35,25 @@ async def delete_agent_prompt(
 ) -> DeleteAgentPromptResponse:
     """Delete an agent prompt."""
     tags = ["agents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/agents/delete_agent_prompt.sql")
         sql_params = (request.agentId, request.promptId, request.departmentId)
-        await conn.execute(sql_query, request.agentId, request.promptId, request.departmentId)
+        await conn.execute(
+            sql_query, request.agentId, request.promptId, request.departmentId
+        )
 
         result_data = DeleteAgentPromptResponse(
             success=True, message="Prompt deleted successfully"
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -66,4 +68,3 @@ async def delete_agent_prompt(
             sql_params=sql_params,
             request=http_request,
         )
-

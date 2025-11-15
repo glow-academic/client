@@ -66,9 +66,9 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
     page.goto(f"{base_url}/management/rubrics/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
-    assert (
-        detail_counter["total"] <= 1
-    ), "Default rubric detail endpoint fetched more than once"
+    assert detail_counter["total"] <= 1, (
+        "Default rubric detail endpoint fetched more than once"
+    )
 
     rubric_name, rubric_id = create_rubric_via_ui(
         page,
@@ -192,4 +192,3 @@ def test_rubrics_cache_revalidation_and_no_double_fetch(
             )
         except Exception:
             pass
-

@@ -36,10 +36,10 @@ async def delete_department(
 ) -> DeleteDepartmentResponse:
     """Delete a department (with usage check)."""
     tags = ["departments"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete department with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/departments/delete_department_complete.sql")
@@ -65,11 +65,11 @@ async def delete_department(
             success=True,
             message="Department deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -82,4 +82,3 @@ async def delete_department(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -160,7 +160,9 @@ def test_agent_edit_update_prompt_branching(page: Page, base_url: str) -> None:
                     expect(page.get_by_text("Using Default Prompt")).to_be_visible()
 
                     # Create new department-specific prompt
-                    create_new_prompt_button = page.get_by_test_id("btn-create-new-prompt")
+                    create_new_prompt_button = page.get_by_test_id(
+                        "btn-create-new-prompt"
+                    )
                     if create_new_prompt_button.count() > 0:
                         create_new_prompt_button.click()
                         _set_monaco_value(page, department_prompt)
@@ -248,4 +250,3 @@ def test_agent_edit_update_prompt_branching(page: Page, base_url: str) -> None:
             profile_id=ADMIN_PROFILE_ID,
             effective_profile_id=ADMIN_PROFILE_ID,
         )
-

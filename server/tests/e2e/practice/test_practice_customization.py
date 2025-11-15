@@ -91,10 +91,10 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
     # Click start button
     start_button = page.get_by_test_id("practice-start-button")
     start_button.wait_for(state="visible", timeout=10000)
-    
+
     # Set up navigation promise before clicking
     navigation_promise = page.wait_for_event("framenavigated", timeout=30000)
-    
+
     start_button.click()
 
     # Wait for navigation to attempt page
@@ -108,4 +108,3 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
     chat_container = page.get_by_test_id("attempt-chat-container")
     chat_container.wait_for(state="visible", timeout=15000)
     expect(chat_container).to_be_visible()
-

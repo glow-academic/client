@@ -10,6 +10,7 @@ from app.main import get_db, transaction
 from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class DeletePersonaRequest(BaseModel):
     """Request to delete persona."""
@@ -36,7 +37,7 @@ async def delete_persona(
     """Delete a persona."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Delete persona with usage check and name fetch (single query)
@@ -72,4 +73,3 @@ async def delete_persona(
             sql_params=sql_params,
             request=http_request,
         )
-

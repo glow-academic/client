@@ -67,7 +67,9 @@ async def find_profiles(
     """
     pool = get_pool()
     if not pool:
-        raise HTTPException(status_code=500, detail="Database connection pool not available")
+        raise HTTPException(
+            status_code=500, detail="Database connection pool not available"
+        )
 
     try:
         async with pool.acquire() as conn:
@@ -97,7 +99,4 @@ async def find_profiles(
 
             return results
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Search error: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Search error: {str(e)}")

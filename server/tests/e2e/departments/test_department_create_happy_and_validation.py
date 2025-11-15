@@ -104,4 +104,3 @@ def test_department_create_validation_and_success(page: Page, base_url: str) -> 
                 )
             except Exception:
                 pass
-

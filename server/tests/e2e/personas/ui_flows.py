@@ -98,7 +98,9 @@ def create_persona_via_ui(
     search_input.fill(persona_name)
     page.wait_for_timeout(500)
 
-    persona_card = page.get_by_test_id("persona-card").filter(has_text=persona_name).first
+    persona_card = (
+        page.get_by_test_id("persona-card").filter(has_text=persona_name).first
+    )
     expect(persona_card).to_be_visible()
 
     persona_id = persona_card.get_attribute("data-persona-id")
@@ -106,4 +108,3 @@ def create_persona_via_ui(
         raise AssertionError("Created persona card missing data-persona-id attribute")
 
     return persona_name, persona_id
-

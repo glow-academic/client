@@ -67,4 +67,3 @@ def test_persona_readonly_permissions(page: Page, base_url: str) -> None:
 
     model_picker = page.get_by_test_id("picker-model")
     expect(model_picker).to_be_disabled()
-

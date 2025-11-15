@@ -34,10 +34,10 @@ async def duplicate_agent(
 ) -> DuplicateAgentResponse:
     """Duplicate an agent."""
     tags = ["agents"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/agents/duplicate_agent.sql")
         sql_params = (request.agentId,)
@@ -51,11 +51,11 @@ async def duplicate_agent(
             agentId=new_agent_row["agent_id"],
             message="Agent duplicated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -68,4 +68,3 @@ async def duplicate_agent(
             sql_params=sql_params,
             request=http_request,
         )
-

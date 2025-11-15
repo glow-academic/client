@@ -9,4 +9,3 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 
 router.include_router(chat_full_router)
 router.include_router(chat_list_router)
-

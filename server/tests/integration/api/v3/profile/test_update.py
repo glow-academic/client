@@ -55,7 +55,9 @@ async def test_update_profile_partial(
     profile_id = await get_superadmin_alias(db)
 
     # Get original values
-    original = await db.fetchrow("SELECT first_name, last_name, active FROM profiles WHERE id = $1", profile_id)
+    original = await db.fetchrow(
+        "SELECT first_name, last_name, active FROM profiles WHERE id = $1", profile_id
+    )
     assert original is not None
 
     response = await client.post(
@@ -129,6 +131,7 @@ async def test_update_profile_last_active(
     profile_id = await get_superadmin_alias(db)
 
     from datetime import datetime, UTC
+
     last_active = datetime.now(UTC).isoformat()
 
     response = await client.post(
@@ -149,4 +152,3 @@ async def test_update_profile_last_active(
         profile_id,
     )
     assert activity is not None
-

@@ -70,28 +70,30 @@ async def get_department_detail_default(
 ) -> DepartmentDetailResponse:
     """Get default department detail for creation mode."""
     tags = ["departments"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request_body.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return DepartmentDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/departments/get_department_default_complete.sql")
         sql_params = (request_body.profileId,)
         result = await conn.fetchrow(sql_query, request_body.profileId)
 
         if not result:
-            raise HTTPException(status_code=404, detail=f"Profile {request_body.profileId} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Profile {request_body.profileId} not found"
+            )
 
         is_superadmin = result["profile_role"] == "superadmin"
 
@@ -109,7 +111,7 @@ async def get_department_detail_default(
             cohort_mapping={},
             department_mapping={},
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -119,7 +121,7 @@ async def get_department_detail_default(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -132,4 +134,3 @@ async def get_department_detail_default(
             sql_params=sql_params,
             request=request,
         )
-

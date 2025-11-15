@@ -21,7 +21,9 @@ async def test_update_rubric(
     )
 
     # Get a department ID
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     response = await client.post(
@@ -132,7 +134,9 @@ async def test_update_rubric_remove_departments(
         "VALUES('Test Rubric', 'Test', 100, 70, true) RETURNING id"
     )
 
-    dept_id = await db.fetchval("SELECT id FROM departments WHERE active = true LIMIT 1")
+    dept_id = await db.fetchval(
+        "SELECT id FROM departments WHERE active = true LIMIT 1"
+    )
     assert dept_id is not None
 
     await db.execute(
@@ -167,4 +171,3 @@ async def test_update_rubric_remove_departments(
     )
     assert dept_link is not None
     assert dept_link["active"] is False
-

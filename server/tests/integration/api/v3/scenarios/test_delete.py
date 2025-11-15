@@ -43,9 +43,7 @@ async def test_delete_scenario(
     assert "deleted successfully" in data["message"].lower()
 
     # Verify scenario was deleted
-    scenario = await db.fetchrow(
-        "SELECT * FROM scenarios WHERE id = $1", scenario_id
-    )
+    scenario = await db.fetchrow("SELECT * FROM scenarios WHERE id = $1", scenario_id)
     assert scenario is None
 
 
@@ -117,4 +115,3 @@ async def test_delete_scenario_not_found(
     assert response.status_code == 404
     data = response.json()
     assert "not found" in data["detail"].lower()
-

@@ -124,4 +124,3 @@ async def test_create_parameter_minimal(
         "SELECT * FROM parameter_items WHERE parameter_id = $1", data["parameterId"]
     )
     assert len(items) == 0
-

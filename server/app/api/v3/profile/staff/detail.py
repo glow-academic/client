@@ -53,21 +53,21 @@ async def get_profile_detail_staff(
 ) -> StaffDetailResponse:
     """Get detailed profile information (staff version with permissions)."""
     tags = ["staff"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return StaffDetailResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Get campus email domain from environment
         campus_email = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
@@ -135,7 +135,7 @@ async def get_profile_detail_staff(
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -145,7 +145,7 @@ async def get_profile_detail_staff(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -158,4 +158,3 @@ async def get_profile_detail_staff(
             sql_params=sql_params,
             request=http_request,
         )
-

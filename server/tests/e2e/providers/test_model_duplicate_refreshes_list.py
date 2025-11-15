@@ -53,9 +53,9 @@ def test_model_duplicate_creates_copy(page: Page, base_url: str) -> None:
     # Verify duplicate has same provider
     original_provider_id = model_card.get_attribute("data-provider-id")
     copy_provider_id = copy_card.get_attribute("data-provider-id")
-    assert (
-        original_provider_id == copy_provider_id
-    ), "Duplicated model should have same provider"
+    assert original_provider_id == copy_provider_id, (
+        "Duplicated model should have same provider"
+    )
 
     # Cleanup: delete the duplicated model via API
     try:
@@ -67,4 +67,3 @@ def test_model_duplicate_creates_copy(page: Page, base_url: str) -> None:
         )
     except Exception:
         pass
-

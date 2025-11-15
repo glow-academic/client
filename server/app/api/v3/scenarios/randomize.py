@@ -58,7 +58,7 @@ async def randomize_scenario_sections(
     """Suggest randomized persona/documents/parameters based on current inputs."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Convert string IDs to UUIDs
         persona_ids = (
@@ -88,7 +88,11 @@ async def randomize_scenario_sections(
         targets = [t for t in request.targets if t.strip()] if request.targets else []
 
         # Get randomization data (single SQL file with conditional logic)
-        dept_uuids = [uuid.UUID(d) for d in department_ids] if department_ids and len(department_ids) > 0 else None
+        dept_uuids = (
+            [uuid.UUID(d) for d in department_ids]
+            if department_ids and len(department_ids) > 0
+            else None
+        )
         sql_query = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
         sql_params = (dept_uuids,)
         result = await conn.fetchrow(sql_query, dept_uuids)
@@ -113,7 +117,9 @@ async def randomize_scenario_sections(
         if not isinstance(parameter_items_data, list):
             parameter_items_data = []
 
-        document_parameter_items_data = parse_jsonb(result.get("document_parameter_items"))
+        document_parameter_items_data = parse_jsonb(
+            result.get("document_parameter_items")
+        )
         if not isinstance(document_parameter_items_data, list):
             document_parameter_items_data = []
 
@@ -132,7 +138,9 @@ async def randomize_scenario_sections(
             param_id = uuid.UUID(str(pi["parameter_id"]))
             if param_id not in parameter_items_by_param_id:
                 parameter_items_by_param_id[param_id] = []
-            parameter_items_by_param_id[param_id].append(parameter_items_by_id[uuid.UUID(str(pi["id"]))])
+            parameter_items_by_param_id[param_id].append(
+                parameter_items_by_id[uuid.UUID(str(pi["id"]))]
+            )
 
         documents_by_id: dict[uuid.UUID, dict[str, Any]] = {}
         for d in documents_data:
@@ -164,7 +172,9 @@ async def randomize_scenario_sections(
             else:
                 # Random selection from all documents
                 if documents_data:
-                    suggested_document_ids = [uuid.UUID(str(random.choice(documents_data)["id"]))]
+                    suggested_document_ids = [
+                        uuid.UUID(str(random.choice(documents_data)["id"]))
+                    ]
 
         # Suggest parameters (random selection, one per parameter)
         suggested_parameter_item_ids: list[uuid.UUID] = []
@@ -203,4 +213,3 @@ async def randomize_scenario_sections(
             sql_params=sql_params,
             request=http_request,
         )
-

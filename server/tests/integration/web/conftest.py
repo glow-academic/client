@@ -51,4 +51,3 @@ def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) 
 
     # Patch sio in main module (all handlers import sio from app.main)
     monkeypatch.setattr(main, "sio", mock_sio)
-

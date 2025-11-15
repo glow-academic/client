@@ -88,4 +88,3 @@ async def test_duplicate_persona_not_found(
 
     assert response.status_code == 400
     assert "not found" in response.json()["detail"].lower()
-

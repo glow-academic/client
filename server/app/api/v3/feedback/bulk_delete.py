@@ -35,10 +35,10 @@ async def bulk_delete_feedback(
 ) -> BulkDeleteFeedbackResponse:
     """Bulk delete feedback. Only superadmin can delete feedback."""
     tags = ["feedback"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         if not request.ids:
             return BulkDeleteFeedbackResponse(
@@ -51,13 +51,11 @@ async def bulk_delete_feedback(
         result = await conn.fetchrow(sql_query, request.profileId, request.ids)
 
         if not result:
-            raise HTTPException(
-                status_code=500, detail="Failed to delete feedback"
-            )
-        
+            raise HTTPException(status_code=500, detail="Failed to delete feedback")
+
         deleted_count = result["deleted_count"]
         profile_role = result.get("profile_role")
-        
+
         # Check if deletion was authorized (superadmin check)
         if deleted_count == 0 and len(request.ids) > 0:
             # Check if it's because user is not superadmin
@@ -72,11 +70,11 @@ async def bulk_delete_feedback(
             deleted_count=deleted_count,
             message=f"Successfully deleted {deleted_count} feedback item(s)",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -89,4 +87,3 @@ async def bulk_delete_feedback(
             sql_params=sql_params,
             request=http_request,
         )
-

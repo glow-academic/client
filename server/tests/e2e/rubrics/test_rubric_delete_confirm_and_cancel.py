@@ -80,4 +80,3 @@ def test_rubric_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
     except Exception:
         # Toast might have disappeared, that's okay
         pass
-

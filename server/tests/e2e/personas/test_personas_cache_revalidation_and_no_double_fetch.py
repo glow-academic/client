@@ -7,8 +7,10 @@ from typing import Callable, Dict
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.personas.helpers import (fetch_personas_list,
-                                               generate_unique_persona_name)
+from server.tests.e2e.personas.helpers import (
+    fetch_personas_list,
+    generate_unique_persona_name,
+)
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -58,6 +60,7 @@ def _set_request_counter(
             counts["total"] += 1
 
     page.on("request", _handle)
+
     def stop() -> None:
         page.remove_listener("request", _handle)
 
@@ -73,7 +76,9 @@ def _collect_persona_ids(page: Page) -> set[str]:
     return set(ids)
 
 
-def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: str) -> None:
+def test_personas_cache_revalidation_and_no_double_fetch(
+    page: Page, base_url: str
+) -> None:
     """Ensure default detail fetch happens once and mutations revalidate list data."""
     detail_counter, stop_counter = _set_request_counter(
         page, "/api/v3/personas/detail-default"
@@ -81,9 +86,9 @@ def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: s
     page.goto(f"{base_url}/create/personas/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
-    assert (
-        detail_counter["total"] <= 1
-    ), "Default persona detail endpoint fetched more than once"
+    assert detail_counter["total"] <= 1, (
+        "Default persona detail endpoint fetched more than once"
+    )
 
     persona_name = generate_unique_persona_name("Cache Persona")
     system_prompt = "Cache test system prompt content."
@@ -197,5 +202,3 @@ def test_personas_cache_revalidation_and_no_double_fetch(page: Page, base_url: s
     confirm_button.click()
     page.wait_for_timeout(500)
     expect(copy_card).to_have_count(0)
-
-

@@ -67,11 +67,10 @@ async def test_delete_cohort_in_use(
             cohort_id,
             profile_id,
         )
-        
+
         # Create attempt and link to profile (via attempt_profiles)
         attempt_id = await db.fetchval(
-            "INSERT INTO simulation_attempts(simulation_id) "
-            "VALUES ($1) RETURNING id",
+            "INSERT INTO simulation_attempts(simulation_id) VALUES ($1) RETURNING id",
             simulation_id,
         )
         await db.execute(
@@ -105,4 +104,3 @@ async def test_delete_cohort_not_found(
 
     # Delete should succeed even if cohort doesn't exist (no error raised)
     assert response.status_code == 200
-

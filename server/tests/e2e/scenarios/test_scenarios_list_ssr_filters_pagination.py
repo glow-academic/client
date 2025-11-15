@@ -39,7 +39,11 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
         # Fallback: get text from card, excluding badges
         all_text = first_card.inner_text()
         # Remove common badge text and get first meaningful line
-        lines = [line.strip() for line in all_text.splitlines() if line.strip() and line.strip() != "Inactive"]
+        lines = [
+            line.strip()
+            for line in all_text.splitlines()
+            if line.strip() and line.strip() != "Inactive"
+        ]
         search_title = lines[0] if lines else ""
 
     assert search_title, "Could not extract scenario title for search test"
@@ -51,10 +55,7 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
     filtered_count = cards.count()
     assert filtered_count <= initial_count
     assert (
-        grid.get_by_test_id("scenario-card")
-        .filter(has_text=search_title)
-        .count()
-        > 0
+        grid.get_by_test_id("scenario-card").filter(has_text=search_title).count() > 0
     )
 
     search_input.fill("")
@@ -62,7 +63,7 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
     assert cards.count() == initial_count
 
     toolbar = page.get_by_test_id("scenarios-toolbar")
-    
+
     # Test Simulation filter
     simulation_button = toolbar.get_by_role("button", name="Simulation")
     if simulation_button.count() > 0:
@@ -135,4 +136,3 @@ def test_scenarios_list_filters_and_empty_state(page: Page, base_url: str) -> No
         pagination = page.locator("nav[aria-label*='pagination'], .pagination")
     # Pagination may or may not be visible depending on number of scenarios
     # Just verify the page loaded successfully
-

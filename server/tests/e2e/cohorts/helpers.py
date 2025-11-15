@@ -225,11 +225,19 @@ def update_cohort_api(
     payload = {
         "cohortId": cohort_id,
         "title": title if title is not None else current.get("title", ""),
-        "description": description if description is not None else current.get("description"),
+        "description": description
+        if description is not None
+        else current.get("description"),
         "active": active if active is not None else current.get("active", True),
-        "department_ids": department_ids if department_ids is not None else (current.get("department_ids") or []),
-        "profile_ids": profile_ids if profile_ids is not None else (current.get("profile_ids") or []),
-        "simulation_ids": simulation_ids if simulation_ids is not None else (current.get("simulation_ids") or []),
+        "department_ids": department_ids
+        if department_ids is not None
+        else (current.get("department_ids") or []),
+        "profile_ids": profile_ids
+        if profile_ids is not None
+        else (current.get("profile_ids") or []),
+        "simulation_ids": simulation_ids
+        if simulation_ids is not None
+        else (current.get("simulation_ids") or []),
     }
     _post_json(
         request,
@@ -332,4 +340,3 @@ def find_editable_cohort(
         if require_department_specific is False and not is_dept_specific:
             return cohort
     raise ValueError("No matching editable cohort found in cohort list")
-

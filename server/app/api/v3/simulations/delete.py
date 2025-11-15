@@ -37,10 +37,10 @@ async def delete_simulation(
 ) -> DeleteSimulationResponse:
     """Delete a simulation (with usage check)."""
     tags = ["simulations"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete simulation with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/simulations/delete_simulation_complete.sql")
@@ -66,11 +66,11 @@ async def delete_simulation(
             success=True,
             message=f"Simulation '{result['title']}' deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -83,4 +83,3 @@ async def delete_simulation(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -150,5 +150,6 @@ async def test_get_profile_context_not_found(
     # or context fetch fails (404) - either is acceptable
     assert response.status_code in [403, 404]
     data = response.json()
-    assert "not found" in data["detail"].lower() or "permission" in data["detail"].lower()
-
+    assert (
+        "not found" in data["detail"].lower() or "permission" in data["detail"].lower()
+    )

@@ -30,7 +30,9 @@ async def test_delete_document(
     assert "message" in data
 
     # Verify document is deleted
-    exists = await db.fetchval("SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", document_id)
+    exists = await db.fetchval(
+        "SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", document_id
+    )
     assert exists is False
 
 
@@ -48,4 +50,3 @@ async def test_delete_document_not_found(
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
-

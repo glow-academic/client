@@ -66,9 +66,9 @@ def test_simulations_cache_revalidation_and_no_double_fetch(
     page.goto(f"{base_url}/create/simulations/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
-    assert (
-        detail_counter["total"] <= 1
-    ), "Default simulation detail endpoint fetched more than once"
+    assert detail_counter["total"] <= 1, (
+        "Default simulation detail endpoint fetched more than once"
+    )
 
     # Get defaults for creating simulation
     from server.tests.e2e.simulations.helpers import (
@@ -158,7 +158,7 @@ def test_simulations_cache_revalidation_and_no_double_fetch(
     # Wait for form to be fully loaded
     container = page.locator("[data-page='simulation-edit']").first
     container.wait_for(state="visible", timeout=15000)
-    
+
     updated_name = f"{simulation_name} Updated"
     name_input = page.get_by_test_id("input-simulation-title")
     name_input.wait_for(state="visible", timeout=10000)
@@ -208,4 +208,3 @@ def test_simulations_cache_revalidation_and_no_double_fetch(
     confirm_button.click()
     page.wait_for_timeout(500)
     expect(copy_card).to_have_count(0)
-

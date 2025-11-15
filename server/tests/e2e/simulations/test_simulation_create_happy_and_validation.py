@@ -71,9 +71,7 @@ def test_simulation_create_validation_and_success(page: Page, base_url: str) -> 
         department_picker = page.locator("[data-testid='picker-department']")
         if department_picker.count() > 0:
             department_picker.click()
-            department_option = page.locator(
-                "[data-testid='department-option']"
-            ).first
+            department_option = page.locator("[data-testid='department-option']").first
             if department_option.count():
                 department_option.click()
             page.keyboard.press("Escape")
@@ -140,4 +138,3 @@ def test_simulation_create_validation_and_success(page: Page, base_url: str) -> 
                 )
             except Exception:
                 pass
-

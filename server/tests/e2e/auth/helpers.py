@@ -142,4 +142,3 @@ def get_simulatable_profiles(
     # For now, return empty list - this would require a dedicated endpoint
     # or we can use authorize_emulation in a loop
     return []
-

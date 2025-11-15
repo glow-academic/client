@@ -103,4 +103,3 @@ def fetch_profile_data(
         effective_profile_id=resolved_effective,
         bypass_cache=bypass_cache,
     )
-

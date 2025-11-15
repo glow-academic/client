@@ -12,6 +12,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class UpdateChatCreatedAtRequest(BaseModel):
     chatId: str
@@ -35,10 +36,10 @@ async def update_chat_created_at(
 ) -> UpdateChatTimestampResponse:
     """Update simulation chat createdAt timestamp."""
     tags = ["attempts"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Parse ISO string to datetime
         created_at = datetime.fromisoformat(request.createdAt.replace("Z", "+00:00"))
@@ -49,17 +50,19 @@ async def update_chat_created_at(
         result = await conn.fetchrow(sql_query, created_at, request.chatId)
 
         if not result:
-            raise HTTPException(status_code=404, detail=f"Chat not found: {request.chatId}")
+            raise HTTPException(
+                status_code=404, detail=f"Chat not found: {request.chatId}"
+            )
 
         result_data = UpdateChatTimestampResponse(
             success=True,
             message=f"Chat {request.chatId} createdAt updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -72,4 +75,3 @@ async def update_chat_created_at(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -40,18 +40,22 @@ async def create_department(
 ) -> CreateDepartmentResponse:
     """Create a new department."""
     tags = ["departments"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             sql_query = load_sql("sql/v3/departments/create_department.sql")
             sql_params = (request.title, request.description, request.active)
-            dept_row = await conn.fetchrow(sql_query, request.title, request.description, request.active)
+            dept_row = await conn.fetchrow(
+                sql_query, request.title, request.description, request.active
+            )
 
             if not dept_row:
-                raise HTTPException(status_code=500, detail="Failed to create department")
+                raise HTTPException(
+                    status_code=500, detail="Failed to create department"
+                )
 
             department_id = dept_row["department_id"]
 
@@ -61,7 +65,7 @@ async def create_department(
             WHERE role = 'superadmin' OR default_profile = true OR id = $1
             """
             profiles_to_link = await conn.fetch(auto_link_query, request.profile_id)
-            
+
             for profile in profiles_to_link:
                 profile_dept_query = """
                 INSERT INTO profile_departments (profile_id, department_id)
@@ -75,11 +79,11 @@ async def create_department(
             departmentId=department_id,
             message="Department created successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -92,4 +96,3 @@ async def create_department(
             sql_params=sql_params,
             request=http_request,
         )
-

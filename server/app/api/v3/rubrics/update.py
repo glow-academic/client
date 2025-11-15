@@ -64,30 +64,32 @@ async def update_rubric(
 ) -> UpdateRubricResponse:
     """Update an existing rubric (replaces entire hierarchy)."""
     tags = ["rubrics"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Convert standard groups to JSONB array for SQL
-        standard_groups_json = json.dumps([
-            {
-                "name": group.name,
-                "short_name": group.short_name,
-                "description": group.description,
-                "points": group.points,
-                "passPoints": group.passPoints,
-                "standards": [
-                    {
-                        "name": standard.name,
-                        "description": standard.description,
-                        "points": standard.points,
-                    }
-                    for standard in group.standards
-                ]
-            }
-            for group in request.standard_groups
-        ])
+        standard_groups_json = json.dumps(
+            [
+                {
+                    "name": group.name,
+                    "short_name": group.short_name,
+                    "description": group.description,
+                    "points": group.points,
+                    "passPoints": group.passPoints,
+                    "standards": [
+                        {
+                            "name": standard.name,
+                            "description": standard.description,
+                            "points": standard.points,
+                        }
+                        for standard in group.standards
+                    ],
+                }
+                for group in request.standard_groups
+            ]
+        )
 
         # Ensure department_ids is always an array (empty if None)
         department_ids = request.department_ids if request.department_ids else []
@@ -113,12 +115,12 @@ async def update_rubric(
             success=True,
             message="Rubric updated successfully",
         )
-        
+
         # Invalidate cache after mutation (both list and individual rubric)
         all_tags = tags + [f"rubric:{request.rubricId}"]
         await invalidate_tags(all_tags)
         response.headers["X-Invalidate-Tags"] = ",".join(all_tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -131,4 +133,3 @@ async def update_rubric(
             sql_params=sql_params,
             request=http_request,
         )
-

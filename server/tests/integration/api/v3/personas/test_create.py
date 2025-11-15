@@ -143,4 +143,3 @@ async def test_create_persona_with_existing_prompt(
         prompt_id,
     )
     assert prompt_link is not None
-

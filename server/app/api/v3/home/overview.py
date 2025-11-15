@@ -7,13 +7,18 @@ import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import (SimulationMapping, SimulationMappingItem,
-                              StandardGroupsMapping, StandardsMapping)
+from app.utils.schema import (
+    SimulationMapping,
+    SimulationMappingItem,
+    StandardGroupsMapping,
+    StandardsMapping,
+)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/home", tags=["home"])
+
 
 # Inline schemas
 class HomeSimulationItem(BaseModel):
@@ -119,25 +124,25 @@ async def get_home_overview(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> HomeOverviewResponse:
     """Get home overview with items, history, and mappings.
-    
+
     Home always shows general simulations only (no simulationFilters parameter).
     """
     tags = ["home"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return HomeOverviewResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
         profile_id = filters.profileId
@@ -147,6 +152,7 @@ async def get_home_overview(
         # The SQL file expects WHERE clause to use $1, $2 (dates) and simulation filter
         # Cohort and department filters are handled separately in the SQL via $4, $5
         from datetime import datetime
+
         where_clause = "a.attempt_created_at >= $1 AND a.attempt_created_at < $2 AND a.is_general = TRUE"
 
         # Load SQL template
@@ -207,7 +213,7 @@ async def get_home_overview(
                         dept_ids = None
                     elif not isinstance(dept_ids, list):
                         dept_ids = [dept_ids] if dept_ids else None
-                    
+
                     simulation_mapping[str(sim_id)] = SimulationMappingItem(
                         name=sim_data.get("name", ""),
                         description=sim_data.get("description", ""),
@@ -224,7 +230,7 @@ async def get_home_overview(
             standards_mapping=parsed_result.get("standards_mapping", {}),
             simulation_mapping=simulation_mapping,  # type: ignore[arg-type]
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -234,7 +240,7 @@ async def get_home_overview(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -249,4 +255,3 @@ async def get_home_overview(
             sql_params=sql_params,
             request=request,
         )
-

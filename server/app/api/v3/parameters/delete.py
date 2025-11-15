@@ -37,10 +37,10 @@ async def delete_parameter(
 ) -> DeleteParameterResponse:
     """Delete a parameter if items not in use."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Delete parameter with usage check in single SQL (DHH style)
@@ -65,11 +65,11 @@ async def delete_parameter(
                 success=True,
                 message=f"Parameter '{parameter_name}' deleted successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -84,4 +84,3 @@ async def delete_parameter(
             sql_params=sql_params,
             request=http_request,
         )
-

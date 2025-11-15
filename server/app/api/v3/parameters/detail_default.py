@@ -18,8 +18,7 @@ class ParameterDetailDefaultRequest(BaseModel):
 
 
 # Reuse models from detail.py (import after defining request to avoid circular import)
-from app.api.v3.parameters.detail import (ParameterDetailResponse,
-                                          ParameterItemDetail)
+from app.api.v3.parameters.detail import ParameterDetailResponse, ParameterItemDetail
 
 router = APIRouter()
 
@@ -33,11 +32,11 @@ async def get_parameter_detail_default(
 ) -> ParameterDetailResponse:
     """Get default parameter detail for creation mode."""
     tags = ["parameters"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
@@ -48,12 +47,14 @@ async def get_parameter_detail_default(
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ParameterDetailResponse.model_validate(cached_data)
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
-        sql_query = load_sql("sql/v3/parameters/get_parameter_detail_default_complete.sql")
+        sql_query = load_sql(
+            "sql/v3/parameters/get_parameter_detail_default_complete.sql"
+        )
         sql_params = (request.profileId,)
         result = await conn.fetchrow(sql_query, request.profileId)
 
@@ -117,7 +118,7 @@ async def get_parameter_detail_default(
             valid_department_ids=valid_department_ids,
             can_edit=result.get("can_edit", True),  # Default to True for new parameters
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -127,7 +128,7 @@ async def get_parameter_detail_default(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -140,4 +141,3 @@ async def get_parameter_detail_default(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -316,4 +316,3 @@ def find_deletable_staff(
         if staff.get("can_delete"):
             return staff
     raise ValueError("No deletable staff member found in staff list")
-

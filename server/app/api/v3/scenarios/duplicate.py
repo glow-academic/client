@@ -38,10 +38,10 @@ async def duplicate_scenario(
 ) -> DuplicateScenarioResponse:
     """Duplicate a scenario."""
     tags = ["scenarios"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Use single comprehensive SQL file (DHH style)
@@ -64,11 +64,11 @@ async def duplicate_scenario(
                 scenarioId=new_scenario_id,
                 message=f"Scenario '{original_name}' duplicated successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -83,4 +83,3 @@ async def duplicate_scenario(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -85,4 +85,3 @@ async def test_delete_rubric_not_found(
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
-

@@ -78,4 +78,3 @@ async def test_create_department_minimal(
     assert dept is not None
     assert dept["title"] == "Minimal Department"
     assert dept["description"] == ""  # Empty string
-

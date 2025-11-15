@@ -66,9 +66,9 @@ def test_departments_cache_revalidation_and_no_double_fetch(
     page.goto(f"{base_url}/system/departments/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
-    assert (
-        detail_counter["total"] <= 1
-    ), "Default department detail endpoint fetched more than once"
+    assert detail_counter["total"] <= 1, (
+        "Default department detail endpoint fetched more than once"
+    )
 
     department_title = generate_unique_department_name("Cache Department")
     department_id = None
@@ -188,4 +188,3 @@ def test_departments_cache_revalidation_and_no_double_fetch(
                 )
             except Exception:
                 pass
-

@@ -23,4 +23,3 @@ async def stop_chat(sid: str, data: dict[str, Any]) -> None:
         )
         await remove_active_connection(chat_id)
         logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
-

@@ -62,7 +62,9 @@ async def persona_response_times(
 
     pool = get_pool()
     if not pool:
-        raise HTTPException(status_code=500, detail="Database connection pool not available")
+        raise HTTPException(
+            status_code=500, detail="Database connection pool not available"
+        )
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -100,7 +102,9 @@ async def persona_response_times(
                 response_times = [
                     r.get("response_time_seconds", 0) for r in recent_responses
                 ]
-                avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+                avg_response_time = (
+                    sum(response_times) / len(response_times) if response_times else 0
+                )
                 min_response_time = min(response_times) if response_times else 0
                 max_response_time = max(response_times) if response_times else 0
             else:
@@ -136,4 +140,3 @@ async def persona_response_times(
             sql_params=sql_params,
             request=None,  # Tool endpoints don't have Request
         )
-

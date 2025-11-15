@@ -12,12 +12,14 @@ from agents import Runner, ToolsToFinalOutputResult, trace
 from agents.items import TResponseInputItem
 from app.main import get_pool
 from app.main import sio
-from app.utils.agent_tools import (create_grading_tools,
-                                   create_safe_field_name, grading_progress,
-                                   grading_results)
+from app.utils.agent_tools import (
+    create_grading_tools,
+    create_safe_field_name,
+    grading_progress,
+    grading_results,
+)
 from app.utils.agents import GenericAgent
-from app.utils.chat import (format_chat_scenario,
-                            get_simulation_conversation_history)
+from app.utils.chat import format_chat_scenario, get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
@@ -35,7 +37,7 @@ async def _create_chat_for_scenario_inline(
     mark_completed: bool,
 ) -> dict[str, Any] | None:
     """Create chat for a scenario with full scenario preparation.
-    
+
     Helper function for continue_simulation_attempt.
     Uses SQL files for database operations.
     Inlined from simulations/utils.py to remove abstraction layer.
@@ -51,20 +53,22 @@ async def _create_chat_for_scenario_inline(
     # Randomly fill any null attributes using SQL files
     scenario = dict(old_scenario)
     import random
-    
+
     scenario_id_uuid = scenario["id"]
-    
+
     # Step 1: Select department_id first
     # Priority 1: Get department_ids from scenario_departments junction table
     sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
     scenario_dept_rows = await conn.fetch(sql, scenario_id_uuid)
     scenario_dept_ids = [row["department_id"] for row in scenario_dept_rows]
-    
+
     selected_dept_id: uuid.UUID | None = None
     if scenario_dept_ids:
         # Randomly select one department from scenario's departments
         selected_dept_id = random.choice(scenario_dept_ids)
-        logger.info(f"Selected department_id from scenario_departments: {selected_dept_id}")
+        logger.info(
+            f"Selected department_id from scenario_departments: {selected_dept_id}"
+        )
     else:
         # Cross-department scenario - need to pick a department
         if profile_id:
@@ -74,9 +78,13 @@ async def _create_chat_for_scenario_inline(
             profile_dept_ids = [row["id"] for row in profile_dept_rows]
             if profile_dept_ids:
                 selected_dept_id = random.choice(profile_dept_ids)
-                logger.info(f"Selected department_id from user's accessible departments: {selected_dept_id}")
+                logger.info(
+                    f"Selected department_id from user's accessible departments: {selected_dept_id}"
+                )
             else:
-                logger.warning(f"No accessible departments found for profile {profile_id}")
+                logger.warning(
+                    f"No accessible departments found for profile {profile_id}"
+                )
         else:
             # No profile_id - get all active departments
             sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
@@ -84,23 +92,27 @@ async def _create_chat_for_scenario_inline(
             all_dept_ids = [row["id"] for row in all_dept_rows]
             if all_dept_ids:
                 selected_dept_id = random.choice(all_dept_ids)
-                logger.info(f"Selected department_id from all active departments: {selected_dept_id}")
+                logger.info(
+                    f"Selected department_id from all active departments: {selected_dept_id}"
+                )
             else:
                 logger.warning("No active departments found in database")
-    
+
     if not selected_dept_id:
-        raise ValueError("Cannot proceed without a department_id - no departments available")
-    
+        raise ValueError(
+            "Cannot proceed without a department_id - no departments available"
+        )
+
     selected_dept_id_str = str(selected_dept_id)
-    
+
     # Step 2: Get all randomization data in a single query
     sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
     dept_uuids = [uuid.UUID(selected_dept_id_str)]
     result = await conn.fetchrow(sql, dept_uuids)
-    
+
     if not result:
         raise ValueError("Failed to fetch randomization data")
-    
+
     # Parse JSONB aggregations (may be string or list)
     def parse_jsonb(data: Any) -> list[dict[str, Any]]:
         if isinstance(data, str):
@@ -111,43 +123,53 @@ async def _create_chat_for_scenario_inline(
         if not isinstance(data, list):
             return []
         return [dict(item) for item in data]
-    
+
     personas_data = parse_jsonb(result.get("personas", []))
     documents_data = parse_jsonb(result.get("documents", []))
     parameters_data = parse_jsonb(result.get("parameters", []))
     parameter_items_data = parse_jsonb(result.get("parameter_items", []))
-    document_parameter_items_data = parse_jsonb(result.get("document_parameter_items", []))
-    
+    document_parameter_items_data = parse_jsonb(
+        result.get("document_parameter_items", [])
+    )
+
     # Convert UUIDs and build lookup maps
     active_personas = []
     for p in personas_data:
-        active_personas.append({
-            **p,
-            "id": uuid.UUID(str(p["id"])),
-        })
-    
+        active_personas.append(
+            {
+                **p,
+                "id": uuid.UUID(str(p["id"])),
+            }
+        )
+
     active_documents = []
     for d in documents_data:
-        active_documents.append({
-            **d,
-            "id": uuid.UUID(str(d["id"])),
-        })
-    
+        active_documents.append(
+            {
+                **d,
+                "id": uuid.UUID(str(d["id"])),
+            }
+        )
+
     active_parameters = []
     for p in parameters_data:
-        active_parameters.append({
-            **p,
-            "id": uuid.UUID(str(p["id"])),
-        })
-    
+        active_parameters.append(
+            {
+                **p,
+                "id": uuid.UUID(str(p["id"])),
+            }
+        )
+
     all_parameter_items = []
     for pi in parameter_items_data:
-        all_parameter_items.append({
-            **pi,
-            "id": uuid.UUID(str(pi["id"])),
-            "parameter_id": uuid.UUID(str(pi["parameter_id"])),
-        })
-    
+        all_parameter_items.append(
+            {
+                **pi,
+                "id": uuid.UUID(str(pi["id"])),
+                "parameter_id": uuid.UUID(str(pi["parameter_id"])),
+            }
+        )
+
     document_parameter_items_junction = [
         {
             "document_id": uuid.UUID(str(j["document_id"])),
@@ -155,26 +177,26 @@ async def _create_chat_for_scenario_inline(
         }
         for j in document_parameter_items_data
     ]
-    
+
     # Build lookup maps for efficiency
     parameter_items_by_id: dict[uuid.UUID, dict[str, Any]] = {}
     for pi in all_parameter_items:
         parameter_items_by_id[pi["id"]] = pi
-    
+
     parameter_items_by_param_id: dict[uuid.UUID, list[dict[str, Any]]] = {}
     for pi in all_parameter_items:
         param_id = pi["parameter_id"]
         if param_id not in parameter_items_by_param_id:
             parameter_items_by_param_id[param_id] = []
         parameter_items_by_param_id[param_id].append(pi)
-    
+
     documents_by_id: dict[uuid.UUID, dict[str, Any]] = {}
     for d in active_documents:
         documents_by_id[d["id"]] = d
-    
+
     # Step 3: Get personas (priority: existing links, then random selection)
     scenario_persona_ids: list[uuid.UUID] = []
-    
+
     # Priority 1: Check for existing persona links in database
     sql = load_sql("sql/v3/scenarios/get_scenario_persona_links.sql")
     existing_persona_links = await conn.fetchrow(sql, scenario_id_uuid)
@@ -182,8 +204,10 @@ async def _create_chat_for_scenario_inline(
         scenario_persona_ids = [
             uuid.UUID(p) for p in existing_persona_links["persona_ids"]
         ]
-        logger.info(f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}")
-    
+        logger.info(
+            f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}"
+        )
+
     # Priority 2: Random persona selection if still none (filtered by selected department)
     if not scenario_persona_ids:
         if active_personas:
@@ -191,47 +215,55 @@ async def _create_chat_for_scenario_inline(
             num_personas = random.randint(1, min(3, len(active_personas)))
             selected_personas = random.sample(active_personas, num_personas)
             scenario_persona_ids = [p["id"] for p in selected_personas]
-            logger.info(f"Randomly selected {len(scenario_persona_ids)} persona_ids: {scenario_persona_ids}")
+            logger.info(
+                f"Randomly selected {len(scenario_persona_ids)} persona_ids: {scenario_persona_ids}"
+            )
         else:
             logger.info("No active personas found")
-    
+
     # Step 4: Update persona links (delete existing, insert new)
     if scenario_persona_ids:
         sql = load_sql("sql/v3/scenarios/delete_scenario_personas.sql")
         await conn.execute(sql, scenario_id_uuid)
-        
+
         # Insert all selected personas
         sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
         for pid in scenario_persona_ids:
             await conn.execute(sql, scenario_id_uuid, pid, True)
-    
+
     # Step 5: Get objectives (first 3 by idx)
     sql = load_sql("sql/v3/scenarios/get_scenario_objectives_top_n.sql")
     objectives_data = await conn.fetch(sql, scenario_id_uuid, 3)
     scenario_objectives = [obj["objective"] for obj in objectives_data]
-    logger.info(f"Found {len(scenario_objectives)} objectives for scenario: {scenario_objectives}")
-    
+    logger.info(
+        f"Found {len(scenario_objectives)} objectives for scenario: {scenario_objectives}"
+    )
+
     # Step 6: Get most recent active problem statement
     sql = load_sql("sql/v3/scenarios/get_scenario_problem_statement_active.sql")
     problem_statement_row = await conn.fetchrow(sql, scenario_id_uuid)
-    scenario_problem_statement = problem_statement_row["problem_statement"] if problem_statement_row else None
+    scenario_problem_statement = (
+        problem_statement_row["problem_statement"] if problem_statement_row else None
+    )
     logger.info(f"Found problem statement: {scenario_problem_statement}")
-    
+
     # Step 7: Get existing documents and parameters from junction tables
     sql = load_sql("sql/v3/scenarios/get_scenario_document_links.sql")
     doc_links = await conn.fetch(sql, scenario_id_uuid)
     existing_doc_ids = [link["document_id"] for link in doc_links]
-    
+
     sql = load_sql("sql/v3/scenarios/get_scenario_parameter_links.sql")
     param_links = await conn.fetch(sql, scenario_id_uuid)
     existing_param_ids = [link["parameter_item_id"] for link in param_links]
-    
+
     # Step 8: Random document selection if documents still don't exist
     scenario_documents: list[uuid.UUID] = []
     if not existing_doc_ids:
         # First, get parameter items for this scenario (for document matching)
-        doc_matching_param_item_ids = existing_param_ids.copy() if existing_param_ids else []
-        
+        doc_matching_param_item_ids = (
+            existing_param_ids.copy() if existing_param_ids else []
+        )
+
         # If no parameter items, randomly select one per active parameter
         if not doc_matching_param_item_ids and active_parameters:
             for param in active_parameters:
@@ -239,7 +271,7 @@ async def _create_chat_for_scenario_inline(
                 if param_items:
                     selected_item = random.choice(param_items)
                     doc_matching_param_item_ids.append(selected_item["id"])
-        
+
         # Try to find documents that match parameter items via document_parameter_items junction
         matching_documents = []
         if doc_matching_param_item_ids:
@@ -249,25 +281,33 @@ async def _create_chat_for_scenario_inline(
                 if j["parameter_item_id"] in doc_matching_param_item_ids
                 and j["document_id"] in documents_by_id
             ]
-            logger.info(f"Found {len(matching_documents)} documents matching parameter items")
-        
+            logger.info(
+                f"Found {len(matching_documents)} documents matching parameter items"
+            )
+
         if matching_documents:
             # Select 1 document from matching documents
             selected_doc = random.choice(matching_documents)
             scenario_documents = [selected_doc["id"]]
-            logger.info(f"Selected document via parameter items: {selected_doc['id']} ({selected_doc['name']})")
+            logger.info(
+                f"Selected document via parameter items: {selected_doc['id']} ({selected_doc['name']})"
+            )
         elif active_documents:
             # Fallback to text similarity scoring (simplified - just random selection for now)
             logger.info("No documents match parameter items, using random selection")
             selected_doc = random.choice(active_documents)
             scenario_documents = [selected_doc["id"]]
-            logger.info(f"Randomly selected document: {selected_doc['id']} ({selected_doc['name']})")
+            logger.info(
+                f"Randomly selected document: {selected_doc['id']} ({selected_doc['name']})"
+            )
         else:
             logger.info("No active documents found")
     else:
         scenario_documents = existing_doc_ids
-        logger.info(f"Scenario already has {len(existing_doc_ids)} documents, keeping them")
-    
+        logger.info(
+            f"Scenario already has {len(existing_doc_ids)} documents, keeping them"
+        )
+
     # Step 9: Random parameter item selection if no parameters linked via junction
     scenario_parameter_item_ids = []
     if not existing_param_ids:
@@ -278,26 +318,30 @@ async def _create_chat_for_scenario_inline(
                 if param_items:
                     selected_item = random.choice(param_items)
                     scenario_parameter_item_ids.append(selected_item["id"])
-            logger.info(f"Randomly selected {len(scenario_parameter_item_ids)} parameter items")
+            logger.info(
+                f"Randomly selected {len(scenario_parameter_item_ids)} parameter items"
+            )
         else:
             logger.info("No active parameters found")
     else:
         scenario_parameter_item_ids = existing_param_ids
-        logger.info(f"Scenario already has {len(existing_param_ids)} parameter items, keeping them")
-    
+        logger.info(
+            f"Scenario already has {len(existing_param_ids)} parameter items, keeping them"
+        )
+
     # Step 10: Update document and parameter links
     if scenario_documents:
         # Delete existing documents first (simplified - just insert, let DB handle conflicts)
         sql = load_sql("sql/v3/scenarios/insert_scenario_document_link.sql")
         for doc_id in scenario_documents:
             await conn.execute(sql, scenario_id_uuid, doc_id, True)
-    
+
     if scenario_parameter_item_ids:
         # Delete existing parameters first (simplified - just insert, let DB handle conflicts)
         sql = load_sql("sql/v3/scenarios/insert_scenario_parameter_link.sql")
         for param_id in scenario_parameter_item_ids:
             await conn.execute(sql, scenario_id_uuid, param_id, True)
-    
+
     # Return updated scenario with filled attributes
     scenario["objectives"] = scenario_objectives
     scenario["problem_statement"] = scenario_problem_statement
@@ -335,11 +379,15 @@ async def _run_grade_agent_inline(
 
         # Get all grading context data in one optimized query using SQL file
         sql = load_sql("sql/v3/agents/get_grading_run_context.sql")
-        context_row = await conn.fetchrow(sql, str(simulation_chat_id), str(department_id))
-        
+        context_row = await conn.fetchrow(
+            sql, str(simulation_chat_id), str(department_id)
+        )
+
         if not context_row:
-            raise ValueError(f"Chat {simulation_chat_id} not found or no grading agent configured")
-        
+            raise ValueError(
+                f"Chat {simulation_chat_id} not found or no grading agent configured"
+            )
+
         # Parse JSON arrays for standard_groups and standards
         standard_groups_json = (
             json.loads(context_row["standard_groups"])
@@ -351,7 +399,7 @@ async def _run_grade_agent_inline(
             if isinstance(context_row["standards"], str)
             else context_row["standards"]
         )
-        
+
         context = {
             "chat_id": context_row["chat_id"],
             "scenario_id": context_row["scenario_id"],
@@ -377,7 +425,9 @@ async def _run_grade_agent_inline(
                 "id": context_row["agent_id"],
                 "name": context_row["agent_name"],
                 "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                "temperature": float(context_row["temperature"])
+                if context_row["temperature"] is not None
+                else 0.0,
                 "reasoning": context_row["reasoning"],
             },
             "model": {
@@ -481,15 +531,15 @@ async def _run_grade_agent_inline(
         # Emit grading start event
         await sio.emit(
             "simulation_grading_progress",
-                {
-                    "type": "start",
-                    "chat_id": str(simulation_chat_id),
-                    "message": "Starting grading process",
-                    "rubric_name": rubric["name"],
-                    "standards_count": len(standard_groups),
-                },
-                room=f"simulation_{simulation_chat_id}",
-            )
+            {
+                "type": "start",
+                "chat_id": str(simulation_chat_id),
+                "message": "Starting grading process",
+                "rubric_name": rubric["name"],
+                "standards_count": len(standard_groups),
+            },
+            room=f"simulation_{simulation_chat_id}",
+        )
         logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
 
         # Build dynamic rubric using utility function
@@ -552,10 +602,15 @@ async def _run_grade_agent_inline(
 
         # Create grading tools for each standard group
         grading_tools = create_grading_tools(
-            list(standard_groups), list(standards), simulation_chat_id, emit_progress_wrapper
+            list(standard_groups),
+            list(standards),
+            simulation_chat_id,
+            emit_progress_wrapper,
         )
         grading_tools.append(debug_info_tool)
-        logger.info(f"Created {len(grading_tools)} grading tools (including debug_info)")
+        logger.info(
+            f"Created {len(grading_tools)} grading tools (including debug_info)"
+        )
 
         # Create tool use behavior to check when all required tools are called
         def tool_use_behavior(
@@ -598,16 +653,19 @@ async def _run_grade_agent_inline(
         agent_instance = grading_agent.agent()
 
         # Check rate limit
-        profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+        profile_id_uuid = (
+            uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+        )
         if not profile_id_uuid:
             raise ValueError("Profile not found. Please contact support.")
-        
+
         req_per_day = context["req_per_day"]
         runs_today_count = context["runs_today_count"]
-        
+
         if req_per_day is not None and runs_today_count >= req_per_day:
             from datetime import timedelta
             from zoneinfo import ZoneInfo
+
             earliest_run_created_at = context["earliest_run_created_at"]
             if earliest_run_created_at:
                 next_allowed_utc = earliest_run_created_at + timedelta(days=1)
@@ -696,7 +754,7 @@ async def _run_grade_agent_inline(
         if not grade_row:
             raise ValueError("Failed to create simulation chat grade")
         grade_id = uuid.UUID(grade_row["id"])
-        
+
         # 2. Create feedback records
         feedback_records = []
         for group in standard_groups:
@@ -704,7 +762,7 @@ async def _run_grade_agent_inline(
             group_data = grading_result.get(safe_name, {})
             group_score = group_data.get("score", 0)
             group_feedback = group_data.get("feedback", "")
-            
+
             # Find the corresponding standard for this score
             group_standards = [
                 s for s in standards if s["standard_group_id"] == group["id"]
@@ -714,19 +772,23 @@ async def _run_grade_agent_inline(
                 if standard["points"] == group_score:
                     matching_standard = standard
                     break
-            
+
             if matching_standard:
-                feedback_records.append({
-                    "standard_id": str(matching_standard["id"]),
-                    "total": group_score,
-                    "feedback": group_feedback,
-                })
-        
+                feedback_records.append(
+                    {
+                        "standard_id": str(matching_standard["id"]),
+                        "total": group_score,
+                        "feedback": group_feedback,
+                    }
+                )
+
         if feedback_records:
             feedbacks_json = json.dumps(feedback_records)
-            sql_create_feedbacks = load_sql("sql/v3/grading/create_feedbacks_complete.sql")
+            sql_create_feedbacks = load_sql(
+                "sql/v3/grading/create_feedbacks_complete.sql"
+            )
             await conn.execute(sql_create_feedbacks, str(grade_id), feedbacks_json)
-        
+
         # 3. Mark chat as completed
         sql_mark_completed = """
             UPDATE simulation_chats 
@@ -742,22 +804,20 @@ async def _run_grade_agent_inline(
         # Emit grading completion event
         await sio.emit(
             "simulation_grading_progress",
-                {
-                    "type": "complete",
-                    "chat_id": str(simulation_chat_id),
-                    "message": "Grading completed successfully",
-                    "grade_id": str(grade_id),
-                    "total_score": overall_score,
-                    "passed": passed,
-                    "standards_graded": len(standard_groups),
-                    "time_taken": actual_time_taken,
-                    "summary": summary,
-                },
-                room=f"simulation_{simulation_chat_id}",
-            )
-        logger.info(
-            f"Emitted grading completion event for chat {simulation_chat_id}"
+            {
+                "type": "complete",
+                "chat_id": str(simulation_chat_id),
+                "message": "Grading completed successfully",
+                "grade_id": str(grade_id),
+                "total_score": overall_score,
+                "passed": passed,
+                "standards_graded": len(standard_groups),
+                "time_taken": actual_time_taken,
+                "summary": summary,
+            },
+            room=f"simulation_{simulation_chat_id}",
         )
+        logger.info(f"Emitted grading completion event for chat {simulation_chat_id}")
 
         logger.info(f"Grading completed successfully with grade ID: {grade_id}")
 
@@ -770,14 +830,14 @@ async def _run_grade_agent_inline(
         try:
             await sio.emit(
                 "simulation_grading_progress",
-                    {
-                        "type": "error",
-                        "chat_id": str(simulation_chat_id),
-                        "message": f"Grading failed: {str(e)}",
-                        "error": str(e),
-                    },
-                    room=f"simulation_{simulation_chat_id}",
-                )
+                {
+                    "type": "error",
+                    "chat_id": str(simulation_chat_id),
+                    "message": f"Grading failed: {str(e)}",
+                    "error": str(e),
+                },
+                room=f"simulation_{simulation_chat_id}",
+            )
         except Exception as emit_err:
             logger.warning(f"Failed to emit error event: {emit_err}")
 
@@ -796,11 +856,15 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
         attempt_id = data.get("attempt_id")
         end_all = data.get("end_all", False)
         previous_chat_id = data.get("previous_chat_id")
-        previous_chat_map = data.get("previous_chat_map")  # Map of scenario_id -> previous_chat_id
+        previous_chat_map = data.get(
+            "previous_chat_map"
+        )  # Map of scenario_id -> previous_chat_id
 
         if not chat_id or not attempt_id:
             await sio.emit(
-                "simulation_error", {"success": False, "message": "Missing chat_id or attempt_id"}, room=sid
+                "simulation_error",
+                {"success": False, "message": "Missing chat_id or attempt_id"},
+                room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing chat_id or attempt_id")
             return
@@ -809,9 +873,13 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
         pool = get_pool()
         if not pool:
             await sio.emit(
-                "simulation_error", {"success": False, "message": "Database connection pool not available"}, room=sid
+                "simulation_error",
+                {"success": False, "message": "Database connection pool not available"},
+                room=sid,
             )
-            logger.error(f"Emitted error to {sid}: Database connection pool not available")
+            logger.error(
+                f"Emitted error to {sid}: Database connection pool not available"
+            )
             return
 
         async with pool.acquire() as conn:
@@ -820,7 +888,9 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             chat = await conn.fetchrow(sql, chat_id)
             if not chat:
                 await sio.emit(
-                    "simulation_error", {"success": False, "message": "Chat not found"}, room=sid
+                    "simulation_error",
+                    {"success": False, "message": "Chat not found"},
+                    room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Chat not found")
                 return
@@ -830,33 +900,46 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             attempt_with_profile = await conn.fetchrow(sql, attempt_id)
             if not attempt_with_profile:
                 await sio.emit(
-                    "simulation_error", {"success": False, "message": "Attempt not found"}, room=sid
+                    "simulation_error",
+                    {"success": False, "message": "Attempt not found"},
+                    room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Attempt not found")
                 return
-            
+
             simulation_attempt = attempt_with_profile
             profile_id = attempt_with_profile.get("profile_id")
-            
+
             # Extract department_id from chat/scenario for grading
             sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
             run_context = await conn.fetchrow(sql, chat_id)
-            
+
             if not run_context or not run_context.get("department_id"):
                 await sio.emit(
-                    "simulation_error", {"success": False, "message": f"Failed to get department_id from run context for chat {chat_id}"}, room=sid
+                    "simulation_error",
+                    {
+                        "success": False,
+                        "message": f"Failed to get department_id from run context for chat {chat_id}",
+                    },
+                    room=sid,
                 )
-                logger.error(f"Emitted error to {sid}: Failed to get department_id from run context for chat {chat_id}")
+                logger.error(
+                    f"Emitted error to {sid}: Failed to get department_id from run context for chat {chat_id}"
+                )
                 return
-            
+
             department_id = run_context["department_id"]
 
             # Get the simulation
             sql = load_sql("sql/v3/simulations/get_simulation_by_id.sql")
-            simulation = await conn.fetchrow(sql, str(simulation_attempt["simulation_id"]))
+            simulation = await conn.fetchrow(
+                sql, str(simulation_attempt["simulation_id"])
+            )
             if not simulation:
                 await sio.emit(
-                    "simulation_error", {"success": False, "message": "Simulation not found"}, room=sid
+                    "simulation_error",
+                    {"success": False, "message": "Simulation not found"},
+                    room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Simulation not found")
                 return
@@ -869,15 +952,22 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             # Get existing chats for this attempt
             sql = load_sql("sql/v3/attempts/get_existing_chats_for_attempt.sql")
             existing_chats = await conn.fetch(sql, attempt_id)
-            
+
             # Debug: Check if existing_chats have 'id' field
             if existing_chats and "id" not in existing_chats[0]:
                 await sio.emit(
-                    "simulation_error", {"success": False, "message": f"Existing chats missing 'id' field: {existing_chats[0]}"}, room=sid
+                    "simulation_error",
+                    {
+                        "success": False,
+                        "message": f"Existing chats missing 'id' field: {existing_chats[0]}",
+                    },
+                    room=sid,
                 )
-                logger.error(f"Emitted error to {sid}: Existing chats missing 'id' field: {existing_chats[0]}")
+                logger.error(
+                    f"Emitted error to {sid}: Existing chats missing 'id' field: {existing_chats[0]}"
+                )
                 return
-            
+
             # Get scenarios that already have graded chats (completed with grade)
             # A scenario is considered done only if it has at least one chat with a grade
             sql = load_sql("sql/v3/simulations/get_scenarios_with_grades.sql")
@@ -885,17 +975,19 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             scenarios_with_grades_set = {
                 str(row["scenario_id"]) for row in scenarios_with_grades
             }
-            
+
             # Get current chat's scenario_id to exclude it from next scenario selection
             # (for normal grading, we don't want to create another chat for the current scenario)
             current_chat_scenario_id = str(chat.get("scenario_id"))
-            
+
             # Also get scenarios that already have chats (even without grades) to avoid duplicates
             # This prevents creating multiple chats for the same scenario in the same attempt
             existing_scenario_ids = {
-                str(ec.get("scenario_id")) for ec in existing_chats if ec.get("scenario_id")
+                str(ec.get("scenario_id"))
+                for ec in existing_chats
+                if ec.get("scenario_id")
             }
-            
+
             # Find the next scenario index that doesn't have a graded chat
             # Exclude the current chat's scenario (it will be graded but doesn't have a grade yet)
             # Also exclude scenarios that already have chats (to prevent duplicates)
@@ -906,12 +998,14 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 # 1. Already have grades (completed with grade)
                 # 2. Are the current chat's scenario (will be graded)
                 # 3. Already have a chat in this attempt (prevent duplicates)
-                if (scenario_id_str not in scenarios_with_grades_set 
+                if (
+                    scenario_id_str not in scenarios_with_grades_set
                     and scenario_id_str != current_chat_scenario_id
-                    and scenario_id_str not in existing_scenario_ids):
+                    and scenario_id_str not in existing_scenario_ids
+                ):
                     next_index = idx
                     break
-            
+
             # If all scenarios have graded chats or only current scenario remains, use the length for infinite mode cycling
             if next_index is None:
                 next_index = len(scenario_links)
@@ -921,11 +1015,15 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 # Link the previous chat to current attempt via junction table
                 sql = load_sql("sql/v3/attempts/link_chat_to_attempt.sql")
                 await conn.execute(sql, attempt_id, previous_chat_id)
-                
+
                 # Check if the previous chat has a grade and update scenarios_with_grades_set
                 sql = load_sql("sql/v3/simulations/get_previous_chat_info.sql")
                 prev_chat_info = await conn.fetchrow(sql, previous_chat_id)
-                if prev_chat_info and prev_chat_info["has_grade"] and prev_chat_info["scenario_id"]:
+                if (
+                    prev_chat_info
+                    and prev_chat_info["has_grade"]
+                    and prev_chat_info["scenario_id"]
+                ):
                     scenarios_with_grades_set.add(str(prev_chat_info["scenario_id"]))
                     # Recalculate next_index since we now have a new scenario with a grade
                     next_index = None
@@ -936,36 +1034,43 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                             break
                     if next_index is None:
                         next_index = len(scenario_links)
-                
+
                 # Mark current incomplete chat as completed (without grade = skipped)
                 sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
                 await conn.execute(sql, chat_id)
-                
+
                 # If end_all, mark all remaining incomplete chats as completed
                 if end_all:
                     for existing_chat in existing_chats:
-                        if not existing_chat["completed"] and existing_chat["id"] != chat_id:
-                            sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
+                        if (
+                            not existing_chat["completed"]
+                            and existing_chat["id"] != chat_id
+                        ):
+                            sql = load_sql(
+                                "sql/v3/simulations/update_chat_completed.sql"
+                            )
                             await conn.execute(sql, str(existing_chat["id"]))
-            
+
             # Handle previous_chat_map if provided (for end_all with permutations)
             created_chats_count_map = 0
             if end_all and previous_chat_map:
                 # Mark current chat as completed (without grading - user is using previous chat scores)
                 sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
                 await conn.execute(sql, chat_id)
-                
+
                 # Get scenario IDs that already have chats in this attempt
                 existing_scenario_ids = {
-                    str(ec.get("scenario_id")) for ec in existing_chats if ec.get("scenario_id")
+                    str(ec.get("scenario_id"))
+                    for ec in existing_chats
+                    if ec.get("scenario_id")
                 }
-                
+
                 # Process ALL scenarios in the simulation
                 # For each scenario in previous_chat_map: link previous chat if provided
                 # For scenarios NOT in previous_chat_map: create skipped chat if they don't have a chat yet
                 for scenario_link in scenario_links:
                     scenario_id_str = str(scenario_link["scenario_id"])
-                    
+
                     if scenario_id_str in previous_chat_map:
                         # User selected a previous chat to reuse for this scenario
                         prev_chat_id = previous_chat_map[scenario_id_str]
@@ -973,12 +1078,20 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                             # Link the previous chat to current attempt via junction table
                             sql = load_sql("sql/v3/attempts/link_chat_to_attempt.sql")
                             await conn.execute(sql, attempt_id, prev_chat_id)
-                            
+
                             # Check if the previous chat has a grade and update scenarios_with_grades_set
-                            sql = load_sql("sql/v3/simulations/get_previous_chat_info.sql")
+                            sql = load_sql(
+                                "sql/v3/simulations/get_previous_chat_info.sql"
+                            )
                             prev_chat_info = await conn.fetchrow(sql, prev_chat_id)
-                            if prev_chat_info and prev_chat_info["has_grade"] and prev_chat_info["scenario_id"]:
-                                scenarios_with_grades_set.add(str(prev_chat_info["scenario_id"]))
+                            if (
+                                prev_chat_info
+                                and prev_chat_info["has_grade"]
+                                and prev_chat_info["scenario_id"]
+                            ):
+                                scenarios_with_grades_set.add(
+                                    str(prev_chat_info["scenario_id"])
+                                )
                     elif scenario_id_str not in existing_scenario_ids:
                         # Scenario not in map and doesn't have a chat yet = skipped, create new completed chat (no grade)
                         created = await _create_chat_for_scenario_inline(
@@ -998,7 +1111,7 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                     if not existing_chat["completed"]:
                         sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
                         await conn.execute(sql, str(existing_chat["id"]))
-            
+
             # Create next chat if not end_all (works for both previous_chat_id and normal cases)
             next_chat_id = chat_id
             if not end_all and scenario_links:
@@ -1013,15 +1126,21 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                         # Start from next_index and cycle until we find one without a graded chat
                         for offset in range(num_scenarios):
                             cycling_index = (next_index + offset) % num_scenarios
-                            scenario_id_str = str(scenario_links[cycling_index]["scenario_id"])
+                            scenario_id_str = str(
+                                scenario_links[cycling_index]["scenario_id"]
+                            )
                             # Skip scenarios that:
                             # 1. Already have grades OR
                             # 2. Are the current chat's scenario OR
                             # 3. Already have a chat in this attempt
-                            if (scenario_id_str not in scenarios_with_grades_set 
+                            if (
+                                scenario_id_str not in scenarios_with_grades_set
                                 and scenario_id_str != current_chat_scenario_id
-                                and scenario_id_str not in existing_scenario_ids):
-                                next_scenario_id = scenario_links[cycling_index]["scenario_id"]
+                                and scenario_id_str not in existing_scenario_ids
+                            ):
+                                next_scenario_id = scenario_links[cycling_index][
+                                    "scenario_id"
+                                ]
                                 break
                 elif next_index is not None and next_index < len(scenario_links):
                     # Use the next scenario that doesn't have a graded chat
@@ -1033,9 +1152,11 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                     # is not the current chat's scenario, and doesn't already have a chat
                     # (it might have been created between the query and now)
                     scenario_id_str = str(next_scenario_id)
-                    if (scenario_id_str not in scenarios_with_grades_set 
+                    if (
+                        scenario_id_str not in scenarios_with_grades_set
                         and scenario_id_str != current_chat_scenario_id
-                        and scenario_id_str not in existing_scenario_ids):
+                        and scenario_id_str not in existing_scenario_ids
+                    ):
                         created_next_chat = await _create_chat_for_scenario_inline(
                             conn,
                             scenario_id_str,
@@ -1045,15 +1166,29 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                         )
                         if created_next_chat is None:
                             await sio.emit(
-                                "simulation_error", {"success": False, "message": "Next scenario not found"}, room=sid
+                                "simulation_error",
+                                {
+                                    "success": False,
+                                    "message": "Next scenario not found",
+                                },
+                                room=sid,
                             )
-                            logger.error(f"Emitted error to {sid}: Next scenario not found")
+                            logger.error(
+                                f"Emitted error to {sid}: Next scenario not found"
+                            )
                             return
                         if "id" not in created_next_chat:
                             await sio.emit(
-                                "simulation_error", {"success": False, "message": f"Created chat missing 'id' field: {created_next_chat}"}, room=sid
+                                "simulation_error",
+                                {
+                                    "success": False,
+                                    "message": f"Created chat missing 'id' field: {created_next_chat}",
+                                },
+                                room=sid,
                             )
-                            logger.error(f"Emitted error to {sid}: Created chat missing 'id' field: {created_next_chat}")
+                            logger.error(
+                                f"Emitted error to {sid}: Created chat missing 'id' field: {created_next_chat}"
+                            )
                             return
                         next_chat_id = created_next_chat["id"]
 
@@ -1074,7 +1209,7 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                     simulation_grade_id = await _run_grade_agent_inline(
                         uuid.UUID(chat_id), uuid.UUID(department_id), conn
                     )
-                    
+
                     # After grading completes, add current chat's scenario to scenarios_with_grades_set
                     # and recalculate next_index (similar to previous_chat_id handling)
                     # This is mainly for tracking purposes - the next chat was already created correctly
@@ -1109,9 +1244,12 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 message_count_map = {
                     str(row["chat_id"]): row["message_count"] for row in message_counts
                 }
-                
+
                 for existing_chat in existing_chats:
-                    if not existing_chat["completed"] and existing_chat["id"] != chat_id:
+                    if (
+                        not existing_chat["completed"]
+                        and existing_chat["id"] != chat_id
+                    ):
                         other_message_count = message_count_map.get(
                             str(existing_chat["id"]), 0
                         )
@@ -1131,11 +1269,7 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 for offset in range(total_needed):
                     next_id = scenario_links[start_index + offset]["scenario_id"]
                     created = await _create_chat_for_scenario_inline(
-                        conn,
-                        str(next_id), 
-                        attempt_id, 
-                        profile_id, 
-                        mark_completed=True
+                        conn, str(next_id), attempt_id, profile_id, mark_completed=True
                     )
                     if created is None:
                         break
@@ -1207,7 +1341,8 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error continuing simulation for {sid}: {str(e)}")
         await sio.emit(
-            "simulation_error", {"success": False, "message": f"Failed to continue simulation: {str(e)}"}, room=sid
+            "simulation_error",
+            {"success": False, "message": f"Failed to continue simulation: {str(e)}"},
+            room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to continue simulation: {str(e)}")
-

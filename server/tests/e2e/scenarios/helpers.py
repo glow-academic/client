@@ -258,4 +258,3 @@ def find_editable_scenario(
         if require_department_specific is False and not is_dept_specific:
             return scenario
     raise ValueError("No matching editable scenario found in scenario list")
-

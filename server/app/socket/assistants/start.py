@@ -31,17 +31,28 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
         if not profile_id or not initial_message:
             logger.error(f"Missing profile_id or initial_message in request from {sid}")
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Missing profile_id or initial_message"}, room=sid
+                "assistant_error",
+                {"success": False, "message": "Missing profile_id or initial_message"},
+                room=sid,
             )
-            logger.error(f"Emitted assistant error to {sid}: Missing profile_id or initial_message")
+            logger.error(
+                f"Emitted assistant error to {sid}: Missing profile_id or initial_message"
+            )
             return
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Missing department_id - please refresh the page"}, room=sid
+                "assistant_error",
+                {
+                    "success": False,
+                    "message": "Missing department_id - please refresh the page",
+                },
+                room=sid,
             )
-            logger.error(f"Emitted assistant error to {sid}: Missing department_id - please refresh the page")
+            logger.error(
+                f"Emitted assistant error to {sid}: Missing department_id - please refresh the page"
+            )
             return
 
         logger.info(f"Processing assistant start: profile_id={profile_id}, sid={sid}")
@@ -50,7 +61,9 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
         pool = get_pool()
         if not pool:
             await sio.emit(
-                "assistant_error", {"success": False, "message": "Database not available"}, room=sid
+                "assistant_error",
+                {"success": False, "message": "Database not available"},
+                room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Database not available")
             return
@@ -61,7 +74,9 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             profile_row = await conn.fetchrow(sql, profile_id)
             if not profile_row:
                 await sio.emit(
-                    "assistant_error", {"success": False, "message": "Profile not found"}, room=sid
+                    "assistant_error",
+                    {"success": False, "message": "Profile not found"},
+                    room=sid,
                 )
                 logger.error(f"Emitted assistant error to {sid}: Profile not found")
                 return
@@ -71,6 +86,7 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
 
             # Create the assistant chat
             from datetime import UTC, datetime
+
             sql = load_sql("sql/v3/assistant/create_chat.sql")
             chat_row = await conn.fetchrow(
                 sql,
@@ -91,16 +107,22 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             # Update the title with the title agent (inlined run_title_agent)
             # Get all agent/model/provider/chat data in single query using SQL file
             sql = load_sql("sql/v3/agents/get_title_run_context.sql")
-            context_row = await conn.fetchrow(sql, str(chat_id_uuid), str(department_id))
-            
+            context_row = await conn.fetchrow(
+                sql, str(chat_id_uuid), str(department_id)
+            )
+
             if not context_row:
-                raise ValueError(f"Chat {chat_id_uuid} not found or no title agent configured")
-            
+                raise ValueError(
+                    f"Chat {chat_id_uuid} not found or no title agent configured"
+                )
+
             context = {
                 "agent_id": context_row["agent_id"],
                 "name": context_row["agent_name"],
                 "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                "temperature": float(context_row["temperature"])
+                if context_row["temperature"] is not None
+                else 0.0,
                 "reasoning": context_row["reasoning"],
                 "model_id": context_row["model_id"],
                 "model_name": context_row["model_name"],
@@ -129,16 +151,19 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             )
 
             # Check rate limit
-            profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+            profile_id_uuid = (
+                uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+            )
             if not profile_id_uuid:
                 raise ValueError("Profile not found. Please contact support.")
-            
+
             req_per_day = context["req_per_day"]
             runs_today_count = context["runs_today_count"]
-            
+
             if req_per_day is not None and runs_today_count >= req_per_day:
                 from datetime import timedelta
                 from zoneinfo import ZoneInfo
+
                 earliest_run_created_at = context["earliest_run_created_at"]
                 if earliest_run_created_at:
                     next_allowed_utc = earliest_run_created_at + timedelta(days=1)
@@ -177,7 +202,9 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             usage = result.context_wrapper.usage
 
             # Update model run tokens using SQL file
-            sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+            sql_update_tokens = load_sql(
+                "sql/v3/model_runs/update_model_run_tokens.sql"
+            )
             await conn.execute(
                 sql_update_tokens,
                 str(model_run_id),
@@ -192,7 +219,7 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
             # Update the chat title using SQL file
             sql_update_title = load_sql("sql/v3/assistant/update_chat_title.sql")
             await conn.execute(sql_update_title, str(chat_id_uuid), chat_title)
-            
+
             logger.info(f"Chat title: {chat_title}")
 
             # Emit title update to connected clients
@@ -218,7 +245,10 @@ async def start_assistant(sid: str, data: dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error starting assistant for {sid}: {str(e)}")
         await sio.emit(
-            "assistant_error", {"success": False, "message": f"Failed to start assistant: {str(e)}"}, room=sid
+            "assistant_error",
+            {"success": False, "message": f"Failed to start assistant: {str(e)}"},
+            room=sid,
         )
-        logger.error(f"Emitted assistant error to {sid}: Failed to start assistant: {str(e)}")
-
+        logger.error(
+            f"Emitted assistant error to {sid}: Failed to start assistant: {str(e)}"
+        )

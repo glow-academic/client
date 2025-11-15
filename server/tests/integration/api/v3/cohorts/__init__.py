@@ -1,2 +1,1 @@
 """Cohort route tests."""
-

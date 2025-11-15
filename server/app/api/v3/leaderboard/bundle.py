@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
+
 # Inline schemas
 class LeaderboardMetric(BaseModel):
     """Leaderboard metric."""
@@ -65,21 +66,21 @@ async def get_leaderboard(
 ) -> LeaderboardBundleResponse:
     """Get leaderboard bundle with all metrics and profile data."""
     tags = ["leaderboard"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return LeaderboardBundleResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Build WHERE clause using analytics query builder utility
         where_clause, params = build_base_filter(
@@ -96,7 +97,7 @@ async def get_leaderboard(
 
         # Load SQL template
         sql_template = load_sql("sql/v3/leaderboard/leaderboard_bundle.sql")
-        
+
         # Replace WHERE clause placeholder
         sql_query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
         sql_params = tuple(params)
@@ -128,7 +129,7 @@ async def get_leaderboard(
 
         # Validate and return response
         response_data = LeaderboardBundleResponse.model_validate(parsed_result)
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -138,7 +139,7 @@ async def get_leaderboard(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise

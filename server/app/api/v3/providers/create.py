@@ -38,10 +38,10 @@ async def create_provider(
 ) -> CreateProviderResponse:
     """Create a new provider."""
     tags = ["providers"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Encrypt API key before storing
         encrypted_api_key = encrypt_api_key(request.api_key)
@@ -72,11 +72,11 @@ async def create_provider(
             providerId=provider_id,
             message=f"Provider '{request.name}' created successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -89,4 +89,3 @@ async def create_provider(
             sql_params=sql_params,
             request=http_request,
         )
-

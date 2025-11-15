@@ -288,4 +288,3 @@ def find_editable_department(
         if require_can_delete is False and not can_delete:
             return department
     raise ValueError("No matching editable department found in departments list")
-

@@ -37,10 +37,10 @@ async def delete_rubric(
 ) -> DeleteRubricResponse:
     """Delete a rubric."""
     tags = ["rubrics"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         # Delete rubric with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/rubrics/delete_rubric_complete.sql")
@@ -66,11 +66,11 @@ async def delete_rubric(
             success=True,
             message="Rubric deleted successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -83,4 +83,3 @@ async def delete_rubric(
             sql_params=sql_params,
             request=http_request,
         )
-

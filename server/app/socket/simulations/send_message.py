@@ -13,11 +13,9 @@ from agents.items import TResponseInputItem
 from app.main import get_pool
 from app.main import sio
 from app.utils.agent_helpers import build_hint_agent, get_output_guardrails
-from app.utils.agent_tools import (create_hint_tools, hint_progress,
-                                   hint_results)
+from app.utils.agent_tools import create_hint_tools, hint_progress, hint_results
 from app.utils.agents import GenericAgent
-from app.utils.chat import (format_chat_scenario,
-                            get_simulation_conversation_history)
+from app.utils.chat import format_chat_scenario, get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
 from app.utils.sql_helper import load_sql
@@ -45,28 +43,30 @@ async def _generate_hints_background_inline(
     async with pool.acquire() as conn:
         try:
             logger.info(f"Background hint generation started for message {message_id}")
-            
+
             # Clear previous results
             hint_results.clear()
             hint_progress.clear()
-            
+
             # Get all hint context data using SQL file
             sql = load_sql("sql/v3/agents/get_hint_run_context.sql")
-            context_row = await conn.fetchrow(sql, str(message_id), str(chat_id), str(department_id))
-            
+            context_row = await conn.fetchrow(
+                sql, str(message_id), str(chat_id), str(department_id)
+            )
+
             if not context_row:
                 raise ValueError(
                     f"Message {message_id} in chat {chat_id} not found or "
                     f"no hint agent configured for department {department_id}"
                 )
-            
+
             # Parse JSON array for documents
             documents = (
                 json.loads(context_row["documents"])
                 if isinstance(context_row["documents"], str)
                 else context_row["documents"]
             )
-            
+
             # Resolve guest profile if needed
             profile_id = context_row["profile_id"]
             if not profile_id:
@@ -74,7 +74,7 @@ async def _generate_hints_background_inline(
                 guest_row = await conn.fetchrow(sql_guest)
                 if guest_row:
                     profile_id = guest_row["id"]
-            
+
             context = {
                 "message_id": context_row["message_id"],
                 "message_created_at": context_row["message_created_at"],
@@ -88,7 +88,9 @@ async def _generate_hints_background_inline(
                 "agent_id": context_row["agent_id"],
                 "agent_name": context_row["agent_name"],
                 "system_prompt": context_row["system_prompt"],
-                "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                "temperature": float(context_row["temperature"])
+                if context_row["temperature"] is not None
+                else 0.0,
                 "reasoning": context_row["reasoning"],
                 "model_id": context_row["model_id"],
                 "model_name": context_row["model_name"],
@@ -103,7 +105,7 @@ async def _generate_hints_background_inline(
                 "runs_today_count": context_row["runs_today_count"],
                 "earliest_run_created_at": context_row["earliest_run_created_at"],
             }
-            
+
             # Extract data from context
             chat = {
                 "id": uuid.UUID(context["chat_id"]),
@@ -163,16 +165,19 @@ async def _generate_hints_background_inline(
             input_items.extend(conversation_history)
 
             # Check rate limit
-            profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+            profile_id_uuid = (
+                uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+            )
             if not profile_id_uuid:
                 raise ValueError("Profile not found. Please contact support.")
-            
+
             req_per_day = context["req_per_day"]
             runs_today_count = context["runs_today_count"]
-            
+
             if req_per_day is not None and runs_today_count >= req_per_day:
                 from datetime import timedelta
                 from zoneinfo import ZoneInfo
+
                 earliest_run_created_at = context["earliest_run_created_at"]
                 if earliest_run_created_at:
                     next_allowed_utc = earliest_run_created_at + timedelta(days=1)
@@ -216,7 +221,9 @@ async def _generate_hints_background_inline(
 
             # Update token usage using SQL file
             usage = result.context_wrapper.usage
-            sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+            sql_update_tokens = load_sql(
+                "sql/v3/model_runs/update_model_run_tokens.sql"
+            )
             await conn.execute(
                 sql_update_tokens,
                 str(model_run_id),
@@ -253,7 +260,7 @@ async def _generate_hints_background_inline(
                     """
                     max_idx_row = await conn.fetchrow(sql_max_idx, str(message_id))
                     next_idx = max_idx_row["next_idx"] if max_idx_row else 0
-                    
+
                     # Insert the hint
                     sql_insert = """
                         INSERT INTO simulation_hints (simulation_message_id, idx, hint)
@@ -264,7 +271,9 @@ async def _generate_hints_background_inline(
                         sql_insert, str(message_id), next_idx, hint_text
                     )
                     hint_result = {
-                        "simulation_message_id": hint_result_row["simulation_message_id"],
+                        "simulation_message_id": hint_result_row[
+                            "simulation_message_id"
+                        ],
                         "idx": hint_result_row["idx"],
                     }
                     hint_ids.append(hint_result)
@@ -292,7 +301,7 @@ async def _generate_hints_background_inline(
                 sio,
                 chat_id,
             )
-            
+
             logger.info(
                 f"Background hint generation completed: {len(hint_ids)} hints created"
             )
@@ -301,7 +310,7 @@ async def _generate_hints_background_inline(
                 f"Background hint generation failed for message {message_id}: {e}",
                 exc_info=True,
             )
-            
+
             # Emit error event
             try:
                 await sio.emit(
@@ -342,7 +351,7 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
         # Process the message via WebSocket
         chat_id_uuid = uuid.UUID(chat_id)
         message_str = message or ""
-        
+
         # Get connection pool
         pool = get_pool()
         if not pool:
@@ -362,7 +371,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     }
 
                     # 2. Emit user message to connected clients
-                    logger.info(f"Emitting user message to room simulation_{chat_id_uuid}")
+                    logger.info(
+                        f"Emitting user message to room simulation_{chat_id_uuid}"
+                    )
                     await sio.emit(
                         "simulation_new_message",
                         {
@@ -392,7 +403,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 }
 
                 # 4. Emit placeholder assistant message
-                logger.info(f"Emitting assistant placeholder to room simulation_{chat_id_uuid}")
+                logger.info(
+                    f"Emitting assistant placeholder to room simulation_{chat_id_uuid}"
+                )
                 await sio.emit(
                     "simulation_new_message",
                     {
@@ -416,24 +429,30 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
                     from app.utils.websocket_utils import (
-                        get_active_run, is_run_cancelled, remove_active_result,
-                        store_active_events, store_active_result,
-                        store_active_run)
+                        get_active_run,
+                        is_run_cancelled,
+                        remove_active_result,
+                        store_active_events,
+                        store_active_result,
+                        store_active_run,
+                    )
 
                     # Get all context data in a single optimized query using SQL file
                     sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
                     context_row = await conn.fetchrow(sql, str(chat_id_uuid))
-                    
+
                     if not context_row:
-                        raise ValueError(f"Chat {chat_id_uuid} not found or no persona configured")
-                    
+                        raise ValueError(
+                            f"Chat {chat_id_uuid} not found or no persona configured"
+                        )
+
                     # Parse JSON array for documents
                     documents = (
                         json.loads(context_row["documents"])
                         if isinstance(context_row["documents"], str)
                         else context_row["documents"]
                     )
-                    
+
                     context = {
                         "chat_id": context_row["chat_id"],
                         "chat_title": context_row["chat_title"],
@@ -446,7 +465,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         "persona_id": context_row["persona_id"],
                         "persona_name": context_row["persona_name"],
                         "system_prompt": context_row["system_prompt"],
-                        "temperature": float(context_row["temperature"]) if context_row["temperature"] is not None else 0.0,
+                        "temperature": float(context_row["temperature"])
+                        if context_row["temperature"] is not None
+                        else 0.0,
                         "reasoning": context_row["reasoning"],
                         "model_id": context_row["model_id"],
                         "model_name": context_row["model_name"],
@@ -456,18 +477,24 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         "base_url": context_row["base_url"],
                         "api_key": context_row["api_key"],
                         "image_input_active": context_row["image_input_enabled"],
-                        "output_guardrail_active": context_row["output_guardrail_enabled"],
+                        "output_guardrail_active": context_row[
+                            "output_guardrail_enabled"
+                        ],
                         "profile_id": context_row["profile_id"],
                         "documents": documents,
                         "req_per_day": context_row["req_per_day"],
                         "runs_today_count": context_row["runs_today_count"],
-                        "earliest_run_created_at": context_row["earliest_run_created_at"],
+                        "earliest_run_created_at": context_row[
+                            "earliest_run_created_at"
+                        ],
                     }
-                    
+
                     # Extract department_id from context
                     if not context.get("department_id"):
-                        raise ValueError(f"Failed to get department_id from run context for chat {chat_id_uuid}")
-                    
+                        raise ValueError(
+                            f"Failed to get department_id from run context for chat {chat_id_uuid}"
+                        )
+
                     department_id = uuid.UUID(context["department_id"])
 
                     input_items: list[TResponseInputItem] = []
@@ -480,7 +507,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         input_items.append(document_info)
 
                     # Get all messages using SQL file
-                    sql_messages = load_sql("sql/v3/simulations/get_simulation_messages.sql")
+                    sql_messages = load_sql(
+                        "sql/v3/simulations/get_simulation_messages.sql"
+                    )
                     message_rows = await conn.fetch(sql_messages, str(chat_id_uuid))
                     messages = [dict(row) for row in message_rows]
 
@@ -495,7 +524,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
 
                     # Get output guardrails if enabled
                     output_guards = (
-                        get_output_guardrails(chat_id_uuid, department_id, conversation_history, conn)
+                        get_output_guardrails(
+                            chat_id_uuid, department_id, conversation_history, conn
+                        )
                         if context["output_guardrail_active"]
                         else None
                     )
@@ -515,19 +546,26 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     )
 
                     # Check rate limit
-                    profile_id_uuid = uuid.UUID(context["profile_id"]) if context["profile_id"] else None
+                    profile_id_uuid = (
+                        uuid.UUID(context["profile_id"])
+                        if context["profile_id"]
+                        else None
+                    )
                     if not profile_id_uuid:
                         raise ValueError("Profile not found. Please contact support.")
-                    
+
                     req_per_day = context["req_per_day"]
                     runs_today_count = context["runs_today_count"]
-                    
+
                     if req_per_day is not None and runs_today_count >= req_per_day:
                         from datetime import timedelta
                         from zoneinfo import ZoneInfo
+
                         earliest_run_created_at = context["earliest_run_created_at"]
                         if earliest_run_created_at:
-                            next_allowed_utc = earliest_run_created_at + timedelta(days=1)
+                            next_allowed_utc = earliest_run_created_at + timedelta(
+                                days=1
+                            )
                             eastern_tz = ZoneInfo("America/New_York")
                             next_allowed_et = next_allowed_utc.astimezone(eastern_tz)
                             error_message = (
@@ -540,7 +578,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         raise ValueError(error_message)
 
                     # Create model run with all junction records using SQL file (using persona, not agent)
-                    sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+                    sql_create_run = load_sql(
+                        "sql/v3/model_runs/create_model_run_complete.sql"
+                    )
                     model_run_row = await conn.fetchrow(
                         sql_create_run,
                         context["department_id"],
@@ -585,14 +625,18 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                             if event.type == "raw_response_event":
                                 if isinstance(event.data, ResponseTextDeltaEvent):
                                     token = event.data.delta
-                                    
+
                                     # Check cancellation BEFORE processing this token to avoid emitting it
                                     try:
                                         run_id = await get_active_run(chat_id_str)
                                         if run_id and await is_run_cancelled(run_id):
                                             cancelled = True
-                                            sql = load_sql("sql/v3/simulations/complete_message.sql")
-                                            await conn.execute(sql, None, str(assistant_message["id"]))
+                                            sql = load_sql(
+                                                "sql/v3/simulations/complete_message.sql"
+                                            )
+                                            await conn.execute(
+                                                sql, None, str(assistant_message["id"])
+                                            )
                                             break
                                     except Exception:
                                         pass
@@ -601,8 +645,14 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                                     accumulated_content += token
 
                                     # Update the database with accumulated content
-                                    sql = load_sql("sql/v3/simulations/update_message_content.sql")
-                                    await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+                                    sql = load_sql(
+                                        "sql/v3/simulations/update_message_content.sql"
+                                    )
+                                    await conn.execute(
+                                        sql,
+                                        accumulated_content,
+                                        str(assistant_message["id"]),
+                                    )
 
                                     logger.info(
                                         f"Emitting token to room simulation_{chat_id_uuid}: {token[:20]}..."
@@ -621,7 +671,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                                         break
 
                         usage = result.context_wrapper.usage
-                        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+                        sql_update_tokens = load_sql(
+                            "sql/v3/model_runs/update_model_run_tokens.sql"
+                        )
                         await conn.execute(
                             sql_update_tokens,
                             str(model_run_id),
@@ -653,7 +705,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                             getattr(e, "guardrail_result", None)
                             and getattr(e.guardrail_result, "output", None)
                             and getattr(e.guardrail_result.output, "output_info", None)
-                            and getattr(e.guardrail_result.output.output_info, "reason", "")
+                            and getattr(
+                                e.guardrail_result.output.output_info, "reason", ""
+                            )
                         ) or ""
                     except Exception:
                         reason = ""
@@ -687,15 +741,21 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
                         # Handle cancellation gracefully
                         cancelled = True
-                        logger.info(f"Simulation run for chat {chat_id_uuid} was cancelled")
+                        logger.info(
+                            f"Simulation run for chat {chat_id_uuid} was cancelled"
+                        )
 
                         # Keep content as-is, don't add cancellation notice
                         # Mark message as completed when cancelled
                         sql = load_sql("sql/v3/simulations/complete_message.sql")
-                        await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+                        await conn.execute(
+                            sql, accumulated_content, str(assistant_message["id"])
+                        )
 
                         # Emit cancellation signal
-                        logger.info(f"Emitting cancellation to room simulation_{chat_id_uuid}")
+                        logger.info(
+                            f"Emitting cancellation to room simulation_{chat_id_uuid}"
+                        )
                         await sio.emit(
                             "simulation_message_cancelled",
                             {
@@ -711,11 +771,15 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
 
                 # 6. Mark as completed and ensure final content is persisted
                 sql = load_sql("sql/v3/simulations/complete_message.sql")
-                await conn.execute(sql, accumulated_content, str(assistant_message["id"]))
+                await conn.execute(
+                    sql, accumulated_content, str(assistant_message["id"])
+                )
 
                 # 7. Emit completion signal (only if not cancelled)
                 if not cancelled:
-                    logger.info(f"Emitting completion to room simulation_{chat_id_uuid}")
+                    logger.info(
+                        f"Emitting completion to room simulation_{chat_id_uuid}"
+                    )
                     await sio.emit(
                         "simulation_message_complete",
                         {
@@ -728,16 +792,22 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
 
                     # 8. Trigger hint generation for practice simulations only (fire and forget)
                     # Use optimized query to get simulation metadata
-                    sql = load_sql("sql/v3/simulations/get_simulation_metadata_for_chat.sql")
+                    sql = load_sql(
+                        "sql/v3/simulations/get_simulation_metadata_for_chat.sql"
+                    )
                     sim_metadata_row = await conn.fetchrow(sql, str(chat_id_uuid))
                     if not sim_metadata_row:
-                        logger.warning(f"Failed to get simulation metadata for chat {chat_id_uuid}")
+                        logger.warning(
+                            f"Failed to get simulation metadata for chat {chat_id_uuid}"
+                        )
                         sim_metadata = {"practice_simulation": False}
                     else:
                         sim_metadata = {
                             "simulation_id": sim_metadata_row["simulation_id"],
                             "attempt_id": sim_metadata_row["attempt_id"],
-                            "practice_simulation": sim_metadata_row["practice_simulation"],
+                            "practice_simulation": sim_metadata_row[
+                                "practice_simulation"
+                            ],
                         }
 
                     if sim_metadata["practice_simulation"]:
@@ -746,10 +816,18 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         )
                         # Extract department_id from run context for hint generation
                         sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
-                        run_context_for_hints = await conn.fetchrow(sql, str(chat_id_uuid))
-                        hint_dept_id = run_context_for_hints.get("department_id") if run_context_for_hints else None
+                        run_context_for_hints = await conn.fetchrow(
+                            sql, str(chat_id_uuid)
+                        )
+                        hint_dept_id = (
+                            run_context_for_hints.get("department_id")
+                            if run_context_for_hints
+                            else None
+                        )
                         if not hint_dept_id:
-                            logger.warning(f"Failed to get department_id for hint generation in chat {chat_id_uuid}")
+                            logger.warning(
+                                f"Failed to get department_id for hint generation in chat {chat_id_uuid}"
+                            )
                         else:
                             asyncio.create_task(
                                 _generate_hints_background_inline(
@@ -759,7 +837,9 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                                 )
                             )
                     else:
-                        logger.debug("Skipping hint generation for non-practice simulation")
+                        logger.debug(
+                            "Skipping hint generation for non-practice simulation"
+                        )
 
             except Exception as e:
                 logger.error(f"Error processing simulation message: {str(e)}")
@@ -767,9 +847,14 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 # persist the error text onto it and mark it complete so the UI shows it.
                 try:
                     error_text = f"Error: {str(e)}"
-                    if "assistant_message" in locals() and assistant_message is not None:
+                    if (
+                        "assistant_message" in locals()
+                        and assistant_message is not None
+                    ):
                         sql = load_sql("sql/v3/simulations/complete_message.sql")
-                        await conn.execute(sql, error_text, str(assistant_message["id"]))
+                        await conn.execute(
+                            sql, error_text, str(assistant_message["id"])
+                        )
 
                         # Emit a completion update using the same message so the client updates content
                         await sio.emit(
@@ -788,7 +873,10 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
 
                 # Also emit the explicit error event for toasts/state resets
                 # Only emit explicit error event if not cancelled
-                if "cancelled" not in str(e).lower() and "canceled" not in str(e).lower():
+                if (
+                    "cancelled" not in str(e).lower()
+                    and "canceled" not in str(e).lower()
+                ):
                     logger.info(f"Emitting error to room simulation_{chat_id_uuid}")
                     await sio.emit(
                         "simulation_message_error",
@@ -841,4 +929,3 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
             {"success": False, "message": str(e)},
             room=sid,
         )
-

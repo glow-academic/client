@@ -65,7 +65,9 @@ async def find_scenarios(
     """
     pool = get_pool()
     if not pool:
-        raise HTTPException(status_code=500, detail="Database connection pool not available")
+        raise HTTPException(
+            status_code=500, detail="Database connection pool not available"
+        )
 
     try:
         async with pool.acquire() as conn:
@@ -79,7 +81,9 @@ async def find_scenarios(
                         id=str(row["id"]),
                         name=row["name"],
                         problem_statement=row["problem_statement"],
-                        persona_id=str(row["persona_id"]) if row["persona_id"] else None,
+                        persona_id=str(row["persona_id"])
+                        if row["persona_id"]
+                        else None,
                         default_scenario=row["default_scenario"],
                         score=int(row["score"]),
                     )
@@ -87,7 +91,4 @@ async def find_scenarios(
 
             return results
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Search error: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Search error: {str(e)}")

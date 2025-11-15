@@ -69,4 +69,3 @@ def create_cohort_via_ui(
         raise AssertionError("Created cohort card missing data-cohort-id attribute")
 
     return cohort_name, cohort_id
-

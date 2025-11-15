@@ -38,10 +38,10 @@ async def duplicate_parameter(
 ) -> DuplicateParameterResponse:
     """Duplicate a parameter with all items and their department associations."""
     tags = ["parameters", "agents"]  # Parameters used in scenario generation
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Duplicate parameter with items and department links in single SQL (DHH style)
@@ -64,11 +64,11 @@ async def duplicate_parameter(
                 parameterId=new_parameter_id,
                 message=f"Parameter '{original_parameter['name']}' duplicated successfully",
             )
-            
+
             # Invalidate cache after mutation
             await invalidate_tags(tags)
             response.headers["X-Invalidate-Tags"] = ",".join(tags)
-            
+
             return result_data
     except HTTPException:
         raise
@@ -83,4 +83,3 @@ async def duplicate_parameter(
             sql_params=sql_params,
             request=http_request,
         )
-

@@ -57,21 +57,21 @@ async def get_providers_list(
 ) -> ProvidersListResponse:
     """Get providers list with nested models (hierarchical)."""
     tags = ["providers"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return ProvidersListResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/providers/list_providers_complete.sql")
         sql_params = (filters.profileId,)
@@ -90,9 +90,9 @@ async def get_providers_list(
             if models_data and isinstance(models_data, list):
                 for model_obj in models_data:
                     if isinstance(model_obj, dict):
-                        total_usage = model_obj.get("persona_usage_count", 0) + model_obj.get(
-                            "agent_usage_count", 0
-                        )
+                        total_usage = model_obj.get(
+                            "persona_usage_count", 0
+                        ) + model_obj.get("agent_usage_count", 0)
                         is_in_use = total_usage > 0
 
                         updated_at = model_obj.get("updated_at", "")
@@ -142,7 +142,7 @@ async def get_providers_list(
             custom_model_options=custom_model_options,
             status_options=status_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -152,7 +152,7 @@ async def get_providers_list(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -165,4 +165,3 @@ async def get_providers_list(
             sql_params=sql_params,
             request=http_request,
         )
-

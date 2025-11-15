@@ -37,10 +37,10 @@ async def duplicate_department(
 ) -> DuplicateDepartmentResponse:
     """Duplicate a department."""
     tags = ["departments"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Duplicate department (fetch and duplicate in single query)
@@ -49,7 +49,10 @@ async def duplicate_department(
             result = await conn.fetchrow(sql_query, request.departmentId)
 
             if not result or not result.get("new_department_id"):
-                raise HTTPException(status_code=404, detail=f"Department {request.departmentId} not found")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Department {request.departmentId} not found",
+                )
 
             new_department_id = result["new_department_id"]
 
@@ -58,11 +61,11 @@ async def duplicate_department(
             departmentId=new_department_id,
             message="Department duplicated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result
     except HTTPException:
         raise
@@ -75,4 +78,3 @@ async def duplicate_department(
             sql_params=sql_params,
             request=http_request,
         )
-

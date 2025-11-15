@@ -302,7 +302,8 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
             try:
                 generic_agent = GenericAgent(
                     agent_name=agent["name"],
-                    system_prompt=agent["system_prompt"] or "You are a helpful assistant.",
+                    system_prompt=agent["system_prompt"]
+                    or "You are a helpful assistant.",
                     temperature=agent["temperature"] or 0.7,
                     model_name=agent["model_name"],
                     model_provider=agent["provider_name"],
@@ -334,7 +335,9 @@ async def check_assistant_service(conn: asyncpg.Connection) -> HealthCheckItem:
             status: Literal["healthy", "unhealthy", "warning", "n/a"]
             if ai_healthy and mcp_healthy:
                 status = "healthy"
-                message = f"AI provider '{agent['provider_name']}' + MCP server responding"
+                message = (
+                    f"AI provider '{agent['provider_name']}' + MCP server responding"
+                )
             elif ai_healthy:
                 status = "warning"
                 message = "AI OK but MCP server unavailable"
@@ -398,7 +401,9 @@ async def check_document_upload() -> HealthCheckItem:
         stat = os.statvfs(str(UPLOAD_FOLDER))
         free_gb = (stat.f_bavail * stat.f_frsize) / (1024**3)
 
-        status: Literal["healthy", "unhealthy", "warning", "n/a"] = "warning" if free_gb < 1 else "healthy"
+        status: Literal["healthy", "unhealthy", "warning", "n/a"] = (
+            "warning" if free_gb < 1 else "healthy"
+        )
         message = f"Upload folder OK, {free_gb:.1f}GB free"
 
         return HealthCheckItem(

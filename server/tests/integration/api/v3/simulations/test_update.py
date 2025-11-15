@@ -3,8 +3,10 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_alias)
+from tests.seed_helpers import (
+    get_cs_dept_id,  # type: ignore
+    get_superadmin_alias,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -65,7 +67,9 @@ async def test_update_simulation(
     assert data["message"] == "Simulation 'Updated Simulation' updated successfully"
 
     # Verify simulation was updated
-    simulation = await db.fetchrow("SELECT * FROM simulations WHERE id = $1", simulation_id)
+    simulation = await db.fetchrow(
+        "SELECT * FROM simulations WHERE id = $1", simulation_id
+    )
     assert simulation is not None
     assert simulation["title"] == "Updated Simulation"
     assert simulation["description"] == "Updated Description"
@@ -114,4 +118,3 @@ async def test_update_simulation_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

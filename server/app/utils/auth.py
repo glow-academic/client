@@ -64,7 +64,7 @@ def decrypt_api_key(encrypted_key: str) -> str:
         raise ValueError(
             "API key is missing - scenario/persona/provider chain is broken."
         )
-    
+
     secret_key = os.getenv("SECRET_KEY")
     if not secret_key:
         raise ValueError("SECRET_KEY environment variable is not set")

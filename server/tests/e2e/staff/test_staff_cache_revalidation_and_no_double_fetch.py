@@ -126,9 +126,9 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
         # Verify new request made (cache revalidated)
         stop_counter()
         final_count = list_counter["total"]
-        assert (
-            final_count > initial_count
-        ), "List should be re-fetched after edit operation"
+        assert final_count > initial_count, (
+            "List should be re-fetched after edit operation"
+        )
 
         # Verify updated data shown
         staff_row = page.locator(
@@ -208,9 +208,9 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
         # Verify cache revalidated
         stop_counter()
         final_count = list_counter["total"]
-        assert (
-            final_count > initial_count
-        ), "List should be re-fetched after delete operation"
+        assert final_count > initial_count, (
+            "List should be re-fetched after delete operation"
+        )
 
         # Verify deleted staff removed
         final_ids = _collect_staff_ids(page)
@@ -258,9 +258,9 @@ def test_staff_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
 
     # Should use cache on second visit (might be same count or +1 for revalidation)
     # Allow for one additional request due to cache revalidation
-    assert (
-        final_count <= initial_count + 1
-    ), f"Too many requests: {initial_count} -> {final_count}"
+    assert final_count <= initial_count + 1, (
+        f"Too many requests: {initial_count} -> {final_count}"
+    )
 
     # Verify data still correct
     table = page.get_by_test_id("staff-table")
@@ -329,9 +329,9 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
             # Verify new request made
             stop_counter()
             final_count = list_counter["total"]
-            assert (
-                final_count > initial_count
-            ), "Refresh should trigger new list request"
+            assert final_count > initial_count, (
+                "Refresh should trigger new list request"
+            )
 
             # Verify new staff appears
             final_ids = _collect_staff_ids(page)
@@ -348,4 +348,3 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
                 )
             except Exception:
                 pass
-

@@ -41,25 +41,27 @@ async def get_create_staff_data(
 ) -> CreateStaffDataResponse:
     """Get all data needed for create staff UI (mappings, etc.)."""
     tags = ["staff"]  # From router tags
-    
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
-    
+
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
         return CreateStaffDataResponse.model_validate(cached["data"])
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         sql_query = load_sql("sql/v3/profile/staff/get_create_staff_data.sql")
         sql_params = (request.departmentIds, request.profileId)
-        result = await conn.fetchrow(sql_query, request.departmentIds, request.profileId)
+        result = await conn.fetchrow(
+            sql_query, request.departmentIds, request.profileId
+        )
 
         if not result:
             # Return empty mappings if no data
@@ -81,7 +83,7 @@ async def get_create_staff_data(
                     # Convert UUID arrays to string arrays
                     cohort_ids = [str(cid) for cid in (item.get("cohort_ids") or [])]
                     department_ids = item.get("department_ids") or []
-                    
+
                     staff.append(
                         StaffItem(
                             profile_id=str(item.get("profile_id", "")),
@@ -136,7 +138,7 @@ async def get_create_staff_data(
             cohort_mapping=cohort_mapping,
             role_options=["superadmin", "admin", "instructional", "ta", "guest"],
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -146,7 +148,7 @@ async def get_create_staff_data(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -159,4 +161,3 @@ async def get_create_staff_data(
             sql_params=sql_params,
             request=http_request,
         )
-

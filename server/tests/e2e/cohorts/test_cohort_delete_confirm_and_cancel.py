@@ -62,4 +62,3 @@ def test_cohort_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
 
     page.wait_for_timeout(500)
     expect(cohort_card).to_have_count(0)
-

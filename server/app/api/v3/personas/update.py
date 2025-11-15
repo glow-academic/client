@@ -11,6 +11,7 @@ from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql
 
+
 # Inline request/response schemas
 class UpdatePersonaRequest(BaseModel):
     """Request to update persona."""
@@ -49,15 +50,15 @@ async def update_persona(
 ) -> UpdatePersonaResponse:
     """Update an existing persona."""
     tags = ["personas"]  # From router tags
-    
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         async with transaction(conn):
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
-            
+
             # Convert description None to empty string
             description = request.description if request.description is not None else ""
 
@@ -87,11 +88,11 @@ async def update_persona(
             success=True,
             message=f"Persona '{request.name}' updated successfully",
         )
-        
+
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return result_data
     except HTTPException:
         raise
@@ -106,4 +107,3 @@ async def update_persona(
             sql_params=sql_params,
             request=http_request,
         )
-

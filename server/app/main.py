@@ -124,6 +124,7 @@ sio = socketio.AsyncServer(
     },
 )
 
+
 # Wrapper functions to access shared state (avoids circular dependencies)
 # These are defined after sio is created so they can reference it
 def get_redis_client() -> Any | None:
@@ -154,14 +155,13 @@ def get_pool() -> asyncpg.Pool | None:
 async def init_db_pool() -> None:
     """Initialize asyncpg connection pool."""
     global _db_pool, _test_container
-    
+
     env_value = os.getenv("ENV", "")
     env_name = env_value.upper()
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import \
-            PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:16")
         _test_container.start()
@@ -177,7 +177,9 @@ async def init_db_pool() -> None:
         _db_pool = await asyncpg.create_pool(db_url, **pool_config)
         print(f"✅ Using test database at {db_url}")
 
-        schema_path = Path(__file__).resolve().parent.parent / "tests" / "test-schema.sql"
+        schema_path = (
+            Path(__file__).resolve().parent.parent / "tests" / "test-schema.sql"
+        )
         if not schema_path.exists():
             raise FileNotFoundError(
                 f"Test schema file not found at {schema_path}. \n"
@@ -304,7 +306,9 @@ from app.socket.simulations import stop_simulation  # type: ignore
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         # Configure uvicorn loggers to use compact format (after uvicorn has initialized)
-        compact_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        compact_formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
         for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
             uvicorn_logger = logging.getLogger(logger_name)
             uvicorn_logger.propagate = False  # Prevent double logging
@@ -316,7 +320,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 handler = logging.StreamHandler()
                 handler.setFormatter(compact_formatter)
                 uvicorn_logger.addHandler(handler)
-        
+
         # Initialize Redis client for socket ownership management
         global redis_client
         redis_url = os.getenv("REDIS_URL")
@@ -347,7 +351,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             routes=app.routes,
             description="Auto-generated OpenAPI schema from FastAPI v3 API",
         )
-        
+
         # Add x-cache-tags extension to each operation based on tags
         for path, path_item in schema.get("paths", {}).items():
             for method, operation in path_item.items():
@@ -356,7 +360,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                     tags = operation.get("tags", [])
                     if tags:
                         operation["x-cache-tags"] = tags
-        
+
         openapi_path = Path(__file__).parent.parent / "openapi.json"
         openapi_path.write_text(json.dumps(schema, indent=2))
         logger.info(f"✅ OpenAPI schema written to {openapi_path}")
