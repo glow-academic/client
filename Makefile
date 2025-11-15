@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types ws-gen gen-ws-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -188,7 +188,24 @@ print('✅ openapi.json written to', p.resolve())"
 gen-client-types:
 	@echo "📝 Generating client TypeScript types from OpenAPI..."
 	@cd client && yarn gen:types
-	@echo "✅ Client types updated in lib/api-types.ts"
+	@echo "✅ Client types updated in lib/api/schema.ts"
+
+# Generate WebSocket contract manually
+ws-gen: check-venv
+	@echo "📝 Generating WebSocket contract..."
+	@cd server && $(PWD)/$(VENV_PYTHON) -c "import asyncio; \
+from app.main import lifespan, fastapi_app; \
+async def run(): \
+	async with lifespan(fastapi_app): \
+		pass; \
+asyncio.run(run())"
+	@echo "✅ ws.json written to server/ws.json"
+
+# Generate client TypeScript types from WebSocket contract
+gen-ws-types:
+	@echo "📝 Generating client TypeScript types from WebSocket contract..."
+	@cd client && yarn gen:ws-types
+	@echo "✅ Client WebSocket types updated in lib/ws-types.ts"
 
 # Start all services in foreground with combined logs
 run: check-venv
@@ -200,11 +217,12 @@ run: check-venv
 	@echo ""
 	@echo "Press Ctrl+C to stop all services"
 	@echo "----------------------------------------"
-	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
+	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*ws.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
 	exec 2>/dev/null; \
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
-	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
+	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude server/ws.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
+	(cd client && yarn watch:ws 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[WS]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	wait
@@ -325,6 +343,8 @@ help:
 	@echo "  generate-tests  - Generate pytest tests"
 	@echo "  openapi-gen      - Generate OpenAPI schema manually"
 	@echo "  gen-client-types - Generate client TypeScript types from OpenAPI"
+	@echo "  ws-gen           - Generate WebSocket contract manually"
+	@echo "  gen-ws-types     - Generate client TypeScript types from WebSocket contract"
 	@echo ""
 	@echo "Service URLs:"
 	@echo "  Redis:     localhost:$(REDIS_PORT)"

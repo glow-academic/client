@@ -17,12 +17,44 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
+# Pydantic models for server-to-client events
+class SimulationErrorPayload(BaseModel):
+    success: bool
+    message: str
+
+
+class SimulationStartedPayload(BaseModel):
+    success: bool
+    message: str
+    attempt_id: str
+    chat_id: str
+
+
+# Pydantic model for client-to-server event
+class StartSimulationPayload(BaseModel):
+    simulation_id: str
+    profile_id: str | None = None
+    scenario_id: str | None = None
+    infinite: bool = False
+    infinite_time_limit: int | None = None
+
+
+# Emit helper functions
+async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
+    await sio.emit("simulation_error", payload.model_dump(), room=room)
+
+
+async def simulation_started(payload: SimulationStartedPayload, room: str) -> None:
+    await sio.emit("simulation_started", payload.model_dump(), room=room)
+
+
 @sio.event  # type: ignore
-async def start_simulation(sid: str, data: dict[str, Any]) -> None:
+async def start_simulation(sid: str, data: StartSimulationPayload) -> None:
     """
     Handle simulation start requests via WebSocket
     Replaces /simulations/start endpoint
@@ -30,17 +62,16 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
     try:
         logger.info(f"Received start_simulation request from {sid} with data: {data}")
 
-        simulation_id = data.get("simulation_id")
-        profile_id = data.get("profile_id")
-        scenario_id_override = data.get("scenario_id")
-        infinite = bool(data.get("infinite", False))
-        infinite_time_limit = data.get("infinite_time_limit")
+        simulation_id = data.simulation_id
+        profile_id = data.profile_id
+        scenario_id_override = data.scenario_id
+        infinite = data.infinite
+        infinite_time_limit = data.infinite_time_limit
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
-            await sio.emit(
-                "simulation_error",
-                {"success": False, "message": "Missing simulation_id"},
+            await simulation_error(
+                SimulationErrorPayload(success=False, message="Missing simulation_id"),
                 room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing simulation_id")
@@ -57,9 +88,10 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await sio.emit(
-                "simulation_error",
-                {"success": False, "message": "Database connection pool not available"},
+            await simulation_error(
+                SimulationErrorPayload(
+                    success=False, message="Database connection pool not available"
+                ),
                 room=sid,
             )
             logger.error(
@@ -101,9 +133,10 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
             )
 
             if not row:
-                await sio.emit(
-                    "simulation_error",
-                    {"success": False, "message": "Failed to start simulation attempt"},
+                await simulation_error(
+                    SimulationErrorPayload(
+                        success=False, message="Failed to start simulation attempt"
+                    ),
                     room=sid,
                 )
                 logger.error(
@@ -633,14 +666,13 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
             logger.info(f"Client {sid} joined simulation room {simulation_room}")
 
             # Emit success response
-            await sio.emit(
-                "simulation_started",
-                {
-                    "success": True,
-                    "message": "Simulation started successfully",
-                    "attempt_id": str(result["attempt_id"]),
-                    "chat_id": str(result["chat_id"]),
-                },
+            await simulation_started(
+                SimulationStartedPayload(
+                    success=True,
+                    message="Simulation started successfully",
+                    attempt_id=str(result["attempt_id"]),
+                    chat_id=str(result["chat_id"]),
+                ),
                 room=sid,
             )
 
@@ -650,9 +682,10 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error starting simulation for {sid}: {str(e)}")
-        await sio.emit(
-            "simulation_error",
-            {"success": False, "message": f"Failed to start simulation: {str(e)}"},
+        await simulation_error(
+            SimulationErrorPayload(
+                success=False, message=f"Failed to start simulation: {str(e)}"
+            ),
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to start simulation: {str(e)}")

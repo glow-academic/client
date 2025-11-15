@@ -10,22 +10,118 @@ import socketio  # type: ignore
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import get_pool, sio
+from app.main import get_pool, hint_progress, hint_results, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.get_output_guardrails import get_output_guardrails
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
-from app.main import hint_progress, hint_results
 from app.utils.chat.format_chat_scenario import format_chat_scenario
 from app.utils.chat.get_simulation_conversation_history import \
     get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.sql_helper import load_sql
-from app.utils.websocket.emit_hint_progress import emit_hint_progress
 from openai.types.responses import ResponseTextDeltaEvent
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+
+# Pydantic models for server-to-client events
+class SimulationErrorPayload(BaseModel):
+    success: bool
+    message: str
+
+
+class HintGenerationProgressPayload(BaseModel):
+    type: str
+    message: str | None = None
+    error: str | None = None
+    chat_id: str
+    message_id: str
+    hint_ids: list[str] | None = None
+    hints_count: int | None = None
+
+
+class SimulationNewMessagePayload(BaseModel):
+    message_id: str
+    chat_id: str
+    role: str
+    content: str
+    completed: bool
+    created_at: str
+
+
+class SimulationMessageTokenPayload(BaseModel):
+    message_id: str
+    chat_id: str
+    token: str
+    accumulated_content: str
+
+
+class SimulationMessageCompletePayload(BaseModel):
+    message_id: str
+    chat_id: str
+    final_content: str
+
+
+class SimulationMessageErrorPayload(BaseModel):
+    chat_id: str
+    error: str
+
+
+class SimulationMessageCancelledPayload(BaseModel):
+    message_id: str
+    chat_id: str
+    final_content: str
+
+
+# Pydantic model for client-to-server event
+class SendSimulationMessagePayload(BaseModel):
+    chat_id: str
+    message: str | None = None
+    is_retry: bool = False
+
+
+# Emit helper functions
+async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
+    await sio.emit("simulation_error", payload.model_dump(), room=room)
+
+
+async def hint_generation_progress(
+    payload: HintGenerationProgressPayload, room: str
+) -> None:
+    await sio.emit("hint_generation_progress", payload.model_dump(exclude_none=True), room=room)
+
+
+async def simulation_new_message(
+    payload: SimulationNewMessagePayload, room: str
+) -> None:
+    await sio.emit("simulation_new_message", payload.model_dump(), room=room)
+
+
+async def simulation_message_token(
+    payload: SimulationMessageTokenPayload, room: str
+) -> None:
+    await sio.emit("simulation_message_token", payload.model_dump(), room=room)
+
+
+async def simulation_message_complete(
+    payload: SimulationMessageCompletePayload, room: str
+) -> None:
+    await sio.emit("simulation_message_complete", payload.model_dump(), room=room)
+
+
+async def simulation_message_error(
+    payload: SimulationMessageErrorPayload, room: str
+) -> None:
+    await sio.emit("simulation_message_error", payload.model_dump(), room=room)
+
+
+async def simulation_message_cancelled(
+    payload: SimulationMessageCancelledPayload, room: str
+) -> None:
+    await sio.emit("simulation_message_cancelled", payload.model_dump(), room=room)
 
 
 async def _generate_hints_background_inline(
@@ -130,15 +226,14 @@ async def _generate_hints_background_inline(
             )
 
             # Emit start event
-            await emit_hint_progress(
-                {
-                    "type": "start",
-                    "message": "Starting hint generation",
-                    "chat_id": str(chat_id),
-                    "message_id": str(message_id),
-                },
-                sio,
-                chat_id,
+            await hint_generation_progress(
+                HintGenerationProgressPayload(
+                    type="start",
+                    message="Starting hint generation",
+                    chat_id=str(chat_id),
+                    message_id=str(message_id),
+                ),
+                room=f"simulation_{chat_id}",
             )
 
             # Build input items
@@ -290,19 +385,18 @@ async def _generate_hints_background_inline(
             )
 
             # Emit completion event
-            await emit_hint_progress(
-                {
-                    "type": "complete",
-                    "message": "Hint generation completed successfully",
-                    "chat_id": str(chat_id),
-                    "message_id": str(message_id),
-                    "hint_ids": [
+            await hint_generation_progress(
+                HintGenerationProgressPayload(
+                    type="complete",
+                    message="Hint generation completed successfully",
+                    chat_id=str(chat_id),
+                    message_id=str(message_id),
+                    hint_ids=[
                         f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
                     ],
-                    "hints_count": len(hint_ids),
-                },
-                sio,
-                chat_id,
+                    hints_count=len(hint_ids),
+                ),
+                room=f"simulation_{chat_id}",
             )
 
             logger.info(
@@ -316,30 +410,41 @@ async def _generate_hints_background_inline(
 
             # Emit error event
             try:
-                await sio.emit(
-                    "hint_generation_progress",
-                    {
-                        "type": "error",
-                        "message": f"Hint generation failed: {str(e)}",
-                        "error": str(e),
-                        "chat_id": str(chat_id),
-                        "message_id": str(message_id),
-                    },
+                await hint_generation_progress(
+                    HintGenerationProgressPayload(
+                        type="error",
+                        message=f"Hint generation failed: {str(e)}",
+                        error=str(e),
+                        chat_id=str(chat_id),
+                        message_id=str(message_id),
+                    ),
                     room=f"simulation_{chat_id}",
                 )
             except Exception as emit_err:
                 logger.warning(f"Failed to emit error event: {emit_err}")
+                await hint_generation_progress(
+                    HintGenerationProgressPayload(
+                        type="error",
+                        message=f"Hint generation failed: {str(emit_err)}",
+                        error=str(emit_err),
+                        chat_id=str(chat_id),
+                        message_id=str(message_id),
+                    ),
+                    room=f"simulation_{chat_id}",
+                )
 
 
 @sio.event  # type: ignore
-async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
+async def send_simulation_message(sid: str, data: SendSimulationMessagePayload) -> None:
     """Handle simulation message sending requests"""
     try:
-        chat_id = data.get("chat_id")
-        message = data.get("message")
-        assistant_audio_enabled = data.get("assistant_audio_enabled", False)
-        sketch_data = data.get("sketch_data")
-        is_retry = data.get("isRetry", False)
+        chat_id = data.chat_id
+        message = data.message
+        is_retry = data.is_retry
+        # Note: assistant_audio_enabled and sketch_data not in payload model yet
+        # These may need to be added if they're required
+        assistant_audio_enabled = False
+        sketch_data = None
 
         if not chat_id or (not message and not sketch_data):
             logger.error(
@@ -377,16 +482,15 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     logger.info(
                         f"Emitting user message to room simulation_{chat_id_uuid}"
                     )
-                    await sio.emit(
-                        "simulation_new_message",
-                        {
-                            "message_id": str(user_message["id"]),
-                            "chat_id": str(chat_id_uuid),
-                            "role": "user",
-                            "content": message_str,
-                            "completed": True,
-                            "created_at": user_message["created_at"].isoformat(),
-                        },
+                    await simulation_new_message(
+                        SimulationNewMessagePayload(
+                            message_id=str(user_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            role="user",
+                            content=message_str,
+                            completed=True,
+                            created_at=user_message["created_at"].isoformat(),
+                        ),
                         room=f"simulation_{chat_id_uuid}",
                     )
                 else:
@@ -409,16 +513,15 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 logger.info(
                     f"Emitting assistant placeholder to room simulation_{chat_id_uuid}"
                 )
-                await sio.emit(
-                    "simulation_new_message",
-                    {
-                        "message_id": str(assistant_message["id"]),
-                        "chat_id": str(chat_id_uuid),
-                        "role": "assistant",
-                        "content": "",
-                        "completed": False,
-                        "created_at": assistant_message["created_at"].isoformat(),
-                    },
+                await simulation_new_message(
+                    SimulationNewMessagePayload(
+                        message_id=str(assistant_message["id"]),
+                        chat_id=str(chat_id_uuid),
+                        role="assistant",
+                        content="",
+                        completed=False,
+                        created_at=assistant_message["created_at"].isoformat(),
+                    ),
                     room=f"simulation_{chat_id_uuid}",
                 )
 
@@ -664,14 +767,13 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                                     logger.info(
                                         f"Emitting token to room simulation_{chat_id_uuid}: {token[:20]}..."
                                     )
-                                    await sio.emit(
-                                        "simulation_message_token",
-                                        {
-                                            "message_id": str(assistant_message["id"]),
-                                            "chat_id": str(chat_id_uuid),
-                                            "token": token,
-                                            "accumulated_content": accumulated_content,
-                                        },
+                                    await simulation_message_token(
+                                        SimulationMessageTokenPayload(
+                                            message_id=str(assistant_message["id"]),
+                                            chat_id=str(chat_id_uuid),
+                                            token=token,
+                                            accumulated_content=accumulated_content,
+                                        ),
                                         room=f"simulation_{chat_id_uuid}",
                                     )
                                     if cancelled:
@@ -726,19 +828,19 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     sql = load_sql("sql/v3/simulations/complete_message.sql")
                     await conn.execute(sql, error_text, str(assistant_message["id"]))
 
-                    await sio.emit(
-                        "simulation_message_complete",
-                        {
-                            "message_id": str(assistant_message["id"]),
-                            "chat_id": str(chat_id_uuid),
-                            "final_content": error_text,
-                        },
+                    await simulation_message_complete(
+                        SimulationMessageCompletePayload(
+                            message_id=str(assistant_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            final_content=error_text,
+                        ),
                         room=f"simulation_{chat_id_uuid}",
                     )
 
-                    await sio.emit(
-                        "simulation_message_error",
-                        {"chat_id": str(chat_id_uuid), "error": error_text},
+                    await simulation_message_error(
+                        SimulationMessageErrorPayload(
+                            chat_id=str(chat_id_uuid), error=error_text
+                        ),
                         room=f"simulation_{chat_id_uuid}",
                     )
 
@@ -764,13 +866,12 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         logger.info(
                             f"Emitting cancellation to room simulation_{chat_id_uuid}"
                         )
-                        await sio.emit(
-                            "simulation_message_cancelled",
-                            {
-                                "message_id": str(assistant_message["id"]),
-                                "chat_id": str(chat_id_uuid),
-                                "final_content": accumulated_content,
-                            },
+                        await simulation_message_cancelled(
+                            SimulationMessageCancelledPayload(
+                                message_id=str(assistant_message["id"]),
+                                chat_id=str(chat_id_uuid),
+                                final_content=accumulated_content,
+                            ),
                             room=f"simulation_{chat_id_uuid}",
                         )
                     else:
@@ -788,13 +889,12 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     logger.info(
                         f"Emitting completion to room simulation_{chat_id_uuid}"
                     )
-                    await sio.emit(
-                        "simulation_message_complete",
-                        {
-                            "message_id": str(assistant_message["id"]),
-                            "chat_id": str(chat_id_uuid),
-                            "final_content": accumulated_content,
-                        },
+                    await simulation_message_complete(
+                        SimulationMessageCompletePayload(
+                            message_id=str(assistant_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            final_content=accumulated_content,
+                        ),
                         room=f"simulation_{chat_id_uuid}",
                     )
 
@@ -865,13 +965,12 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                         )
 
                         # Emit a completion update using the same message so the client updates content
-                        await sio.emit(
-                            "simulation_message_complete",
-                            {
-                                "message_id": str(assistant_message["id"]),
-                                "chat_id": str(chat_id_uuid),
-                                "final_content": error_text,
-                            },
+                        await simulation_message_complete(
+                            SimulationMessageCompletePayload(
+                                message_id=str(assistant_message["id"]),
+                                chat_id=str(chat_id_uuid),
+                                final_content=error_text,
+                            ),
                             room=f"simulation_{chat_id_uuid}",
                         )
                 except Exception as persist_error:
@@ -886,9 +985,10 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                     and "canceled" not in str(e).lower()
                 ):
                     logger.info(f"Emitting error to room simulation_{chat_id_uuid}")
-                    await sio.emit(
-                        "simulation_message_error",
-                        {"chat_id": str(chat_id_uuid), "error": str(e)},
+                    await simulation_message_error(
+                        SimulationMessageErrorPayload(
+                            chat_id=str(chat_id_uuid), error=str(e)
+                        ),
                         room=f"simulation_{chat_id_uuid}",
                     )
 
@@ -897,7 +997,7 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
 
         # Try to create an error message in the database if we have a valid chat_id
         try:
-            chat_id = data.get("chat_id")
+            chat_id = data.chat_id
             if chat_id:
                 pool = get_pool()
                 if pool:
@@ -914,26 +1014,27 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
 
                         # Emit the error message to clients
                         if error_message:
-                            await sio.emit(
-                                "simulation_new_message",
-                                {
-                                    "message_id": str(error_message["id"]),
-                                    "chat_id": str(chat_id),
-                                    "role": "assistant",
-                                    "content": f"Error: {str(e)}",
-                                    "completed": True,
-                                    "created_at": error_message[
-                                        "created_at"
-                                    ].isoformat(),
-                                },
+                            created_at = error_message.get("created_at")
+                            created_at_str = (
+                                created_at.isoformat()
+                                if hasattr(created_at, "isoformat")
+                                else str(created_at)
+                            )
+                            await simulation_new_message(
+                                SimulationNewMessagePayload(
+                                    message_id=str(error_message.get("id", "")),
+                                    chat_id=str(chat_id),
+                                    role="assistant",
+                                    content=f"Error: {str(e)}",
+                                    completed=True,
+                                    created_at=created_at_str,
+                                ),
                                 room=f"simulation_{chat_id}",
                             )
         except Exception as db_error:
             logger.error(f"Failed to create error message in database: {db_error}")
 
         # Also emit the error event for backward compatibility
-        await sio.emit(
-            "simulation_error",
-            {"success": False, "message": str(e)},
-            room=sid,
+        await simulation_error(
+            SimulationErrorPayload(success=False, message=str(e)), room=sid
         )

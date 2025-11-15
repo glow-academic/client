@@ -1,5 +1,5 @@
 // lib/api/types.ts
-import type { paths } from "@/lib/api-types";
+import type { paths } from "@/lib/api/schema";
 import type { Version } from "./config";
 
 type M = "get" | "post" | "put" | "patch" | "delete";

@@ -10,30 +10,105 @@ import asyncpg  # type: ignore
 import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, trace
 from agents.items import TResponseInputItem
-from app.main import get_pool
-from app.main import sio
-from app.utils.agents.tools.create_grading_tools import create_grading_tools
-from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
-from app.main import grading_progress, grading_results
+from app.main import get_pool, grading_progress, grading_results, sio
 from app.utils.agents.generic_agent import GenericAgent
+from app.utils.agents.tools.create_grading_tools import create_grading_tools
+from app.utils.agents.tools.create_safe_field_name import \
+    create_safe_field_name
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from app.utils.websocket.emit_grading_progress import emit_grading_progress
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
+# Pydantic models for server-to-client events
+class SimulationErrorPayload(BaseModel):
+    success: bool
+    message: str
+
+
+class SimulationGradingProgressPayload(BaseModel):
+    type: str
+    chat_id: str
+    message: str | None = None
+    error: str | None = None
+    rubric_name: str | None = None
+    standards_count: int | None = None
+    grade_id: str | None = None
+    total_score: float | None = None
+    passed: bool | None = None
+    standards_graded: int | None = None
+    time_taken: float | None = None
+    summary: str | None = None
+    standard_group_name: str | None = None
+    standard_group_short_name: str | None = None
+    score: int | None = None
+    feedback_preview: str | None = None
+    completed_count: int | None = None
+    total_count: int | None = None
+    summary_preview: str | None = None
+
+
+class EndAllCompletedPayload(BaseModel):
+    success: bool
+    message: str
+    attempt_id: str | None = None
+    completed_chat_ids: list[str] | None = None
+    next_chat_ids: list[str | None] | None = None
+    all_completed: bool | None = None
+
+
+class SimulationContinuedPayload(BaseModel):
+    success: bool
+    message: str
+    completed_chat_id: str
+    next_chat_id: str | None
+    is_attempt_finished: bool | None = None
+    simulation_grade_id: str | None = None
+
+
+# Pydantic model for client-to-server event
+class ContinueSimulationPayload(BaseModel):
+    chat_id: str
+    attempt_id: str
+    end_all: bool = False
+    previous_chat_id: str | None = None
+    previous_chat_map: dict[str, str | None] | None = None
+    department_id: str | None = None
+
+
+# Emit helper functions
+async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
+    await sio.emit("simulation_error", payload.model_dump(), room=room)
+
+
+async def simulation_grading_progress(
+    payload: SimulationGradingProgressPayload, room: str
+) -> None:
+    await sio.emit("simulation_grading_progress", payload.model_dump(exclude_none=True), room=room)
+
+
+async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
+    await sio.emit("end_all_completed", payload.model_dump(), room=room)
+
+
+async def simulation_continued(payload: SimulationContinuedPayload, room: str) -> None:
+    await sio.emit("simulation_continued", payload.model_dump(), room=room)
+
+
 async def _create_chat_for_scenario_inline(
-    conn: Any,
+    conn: asyncpg.Connection,
     scenario_id: str,
     attempt_id: str,
     profile_id: str | None,
     mark_completed: bool,
-) -> dict[str, Any] | None:
+) -> dict[str, str] | None:
     """Create chat for a scenario with full scenario preparation.
 
     Helper function for continue_simulation_attempt.
@@ -527,15 +602,14 @@ async def _run_grade_agent_inline(
         )
 
         # Emit grading start event
-        await sio.emit(
-            "simulation_grading_progress",
-            {
-                "type": "start",
-                "chat_id": str(simulation_chat_id),
-                "message": "Starting grading process",
-                "rubric_name": rubric["name"],
-                "standards_count": len(standard_groups),
-            },
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="start",
+                chat_id=str(simulation_chat_id),
+                message="Starting grading process",
+                rubric_name=rubric["name"],
+                standards_count=len(standard_groups),
+            ),
             room=f"simulation_{simulation_chat_id}",
         )
         logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
@@ -596,7 +670,10 @@ async def _run_grade_agent_inline(
 
         # Create wrapper for emit_progress that captures chat_id
         async def emit_progress_wrapper(event_data: dict[str, Any]) -> None:
-            await emit_grading_progress(event_data, sio, simulation_chat_id)
+            await simulation_grading_progress(
+                SimulationGradingProgressPayload(**event_data),
+                room=f"simulation_{simulation_chat_id}",
+            )
 
         # Create grading tools for each standard group
         grading_tools = create_grading_tools(
@@ -800,19 +877,18 @@ async def _run_grade_agent_inline(
         )
 
         # Emit grading completion event
-        await sio.emit(
-            "simulation_grading_progress",
-            {
-                "type": "complete",
-                "chat_id": str(simulation_chat_id),
-                "message": "Grading completed successfully",
-                "grade_id": str(grade_id),
-                "total_score": overall_score,
-                "passed": passed,
-                "standards_graded": len(standard_groups),
-                "time_taken": actual_time_taken,
-                "summary": summary,
-            },
+        await simulation_grading_progress(
+            SimulationGradingProgressPayload(
+                type="complete",
+                chat_id=str(simulation_chat_id),
+                message="Grading completed successfully",
+                grade_id=str(grade_id),
+                total_score=overall_score,
+                passed=passed,
+                standards_graded=len(standard_groups),
+                time_taken=actual_time_taken,
+                summary=summary,
+            ),
             room=f"simulation_{simulation_chat_id}",
         )
         logger.info(f"Emitted grading completion event for chat {simulation_chat_id}")
@@ -826,14 +902,13 @@ async def _run_grade_agent_inline(
 
         # Emit error event
         try:
-            await sio.emit(
-                "simulation_grading_progress",
-                {
-                    "type": "error",
-                    "chat_id": str(simulation_chat_id),
-                    "message": f"Grading failed: {str(e)}",
-                    "error": str(e),
-                },
+            await simulation_grading_progress(
+                SimulationGradingProgressPayload(
+                    type="error",
+                    chat_id=str(simulation_chat_id),
+                    message=f"Grading failed: {str(e)}",
+                    error=str(e),
+                ),
                 room=f"simulation_{simulation_chat_id}",
             )
         except Exception as emit_err:
@@ -843,25 +918,25 @@ async def _run_grade_agent_inline(
 
 
 @sio.event  # type: ignore
-async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
+async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None:
     """
     Handle simulation continue requests via WebSocket
     Replaces /simulations/continue endpoint
     Inlined from SimulationService.continue_simulation_attempt to use SQL files
     """
     try:
-        chat_id = data.get("chat_id")
-        attempt_id = data.get("attempt_id")
-        end_all = data.get("end_all", False)
-        previous_chat_id = data.get("previous_chat_id")
-        previous_chat_map = data.get(
-            "previous_chat_map"
-        )  # Map of scenario_id -> previous_chat_id
+        chat_id = data.chat_id
+        attempt_id = data.attempt_id
+        end_all = data.end_all
+        previous_chat_id = data.previous_chat_id
+        previous_chat_map = data.previous_chat_map
+        department_id = data.department_id
 
         if not chat_id or not attempt_id:
-            await sio.emit(
-                "simulation_error",
-                {"success": False, "message": "Missing chat_id or attempt_id"},
+            await simulation_error(
+                SimulationErrorPayload(
+                    success=False, message="Missing chat_id or attempt_id"
+                ),
                 room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing chat_id or attempt_id")
@@ -870,9 +945,10 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await sio.emit(
-                "simulation_error",
-                {"success": False, "message": "Database connection pool not available"},
+            await simulation_error(
+                SimulationErrorPayload(
+                    success=False, message="Database connection pool not available"
+                ),
                 room=sid,
             )
             logger.error(
@@ -885,9 +961,8 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             sql = load_sql("sql/v3/simulations/get_chat_basic.sql")
             chat = await conn.fetchrow(sql, chat_id)
             if not chat:
-                await sio.emit(
-                    "simulation_error",
-                    {"success": False, "message": "Chat not found"},
+                await simulation_error(
+                    SimulationErrorPayload(success=False, message="Chat not found"),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Chat not found")
@@ -897,9 +972,8 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
             attempt_with_profile = await conn.fetchrow(sql, attempt_id)
             if not attempt_with_profile:
-                await sio.emit(
-                    "simulation_error",
-                    {"success": False, "message": "Attempt not found"},
+                await simulation_error(
+                    SimulationErrorPayload(success=False, message="Attempt not found"),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Attempt not found")
@@ -913,12 +987,11 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
             run_context = await conn.fetchrow(sql, chat_id)
 
             if not run_context or not run_context.get("department_id"):
-                await sio.emit(
-                    "simulation_error",
-                    {
-                        "success": False,
-                        "message": f"Failed to get department_id from run context for chat {chat_id}",
-                    },
+                await simulation_error(
+                    SimulationErrorPayload(
+                        success=False,
+                        message=f"Failed to get department_id from run context for chat {chat_id}",
+                    ),
                     room=sid,
                 )
                 logger.error(
@@ -934,9 +1007,10 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 sql, str(simulation_attempt["simulation_id"])
             )
             if not simulation:
-                await sio.emit(
-                    "simulation_error",
-                    {"success": False, "message": "Simulation not found"},
+                await simulation_error(
+                    SimulationErrorPayload(
+                        success=False, message="Simulation not found"
+                    ),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Simulation not found")
@@ -953,12 +1027,11 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
 
             # Debug: Check if existing_chats have 'id' field
             if existing_chats and "id" not in existing_chats[0]:
-                await sio.emit(
-                    "simulation_error",
-                    {
-                        "success": False,
-                        "message": f"Existing chats missing 'id' field: {existing_chats[0]}",
-                    },
+                await simulation_error(
+                    SimulationErrorPayload(
+                        success=False,
+                        message=f"Existing chats missing 'id' field: {existing_chats[0]}",
+                    ),
                     room=sid,
                 )
                 logger.error(
@@ -1163,12 +1236,10 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                             mark_completed=False,
                         )
                         if created_next_chat is None:
-                            await sio.emit(
-                                "simulation_error",
-                                {
-                                    "success": False,
-                                    "message": "Next scenario not found",
-                                },
+                            await simulation_error(
+                                SimulationErrorPayload(
+                                    success=False, message="Next scenario not found"
+                                ),
                                 room=sid,
                             )
                             logger.error(
@@ -1176,12 +1247,11 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                             )
                             return
                         if "id" not in created_next_chat:
-                            await sio.emit(
-                                "simulation_error",
-                                {
-                                    "success": False,
-                                    "message": f"Created chat missing 'id' field: {created_next_chat}",
-                                },
+                            await simulation_error(
+                                SimulationErrorPayload(
+                                    success=False,
+                                    message=f"Created chat missing 'id' field: {created_next_chat}",
+                                ),
                                 room=sid,
                             )
                             logger.error(
@@ -1292,45 +1362,33 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 )
 
                 # Emit end all completed event
-                payload = {
-                    "success": True,
-                    "message": "Ended all chats for this attempt",
-                    "attempt_id": attempt_id,
-                }
+                payload_obj = EndAllCompletedPayload(
+                    success=True,
+                    message="Ended all chats for this attempt",
+                    attempt_id=attempt_id,
+                )
                 # Emit to requester
-                await sio.emit(
-                    "end_all_completed",
-                    payload,
-                    room=sid,
-                )
+                await end_all_completed(payload_obj, room=sid)
                 # Also broadcast to the simulation room so watchers stay in sync
-                await sio.emit(
-                    "end_all_completed",
-                    payload,
-                    room=f"simulation_{chat_id}",
-                )
+                await end_all_completed(payload_obj, room=f"simulation_{chat_id}")
             else:
                 # Emit the new, more descriptive success response for single chat
-                payload = {
-                    "success": True,
-                    "message": "Simulation continued successfully",
-                    "completed_chat_id": str(result["completed_chat_id"]),
-                    "next_chat_id": str(result["next_chat_id"]),
-                    "is_attempt_finished": result["is_attempt_finished"],
-                    "simulation_grade_id": result["simulation_grade_id"],
-                }
+                continued_payload = SimulationContinuedPayload(
+                    success=True,
+                    message="Simulation continued successfully",
+                    completed_chat_id=str(result["completed_chat_id"]),
+                    next_chat_id=str(result["next_chat_id"]),
+                    is_attempt_finished=bool(result["is_attempt_finished"])
+                    if result["is_attempt_finished"] is not None
+                    else None,
+                    simulation_grade_id=str(result["simulation_grade_id"])
+                    if result["simulation_grade_id"]
+                    else None,
+                )
                 # Emit to requester
-                await sio.emit(
-                    "simulation_continued",
-                    payload,
-                    room=sid,
-                )
+                await simulation_continued(continued_payload, room=sid)
                 # Also broadcast to the simulation room so watchers stay in sync
-                await sio.emit(
-                    "simulation_continued",
-                    payload,
-                    room=f"simulation_{chat_id}",
-                )
+                await simulation_continued(continued_payload, room=f"simulation_{chat_id}")
 
                 logger.info(
                     f"Simulation continued successfully: completed_chat={result['completed_chat_id']}, next_chat={result['next_chat_id']}"
@@ -1338,9 +1396,10 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error continuing simulation for {sid}: {str(e)}")
-        await sio.emit(
-            "simulation_error",
-            {"success": False, "message": f"Failed to continue simulation: {str(e)}"},
+        await simulation_error(
+            SimulationErrorPayload(
+                success=False, message=f"Failed to continue simulation: {str(e)}"
+            ),
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to continue simulation: {str(e)}")

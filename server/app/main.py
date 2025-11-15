@@ -193,7 +193,8 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import \
+            PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:16")
         _test_container.start()
@@ -331,6 +332,8 @@ from app.socket.connections import stop_chat  # type: ignore
 from app.socket.simulations import send_simulation_message  # type: ignore
 from app.socket.simulations import start_simulation  # type: ignore
 from app.socket.simulations import stop_simulation  # type: ignore
+from app.socket.simulations.continue_chat import \
+    continue_simulation  # type: ignore
 
 
 # Create a combined lifespan to manage both session managers
@@ -396,6 +399,92 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         openapi_path = Path(__file__).parent.parent / "openapi.json"
         openapi_path.write_text(json.dumps(schema, indent=2))
         logger.info(f"✅ OpenAPI schema written to {openapi_path}")
+
+        # Generate WebSocket contract and write to disk
+        from app.utils.socket_contract import build_socket_contract
+
+        client_to_server_handlers = [
+            connect,
+            disconnect,
+            send_assistant_message,
+            start_assistant,
+            stop_assistant,
+            send_simulation_message,
+            start_simulation,
+            stop_simulation,
+            continue_simulation,  # type: ignore[name-defined]
+            join_chat,
+            leave_chat,
+            stop_chat,
+        ]
+
+        # Import server-to-client emit functions (with Pydantic payload models)
+        from app.socket.assistants.send_message import (
+            assistant_message_cancelled, assistant_message_complete,
+            assistant_message_token, assistant_new_message, message_complete,
+            tool_call_completed, tool_call_created)
+        from app.socket.assistants.start import \
+            assistant_error as assistant_error_start
+        from app.socket.assistants.start import (assistant_started,
+                                                 title_updated)
+        from app.socket.assistants.stop import assistant_stopped
+        from app.socket.connections.connect import connection_confirmed
+        from app.socket.connections.join_chat import joined_chat
+        from app.socket.connections.stop_chat import chat_stopped
+        from app.socket.simulations.continue_chat import (
+            end_all_completed, simulation_continued,
+            simulation_grading_progress)
+        from app.socket.simulations.send_message import (
+            hint_generation_progress, simulation_message_complete,
+            simulation_message_error, simulation_message_token,
+            simulation_new_message)
+        from app.socket.simulations.start import \
+            simulation_error as simulation_error_start
+        from app.socket.simulations.start import simulation_started
+        from app.socket.simulations.stop import (simulation_message_cancelled,
+                                                 simulation_stopped)
+
+        # Collect all unique emit functions (use one instance of each event name)
+        server_to_client_stubs = [
+            # Assistant events
+            assistant_error_start,  # Use one instance (they're all the same)
+            assistant_started,
+            title_updated,
+            assistant_new_message,
+            message_complete,
+            tool_call_created,
+            tool_call_completed,
+            assistant_message_token,
+            assistant_message_complete,
+            assistant_message_cancelled,
+            assistant_stopped,
+            # Simulation events
+            simulation_error_start,  # Use one instance (they're all the same)
+            simulation_started,
+            simulation_message_cancelled,
+            simulation_stopped,
+            simulation_new_message,
+            simulation_message_token,
+            simulation_message_complete,
+            simulation_message_error,
+            hint_generation_progress,
+            simulation_grading_progress,
+            simulation_continued,
+            end_all_completed,
+            # Connection events
+            connection_confirmed,
+            joined_chat,
+            chat_stopped,
+        ]
+
+        contract = build_socket_contract(
+            client_to_server=client_to_server_handlers,
+            server_to_client=server_to_client_stubs, # type: ignore[arg-type]
+        )
+
+        ws_path = Path(__file__).parent.parent / "ws.json"
+        ws_path.write_text(json.dumps(contract, indent=2))
+        logger.info(f"✅ WebSocket contract written to {ws_path}")
 
         yield
 

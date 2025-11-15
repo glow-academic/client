@@ -137,7 +137,7 @@ export function WebSocketProvider({
         created_at: string;
       }) => {
         // Window event dispatched - assistant-context will handle refresh
-      },
+      }
     );
 
     // Simulation-specific message events
@@ -159,7 +159,7 @@ export function WebSocketProvider({
                 messageId: data.message_id,
                 chatId: data.chat_id,
               },
-            }),
+            })
           );
         }
 
@@ -171,7 +171,7 @@ export function WebSocketProvider({
                 messageId: data.message_id,
                 chatId: data.chat_id,
               },
-            }),
+            })
           );
         }
 
@@ -186,9 +186,9 @@ export function WebSocketProvider({
               completed: data.completed,
               createdAt: data.created_at,
             },
-          }),
+          })
         );
-      },
+      }
     );
 
     // Assistant message token updates
@@ -207,9 +207,9 @@ export function WebSocketProvider({
               chatId: data.chat_id,
               accumulatedContent: data.accumulated_content,
             },
-          }),
+          })
         );
-      },
+      }
     );
 
     // Simulation message token updates
@@ -230,9 +230,9 @@ export function WebSocketProvider({
               token: data.token,
               accumulatedContent: data.accumulated_content,
             },
-          }),
+          })
         );
-      },
+      }
     );
 
     // Assistant message completion
@@ -255,11 +255,11 @@ export function WebSocketProvider({
               chatId: data.chat_id,
               finalContent: data.final_content,
             },
-          }),
+          })
         );
 
         // Window event dispatched - assistant-context will handle refresh
-      },
+      }
     );
 
     // Assistant message cancellation
@@ -282,11 +282,11 @@ export function WebSocketProvider({
               chatId: data.chat_id,
               finalContent: data.final_content,
             },
-          }),
+          })
         );
 
         // Window event dispatched - assistant-context will handle refresh
-      },
+      }
     );
 
     // Simulation message completion
@@ -310,11 +310,11 @@ export function WebSocketProvider({
               chatId: data.chat_id,
               finalContent: data.final_content,
             },
-          }),
+          })
         );
 
         // Window event dispatched - simulation-context will handle refresh via router.refresh()
-      },
+      }
     );
 
     // Hint generation progress
@@ -333,9 +333,9 @@ export function WebSocketProvider({
         window.dispatchEvent(
           new CustomEvent("hint_generation_progress", {
             detail: data,
-          }),
+          })
         );
-      },
+      }
     );
 
     // Grading progress
@@ -362,9 +362,9 @@ export function WebSocketProvider({
         window.dispatchEvent(
           new CustomEvent("simulationGradingProgress", {
             detail: data,
-          }),
+          })
         );
-      },
+      }
     );
 
     // Simulation message cancellation
@@ -387,11 +387,11 @@ export function WebSocketProvider({
               chatId: data.chat_id,
               finalContent: data.final_content,
             },
-          }),
+          })
         );
 
         // Window event dispatched - simulation-context will handle refresh via router.refresh()
-      },
+      }
     );
 
     // Simulation message error
@@ -408,18 +408,18 @@ export function WebSocketProvider({
               chatId: data.chat_id,
               error: data.error,
             },
-          }),
+          })
         );
 
         toast.error(`Simulation error: ${data.error}`);
-      },
+      }
     );
 
     socket.on(
       "message_cancelled",
       (_data: { message_id: string; chat_id: string }) => {
         // Window event dispatched - contexts will handle their own refreshes
-      },
+      }
     );
 
     socket.on("title_updated", (data: { chat_id: string; title: string }) => {
@@ -430,13 +430,13 @@ export function WebSocketProvider({
             chat_id: data.chat_id,
             title: data.title,
           },
-        }),
+        })
       );
     });
 
     socket.on(
       "joined_chat",
-      (_data: { chat_type: string; chat_id: string }) => {},
+      (_data: { chat_type: string; chat_id: string }) => {}
     );
 
     // Tool call events
@@ -450,9 +450,9 @@ export function WebSocketProvider({
               tool_name: data.tool_name,
               chat_id: data.chat_id,
             },
-          }),
+          })
         );
-      },
+      }
     );
 
     socket.on(
@@ -465,9 +465,9 @@ export function WebSocketProvider({
               tool_name: data.tool_name,
               chat_id: data.chat_id,
             },
-          }),
+          })
         );
-      },
+      }
     );
 
     // Simulation-specific events
@@ -489,19 +489,19 @@ export function WebSocketProvider({
           window.dispatchEvent(
             new CustomEvent("simulationStarted", {
               detail: { attemptId: data.attempt_id },
-            }),
+            })
           );
 
           // Window event dispatched - home/practice pages will handle refresh via router.refresh()
         } else {
           toast.error(data.message);
         }
-      },
+      }
     );
 
     socket.on(
       "simulation_message_processing",
-      (_data: { chat_id: string; status: string; message: string }) => {},
+      (_data: { chat_id: string; status: string; message: string }) => {}
     );
 
     socket.on(
@@ -517,7 +517,7 @@ export function WebSocketProvider({
               success: data.success,
               message: data.message,
             },
-          }),
+          })
         );
 
         if (data.success) {
@@ -528,7 +528,7 @@ export function WebSocketProvider({
         } else {
           toast.error(data.message);
         }
-      },
+      }
     );
 
     socket.on(
@@ -555,7 +555,7 @@ export function WebSocketProvider({
                 nextChatId: data.next_chat_id,
                 isAttemptFinished: data.is_attempt_finished,
               },
-            }),
+            })
           );
 
           // Dispatch chatEnded event for tour progression
@@ -564,14 +564,14 @@ export function WebSocketProvider({
               detail: {
                 chatId: data.completed_chat_id,
               },
-            }),
+            })
           );
 
           // Window event dispatched - home/practice pages will handle refresh via router.refresh()
         } else {
           toast.error(data.message);
         }
-      },
+      }
     );
 
     socket.on(
@@ -590,14 +590,14 @@ export function WebSocketProvider({
               detail: {
                 attemptId: data.attempt_id,
               },
-            }),
+            })
           );
 
           // Window event dispatched - home/practice pages will handle refresh via router.refresh()
         } else {
           toast.error(data.message);
         }
-      },
+      }
     );
 
     socket.on(
@@ -610,7 +610,7 @@ export function WebSocketProvider({
         toast.error(data.message);
         // Trigger error event for components that need to reset state
         window.dispatchEvent(new CustomEvent("simulationError"));
-      },
+      }
     );
 
     // Assistant-specific events
@@ -625,17 +625,17 @@ export function WebSocketProvider({
           window.dispatchEvent(
             new CustomEvent("assistant_started", {
               detail: { chat_id: data.chat_id },
-            }),
+            })
           );
         } else {
           toast.error(data.message);
         }
-      },
+      }
     );
 
     socket.on(
       "assistant_message_processing",
-      (_data: { chat_id: string; status: string; message: string }) => {},
+      (_data: { chat_id: string; status: string; message: string }) => {}
     );
 
     socket.on(
@@ -647,7 +647,7 @@ export function WebSocketProvider({
         } else {
           toast.error(data.message);
         }
-      },
+      }
     );
 
     socket.on(
@@ -664,9 +664,9 @@ export function WebSocketProvider({
             detail: {
               message: data.message,
             },
-          }),
+          })
         );
-      },
+      }
     );
   }, []);
 
@@ -761,7 +761,7 @@ export function WebSocketProvider({
           };
           if (data.sid)
             payload2["correlation"] = { sessionId: data.sid as string };
-        },
+        }
       );
 
       socket.on("disconnect", (reason: string) => {
@@ -816,7 +816,7 @@ export function WebSocketProvider({
 
         if (connectionAttempts.current >= maxConnectionAttempts) {
           toast.error(
-            "Unable to connect to real-time updates. Some features may be limited.",
+            "Unable to connect to real-time updates. Some features may be limited."
           );
         }
       });
@@ -944,7 +944,7 @@ export function WebSocketProvider({
       });
       currentRoomsRef.current.add(roomId);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const leaveRoom = useCallback(
@@ -960,7 +960,7 @@ export function WebSocketProvider({
 
       // Note: We don't remove the persistent audio track here as it's shared across all rooms
     },
-    [],
+    []
   );
 
   // Event emitters
@@ -992,7 +992,7 @@ export function WebSocketProvider({
       setStartingSimulationId(data.simulation_id);
       socketRef.current.emit("start_simulation", payload);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitSendSimulationMessage = useCallback(
@@ -1004,7 +1004,7 @@ export function WebSocketProvider({
       setIsSendingSimulationMessage(true);
       socketRef.current.emit("send_simulation_message", data);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitStopSimulation = useCallback(
@@ -1017,7 +1017,7 @@ export function WebSocketProvider({
       setIsStoppingSimulation(true);
       socketRef.current.emit("stop_simulation", data);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitContinueSimulation = useCallback(
@@ -1037,7 +1037,7 @@ export function WebSocketProvider({
       setIsContinuingSimulation(true);
       socketRef.current.emit("continue_simulation", data);
     },
-    [isConnected],
+    [isConnected]
   );
 
   // Assistant event emitters
@@ -1055,7 +1055,7 @@ export function WebSocketProvider({
       setIsStartingAssistant(true);
       socketRef.current.emit("start_assistant", data);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitSendAssistantMessage = useCallback(
@@ -1067,7 +1067,7 @@ export function WebSocketProvider({
       setIsSendingAssistantMessage(true);
       socketRef.current.emit("send_assistant_message", data);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const emitStopAssistant = useCallback(
@@ -1080,7 +1080,7 @@ export function WebSocketProvider({
       setIsStoppingAssistant(true);
       socketRef.current.emit("stop_assistant", data);
     },
-    [isConnected],
+    [isConnected]
   );
 
   const value: WebSocketContextType = {

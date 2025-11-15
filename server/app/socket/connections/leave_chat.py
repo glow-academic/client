@@ -1,21 +1,25 @@
 """Handler for leave_chat WebSocket event."""
 
 import logging
-from typing import Any
 
 from app.main import sio
 from app.utils.websocket.remove_active_connection import remove_active_connection
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 
+# Pydantic model for client-to-server event
+class LeaveChatPayload(BaseModel):
+    chat_id: str
+    chat_type: str = "assistant"
+
+
 @sio.event  # type: ignore
-async def leave_chat(sid: str, data: dict[str, Any]) -> None:
+async def leave_chat(sid: str, data: LeaveChatPayload) -> None:
     """Leave a specific chat room"""
-    chat_id = data.get("chat_id")
-    chat_type = data.get(
-        "chat_type", "assistant"
-    )  # Default to assistant for backward compatibility
+    chat_id = data.chat_id
+    chat_type = data.chat_type
 
     if chat_id:
         room_name = f"{chat_type}_{chat_id}"

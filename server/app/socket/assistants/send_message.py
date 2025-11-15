@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 from openai.types.responses import (ResponseFunctionToolCall,
                                     ResponseFunctionToolCallParam,
                                     ResponseTextDeltaEvent)
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -33,19 +34,113 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 logger = logging.getLogger(__name__)
 
 
+# Pydantic models for server-to-client events
+class AssistantErrorPayload(BaseModel):
+    success: bool | None = None
+    message: str | None = None
+    chat_id: str | None = None
+    error: str | None = None
+
+
+class AssistantNewMessagePayload(BaseModel):
+    message_id: str
+    chat_id: str
+    role: str
+    content: str
+    completed: bool
+    created_at: str
+
+
+class MessageCompletePayload(BaseModel):
+    message_id: str
+    chat_id: str
+    final_content: str
+
+
+class ToolCallCreatedPayload(BaseModel):
+    tool_call_id: str
+    chat_id: str
+    tool_name: str
+    tool_type: str
+
+
+class ToolCallCompletedPayload(BaseModel):
+    tool_call_id: str | None
+    chat_id: str
+    tool_name: str | None
+
+
+class AssistantMessageTokenPayload(BaseModel):
+    message_id: str
+    chat_id: str
+    token: str
+    accumulated_content: str
+
+
+class AssistantMessageCompletePayload(BaseModel):
+    message_id: str
+    chat_id: str
+    final_content: str
+
+
+class AssistantMessageCancelledPayload(BaseModel):
+    message_id: str
+    chat_id: str
+    final_content: str
+
+
+# Pydantic model for client-to-server event
+class SendAssistantMessagePayload(BaseModel):
+    chat_id: str
+    message: str
+    department_id: str
+
+
+# Emit helper functions
+async def assistant_error(payload: AssistantErrorPayload, room: str) -> None:
+    await sio.emit("assistant_error", payload.model_dump(exclude_none=True), room=room)
+
+
+async def assistant_new_message(payload: AssistantNewMessagePayload, room: str) -> None:
+    await sio.emit("assistant_new_message", payload.model_dump(), room=room)
+
+
+async def message_complete(payload: MessageCompletePayload, room: str) -> None:
+    await sio.emit("message_complete", payload.model_dump(), room=room)
+
+
+async def tool_call_created(payload: ToolCallCreatedPayload, room: str) -> None:
+    await sio.emit("tool_call_created", payload.model_dump(), room=room)
+
+
+async def tool_call_completed(payload: ToolCallCompletedPayload, room: str) -> None:
+    await sio.emit("tool_call_completed", payload.model_dump(exclude_none=True), room=room)
+
+
+async def assistant_message_token(payload: AssistantMessageTokenPayload, room: str) -> None:
+    await sio.emit("assistant_message_token", payload.model_dump(), room=room)
+
+
+async def assistant_message_complete(payload: AssistantMessageCompletePayload, room: str) -> None:
+    await sio.emit("assistant_message_complete", payload.model_dump(), room=room)
+
+
+async def assistant_message_cancelled(payload: AssistantMessageCancelledPayload, room: str) -> None:
+    await sio.emit("assistant_message_cancelled", payload.model_dump(), room=room)
+
+
 @sio.event  # type: ignore
-async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
+async def send_assistant_message(sid: str, data: SendAssistantMessagePayload) -> None:
     """Handle assistant message sending requests"""
     try:
-        chat_id = data.get("chat_id")
-        message = data.get("message")
-        department_id = data.get("department_id")
+        chat_id = data.chat_id
+        message = data.message
+        department_id = data.department_id
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
-            await sio.emit(
-                "assistant_error",
-                {"success": False, "message": "Missing department_id"},
+            await assistant_error(
+                AssistantErrorPayload(success=False, message="Missing department_id"),
                 room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Missing department_id")
@@ -53,9 +148,10 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
 
         if not chat_id or not message:
             logger.error(f"Missing chat_id or message in request from {sid}")
-            await sio.emit(
-                "assistant_error",
-                {"success": False, "message": "Missing chat_id or message"},
+            await assistant_error(
+                AssistantErrorPayload(
+                    success=False, message="Missing chat_id or message"
+                ),
                 room=sid,
             )
             logger.error(
@@ -99,16 +195,15 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                 }
 
                 # 2. Emit user message to connected clients
-                await sio.emit(
-                    "assistant_new_message",
-                    {
-                        "message_id": str(user_message["id"]),
-                        "chat_id": str(chat_id_uuid),
-                        "role": "user",
-                        "content": message,
-                        "completed": True,
-                        "created_at": user_message["created_at"].isoformat(),
-                    },
+                await assistant_new_message(
+                    AssistantNewMessagePayload(
+                        message_id=str(user_message["id"]),
+                        chat_id=str(chat_id_uuid),
+                        role="user",
+                        content=message,
+                        completed=True,
+                        created_at=user_message["created_at"].isoformat(),
+                    ),
                     room=f"assistant_{chat_id_uuid}",
                 )
 
@@ -413,15 +508,12 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             )
 
                                             # Emit completion for current message
-                                            await sio.emit(
-                                                "message_complete",
-                                                {
-                                                    "message_id": str(
-                                                        current_message["id"]
-                                                    ),
-                                                    "chat_id": str(chat_id_uuid),
-                                                    "final_content": accumulated_content,
-                                                },
+                                            await message_complete(
+                                                MessageCompletePayload(
+                                                    message_id=str(current_message["id"]),
+                                                    chat_id=str(chat_id_uuid),
+                                                    final_content=accumulated_content,
+                                                ),
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
 
@@ -508,16 +600,13 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                                 )
 
                                             # Emit tool call created event (frontend will refetch tool calls)
-                                            await sio.emit(
-                                                "tool_call_created",
-                                                {
-                                                    "tool_call_id": str(
-                                                        tool_call["id"]
-                                                    ),
-                                                    "chat_id": str(chat_id_uuid),
-                                                    "tool_name": tool_name,
-                                                    "tool_type": tool_type,
-                                                },
+                                            await tool_call_created(
+                                                ToolCallCreatedPayload(
+                                                    tool_call_id=str(tool_call["id"]),
+                                                    chat_id=str(chat_id_uuid),
+                                                    tool_name=tool_name,
+                                                    tool_type=tool_type,
+                                                ),
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
 
@@ -574,19 +663,14 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                                 del active_tool_calls[tool_call_id]
 
                                             # Emit tool call completed event (frontend will refetch tool calls)
-                                            await sio.emit(
-                                                "tool_call_completed",
-                                                {
-                                                    "tool_call_id": str(
-                                                        tool_call_record["id"]
-                                                    )
+                                            await tool_call_completed(
+                                                ToolCallCompletedPayload(
+                                                    tool_call_id=str(tool_call_record["id"])
                                                     if tool_call_record
                                                     else None,
-                                                    "chat_id": str(chat_id_uuid),
-                                                    "tool_name": tool_result_data.get(
-                                                        "name"
-                                                    ),
-                                                },
+                                                    chat_id=str(chat_id_uuid),
+                                                    tool_name=tool_result_data.get("name"),
+                                                ),
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
 
@@ -620,20 +704,17 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             }
 
                                             # Emit new placeholder message
-                                            await sio.emit(
-                                                "assistant_new_message",
-                                                {
-                                                    "message_id": str(
-                                                        current_message["id"]
-                                                    ),
-                                                    "chat_id": str(chat_id_uuid),
-                                                    "role": "assistant",
-                                                    "content": "",
-                                                    "completed": False,
-                                                    "created_at": current_message[
+                                            await assistant_new_message(
+                                                AssistantNewMessagePayload(
+                                                    message_id=str(current_message["id"]),
+                                                    chat_id=str(chat_id_uuid),
+                                                    role="assistant",
+                                                    content="",
+                                                    completed=False,
+                                                    created_at=current_message[
                                                         "created_at"
                                                     ].isoformat(),
-                                                },
+                                                ),
                                                 room=f"assistant_{chat_id_uuid}",
                                             )
 
@@ -648,16 +729,13 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                         )
 
                                         # Emit token update to connected clients
-                                        await sio.emit(
-                                            "assistant_message_token",
-                                            {
-                                                "message_id": str(
-                                                    current_message["id"]
-                                                ),
-                                                "chat_id": str(chat_id_uuid),
-                                                "token": token,
-                                                "accumulated_content": accumulated_content,
-                                            },
+                                        await assistant_message_token(
+                                            AssistantMessageTokenPayload(
+                                                message_id=str(current_message["id"]),
+                                                chat_id=str(chat_id_uuid),
+                                                token=token,
+                                                accumulated_content=accumulated_content,
+                                            ),
                                             room=f"assistant_{chat_id_uuid}",
                                         )
                     except BaseException as stream_error:
@@ -690,13 +768,12 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                     )
 
                     # 5. Emit completion signal
-                    await sio.emit(
-                        "assistant_message_complete",
-                        {
-                            "message_id": str(current_message["id"]),
-                            "chat_id": str(chat_id_uuid),
-                            "final_content": accumulated_content,
-                        },
+                    await assistant_message_complete(
+                        AssistantMessageCompletePayload(
+                            message_id=str(current_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            final_content=accumulated_content,
+                        ),
                         room=f"assistant_{chat_id_uuid}",
                     )
 
@@ -724,13 +801,12 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         )
 
                         # Emit a cancellation event
-                        await sio.emit(
-                            "assistant_message_cancelled",
-                            {
-                                "message_id": str(current_message["id"]),
-                                "chat_id": str(chat_id_uuid),
-                                "final_content": accumulated_content,
-                            },
+                        await assistant_message_cancelled(
+                            AssistantMessageCancelledPayload(
+                                message_id=str(current_message["id"]),
+                                chat_id=str(chat_id_uuid),
+                                final_content=accumulated_content,
+                            ),
                             room=f"assistant_{chat_id_uuid}",
                         )
                 else:
@@ -739,9 +815,8 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         f"Error processing assistant message for chat {chat_id_uuid}: {e}",
                         exc_info=True,
                     )
-                    await sio.emit(
-                        "assistant_error",
-                        {"chat_id": str(chat_id_uuid), "error": str(e)},
+                    await assistant_error(
+                        AssistantErrorPayload(chat_id=str(chat_id_uuid), error=str(e)),
                         room=f"assistant_{chat_id_uuid}",
                     )
 
@@ -749,9 +824,10 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
 
     except Exception as e:
         logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")
-        await sio.emit(
-            "assistant_error",
-            {"success": False, "message": f"Failed to send message: {str(e)}"},
+        await assistant_error(
+            AssistantErrorPayload(
+                success=False, message=f"Failed to send message: {str(e)}"
+            ),
             room=sid,
         )
         logger.error(
