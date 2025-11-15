@@ -12,8 +12,6 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
-type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
 type MarkIntroCompleteIn = InputOf<
   "/api/v3/profile/mark-intro-complete",
   "post"
@@ -51,13 +49,6 @@ const getLayoutContext = cache(
   }
 );
 
-/** ---- Cached fetch for attempt data ---- */
-const getAttemptFull = cache(
-  async (input: AttemptFullIn): Promise<AttemptFullOut> => {
-    return api.post("/attempts/full", input);
-  }
-);
-
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
 
@@ -90,24 +81,7 @@ export async function getLayoutContextData() {
     },
   });
 
-  // Check if we're on an attempt page and fetch attempt data
-  let attemptData: AttemptFullOut | null = null;
-  const attemptMatch = pathname.match(/^\/(home|practice)\/a\/([^/]+)$/);
-  const attemptId = attemptMatch?.[2] || null;
-
-  if (attemptId) {
-    try {
-      attemptData = await getAttemptFull({
-        body: { attemptId },
-      });
-    } catch (error) {
-      // Silently fail - attempt data will be null if not available
-      // eslint-disable-next-line no-console
-      console.error("Failed to fetch attempt data in layout:", error);
-    }
-  }
-
-  return { initial, snapshot, attemptData, attemptId };
+  return { initial, snapshot };
 }
 
 /** ---- Strongly-typed server actions for TATour (single source of truth) ---- */

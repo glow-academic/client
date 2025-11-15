@@ -38,7 +38,7 @@ const getAttemptFull = unstable_cache(
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
@@ -61,7 +61,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function updateChatCreatedAt(
-  input: UpdateChatCreatedAtIn,
+  input: UpdateChatCreatedAtIn
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
   const out = await api.post("/attempts/chats/update-created-at", input);
@@ -79,12 +79,20 @@ export default async function AttemptPage({
 }: {
   params: Promise<{ attemptId: string }>;
 }) {
-  void params; // SimulationProvider is fetched in layout, so we don't need attemptId here
-  // SimulationProvider is now provided in the layout, so we don't need to wrap here
-  // The layout will fetch the data and provide the context
+  const { attemptId } = await params;
+
+  // Fetch attempt data server-side
+  const attemptData = await getAttemptFull({
+    body: { attemptId },
+  });
+
   return (
     <div className="space-y-6">
-      <AttemptChat updateChatCreatedAtAction={updateChatCreatedAt} />
+      <AttemptChat
+        attemptId={attemptId}
+        attemptData={attemptData}
+        updateChatCreatedAtAction={updateChatCreatedAt}
+      />
     </div>
   );
 }

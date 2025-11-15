@@ -7,7 +7,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useWebSocket } from "@/contexts/websocket-context";
 import { RotateCcw } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -44,8 +43,8 @@ export function DataTableRowActions({
   canView,
   canContinue,
 }: DataTableRowActionsProps) {
-  const { effectiveProfile, activeProfile } = useProfile();
-  const { isConnected, emitStartSimulation } = useWebSocket();
+  const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
+    useProfile();
   const [isRetrying, setIsRetrying] = React.useState(false);
 
   const isCurrentUser = effectiveProfile?.id === profileId;

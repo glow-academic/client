@@ -32,8 +32,6 @@ import {
 } from "@/components/ui/popover";
 
 import HintDisplay from "@/components/common/chat/HintDisplay";
-import { useSimulation } from "@/contexts/simulation-context";
-import { useWebSocket } from "@/contexts/websocket-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -41,24 +39,53 @@ import { useMemo } from "react";
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
   onHeightChange?: (height: number) => void;
+  currentMessages: Array<{
+    id: string;
+    type: string;
+    content: string;
+    createdAt: string;
+    completed?: boolean;
+  }>;
+  currentChatHints: Array<{
+    messageId: string;
+    hints: Array<unknown>;
+  }>;
+  currentChat: { id: string; completed?: boolean } | null;
+  sendMessage: (message: string, isRetry?: boolean) => void;
+  stopMessage: () => void;
+  isSendingMessage: boolean;
+  isStoppingMessage: boolean;
+  isConnected: boolean;
+  simulation: {
+    practiceSimulation?: boolean;
+    copyPasteAllowed?: boolean;
+  } | null;
+  scenario: { copyPasteAllowed?: boolean } | null;
+  readOnly?: boolean;
 }
 
 export default function AttemptInput({
   isAttemptOwner = true,
   onHeightChange,
+  currentMessages,
+  currentChatHints,
+  currentChat,
+  sendMessage,
+  stopMessage,
+  isSendingMessage,
+  isStoppingMessage,
+  isConnected,
+  simulation,
+  scenario,
+  readOnly = false,
 }: AttemptInputProps) {
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
-  const simulationContext = useSimulation();
-  const { isConnected } = useWebSocket();
   const router = useRouter();
   const [newMessage, setNewMessage] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-  // Get messages from context (v2 single source of truth)
-  const messages = useMemo(
-    () => simulationContext?.currentMessages || [],
-    [simulationContext?.currentMessages],
-  );
+  // Get messages from props
+  const messages = useMemo(() => currentMessages || [], [currentMessages]);
 
   // Get the most recent assistant message
   const latestAssistantMessage = useMemo(() => {
@@ -66,19 +93,15 @@ export default function AttemptInput({
       .filter((msg) => msg.type === "response")
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )[0];
   }, [messages]);
 
-  // Get hints from context (v2 single source of truth)
-  const currentChatHints = useMemo(
-    () => simulationContext?.currentChatHints || [],
-    [simulationContext?.currentChatHints],
-  );
+  // Get hints from props
   const hintsData = useMemo(() => {
     if (!latestAssistantMessage?.id) return [];
     const hintsForMessage = currentChatHints.find(
-      (h) => h.messageId === latestAssistantMessage.id,
+      (h) => h.messageId === latestAssistantMessage.id
     );
     return hintsForMessage?.hints || [];
   }, [currentChatHints, latestAssistantMessage?.id]);
@@ -86,10 +109,7 @@ export default function AttemptInput({
 
   // Listen for hint generation progress via WebSocket events
   useEffect(() => {
-    if (
-      !simulationContext?.simulation?.practiceSimulation ||
-      !latestAssistantMessage?.id
-    ) {
+    if (!simulation?.practiceSimulation || !latestAssistantMessage?.id) {
       return;
     }
 
@@ -108,20 +128,16 @@ export default function AttemptInput({
     // Listen for hint generation events
     window.addEventListener(
       "hint_generation_progress",
-      handleHintGenerationProgress as EventListener,
+      handleHintGenerationProgress as EventListener
     );
 
     return () => {
       window.removeEventListener(
         "hint_generation_progress",
-        handleHintGenerationProgress as EventListener,
+        handleHintGenerationProgress as EventListener
       );
     };
-  }, [
-    simulationContext?.simulation?.practiceSimulation,
-    latestAssistantMessage?.id,
-    router,
-  ]);
+  }, [simulation?.practiceSimulation, latestAssistantMessage?.id, router]);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -131,15 +147,8 @@ export default function AttemptInput({
 
   // Get copyPasteAllowed from scenario or simulation (scenario takes precedence)
   const copyPasteAllowed = useMemo(() => {
-    return (
-      simulationContext?.scenario?.copyPasteAllowed ??
-      simulationContext?.simulation?.copyPasteAllowed ??
-      false
-    );
-  }, [
-    simulationContext?.scenario?.copyPasteAllowed,
-    simulationContext?.simulation?.copyPasteAllowed,
-  ]);
+    return scenario?.copyPasteAllowed ?? simulation?.copyPasteAllowed ?? false;
+  }, [scenario?.copyPasteAllowed, simulation?.copyPasteAllowed]);
 
   // Initialize paste prevention hook
   const pastePrevention = useNoPasteTextarea(textareaRef, {
@@ -158,7 +167,7 @@ export default function AttemptInput({
     if (!isConnected) {
       return "Initializing (0/1)";
     }
-    if (simulationContext?.isSendingMessage) {
+    if (isSendingMessage) {
       return "Stop sending";
     }
     if (!hasTextMessage) {
@@ -172,18 +181,13 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement>,
+      | React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
 
     // Require either text message or sketch to send
-    if (
-      !messageToSend ||
-      !simulationContext?.currentChat ||
-      simulationContext?.isSendingMessage ||
-      !isConnected
-    )
+    if (!messageToSend || !currentChat || isSendingMessage || !isConnected)
       return;
 
     setNewMessage("");
@@ -193,21 +197,21 @@ export default function AttemptInput({
       new CustomEvent("messageSent", {
         detail: {
           message: messageToSend,
-          chatId: simulationContext.currentChat.id,
+          chatId: currentChat.id,
           isTourMessage: false,
         },
-      }),
+      })
     );
 
-    simulationContext?.sendMessage(messageToSend);
+    sendMessage(messageToSend);
   };
-  const handleStopMessage = () => simulationContext?.stopMessage();
+  const handleStopMessage = () => stopMessage();
 
   // --- Effects ---
   useEffect(() => {
     setNewMessage("");
     setIsPopoverOpen(false); // Close popover when chat changes
-  }, [simulationContext?.currentChat?.id]);
+  }, [currentChat?.id]);
 
   // Auto-resize the textarea based on content
   useEffect(() => {
@@ -221,7 +225,7 @@ export default function AttemptInput({
         const maxTextareaHeight = 128; // max-h-32 = 8rem = 128px
         const actualTextareaHeight = Math.min(
           textarea.scrollHeight,
-          maxTextareaHeight,
+          maxTextareaHeight
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
         onHeightChange(Math.min(Math.max(totalHeight, 60), 160)); // Clamp between 60px and 160px
@@ -237,7 +241,7 @@ export default function AttemptInput({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        !simulationContext?.currentChat?.completed &&
+        !currentChat?.completed &&
         // Always allow input - don't disable based on timer
         true &&
         !e.ctrlKey &&
@@ -255,15 +259,10 @@ export default function AttemptInput({
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [simulationContext?.currentChat?.completed]);
+  }, [currentChat?.completed]);
 
   // Hide input if not the attempt owner or if read-only/completed
-  if (
-    simulationContext?.readOnly ||
-    simulationContext?.currentChat?.completed ||
-    !isAttemptOwner
-  )
-    return null;
+  if (readOnly || currentChat?.completed || !isAttemptOwner) return null;
 
   return (
     <TooltipProvider>
@@ -279,11 +278,11 @@ export default function AttemptInput({
               value={newMessage}
               onChange={(e) =>
                 pastePrevention.handleChange(e, (value) =>
-                  setNewMessage(sanitizeInputLength(value)),
+                  setNewMessage(sanitizeInputLength(value))
                 )
               }
               placeholder="Type your message (LaTeX supported)"
-              disabled={simulationContext?.readOnly ? true : false}
+              disabled={readOnly ? true : false}
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}
               maxLength={MAX_INPUT_CHARS}
@@ -313,7 +312,7 @@ export default function AttemptInput({
 
           <div className="flex gap-2">
             {/* Hints toggle button - only show for practice simulations */}
-            {simulationContext?.simulation?.practiceSimulation && (
+            {simulation?.practiceSimulation && (
               <Popover
                 open={isPopoverOpen}
                 onOpenChange={setIsPopoverOpen}
@@ -373,30 +372,25 @@ export default function AttemptInput({
                   <Button
                     type="submit"
                     className="min-h-[40px] h-[40px] px-3"
-                    variant={
-                      simulationContext?.isSendingMessage
-                        ? "destructive"
-                        : "default"
-                    }
+                    variant={isSendingMessage ? "destructive" : "default"}
                     disabled={
-                      simulationContext?.readOnly ||
-                      simulationContext?.isSendingMessage
-                        ? simulationContext?.isStoppingMessage
+                      readOnly || isSendingMessage
+                        ? isStoppingMessage
                         : !isConnected || !hasTextMessage
                     }
                     onClick={
-                      simulationContext?.isSendingMessage
+                      isSendingMessage
                         ? handleStopMessage
                         : (e) => handleSendMessage(e)
                     }
                     data-testid={
-                      simulationContext?.isSendingMessage
+                      isSendingMessage
                         ? "attempt-stop-button"
                         : "attempt-send-button"
                     }
                   >
-                    {simulationContext?.isSendingMessage ? (
-                      simulationContext?.isStoppingMessage ? (
+                    {isSendingMessage ? (
+                      isStoppingMessage ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Square className="h-4 w-4" />

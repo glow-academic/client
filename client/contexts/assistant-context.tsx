@@ -16,7 +16,6 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { useWebSocket } from "./websocket-context";
 
 /** ---- Server Actions Types ---- */
 type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
@@ -140,17 +139,15 @@ export function AssistantProvider({
   >(null);
   const [isLoadingChats, setIsLoadingChats] = useState(false);
 
-  // Use the global WebSocket context
   const {
+    activeProfile,
     isConnected,
     joinRoom,
     leaveRoom,
     emitStartAssistant,
     emitSendAssistantMessage,
     emitStopAssistant,
-  } = useWebSocket();
-
-  const { activeProfile } = useProfile();
+  } = useProfile();
 
   // V3 API: Fetch assistant chat data
   // Only fetch when user has interacted with chat (lazy loading)

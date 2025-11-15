@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { useWebSocket } from "@/contexts/websocket-context";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
 import SimulationHistory from "../common/history/SimulationHistory";
@@ -26,9 +25,13 @@ export interface PracticeProps {
 export default function Practice({ practiceData }: PracticeProps) {
   const router = useRouter();
 
-  // Use global WebSocket context instead of local connection
-  const { isConnected, emitStartSimulation, startingSimulationId } =
-    useWebSocket();
+  const {
+    effectiveProfile,
+    activeProfile,
+    isConnected,
+    emitStartSimulation,
+    startingSimulationId,
+  } = useProfile();
 
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
@@ -36,7 +39,6 @@ export default function Practice({ practiceData }: PracticeProps) {
     null,
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const { effectiveProfile, activeProfile } = useProfile();
   // Practice customize dialog state
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [isStartingAttempt, setIsStartingAttempt] = useState(false);

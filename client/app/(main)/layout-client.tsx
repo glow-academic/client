@@ -16,7 +16,6 @@ import React, { useMemo } from "react";
 import ChatDialog from "@/components/assistant/ChatDialog";
 import ChatFab from "@/components/assistant/ChatFab";
 import ChatWidget from "@/components/assistant/ChatWidget";
-import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -31,10 +30,7 @@ import {
   useBreadcrumbContext,
 } from "@/contexts/breadcrumb-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
-import { SimulationProvider } from "@/contexts/simulation-context";
 import { TourProvider } from "@/contexts/tour-context";
-import { WebSocketProvider } from "@/contexts/websocket-context";
-import type { OutputOf } from "@/lib/api/types";
 import {
   generateBreadcrumbs,
   getActiveSectionFromPath,
@@ -98,8 +94,6 @@ function MainLayoutContent({
 }) {
   const pathname = usePathname() || "/";
 
-  // Check if we're on an attempt page (home/a/[attemptId] or practice/a/[attemptId])
-  const isAttemptPage = /^\/(home|practice)\/a\/[^/]+$/.test(pathname);
   const router = useRouter();
   const { effectiveProfile, activeProfile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
@@ -328,13 +322,6 @@ function MainLayoutContent({
               />
             )}
 
-            {/* Simulation Controls - Only shown when in an attempt */}
-            {isAttemptPage && (
-              <div className="pr-4">
-                <SimulationControls />
-              </div>
-            )}
-
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
 
@@ -369,51 +356,10 @@ function MainLayoutContent({
   );
 }
 
-// Wrapper component for WebSocket that gets profileId from ProfileContext
-function WebSocketProviderWrapper({ children }: { children: React.ReactNode }) {
-  const { effectiveProfile } = useProfile();
-
-  // For guest mode (no session), profileId should be null, not undefined
-  const profileId = effectiveProfile?.id ?? null;
-
-  return (
-    <WebSocketProvider profileId={profileId}>{children}</WebSocketProvider>
-  );
-}
-
-/**
- * Conditionally wraps children with SimulationProvider when on an attempt page.
- * This allows SimulationControls in the layout header to access the context.
- * Data is fetched server-side and passed from the layout.
- */
-function SimulationProviderWrapper({
-  children,
-  attemptData,
-  attemptId,
-}: {
-  children: React.ReactNode;
-  attemptData: OutputOf<"/api/v3/attempts/full", "post"> | null;
-  attemptId: string | null;
-}) {
-  // Only provide SimulationProvider when we have attempt data
-  if (attemptId && attemptData) {
-    return (
-      <SimulationProvider attemptId={attemptId} initial={attemptData}>
-        {children}
-      </SimulationProvider>
-    );
-  }
-
-  // On non-attempt pages, just render children
-  return <>{children}</>;
-}
-
 export function MainLayoutClient({
   children,
   initial,
   sessionSnapshot,
-  attemptData,
-  attemptId,
   markIntroCompleteAction,
   markChatCompleteAction,
   getAssistantChatListAction,
@@ -425,8 +371,6 @@ export function MainLayoutClient({
   children: React.ReactNode;
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
-  attemptData?: OutputOf<"/api/v3/attempts/full", "post"> | null;
-  attemptId?: string | null;
   markIntroCompleteAction: (
     input: MarkIntroCompleteIn,
   ) => Promise<MarkIntroCompleteOut>;
@@ -451,30 +395,23 @@ export function MainLayoutClient({
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
-      <WebSocketProviderWrapper>
-        <TourProvider>
-          <BreadcrumbProvider>
-            <AnalyticsProvider>
-              <SimulationProviderWrapper
-                attemptData={attemptData ?? null}
-                attemptId={attemptId ?? null}
-              >
-                <MainLayoutContent
-                  markIntroCompleteAction={markIntroCompleteAction}
-                  markChatCompleteAction={markChatCompleteAction}
-                  getAssistantChatListAction={getAssistantChatListAction}
-                  getAssistantChatFullAction={getAssistantChatFullAction}
-                  switchEffectiveProfileAction={switchEffectiveProfileAction}
-                  createFeedbackAction={createFeedbackAction}
-                  refreshAnalyticsAction={refreshAnalyticsAction}
-                >
-                  {children}
-                </MainLayoutContent>
-              </SimulationProviderWrapper>
-            </AnalyticsProvider>
-          </BreadcrumbProvider>
-        </TourProvider>
-      </WebSocketProviderWrapper>
+      <TourProvider>
+        <BreadcrumbProvider>
+          <AnalyticsProvider>
+            <MainLayoutContent
+              markIntroCompleteAction={markIntroCompleteAction}
+              markChatCompleteAction={markChatCompleteAction}
+              getAssistantChatListAction={getAssistantChatListAction}
+              getAssistantChatFullAction={getAssistantChatFullAction}
+              switchEffectiveProfileAction={switchEffectiveProfileAction}
+              createFeedbackAction={createFeedbackAction}
+              refreshAnalyticsAction={refreshAnalyticsAction}
+            >
+              {children}
+            </MainLayoutContent>
+          </AnalyticsProvider>
+        </BreadcrumbProvider>
+      </TourProvider>
     </ProfileProviderClient>
   );
 }

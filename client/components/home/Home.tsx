@@ -8,7 +8,6 @@
 import type { HomeOut } from "@/app/(main)/home/page";
 
 import { useProfile } from "@/contexts/profile-context";
-import { useWebSocket } from "@/contexts/websocket-context";
 
 import SimulationCard from "@/components/common/layout/SimulationCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -23,7 +22,13 @@ export interface HomeProps {
 }
 
 export default function Home({ homeData }: HomeProps) {
-  const { effectiveProfile, activeProfile } = useProfile();
+  const {
+    effectiveProfile,
+    activeProfile,
+    isConnected,
+    emitStartSimulation,
+    startingSimulationId,
+  } = useProfile();
 
   // Use data directly from props (fetched server-side)
   const homeOverview = homeData;
@@ -38,9 +43,6 @@ export default function Home({ homeData }: HomeProps) {
     () => homeOverview?.standards_mapping || {},
     [homeOverview]
   );
-
-  const { isConnected, emitStartSimulation, startingSimulationId } =
-    useWebSocket();
 
   const [carouselIndex, setCarouselIndex] = useState(0);
   // Use WebSocket's specific simulation ID for precise loading state

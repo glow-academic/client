@@ -23,15 +23,12 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initial, snapshot, attemptData, attemptId } =
-    await getLayoutContextData();
+  const { initial, snapshot } = await getLayoutContextData();
 
   return (
     <MainLayoutClient
       initial={initial}
       sessionSnapshot={snapshot}
-      attemptData={attemptData}
-      attemptId={attemptId}
       markIntroCompleteAction={markIntroComplete}
       markChatCompleteAction={markChatComplete}
       getAssistantChatListAction={getAssistantChatList}

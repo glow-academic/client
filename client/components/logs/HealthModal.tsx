@@ -23,7 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useProfile } from "@/contexts/profile-context";
-import { useWebSocket } from "@/contexts/websocket-context";
 import {
   AlertCircle,
   CheckCircle,
@@ -83,8 +82,7 @@ export function HealthModal({
   onOpenChange,
   getHealthCheckAction,
 }: HealthModalProps) {
-  const { isConnected } = useWebSocket();
-  const { effectiveProfile } = useProfile();
+  const { isConnected, effectiveProfile } = useProfile();
   const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
   const [authStatus, setAuthStatus] = useState<
     "loading" | "authenticated" | "unauthenticated"

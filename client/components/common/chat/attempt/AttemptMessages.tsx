@@ -30,30 +30,38 @@ import { createFeedback } from "@/app/(main)/layout-server";
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
-import { useSimulation } from "@/contexts/simulation-context";
 
 export interface AttemptMessagesProps {
   chatId?: string;
   isAttemptOwner?: boolean;
+  messages: Array<{
+    id: string;
+    type: string;
+    content: string;
+    createdAt: string;
+    completed?: boolean;
+  }>;
+  currentChat: { id: string; completed?: boolean } | null;
+  sendMessage: (message: string, isRetry?: boolean) => void;
+  isSendingMessage: boolean;
+  isActive: boolean;
+  simulation: { timeLimit?: number | null } | null;
 }
 
 export default function AttemptMessages({
   chatId,
   isAttemptOwner = true,
+  messages: propMessages,
+  currentChat,
+  sendMessage,
+  isSendingMessage,
+  isActive,
+  simulation,
 }: AttemptMessagesProps) {
-  const simulationContext = useSimulation();
-
-  // Infer types directly from simulation context
-  type Message = NonNullable<
-    NonNullable<
-      NonNullable<typeof simulationContext>["attemptData"]
-    >["chats"][number]["messages"][number]
-  >;
-
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const targetChatId = chatId || simulationContext?.currentChat?.id;
+  const targetChatId = chatId || currentChat?.id;
 
   // State to track which response version is shown for each message group
   const [responseVersions, setResponseVersions] = useState<
@@ -68,19 +76,15 @@ export default function AttemptMessages({
     new Map()
   );
 
-  // Get messages from context for the specific chat (not just currentMessages)
+  // Get messages from props
   // Merge with streaming content for real-time updates
   const messages = useMemo(() => {
-    if (!targetChatId || !simulationContext?.attemptData?.chats) return [];
-    const chatData = simulationContext.attemptData.chats.find(
-      (c) => c.chat.id === targetChatId
-    );
-    const baseMessages = chatData?.messages || [];
+    if (!propMessages) return [];
 
     // Merge streaming content with SSR messages
     // Only use streaming content if message is not completed (still streaming)
     // or if streaming content is more recent than SSR content
-    return baseMessages.map((msg) => {
+    return propMessages.map((msg) => {
       const streaming = streamingContent.get(msg.id);
       if (
         streaming !== undefined &&
@@ -93,7 +97,7 @@ export default function AttemptMessages({
       }
       return msg;
     });
-  }, [targetChatId, simulationContext?.attemptData, streamingContent]);
+  }, [propMessages, streamingContent]);
 
   // Group messages by conversation turns (user message + all its responses)
   const groupedMessages = useMemo(() => {
@@ -207,7 +211,7 @@ export default function AttemptMessages({
         },
       })
     );
-    simulationContext?.sendMessage(prompt);
+    sendMessage(prompt);
   };
 
   const handleRetry = (errorMessageIndex: number) => {
@@ -250,7 +254,7 @@ export default function AttemptMessages({
           },
         })
       );
-      simulationContext?.sendMessage(previousUserMessage.content, true);
+      sendMessage(previousUserMessage.content, true);
     }
   };
 
@@ -299,17 +303,13 @@ export default function AttemptMessages({
 
   // Clear streaming content for completed messages when SSR data refreshes
   useEffect(() => {
-    if (!simulationContext?.attemptData?.chats) return;
-    const chatData = simulationContext.attemptData.chats.find(
-      (c) => c.chat.id === targetChatId
-    );
-    if (!chatData) return;
+    if (!propMessages) return;
 
     // Clear streaming content for messages that are completed in SSR data
     setStreamingContent((prev) => {
       const newMap = new Map(prev);
       let changed = false;
-      chatData.messages.forEach((msg) => {
+      propMessages.forEach((msg) => {
         if (msg.completed && newMap.has(msg.id)) {
           // Only clear if SSR content matches or is longer (SSR has final content)
           const streaming = newMap.get(msg.id);
@@ -321,7 +321,7 @@ export default function AttemptMessages({
       });
       return changed ? newMap : prev;
     });
-  }, [targetChatId, simulationContext?.attemptData]);
+  }, [targetChatId, propMessages]);
 
   // Listen for streaming token events to update message content in real-time
   useEffect(() => {
@@ -376,7 +376,10 @@ export default function AttemptMessages({
   }, [targetChatId]);
 
   return (
-    <div className="flex-1 flex flex-col p-0 min-h-0 relative" data-testid="attempt-messages-container">
+    <div
+      className="flex-1 flex flex-col p-0 min-h-0 relative"
+      data-testid="attempt-messages-container"
+    >
       <TooltipProvider>
         <>
           <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
@@ -389,7 +392,10 @@ export default function AttemptMessages({
                         Choose a prompt below or type your own message
                       </p>
                     </div>
-                    <div className="flex flex-col gap-3 w-full max-w-md" data-testid="starter-prompts">
+                    <div
+                      className="flex flex-col gap-3 w-full max-w-md"
+                      data-testid="starter-prompts"
+                    >
                       {starterPrompts.map((prompt, index) => (
                         <Button
                           key={index}
@@ -397,8 +403,8 @@ export default function AttemptMessages({
                           className="h-auto p-4 text-left justify-start whitespace-normal"
                           onClick={() => handleStarterPromptClick(prompt)}
                           disabled={
-                            simulationContext?.currentChat?.completed ||
-                            simulationContext?.isSendingMessage ||
+                            currentChat?.completed ||
+                            isSendingMessage ||
                             !isAttemptOwner
                           }
                         >
@@ -414,7 +420,7 @@ export default function AttemptMessages({
                     {/* User message */}
                     <div className="flex justify-end mb-3">
                       <div className="max-w-[80%]">
-                        <div 
+                        <div
                           className="bg-primary text-primary-foreground rounded-lg p-3"
                           data-testid={`message-${group.userMessage.id}`}
                           data-message-id={group.userMessage.id}
@@ -440,7 +446,7 @@ export default function AttemptMessages({
                                 {/* Show loading state for empty/incomplete messages, otherwise show content */}
                                 {!currentResponse.completed &&
                                 currentResponse.content === "" ? (
-                                  <div 
+                                  <div
                                     className="bg-muted rounded-lg p-3"
                                     data-testid={`message-${currentResponse.id}`}
                                     data-message-id={currentResponse.id}
@@ -453,7 +459,7 @@ export default function AttemptMessages({
                                 ) : currentResponse.completed &&
                                   currentResponse.content === "" ? (
                                   // Show "No response" for completed messages with empty content
-                                  <div 
+                                  <div
                                     className="bg-muted rounded-lg p-3"
                                     data-testid={`message-${currentResponse.id}`}
                                     data-message-id={currentResponse.id}
@@ -468,7 +474,7 @@ export default function AttemptMessages({
                                     "Error:"
                                   ) ? (
                                   // Show error messages in red with retry button (only if no successful responses exist)
-                                  <div 
+                                  <div
                                     className="bg-red-50 border border-red-200 rounded-lg p-3 relative"
                                     data-testid={`message-${currentResponse.id}`}
                                     data-message-id={currentResponse.id}
@@ -535,13 +541,10 @@ export default function AttemptMessages({
                                                   }
                                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
                                                   disabled={
-                                                    simulationContext
-                                                      ?.currentChat
-                                                      ?.completed ||
-                                                    simulationContext?.isSendingMessage ||
-                                                    (simulationContext
-                                                      ?.simulation?.timeLimit
-                                                      ? !simulationContext?.isActive
+                                                    currentChat?.completed ||
+                                                    isSendingMessage ||
+                                                    (simulation?.timeLimit
+                                                      ? !isActive
                                                       : false)
                                                   }
                                                 >
@@ -558,7 +561,7 @@ export default function AttemptMessages({
                                     })()}
                                   </div>
                                 ) : (
-                                  <div 
+                                  <div
                                     className="bg-muted rounded-lg p-3 relative"
                                     data-testid={`message-${currentResponse.id}`}
                                     data-message-id={currentResponse.id}

@@ -12,6 +12,7 @@ import type {
   LayoutContextResponse,
   SafeSessionSnapshot,
 } from "@/app/(main)/layout-server";
+import { createSocketClient } from "@/lib/ws/socket";
 import {
   getFirstAvailableSectionForRole,
   getSectionRoute,
@@ -22,9 +23,14 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { Socket } from "socket.io-client";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
@@ -89,6 +95,32 @@ interface ProfileContextType {
   // Permissions data (from server)
   availableSections: string[];
   redirectPath: string;
+
+  // WebSocket connection (tied to profile)
+  socket: Socket | null;
+  isConnected: boolean;
+  startingSimulationId: string | null;
+
+  // WebSocket helper methods
+  emitStartSimulation: (data: {
+    simulation_id: string;
+    profile_id?: string | null;
+    scenario_id?: string | null;
+    infinite?: boolean;
+    infinite_time_limit?: number | null;
+  }) => void;
+  joinRoom: (roomId: string, roomType: "assistant" | "simulation") => void;
+  leaveRoom: (roomId: string, roomType: "assistant" | "simulation") => void;
+  emitStartAssistant: (data: {
+    profile_id: string;
+    initial_message: string;
+    department_id: string;
+  }) => void;
+  emitSendAssistantMessage: (data: {
+    chat_id: string;
+    message: string;
+  }) => void;
+  emitStopAssistant: (data: { chat_id: string }) => void;
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -117,11 +149,147 @@ export function ProfileProviderClient({
 
   // Department filter state
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    [],
+    []
   );
 
   const bootstrapProfile = initial.actualProfile ?? null;
   const effectiveProfile = initial.effectiveProfile ?? null;
+
+  // WebSocket connection state
+  const [isConnected, setIsConnected] = useState(false);
+  const [startingSimulationId, setStartingSimulationId] = useState<
+    string | null
+  >(null);
+  const socketRef = useRef<Socket | null>(null);
+  const connectionAttempts = useRef(0);
+  const maxConnectionAttempts = 5;
+  const currentRoomsRef = useRef<Set<string>>(new Set());
+
+  /**
+   * Stable guest id (per tab) used when profileId === null.
+   * Using sessionStorage lets us survive re-renders & soft navigations.
+   */
+  const guestIdRef = useRef<string | null>(null);
+  if (guestIdRef.current === null) {
+    if (typeof window !== "undefined") {
+      const existing = sessionStorage.getItem("guest-id");
+      guestIdRef.current = existing ?? uuidv4();
+      if (!existing) sessionStorage.setItem("guest-id", guestIdRef.current);
+    } else {
+      guestIdRef.current = uuidv4();
+    }
+  }
+
+  // Get profile ID for socket connection
+  const profileId = effectiveProfile?.id ?? null;
+
+  // Initialize WebSocket connection when profileId is resolved (may be null for guest)
+  useEffect(() => {
+    // Capture current rooms at effect creation time for cleanup
+    const roomsToCleanup = currentRoomsRef.current;
+
+    // Clean up existing socket if profile changes
+    if (socketRef.current) {
+      roomsToCleanup.forEach((roomId) => {
+        socketRef.current?.emit("leave_chat", {
+          chat_id: roomId,
+          chat_type: "any",
+        });
+      });
+      roomsToCleanup.clear();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      setIsConnected(false);
+    }
+
+    const connectWebSocket = async () => {
+      const query: Record<string, string | number | undefined> = {
+        timestamp: Date.now(),
+        EIO: "4",
+      };
+      if (profileId) {
+        query["profileId"] = profileId;
+      } else {
+        // guest mode
+        query["guestId"] = guestIdRef.current!;
+      }
+
+      const socket = createSocketClient(query);
+
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        setIsConnected(true);
+        connectionAttempts.current = 0;
+      });
+
+      socket.on("disconnect", () => {
+        setIsConnected(false);
+      });
+
+      socket.on("connect_error", (_error: Error) => {
+        connectionAttempts.current++;
+        setIsConnected(false);
+
+        if (connectionAttempts.current >= maxConnectionAttempts) {
+          toast.error(
+            "Unable to connect to real-time updates. Some features may be limited."
+          );
+        }
+      });
+
+      // Set up event handlers for simulation tracking
+      socket.on(
+        "simulation_started",
+        (data: {
+          success: boolean;
+          message: string;
+          attempt_id: string;
+          chat_id: string;
+        }) => {
+          setStartingSimulationId(null);
+          if (data.success) {
+            toast.success(data.message);
+            window.dispatchEvent(
+              new CustomEvent("simulationStarted", {
+                detail: { attemptId: data.attempt_id },
+              })
+            );
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "simulation_error",
+        (data: { success: boolean; message: string }) => {
+          setStartingSimulationId(null);
+          toast.error(data.message);
+          window.dispatchEvent(new CustomEvent("simulationError"));
+        }
+      );
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (socketRef.current) {
+        // Leave all rooms before disconnecting using captured rooms
+        roomsToCleanup.forEach((roomId) => {
+          socketRef.current?.emit("leave_chat", {
+            chat_id: roomId,
+            chat_type: "any",
+          });
+        });
+        roomsToCleanup.clear();
+
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsConnected(false);
+      }
+    };
+  }, [profileId]);
 
   // Compute effective department IDs (like cohorts in Home.tsx)
   const effectiveDepartmentIds = useMemo(() => {
@@ -138,7 +306,7 @@ export function ProfileProviderClient({
         effectiveProfile &&
         effectiveProfile.id !== bootstrapProfile.id &&
         sessionSnapshot.emulationTTL &&
-        sessionSnapshot.fullEmulation,
+        sessionSnapshot.fullEmulation
     );
   }, [
     bootstrapProfile,
@@ -178,7 +346,7 @@ export function ProfileProviderClient({
       const route = getSectionRoute(defaultSection, pathname);
       router.push(route);
     },
-    [router, pathname],
+    [router, pathname]
   );
 
   const isSectionAvailable = useCallback(
@@ -188,7 +356,102 @@ export function ProfileProviderClient({
         "guest") as ProfileRole;
       return isSectionAvailableForRole(section, targetRole);
     },
-    [effectiveProfile?.role],
+    [effectiveProfile?.role]
+  );
+
+  // WebSocket helper methods
+  const emitStartSimulation = useCallback(
+    (data: {
+      simulation_id: string;
+      profile_id?: string | null;
+      scenario_id?: string | null;
+      infinite?: boolean;
+      infinite_time_limit?: number | null;
+    }) => {
+      if (!socketRef.current || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+      const payload = {
+        simulation_id: data.simulation_id,
+        profile_id: data.profile_id ?? "",
+        ...(data.scenario_id !== undefined && {
+          scenario_id: data.scenario_id,
+        }),
+        ...(data.infinite !== undefined && { infinite: data.infinite }),
+        ...(data.infinite_time_limit !== undefined && {
+          infinite_time_limit: data.infinite_time_limit,
+        }),
+      };
+
+      setStartingSimulationId(data.simulation_id);
+      socketRef.current.emit("start_simulation", payload);
+    },
+    [isConnected]
+  );
+
+  const joinRoom = useCallback(
+    (roomId: string, roomType: "assistant" | "simulation") => {
+      if (!socketRef.current || !isConnected) {
+        return;
+      }
+      socketRef.current.emit("join_chat", {
+        chat_id: roomId,
+        chat_type: roomType,
+      });
+      currentRoomsRef.current.add(roomId);
+    },
+    [isConnected]
+  );
+
+  const leaveRoom = useCallback(
+    (roomId: string, roomType: "assistant" | "simulation") => {
+      if (!socketRef.current) {
+        return;
+      }
+      socketRef.current.emit("leave_chat", {
+        chat_id: roomId,
+        chat_type: roomType,
+      });
+      currentRoomsRef.current.delete(roomId);
+    },
+    []
+  );
+
+  const emitStartAssistant = useCallback(
+    (data: {
+      profile_id: string;
+      initial_message: string;
+      department_id: string;
+    }) => {
+      if (!socketRef.current || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+      socketRef.current.emit("start_assistant", data);
+    },
+    [isConnected]
+  );
+
+  const emitSendAssistantMessage = useCallback(
+    (data: { chat_id: string; message: string }) => {
+      if (!socketRef.current || !isConnected) {
+        return;
+      }
+      socketRef.current.emit("send_assistant_message", data);
+    },
+    [isConnected]
+  );
+
+  const emitStopAssistant = useCallback(
+    (data: { chat_id: string }) => {
+      if (!socketRef.current || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+      socketRef.current.emit("stop_assistant", data);
+    },
+    [isConnected]
   );
 
   const value: ProfileContextType = {
@@ -226,6 +489,17 @@ export function ProfileProviderClient({
     // Permissions data (from server)
     availableSections: initial.availableSections ?? [],
     redirectPath: initial.redirectPath ?? "/home",
+
+    // WebSocket connection (tied to profile)
+    socket: socketRef.current,
+    isConnected,
+    startingSimulationId,
+    emitStartSimulation,
+    joinRoom,
+    leaveRoom,
+    emitStartAssistant,
+    emitSendAssistantMessage,
+    emitStopAssistant,
   };
 
   return (

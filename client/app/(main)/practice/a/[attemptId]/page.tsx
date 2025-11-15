@@ -72,12 +72,20 @@ export default async function PracticeAttemptPage({
 }: {
   params: Promise<{ attemptId: string }>;
 }) {
-  void params; // SimulationProvider is fetched in layout, so we don't need attemptId here
-  // SimulationProvider is now provided in the layout, so we don't need to wrap here
-  // The layout will fetch the data and provide the context
+  const { attemptId } = await params;
+
+  // Fetch attempt data server-side
+  const attemptData = await getAttemptFull({
+    body: { attemptId },
+  });
+
   return (
     <div className="space-y-6">
-      <AttemptChat updateChatCreatedAtAction={updateChatCreatedAt} />
+      <AttemptChat
+        attemptId={attemptId}
+        attemptData={attemptData}
+        updateChatCreatedAtAction={updateChatCreatedAt}
+      />
     </div>
   );
 }

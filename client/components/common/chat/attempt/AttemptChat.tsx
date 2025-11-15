@@ -60,10 +60,10 @@ import {
 
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
-import { useSimulation } from "@/contexts/simulation-context";
 import { formatTime } from "@/utils/time";
 
 import type {
+  AttemptFullOut,
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
@@ -81,22 +81,26 @@ type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
   : never;
 
 interface AttemptChatProps {
+  attemptId: string;
+  attemptData: AttemptFullOut;
   updateChatCreatedAtAction?: (
-    input: UpdateChatCreatedAtIn,
+    input: UpdateChatCreatedAtIn
   ) => Promise<UpdateChatCreatedAtOut>;
 }
 
 export default function AttemptChat({
+  attemptId,
+  attemptData: initialAttemptData,
   updateChatCreatedAtAction,
 }: AttemptChatProps) {
   const router = useRouter();
-  const simulationContext = useSimulation();
-  const { effectiveProfile, activeProfile } = useProfile();
+  const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
 
-  // Infer types directly from simulation context
-  type Chat = NonNullable<
-    NonNullable<typeof simulationContext>["chats"][number]
-  >;
+  // Infer types from the API response
+  type AttemptFullResponse = typeof initialAttemptData;
+  type ChatDataType = AttemptFullResponse["chats"][number];
+  type Chat = ChatDataType["chat"];
+
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   // Server action handler
@@ -107,7 +111,7 @@ export default function AttemptChat({
       }
       await updateChatCreatedAtAction({ body });
     },
-    [updateChatCreatedAtAction],
+    [updateChatCreatedAtAction]
   );
 
   // Wrapper function for compatibility (matching original async signature)
@@ -115,12 +119,1040 @@ export default function AttemptChat({
     async (request: { chatId: string; createdAt: string }) => {
       await handleUpdateChatCreatedAt(request);
     },
-    [handleUpdateChatCreatedAt],
+    [handleUpdateChatCreatedAt]
   );
   const isMobile = useIsMobile();
 
+  // Initialize state from server snapshot
+  const [attemptData, setAttemptData] = useState<AttemptFullResponse | null>(
+    initialAttemptData
+  );
+
+  // Update state when initial prop changes (from router.refresh())
+  useEffect(() => {
+    setAttemptData(initialAttemptData);
+  }, [initialAttemptData]);
+
+  // Simulation state management
+  const [currentChatIndex, setCurrentChatIndex] = useState(
+    initialAttemptData.currentChatIndex ?? 0
+  );
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isStoppingMessage, setIsStoppingMessage] = useState(false);
+  const [endChatLoading, setEndChatLoading] = useState(false);
+  const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<
+    Set<string>
+  >(new Set());
+  const [showResults, setShowResults] = useState(
+    initialAttemptData.showResults ?? false
+  );
+  const [showGrades, setShowGrades] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(true);
+  const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] =
+    useState(false);
+
+  // Grading progress state
+  const [gradingProgress, setGradingProgress] = useState<{
+    completed: number;
+    total: number;
+    displayedProgress: number;
+    phase: "tools" | "summary" | null;
+  } | null>(null);
+  const [isGrading, setIsGrading] = useState(false);
+  const gradingProgressRef = useRef<{
+    completed: number;
+    total: number;
+    displayedProgress: number;
+    phase: "tools" | "summary" | null;
+  } | null>(null);
+  const isGradingRef = useRef(false);
+
+  // Refs for WebSocket and chat management
+  const currentRoomRef = useRef<string | null>(null);
+  const currentChatIdRef = useRef<string | null>(null);
+  const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
+  const simulationRef = useRef<typeof simulation | null>(null);
+  const pendingNextChatIdRef = useRef<string | null>(null);
+  const dataFetchedAtRef = useRef<number>(Date.now());
+  const [localElapsedOffset, setLocalElapsedOffset] = useState(0);
+
+  // Extract data from v3 response
+  const chats = useMemo(
+    () => attemptData?.chats.map((c) => c.chat) || [],
+    [attemptData]
+  );
+  const attempt = attemptData?.attempt || null;
+  const simulation = attemptData?.simulation || null;
+
+  // Current chat based on index (client-controlled, defaults to server's suggestion)
+  const currentChat = useMemo(() => {
+    if (!attemptData?.chats || attemptData.chats.length === 0) return null;
+    const chatData = attemptData.chats[currentChatIndex];
+    return chatData?.chat || attemptData.chats[0]?.chat || null;
+  }, [attemptData, currentChatIndex]);
+
+  // Get scenario, documents from v3 data
+  const scenario = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return null;
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.scenario ?? null;
+  }, [attemptData, currentChat]);
+
+  const scenarioDocuments = attemptData?.scenarioDocuments || [];
+  const attemptProfiles = useMemo(
+    () => attemptData?.attemptProfiles || [],
+    [attemptData?.attemptProfiles]
+  );
+  const attemptProfileId = useMemo(() => {
+    const activeProfile = attemptProfiles.find((ap) => ap["active"]);
+    return activeProfile?.["profileId"] || null;
+  }, [attemptProfiles]);
+
+  // Scenarios map - map chatId -> scenario for all chats
+  const scenariosByChatId = useMemo(() => {
+    if (!attemptData?.chats) return {};
+    const map: Record<string, ChatDataType["scenario"]> = {};
+    attemptData.chats.forEach((chatData) => {
+      map[chatData.chat.id] = chatData.scenario;
+    });
+    return map;
+  }, [attemptData]);
+
+  // Rubric structure
+  const rubricStructure = attemptData?.rubricStructure ?? null;
+
+  // Grading states map - map chatId -> grading state
+  const gradingStatesByChatId = useMemo(() => {
+    if (!attemptData?.chats) return {};
+    const map: Record<string, NonNullable<ChatDataType["gradingState"]>> = {};
+    attemptData.chats.forEach((chatData) => {
+      if (chatData.gradingState) {
+        map[chatData.chat.id] = chatData.gradingState;
+      }
+    });
+    return map;
+  }, [attemptData]);
+
+  // Messages - get messages for current chat
+  const currentMessages = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return [];
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.messages ?? [];
+  }, [attemptData, currentChat]);
+
+  // Hints - get hints for current chat
+  const currentChatHints = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return [];
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.hints || [];
+  }, [attemptData, currentChat]);
+
+  // Get computed data from v3 response (server-side computations)
+  const currentDynamicRubric = useMemo(() => {
+    if (!attemptData?.chats || !currentChat) return null;
+    const chatData = attemptData.chats.find(
+      (c) => c.chat.id === currentChat.id
+    );
+    return chatData?.dynamicRubric;
+  }, [attemptData, currentChat]);
+
+  const allDynamicRubrics = useMemo(
+    () =>
+      attemptData?.chats
+        .map((c) => c.dynamicRubric)
+        .filter(
+          (r): r is NonNullable<ChatDataType["dynamicRubric"]> => r !== null
+        ) || [],
+    [attemptData]
+  );
+
+  const aggregatedResults = attemptData?.aggregatedResults || null;
+
+  // Metadata from v3
+  const expectedChatCount = attemptData?.expectedChatCount || 1;
+  const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
+  const isLastAttempt = attemptData?.isLastAttempt ?? true;
+  const shouldShowControls = attemptData?.shouldShowControls ?? true;
+
+  // Timer from v3 (server computed baseline) - convert backend format to frontend format
+  const serverTimer = useMemo(() => {
+    const backendTimer = attemptData?.timer;
+    if (!backendTimer) {
+      return {
+        elapsed: 0,
+        remaining: null as number | null,
+        expired: false,
+      };
+    }
+    const remaining =
+      backendTimer.limit !== null
+        ? backendTimer.limit - backendTimer.elapsed
+        : null;
+    return {
+      elapsed: backendTimer.elapsed,
+      remaining,
+      expired: backendTimer.exceeded,
+    };
+  }, [attemptData?.timer]);
+
+  // Update baseline when server data changes
+  useEffect(() => {
+    dataFetchedAtRef.current = Date.now();
+    setLocalElapsedOffset(0);
+  }, [attemptData?.timer.elapsed]);
+
+  // Tick timer every second for active simulations
+  useEffect(() => {
+    if (!currentChat || currentChat.completed || showResults) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const secondsSinceFetch = Math.floor(
+        (now - dataFetchedAtRef.current) / 1000
+      );
+      setLocalElapsedOffset(secondsSinceFetch);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentChat, showResults]);
+
+  // Compute display timer
+  const timer = useMemo(() => {
+    const displayElapsed = serverTimer.elapsed + localElapsedOffset;
+    const displayRemaining =
+      serverTimer.remaining !== null
+        ? serverTimer.remaining - localElapsedOffset
+        : null;
+
+    return {
+      elapsed: displayElapsed,
+      remaining: displayRemaining,
+      expired:
+        serverTimer.expired ||
+        (displayRemaining !== null && displayRemaining <= 0),
+    };
+  }, [serverTimer, localElapsedOffset]);
+
+  // Update simulation ref when simulation changes
+  useEffect(() => {
+    simulationRef.current = simulation;
+  }, [simulation]);
+
+  // Initialize to first incomplete chat when data loads
+  useEffect(() => {
+    if (chats && chats.length > 0 && currentChatIndex === 0) {
+      const sortedChats = [...chats].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      const firstIncompleteIndex = sortedChats.findIndex(
+        (chat) => !chat.completed
+      );
+
+      if (
+        firstIncompleteIndex !== -1 &&
+        firstIncompleteIndex !== currentChatIndex
+      ) {
+        setCurrentChatIndex(firstIncompleteIndex);
+      }
+    }
+  }, [chats, currentChatIndex]);
+
+  // Check if current chat is completed and move to next or show results
+  useEffect(() => {
+    let timerTimeout: NodeJS.Timeout | null = null;
+
+    if (currentChat?.completed && !showResults) {
+      const isFresh = freshlyCompletedChatsRef.current.has(currentChat.id);
+
+      if (isFresh) {
+        if (
+          !isSingleChatAttempt &&
+          currentChatIndex < (chats?.length || 0) - 1
+        ) {
+          timerTimeout = setTimeout(() => {
+            setCurrentChatIndex((prev) => {
+              const nextIndex = prev + 1;
+              toast.success(
+                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`
+              );
+              return nextIndex;
+            });
+          }, 2000);
+        } else {
+          setShowResults(true);
+        }
+      }
+
+      freshlyCompletedChatsRef.current = new Set();
+    }
+
+    return () => {
+      if (timerTimeout) clearTimeout(timerTimeout);
+    };
+  }, [
+    currentChat?.completed,
+    currentChat?.id,
+    currentChatIndex,
+    chats?.length,
+    showResults,
+    isSingleChatAttempt,
+  ]);
+
+  // Check if all chats are completed and show results
+  useEffect(() => {
+    if (chats && chats.length > 0 && !showResults) {
+      const totalExpectedChats = chats.length;
+      const completedChats = chats.filter((chat) => chat.completed).length;
+
+      if (completedChats === totalExpectedChats) {
+        setShowResults(true);
+      }
+    }
+  }, [chats, showResults]);
+
+  // Join/leave chat rooms when currentChat changes
+  useEffect(() => {
+    if (!isConnected || !currentChat?.id || !socket) return;
+
+    if (currentRoomRef.current === currentChat.id) return;
+
+    if (currentRoomRef.current) {
+      socket.emit("leave_chat", {
+        chat_id: currentRoomRef.current,
+        chat_type: "simulation",
+      });
+    }
+
+    socket.emit("join_chat", {
+      chat_id: currentChat.id,
+      chat_type: "simulation",
+    });
+    currentRoomRef.current = currentChat.id;
+    currentChatIdRef.current = currentChat.id;
+
+    return () => {
+      if (currentRoomRef.current && socket) {
+        socket.emit("leave_chat", {
+          chat_id: currentRoomRef.current,
+          chat_type: "simulation",
+        });
+        currentRoomRef.current = null;
+        currentChatIdRef.current = null;
+      }
+    };
+  }, [currentChat?.id, isConnected, socket]);
+
+  // Update the ref whenever currentChat changes
+  useEffect(() => {
+    const newChatId = currentChat?.id || null;
+    currentChatIdRef.current = newChatId;
+  }, [currentChat?.id]);
+
+  // WebSocket-based message handler
+  const sendMessage = useCallback(
+    async (message: string, isRetry?: boolean) => {
+      if (!message.trim() || !currentChat || isSendingMessage || !socket)
+        return;
+
+      setIsSendingMessage(true);
+
+      try {
+        socket.emit("send_simulation_message", {
+          chat_id: currentChat.id,
+          message: message,
+          is_retry: isRetry ?? false,
+        });
+      } catch (err) {
+        toast.error(`Failed to send message: ${err}`);
+        setIsSendingMessage(false);
+      }
+    },
+    [currentChat, isSendingMessage, socket]
+  );
+
+  // Stop message function
+  const stopMessage = useCallback(async () => {
+    if (!currentChat || isStoppingMessage || !socket) return;
+
+    setIsStoppingMessage(true);
+
+    try {
+      socket.emit("stop_simulation", {
+        chat_id: currentChat.id,
+      });
+    } catch (error) {
+      toast.error(`Failed to stop message: ${error}`);
+      setIsStoppingMessage(false);
+    }
+  }, [currentChat, isStoppingMessage, socket]);
+
+  const endChat = useCallback(
+    async (chatId?: string, previousChatId?: string) => {
+      const targetChatId = chatId || currentChat?.id;
+      if (!targetChatId || !simulation?.departmentId || !socket) return;
+
+      setEndChatLoading(true);
+
+      try {
+        const continueData: {
+          chat_id: string;
+          attempt_id: string;
+          end_all: boolean;
+          previous_chat_id?: string;
+          department_id: string;
+        } = {
+          chat_id: targetChatId,
+          attempt_id: attemptId,
+          end_all: false,
+          department_id: simulation.departmentId,
+        };
+        if (previousChatId) {
+          continueData.previous_chat_id = previousChatId;
+        }
+        socket.emit("continue_simulation", continueData);
+      } catch (error) {
+        toast.error(`Failed to end chat: ${error}`);
+        setEndChatLoading(false);
+      }
+    },
+    [currentChat?.id, socket, attemptId, simulation?.departmentId]
+  );
+
+  const endAllChats = useCallback(
+    async (previousChatMap?: Record<string, string | null>) => {
+      if (!simulation || !attempt || !currentChat || !socket) return;
+
+      setEndChatLoading(true);
+
+      try {
+        const continueData: {
+          chat_id: string;
+          attempt_id: string;
+          end_all: boolean;
+          previous_chat_map?: Record<string, string | null>;
+          department_id: string;
+        } = {
+          chat_id: currentChat.id,
+          attempt_id: attemptId,
+          end_all: true,
+          department_id: simulation.departmentId,
+        };
+        if (previousChatMap) {
+          continueData.previous_chat_map = previousChatMap;
+        }
+        socket.emit("continue_simulation", continueData);
+      } catch (error) {
+        toast.error(`Failed to end all chats: ${error}`);
+        setEndChatLoading(false);
+      }
+    },
+    [simulation, attempt, currentChat, attemptId, socket]
+  );
+
+  // Set up WebSocket event handlers for simulation events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSimulationNewMessage = (data: {
+      message_id: string;
+      chat_id: string;
+      role: string;
+      content: string;
+      completed: boolean;
+      created_at: string;
+    }) => {
+      if (data.role === "assistant" || data.role === "response") {
+        window.dispatchEvent(
+          new CustomEvent("simulationMessageStart", {
+            detail: {
+              messageId: data.message_id,
+              chatId: data.chat_id,
+            },
+          })
+        );
+      }
+
+      if (data.role === "user") {
+        window.dispatchEvent(
+          new CustomEvent("messageSent", {
+            detail: {
+              messageId: data.message_id,
+              chatId: data.chat_id,
+            },
+          })
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("simulationNewMessage", {
+          detail: {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            role: data.role,
+            content: data.content,
+            completed: data.completed,
+            createdAt: data.created_at,
+          },
+        })
+      );
+    };
+
+    const handleSimulationMessageToken = (data: {
+      message_id: string;
+      chat_id: string;
+      token: string;
+      accumulated_content: string;
+    }) => {
+      window.dispatchEvent(
+        new CustomEvent("simulationMessageToken", {
+          detail: {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            token: data.token,
+            accumulatedContent: data.accumulated_content,
+          },
+        })
+      );
+    };
+
+    const handleSimulationMessageComplete = (data: {
+      message_id: string;
+      chat_id: string;
+      final_content: string;
+      completed?: boolean;
+      audio?: boolean;
+    }) => {
+      setIsSendingMessage(false);
+
+      window.dispatchEvent(
+        new CustomEvent("simulationMessageComplete", {
+          detail: {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            finalContent: data.final_content,
+          },
+        })
+      );
+    };
+
+    const handleSimulationMessageCancelled = (data: {
+      message_id: string;
+      chat_id: string;
+      final_content: string;
+    }) => {
+      setIsSendingMessage(false);
+      setIsStoppingMessage(false);
+
+      window.dispatchEvent(
+        new CustomEvent("simulationMessageCancelled", {
+          detail: {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            finalContent: data.final_content,
+          },
+        })
+      );
+    };
+
+    const handleSimulationMessageError = (data: {
+      chat_id: string;
+      error: string;
+    }) => {
+      setIsSendingMessage(false);
+      setIsStoppingMessage(false);
+
+      window.dispatchEvent(
+        new CustomEvent("simulationMessageError", {
+          detail: {
+            chatId: data.chat_id,
+            error: data.error,
+          },
+        })
+      );
+
+      toast.error(`Simulation error: ${data.error}`);
+    };
+
+    const handleSimulationStopped = (data: {
+      chat_id: string;
+      success: boolean;
+      message: string;
+    }) => {
+      setIsStoppingMessage(false);
+
+      window.dispatchEvent(
+        new CustomEvent("simulationStopped", {
+          detail: {
+            chatId: data.chat_id,
+            success: data.success,
+            message: data.message,
+          },
+        })
+      );
+
+      if (data.success && data.message) {
+        toast.success(data.message);
+      } else if (!data.success) {
+        toast.error(data.message);
+      }
+    };
+
+    const handleSimulationContinued = (data: {
+      success: boolean;
+      message: string;
+      completed_chat_id: string;
+      next_chat_id: string;
+      is_attempt_finished: boolean;
+    }) => {
+      if (data.success) {
+        toast.success(data.message);
+
+        window.dispatchEvent(
+          new CustomEvent("simulationChatEnded", {
+            detail: {
+              completedChatId: data.completed_chat_id,
+              nextChatId: data.next_chat_id,
+              isAttemptFinished: data.is_attempt_finished,
+            },
+          })
+        );
+
+        window.dispatchEvent(
+          new CustomEvent("chatEnded", {
+            detail: {
+              chatId: data.completed_chat_id,
+            },
+          })
+        );
+      } else {
+        toast.error(data.message);
+      }
+    };
+
+    const handleEndAllCompleted = (data: {
+      success: boolean;
+      message: string;
+      attempt_id: string;
+    }) => {
+      if (data.success) {
+        toast.success(data.message);
+
+        window.dispatchEvent(
+          new CustomEvent("endAllCompleted", {
+            detail: {
+              attemptId: data.attempt_id,
+            },
+          })
+        );
+      } else {
+        toast.error(data.message);
+      }
+    };
+
+    const handleSimulationError = (data: {
+      success: boolean;
+      message: string;
+    }) => {
+      setIsSendingMessage(false);
+      setIsStoppingMessage(false);
+      setEndChatLoading(false);
+      toast.error(data.message);
+      window.dispatchEvent(new CustomEvent("simulationError"));
+    };
+
+    const handleHintGenerationProgress = (data: {
+      type: string;
+      message: string;
+      chat_id: string;
+      message_id: string;
+      hint_ids?: string[];
+      hints_count?: number;
+      error?: string;
+    }) => {
+      window.dispatchEvent(
+        new CustomEvent("hint_generation_progress", {
+          detail: data,
+        })
+      );
+    };
+
+    const handleSimulationGradingProgress = (data: {
+      type: string;
+      chat_id: string;
+      standard_group_name?: string;
+      standard_group_short_name?: string;
+      score?: number;
+      feedback_preview?: string;
+      completed_count?: number;
+      total_count?: number;
+      message?: string;
+      grade_id?: string;
+      total_score?: number;
+      passed?: boolean;
+      standards_graded?: number;
+      time_taken?: number;
+      summary?: string;
+    }) => {
+      window.dispatchEvent(
+        new CustomEvent("simulationGradingProgress", {
+          detail: data,
+        })
+      );
+    };
+
+    socket.on("simulation_new_message", handleSimulationNewMessage);
+    socket.on("simulation_message_token", handleSimulationMessageToken);
+    socket.on("simulation_message_complete", handleSimulationMessageComplete);
+    socket.on("simulation_message_cancelled", handleSimulationMessageCancelled);
+    socket.on("simulation_message_error", handleSimulationMessageError);
+    socket.on("simulation_stopped", handleSimulationStopped);
+    socket.on("simulation_continued", handleSimulationContinued);
+    socket.on("end_all_completed", handleEndAllCompleted);
+    socket.on("simulation_error", handleSimulationError);
+    socket.on("hint_generation_progress", handleHintGenerationProgress);
+    socket.on("simulation_grading_progress", handleSimulationGradingProgress);
+
+    return () => {
+      socket.off("simulation_new_message", handleSimulationNewMessage);
+      socket.off("simulation_message_token", handleSimulationMessageToken);
+      socket.off(
+        "simulation_message_complete",
+        handleSimulationMessageComplete
+      );
+      socket.off(
+        "simulation_message_cancelled",
+        handleSimulationMessageCancelled
+      );
+      socket.off("simulation_message_error", handleSimulationMessageError);
+      socket.off("simulation_stopped", handleSimulationStopped);
+      socket.off("simulation_continued", handleSimulationContinued);
+      socket.off("end_all_completed", handleEndAllCompleted);
+      socket.off("simulation_error", handleSimulationError);
+      socket.off("hint_generation_progress", handleHintGenerationProgress);
+      socket.off(
+        "simulation_grading_progress",
+        handleSimulationGradingProgress
+      );
+    };
+  }, [socket]);
+
+  // Listen for WebSocket loading state changes via window events
+  useEffect(() => {
+    const handleSimulationMessageStart = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(true);
+      }
+    };
+
+    const handleSimulationMessageComplete = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        router.refresh();
+
+        window.dispatchEvent(
+          new CustomEvent("responseComplete", {
+            detail: {
+              chatId: event.detail.chatId,
+              messageId: event.detail.messageId,
+              finalContent: event.detail.finalContent,
+            },
+          })
+        );
+      }
+    };
+
+    const handleSimulationMessageCancelled = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
+    };
+
+    const handleSimulationMessageError = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
+    };
+
+    const handleSimulationStopped = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsStoppingMessage(false);
+        setIsSendingMessage(false);
+      }
+    };
+
+    const handleChatEnded = (event: CustomEvent) => {
+      if (event.detail.completedChatId === currentChatIdRef.current) {
+        setFreshlyCompletedChats((prev) =>
+          new Set(prev).add(event.detail.completedChatId)
+        );
+        freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
+
+        router.refresh();
+        setEndChatLoading(false);
+
+        if (event.detail.nextChatId) {
+          pendingNextChatIdRef.current = event.detail.nextChatId as string;
+        }
+
+        window.dispatchEvent(
+          new CustomEvent("chatEnded", {
+            detail: {
+              chatId: event.detail.completedChatId,
+              attemptId: attemptId,
+            },
+          })
+        );
+      }
+    };
+
+    const handleSimulationError = () => {
+      setIsSendingMessage(false);
+      setIsStoppingMessage(false);
+      setEndChatLoading(false);
+    };
+
+    const handleEndAllCompleted = (event: CustomEvent) => {
+      if (event.detail.attemptId === attemptId) {
+        router.refresh();
+        setShowResults(true);
+        setEndChatLoading(false);
+      }
+    };
+
+    const handleSimulationNewMessage = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        router.refresh();
+      }
+    };
+
+    window.addEventListener(
+      "simulationMessageStart",
+      handleSimulationMessageStart as EventListener
+    );
+    window.addEventListener(
+      "simulationMessageComplete",
+      handleSimulationMessageComplete as EventListener
+    );
+    window.addEventListener(
+      "simulationMessageCancelled",
+      handleSimulationMessageCancelled as EventListener
+    );
+    window.addEventListener(
+      "simulationMessageError",
+      handleSimulationMessageError as EventListener
+    );
+    window.addEventListener(
+      "simulationStopped",
+      handleSimulationStopped as EventListener
+    );
+    window.addEventListener(
+      "simulationChatEnded",
+      handleChatEnded as EventListener
+    );
+    window.addEventListener(
+      "simulationError",
+      handleSimulationError as EventListener
+    );
+    window.addEventListener(
+      "endAllCompleted",
+      handleEndAllCompleted as EventListener
+    );
+    window.addEventListener(
+      "simulationNewMessage",
+      handleSimulationNewMessage as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "simulationMessageStart",
+        handleSimulationMessageStart as EventListener
+      );
+      window.removeEventListener(
+        "simulationMessageComplete",
+        handleSimulationMessageComplete as EventListener
+      );
+      window.removeEventListener(
+        "simulationMessageCancelled",
+        handleSimulationMessageCancelled as EventListener
+      );
+      window.removeEventListener(
+        "simulationMessageError",
+        handleSimulationMessageError as EventListener
+      );
+      window.removeEventListener(
+        "simulationStopped",
+        handleSimulationStopped as EventListener
+      );
+      window.removeEventListener(
+        "simulationChatEnded",
+        handleChatEnded as EventListener
+      );
+      window.removeEventListener(
+        "simulationError",
+        handleSimulationError as EventListener
+      );
+      window.removeEventListener(
+        "endAllCompleted",
+        handleEndAllCompleted as EventListener
+      );
+      window.removeEventListener(
+        "simulationNewMessage",
+        handleSimulationNewMessage as EventListener
+      );
+    };
+  }, [attemptId, router]);
+
+  // Listen for grading progress events
+  useEffect(() => {
+    const handleGradingProgress = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { type, chat_id, completed_count, total_count } =
+        customEvent.detail;
+
+      if (chat_id !== currentChat?.id) {
+        if (isGrading && gradingProgress) {
+          isGradingRef.current = false;
+          setIsGrading(false);
+          setGradingProgress(null);
+          gradingProgressRef.current = null;
+        }
+        return;
+      }
+
+      if (type === "start") {
+        isGradingRef.current = true;
+        setIsGrading(true);
+        const initialTotal =
+          total_count ??
+          (customEvent.detail.standards_count as number | undefined);
+        if (initialTotal !== undefined) {
+          const initialProgress = {
+            completed: 0,
+            total: initialTotal,
+            displayedProgress: 0,
+            phase: "tools" as const,
+          };
+          gradingProgressRef.current = initialProgress;
+          setGradingProgress(initialProgress);
+        }
+      } else if (
+        type === "standard_graded" &&
+        completed_count !== undefined &&
+        total_count !== undefined
+      ) {
+        isGradingRef.current = true;
+        setIsGrading(true);
+        setGradingProgress((prev) => {
+          const allToolsComplete = completed_count === total_count;
+          const newPhase = allToolsComplete
+            ? "summary"
+            : prev?.phase || "tools";
+
+          let displayedProgress: number;
+          if (newPhase === "tools") {
+            displayedProgress = Math.min(
+              (completed_count / total_count) * 90,
+              90
+            );
+          } else {
+            displayedProgress = 95;
+          }
+
+          if (!prev) {
+            const newProgress = {
+              completed: completed_count,
+              total: total_count,
+              displayedProgress,
+              phase: newPhase,
+            };
+            gradingProgressRef.current = newProgress;
+            return newProgress;
+          }
+
+          const updatedProgress = {
+            ...prev,
+            completed: completed_count,
+            total: total_count,
+            phase: newPhase,
+            displayedProgress,
+          };
+          gradingProgressRef.current = updatedProgress;
+          return updatedProgress;
+        });
+      } else if (type === "summary_recorded") {
+        setGradingProgress((prev) => {
+          if (!prev) return null;
+          const updatedProgress = {
+            ...prev,
+            phase: "summary" as const,
+            displayedProgress: 95,
+          };
+          gradingProgressRef.current = updatedProgress;
+          return updatedProgress;
+        });
+      } else if (type === "complete") {
+        setGradingProgress((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            displayedProgress: 100,
+          };
+        });
+        setTimeout(() => {
+          isGradingRef.current = false;
+          setIsGrading(false);
+          setGradingProgress(null);
+          gradingProgressRef.current = null;
+        }, 300);
+      }
+    };
+
+    window.addEventListener("simulationGradingProgress", handleGradingProgress);
+
+    return () => {
+      window.removeEventListener(
+        "simulationGradingProgress",
+        handleGradingProgress
+      );
+    };
+  }, [currentChat?.id, isGrading, gradingProgress]);
+
+  // Update ref when grading state changes
+  useEffect(() => {
+    isGradingRef.current = isGrading;
+  }, [isGrading]);
+
+  // After chats refresh, jump to the next chat if one was provided by the server
+  useEffect(() => {
+    if (!chats || chats.length === 0) return;
+    const desiredNextId = pendingNextChatIdRef.current;
+    if (!desiredNextId) return;
+
+    const sortedChats = [...chats].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+    const idx = sortedChats.findIndex((c) => c.id === desiredNextId);
+    if (idx !== -1) {
+      setCurrentChatIndex(idx);
+      pendingNextChatIdRef.current = null;
+    }
+  }, [chats]);
+
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
-    null,
+    null
   );
   const [inputPanelHeight, setInputPanelHeight] = useState<number>(70); // Default height in pixels
   const [showObjectives, setShowObjectives] = useState<boolean>(false);
@@ -132,9 +1164,6 @@ export default function AttemptChat({
 
   // Track which chats have had their timestamps reset to prevent infinite loops
   const resetChatTimestampsRef = useRef<Set<string>>(new Set());
-
-  // Get attempt profile ID from context (v2 single source of truth)
-  const attemptProfileId = simulationContext?.attemptProfileId;
 
   // Check if current user is the owner of this attempt (activeProfile, effectiveProfile, and attempt.profileId must all match)
   const isAttemptOwner = useMemo(() => {
@@ -155,45 +1184,31 @@ export default function AttemptChat({
 
   // Set breadcrumb context when attempt data is loaded
   useEffect(() => {
-    if (simulationContext?.simulation?.title && simulationContext?.attemptId) {
-      const displayName = `${simulationContext.simulation.title}`;
+    if (simulation?.title && attemptId) {
+      const displayName = `${simulation.title}`;
       setEntityMetadata({
-        entityId: simulationContext.attemptId,
+        entityId: attemptId,
         entityName: displayName,
         entityType: "attempt",
       });
     }
     return () => clearEntityMetadata();
-  }, [
-    simulationContext?.simulation?.title,
-    simulationContext?.attemptId,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  }, [simulation?.title, attemptId, setEntityMetadata, clearEntityMetadata]);
 
-  // Get current chat from context
-  const displayChat =
-    simulationContext?.chats[simulationContext.currentChatIndex];
-
-  // Get UI state from context (persists across chat switches)
-  const showGrades = simulationContext?.showGrades ?? false;
-  const showDocuments = simulationContext?.showDocuments ?? true;
+  // Get current chat
+  const displayChat = chats[currentChatIndex];
 
   // Chat picker component - reusable Select component for chat selection
   const chatPicker = useMemo(() => {
-    if (simulationContext?.isSingleChatAttempt) return null;
+    if (isSingleChatAttempt) return null;
 
     return (
       <Select
-        value={
-          simulationContext?.chats[simulationContext.currentChatIndex]?.id || ""
-        }
+        value={chats[currentChatIndex]?.id || ""}
         onValueChange={(chatId) => {
-          const chatIndex = simulationContext?.chats.findIndex(
-            (chat) => chat.id === chatId,
-          );
+          const chatIndex = chats.findIndex((chat) => chat.id === chatId);
           if (chatIndex !== undefined && chatIndex >= 0) {
-            simulationContext?.setCurrentChatIndex(chatIndex);
+            setCurrentChatIndex(chatIndex);
           }
         }}
       >
@@ -201,10 +1216,10 @@ export default function AttemptChat({
           <SelectValue placeholder="Select chat to view results" />
         </SelectTrigger>
         <SelectContent>
-          {simulationContext?.chats?.map((chat: Chat) => {
+          {chats?.map((chat: Chat) => {
             // Find rubric result for this chat
-            const rubricResult = simulationContext?.allDynamicRubrics.find(
-              (rubric) => rubric.chatId === chat.id,
+            const rubricResult = allDynamicRubrics.find(
+              (rubric) => rubric.chatId === chat.id
             );
 
             return (
@@ -234,22 +1249,15 @@ export default function AttemptChat({
         </SelectContent>
       </Select>
     );
-  }, [simulationContext]);
+  }, [isSingleChatAttempt, chats, currentChatIndex, allDynamicRubrics]);
 
-  // Get selected scenario from context (v2 single source of truth)
+  // Get selected scenario
   const selectedScenario = useMemo(() => {
-    if (!displayChat?.id || !simulationContext?.scenariosByChatId) {
-      return simulationContext?.scenario;
+    if (!displayChat?.id) {
+      return scenario;
     }
-    return (
-      simulationContext.scenariosByChatId[displayChat.id] ||
-      simulationContext.scenario
-    );
-  }, [
-    displayChat?.id,
-    simulationContext?.scenariosByChatId,
-    simulationContext?.scenario,
-  ]);
+    return scenariosByChatId[displayChat.id] || scenario;
+  }, [displayChat?.id, scenariosByChatId, scenario]);
 
   // Helper function to calculate time taken from chat timestamps
   const calculateChatTimeTaken = useCallback((chat: Chat | null): number => {
@@ -265,15 +1273,12 @@ export default function AttemptChat({
   // Helper function to calculate adjusted time limit for multi-simulation attempts
   const calculateAdjustedTimeLimit = useCallback(
     (_chat: Chat | null): number => {
-      if (
-        !simulationContext?.simulation?.timeLimit ||
-        !simulationContext?.chats
-      ) {
+      if (!simulation?.timeLimit || !chats) {
         return 0;
       }
 
-      const totalTimeLimitSeconds = simulationContext.simulation.timeLimit * 60;
-      const totalChats = simulationContext.chats.length;
+      const totalTimeLimitSeconds = simulation.timeLimit * 60;
+      const totalChats = chats.length;
 
       // For multi-simulation attempts, split time evenly
       if (totalChats > 1) {
@@ -283,7 +1288,7 @@ export default function AttemptChat({
       // For single simulation attempts, use the full time limit
       return totalTimeLimitSeconds;
     },
-    [simulationContext?.simulation?.timeLimit, simulationContext?.chats],
+    [simulation?.timeLimit, chats]
   );
 
   // Helper function to calculate how much time was exceeded for a chat
@@ -296,15 +1301,15 @@ export default function AttemptChat({
 
       return Math.max(0, timeTaken - adjustedTimeLimit);
     },
-    [calculateChatTimeTaken, calculateAdjustedTimeLimit],
+    [calculateChatTimeTaken, calculateAdjustedTimeLimit]
   );
 
   // Reset createdAt timestamp when chat is first loaded (if createdAt and updatedAt are the same)
   useEffect(() => {
     const resetChatTimestamp = async () => {
-      if (!simulationContext?.currentChat || !isAttemptOwner) return;
+      if (!currentChat || !isAttemptOwner) return;
 
-      const chat = simulationContext.currentChat;
+      const chat = currentChat;
 
       // Don't reset timestamps for completed chats
       if (chat.completed) return;
@@ -336,60 +1341,38 @@ export default function AttemptChat({
     };
 
     resetChatTimestamp();
-  }, [
-    simulationContext?.currentChat,
-    isAttemptOwner,
-    simulationContext?.attemptId,
-    updateChatCreatedAt,
-  ]);
+  }, [currentChat, isAttemptOwner, attemptId, updateChatCreatedAt]);
 
   // Auto-select first chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
-    if (
-      simulationContext?.showResults &&
-      simulationContext?.chats &&
-      simulationContext?.chats.length > 0 &&
-      simulationContext.currentChatIndex === 0
-    ) {
+    if (showResults && chats && chats.length > 0 && currentChatIndex === 0) {
       // Ensure we're on the first chat
-      if (
-        simulationContext?.chats[0] &&
-        simulationContext.currentChatIndex !== 0
-      ) {
-        simulationContext.setCurrentChatIndex(0);
+      if (chats[0] && currentChatIndex !== 0) {
+        setCurrentChatIndex(0);
       }
 
       // If all chats are completed, default to showing rubric (only if user hasn't manually toggled)
-      const completedChats = simulationContext?.chats.filter(
-        (chat: Chat) => chat.completed,
-      );
+      const completedChats = chats.filter((chat: Chat) => chat.completed);
       if (
-        completedChats.length === simulationContext?.chats.length &&
-        !simulationContext?.userHasManuallyToggledGrades
+        completedChats.length === chats.length &&
+        !userHasManuallyToggledGrades
       ) {
-        simulationContext?.setShowGrades(true);
+        setShowGrades(true);
       }
     }
-  }, [
-    simulationContext?.showResults,
-    simulationContext?.chats,
-    simulationContext?.currentChatIndex,
-    simulationContext?.setCurrentChatIndex,
-    simulationContext?.setShowGrades,
-    simulationContext,
-  ]);
+  }, [showResults, chats, currentChatIndex, userHasManuallyToggledGrades]);
 
   // Reset selected document when chat changes - scope to current chat's documents
   useEffect(() => {
-    if (!displayChat || !simulationContext?.scenarioDocuments) {
+    if (!displayChat || !scenarioDocuments) {
       setSelectedDocumentId(null);
       return;
     }
 
     // Filter documents to only include current chat's documents
     const currentChatDocIds = displayChat.documentIds || [];
-    const filteredDocs = simulationContext.scenarioDocuments.filter((doc) =>
-      currentChatDocIds.includes(doc.document_id),
+    const filteredDocs = scenarioDocuments.filter((doc) =>
+      currentChatDocIds.includes(doc.document_id)
     );
 
     // Set to first document of current chat, or null if no documents
@@ -407,14 +1390,9 @@ export default function AttemptChat({
     } else {
       setSelectedDocumentId(null);
     }
-  }, [
-    displayChat,
-    simulationContext?.currentChatIndex,
-    simulationContext?.scenarioDocuments,
-    selectedDocumentId,
-  ]);
+  }, [displayChat, currentChatIndex, scenarioDocuments, selectedDocumentId]);
 
-  if (!simulationContext?.chats || simulationContext?.chats.length === 0) {
+  if (!chats || chats.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Card>
@@ -434,30 +1412,27 @@ export default function AttemptChat({
   }
 
   // In infinite mode, force chat view until time has expired
-  const isAttemptInfinite = Boolean(simulationContext?.attempt?.infiniteMode);
-  const hasTimeLimit = Boolean(simulationContext?.simulation?.timeLimit);
-  const timeRemaining = simulationContext?.timer.remaining;
+  const isAttemptInfinite = Boolean(attempt?.infiniteMode);
+  const hasTimeLimit = Boolean(simulation?.timeLimit);
+  const timeRemaining = timer.remaining;
   const shouldForceChatView =
     isAttemptInfinite && (!hasTimeLimit || (timeRemaining ?? 1) > 0);
 
   // Show results screen (but not during active infinite mode)
-  if (simulationContext?.showResults && !shouldForceChatView) {
-    const isInfiniteMode = simulationContext?.attempt?.infiniteMode;
-    const infiniteLimitMinutes =
-      simulationContext?.simulation?.timeLimit ?? null;
+  if (showResults && !shouldForceChatView) {
+    const isInfiniteMode = attempt?.infiniteMode;
+    const infiniteLimitMinutes = simulation?.timeLimit ?? null;
     return (
-      <div 
+      <div
         className="h-[calc(100vh-4rem)]"
         data-testid="attempt-chat-container"
-        data-attempt-id={simulationContext?.attemptId || ""}
+        data-attempt-id={attemptId || ""}
       >
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel
             defaultSize={
-              showDocuments && simulationContext?.scenarioDocuments.length > 0
-                ? 70
-                : 100
+              showDocuments && scenarioDocuments.length > 0 ? 70 : 100
             }
             className="md:flex-none"
           >
@@ -476,7 +1451,7 @@ export default function AttemptChat({
                         <div className="flex items-center gap-2">
                           <span className="font-medium">
                             {selectedScenario?.problemStatement ||
-                              simulationContext?.scenario?.problemStatement ||
+                              scenario?.problemStatement ||
                               "Session Results"}
                           </span>
                         </div>
@@ -495,12 +1470,8 @@ export default function AttemptChat({
                                       }
                                       size="sm"
                                       onClick={() => {
-                                        simulationContext?.setShowGrades(
-                                          !showGrades,
-                                        );
-                                        simulationContext?.setUserHasManuallyToggledGrades(
-                                          true,
-                                        );
+                                        setShowGrades(!showGrades);
+                                        setUserHasManuallyToggledGrades(true);
                                       }}
                                       className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
                                     >
@@ -524,9 +1495,8 @@ export default function AttemptChat({
                               const currentChatDocIds =
                                 displayChat?.documentIds || [];
                               const hasDocumentsForCurrentChat =
-                                simulationContext?.scenarioDocuments?.some(
-                                  (doc) =>
-                                    currentChatDocIds.includes(doc.document_id),
+                                scenarioDocuments?.some((doc) =>
+                                  currentChatDocIds.includes(doc.document_id)
                                 );
                               return hasDocumentsForCurrentChat;
                             })() && (
@@ -543,9 +1513,7 @@ export default function AttemptChat({
                                         if (isMobile) {
                                           setShowDocumentModal(true);
                                         } else {
-                                          simulationContext?.setShowDocuments(
-                                            !showDocuments,
-                                          );
+                                          setShowDocuments(!showDocuments);
                                         }
                                       }}
                                       className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
@@ -565,12 +1533,10 @@ export default function AttemptChat({
                             )}
 
                             {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives, hide in grading mode and results view */}
-                            {simulationContext?.simulation?.objectivesEnabled &&
+                            {simulation?.objectivesEnabled &&
                               (() => {
                                 const currentScenario = displayChat?.id
-                                  ? simulationContext?.scenariosByChatId[
-                                      displayChat.id
-                                    ]
+                                  ? scenariosByChatId[displayChat.id]
                                   : null;
                                 const hasObjectives =
                                   currentScenario?.objectives &&
@@ -578,7 +1544,7 @@ export default function AttemptChat({
                                 return hasObjectives;
                               })() &&
                               !showGrades &&
-                              !simulationContext?.showResults && (
+                              !showResults && (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -620,21 +1586,20 @@ export default function AttemptChat({
                                   <div
                                     className={`flex items-center gap-2 px-3 py-1 rounded-full ${
                                       displayChat &&
-                                      simulationContext?.allDynamicRubrics.find(
+                                      allDynamicRubrics.find(
                                         (rubric) =>
-                                          rubric.chatId === displayChat.id,
+                                          rubric.chatId === displayChat.id
                                       )
-                                        ? simulationContext?.allDynamicRubrics.find(
+                                        ? allDynamicRubrics.find(
                                             (rubric) =>
-                                              rubric.chatId === displayChat.id,
+                                              rubric.chatId === displayChat.id
                                           )?.passed
                                           ? "bg-green-100 dark:bg-green-900/30"
                                           : "bg-red-100 dark:bg-red-900/30"
                                         : displayChat && !displayChat.completed
                                           ? "bg-red-100 dark:bg-red-900/30"
-                                          : simulationContext?.aggregatedResults
-                                            ? simulationContext
-                                                ?.aggregatedResults.passed
+                                          : aggregatedResults
+                                            ? aggregatedResults.passed
                                               ? "bg-green-100 dark:bg-green-900/30"
                                               : "bg-red-100 dark:bg-red-900/30"
                                             : "bg-muted"
@@ -649,9 +1614,7 @@ export default function AttemptChat({
                                       className={`text-sm font-medium ${
                                         displayChat && displayChat.completed
                                           ? calculateTimeExceeded(displayChat) >
-                                              0 &&
-                                            simulationContext?.simulation
-                                              ?.timeLimit
+                                              0 && simulation?.timeLimit
                                             ? "text-red-500"
                                             : ""
                                           : ""
@@ -660,23 +1623,19 @@ export default function AttemptChat({
                                     >
                                       {displayChat && displayChat.completed
                                         ? formatTime(
-                                            calculateChatTimeTaken(displayChat),
+                                            calculateChatTimeTaken(displayChat)
                                           )
                                         : isInfiniteMode
                                           ? infiniteLimitMinutes
                                             ? formatTime(
-                                                infiniteLimitMinutes * 60,
+                                                infiniteLimitMinutes * 60
                                               )
-                                            : formatTime(
-                                                simulationContext?.timer
-                                                  .elapsed || 0,
-                                              )
-                                          : simulationContext?.simulation
-                                                ?.timeLimit && displayChat
+                                            : formatTime(timer.elapsed || 0)
+                                          : simulation?.timeLimit && displayChat
                                             ? formatTime(
                                                 calculateAdjustedTimeLimit(
-                                                  displayChat,
-                                                ),
+                                                  displayChat
+                                                )
                                               )
                                             : "No time limit"}
                                     </span>
@@ -684,43 +1643,40 @@ export default function AttemptChat({
                                 </TooltipTrigger>
                                 {displayChat &&
                                 showGrades &&
-                                simulationContext?.allDynamicRubrics.find(
-                                  (rubric) => rubric.chatId === displayChat.id,
+                                allDynamicRubrics.find(
+                                  (rubric) => rubric.chatId === displayChat.id
                                 ) ? (
                                   <TooltipContent>
                                     <p className="flex items-center flex-wrap gap-x-0">
                                       <span>
-                                        {simulationContext?.allDynamicRubrics.find(
+                                        {allDynamicRubrics.find(
                                           (rubric) =>
-                                            rubric.chatId === displayChat.id,
+                                            rubric.chatId === displayChat.id
                                         )?.passed
                                           ? "Passed"
                                           : "Failed"}
                                         (
                                         {
-                                          simulationContext?.allDynamicRubrics.find(
+                                          allDynamicRubrics.find(
                                             (rubric) =>
-                                              rubric.chatId === displayChat.id,
+                                              rubric.chatId === displayChat.id
                                           )?.score
                                         }
                                         /
                                         {
-                                          simulationContext?.allDynamicRubrics.find(
+                                          allDynamicRubrics.find(
                                             (rubric) =>
-                                              rubric.chatId === displayChat.id,
+                                              rubric.chatId === displayChat.id
                                           )?.totalPossiblePoints
                                         }
                                         )
                                       </span>
                                       {calculateTimeExceeded(displayChat) > 0 &&
-                                        simulationContext?.simulation
-                                          ?.timeLimit && (
+                                        simulation?.timeLimit && (
                                           <span className="text-xs text-muted-foreground ml-2">
                                             +
                                             {formatTime(
-                                              calculateTimeExceeded(
-                                                displayChat,
-                                              ),
+                                              calculateTimeExceeded(displayChat)
                                             )}
                                           </span>
                                         )}
@@ -730,17 +1686,17 @@ export default function AttemptChat({
                                   <TooltipContent>
                                     <p>Incomplete</p>
                                   </TooltipContent>
-                                ) : simulationContext?.aggregatedResults ? (
+                                ) : aggregatedResults ? (
                                   <TooltipContent>
                                     <p>
                                       {((
-                                        simulationContext?.aggregatedResults as {
+                                        aggregatedResults as {
                                           overallPassed?: boolean;
                                           passed?: boolean;
                                         }
                                       )?.overallPassed ??
                                       (
-                                        simulationContext?.aggregatedResults as {
+                                        aggregatedResults as {
                                           overallPassed?: boolean;
                                           passed?: boolean;
                                         }
@@ -750,21 +1706,21 @@ export default function AttemptChat({
                                       (
                                       {Math.round(
                                         (
-                                          simulationContext?.aggregatedResults as {
+                                          aggregatedResults as {
                                             averageScore?: number;
                                             percentage?: number;
                                           }
                                         )?.averageScore ??
                                           (
-                                            simulationContext?.aggregatedResults as {
+                                            aggregatedResults as {
                                               averageScore?: number;
                                               percentage?: number;
                                             }
                                           )?.percentage ??
-                                          0,
+                                          0
                                       )}
                                       /
-                                      {simulationContext?.allDynamicRubrics?.[0]
+                                      {allDynamicRubrics?.[0]
                                         ?.totalPossiblePoints || 100}{" "}
                                       points)
                                     </p>
@@ -775,18 +1731,17 @@ export default function AttemptChat({
                           </div>
                         </div>
                         {/* Chat picker row - show when multi-chat attempt */}
-                        {!simulationContext?.isSingleChatAttempt &&
-                          chatPicker && (
-                            <div className="flex justify-end">{chatPicker}</div>
-                          )}
+                        {!isSingleChatAttempt && chatPicker && (
+                          <div className="flex justify-end">{chatPicker}</div>
+                        )}
                       </div>
                     </div>
 
                     {/* Objectives Collapsible Content - Desktop Only, hide in grading mode */}
-                    {simulationContext?.simulation?.objectivesEnabled &&
+                    {simulation?.objectivesEnabled &&
                       (() => {
                         const currentScenario = displayChat?.id
-                          ? simulationContext?.scenariosByChatId[displayChat.id]
+                          ? scenariosByChatId[displayChat.id]
                           : null;
                         const objectives = currentScenario?.objectives || [];
                         return objectives.length > 0;
@@ -797,9 +1752,7 @@ export default function AttemptChat({
                             <ul className="space-y-2 list-none">
                               {(() => {
                                 const currentScenario = displayChat?.id
-                                  ? simulationContext?.scenariosByChatId[
-                                      displayChat.id
-                                    ]
+                                  ? scenariosByChatId[displayChat.id]
                                   : null;
                                 const objectives =
                                   currentScenario?.objectives || [];
@@ -826,30 +1779,24 @@ export default function AttemptChat({
                   <ScrollArea className="flex-1 px-4 min-h-0">
                     <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
-                      {showGrades &&
-                      displayChat &&
-                      simulationContext?.rubricStructure ? (
+                      {showGrades && displayChat && rubricStructure ? (
                         <div className="space-y-4 py-4">
                           <TableRubric
                             standardGroups={
-                              simulationContext.rubricStructure.standardGroups
+                              rubricStructure?.standardGroups || []
                             }
                             standardGroupsMapping={
-                              simulationContext.rubricStructure
-                                .standardGroupsMapping
+                              rubricStructure?.standardGroupsMapping || {}
                             }
                             standardsMapping={
-                              simulationContext.rubricStructure
-                                .standardsMapping as Parameters<
+                              (rubricStructure?.standardsMapping ||
+                                {}) as Parameters<
                                 typeof TableRubric
                               >[0]["standardsMapping"]
                             }
                             {...(displayChat?.id &&
-                              simulationContext.gradingStatesByChatId[
-                                displayChat.id
-                              ] && {
-                                gradingState: simulationContext
-                                  .gradingStatesByChatId[
+                              gradingStatesByChatId[displayChat.id] && {
+                                gradingState: gradingStatesByChatId[
                                   displayChat.id
                                 ] as NonNullable<
                                   Parameters<
@@ -865,6 +1812,12 @@ export default function AttemptChat({
                           <AttemptMessages
                             chatId={displayChat.id}
                             isAttemptOwner={isAttemptOwner}
+                            messages={currentMessages}
+                            currentChat={currentChat}
+                            sendMessage={sendMessage}
+                            isSendingMessage={isSendingMessage}
+                            isActive={!timer.expired && !showResults}
+                            simulation={simulation}
                           />
                         </div>
                       ) : (
@@ -888,8 +1841,8 @@ export default function AttemptChat({
               // Filter documents for current chat's scenario
               const currentChatDocIds = displayChat?.documentIds || [];
               const filteredDocs =
-                simulationContext?.scenarioDocuments.filter((doc) =>
-                  currentChatDocIds.includes(doc.document_id),
+                scenarioDocuments.filter((doc) =>
+                  currentChatDocIds.includes(doc.document_id)
                 ) || [];
 
               return (
@@ -921,7 +1874,7 @@ export default function AttemptChat({
                                 const document =
                                   filteredDocs.find(
                                     (doc) =>
-                                      doc.document_id === selectedDocumentId,
+                                      doc.document_id === selectedDocumentId
                                   ) || filteredDocs[0];
                                 return document ? (
                                   <DocumentViewer
@@ -951,12 +1904,12 @@ export default function AttemptChat({
                 {(() => {
                   const currentChatDocIds = displayChat?.documentIds || [];
                   const filteredDocs =
-                    simulationContext?.scenarioDocuments.filter((doc) =>
-                      currentChatDocIds.includes(doc.document_id),
+                    scenarioDocuments.filter((doc) =>
+                      currentChatDocIds.includes(doc.document_id)
                     ) || [];
                   return (
                     filteredDocs.find(
-                      (doc) => doc.document_id === selectedDocumentId,
+                      (doc) => doc.document_id === selectedDocumentId
                     )?.name ||
                     filteredDocs[0]?.name ||
                     "Document"
@@ -970,8 +1923,8 @@ export default function AttemptChat({
             {(() => {
               const currentChatDocIds = displayChat?.documentIds || [];
               const filteredDocs =
-                simulationContext?.scenarioDocuments.filter((doc) =>
-                  currentChatDocIds.includes(doc.document_id),
+                scenarioDocuments.filter((doc) =>
+                  currentChatDocIds.includes(doc.document_id)
                 ) || [];
               return filteredDocs.length > 1 ? (
                 <div className="pb-3">
@@ -990,12 +1943,12 @@ export default function AttemptChat({
                 {(() => {
                   const currentChatDocIds = displayChat?.documentIds || [];
                   const filteredDocs =
-                    simulationContext?.scenarioDocuments.filter((doc) =>
-                      currentChatDocIds.includes(doc.document_id),
+                    scenarioDocuments.filter((doc) =>
+                      currentChatDocIds.includes(doc.document_id)
                     ) || [];
                   const document =
                     filteredDocs.find(
-                      (doc) => doc.document_id === selectedDocumentId,
+                      (doc) => doc.document_id === selectedDocumentId
                     ) || filteredDocs[0];
                   return document ? (
                     <DocumentViewer document={document} bare={true} />
@@ -1034,7 +1987,7 @@ export default function AttemptChat({
             <div className="flex-1 overflow-auto py-4">
               {(() => {
                 const currentScenario = displayChat?.id
-                  ? simulationContext?.scenariosByChatId[displayChat.id]
+                  ? scenariosByChatId[displayChat.id]
                   : null;
                 const objectives = currentScenario?.objectives || [];
 
@@ -1077,19 +2030,15 @@ export default function AttemptChat({
   }
 
   return (
-    <div 
+    <div
       className="h-[calc(100vh-4rem)]"
       data-testid="attempt-chat-container"
-      data-attempt-id={simulationContext?.attemptId || ""}
+      data-attempt-id={attemptId || ""}
     >
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel
-          defaultSize={
-            showDocuments && simulationContext?.scenarioDocuments.length > 0
-              ? 70
-              : 100
-          }
+          defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
           className="md:flex-none"
         >
           <Card className="h-full flex flex-col py-4">
@@ -1112,22 +2061,20 @@ export default function AttemptChat({
                           <div className="flex items-center gap-4">
                             <div className="flex items-start gap-2">
                               <span className="font-medium">
-                                {simulationContext?.scenario
-                                  ?.problemStatement ||
-                                  simulationContext?.scenario?.name ||
-                                  simulationContext?.currentChat?.title}
+                                {scenario?.problemStatement ||
+                                  scenario?.name ||
+                                  currentChat?.title}
                               </span>
                             </div>
                           </div>
                           <div className="flex items-start justify-end gap-2">
                             <div className="flex items-center gap-4">
                               {/* Hide completed badge logic in infinite mode */}
-                              {!simulationContext?.attempt?.infiniteMode &&
-                                simulationContext?.currentChat?.completed &&
-                                simulationContext?.expectedChatCount ===
-                                  simulationContext?.chats.filter(
-                                    (chat: Chat) => chat.completed,
-                                  ).length && (
+                              {!attempt?.infiniteMode &&
+                                currentChat?.completed &&
+                                expectedChatCount ===
+                                  chats.filter((chat: Chat) => chat.completed)
+                                    .length && (
                                   <Badge variant="default">Completed</Badge>
                                 )}
                             </div>
@@ -1137,11 +2084,8 @@ export default function AttemptChat({
                                 const currentChatDocIds =
                                   displayChat?.documentIds || [];
                                 const hasDocumentsForCurrentChat =
-                                  simulationContext?.scenarioDocuments?.some(
-                                    (doc) =>
-                                      currentChatDocIds.includes(
-                                        doc.document_id,
-                                      ),
+                                  scenarioDocuments?.some((doc) =>
+                                    currentChatDocIds.includes(doc.document_id)
                                   );
                                 return hasDocumentsForCurrentChat;
                               })() && (
@@ -1157,9 +2101,7 @@ export default function AttemptChat({
                                         if (window.innerWidth < 768) {
                                           setShowDocumentModal(true);
                                         } else {
-                                          simulationContext?.setShowDocuments(
-                                            !showDocuments,
-                                          );
+                                          setShowDocuments(!showDocuments);
                                         }
                                       }}
                                       className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
@@ -1178,13 +2120,10 @@ export default function AttemptChat({
                               )}
 
                               {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives */}
-                              {simulationContext?.simulation
-                                ?.objectivesEnabled &&
+                              {simulation?.objectivesEnabled &&
                                 (() => {
                                   const currentScenario = displayChat?.id
-                                    ? simulationContext?.scenariosByChatId[
-                                        displayChat.id
-                                      ]
+                                    ? scenariosByChatId[displayChat.id]
                                     : null;
                                   const hasObjectives =
                                     currentScenario?.objectives &&
@@ -1228,94 +2167,64 @@ export default function AttemptChat({
                                 <TooltipTrigger asChild>
                                   <div
                                     className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                      !simulationContext?.attempt
-                                        ?.infiniteMode &&
-                                      simulationContext?.currentChat
-                                        ?.completed &&
-                                      simulationContext?.currentDynamicRubric &&
-                                      simulationContext?.expectedChatCount ===
-                                        simulationContext?.chats.filter(
-                                          (chat: Chat) => chat.completed,
+                                      !attempt?.infiniteMode &&
+                                      currentChat?.completed &&
+                                      currentDynamicRubric &&
+                                      expectedChatCount ===
+                                        chats.filter(
+                                          (chat: Chat) => chat.completed
                                         ).length
-                                        ? simulationContext
-                                            ?.currentDynamicRubric.passed
+                                        ? currentDynamicRubric?.passed
                                           ? "bg-green-100 dark:bg-green-900/30"
                                           : "bg-red-100 dark:bg-red-900/30"
                                         : "bg-muted"
                                     }`}
                                   >
-                                    {simulationContext?.attempt
-                                      ?.infiniteMode ? (
+                                    {attempt?.infiniteMode ? (
                                       <InfinityIcon className="h-4 w-4" />
                                     ) : (
                                       <Clock className="h-4 w-4" />
                                     )}
                                     <span
                                       className={`text-sm font-medium ${
-                                        simulationContext?.attempt?.infiniteMode
+                                        attempt?.infiniteMode
                                           ? ""
-                                          : simulationContext?.simulation
-                                                ?.timeLimit &&
-                                              simulationContext?.timer
-                                                .remaining !== null &&
-                                              simulationContext?.timer
-                                                .remaining < 0
+                                          : simulation?.timeLimit &&
+                                              timer.remaining !== null &&
+                                              timer.remaining < 0
                                             ? "text-red-500"
                                             : ""
                                       }`}
                                       data-testid="timer"
                                     >
-                                      {simulationContext?.attempt?.infiniteMode
-                                        ? simulationContext?.simulation
-                                            ?.timeLimit
+                                      {attempt?.infiniteMode
+                                        ? simulation?.timeLimit
                                           ? formatTime(
-                                              Math.max(
-                                                simulationContext?.timer
-                                                  .remaining || 0,
-                                                0,
-                                              ),
+                                              Math.max(timer.remaining || 0, 0)
                                             )
-                                          : formatTime(
-                                              simulationContext?.timer.elapsed,
-                                            )
-                                        : simulationContext?.simulation
-                                              ?.timeLimit &&
-                                            simulationContext?.timer
-                                              .remaining !== null
-                                          ? formatTime(
-                                              simulationContext?.timer
-                                                .remaining,
-                                            )
-                                          : formatTime(
-                                              simulationContext?.timer.elapsed,
-                                            )}
+                                          : formatTime(timer.elapsed)
+                                        : simulation?.timeLimit &&
+                                            timer.remaining !== null
+                                          ? formatTime(timer.remaining)
+                                          : formatTime(timer.elapsed)}
                                     </span>
                                     {/* In infinite mode, we don't show negative state; we auto-finish on expiry */}
                                   </div>
                                 </TooltipTrigger>
-                                {!simulationContext?.attempt?.infiniteMode &&
-                                  simulationContext?.currentChat?.completed &&
-                                  simulationContext?.currentDynamicRubric &&
-                                  simulationContext?.expectedChatCount ===
-                                    simulationContext?.chats.filter(
-                                      (chat: Chat) => chat.completed,
-                                    ).length && (
+                                {!attempt?.infiniteMode &&
+                                  currentChat?.completed &&
+                                  currentDynamicRubric &&
+                                  expectedChatCount ===
+                                    chats.filter((chat: Chat) => chat.completed)
+                                      .length && (
                                     <TooltipContent>
                                       <p>
-                                        {simulationContext?.currentDynamicRubric
-                                          .passed
+                                        {currentDynamicRubric.passed
                                           ? "Passed"
                                           : "Failed"}
-                                        (
+                                        ({currentDynamicRubric?.score}/
                                         {
-                                          simulationContext
-                                            ?.currentDynamicRubric.score
-                                        }
-                                        /
-                                        {
-                                          simulationContext
-                                            ?.currentDynamicRubric
-                                            .totalPossiblePoints
+                                          currentDynamicRubric?.totalPossiblePoints
                                         }
                                         )
                                       </p>
@@ -1328,12 +2237,10 @@ export default function AttemptChat({
                       </div>
 
                       {/* Objectives Collapsible Content - hide in grading mode */}
-                      {simulationContext?.simulation?.objectivesEnabled &&
+                      {simulation?.objectivesEnabled &&
                         (() => {
                           const currentScenario = displayChat?.id
-                            ? simulationContext?.scenariosByChatId[
-                                displayChat.id
-                              ]
+                            ? scenariosByChatId[displayChat.id]
                             : null;
                           const objectives = currentScenario?.objectives || [];
                           return objectives.length > 0;
@@ -1344,9 +2251,7 @@ export default function AttemptChat({
                               <ul className="space-y-2 list-none">
                                 {(() => {
                                   const currentScenario = displayChat?.id
-                                    ? simulationContext?.scenariosByChatId[
-                                        displayChat.id
-                                      ]
+                                    ? scenariosByChatId[displayChat.id]
                                     : null;
                                   const objectives =
                                     currentScenario?.objectives || [];
@@ -1371,37 +2276,39 @@ export default function AttemptChat({
                     {/* Messages Area */}
                     {/* Progress Bar at the very top */}
                     {/* Hide progress bar in infinite mode */}
-                    {!simulationContext?.attempt?.infiniteMode &&
-                      simulationContext?.expectedChatCount > 1 && (
-                        <div className="p-0">
-                          <Progress
-                            value={(() => {
-                              // Count unique scenarios with at least one graded chat
-                              // A scenario is considered complete only if it has at least one chat with a grade
-                              const scenariosWithGrades = new Set<string>();
-                              simulationContext?.attemptData?.chats?.forEach(
-                                (chatData) => {
-                                  if (
-                                    chatData.chat.completed &&
-                                    chatData.scenario?.id
-                                  ) {
-                                    scenariosWithGrades.add(
-                                      chatData.scenario.id,
-                                    );
-                                  }
-                                },
-                              );
-                              return (
-                                (scenariosWithGrades.size /
-                                  simulationContext?.expectedChatCount) *
-                                100
-                              );
-                            })()}
-                            className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
-                          />
-                        </div>
-                      )}
-                    <AttemptMessages isAttemptOwner={isAttemptOwner} />
+                    {!attempt?.infiniteMode && expectedChatCount > 1 && (
+                      <div className="p-0">
+                        <Progress
+                          value={(() => {
+                            // Count unique scenarios with at least one graded chat
+                            // A scenario is considered complete only if it has at least one chat with a grade
+                            const scenariosWithGrades = new Set<string>();
+                            attemptData?.chats?.forEach((chatData) => {
+                              if (
+                                chatData.chat.completed &&
+                                chatData.scenario?.id
+                              ) {
+                                scenariosWithGrades.add(chatData.scenario.id);
+                              }
+                            });
+                            return (
+                              (scenariosWithGrades.size / expectedChatCount) *
+                              100
+                            );
+                          })()}
+                          className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+                        />
+                      </div>
+                    )}
+                    <AttemptMessages
+                      isAttemptOwner={isAttemptOwner}
+                      messages={currentMessages}
+                      currentChat={currentChat}
+                      sendMessage={sendMessage}
+                      isSendingMessage={isSendingMessage}
+                      isActive={!timer.expired && !showResults}
+                      simulation={simulation}
+                    />
                   </div>
                 </ResizablePanel>
 
@@ -1417,6 +2324,17 @@ export default function AttemptChat({
                   <AttemptInput
                     isAttemptOwner={isAttemptOwner}
                     onHeightChange={setInputPanelHeight}
+                    currentMessages={currentMessages}
+                    currentChatHints={currentChatHints}
+                    currentChat={currentChat}
+                    sendMessage={sendMessage}
+                    stopMessage={stopMessage}
+                    isSendingMessage={isSendingMessage}
+                    isStoppingMessage={isStoppingMessage}
+                    isConnected={isConnected}
+                    simulation={simulation}
+                    scenario={scenario}
+                    readOnly={false}
                   />
                 </div>
               </ResizablePanelGroup>
@@ -1430,8 +2348,8 @@ export default function AttemptChat({
             // Filter documents for current chat's scenario
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
-              simulationContext?.scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id),
+              scenarioDocuments.filter((doc) =>
+                currentChatDocIds.includes(doc.document_id)
               ) || [];
 
             return (
@@ -1463,7 +2381,7 @@ export default function AttemptChat({
                               const document =
                                 filteredDocs.find(
                                   (doc) =>
-                                    doc.document_id === selectedDocumentId,
+                                    doc.document_id === selectedDocumentId
                                 ) || filteredDocs[0];
                               return document ? (
                                 <DocumentViewer
@@ -1493,12 +2411,12 @@ export default function AttemptChat({
               {(() => {
                 const currentChatDocIds = displayChat?.documentIds || [];
                 const filteredDocs =
-                  simulationContext?.scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id),
+                  scenarioDocuments.filter((doc) =>
+                    currentChatDocIds.includes(doc.document_id)
                   ) || [];
                 return (
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId,
+                    (doc) => doc.document_id === selectedDocumentId
                   )?.name ||
                   filteredDocs[0]?.name ||
                   "Document"
@@ -1512,8 +2430,8 @@ export default function AttemptChat({
           {(() => {
             const currentChatDocIds = displayChat?.documentIds || [];
             const filteredDocs =
-              simulationContext?.scenarioDocuments.filter((doc) =>
-                currentChatDocIds.includes(doc.document_id),
+              scenarioDocuments.filter((doc) =>
+                currentChatDocIds.includes(doc.document_id)
               ) || [];
             return filteredDocs.length > 1 ? (
               <div className="pb-3">
@@ -1532,12 +2450,12 @@ export default function AttemptChat({
               {(() => {
                 const currentChatDocIds = displayChat?.documentIds || [];
                 const filteredDocs =
-                  simulationContext?.scenarioDocuments.filter((doc) =>
-                    currentChatDocIds.includes(doc.document_id),
+                  scenarioDocuments.filter((doc) =>
+                    currentChatDocIds.includes(doc.document_id)
                   ) || [];
                 const document =
                   filteredDocs.find(
-                    (doc) => doc.document_id === selectedDocumentId,
+                    (doc) => doc.document_id === selectedDocumentId
                   ) || filteredDocs[0];
                 return document ? (
                   <DocumentViewer document={document} bare={true} />
@@ -1573,7 +2491,7 @@ export default function AttemptChat({
           <div className="flex-1 overflow-auto py-4">
             {(() => {
               const currentScenario = displayChat?.id
-                ? simulationContext?.scenariosByChatId[displayChat.id]
+                ? scenariosByChatId[displayChat.id]
                 : null;
               const objectives = currentScenario?.objectives || [];
 
