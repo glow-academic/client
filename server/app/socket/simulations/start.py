@@ -17,13 +17,13 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
 # Pydantic models for server-to-client events
-class SimulationErrorPayload(BaseModel):
+class StartSimulationErrorPayload(BaseModel):
     success: bool
     message: str
 
@@ -45,16 +45,15 @@ class StartSimulationPayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
-    await sio.emit("simulation_error", payload.model_dump(), room=room)
+async def start_simulation_error(payload: StartSimulationErrorPayload, room: str) -> None:
+    await sio.emit("start_simulation_error", payload.model_dump(), room=room)
 
 
 async def simulation_started(payload: SimulationStartedPayload, room: str) -> None:
     await sio.emit("simulation_started", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def start_simulation(sid: str, data: StartSimulationPayload) -> None:
+async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None:
     """
     Handle simulation start requests via WebSocket
     Replaces /simulations/start endpoint
@@ -70,8 +69,8 @@ async def start_simulation(sid: str, data: StartSimulationPayload) -> None:
 
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
-            await simulation_error(
-                SimulationErrorPayload(success=False, message="Missing simulation_id"),
+            await start_simulation_error(
+                StartSimulationErrorPayload(success=False, message="Missing simulation_id"),
                 room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing simulation_id")
@@ -88,8 +87,8 @@ async def start_simulation(sid: str, data: StartSimulationPayload) -> None:
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await simulation_error(
-                SimulationErrorPayload(
+            await start_simulation_error(
+                StartSimulationErrorPayload(
                     success=False, message="Database connection pool not available"
                 ),
                 room=sid,
@@ -133,8 +132,8 @@ async def start_simulation(sid: str, data: StartSimulationPayload) -> None:
             )
 
             if not row:
-                await simulation_error(
-                    SimulationErrorPayload(
+                await start_simulation_error(
+                    StartSimulationErrorPayload(
                         success=False, message="Failed to start simulation attempt"
                     ),
                     room=sid,
@@ -682,10 +681,26 @@ async def start_simulation(sid: str, data: StartSimulationPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error starting simulation for {sid}: {str(e)}")
-        await simulation_error(
-            SimulationErrorPayload(
+        await start_simulation_error(
+            StartSimulationErrorPayload(
                 success=False, message=f"Failed to start simulation: {str(e)}"
             ),
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to start simulation: {str(e)}")
+
+
+@sio.event  # type: ignore
+async def start_simulation(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = StartSimulationPayload(**data)
+        await _start_simulation_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in start_simulation for {sid}: {e}")
+        await start_simulation_error(
+            StartSimulationErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
+        )

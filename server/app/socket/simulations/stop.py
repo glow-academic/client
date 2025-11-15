@@ -1,18 +1,19 @@
 """Handler for stop_simulation WebSocket event."""
 
 import logging
+from typing import Any
 
 import socketio  # type: ignore
 from app.main import get_pool, sio
 from app.utils.sql_helper import load_sql
 from app.utils.websocket.cancel_active_run import cancel_active_run
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
 # Pydantic models for server-to-client events
-class SimulationErrorPayload(BaseModel):
+class StopSimulationErrorPayload(BaseModel):
     success: bool
     message: str
 
@@ -35,8 +36,8 @@ class StopSimulationPayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
-    await sio.emit("simulation_error", payload.model_dump(), room=room)
+async def stop_simulation_error(payload: StopSimulationErrorPayload, room: str) -> None:
+    await sio.emit("stop_simulation_error", payload.model_dump(), room=room)
 
 
 async def simulation_message_cancelled(
@@ -49,8 +50,7 @@ async def simulation_stopped(payload: SimulationStoppedPayload, room: str) -> No
     await sio.emit("simulation_stopped", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def stop_simulation(sid: str, data: StopSimulationPayload) -> None:
+async def _stop_simulation_impl(sid: str, data: StopSimulationPayload) -> None:
     """
     Handle simulation stop requests via WebSocket
     Replaces /simulations/stop endpoint
@@ -59,8 +59,8 @@ async def stop_simulation(sid: str, data: StopSimulationPayload) -> None:
         chat_id = data.chat_id
 
         if not chat_id:
-            await simulation_error(
-                SimulationErrorPayload(success=False, message="Missing chat_id"),
+            await stop_simulation_error(
+                StopSimulationErrorPayload(success=False, message="Missing chat_id"),
                 room=sid,
             )
             logger.error(f"Emitted error to {sid}: Missing chat_id")
@@ -69,8 +69,8 @@ async def stop_simulation(sid: str, data: StopSimulationPayload) -> None:
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await simulation_error(
-                SimulationErrorPayload(
+            await stop_simulation_error(
+                StopSimulationErrorPayload(
                     success=False, message="Database connection pool not available"
                 ),
                 room=sid,
@@ -141,10 +141,26 @@ async def stop_simulation(sid: str, data: StopSimulationPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error stopping simulation for {sid}: {str(e)}")
-        await simulation_error(
-            SimulationErrorPayload(
+        await stop_simulation_error(
+            StopSimulationErrorPayload(
                 success=False, message=f"Failed to stop simulation: {str(e)}"
             ),
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to stop simulation: {str(e)}")
+
+
+@sio.event  # type: ignore
+async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = StopSimulationPayload(**data)
+        await _stop_simulation_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in stop_simulation for {sid}: {e}")
+        await stop_simulation_error(
+            StopSimulationErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
+        )

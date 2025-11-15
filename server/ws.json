@@ -1,76 +1,7 @@
 {
-  "clientToServer": {
-    "send_assistant_message": {
-      "payload": {
-        "chat_id": "string",
-        "message": "string",
-        "department_id": "string"
-      }
-    },
-    "start_assistant": {
-      "payload": {
-        "profile_id": "string",
-        "initial_message": "string",
-        "department_id": "string"
-      }
-    },
-    "stop_assistant": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
-    "send_simulation_message": {
-      "payload": {
-        "chat_id": "string",
-        "message": "string",
-        "is_retry": "boolean"
-      }
-    },
-    "start_simulation": {
-      "payload": {
-        "simulation_id": "string",
-        "profile_id": "string",
-        "scenario_id": "string",
-        "infinite": "boolean",
-        "infinite_time_limit": "number"
-      }
-    },
-    "stop_simulation": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
-    "continue_simulation": {
-      "payload": {
-        "chat_id": "string",
-        "attempt_id": "string",
-        "end_all": "boolean",
-        "previous_chat_id": "string",
-        "previous_chat_map": "string",
-        "department_id": "string"
-      }
-    },
-    "join_chat": {
-      "payload": {
-        "chat_id": "string",
-        "chat_type": "string"
-      }
-    },
-    "leave_chat": {
-      "payload": {
-        "chat_id": "string",
-        "chat_type": "string"
-      }
-    },
-    "stop_chat": {
-      "payload": {
-        "chat_id": "string",
-        "chat_type": "string"
-      }
-    }
-  },
+  "clientToServer": {},
   "serverToClient": {
-    "assistant_error": {
+    "start_assistant_error": {
       "payload": {
         "success": "boolean",
         "message": "string",
@@ -152,7 +83,7 @@
         "message": "string"
       }
     },
-    "simulation_error": {
+    "start_simulation_error": {
       "payload": {
         "success": "boolean",
         "message": "string"

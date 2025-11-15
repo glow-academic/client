@@ -2,6 +2,7 @@
 
 import logging
 import uuid
+from typing import Any
 
 import socketio  # type: ignore
 from agents import Runner, gen_trace_id, trace
@@ -9,13 +10,13 @@ from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
 # Pydantic models for server-to-client events
-class AssistantErrorPayload(BaseModel):
+class StartAssistantErrorPayload(BaseModel):
     success: bool
     message: str
     chat_id: str | None = None
@@ -41,8 +42,8 @@ class StartAssistantPayload(BaseModel):
 
 
 # Emit helper functions
-async def assistant_error(payload: AssistantErrorPayload, room: str) -> None:
-    await sio.emit("assistant_error", payload.model_dump(exclude_none=True), room=room)
+async def start_assistant_error(payload: StartAssistantErrorPayload, room: str) -> None:
+    await sio.emit("start_assistant_error", payload.model_dump(exclude_none=True), room=room)
 
 
 async def title_updated(payload: TitleUpdatedPayload, room: str) -> None:
@@ -53,8 +54,7 @@ async def assistant_started(payload: AssistantStartedPayload, room: str) -> None
     await sio.emit("assistant_started", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def start_assistant(sid: str, data: StartAssistantPayload) -> None:
+async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
     """
     Handle assistant start requests via WebSocket
     Creates a new assistant chat and processes the initial message
@@ -68,8 +68,8 @@ async def start_assistant(sid: str, data: StartAssistantPayload) -> None:
 
         if not profile_id or not initial_message:
             logger.error(f"Missing profile_id or initial_message in request from {sid}")
-            await assistant_error(
-                AssistantErrorPayload(
+            await start_assistant_error(
+                StartAssistantErrorPayload(
                     success=False, message="Missing profile_id or initial_message"
                 ),
                 room=sid,
@@ -81,8 +81,8 @@ async def start_assistant(sid: str, data: StartAssistantPayload) -> None:
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
-            await assistant_error(
-                AssistantErrorPayload(
+            await start_assistant_error(
+                StartAssistantErrorPayload(
                     success=False,
                     message="Missing department_id - please refresh the page",
                 ),
@@ -98,8 +98,8 @@ async def start_assistant(sid: str, data: StartAssistantPayload) -> None:
         # Get connection from pool
         pool = get_pool()
         if not pool:
-            await assistant_error(
-                AssistantErrorPayload(success=False, message="Database not available"),
+            await start_assistant_error(
+                StartAssistantErrorPayload(success=False, message="Database not available"),
                 room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Database not available")
@@ -110,8 +110,8 @@ async def start_assistant(sid: str, data: StartAssistantPayload) -> None:
             sql = load_sql("sql/v3/profile/verify_profile_exists.sql")
             profile_row = await conn.fetchrow(sql, uuid.UUID(profile_id))
             if not profile_row:
-                await assistant_error(
-                    AssistantErrorPayload(success=False, message="Profile not found"),
+                await start_assistant_error(
+                    StartAssistantErrorPayload(success=False, message="Profile not found"),
                     room=sid,
                 )
                 logger.error(f"Emitted assistant error to {sid}: Profile not found")
@@ -281,12 +281,28 @@ async def start_assistant(sid: str, data: StartAssistantPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error starting assistant for {sid}: {str(e)}")
-        await assistant_error(
-            AssistantErrorPayload(
+        await start_assistant_error(
+            StartAssistantErrorPayload(
                 success=False, message=f"Failed to start assistant: {str(e)}"
             ),
             room=sid,
         )
         logger.error(
             f"Emitted assistant error to {sid}: Failed to start assistant: {str(e)}"
+        )
+
+
+@sio.event  # type: ignore
+async def start_assistant(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = StartAssistantPayload(**data)
+        await _start_assistant_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in start_assistant for {sid}: {e}")
+        await start_assistant_error(
+            StartAssistantErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
         )

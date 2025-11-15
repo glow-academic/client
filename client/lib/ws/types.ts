@@ -4,7 +4,7 @@
  */
 
 export type ServerToClientEvents = {
-  assistant_error: (payload: {
+  start_assistant_error: (payload: {
     success: boolean;
     message: string;
     chat_id: string;
@@ -64,7 +64,7 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
-  simulation_error: (payload: {
+  start_simulation_error: (payload: {
     success: boolean;
     message: string;
   }) => void;
@@ -170,52 +170,5 @@ export type ServerToClientEvents = {
 };
 
 export type ClientToServerEvents = {
-  send_assistant_message: (payload: {
-    chat_id: string;
-    message: string;
-    department_id: string;
-  }) => void;
-  start_assistant: (payload: {
-    profile_id: string;
-    initial_message: string;
-    department_id: string;
-  }) => void;
-  stop_assistant: (payload: {
-    chat_id: string;
-  }) => void;
-  send_simulation_message: (payload: {
-    chat_id: string;
-    message: string;
-    is_retry: boolean;
-  }) => void;
-  start_simulation: (payload: {
-    simulation_id: string;
-    profile_id: string;
-    scenario_id: string;
-    infinite: boolean;
-    infinite_time_limit: number;
-  }) => void;
-  stop_simulation: (payload: {
-    chat_id: string;
-  }) => void;
-  continue_simulation: (payload: {
-    chat_id: string;
-    attempt_id: string;
-    end_all: boolean;
-    previous_chat_id: string;
-    previous_chat_map: string;
-    department_id: string;
-  }) => void;
-  join_chat: (payload: {
-    chat_id: string;
-    chat_type: string;
-  }) => void;
-  leave_chat: (payload: {
-    chat_id: string;
-    chat_type: string;
-  }) => void;
-  stop_chat: (payload: {
-    chat_id: string;
-    chat_type: string;
-  }) => void;
+
 };

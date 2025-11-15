@@ -1,10 +1,11 @@
 """Handler for join_chat WebSocket event."""
 
 import logging
+from typing import Any
 
 from app.main import sio
 from app.utils.websocket.set_active_connection import set_active_connection
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,11 @@ logger = logging.getLogger(__name__)
 class JoinedChatPayload(BaseModel):
     chat_id: str
     chat_type: str
+
+
+class JoinChatErrorPayload(BaseModel):
+    success: bool
+    message: str
 
 
 # Pydantic model for client-to-server event
@@ -26,8 +32,11 @@ async def joined_chat(payload: JoinedChatPayload, room: str) -> None:
     await sio.emit("joined_chat", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def join_chat(sid: str, data: JoinChatPayload) -> None:
+async def join_chat_error(payload: JoinChatErrorPayload, room: str) -> None:
+    await sio.emit("join_chat_error", payload.model_dump(), room=room)
+
+
+async def _join_chat_impl(sid: str, data: JoinChatPayload) -> None:
     """Join a specific chat room for real-time updates"""
     chat_id = data.chat_id
     chat_type = data.chat_type
@@ -41,4 +50,20 @@ async def join_chat(sid: str, data: JoinChatPayload) -> None:
         )
         await joined_chat(
             JoinedChatPayload(chat_id=chat_id, chat_type=chat_type), room=sid
+        )
+
+
+@sio.event  # type: ignore
+async def join_chat(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = JoinChatPayload(**data)
+        await _join_chat_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in join_chat for {sid}: {e}")
+        await join_chat_error(
+            JoinChatErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
         )

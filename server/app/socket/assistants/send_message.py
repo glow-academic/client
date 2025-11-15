@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from openai.types.responses import (ResponseFunctionToolCall,
                                     ResponseFunctionToolCallParam,
                                     ResponseTextDeltaEvent)
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 # Pydantic models for server-to-client events
-class AssistantErrorPayload(BaseModel):
+class SendAssistantMessageErrorPayload(BaseModel):
     success: bool | None = None
     message: str | None = None
     chat_id: str | None = None
@@ -97,8 +97,8 @@ class SendAssistantMessagePayload(BaseModel):
 
 
 # Emit helper functions
-async def assistant_error(payload: AssistantErrorPayload, room: str) -> None:
-    await sio.emit("assistant_error", payload.model_dump(exclude_none=True), room=room)
+async def send_assistant_message_error(payload: SendAssistantMessageErrorPayload, room: str) -> None:
+    await sio.emit("send_assistant_message_error", payload.model_dump(exclude_none=True), room=room)
 
 
 async def assistant_new_message(payload: AssistantNewMessagePayload, room: str) -> None:
@@ -129,8 +129,7 @@ async def assistant_message_cancelled(payload: AssistantMessageCancelledPayload,
     await sio.emit("assistant_message_cancelled", payload.model_dump(), room=room)
 
 
-@sio.event  # type: ignore
-async def send_assistant_message(sid: str, data: SendAssistantMessagePayload) -> None:
+async def _send_assistant_message_impl(sid: str, data: SendAssistantMessagePayload) -> None:
     """Handle assistant message sending requests"""
     try:
         chat_id = data.chat_id
@@ -139,8 +138,8 @@ async def send_assistant_message(sid: str, data: SendAssistantMessagePayload) ->
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
-            await assistant_error(
-                AssistantErrorPayload(success=False, message="Missing department_id"),
+            await send_assistant_message_error(
+                SendAssistantMessageErrorPayload(success=False, message="Missing department_id"),
                 room=sid,
             )
             logger.error(f"Emitted assistant error to {sid}: Missing department_id")
@@ -148,8 +147,8 @@ async def send_assistant_message(sid: str, data: SendAssistantMessagePayload) ->
 
         if not chat_id or not message:
             logger.error(f"Missing chat_id or message in request from {sid}")
-            await assistant_error(
-                AssistantErrorPayload(
+            await send_assistant_message_error(
+                SendAssistantMessageErrorPayload(
                     success=False, message="Missing chat_id or message"
                 ),
                 room=sid,
@@ -815,8 +814,8 @@ async def send_assistant_message(sid: str, data: SendAssistantMessagePayload) ->
                         f"Error processing assistant message for chat {chat_id_uuid}: {e}",
                         exc_info=True,
                     )
-                    await assistant_error(
-                        AssistantErrorPayload(chat_id=str(chat_id_uuid), error=str(e)),
+                    await send_assistant_message_error(
+                        SendAssistantMessageErrorPayload(chat_id=str(chat_id_uuid), error=str(e)),
                         room=f"assistant_{chat_id_uuid}",
                     )
 
@@ -824,12 +823,28 @@ async def send_assistant_message(sid: str, data: SendAssistantMessagePayload) ->
 
     except Exception as e:
         logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")
-        await assistant_error(
-            AssistantErrorPayload(
+        await send_assistant_message_error(
+            SendAssistantMessageErrorPayload(
                 success=False, message=f"Failed to send message: {str(e)}"
             ),
             room=sid,
         )
         logger.error(
             f"Emitted assistant error to {sid}: Failed to send message: {str(e)}"
+        )
+
+
+@sio.event  # type: ignore
+async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = SendAssistantMessagePayload(**data)
+        await _send_assistant_message_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in send_assistant_message for {sid}: {e}")
+        await send_assistant_message_error(
+            SendAssistantMessageErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
         )

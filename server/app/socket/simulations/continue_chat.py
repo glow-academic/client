@@ -22,13 +22,13 @@ from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
 # Pydantic models for server-to-client events
-class SimulationErrorPayload(BaseModel):
+class ContinueSimulationErrorPayload(BaseModel):
     success: bool
     message: str
 
@@ -84,8 +84,8 @@ class ContinueSimulationPayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
-    await sio.emit("simulation_error", payload.model_dump(), room=room)
+async def continue_simulation_error(payload: ContinueSimulationErrorPayload, room: str) -> None:
+    await sio.emit("continue_simulation_error", payload.model_dump(), room=room)
 
 
 async def simulation_grading_progress(
@@ -917,8 +917,7 @@ async def _run_grade_agent_inline(
         raise
 
 
-@sio.event  # type: ignore
-async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None:
+async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -> None:
     """
     Handle simulation continue requests via WebSocket
     Replaces /simulations/continue endpoint
@@ -933,8 +932,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
         department_id = data.department_id
 
         if not chat_id or not attempt_id:
-            await simulation_error(
-                SimulationErrorPayload(
+            await continue_simulation_error(
+                ContinueSimulationErrorPayload(
                     success=False, message="Missing chat_id or attempt_id"
                 ),
                 room=sid,
@@ -945,8 +944,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
         # Get connection pool
         pool = get_pool()
         if not pool:
-            await simulation_error(
-                SimulationErrorPayload(
+            await continue_simulation_error(
+                ContinueSimulationErrorPayload(
                     success=False, message="Database connection pool not available"
                 ),
                 room=sid,
@@ -961,8 +960,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
             sql = load_sql("sql/v3/simulations/get_chat_basic.sql")
             chat = await conn.fetchrow(sql, chat_id)
             if not chat:
-                await simulation_error(
-                    SimulationErrorPayload(success=False, message="Chat not found"),
+                await continue_simulation_error(
+                    ContinueSimulationErrorPayload(success=False, message="Chat not found"),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Chat not found")
@@ -972,8 +971,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
             sql = load_sql("sql/v3/attempts/get_attempt_with_profile.sql")
             attempt_with_profile = await conn.fetchrow(sql, attempt_id)
             if not attempt_with_profile:
-                await simulation_error(
-                    SimulationErrorPayload(success=False, message="Attempt not found"),
+                await continue_simulation_error(
+                    ContinueSimulationErrorPayload(success=False, message="Attempt not found"),
                     room=sid,
                 )
                 logger.error(f"Emitted error to {sid}: Attempt not found")
@@ -987,8 +986,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
             run_context = await conn.fetchrow(sql, chat_id)
 
             if not run_context or not run_context.get("department_id"):
-                await simulation_error(
-                    SimulationErrorPayload(
+                await continue_simulation_error(
+                    ContinueSimulationErrorPayload(
                         success=False,
                         message=f"Failed to get department_id from run context for chat {chat_id}",
                     ),
@@ -1007,8 +1006,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
                 sql, str(simulation_attempt["simulation_id"])
             )
             if not simulation:
-                await simulation_error(
-                    SimulationErrorPayload(
+                await continue_simulation_error(
+                    ContinueSimulationErrorPayload(
                         success=False, message="Simulation not found"
                     ),
                     room=sid,
@@ -1027,8 +1026,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
 
             # Debug: Check if existing_chats have 'id' field
             if existing_chats and "id" not in existing_chats[0]:
-                await simulation_error(
-                    SimulationErrorPayload(
+                await continue_simulation_error(
+                    ContinueSimulationErrorPayload(
                         success=False,
                         message=f"Existing chats missing 'id' field: {existing_chats[0]}",
                     ),
@@ -1236,8 +1235,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
                             mark_completed=False,
                         )
                         if created_next_chat is None:
-                            await simulation_error(
-                                SimulationErrorPayload(
+                            await continue_simulation_error(
+                                ContinueSimulationErrorPayload(
                                     success=False, message="Next scenario not found"
                                 ),
                                 room=sid,
@@ -1247,8 +1246,8 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
                             )
                             return
                         if "id" not in created_next_chat:
-                            await simulation_error(
-                                SimulationErrorPayload(
+                            await continue_simulation_error(
+                                ContinueSimulationErrorPayload(
                                     success=False,
                                     message=f"Created chat missing 'id' field: {created_next_chat}",
                                 ),
@@ -1396,10 +1395,26 @@ async def continue_simulation(sid: str, data: ContinueSimulationPayload) -> None
 
     except Exception as e:
         logger.error(f"Error continuing simulation for {sid}: {str(e)}")
-        await simulation_error(
-            SimulationErrorPayload(
+        await continue_simulation_error(
+            ContinueSimulationErrorPayload(
                 success=False, message=f"Failed to continue simulation: {str(e)}"
             ),
             room=sid,
         )
         logger.error(f"Emitted error to {sid}: Failed to continue simulation: {str(e)}")
+
+
+@sio.event  # type: ignore
+async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = ContinueSimulationPayload(**data)
+        await _continue_simulation_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in continue_simulation for {sid}: {e}")
+        await continue_simulation_error(
+            ContinueSimulationErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
+        )

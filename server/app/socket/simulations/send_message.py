@@ -22,13 +22,13 @@ from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.sql_helper import load_sql
 from openai.types.responses import ResponseTextDeltaEvent
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
 # Pydantic models for server-to-client events
-class SimulationErrorPayload(BaseModel):
+class SendSimulationMessageErrorPayload(BaseModel):
     success: bool
     message: str
 
@@ -84,8 +84,8 @@ class SendSimulationMessagePayload(BaseModel):
 
 
 # Emit helper functions
-async def simulation_error(payload: SimulationErrorPayload, room: str) -> None:
-    await sio.emit("simulation_error", payload.model_dump(), room=room)
+async def send_simulation_message_error(payload: SendSimulationMessageErrorPayload, room: str) -> None:
+    await sio.emit("send_simulation_message_error", payload.model_dump(), room=room)
 
 
 async def hint_generation_progress(
@@ -434,8 +434,7 @@ async def _generate_hints_background_inline(
                 )
 
 
-@sio.event  # type: ignore
-async def send_simulation_message(sid: str, data: SendSimulationMessagePayload) -> None:
+async def _send_simulation_message_impl(sid: str, data: SendSimulationMessagePayload) -> None:
     """Handle simulation message sending requests"""
     try:
         chat_id = data.chat_id
@@ -1035,6 +1034,22 @@ async def send_simulation_message(sid: str, data: SendSimulationMessagePayload) 
             logger.error(f"Failed to create error message in database: {db_error}")
 
         # Also emit the error event for backward compatibility
-        await simulation_error(
-            SimulationErrorPayload(success=False, message=str(e)), room=sid
+        await send_simulation_message_error(
+            SendSimulationMessageErrorPayload(success=False, message=str(e)), room=sid
+        )
+
+
+@sio.event  # type: ignore
+async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper that validates payload before calling actual handler"""
+    try:
+        validated = SendSimulationMessagePayload(**data)
+        await _send_simulation_message_impl(sid, validated)
+    except ValidationError as e:
+        logger.error(f"Validation error in send_simulation_message for {sid}: {e}")
+        await send_simulation_message_error(
+            SendSimulationMessageErrorPayload(
+                success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
         )

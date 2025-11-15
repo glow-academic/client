@@ -423,10 +423,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             assistant_message_cancelled, assistant_message_complete,
             assistant_message_token, assistant_new_message, message_complete,
             tool_call_completed, tool_call_created)
+        from app.socket.assistants.start import assistant_started
         from app.socket.assistants.start import \
-            assistant_error as assistant_error_start
-        from app.socket.assistants.start import (assistant_started,
-                                                 title_updated)
+            start_assistant_error as assistant_error_start
+        from app.socket.assistants.start import title_updated
         from app.socket.assistants.stop import assistant_stopped
         from app.socket.connections.connect import connection_confirmed
         from app.socket.connections.join_chat import joined_chat
@@ -438,9 +438,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             hint_generation_progress, simulation_message_complete,
             simulation_message_error, simulation_message_token,
             simulation_new_message)
-        from app.socket.simulations.start import \
-            simulation_error as simulation_error_start
         from app.socket.simulations.start import simulation_started
+        from app.socket.simulations.start import \
+            start_simulation_error as simulation_error_start
         from app.socket.simulations.stop import (simulation_message_cancelled,
                                                  simulation_stopped)
 
