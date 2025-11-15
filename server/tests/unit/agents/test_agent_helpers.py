@@ -4,6 +4,7 @@ Tests for app.utils.agent_helpers
 
 import uuid
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from app.utils.agents.build_guardrail_agent import build_guardrail_agent
@@ -11,7 +12,8 @@ from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.get_input_guardrails import get_input_guardrails
 from app.utils.agents.get_output_guardrails import get_output_guardrails
 from app.utils.agents.run_guardrail_evaluation import run_guardrail_evaluation
-from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
+from app.utils.agents.tools.create_guardrail_tools import \
+    create_guardrail_tools
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
 
 
@@ -33,9 +35,11 @@ class TestBuild_Hint_Agent:
         }
 
         hint_tools = create_hint_tools()
-        agent = build_hint_agent(context, hint_tools)
-        assert agent is not None
-        assert agent.agent_name == "Test Agent"
+        # Mock decrypt_api_key to avoid base64 decoding errors
+        with patch("app.utils.agents.generic_agent.decrypt_api_key", return_value="decrypted-key"):
+            agent = build_hint_agent(context, hint_tools)
+            assert agent is not None
+            assert agent.agent_name == "Test Agent"
 
 
 class TestBuild_Guardrail_Agent:
@@ -56,9 +60,11 @@ class TestBuild_Guardrail_Agent:
         }
 
         guardrail_tools = create_guardrail_tools()
-        agent = build_guardrail_agent(context, guardrail_tools)
-        assert agent is not None
-        assert agent.agent_name == "Guardrail Agent"
+        # Mock decrypt_api_key to avoid base64 decoding errors
+        with patch("app.utils.agents.generic_agent.decrypt_api_key", return_value="decrypted-key"):
+            agent = build_guardrail_agent(context, guardrail_tools)
+            assert agent is not None
+            assert agent.agent_name == "Guardrail Agent"
 
 
 class TestGet_Input_Guardrails:

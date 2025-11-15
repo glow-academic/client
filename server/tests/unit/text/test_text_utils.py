@@ -195,8 +195,8 @@ class TestRead_Document_Content_For_Similarity:
         test_file = tmp_path / "test.txt"
         test_file.write_text("Hello World Test Content")
 
-        # Mock UPLOAD_FOLDER to use tmp_path
-        monkeypatch.setattr("app.main.UPLOAD_FOLDER", str(tmp_path))
+        # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
+        monkeypatch.setattr("app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path)
 
         result = read_document_content_for_similarity("test.txt")
         assert result == "Hello World Test Content"
@@ -207,8 +207,8 @@ class TestRead_Document_Content_For_Similarity:
         """Test reading non-existent file."""
         from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
 
-        # Mock UPLOAD_FOLDER to use tmp_path
-        monkeypatch.setattr("app.main.UPLOAD_FOLDER", str(tmp_path))
+        # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
+        monkeypatch.setattr("app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path)
 
         result = read_document_content_for_similarity("nonexistent.txt")
         assert result == ""
@@ -223,8 +223,8 @@ class TestRead_Document_Content_For_Similarity:
         test_file = tmp_path / "latin1.txt"
         test_file.write_bytes(b"Hello \xe9 World")  # latin-1 encoded é
 
-        # Mock UPLOAD_FOLDER to use tmp_path
-        monkeypatch.setattr("app.main.UPLOAD_FOLDER", str(tmp_path))
+        # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
+        monkeypatch.setattr("app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path)
 
         result = read_document_content_for_similarity("latin1.txt")
         # Should successfully read with latin-1 fallback
