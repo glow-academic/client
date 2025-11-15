@@ -106,6 +106,28 @@ sio = socketio.AsyncServer(
     },
 )
 
+# Wrapper functions to access shared state (avoids circular dependencies)
+# These are defined after sio is created so they can reference it
+def get_redis_client() -> Any | None:
+    """Get the Redis client instance."""
+    return redis_client
+
+
+def get_socket_owner_dict() -> dict[str, str]:
+    """Get the socket owner dictionary."""
+    return socket_owner
+
+
+def get_active_results_dict() -> dict[str, dict[str, Any]]:
+    """Get the active results dictionary."""
+    return active_results
+
+
+def get_sio_instance() -> Any:
+    """Get the Socket.IO server instance."""
+    return sio
+
+
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
 from app.socket.assistants import send_assistant_message  # type: ignore
