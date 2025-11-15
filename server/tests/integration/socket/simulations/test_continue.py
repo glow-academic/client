@@ -67,17 +67,25 @@ async def test_continue_simulation_attempt_not_found(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test continue_simulation with non-existent attempt_id."""
-    # Get an existing chat_id
-    chat_row = await db.fetchrow("SELECT id FROM simulation_chats LIMIT 1")
-    if not chat_row:
-        pytest.skip("No simulation chats found in test database")
-    chat_id = str(chat_row["id"])
+    # Create test data: get a scenario_id
+    scenario_row = await db.fetchrow("SELECT id FROM scenarios WHERE active = true LIMIT 1")
+    if not scenario_row:
+        pytest.skip("No active scenarios found in test database")
+    scenario_id = scenario_row["id"]
+    
+    # Create a simulation_chat
+    chat_id = await db.fetchval(
+        "INSERT INTO simulation_chats (title, scenario_id, completed, trace_id) "
+        "VALUES ('Test Chat', $1, false, 'test-trace-id') RETURNING id",
+        scenario_id,
+    )
+    chat_id_str = str(chat_id)
 
     fake_attempt_id = "00000000-0000-0000-0000-000000000000"
 
     sid = "test_sid_123"
     data = {
-        "chat_id": chat_id,
+        "chat_id": chat_id_str,
         "attempt_id": fake_attempt_id,
     }
 

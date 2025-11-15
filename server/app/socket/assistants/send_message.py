@@ -660,6 +660,16 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                                             },
                                             room=f"assistant_{chat_id_uuid}",
                                         )
+                    except BaseException as stream_error:
+                        # Re-raise CancelledError and other BaseExceptions to outer handler
+                        import asyncio
+                        if isinstance(stream_error, (asyncio.CancelledError, KeyboardInterrupt, SystemExit)):
+                            raise
+                        # For other BaseExceptions, log and re-raise
+                        logger.error(
+                            f"Error processing stream: {stream_error}", exc_info=True
+                        )
+                        raise
                     except Exception as stream_error:
                         logger.error(
                             f"Error processing stream: {stream_error}", exc_info=True
@@ -690,8 +700,19 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         room=f"assistant_{chat_id_uuid}",
                     )
 
+            except BaseException as e:
+                # Handle cancellation gracefully - CancelledError is a BaseException
+                import asyncio
+                if isinstance(e, asyncio.CancelledError):
+                    logger.info(f"Assistant run for chat {chat_id_uuid} was cancelled")
+                elif isinstance(e, (KeyboardInterrupt, SystemExit)):
+                    raise  # Don't handle these
+                else:
+                    # Other BaseExceptions - log and re-raise
+                    logger.error(f"Unexpected BaseException: {e}", exc_info=True)
+                    raise
             except Exception as e:
-                # Handle cancellation gracefully
+                # Handle other exceptions
                 if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
                     logger.info(f"Assistant run for chat {chat_id_uuid} was cancelled")
 

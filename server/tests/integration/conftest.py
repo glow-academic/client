@@ -47,6 +47,7 @@ class MockStreamedRunResult:
     async def stream_events(self) -> AsyncGenerator[Any, None]:
         """Mock async generator for stream events."""
         # Return empty generator - tests shouldn't rely on streaming behavior
+        # Empty generator completes immediately, allowing the async for loop to finish
         if False:  # pragma: no cover
             yield
 

@@ -141,10 +141,12 @@ def patch_get_pool(
     # Also patch in modules that import get_pool directly
     import_modules = [
         "app.socket.assistants.start",
+        "app.socket.assistants.send_message",
         "app.socket.assistants.stop",
         "app.socket.connections.connect",
         "app.socket.connections.disconnect",
         "app.socket.simulations.start",
+        "app.socket.simulations.send_message",
         "app.socket.simulations.stop",
         "app.socket.simulations.continue_chat",
         "app.utils.websocket.cleanup_profile_connection",
