@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from app.db import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
-from app.utils.schema import DepartmentMappingItem
+from app.utils.schema import DepartmentMappingItem, StandardMappingItem
 from app.utils.sql_helper import load_sql
 
 # Reuse models from detail.py
@@ -65,7 +65,7 @@ async def get_rubric_detail_default(
         # Parse standard groups from JSONB (same as detail.py)
         standard_groups_detail: dict[str, StandardGroupDetail] = {}
         standard_groups_mapping: dict[str, dict[str, str]] = {}
-        standards_mapping: dict[str, dict[str, str]] = {}
+        standards_mapping: dict[str, StandardMappingItem] = {}
         standard_group_ids: list[str] = []
 
         if row.get("standard_groups_complete"):
@@ -83,10 +83,11 @@ async def get_rubric_detail_default(
                                 if isinstance(std, dict):
                                     std_id = std.get("id", "")
                                     standard_ids.append(std_id)
-                                    standards_mapping[std_id] = {
-                                        "name": std.get("name", ""),
-                                        "description": std.get("description", ""),
-                                    }
+                                    standards_mapping[std_id] = StandardMappingItem(
+                                        name=std.get("name", ""),
+                                        description=std.get("description", ""),
+                                        points=std.get("points", 0),
+                                    )
                         standard_groups_detail[group_id] = StandardGroupDetail(
                             points=group.get("points", 0),
                             passPoints=group.get("passPoints", 0),

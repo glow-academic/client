@@ -1,6 +1,7 @@
 """Parameter detail endpoint."""
 
 import json
+import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -74,8 +75,8 @@ async def get_parameter_detail(
     
     try:
         sql_query = load_sql("sql/v3/parameters/get_parameter_detail_complete.sql")
-        sql_params = (request.parameterId, request.profileId)
-        result = await conn.fetchrow(sql_query, request.parameterId, request.profileId)
+        sql_params = (uuid.UUID(request.parameterId), request.profileId)
+        result = await conn.fetchrow(sql_query, uuid.UUID(request.parameterId), request.profileId)
 
         if not result:
             raise HTTPException(

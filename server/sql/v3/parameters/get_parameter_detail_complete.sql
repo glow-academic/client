@@ -1,4 +1,8 @@
-WITH resolve_profile_id AS (
+WITH parameter_id_resolved AS (
+    -- Explicitly cast $1 to UUID for consistent type handling
+    SELECT $1::uuid as parameter_id
+),
+resolve_profile_id AS (
     -- Resolve "guest-profile-id" to actual default guest profile ID
     SELECT 
         (
@@ -20,26 +24,27 @@ parameter_active_scenario_links AS (
     SELECT 
         pi.parameter_id,
         COUNT(DISTINCT spi.scenario_id) as active_scenario_count
-    FROM parameter_items pi
+    FROM parameter_id_resolved pid
+    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
     JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
-    WHERE spi.active = true AND pi.parameter_id = $1
+    WHERE spi.active = true
     GROUP BY pi.parameter_id
 ),
 parameter_item_departments_data AS (
     SELECT 
         pi.id as parameter_item_id,
-        ARRAY_AGG(pid.department_id::text ORDER BY pid.created_at) as department_ids
-    FROM parameter_items pi
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE pi.parameter_id = $1
+        ARRAY_AGG(pid_dept.department_id::text ORDER BY pid_dept.created_at) as department_ids
+    FROM parameter_id_resolved pid
+    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
+    LEFT JOIN parameter_item_departments pid_dept ON pid_dept.parameter_item_id = pi.id AND pid_dept.active = true
     GROUP BY pi.id
 ),
 parameter_departments_aggregated AS (
     SELECT 
-        ARRAY_AGG(pid.department_id::text ORDER BY pid.department_id) as department_ids
-    FROM parameter_items pi
-    JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE pi.parameter_id = $1
+        ARRAY_AGG(pid_dept.department_id::text ORDER BY pid_dept.department_id) as department_ids
+    FROM parameter_id_resolved pid
+    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
+    JOIN parameter_item_departments pid_dept ON pid_dept.parameter_item_id = pi.id AND pid_dept.active = true
 ),
 parameter_data AS (
     SELECT 
@@ -55,11 +60,11 @@ parameter_data AS (
             WHEN up.role IN ('admin', 'superadmin') THEN true
             ELSE false
         END as can_edit
-    FROM parameters p
+    FROM parameter_id_resolved pid
+    JOIN parameters p ON p.id = pid.parameter_id
     LEFT JOIN parameter_departments_aggregated pda ON true
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
     CROSS JOIN user_profile up
-    WHERE p.id = $1
 ),
 parameter_items_with_usage AS (
     SELECT 
@@ -69,10 +74,10 @@ parameter_items_with_usage AS (
         pi.value,
         COALESCE(COUNT(spi.scenario_id), 0) as usage_count,
         COALESCE(pidd.department_ids, NULL) as department_ids
-    FROM parameter_items pi
+    FROM parameter_id_resolved pid
+    JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
     LEFT JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id AND spi.active = true
     LEFT JOIN parameter_item_departments_data pidd ON pidd.parameter_item_id = pi.id
-    WHERE pi.parameter_id = $1
     GROUP BY pi.id, pi.name, pi.description, pi.value, pidd.department_ids
 ),
 items_json AS (
@@ -104,9 +109,9 @@ valid_depts AS (
             '{}'::jsonb
         ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
-    FROM departments d
-    JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = $2 AND d.active = true
+    FROM resolve_profile_id rpi
+    JOIN departments d ON d.active = true
+    JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = rpi.resolved_profile_id AND pd.active = true
 )
 SELECT 
     p.*,
