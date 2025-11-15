@@ -1,5 +1,6 @@
 """Pytest configuration for WebSocket integration tests."""
 
+import importlib
 from typing import Any
 
 import pytest
@@ -54,8 +55,33 @@ def mock_sio() -> MockSocketIO:
 
 @pytest.fixture(autouse=True)
 def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Patch sio to return the mock server."""
+    """Patch sio to return the mock server in all handler modules.
+    
+    Handlers import sio at module import time, so we need to patch it
+    in each handler module, not just in main.
+    """
     from app import main
 
-    # Patch sio in main module (all handlers import sio from app.main)
+    # Patch sio in main module
     monkeypatch.setattr(main, "sio", mock_sio)
+    
+    # Import and patch sio in all handler modules that import it
+    # This ensures handlers use the mock instance instead of the real one
+    handler_module_paths = [
+        "app.socket.assistants.send_message",
+        "app.socket.assistants.start",
+        "app.socket.assistants.stop",
+        "app.socket.simulations.send_message",
+        "app.socket.simulations.start",
+        "app.socket.simulations.stop",
+        "app.socket.simulations.continue_chat",
+        "app.socket.connections.connect",
+        "app.socket.connections.disconnect",
+        "app.socket.connections.join_chat",
+        "app.socket.connections.leave_chat",
+        "app.socket.connections.stop_chat",
+    ]
+    
+    for module_path in handler_module_paths:
+        module = importlib.import_module(module_path)
+        monkeypatch.setattr(module, "sio", mock_sio)
