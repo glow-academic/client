@@ -10,10 +10,15 @@ from pathlib import Path
 import asyncpg  # type: ignore[import]
 import pytest
 import pytest_asyncio
+from dotenv import load_dotenv
+
+# Load environment variables from .env file if it exists
+load_dotenv()
 
 # Disable tracing globally BEFORE importing agents
 os.environ["OPENAI_AGENTS_DISABLE_TRACING"] = "1"
 # Set SECRET_KEY for encryption/decryption in tests
+# This will use SECRET_KEY from .env if available, otherwise use default
 os.environ["SECRET_KEY"] = os.getenv(
     "SECRET_KEY", "test_secret_key_for_integration_tests"
 )
@@ -32,11 +37,8 @@ os.environ["E2E_STORAGE"] = os.getenv("E2E_STORAGE", "")
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
 
-from app.main import (
-    close_db_pool,
-    get_pool,  # type: ignore[import]
-    init_db_pool,
-)
+from app.main import get_pool  # type: ignore[import]
+from app.main import close_db_pool, init_db_pool
 from app.utils.test_db import get_test_db_url
 
 # Store the test database URL for direct connections

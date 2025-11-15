@@ -38,11 +38,18 @@ async def test_connect_with_profile_id_success(
 
     # Verify profile was marked as active in database
     profile_row = await db.fetchrow(
-        "SELECT active, last_active FROM profiles WHERE id = $1", profile_id
+        "SELECT active FROM profiles WHERE id = $1", profile_id
     )
     assert profile_row is not None
     assert profile_row["active"] is True
-    assert profile_row["last_active"] is not None
+    
+    # Verify last_active was set in profile_activity table
+    activity_row = await db.fetchrow(
+        "SELECT last_active FROM profile_activity WHERE profile_id = $1 ORDER BY created_at DESC LIMIT 1",
+        profile_id
+    )
+    assert activity_row is not None
+    assert activity_row["last_active"] is not None
 
 
 async def test_connect_with_guest_id_success(
@@ -140,11 +147,16 @@ async def test_connect_guest_profile_id_resolution(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
     """Test 'guest-profile-id' string resolves to actual guest profile."""
-    # Arrange - create default guest profile
+    # Arrange - ensure there's a default guest profile
+    # First, clear any existing default guest profiles
+    await db.execute(
+        "UPDATE profiles SET default_profile = false WHERE role = 'guest' AND default_profile = true"
+    )
+    
+    # Create a new default guest profile
     guest_id = await db.fetchval(
         "INSERT INTO profiles(first_name, last_name, alias, role, default_profile) "
         "VALUES('Guest', 'User', 'default_guest', 'guest', true) "
-        "ON CONFLICT (alias) DO UPDATE SET default_profile = true "
         "RETURNING id"
     )
 
