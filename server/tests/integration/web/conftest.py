@@ -48,11 +48,7 @@ def mock_sio() -> MockSocketIO:
 def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) -> None:
     """Patch sio to return the mock server."""
     from app import main
-    from app.web.assistants import utils as assistants_utils
-    from app.web.simulations import utils as simulations_utils
 
-    # Patch sio in main module and utils modules
+    # Patch sio in main module (all handlers import sio from app.main)
     monkeypatch.setattr(main, "sio", mock_sio)
-    monkeypatch.setattr(assistants_utils, "sio", mock_sio)
-    monkeypatch.setattr(simulations_utils, "sio", mock_sio)
 

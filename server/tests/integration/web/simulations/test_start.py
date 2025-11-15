@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.simulations.start import start_simulation
+from app.socket.simulations.start import start_simulation
 from tests.integration.web.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 

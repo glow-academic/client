@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from app.main import sio
-from app.web.connections.utils import (add_guest_socket,
+from app.socket.connections.utils import (add_guest_socket,
                                        cleanup_profile_connection,
                                        get_socket_owner, increment_guest_count,
                                        set_socket_owner)

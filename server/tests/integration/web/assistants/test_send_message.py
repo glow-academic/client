@@ -5,7 +5,7 @@ import pytest
 from tests.integration.web.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
-from app.web.assistants.send_message import send_assistant_message
+from app.socket.assistants.send_message import send_assistant_message
 
 pytestmark = pytest.mark.asyncio
 

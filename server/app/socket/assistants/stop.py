@@ -8,7 +8,7 @@ import socketio  # type: ignore
 from app.db import get_pool
 from app.main import sio
 from app.utils.sql_helper import load_sql
-from app.web.connections.utils import cancel_active_run
+from app.socket.connections.utils import cancel_active_run
 
 logger = logging.getLogger(__name__)
 

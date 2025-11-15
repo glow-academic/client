@@ -415,7 +415,7 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.web.connections.utils import (
+                    from app.socket.connections.utils import (
                         get_active_run, is_run_cancelled, remove_active_result,
                         store_active_events, store_active_result,
                         store_active_run)
@@ -641,7 +641,7 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                             raise e
                     finally:
                         # Clean up the active run using unified tracking
-                        from app.web.connections.utils import remove_active_run
+                        from app.socket.connections.utils import remove_active_run
 
                         await remove_active_run(chat_id_str)
                         await remove_active_result(chat_id_str)

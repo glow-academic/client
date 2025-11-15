@@ -106,17 +106,17 @@ sio = socketio.AsyncServer(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.web.assistants import send_assistant_message  # type: ignore
-from app.web.assistants import start_assistant  # type: ignore
-from app.web.assistants import stop_assistant  # type: ignore
-from app.web.connections import connect  # type: ignore
-from app.web.connections import disconnect  # type: ignore
-from app.web.connections import join_chat  # type: ignore
-from app.web.connections import leave_chat  # type: ignore
-from app.web.connections import stop_chat  # type: ignore
-from app.web.simulations import send_simulation_message  # type: ignore
-from app.web.simulations import start_simulation  # type: ignore
-from app.web.simulations import stop_simulation  # type: ignore
+from app.socket.assistants import send_assistant_message  # type: ignore
+from app.socket.assistants import start_assistant  # type: ignore
+from app.socket.assistants import stop_assistant  # type: ignore
+from app.socket.connections import connect  # type: ignore
+from app.socket.connections import disconnect  # type: ignore
+from app.socket.connections import join_chat  # type: ignore
+from app.socket.connections import leave_chat  # type: ignore
+from app.socket.connections import stop_chat  # type: ignore
+from app.socket.simulations import send_simulation_message  # type: ignore
+from app.socket.simulations import start_simulation  # type: ignore
+from app.socket.simulations import stop_simulation  # type: ignore
 
 
 # Create a combined lifespan to manage both session managers

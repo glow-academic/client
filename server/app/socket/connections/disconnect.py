@@ -3,7 +3,7 @@
 import logging
 
 from app.main import sio
-from app.web.connections.utils import (cleanup_profile_connection,
+from app.socket.connections.utils import (cleanup_profile_connection,
                                        decrement_guest_count,
                                        find_chats_by_socket,
                                        find_profile_by_socket, is_guest_socket,
