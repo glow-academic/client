@@ -283,7 +283,7 @@ async def process_assistant_message_websocket(
                     )
 
                 # Store the result in active runs for potential cancellation using unified tracking
-                from app.main import store_active_run
+                from app.web.connections.utils import store_active_run
 
                 chat_id_str = context.chat_id
                 await store_active_run(chat_id_str, result)
@@ -499,7 +499,7 @@ async def process_assistant_message_websocket(
                     raise
                 finally:
                     # Clean up active run
-                    from app.extensions import remove_active_run
+                    from app.web.runs.utils import remove_active_run
                     await remove_active_run(chat_id_str)
 
             # 4. Mark current message as completed (if we have one)

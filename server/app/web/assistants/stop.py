@@ -6,7 +6,7 @@ from typing import Any
 
 import socketio  # type: ignore
 from app.db import get_pool
-from app.extensions import cancel_active_run
+from app.web.runs.utils import cancel_active_run
 from app.main import sio
 from app.utils.sql_helper import load_sql
 from app.web.assistants.utils import emit_assistant_error

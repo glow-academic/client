@@ -1,18 +1,14 @@
 # server/app/main.py
-import asyncio
 import contextlib
 import json
 import logging
 import os
 import platform
 import sys
-import time
-import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs
 
 import socketio  # type: ignore
 from app.db import close_db_pool, init_db_pool
@@ -55,19 +51,11 @@ socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 # Allow all origins
 allowed_origins = [origin]
 
-# Import Redis functions from extensions
-from app.extensions import (  # New Redis functions for active connections and runs; Guest management functions
-    add_guest_socket, cleanup_redis_client, decrement_guest_count,
-    find_chats_by_socket, find_profile_by_socket, get_socket_owner,
-    increment_guest_count, init_redis_client, is_guest_socket,
-    remove_active_connection, remove_guest_socket, remove_socket_owner,
-    set_active_connection, set_active_run, set_socket_owner)
+# Import Redis client initialization from extensions
+from app.extensions import cleanup_redis_client, init_redis_client
 
 # Store active chat connections - now using Redis
 # active_connections: dict[str, str] = {}  # REMOVED - using Redis instead
-
-# Global in-process store for active Runner results to support immediate cancel
-active_results: dict[str, dict[str, Any]] = {}
 
 # Profile-based connection management (simplified) - now using Redis
 # socket_owner: Dict[str, str] = {}  # profile_id -> socket_id - REMOVED, using Redis
@@ -75,30 +63,6 @@ active_results: dict[str, dict[str, Any]] = {}
 # Track guest connections without restricting concurrency - now using Redis
 # guest_connection_count: int = 0 - REMOVED, using Redis
 # guest_sids: set[str] = set() - REMOVED, using Redis
-
-
-async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -> None:
-    """Clean up all connections for a profile."""
-    logger.info(f"Cleaning up profile {profile_id} connections - {reason}")
-
-    # Remove from socket ownership using Redis
-    await remove_socket_owner(profile_id)
-
-    # Update database to mark profile as inactive
-    try:
-        from app.db import get_pool
-        from app.utils.sql_helper import load_sql
-
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as conn:
-                async with conn.transaction():
-                    sql = load_sql("sql/v3/profile/update_profile_to_inactive_complete.sql")
-                    last_active = datetime.now(UTC)
-                    await conn.fetchrow(sql, profile_id, last_active)
-            logger.info(f"Updated profile {profile_id} to inactive in database")
-    except Exception as e:
-        logger.error(f"Error updating profile {profile_id} in database: {e}")
 
 
 # ----------  Socket.IO with Redis message queue  ----------
@@ -142,297 +106,17 @@ sio = socketio.AsyncServer(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.web.assistants import send_assistant_message  # noqa: E402
-from app.web.assistants import start_assistant, stop_assistant
-from app.web.simulations import continue_simulation  # noqa: E402
-from app.web.simulations import (send_simulation_message, start_simulation,
-                                 stop_simulation)
-
-
-@sio.event  # type: ignore
-async def connect(sid: str, environ: Any, auth: Any) -> bool:
-    """Handle WebSocket connection with robust, profile-based socket management."""
-    query_string = environ.get("QUERY_STRING", "")
-    profile_id: str | None = None
-    guest_id: str | None = None
-
-    # Parse query string using urllib.parse for proper URL decoding
-    try:
-        params = parse_qs(query_string)
-        profile_id = params.get("profileId", [None])[0]
-        guest_id = params.get("guestId", [None])[0]
-    except Exception:  # defensive; ignore malformed
-        pass
-
-    logger.info(
-        f"Client connecting: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
-    )
-
-    # Resolve "guest-profile-id" to actual default guest profile
-    if profile_id == "guest-profile-id":
-        try:
-            from app.db import get_pool
-            from app.utils.sql_helper import load_sql
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
-                    guest_row = await conn.fetchrow(sql)
-                    if guest_row:
-                        profile_id = str(guest_row["id"])
-                        logger.info(
-                            f"Resolved 'guest-profile-id' to actual guest profile: {profile_id}"
-                        )
-                    else:
-                        logger.warning(
-                            "No default guest profile found; treating as anonymous guest"
-                        )
-                        profile_id = None
-            else:
-                logger.error(
-                    "Database pool not available; cannot resolve guest profile"
-                )
-                profile_id = None
-        except Exception as e:
-            logger.error(f"Error resolving guest profile: {e}")
-            profile_id = None
-
-    if profile_id:
-        # Check if another socket is already active for this profile
-        old_sid = await get_socket_owner(profile_id)
-        if old_sid and old_sid != sid:
-            logger.warning(
-                f"Profile {profile_id} already has active socket {old_sid}. "
-                f"Closing old connection and accepting new one {sid}."
-            )
-            # Clean up the entire old session for this profile
-            await cleanup_profile_connection(profile_id, "new socket takeover")
-            # Forcefully disconnect the old socket from the server-side
-            await sio.disconnect(old_sid)
-
-        # Store socket ownership
-        await set_socket_owner(profile_id, sid)
-        await sio.enter_room(sid, profile_id)
-
-        # Update database to mark profile as active
-        try:
-            from app.db import get_pool
-            from app.utils.sql_helper import load_sql
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    async with conn.transaction():
-                        sql = load_sql("sql/v3/profile/update_profile_to_active_complete.sql")
-                        last_active = datetime.now(UTC)
-                        await conn.fetchrow(sql, profile_id, last_active)
-                    logger.info(f"Updated profile {profile_id} to active in database")
-        except Exception as e:
-            logger.error(f"Error updating profile {profile_id} in database: {e}")
-    else:
-        # Guest connection (no profile). Optionally join a guest room for targeted emits.
-        if guest_id:
-            await sio.enter_room(sid, f"guest_{guest_id}")
-            logger.info(f"Guest {guest_id} joined room guest_{guest_id}")
-            # Track guest connection and update default guest profile activity
-            try:
-                await add_guest_socket(sid)
-                # Increment guest connection counter
-                await increment_guest_count()
-
-                from app.db import get_pool
-                from app.utils.sql_helper import load_sql
-
-                pool = get_pool()
-                if pool:
-                    async with pool.acquire() as conn:
-                        async with conn.transaction():
-                            # Find and update default guest profile
-                            sql = load_sql("sql/v3/profile/update_default_guest_profile_to_active_complete.sql")
-                            await conn.fetchrow(sql, datetime.now(UTC))
-                        logger.info(
-                            "Marked default guest profile active (guest connection added)"
-                        )
-            except Exception as e:
-                logger.error(
-                    f"Error updating default guest profile activity on connect: {e}"
-                )
-        else:
-            logger.info("Anonymous guest connection with no guest_id; broadcasts only.")
-
-    await sio.emit(
-        "connection_confirmed",
-        {
-            "sid": sid,
-            "profile_id": profile_id,
-            "guest_id": guest_id,
-            "server_time": time.time(),
-        },
-        room=sid,
-    )
-
-    logger.info(
-        f"Client connected successfully: sid={sid}, profile_id={profile_id}, guest_id={guest_id}"
-    )
-    return True
-
-
-@sio.event  # type: ignore
-async def disconnect(sid: str) -> None:
-    """Handle WebSocket disconnection with immediate cleanup"""
-    logger.info(f"Client disconnecting: {sid}")
-
-    # Find and clean up profile for this socket
-    # Find and clean up profile for this socket using Redis
-    profile_to_cleanup = await find_profile_by_socket(sid)
-
-    if profile_to_cleanup:
-        await cleanup_profile_connection(profile_to_cleanup, "socket disconnect")
-
-    # If this was a guest connection, update counter and default guest profile activity
-    if await is_guest_socket(sid):
-        try:
-            await remove_guest_socket(sid)
-            # Decrement guest count and get remaining count
-            remaining_guests = await decrement_guest_count()
-
-            from app.db import get_pool
-            from app.utils.sql_helper import load_sql
-
-            pool = get_pool()
-            if pool:
-                async with pool.acquire() as conn:
-                    async with conn.transaction():
-                        # Update default guest profile: refresh last_active, set active False only when all guests are gone
-                        sql = load_sql("sql/v3/profile/update_default_guest_profile_activity_complete.sql")
-                        await conn.fetchrow(sql, datetime.now(UTC), remaining_guests > 0)
-                    logger.info(
-                        f"Updated default guest profile activity on disconnect (remaining guests: {remaining_guests})"
-                    )
-        except Exception as e:
-            logger.error(
-                f"Error updating default guest profile activity on disconnect: {e}"
-            )
-
-    # Remove from all active connections using Redis
-    chat_ids = await find_chats_by_socket(sid)
-    for chat_id in chat_ids:
-        await remove_active_connection(chat_id)
-
-
-@sio.event  # type: ignore
-async def join_chat(sid: str, data: dict[str, Any]) -> None:
-    """Join a specific chat room for real-time updates"""
-    chat_id = data.get("chat_id")
-    chat_type = data.get(
-        "chat_type", "assistant"
-    )  # Default to assistant for backward compatibility
-
-    if chat_id:
-        room_name = f"{chat_type}_{chat_id}"
-        await sio.enter_room(sid, room_name)
-        await set_active_connection(chat_id, sid)
-        logger.info(
-            f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})"
-        )
-        await sio.emit(
-            "joined_chat", {"chat_id": chat_id, "chat_type": chat_type}, room=sid
-        )
-
-
-@sio.event  # type: ignore
-async def leave_chat(sid: str, data: dict[str, Any]) -> None:
-    """Leave a specific chat room"""
-    chat_id = data.get("chat_id")
-    chat_type = data.get(
-        "chat_type", "assistant"
-    )  # Default to assistant for backward compatibility
-
-    if chat_id:
-        room_name = f"{chat_type}_{chat_id}"
-        await sio.leave_room(sid, room_name)
-        await remove_active_connection(chat_id)
-        logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
-
-
-async def store_active_run(chat_id: str, run_result: Any) -> None:
-    """Store an active run for potential cancellation"""
-    # Generate a unique run ID for cooperative cancellation
-    run_id = str(uuid.uuid4())
-    await set_active_run(chat_id, run_id)
-
-
-async def store_active_result(chat_id: str, result: Any) -> None:
-    """Store the Runner result object locally for immediate cancel."""
-    if chat_id not in active_results:
-        active_results[chat_id] = {}
-    active_results[chat_id]["result"] = result
-
-
-async def store_active_events(chat_id: str, events_iter: Any) -> None:
-    """Store the events iterator (async generator) to allow aclose() on cancel."""
-    if chat_id not in active_results:
-        active_results[chat_id] = {}
-    active_results[chat_id]["events"] = events_iter
-
-
-async def cancel_active_result(chat_id: str) -> bool:
-    """Call cancel() on the local Runner result if present."""
-    entry = active_results.get(chat_id)
-    if not entry:
-        return False
-    try:
-        result = entry.get("result")
-        events_iter = entry.get("events")
-
-        # Best-effort: ask the Runner to cancel upstream generation
-        if result is not None and hasattr(result, "cancel"):
-            cancel_result = result.cancel()
-            if asyncio.iscoroutine(cancel_result):
-                await cancel_result
-
-        # Close our local stream iterator so we stop yielding tokens immediately
-        if events_iter is not None and hasattr(events_iter, "aclose"):
-            await events_iter.aclose()
-        if asyncio.iscoroutine(cancel_result):
-            await cancel_result
-        return True
-    except Exception as e:
-        logger.error(f"Failed to cancel local result for chat {chat_id}: {e}")
-        return False
-
-
-async def remove_active_result(chat_id: str) -> None:
-    """Remove stored Runner result for a chat."""
-    active_results.pop(chat_id, None)
-
-
-async def emit_chat_stopped(
-    chat_id: str, chat_type: str, message: str = "Chat stopped successfully"
-) -> None:
-    """Emit chat_stopped event to the appropriate room"""
-    await sio.emit(
-        "chat_stopped",
-        {"chat_id": chat_id, "chat_type": chat_type, "message": message},
-        room=f"{chat_type}_{chat_id}",
-    )
-
-
-@sio.event  # type: ignore
-async def stop_chat(sid: str, data: dict[str, Any]) -> None:
-    """Handle chat stop requests via WebSocket. TODO: Fix this to work and be generic."""
-    chat_id = data.get("chat_id")
-    chat_type = data.get(
-        "chat_type", "assistant"
-    )  # Default to assistant for backward compatibility
-
-    if chat_id:
-        await sio.emit(
-            "chat_stopped", {"chat_id": str(chat_id), "chat_type": chat_type}, room=sid
-        )
-        await remove_active_connection(chat_id)
-        logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
+from app.web.assistants import send_assistant_message  # type: ignore
+from app.web.assistants import start_assistant  # type: ignore
+from app.web.assistants import stop_assistant  # type: ignore
+from app.web.connections import connect  # type: ignore
+from app.web.connections import disconnect  # type: ignore
+from app.web.connections import join_chat  # type: ignore
+from app.web.connections import leave_chat  # type: ignore
+from app.web.connections import stop_chat  # type: ignore
+from app.web.simulations import send_simulation_message  # type: ignore
+from app.web.simulations import start_simulation  # type: ignore
+from app.web.simulations import stop_simulation  # type: ignore
 
 
 def get_socketio_instance() -> socketio.AsyncServer:

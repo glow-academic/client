@@ -13,7 +13,6 @@ from agents.items import TResponseInputItem
 from app.db import get_pool
 from app.main import sio
 from app.utils.agent_helpers import build_hint_agent, get_output_guardrails
-from app.utils.websocket_emitters import emit_hint_progress
 from app.utils.agent_tools import (create_hint_tools, hint_progress,
                                    hint_results)
 from app.utils.agents import GenericAgent
@@ -22,6 +21,7 @@ from app.utils.chat import (format_chat_scenario,
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
 from app.utils.sql_helper import load_sql
+from app.utils.websocket_emitters import emit_hint_progress
 from openai.types.responses import ResponseTextDeltaEvent
 
 logger = logging.getLogger(__name__)
@@ -305,18 +305,18 @@ async def _generate_hints_background_inline(
             # Emit error event
             try:
                 await sio.emit(
-                        "hint_generation_progress",
-                        {
-                            "type": "error",
-                            "message": f"Hint generation failed: {str(e)}",
-                            "error": str(e),
-                            "chat_id": str(chat_id),
-                            "message_id": str(message_id),
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
-                except Exception as emit_error:
-                    logger.warning(f"Failed to emit error event: {emit_error}")
+                    "hint_generation_progress",
+                    {
+                        "type": "error",
+                        "message": f"Hint generation failed: {str(e)}",
+                        "error": str(e),
+                        "chat_id": str(chat_id),
+                        "message_id": str(message_id),
+                    },
+                    room=f"simulation_{chat_id}",
+                )
+            except Exception as emit_err:
+                logger.warning(f"Failed to emit error event: {emit_err}")
 
 
 @sio.event  # type: ignore
@@ -475,10 +475,11 @@ async def process_simulation_message_websocket(
             try:
                 # Cooperative cancellation support using Redis flags
                 # We poll for a cancellation flag bound to this chat's active run ID
-                from app.extensions import get_active_run, is_run_cancelled
-                from app.main import (remove_active_result,
-                                      store_active_events, store_active_result,
-                                      store_active_run)
+                from app.web.runs.utils import get_active_run, is_run_cancelled
+                from app.web.connections.utils import (remove_active_result,
+                                                       store_active_events,
+                                                       store_active_result,
+                                                       store_active_run)
 
                 # Get all context data in a single optimized query using SQL file
                 sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
@@ -701,7 +702,7 @@ async def process_simulation_message_websocket(
                         raise e
                 finally:
                     # Clean up the active run using unified tracking
-                    from app.extensions import remove_active_run
+                    from app.web.runs.utils import remove_active_run
 
                     await remove_active_run(chat_id_str)
                     await remove_active_result(chat_id_str)
