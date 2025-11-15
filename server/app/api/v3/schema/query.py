@@ -3,7 +3,7 @@
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_pool
+from app.main import get_pool
 from app.main import server
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel

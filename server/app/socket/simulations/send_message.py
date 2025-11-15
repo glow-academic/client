@@ -10,7 +10,7 @@ import socketio  # type: ignore
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.db import get_pool
+from app.main import get_pool
 from app.main import sio
 from app.utils.agent_helpers import build_hint_agent, get_output_guardrails
 from app.utils.agent_tools import (create_hint_tools, hint_progress,

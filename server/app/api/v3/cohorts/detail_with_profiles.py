@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 import uuid
 
-from app.db import get_db
+from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import cache_key, get_cached, set_cached
 from app.utils.schema import DepartmentMappingItem

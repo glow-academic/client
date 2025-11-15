@@ -7,7 +7,7 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
-from app.db import get_db
+from app.main import get_db
 from app.utils.agent_tools import (create_scenario_tools, scenario_progress,
                                    scenario_results)
 from app.utils.agents import GenericAgent

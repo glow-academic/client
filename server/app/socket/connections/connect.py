@@ -36,7 +36,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
     # Resolve "guest-profile-id" to actual default guest profile
     if profile_id == "guest-profile-id":
         try:
-            from app.db import get_pool
+            from app.main import get_pool
             from app.utils.sql_helper import load_sql
 
             pool = get_pool()
@@ -84,7 +84,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         try:
             from datetime import UTC, datetime
 
-            from app.db import get_pool
+            from app.main import get_pool
             from app.utils.sql_helper import load_sql
 
             pool = get_pool()
@@ -110,7 +110,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
 
                 from datetime import UTC, datetime
 
-                from app.db import get_pool
+                from app.main import get_pool
                 from app.utils.sql_helper import load_sql
 
                 pool = get_pool()

@@ -34,7 +34,7 @@ async def disconnect(sid: str) -> None:
 
             from datetime import UTC, datetime
 
-            from app.db import get_pool
+            from app.main import get_pool
             from app.utils.sql_helper import load_sql
 
             pool = get_pool()

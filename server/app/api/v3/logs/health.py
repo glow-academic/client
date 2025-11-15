@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
-from app.db import get_db, get_pool
-from app.extensions import UPLOAD_FOLDER
+from app.main import get_db, get_pool
+from app.main import UPLOAD_FOLDER
 from app.main import redis_client
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException

@@ -6,7 +6,7 @@ from typing import Any
 
 import socketio  # type: ignore
 from agents import Runner, gen_trace_id, trace
-from app.db import get_pool
+from app.main import get_pool
 from app.main import sio
 from app.utils.agents import GenericAgent
 from app.utils.debug_info import DebugContext

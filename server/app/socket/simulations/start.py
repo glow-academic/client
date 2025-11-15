@@ -8,7 +8,7 @@ from typing import Any
 import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
-from app.db import get_pool
+from app.main import get_pool
 from app.main import sio
 from app.utils.agent_tools import (create_scenario_tools, scenario_progress,
                                    scenario_results)

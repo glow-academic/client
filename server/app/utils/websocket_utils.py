@@ -271,7 +271,7 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     try:
         from datetime import UTC, datetime
 
-        from app.db import get_pool
+        from app.main import get_pool
         from app.utils.sql_helper import load_sql
 
         pool = get_pool()

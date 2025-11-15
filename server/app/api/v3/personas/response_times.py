@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_pool
+from app.main import get_pool
 from app.main import server
 from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql

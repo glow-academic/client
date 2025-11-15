@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 import socketio  # type: ignore
-from app.db import get_pool
+from app.main import get_pool
 from app.main import sio
 from app.utils.sql_helper import load_sql
 from app.utils.websocket_utils import cancel_active_run

@@ -6,8 +6,8 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.extensions import UPLOAD_FOLDER
+from app.main import get_db
+from app.main import UPLOAD_FOLDER
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from fastapi import APIRouter, Depends, HTTPException, Request, Response

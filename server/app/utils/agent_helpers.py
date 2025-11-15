@@ -13,7 +13,7 @@ from agents import (Agent, GuardrailFunctionOutput, InputGuardrail,
                     OutputGuardrail, RunContextWrapper, Runner, TContext,
                     ToolsToFinalOutputResult, trace)
 from agents.items import TResponseInputItem
-from app.db import get_db
+from app.main import get_db
 from app.utils.agent_tools import (guardrail_progress, guardrail_results,
                                    hint_progress)
 from app.utils.agents import GenericAgent

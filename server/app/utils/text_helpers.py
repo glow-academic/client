@@ -8,7 +8,7 @@ from typing import Any
 
 import pypdf  # type: ignore
 
-from app.extensions import UPLOAD_FOLDER
+from app.main import UPLOAD_FOLDER
 
 
 def normalize_text(text: str | None) -> str:

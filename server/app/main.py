@@ -5,19 +5,23 @@ import logging
 import os
 import platform
 import sys
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import asyncpg  # type: ignore
 import socketio  # type: ignore
-from app.db import close_db_pool, init_db_pool
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
+
+if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
+    from testcontainers.postgres import PostgresContainer  # type: ignore
 
 # Redis is nice in production, but optional in dev
 try:
@@ -32,6 +36,16 @@ except ImportError:
     redis = None  # type: ignore # graceful fallback
 
 load_dotenv()
+
+# Detect container vs. host **without** relying on a .env entry
+IN_DOCKER = os.getenv("DOCKER_ENV") == "1"
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BASE_FOLDER = Path("/app") if IN_DOCKER else PROJECT_ROOT
+UPLOAD_FOLDER = BASE_FOLDER / "uploads"
+UPLOAD_FOLDER.mkdir(
+    parents=True, exist_ok=True
+)  # saving each document as uploads/document_id.ext
 
 # MCP server instance for tool registration
 server = FastMCP("Domain-API", stateless_http=True)
@@ -65,6 +79,10 @@ active_results: dict[str, dict[str, Any]] = {}
 
 # Fallback in-memory storage for when Redis is unavailable
 socket_owner: dict[str, str] = {}  # profile_id -> socket_id
+
+# Global database connection pool
+_db_pool: asyncpg.Pool | None = None
+_test_container: Any | None = None
 
 
 # ----------  Socket.IO with Redis message queue  ----------
@@ -126,6 +144,144 @@ def get_active_results_dict() -> dict[str, dict[str, Any]]:
 def get_sio_instance() -> Any:
     """Get the Socket.IO server instance."""
     return sio
+
+
+def get_pool() -> asyncpg.Pool | None:
+    """Get the global connection pool (for WebSocket handlers)."""
+    return _db_pool
+
+
+async def init_db_pool() -> None:
+    """Initialize asyncpg connection pool."""
+    global _db_pool, _test_container
+    
+    env_value = os.getenv("ENV", "")
+    env_name = env_value.upper()
+
+    if env_name == "TEST":
+        print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
+        from testcontainers.postgres import \
+            PostgresContainer  # type: ignore[import]
+
+        _test_container = PostgresContainer("postgres:16")
+        _test_container.start()
+
+        raw_url = _test_container.get_connection_url()
+        db_url = raw_url.replace("postgresql+psycopg2://", "postgresql://")
+
+        pool_config = {
+            "min_size": 1,
+            "max_size": 5,
+        }
+
+        _db_pool = await asyncpg.create_pool(db_url, **pool_config)
+        print(f"✅ Using test database at {db_url}")
+
+        schema_path = Path(__file__).resolve().parent.parent / "tests" / "test-schema.sql"
+        if not schema_path.exists():
+            raise FileNotFoundError(
+                f"Test schema file not found at {schema_path}. \n"
+                "Generate it with 'make generate-test-schema'."
+            )
+
+        schema_sql = schema_path.read_text()
+        async with _db_pool.acquire() as conn:
+            await conn.execute(schema_sql)
+        print("🗄️  Test schema applied to disposable database")
+        return
+
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_NAME")
+    db_port = os.getenv("DB_PORT")
+    db_host = os.getenv("DB_HOST")
+
+    # Construct the database URL
+    db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+    if not all([db_user, db_password, db_name, db_port, db_host]):
+        raise ValueError("Database configuration is incomplete")
+
+    # Detect if we're connecting through PgBouncer
+    # PgBouncer in transaction mode requires disabling prepared statements
+    using_pgbouncer = db_host == "pgbouncer"
+
+    print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
+
+    pool_config = {
+        "min_size": 10,
+        "max_size": 100,  # High capacity for concurrent analytics + background refresh
+        "command_timeout": 60,  # Allow time for complex analytics queries (cold cache)
+        "max_queries": 50000,  # Limit queries per connection before recycling
+        "max_inactive_connection_lifetime": 300,  # 5 minutes
+    }
+
+    # Note: When using PgBouncer in production:
+    # - Set PgBouncer pool_mode=transaction (recommended for FastAPI)
+    # - Configure PgBouncer: default_pool_size=25, max_client_conn=200
+    # - This gives you: 100 app connections -> PgBouncer -> 25 DB connections
+    # - Reduces DB connection overhead while maintaining app concurrency
+
+    # Disable prepared statements for PgBouncer transaction mode
+    if using_pgbouncer:
+        pool_config["statement_cache_size"] = 0
+        print(
+            "   ⚙️  PgBouncer detected: Disabling prepared statements for transaction mode compatibility"
+        )
+    else:
+        print(
+            "   ⚙️  Direct connection: Using prepared statements for better performance"
+        )
+
+    _db_pool = await asyncpg.create_pool(db_url, **pool_config)
+    print("✅ Database pool initialized")
+
+
+async def close_db_pool() -> None:
+    """Close asyncpg connection pool."""
+    global _db_pool, _test_container
+    if _db_pool:
+        print("🔌 Closing database pool...")
+        await _db_pool.close()
+        _db_pool = None
+        print("✅ Database pool closed")
+
+    if _test_container:
+        print("🐳 Stopping test database container...")
+        _test_container.stop()
+        _test_container = None
+        print("✅ Test database container stopped")
+
+
+async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
+    """Dependency for FastAPI endpoints to get database connection."""
+    if not _db_pool:
+        raise RuntimeError("Database pool not initialized")
+
+    async with _db_pool.acquire() as connection:
+        yield connection
+
+
+@asynccontextmanager
+async def transaction(
+    conn: asyncpg.Connection,
+) -> AsyncGenerator[asyncpg.Connection, None]:
+    """Simple transaction context manager.
+
+    Usage:
+        async with transaction(conn):
+            await conn.execute(query1, *params1)
+            await conn.execute(query2, *params2)
+            # Commits on success, rolls back on exception
+    """
+    tr = conn.transaction()
+    await tr.start()
+    try:
+        yield conn
+        await tr.commit()
+    except Exception:
+        await tr.rollback()
+        raise
 
 
 # Import WebSocket handlers after sio is created to avoid circular imports

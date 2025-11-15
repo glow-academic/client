@@ -11,7 +11,7 @@ from openai.types.responses.response_input_message_content_list_param import (
 )
 from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
-from app.extensions import UPLOAD_FOLDER
+from app.main import UPLOAD_FOLDER
 
 
 def _read_pdf_text_pages(full_path: str) -> list[str]:

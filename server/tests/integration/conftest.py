@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 import pytest_asyncio
-from app.db import get_db
+from app.main import get_db
 from app.main import fastapi_app
 
 

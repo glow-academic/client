@@ -4,7 +4,7 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg
-from app.db import get_db, transaction
+from app.main import get_db, transaction
 from app.utils.error_handler import handle_route_error
 from app.utils.http_cache import invalidate_tags
 from app.utils.sql_helper import load_sql

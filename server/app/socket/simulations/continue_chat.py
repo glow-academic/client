@@ -10,7 +10,7 @@ import asyncpg  # type: ignore
 import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, trace
 from agents.items import TResponseInputItem
-from app.db import get_pool
+from app.main import get_pool
 from app.main import sio
 from app.utils.agent_tools import (create_grading_tools,
                                    create_safe_field_name, grading_progress,

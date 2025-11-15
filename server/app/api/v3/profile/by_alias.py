@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.api.v3.profile.detail import ProfileItem, ProfileDetailResponse
-from app.db import get_db
+from app.main import get_db
 from app.utils.error_handler import handle_route_error
 from app.utils.sql_helper import load_sql
 

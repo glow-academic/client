@@ -9,8 +9,8 @@ import zipfile
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.db import get_db
-from app.extensions import UPLOAD_FOLDER
+from app.main import get_db
+from app.main import UPLOAD_FOLDER
 from app.utils.http_cache import invalidate_tags
 from app.utils.mime_utils import get_content_type
 from app.utils.sql_helper import load_sql

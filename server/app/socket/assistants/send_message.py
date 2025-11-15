@@ -13,7 +13,7 @@ from agents import Runner, trace
 from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from app.db import get_pool
+from app.main import get_pool
 from app.main import sio
 from app.utils.agents import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
