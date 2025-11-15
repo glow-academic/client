@@ -183,9 +183,11 @@ async def get_practice_overview(
             parsed_result = {}
         else:
             # Parse JSON string to dict if needed
-            parsed_result = _parse_json_strings_recursive(result)
+            parsed_result_raw = _parse_json_strings_recursive(result)
             # Ensure data is a dict (handle case where result is None or empty)
-            if not isinstance(parsed_result, dict):
+            if isinstance(parsed_result_raw, dict):
+                parsed_result = parsed_result_raw
+            else:
                 parsed_result = {}
 
         # Parse embedded history

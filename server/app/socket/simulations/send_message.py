@@ -4,26 +4,24 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from openai.types.responses import ResponseTextDeltaEvent
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_pool, hint_progress, hint_results, sio
 from app.utils.agents.build_hint_agent import build_hint_agent
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.get_output_guardrails import get_output_guardrails
 from app.utils.agents.tools.create_hint_tools import create_hint_tools
 from app.utils.chat.format_chat_scenario import format_chat_scenario
-from app.utils.chat.get_simulation_conversation_history import (
-    get_simulation_conversation_history,
-)
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.document.format_document_info import format_document_info
 from app.utils.sql_helper import load_sql
+from openai.types.responses import ResponseTextDeltaEvent
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -561,18 +559,18 @@ async def _send_simulation_message_impl(
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket.get_active_run import get_active_run
-                    from app.utils.websocket.is_run_cancelled import is_run_cancelled
-                    from app.utils.websocket.remove_active_result import (
-                        remove_active_result,
-                    )
-                    from app.utils.websocket.store_active_events import (
-                        store_active_events,
-                    )
-                    from app.utils.websocket.store_active_result import (
-                        store_active_result,
-                    )
-                    from app.utils.websocket.store_active_run import store_active_run
+                    from app.utils.websocket.get_active_run import \
+                        get_active_run
+                    from app.utils.websocket.is_run_cancelled import \
+                        is_run_cancelled
+                    from app.utils.websocket.remove_active_result import \
+                        remove_active_result
+                    from app.utils.websocket.store_active_events import \
+                        store_active_events
+                    from app.utils.websocket.store_active_result import \
+                        store_active_result
+                    from app.utils.websocket.store_active_run import \
+                        store_active_run
 
                     # Get all context data in a single optimized query using SQL file
                     sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
@@ -660,11 +658,18 @@ async def _send_simulation_message_impl(
                     input_items.extend(conversation_history)
 
                     # Get output guardrails if enabled
-                    output_guards = (
+                    output_guards_raw = (
                         get_output_guardrails(
                             chat_id_uuid, department_id, conversation_history, conn
                         )
                         if context["output_guardrail_active"]
+                        else None
+                    )
+                    # Cast to match GenericAgent's expected type
+                    from agents import OutputGuardrail
+                    output_guards = (
+                        cast(list[OutputGuardrail[DebugContext]], output_guards_raw)
+                        if output_guards_raw
                         else None
                     )
 
@@ -829,9 +834,8 @@ async def _send_simulation_message_impl(
                             raise e
                     finally:
                         # Clean up the active run using unified tracking
-                        from app.utils.websocket.remove_active_run import (
-                            remove_active_run,
-                        )
+                        from app.utils.websocket.remove_active_run import \
+                            remove_active_run
 
                         await remove_active_run(chat_id_str)
                         await remove_active_result(chat_id_str)
@@ -1042,15 +1046,17 @@ async def _send_simulation_message_impl(
 
                         # Emit the error message to clients
                         if error_message:
-                            created_at = error_message.get("created_at")
+                            # Convert asyncpg.Record to dict
+                            error_message_dict = dict(error_message)
+                            created_at = error_message_dict.get("created_at")
                             created_at_str = (
                                 created_at.isoformat()
-                                if hasattr(created_at, "isoformat")
-                                else str(created_at)
+                                if created_at and hasattr(created_at, "isoformat")
+                                else str(created_at) if created_at else ""
                             )
                             await simulation_new_message(
                                 SimulationNewMessagePayload(
-                                    message_id=str(error_message.get("id", "")),
+                                    message_id=str(error_message_dict.get("id", "")),
                                     chat_id=str(chat_id),
                                     role="assistant",
                                     content=f"Error: {str(e)}",

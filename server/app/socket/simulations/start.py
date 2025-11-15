@@ -5,17 +5,9 @@ import logging
 import uuid
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_pool, scenario_progress, scenario_results, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
@@ -25,6 +17,7 @@ from app.utils.document.format_document_info import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -229,9 +222,8 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                         )
 
                     # Use shared helper function for selecting attributes
-                    from app.api.v3.scenarios.select_attributes import (
-                        select_scenario_attributes,
-                    )
+                    from app.api.v3.scenarios.select_attributes import \
+                        select_scenario_attributes
 
                     try:
                         selected_attributes = await select_scenario_attributes(

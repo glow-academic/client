@@ -133,18 +133,10 @@ async def list_logs(
                     level=row["level"],
                     message=row["message"],
                     correlation_id=row["correlation_id"],
-                    actor=cast(
-                        ActorData, _parse_jsonb_to_model(row["actor"], ActorData)
-                    ),
-                    subject=cast(
-                        SubjectData, _parse_jsonb_to_model(row["subject"], SubjectData)
-                    ),
-                    context=cast(
-                        ContextData, _parse_jsonb_to_model(row["context"], ContextData)
-                    ),
-                    error=cast(
-                        ErrorData, _parse_jsonb_to_model(row["error"], ErrorData)
-                    ),
+                    actor=_parse_jsonb_to_model(row["actor"], ActorData),
+                    subject=_parse_jsonb_to_model(row["subject"], SubjectData),
+                    context=_parse_jsonb_to_model(row["context"], ContextData),
+                    error=_parse_jsonb_to_model(row["error"], ErrorData),
                     created_at=row["created_at"].isoformat()
                     if row["created_at"]
                     else "",

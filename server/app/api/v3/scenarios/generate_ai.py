@@ -5,18 +5,9 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    ToolsToFinalOutputResult,
-    gen_trace_id,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner,
+                    ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-
 from app.main import get_db, scenario_progress, scenario_results
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
@@ -27,6 +18,8 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
 
 
 # Inline request/response schemas

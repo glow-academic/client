@@ -3,12 +3,8 @@
 import logging
 from typing import Any
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    ToolsToFinalOutputResult,
-)
-
+from agents import (FunctionToolResult, RunContextWrapper,
+                    ToolsToFinalOutputResult)
 from app.main import guardrail_progress
 from app.utils.agents.generic_agent import GenericAgent
 
