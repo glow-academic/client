@@ -68,6 +68,18 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
+  stop_simulation_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  send_simulation_message_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
+  continue_simulation_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
   simulation_started: (payload: {
     success: boolean;
     message: string;
@@ -106,6 +118,12 @@ export type ServerToClientEvents = {
   simulation_message_error: (payload: {
     chat_id: string;
     error: string;
+  }) => void;
+  message_sent: (payload: {
+    message_id: string;
+    chat_id: string;
+    message: string;
+    created_at: string;
   }) => void;
   hint_generation_progress: (payload: {
     type: string;

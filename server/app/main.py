@@ -432,17 +432,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.connections.join_chat import joined_chat
         from app.socket.connections.stop_chat import chat_stopped
         from app.socket.simulations.continue_chat import (
-            end_all_completed, simulation_continued,
+            continue_simulation_error, end_all_completed, simulation_continued,
             simulation_grading_progress)
         from app.socket.simulations.send_message import (
-            hint_generation_progress, simulation_message_complete,
+            hint_generation_progress, message_sent,
+            send_simulation_message_error, simulation_message_complete,
             simulation_message_error, simulation_message_token,
             simulation_new_message)
         from app.socket.simulations.start import simulation_started
         from app.socket.simulations.start import \
             start_simulation_error as simulation_error_start
         from app.socket.simulations.stop import (simulation_message_cancelled,
-                                                 simulation_stopped)
+                                                 simulation_stopped,
+                                                 stop_simulation_error)
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
@@ -459,7 +461,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             assistant_message_cancelled,
             assistant_stopped,
             # Simulation events
-            simulation_error_start,  # Use one instance (they're all the same)
+            simulation_error_start,  # start_simulation_error
+            stop_simulation_error,
+            send_simulation_message_error,
+            continue_simulation_error,
             simulation_started,
             simulation_message_cancelled,
             simulation_stopped,
@@ -467,6 +472,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             simulation_message_token,
             simulation_message_complete,
             simulation_message_error,
+            message_sent,
             hint_generation_progress,
             simulation_grading_progress,
             simulation_continued,

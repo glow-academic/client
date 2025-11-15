@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/popover";
 
 import HintDisplay from "@/components/common/chat/HintDisplay";
+import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -79,6 +80,7 @@ export default function AttemptInput({
   scenario,
   readOnly = false,
 }: AttemptInputProps) {
+  const { socket } = useProfile();
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const router = useRouter();
   const [newMessage, setNewMessage] = useState("");
@@ -103,19 +105,34 @@ export default function AttemptInput({
     const hintsForMessage = currentChatHints.find(
       (h) => h.messageId === latestAssistantMessage.id
     );
-    return hintsForMessage?.hints || [];
+    return (hintsForMessage?.hints || []) as Array<{
+      simulationMessageId: string;
+      hint: string;
+      idx: number;
+      createdAt: string;
+    }>;
   }, [currentChatHints, latestAssistantMessage?.id]);
   const hintsHookLoading = false; // Always false with SSR
 
   // Listen for hint generation progress via WebSocket events
   useEffect(() => {
-    if (!simulation?.practiceSimulation || !latestAssistantMessage?.id) {
+    if (
+      !socket ||
+      !simulation?.practiceSimulation ||
+      !latestAssistantMessage?.id
+    ) {
       return;
     }
 
-    const handleHintGenerationProgress = (event: CustomEvent) => {
-      const data = event.detail;
-
+    const handleHintGenerationProgress = (data: {
+      type: string;
+      message: string;
+      chat_id: string;
+      message_id: string;
+      hint_ids?: string[];
+      hints_count?: number;
+      error?: string;
+    }) => {
       // Only handle hints for the current message
       if (data.message_id === latestAssistantMessage.id) {
         if (data.type === "complete") {
@@ -125,19 +142,17 @@ export default function AttemptInput({
       }
     };
 
-    // Listen for hint generation events
-    window.addEventListener(
-      "hint_generation_progress",
-      handleHintGenerationProgress as EventListener
-    );
+    socket.on("hint_generation_progress", handleHintGenerationProgress);
 
     return () => {
-      window.removeEventListener(
-        "hint_generation_progress",
-        handleHintGenerationProgress as EventListener
-      );
+      socket.off("hint_generation_progress", handleHintGenerationProgress);
     };
-  }, [simulation?.practiceSimulation, latestAssistantMessage?.id, router]);
+  }, [
+    socket,
+    simulation?.practiceSimulation,
+    latestAssistantMessage?.id,
+    router,
+  ]);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -191,18 +206,6 @@ export default function AttemptInput({
       return;
 
     setNewMessage("");
-
-    // Dispatch messageSent event for tour progression and navigating state management
-    window.dispatchEvent(
-      new CustomEvent("messageSent", {
-        detail: {
-          message: messageToSend,
-          chatId: currentChat.id,
-          isTourMessage: false,
-        },
-      })
-    );
-
     sendMessage(messageToSend);
   };
   const handleStopMessage = () => stopMessage();

@@ -30,6 +30,7 @@ import { createFeedback } from "@/app/(main)/layout-server";
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
+import { useProfile } from "@/contexts/profile-context";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -58,6 +59,7 @@ export default function AttemptMessages({
   isActive,
   simulation,
 }: AttemptMessagesProps) {
+  const { socket } = useProfile();
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -105,6 +107,14 @@ export default function AttemptMessages({
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
+
+    type Message = {
+      id: string;
+      type: string;
+      content: string;
+      createdAt: string;
+      completed?: boolean;
+    };
 
     const groups: Array<{
       userMessage: Message;
@@ -201,16 +211,6 @@ export default function AttemptMessages({
   }, []);
 
   const handleStarterPromptClick = (prompt: string) => {
-    // Dispatch messageSent event for tour progression and navigating state management
-    window.dispatchEvent(
-      new CustomEvent("messageSent", {
-        detail: {
-          message: prompt,
-          chatId: targetChatId,
-          isTourMessage: false,
-        },
-      })
-    );
     sendMessage(prompt);
   };
 
@@ -245,15 +245,6 @@ export default function AttemptMessages({
       }
 
       // Retry with the previous user message content
-      window.dispatchEvent(
-        new CustomEvent("messageSent", {
-          detail: {
-            message: previousUserMessage.content,
-            chatId: targetChatId,
-            isTourMessage: false,
-          },
-        })
-      );
       sendMessage(previousUserMessage.content, true);
     }
   };
@@ -325,14 +316,22 @@ export default function AttemptMessages({
 
   // Listen for streaming token events to update message content in real-time
   useEffect(() => {
-    const handleSimulationMessageToken = (event: CustomEvent) => {
-      const { messageId, chatId, accumulatedContent } = event.detail;
+    if (!socket) return;
 
+    const handleSimulationMessageToken = (data: {
+      message_id: string;
+      chat_id: string;
+      token: string;
+      accumulated_content: string;
+    }) => {
       // Only update if this token is for the current chat
-      if (chatId === targetChatId && accumulatedContent !== undefined) {
+      if (
+        data.chat_id === targetChatId &&
+        data.accumulated_content !== undefined
+      ) {
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
-          newMap.set(messageId, accumulatedContent);
+          newMap.set(data.message_id, data.accumulated_content);
           return newMap;
         });
       }
@@ -340,40 +339,33 @@ export default function AttemptMessages({
 
     // Listen for message completion - keep streaming content until SSR refresh completes
     // The streaming content will be cleared when SSR data is refreshed and has the final content
-    const handleSimulationMessageComplete = (event: CustomEvent) => {
-      const { messageId, chatId, finalContent } = event.detail;
-
-      if (chatId === targetChatId && finalContent !== undefined) {
+    const handleSimulationMessageComplete = (data: {
+      message_id: string;
+      chat_id: string;
+      final_content: string;
+    }) => {
+      if (data.chat_id === targetChatId && data.final_content !== undefined) {
         // Update streaming content with final content to prevent flicker
         // This will be cleared when SSR data refreshes
         setStreamingContent((prev) => {
           const newMap = new Map(prev);
-          newMap.set(messageId, finalContent);
+          newMap.set(data.message_id, data.final_content);
           return newMap;
         });
       }
     };
 
-    window.addEventListener(
-      "simulationMessageToken",
-      handleSimulationMessageToken as EventListener
-    );
-    window.addEventListener(
-      "simulationMessageComplete",
-      handleSimulationMessageComplete as EventListener
-    );
+    socket.on("simulation_message_token", handleSimulationMessageToken);
+    socket.on("simulation_message_complete", handleSimulationMessageComplete);
 
     return () => {
-      window.removeEventListener(
-        "simulationMessageToken",
-        handleSimulationMessageToken as EventListener
-      );
-      window.removeEventListener(
-        "simulationMessageComplete",
-        handleSimulationMessageComplete as EventListener
+      socket.off("simulation_message_token", handleSimulationMessageToken);
+      socket.off(
+        "simulation_message_complete",
+        handleSimulationMessageComplete
       );
     };
-  }, [targetChatId]);
+  }, [socket, targetChatId]);
 
   return (
     <div

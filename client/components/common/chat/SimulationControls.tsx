@@ -155,10 +155,10 @@ export function SimulationControls({
           previous_chat_map?: Record<string, string | null>;
           department_id: string;
         } = {
-          chat_id: currentChatId,
+          chat_id: currentChatId!, // Non-null assertion: already checked above
           attempt_id: attemptId,
           end_all: true,
-          department_id: simulation.departmentId,
+          department_id: simulation.departmentId!, // Non-null assertion: already checked above
         };
         if (previousChatMap) {
           continueData.previous_chat_map = previousChatMap;
@@ -190,79 +190,49 @@ export function SimulationControls({
     const handleSimulationGradingProgress = (data: {
       type: string;
       chat_id: string;
-      completed_count: number;
-      total_count: number;
+      completed_count?: number;
+      total_count?: number;
     }) => {
-      if (data.chat_id !== currentChatId) return;
+      if (!currentChatId || data.chat_id !== currentChatId) return;
 
-      const progress = Math.round(
-        (data.completed_count / data.total_count) * 100
-      );
-      setGradingProgress({
-        completed: data.completed_count,
-        total: data.total_count,
-        displayedProgress: progress,
-        phase:
-          data.type === "tools"
-            ? "tools"
-            : data.type === "summary"
-              ? "summary"
-              : null,
-      });
-      setIsGrading(true);
-    };
+      if (data.type === "complete") {
+        setIsGrading(false);
+        setGradingProgress(null);
+        return;
+      }
 
-    const handleGradingComplete = () => {
-      setIsGrading(false);
-      setGradingProgress(null);
+      if (
+        data.completed_count !== undefined &&
+        data.total_count !== undefined
+      ) {
+        const progress = Math.round(
+          (data.completed_count / data.total_count) * 100
+        );
+        setGradingProgress({
+          completed: data.completed_count,
+          total: data.total_count,
+          displayedProgress: progress,
+          phase:
+            data.type === "tools"
+              ? "tools"
+              : data.type === "summary"
+                ? "summary"
+                : null,
+        });
+        setIsGrading(true);
+      }
     };
 
     socket.on("simulation_continued", handleSimulationContinued);
-    socket.on("simulation_error", handleSimulationError);
+    socket.on("continue_simulation_error", handleSimulationError);
     socket.on("simulation_grading_progress", handleSimulationGradingProgress);
-
-    // Listen for custom events from AttemptChat
-    const handleGradingProgressEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const { type, chat_id, completed_count, total_count } =
-        customEvent.detail;
-      if (chat_id !== currentChatId) return;
-      handleSimulationGradingProgress({
-        type,
-        chat_id,
-        completed_count,
-        total_count,
-      });
-    };
-
-    const handleGradingCompleteEvent = () => {
-      setIsGrading(false);
-      setGradingProgress(null);
-    };
-
-    window.addEventListener(
-      "simulationGradingProgress",
-      handleGradingProgressEvent
-    );
-    window.addEventListener(
-      "simulationGradingComplete",
-      handleGradingCompleteEvent
-    );
 
     return () => {
       socket.off("simulation_continued", handleSimulationContinued);
-      socket.off("simulation_error", handleSimulationError);
+      socket.off("continue_simulation_error", handleSimulationError);
       socket.off(
         "simulation_grading_progress",
         handleSimulationGradingProgress
-      );
-      window.removeEventListener(
-        "simulationGradingProgress",
-        handleGradingProgressEvent
-      );
-      window.removeEventListener(
-        "simulationGradingComplete",
-        handleGradingCompleteEvent
       );
     };
   }, [socket, currentChatId]);

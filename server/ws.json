@@ -89,6 +89,24 @@
         "message": "string"
       }
     },
+    "stop_simulation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "send_simulation_message_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "continue_simulation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
     "simulation_started": {
       "payload": {
         "success": "boolean",
@@ -140,6 +158,14 @@
       "payload": {
         "chat_id": "string",
         "error": "string"
+      }
+    },
+    "message_sent": {
+      "payload": {
+        "message_id": "string",
+        "chat_id": "string",
+        "message": "string",
+        "created_at": "string"
       }
     },
     "hint_generation_progress": {

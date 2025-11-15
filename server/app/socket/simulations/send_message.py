@@ -76,6 +76,13 @@ class SimulationMessageCancelledPayload(BaseModel):
     final_content: str
 
 
+class MessageSentPayload(BaseModel):
+    message_id: str
+    chat_id: str
+    message: str
+    created_at: str
+
+
 # Pydantic model for client-to-server event
 class SendSimulationMessagePayload(BaseModel):
     chat_id: str
@@ -122,6 +129,10 @@ async def simulation_message_cancelled(
     payload: SimulationMessageCancelledPayload, room: str
 ) -> None:
     await sio.emit("simulation_message_cancelled", payload.model_dump(), room=room)
+
+
+async def message_sent(payload: MessageSentPayload, room: str) -> None:
+    await sio.emit("message_sent", payload.model_dump(), room=room)
 
 
 async def _generate_hints_background_inline(
@@ -488,6 +499,16 @@ async def _send_simulation_message_impl(sid: str, data: SendSimulationMessagePay
                             role="user",
                             content=message_str,
                             completed=True,
+                            created_at=user_message["created_at"].isoformat(),
+                        ),
+                        room=f"simulation_{chat_id_uuid}",
+                    )
+                    # Emit message_sent event for tour progression and cross-component communication
+                    await message_sent(
+                        MessageSentPayload(
+                            message_id=str(user_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            message=message_str,
                             created_at=user_message["created_at"].isoformat(),
                         ),
                         room=f"simulation_{chat_id_uuid}",

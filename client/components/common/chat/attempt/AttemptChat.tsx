@@ -197,7 +197,10 @@ export default function AttemptChat({
     return chatData?.scenario ?? null;
   }, [attemptData, currentChat]);
 
-  const scenarioDocuments = attemptData?.scenarioDocuments || [];
+  const scenarioDocuments = useMemo(
+    () => attemptData?.scenarioDocuments || [],
+    [attemptData?.scenarioDocuments]
+  );
   const attemptProfiles = useMemo(
     () => attemptData?.attemptProfiles || [],
     [attemptData?.attemptProfiles]
@@ -503,58 +506,18 @@ export default function AttemptChat({
       completed: boolean;
       created_at: string;
     }) => {
-      if (data.role === "assistant" || data.role === "response") {
-        window.dispatchEvent(
-          new CustomEvent("simulationMessageStart", {
-            detail: {
-              messageId: data.message_id,
-              chatId: data.chat_id,
-            },
-          })
-        );
+      // Handle message start for assistant messages
+      if (
+        (data.role === "assistant" || data.role === "response") &&
+        data.chat_id === currentChatIdRef.current
+      ) {
+        setIsSendingMessage(true);
       }
 
-      if (data.role === "user") {
-        window.dispatchEvent(
-          new CustomEvent("messageSent", {
-            detail: {
-              messageId: data.message_id,
-              chatId: data.chat_id,
-            },
-          })
-        );
+      // Refresh when new message arrives for current chat
+      if (data.chat_id === currentChatIdRef.current) {
+        router.refresh();
       }
-
-      window.dispatchEvent(
-        new CustomEvent("simulationNewMessage", {
-          detail: {
-            messageId: data.message_id,
-            chatId: data.chat_id,
-            role: data.role,
-            content: data.content,
-            completed: data.completed,
-            createdAt: data.created_at,
-          },
-        })
-      );
-    };
-
-    const handleSimulationMessageToken = (data: {
-      message_id: string;
-      chat_id: string;
-      token: string;
-      accumulated_content: string;
-    }) => {
-      window.dispatchEvent(
-        new CustomEvent("simulationMessageToken", {
-          detail: {
-            messageId: data.message_id,
-            chatId: data.chat_id,
-            token: data.token,
-            accumulatedContent: data.accumulated_content,
-          },
-        })
-      );
     };
 
     const handleSimulationMessageComplete = (data: {
@@ -564,17 +527,10 @@ export default function AttemptChat({
       completed?: boolean;
       audio?: boolean;
     }) => {
-      setIsSendingMessage(false);
-
-      window.dispatchEvent(
-        new CustomEvent("simulationMessageComplete", {
-          detail: {
-            messageId: data.message_id,
-            chatId: data.chat_id,
-            finalContent: data.final_content,
-          },
-        })
-      );
+      if (data.chat_id === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        router.refresh();
+      }
     };
 
     const handleSimulationMessageCancelled = (data: {
@@ -582,36 +538,20 @@ export default function AttemptChat({
       chat_id: string;
       final_content: string;
     }) => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-
-      window.dispatchEvent(
-        new CustomEvent("simulationMessageCancelled", {
-          detail: {
-            messageId: data.message_id,
-            chatId: data.chat_id,
-            finalContent: data.final_content,
-          },
-        })
-      );
+      if (data.chat_id === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
     };
 
     const handleSimulationMessageError = (data: {
       chat_id: string;
       error: string;
     }) => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-
-      window.dispatchEvent(
-        new CustomEvent("simulationMessageError", {
-          detail: {
-            chatId: data.chat_id,
-            error: data.error,
-          },
-        })
-      );
-
+      if (data.chat_id === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
       toast.error(`Simulation error: ${data.error}`);
     };
 
@@ -620,17 +560,10 @@ export default function AttemptChat({
       success: boolean;
       message: string;
     }) => {
-      setIsStoppingMessage(false);
-
-      window.dispatchEvent(
-        new CustomEvent("simulationStopped", {
-          detail: {
-            chatId: data.chat_id,
-            success: data.success,
-            message: data.message,
-          },
-        })
-      );
+      if (data.chat_id === currentChatIdRef.current) {
+        setIsStoppingMessage(false);
+        setIsSendingMessage(false);
+      }
 
       if (data.success && data.message) {
         toast.success(data.message);
@@ -646,26 +579,17 @@ export default function AttemptChat({
       next_chat_id: string;
       is_attempt_finished: boolean;
     }) => {
+      if (data.completed_chat_id === currentChatIdRef.current) {
+        freshlyCompletedChatsRef.current.add(data.completed_chat_id);
+        router.refresh();
+
+        if (data.next_chat_id) {
+          pendingNextChatIdRef.current = data.next_chat_id;
+        }
+      }
+
       if (data.success) {
         toast.success(data.message);
-
-        window.dispatchEvent(
-          new CustomEvent("simulationChatEnded", {
-            detail: {
-              completedChatId: data.completed_chat_id,
-              nextChatId: data.next_chat_id,
-              isAttemptFinished: data.is_attempt_finished,
-            },
-          })
-        );
-
-        window.dispatchEvent(
-          new CustomEvent("chatEnded", {
-            detail: {
-              chatId: data.completed_chat_id,
-            },
-          })
-        );
       } else {
         toast.error(data.message);
       }
@@ -676,45 +600,41 @@ export default function AttemptChat({
       message: string;
       attempt_id: string;
     }) => {
+      if (data.attempt_id === attemptId) {
+        router.refresh();
+        setShowResults(true);
+      }
+
       if (data.success) {
         toast.success(data.message);
-
-        window.dispatchEvent(
-          new CustomEvent("endAllCompleted", {
-            detail: {
-              attemptId: data.attempt_id,
-            },
-          })
-        );
       } else {
         toast.error(data.message);
       }
     };
 
-    const handleSimulationError = (data: {
+    const handleSendSimulationMessageError = (data: {
       success: boolean;
       message: string;
     }) => {
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
       toast.error(data.message);
-      window.dispatchEvent(new CustomEvent("simulationError"));
     };
 
-    const handleHintGenerationProgress = (data: {
-      type: string;
+    const handleStopSimulationError = (data: {
+      success: boolean;
       message: string;
-      chat_id: string;
-      message_id: string;
-      hint_ids?: string[];
-      hints_count?: number;
-      error?: string;
     }) => {
-      window.dispatchEvent(
-        new CustomEvent("hint_generation_progress", {
-          detail: data,
-        })
-      );
+      setIsStoppingMessage(false);
+      setIsSendingMessage(false);
+      toast.error(data.message);
+    };
+
+    const handleContinueSimulationError = (data: {
+      success: boolean;
+      message: string;
+    }) => {
+      toast.error(data.message);
     };
 
     const handleSimulationGradingProgress = (data: {
@@ -734,219 +654,7 @@ export default function AttemptChat({
       time_taken?: number;
       summary?: string;
     }) => {
-      window.dispatchEvent(
-        new CustomEvent("simulationGradingProgress", {
-          detail: data,
-        })
-      );
-    };
-
-    socket.on("simulation_new_message", handleSimulationNewMessage);
-    socket.on("simulation_message_token", handleSimulationMessageToken);
-    socket.on("simulation_message_complete", handleSimulationMessageComplete);
-    socket.on("simulation_message_cancelled", handleSimulationMessageCancelled);
-    socket.on("simulation_message_error", handleSimulationMessageError);
-    socket.on("simulation_stopped", handleSimulationStopped);
-    socket.on("simulation_continued", handleSimulationContinued);
-    socket.on("end_all_completed", handleEndAllCompleted);
-    socket.on("simulation_error", handleSimulationError);
-    socket.on("hint_generation_progress", handleHintGenerationProgress);
-    socket.on("simulation_grading_progress", handleSimulationGradingProgress);
-
-    return () => {
-      socket.off("simulation_new_message", handleSimulationNewMessage);
-      socket.off("simulation_message_token", handleSimulationMessageToken);
-      socket.off(
-        "simulation_message_complete",
-        handleSimulationMessageComplete
-      );
-      socket.off(
-        "simulation_message_cancelled",
-        handleSimulationMessageCancelled
-      );
-      socket.off("simulation_message_error", handleSimulationMessageError);
-      socket.off("simulation_stopped", handleSimulationStopped);
-      socket.off("simulation_continued", handleSimulationContinued);
-      socket.off("end_all_completed", handleEndAllCompleted);
-      socket.off("simulation_error", handleSimulationError);
-      socket.off("hint_generation_progress", handleHintGenerationProgress);
-      socket.off(
-        "simulation_grading_progress",
-        handleSimulationGradingProgress
-      );
-    };
-  }, [socket]);
-
-  // Listen for WebSocket loading state changes via window events
-  useEffect(() => {
-    const handleSimulationMessageStart = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        setIsSendingMessage(true);
-      }
-    };
-
-    const handleSimulationMessageComplete = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        setIsSendingMessage(false);
-        router.refresh();
-
-        window.dispatchEvent(
-          new CustomEvent("responseComplete", {
-            detail: {
-              chatId: event.detail.chatId,
-              messageId: event.detail.messageId,
-              finalContent: event.detail.finalContent,
-            },
-          })
-        );
-      }
-    };
-
-    const handleSimulationMessageCancelled = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        setIsSendingMessage(false);
-        setIsStoppingMessage(false);
-      }
-    };
-
-    const handleSimulationMessageError = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        setIsSendingMessage(false);
-        setIsStoppingMessage(false);
-      }
-    };
-
-    const handleSimulationStopped = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        setIsStoppingMessage(false);
-        setIsSendingMessage(false);
-      }
-    };
-
-    const handleChatEnded = (event: CustomEvent) => {
-      if (event.detail.completedChatId === currentChatIdRef.current) {
-        freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
-
-        router.refresh();
-
-        if (event.detail.nextChatId) {
-          pendingNextChatIdRef.current = event.detail.nextChatId as string;
-        }
-
-        window.dispatchEvent(
-          new CustomEvent("chatEnded", {
-            detail: {
-              chatId: event.detail.completedChatId,
-              attemptId: attemptId,
-            },
-          })
-        );
-      }
-    };
-
-    const handleSimulationError = () => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-    };
-
-    const handleEndAllCompleted = (event: CustomEvent) => {
-      if (event.detail.attemptId === attemptId) {
-        router.refresh();
-        setShowResults(true);
-      }
-    };
-
-    const handleSimulationNewMessage = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        router.refresh();
-      }
-    };
-
-    window.addEventListener(
-      "simulationMessageStart",
-      handleSimulationMessageStart as EventListener
-    );
-    window.addEventListener(
-      "simulationMessageComplete",
-      handleSimulationMessageComplete as EventListener
-    );
-    window.addEventListener(
-      "simulationMessageCancelled",
-      handleSimulationMessageCancelled as EventListener
-    );
-    window.addEventListener(
-      "simulationMessageError",
-      handleSimulationMessageError as EventListener
-    );
-    window.addEventListener(
-      "simulationStopped",
-      handleSimulationStopped as EventListener
-    );
-    window.addEventListener(
-      "simulationChatEnded",
-      handleChatEnded as EventListener
-    );
-    window.addEventListener(
-      "simulationError",
-      handleSimulationError as EventListener
-    );
-    window.addEventListener(
-      "endAllCompleted",
-      handleEndAllCompleted as EventListener
-    );
-    window.addEventListener(
-      "simulationNewMessage",
-      handleSimulationNewMessage as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "simulationMessageStart",
-        handleSimulationMessageStart as EventListener
-      );
-      window.removeEventListener(
-        "simulationMessageComplete",
-        handleSimulationMessageComplete as EventListener
-      );
-      window.removeEventListener(
-        "simulationMessageCancelled",
-        handleSimulationMessageCancelled as EventListener
-      );
-      window.removeEventListener(
-        "simulationMessageError",
-        handleSimulationMessageError as EventListener
-      );
-      window.removeEventListener(
-        "simulationStopped",
-        handleSimulationStopped as EventListener
-      );
-      window.removeEventListener(
-        "simulationChatEnded",
-        handleChatEnded as EventListener
-      );
-      window.removeEventListener(
-        "simulationError",
-        handleSimulationError as EventListener
-      );
-      window.removeEventListener(
-        "endAllCompleted",
-        handleEndAllCompleted as EventListener
-      );
-      window.removeEventListener(
-        "simulationNewMessage",
-        handleSimulationNewMessage as EventListener
-      );
-    };
-  }, [attemptId, router]);
-
-  // Listen for grading progress events
-  useEffect(() => {
-    const handleGradingProgress = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const { type, chat_id, completed_count, total_count } =
-        customEvent.detail;
-
-      if (chat_id !== currentChat?.id) {
+      if (data.chat_id !== currentChat?.id) {
         if (isGrading && gradingProgress) {
           isGradingRef.current = false;
           setIsGrading(false);
@@ -956,12 +664,11 @@ export default function AttemptChat({
         return;
       }
 
-      if (type === "start") {
+      if (data.type === "start") {
         isGradingRef.current = true;
         setIsGrading(true);
         const initialTotal =
-          total_count ??
-          (customEvent.detail.standards_count as number | undefined);
+          data.total_count ?? (data.standards_graded as number | undefined);
         if (initialTotal !== undefined) {
           const initialProgress = {
             completed: 0,
@@ -973,14 +680,16 @@ export default function AttemptChat({
           setGradingProgress(initialProgress);
         }
       } else if (
-        type === "standard_graded" &&
-        completed_count !== undefined &&
-        total_count !== undefined
+        data.type === "standard_graded" &&
+        data.completed_count !== undefined &&
+        data.total_count !== undefined
       ) {
         isGradingRef.current = true;
         setIsGrading(true);
+        const completedCount = data.completed_count;
+        const totalCount = data.total_count;
         setGradingProgress((prev) => {
-          const allToolsComplete = completed_count === total_count;
+          const allToolsComplete = completedCount === totalCount;
           const newPhase = allToolsComplete
             ? "summary"
             : prev?.phase || "tools";
@@ -988,7 +697,7 @@ export default function AttemptChat({
           let displayedProgress: number;
           if (newPhase === "tools") {
             displayedProgress = Math.min(
-              (completed_count / total_count) * 90,
+              (completedCount / totalCount) * 90,
               90
             );
           } else {
@@ -997,8 +706,8 @@ export default function AttemptChat({
 
           if (!prev) {
             const newProgress = {
-              completed: completed_count,
-              total: total_count,
+              completed: completedCount,
+              total: totalCount,
               displayedProgress,
               phase: newPhase,
             };
@@ -1008,15 +717,15 @@ export default function AttemptChat({
 
           const updatedProgress = {
             ...prev,
-            completed: completed_count,
-            total: total_count,
+            completed: completedCount,
+            total: totalCount,
             phase: newPhase,
             displayedProgress,
           };
           gradingProgressRef.current = updatedProgress;
           return updatedProgress;
         });
-      } else if (type === "summary_recorded") {
+      } else if (data.type === "summary_recorded") {
         setGradingProgress((prev) => {
           if (!prev) return null;
           const updatedProgress = {
@@ -1027,7 +736,7 @@ export default function AttemptChat({
           gradingProgressRef.current = updatedProgress;
           return updatedProgress;
         });
-      } else if (type === "complete") {
+      } else if (data.type === "complete") {
         setGradingProgress((prev) => {
           if (!prev) return null;
           return {
@@ -1044,15 +753,47 @@ export default function AttemptChat({
       }
     };
 
-    window.addEventListener("simulationGradingProgress", handleGradingProgress);
+    socket.on("simulation_new_message", handleSimulationNewMessage);
+    socket.on("simulation_message_complete", handleSimulationMessageComplete);
+    socket.on("simulation_message_cancelled", handleSimulationMessageCancelled);
+    socket.on("simulation_message_error", handleSimulationMessageError);
+    socket.on("simulation_stopped", handleSimulationStopped);
+    socket.on("simulation_continued", handleSimulationContinued);
+    socket.on("end_all_completed", handleEndAllCompleted);
+    socket.on(
+      "send_simulation_message_error",
+      handleSendSimulationMessageError
+    );
+    socket.on("stop_simulation_error", handleStopSimulationError);
+    socket.on("continue_simulation_error", handleContinueSimulationError);
+    socket.on("simulation_grading_progress", handleSimulationGradingProgress);
 
     return () => {
-      window.removeEventListener(
-        "simulationGradingProgress",
-        handleGradingProgress
+      socket.off("simulation_new_message", handleSimulationNewMessage);
+      socket.off(
+        "simulation_message_complete",
+        handleSimulationMessageComplete
+      );
+      socket.off(
+        "simulation_message_cancelled",
+        handleSimulationMessageCancelled
+      );
+      socket.off("simulation_message_error", handleSimulationMessageError);
+      socket.off("simulation_stopped", handleSimulationStopped);
+      socket.off("simulation_continued", handleSimulationContinued);
+      socket.off("end_all_completed", handleEndAllCompleted);
+      socket.off(
+        "send_simulation_message_error",
+        handleSendSimulationMessageError
+      );
+      socket.off("stop_simulation_error", handleStopSimulationError);
+      socket.off("continue_simulation_error", handleContinueSimulationError);
+      socket.off(
+        "simulation_grading_progress",
+        handleSimulationGradingProgress
       );
     };
-  }, [currentChat?.id, isGrading, gradingProgress]);
+  }, [socket, currentChat?.id, attemptId, router, isGrading, gradingProgress]);
 
   // Update ref when grading state changes
   useEffect(() => {

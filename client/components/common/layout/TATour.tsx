@@ -111,6 +111,7 @@ export default function TATour({
     isConnected,
     emitStartSimulation,
     startingSimulationId,
+    socket,
   } = useProfile();
 
   const {
@@ -813,11 +814,19 @@ export default function TATour({
       }
     };
 
-    window.addEventListener(
-      "simulationStarted",
-      handleSimulationStarted as EventListener
-    );
-    window.addEventListener("simulationError", handleSimulationError);
+    // Set up socket listeners for server events
+    if (socket) {
+      socket.on("simulation_started", handleSimulationStarted);
+      socket.on("start_simulation_error", handleStartSimulationError);
+      socket.on("stop_simulation_error", handleStopSimulationError);
+      socket.on(
+        "send_simulation_message_error",
+        handleSendSimulationMessageError
+      );
+      socket.on("continue_simulation_error", handleContinueSimulationError);
+    }
+
+    // Keep window listeners for tour-specific client events (no server equivalents)
     window.addEventListener(
       "simulationButtonPressed",
       handleSimulationButtonPressed as EventListener
@@ -842,11 +851,16 @@ export default function TATour({
     );
 
     return () => {
-      window.removeEventListener(
-        "simulationStarted",
-        handleSimulationStarted as EventListener
-      );
-      window.removeEventListener("simulationError", handleSimulationError);
+      if (socket) {
+        socket.off("simulation_started", handleSimulationStarted);
+        socket.off("start_simulation_error", handleStartSimulationError);
+        socket.off("stop_simulation_error", handleStopSimulationError);
+        socket.off(
+          "send_simulation_message_error",
+          handleSendSimulationMessageError
+        );
+        socket.off("continue_simulation_error", handleContinueSimulationError);
+      }
       window.removeEventListener(
         "simulationButtonPressed",
         handleSimulationButtonPressed as EventListener
@@ -878,6 +892,7 @@ export default function TATour({
     };
   }, [
     isFullEmulation,
+    socket,
     router,
     handleStepComplete,
     setLoadingSimulation,
