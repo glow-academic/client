@@ -135,7 +135,8 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_success(self) -> None:
         """Test successful weighted_sample_without_replacement execution."""
-        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import \
+            weighted_sample_without_replacement
 
         # Test basic sampling
         items = ["a", "b", "c", "d"]
@@ -148,7 +149,8 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_k_greater_than_len(self) -> None:
         """Test weighted_sample_without_replacement with k > len(items)."""
-        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import \
+            weighted_sample_without_replacement
 
         # Test k > len
         items = ["a", "b"]
@@ -160,7 +162,8 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_zero_scores(self) -> None:
         """Test weighted_sample_without_replacement with zero scores."""
-        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import \
+            weighted_sample_without_replacement
 
         # Test zero scores (should fall back to uniform random)
         items = ["a", "b", "c"]
@@ -172,7 +175,8 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_k_zero(self) -> None:
         """Test weighted_sample_without_replacement with k=0."""
-        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import \
+            weighted_sample_without_replacement
 
         # Test k=0
         items = ["a", "b", "c"]
@@ -189,7 +193,8 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading text file."""
-        from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
+        from app.utils.text.read_document_content_for_similarity import \
+            read_document_content_for_similarity
 
         # Create a temporary text file
         test_file = tmp_path / "test.txt"
@@ -205,7 +210,8 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading non-existent file."""
-        from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
+        from app.utils.text.read_document_content_for_similarity import \
+            read_document_content_for_similarity
 
         # Mock UPLOAD_FOLDER to use tmp_path - patch where it's imported
         monkeypatch.setattr("app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path)
@@ -217,7 +223,8 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading file with latin-1 encoding fallback."""
-        from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
+        from app.utils.text.read_document_content_for_similarity import \
+            read_document_content_for_similarity
 
         # Create a file with latin-1 encoding
         test_file = tmp_path / "latin1.txt"
@@ -231,8 +238,55 @@ class TestRead_Document_Content_For_Similarity:
         assert "Hello" in result
         assert "World" in result
 
-    @pytest.mark.skip(reason="PDF reading requires pypdf library and actual PDF file")
-    def test_read_document_content_for_similarity_pdf(self) -> None:
+    def test_read_document_content_for_similarity_pdf(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test reading PDF file."""
-        # This would require creating a valid PDF file which is complex
-        pass
+        from unittest.mock import MagicMock, patch
+
+        from app.utils.text.read_document_content_for_similarity import \
+            read_document_content_for_similarity
+
+        # Create a fake PDF file
+        test_file = tmp_path / "test.pdf"
+        test_file.write_bytes(b"fake pdf content")
+
+        # Mock UPLOAD_FOLDER to use tmp_path
+        monkeypatch.setattr("app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path)
+
+        # Mock pypdf.PdfReader
+        mock_page1 = MagicMock()
+        mock_page1.extract_text.return_value = "Page 1 content"
+        mock_page2 = MagicMock()
+        mock_page2.extract_text.return_value = "Page 2 content"
+        mock_reader = MagicMock()
+        mock_reader.pages = [mock_page1, mock_page2]
+
+        with patch("pypdf.PdfReader", return_value=mock_reader):
+            result = read_document_content_for_similarity("test.pdf")
+
+            assert "Page 1 content" in result
+            assert "Page 2 content" in result
+
+    def test_read_document_content_for_similarity_pdf_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test reading PDF file with error."""
+        from app.utils.text.read_document_content_for_similarity import \
+            read_document_content_for_similarity
+
+        # Create a fake PDF file
+        test_file = tmp_path / "test.pdf"
+        test_file.write_bytes(b"fake pdf content")
+
+        # Mock UPLOAD_FOLDER to use tmp_path
+        monkeypatch.setattr("app.utils.text.read_document_content_for_similarity.UPLOAD_FOLDER", tmp_path)
+
+        # Mock pypdf.PdfReader to raise an exception
+        from unittest.mock import patch
+
+        with patch("pypdf.PdfReader", side_effect=Exception("PDF error")):
+            result = read_document_content_for_similarity("test.pdf")
+
+            # Should return empty string on error
+            assert result == ""
