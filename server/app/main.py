@@ -161,7 +161,7 @@ sio = socketio.AsyncServer(
 
 # Wrapper functions to access shared state (avoids circular dependencies)
 # These are defined after sio is created so they can reference it
-def get_redis_client() -> object | None:
+def get_redis_client() -> Any | None:
     """Get the Redis client instance."""
     return redis_client
 

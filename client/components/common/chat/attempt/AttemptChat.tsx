@@ -500,7 +500,7 @@ export default function AttemptChat({
   useEffect(() => {
     if (!socket) return;
 
-    const handleSimulationNewMessage = (data: {
+    const handleSimulationNewMessage = async (data: {
       message_id: string;
       chat_id: string;
       role: string;
@@ -518,6 +518,10 @@ export default function AttemptChat({
 
       // Refresh when new message arrives for current chat
       if (data.chat_id === currentChatIdRef.current) {
+        // Revalidate cache to ensure we get the latest message state
+        if (revalidateAttemptAction) {
+          await revalidateAttemptAction(attemptId);
+        }
         router.refresh();
       }
     };
@@ -539,7 +543,7 @@ export default function AttemptChat({
       }
     };
 
-    const handleSimulationMessageComplete = (data: {
+    const handleSimulationMessageComplete = async (data: {
       message_id: string;
       chat_id: string;
       final_content: string;
@@ -548,6 +552,10 @@ export default function AttemptChat({
     }) => {
       if (data.chat_id === currentChatIdRef.current) {
         setIsSendingMessage(false);
+        // Revalidate cache first to ensure we get the completed message content
+        if (revalidateAttemptAction) {
+          await revalidateAttemptAction(attemptId);
+        }
         router.refresh();
       }
     };
@@ -591,7 +599,7 @@ export default function AttemptChat({
       }
     };
 
-    const handleSimulationContinued = (data: {
+    const handleSimulationContinued = async (data: {
       success: boolean;
       message: string;
       completed_chat_id: string;
@@ -600,6 +608,10 @@ export default function AttemptChat({
     }) => {
       if (data.completed_chat_id === currentChatIdRef.current) {
         freshlyCompletedChatsRef.current.add(data.completed_chat_id);
+        // Revalidate cache to ensure we get the latest chat state
+        if (revalidateAttemptAction) {
+          await revalidateAttemptAction(attemptId);
+        }
         router.refresh();
 
         if (data.next_chat_id) {
@@ -614,12 +626,16 @@ export default function AttemptChat({
       }
     };
 
-    const handleEndAllCompleted = (data: {
+    const handleEndAllCompleted = async (data: {
       success: boolean;
       message: string;
       attempt_id: string;
     }) => {
       if (data.attempt_id === attemptId) {
+        // Revalidate cache to ensure we get the final attempt state
+        if (revalidateAttemptAction) {
+          await revalidateAttemptAction(attemptId);
+        }
         router.refresh();
         setShowResults(true);
       }

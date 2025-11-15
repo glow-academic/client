@@ -19,7 +19,7 @@ async def invalidate_tags(tags: Iterable[str]) -> None:
         for tag in tags:
             set_name = tag_set_name(tag)
             # Get all keys for this tag
-            keys = await redis_client.smembers(set_name)
+            keys = await redis_client.smembers(set_name)  # type: ignore[misc]
             if keys:
                 # Delete all cached responses
                 key_list = [
