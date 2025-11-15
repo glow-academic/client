@@ -1,0 +1,73 @@
+"""Integration tests for stop_simulation WebSocket event."""
+
+import asyncpg  # type: ignore
+import pytest
+from app.web.simulations.stop import handle_stop_simulation
+from tests.integration.web.conftest import MockSocketIO
+
+pytestmark = pytest.mark.asyncio
+
+
+async def test_stop_simulation_missing_chat_id(
+    db: asyncpg.Connection, mock_sio: MockSocketIO
+) -> None:
+    """Test stop_simulation with missing chat_id."""
+    sid = "test_sid_123"
+    data = {}
+
+    await handle_stop_simulation(sid, data)
+
+    # Verify error was emitted
+    error_events = mock_sio.get_events("simulation_error")
+    assert len(error_events) >= 1
+    assert "Missing chat_id" in error_events[0]["message"]
+
+    # Verify no stop event was emitted
+    stopped_events = mock_sio.get_events("simulation_stopped")
+    assert len(stopped_events) == 0
+
+
+async def test_stop_simulation_chat_not_found(
+    db: asyncpg.Connection, mock_sio: MockSocketIO
+) -> None:
+    """Test stop_simulation with non-existent chat_id."""
+    fake_chat_id = "00000000-0000-0000-0000-000000000000"
+
+    sid = "test_sid_123"
+    data = {
+        "chat_id": fake_chat_id,
+    }
+
+    await handle_stop_simulation(sid, data)
+
+    # Should emit stop event with success=False
+    stopped_events = mock_sio.get_events("simulation_stopped")
+    assert len(stopped_events) >= 1
+    assert stopped_events[0]["success"] is False
+    assert "No active message" in stopped_events[0]["message"]
+
+
+async def test_stop_simulation_success(
+    db: asyncpg.Connection, mock_sio: MockSocketIO
+) -> None:
+    """Test stop_simulation with valid chat_id (may not have active run)."""
+    # Get an existing chat_id from the database
+    chat_row = await db.fetchrow(
+        "SELECT id FROM simulation_chats LIMIT 1"
+    )
+    if not chat_row:
+        pytest.skip("No simulation chats found in test database")
+    chat_id = str(chat_row["id"])
+
+    sid = "test_sid_123"
+    data = {
+        "chat_id": chat_id,
+    }
+
+    await handle_stop_simulation(sid, data)
+
+    # Should emit stop event (may be success=False if no active run)
+    stopped_events = mock_sio.get_events("simulation_stopped")
+    assert len(stopped_events) >= 1
+    assert "chat_id" in stopped_events[0]
+
