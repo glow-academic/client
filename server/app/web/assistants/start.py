@@ -4,17 +4,20 @@ import logging
 import uuid
 from typing import Any
 
+import socketio  # type: ignore
 from agents import Runner, gen_trace_id, trace
 from app.utils.agents import GenericAgent
 from app.db import get_pool
+from app.main import sio
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
-from app.web.assistants.utils import emit_assistant_error, get_sio_instance
+from app.web.assistants.utils import emit_assistant_error
 
 logger = logging.getLogger(__name__)
 
 
-async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def start_assistant(sid: str, data: dict[str, Any]) -> None:
     """
     Handle assistant start requests via WebSocket
     Creates a new assistant chat and processes the initial message
@@ -72,9 +75,8 @@ async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
             logger.info(f"Created new assistant chat: {chat_id}")
 
             # Ensure client is joined to the assistant room
-            sio_instance = get_sio_instance()
             assistant_room = f"assistant_{chat_id}"
-            await sio_instance.enter_room(sid, assistant_room)
+            await sio.enter_room(sid, assistant_room)
             logger.info(f"Client {sid} joined assistant room {assistant_room}")
 
             # Update the title with the title agent (inlined run_title_agent)
@@ -185,14 +187,14 @@ async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
             logger.info(f"Chat title: {chat_title}")
 
             # Emit title update to connected clients
-            await sio_instance.emit(
+            await sio.emit(
                 "title_updated",
                 {"chat_id": chat_id, "title": chat_title},
                 room=assistant_room,
             )
 
             # Emit success response with chat_id
-            await sio_instance.emit(
+            await sio.emit(
                 "assistant_started",
                 {
                     "success": True,

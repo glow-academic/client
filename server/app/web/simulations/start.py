@@ -5,9 +5,11 @@ import logging
 import uuid
 from typing import Any
 
+import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_pool
+from app.main import sio
 from app.utils.agent_tools import (create_scenario_tools, scenario_progress,
                                    scenario_results)
 from app.utils.agents import GenericAgent
@@ -17,12 +19,13 @@ from app.utils.document import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import emit_error, get_sio_instance
+from app.web.simulations.utils import emit_error
 
 logger = logging.getLogger(__name__)
 
 
-async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def start_simulation(sid: str, data: dict[str, Any]) -> None:
     """
     Handle simulation start requests via WebSocket
     Replaces /simulations/start endpoint
@@ -524,13 +527,12 @@ async def handle_start_simulation(sid: str, data: dict[str, Any]) -> None:
             )
 
             # Join the client to the simulation room for real-time updates
-            sio_instance = get_sio_instance()
             simulation_room = f"simulation_{result['chat_id']}"
-            await sio_instance.enter_room(sid, simulation_room)
+            await sio.enter_room(sid, simulation_room)
             logger.info(f"Client {sid} joined simulation room {simulation_room}")
 
             # Emit success response
-            await sio_instance.emit(
+            await sio.emit(
                 "simulation_started",
                 {
                     "success": True,

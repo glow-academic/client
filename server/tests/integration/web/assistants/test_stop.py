@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.assistants.stop import handle_stop_assistant
+from app.web.assistants.stop import stop_assistant
 from tests.integration.web.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
@@ -26,7 +26,7 @@ async def test_stop_assistant_success(
     sid = "test_sid_123"
     data = {"chat_id": chat_id_str}
 
-    await handle_stop_assistant(sid, data)
+    await stop_assistant(sid, data)
 
     # Verify stop event was emitted (even if no active run)
     stopped_events = mock_sio.get_events("assistant_stopped")
@@ -42,7 +42,7 @@ async def test_stop_assistant_missing_chat_id(
     sid = "test_sid_123"
     data = {}
 
-    await handle_stop_assistant(sid, data)
+    await stop_assistant(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -62,7 +62,7 @@ async def test_stop_assistant_chat_not_found(
     sid = "test_sid_123"
     data = {"chat_id": fake_chat_id}
 
-    await handle_stop_assistant(sid, data)
+    await stop_assistant(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -91,7 +91,7 @@ async def test_stop_assistant_no_active_run(
     sid = "test_sid_123"
     data = {"chat_id": chat_id_str}
 
-    await handle_stop_assistant(sid, data)
+    await stop_assistant(sid, data)
 
     # Verify stop event was emitted (success may be False if no active run)
     stopped_events = mock_sio.get_events("assistant_stopped")

@@ -7,10 +7,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 import asyncpg  # type: ignore
+import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, trace
 from agents.items import TResponseInputItem
 from app.db import get_pool
-from app.utils.agent_helpers import emit_grading_progress
+from app.main import sio
 from app.utils.agent_tools import (create_grading_tools,
                                    create_safe_field_name, grading_progress,
                                    grading_results)
@@ -21,7 +22,8 @@ from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import emit_error, get_sio_instance
+from app.utils.websocket_emitters import emit_grading_progress
+from app.web.simulations.utils import emit_error
 
 logger = logging.getLogger(__name__)
 
@@ -350,7 +352,6 @@ async def _run_grade_agent_inline(
     simulation_chat_id: uuid.UUID,
     department_id: uuid.UUID,
     conn: asyncpg.Connection,
-    sio_instance: Any,
 ) -> str:
     """Inlined grading agent logic."""
     try:
@@ -504,9 +505,8 @@ async def _run_grade_agent_inline(
         )
 
         # Emit grading start event
-        if sio_instance:
-            await sio_instance.emit(
-                "simulation_grading_progress",
+        await sio.emit(
+            "simulation_grading_progress",
                 {
                     "type": "start",
                     "chat_id": str(simulation_chat_id),
@@ -516,7 +516,7 @@ async def _run_grade_agent_inline(
                 },
                 room=f"simulation_{simulation_chat_id}",
             )
-            logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
+        logger.info(f"Emitted grading start event for chat {simulation_chat_id}")
 
         # Build dynamic rubric using utility function
         rubric_input = get_dynamic_rubric(rubric, standard_groups, standards)
@@ -572,9 +572,9 @@ async def _run_grade_agent_inline(
         input_items.insert(0, time_message)
         input_items.insert(0, rubric_input)
 
-        # Create wrapper for emit_progress that captures sio_instance and chat_id
+        # Create wrapper for emit_progress that captures chat_id
         async def emit_progress_wrapper(event_data: dict[str, Any]) -> None:
-            await emit_grading_progress(event_data, sio_instance, simulation_chat_id)
+            await emit_grading_progress(event_data, sio, simulation_chat_id)
 
         # Create grading tools for each standard group
         grading_tools = create_grading_tools(
@@ -766,9 +766,8 @@ async def _run_grade_agent_inline(
         )
 
         # Emit grading completion event
-        if sio_instance:
-            await sio_instance.emit(
-                "simulation_grading_progress",
+        await sio.emit(
+            "simulation_grading_progress",
                 {
                     "type": "complete",
                     "chat_id": str(simulation_chat_id),
@@ -782,9 +781,9 @@ async def _run_grade_agent_inline(
                 },
                 room=f"simulation_{simulation_chat_id}",
             )
-            logger.info(
-                f"Emitted grading completion event for chat {simulation_chat_id}"
-            )
+        logger.info(
+            f"Emitted grading completion event for chat {simulation_chat_id}"
+        )
 
         logger.info(f"Grading completed successfully with grade ID: {grade_id}")
 
@@ -794,10 +793,9 @@ async def _run_grade_agent_inline(
         logger.error(f"Error in grading agent: {str(e)}", exc_info=True)
 
         # Emit error event
-        if sio_instance:
-            try:
-                await sio_instance.emit(
-                    "simulation_grading_progress",
+        try:
+            await sio.emit(
+                "simulation_grading_progress",
                     {
                         "type": "error",
                         "chat_id": str(simulation_chat_id),
@@ -806,13 +804,14 @@ async def _run_grade_agent_inline(
                     },
                     room=f"simulation_{simulation_chat_id}",
                 )
-            except Exception as emit_error:
-                logger.warning(f"Failed to emit error event: {emit_error}")
+        except Exception as emit_error:
+            logger.warning(f"Failed to emit error event: {emit_error}")
 
         raise
 
 
-async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
     """
     Handle simulation continue requests via WebSocket
     Replaces /simulations/continue endpoint
@@ -836,8 +835,6 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
             return
 
         async with pool.acquire() as conn:
-            sio_instance = get_sio_instance()
-            
             # Get the chat
             sql = load_sql("sql/v3/simulations/get_chat_basic.sql")
             chat = await conn.fetchrow(sql, chat_id)
@@ -1074,7 +1071,7 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
                 chat_message_count = message_count_map.get(chat_id, 0)
                 if chat_message_count >= 2:
                     simulation_grade_id = await _run_grade_agent_inline(
-                        uuid.UUID(chat_id), uuid.UUID(department_id), conn, sio_instance
+                        uuid.UUID(chat_id), uuid.UUID(department_id), conn
                     )
                     
                     # After grading completes, add current chat's scenario to scenarios_with_grades_set
@@ -1122,7 +1119,6 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
                                 uuid.UUID(str(existing_chat["id"])),
                                 uuid.UUID(department_id),
                                 conn,
-                                sio_instance,
                             )
                         sql = load_sql("sql/v3/simulations/update_chat_completed.sql")
                         await conn.execute(sql, str(existing_chat["id"]))
@@ -1169,13 +1165,13 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
                     "attempt_id": attempt_id,
                 }
                 # Emit to requester
-                await sio_instance.emit(
+                await sio.emit(
                     "end_all_completed",
                     payload,
                     room=sid,
                 )
                 # Also broadcast to the simulation room so watchers stay in sync
-                await sio_instance.emit(
+                await sio.emit(
                     "end_all_completed",
                     payload,
                     room=f"simulation_{chat_id}",
@@ -1191,13 +1187,13 @@ async def handle_continue_simulation(sid: str, data: dict[str, Any]) -> None:
                     "simulation_grade_id": result["simulation_grade_id"],
                 }
                 # Emit to requester
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_continued",
                     payload,
                     room=sid,
                 )
                 # Also broadcast to the simulation room so watchers stay in sync
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_continued",
                     payload,
                     room=f"simulation_{chat_id}",

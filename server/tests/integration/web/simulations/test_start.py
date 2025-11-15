@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.simulations.start import handle_start_simulation
+from app.web.simulations.start import start_simulation
 from tests.integration.web.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
@@ -29,7 +29,7 @@ async def test_start_simulation_success(
         "profile_id": profile_id,
     }
 
-    await handle_start_simulation(sid, data)
+    await start_simulation(sid, data)
 
     # Verify events were emitted
     started_events = mock_sio.get_events("simulation_started")
@@ -57,7 +57,7 @@ async def test_start_simulation_missing_simulation_id(
         "profile_id": profile_id,
     }
 
-    await handle_start_simulation(sid, data)
+    await start_simulation(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("simulation_error")
@@ -87,7 +87,7 @@ async def test_start_simulation_guest_profile(
         "profile_id": None,
     }
 
-    await handle_start_simulation(sid, data)
+    await start_simulation(sid, data)
 
     # Should still succeed - guest profile should be resolved
     started_events = mock_sio.get_events("simulation_started")

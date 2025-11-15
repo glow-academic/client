@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.assistants.start import handle_start_assistant
+from app.web.assistants.start import start_assistant
 from tests.integration.web.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
@@ -30,7 +30,7 @@ async def test_start_assistant_success(
         "department_id": department_id,
     }
 
-    await handle_start_assistant(sid, data)
+    await start_assistant(sid, data)
 
     # Verify events were emitted
     started_events = mock_sio.get_events("assistant_started")
@@ -62,7 +62,7 @@ async def test_start_assistant_missing_profile_id(
         "department_id": "test-dept-id",
     }
 
-    await handle_start_assistant(sid, data)
+    await start_assistant(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -85,7 +85,7 @@ async def test_start_assistant_missing_initial_message(
         "department_id": "test-dept-id",
     }
 
-    await handle_start_assistant(sid, data)
+    await start_assistant(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -104,7 +104,7 @@ async def test_start_assistant_missing_department_id(
         "initial_message": "Hello",
     }
 
-    await handle_start_assistant(sid, data)
+    await start_assistant(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -132,7 +132,7 @@ async def test_start_assistant_profile_not_found(
         "department_id": department_id,
     }
 
-    await handle_start_assistant(sid, data)
+    await start_assistant(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")

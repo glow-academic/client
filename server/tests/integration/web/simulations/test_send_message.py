@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.simulations.send_message import handle_send_simulation_message
+from app.web.simulations.send_message import send_simulation_message
 from tests.integration.web.conftest import MockSocketIO
 
 pytestmark = pytest.mark.asyncio
@@ -17,7 +17,7 @@ async def test_send_simulation_message_missing_chat_id(
         "message": "Hello",
     }
 
-    await handle_send_simulation_message(sid, data)
+    await send_simulation_message(sid, data)
 
     # Should not emit any events (handler returns early)
     # Note: This test may need adjustment based on actual error handling
@@ -36,7 +36,7 @@ async def test_send_simulation_message_missing_message(
         "chat_id": fake_chat_id,
     }
 
-    await handle_send_simulation_message(sid, data)
+    await send_simulation_message(sid, data)
 
     # Should not emit any events (handler returns early)
     # Note: This test may need adjustment based on actual error handling
@@ -58,7 +58,7 @@ async def test_send_simulation_message_chat_not_found(
 
     # This will likely fail when trying to process the message
     # The error handling will create an error message in the database
-    await handle_send_simulation_message(sid, data)
+    await send_simulation_message(sid, data)
 
     # Should emit error event
     error_events = mock_sio.get_events("simulation_error")

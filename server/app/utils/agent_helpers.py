@@ -24,41 +24,6 @@ from fastapi import Depends
 logger = logging.getLogger(__name__)
 
 
-async def emit_grading_progress(
-    event_data: dict[str, Any],
-    sio_instance: Any,
-    chat_id: uuid.UUID,
-) -> None:
-    """Helper to emit grading progress via Socket.IO if available."""
-    if sio_instance and chat_id:
-        try:
-            await sio_instance.emit(
-                "simulation_grading_progress",
-                event_data,
-                room=f"simulation_{chat_id}",
-            )
-            logger.info(f"Emitted grading progress: {event_data.get('type')}")
-        except Exception as e:
-            logger.warning(f"Failed to emit grading progress: {e}")
-
-
-async def emit_hint_progress(
-    event_data: dict[str, Any],
-    sio_instance: Any,
-    chat_id: uuid.UUID,
-) -> None:
-    """Helper to emit hint generation progress via Socket.IO if available."""
-    if sio_instance and chat_id:
-        try:
-            await sio_instance.emit(
-                "hint_generation_progress",
-                event_data,
-                room=f"simulation_{chat_id}",
-            )
-        except Exception as e:
-            logger.warning(f"Failed to emit hint progress: {e}")
-
-
 def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericAgent:
     """Create the hint generation agent from context data.
 

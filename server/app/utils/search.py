@@ -8,40 +8,9 @@ Provides normalization, tokenization, and query building helpers.
 
 from __future__ import annotations
 
-import re
-import unicodedata
 from typing import Any
 
-_WS_RE = re.compile(r"\s+")
-
-
-def normalize_text(s: str | None) -> str:
-    """
-    Lowercase, strip accents, collapse whitespace.
-
-    Args:
-        s: Text to normalize
-
-    Returns:
-        Normalized text string
-    """
-    s = s or ""
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(ch for ch in s if not unicodedata.combining(ch))
-    return _WS_RE.sub(" ", s.strip().lower())
-
-
-def tokenize(s: str | None) -> list[str]:
-    """
-    Split normalized text into tokens.
-
-    Args:
-        s: Text to tokenize
-
-    Returns:
-        List of tokens (non-empty strings)
-    """
-    return [t for t in normalize_text(s).split(" ") if t]
+from app.utils.text_helpers import normalize_text, tokenize
 
 
 def build_fuzzy_conditions(

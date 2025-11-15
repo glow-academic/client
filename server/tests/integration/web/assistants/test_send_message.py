@@ -5,7 +5,7 @@ import pytest
 from tests.integration.web.conftest import MockSocketIO
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 
-from app.web.assistants.send_message import handle_send_assistant_message
+from app.web.assistants.send_message import send_assistant_message
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +27,7 @@ async def test_send_assistant_message_missing_chat_id(
         "department_id": department_id,
     }
 
-    await handle_send_assistant_message(sid, data)
+    await send_assistant_message(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -52,7 +52,7 @@ async def test_send_assistant_message_missing_message(
         "department_id": department_id,
     }
 
-    await handle_send_assistant_message(sid, data)
+    await send_assistant_message(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -80,7 +80,7 @@ async def test_send_assistant_message_missing_department_id(
         "message": "Hello",
     }
 
-    await handle_send_assistant_message(sid, data)
+    await send_assistant_message(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("assistant_error")
@@ -108,7 +108,7 @@ async def test_send_assistant_message_chat_not_found(
         "department_id": department_id,
     }
 
-    await handle_send_assistant_message(sid, data)
+    await send_assistant_message(sid, data)
 
     # Verify error was emitted (either from handler or from process function)
     error_events = mock_sio.get_events("assistant_error")
@@ -151,7 +151,7 @@ async def test_send_assistant_message_success(
         "department_id": department_id,
     }
 
-    await handle_send_assistant_message(sid, data)
+    await send_assistant_message(sid, data)
 
     # Verify user message was emitted
     new_message_events = mock_sio.get_events("assistant_new_message")
@@ -207,7 +207,7 @@ async def test_send_assistant_message_tool_calls(
         "department_id": department_id,
     }
 
-    await handle_send_assistant_message(sid, data)
+    await send_assistant_message(sid, data)
 
     # Verify tool call events were emitted (if OpenAI is mocked to return tool calls)
     tool_call_created = mock_sio.get_events("tool_call_created")

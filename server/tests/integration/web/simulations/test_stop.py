@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.simulations.stop import handle_stop_simulation
+from app.web.simulations.stop import stop_simulation
 from tests.integration.web.conftest import MockSocketIO
 
 pytestmark = pytest.mark.asyncio
@@ -15,7 +15,7 @@ async def test_stop_simulation_missing_chat_id(
     sid = "test_sid_123"
     data = {}
 
-    await handle_stop_simulation(sid, data)
+    await stop_simulation(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("simulation_error")
@@ -38,7 +38,7 @@ async def test_stop_simulation_chat_not_found(
         "chat_id": fake_chat_id,
     }
 
-    await handle_stop_simulation(sid, data)
+    await stop_simulation(sid, data)
 
     # Should emit stop event with success=False
     stopped_events = mock_sio.get_events("simulation_stopped")
@@ -64,7 +64,7 @@ async def test_stop_simulation_success(
         "chat_id": chat_id,
     }
 
-    await handle_stop_simulation(sid, data)
+    await stop_simulation(sid, data)
 
     # Should emit stop event (may be success=False if no active run)
     stopped_events = mock_sio.get_events("simulation_stopped")

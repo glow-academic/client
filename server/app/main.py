@@ -140,15 +140,13 @@ sio = socketio.AsyncServer(
     },
 )
 
-from app.web.assistants import register_assistant_events  # noqa: E402
-# Import and register WebSocket events after sio is created to avoid circular imports
-from app.web.simulations import register_simulation_events  # noqa: E402
-
-# Register simulation and assistant WebSocket events
-register_simulation_events(sio)
-register_assistant_events(sio)
-
-# WebSocket events will be registered after sio is created
+# Import WebSocket handlers after sio is created to avoid circular imports
+# Handlers use @sio.event decorators directly - no registration needed
+from app.web.assistants import send_assistant_message  # noqa: E402
+from app.web.assistants import start_assistant, stop_assistant
+from app.web.simulations import continue_simulation  # noqa: E402
+from app.web.simulations import (send_simulation_message, start_simulation,
+                                 stop_simulation)
 
 
 @sio.event  # type: ignore

@@ -46,13 +46,13 @@ def mock_sio() -> MockSocketIO:
 
 @pytest.fixture(autouse=True)
 def patch_sio_instance(mock_sio: MockSocketIO, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Patch get_sio_instance to return the mock server."""
+    """Patch sio to return the mock server."""
+    from app import main
     from app.web.assistants import utils as assistants_utils
     from app.web.simulations import utils as simulations_utils
 
-    def mock_get_sio_instance() -> Any:
-        return mock_sio
-
-    monkeypatch.setattr(assistants_utils, "get_sio_instance", mock_get_sio_instance)
-    monkeypatch.setattr(simulations_utils, "get_sio_instance", mock_get_sio_instance)
+    # Patch sio in main module and utils modules
+    monkeypatch.setattr(main, "sio", mock_sio)
+    monkeypatch.setattr(assistants_utils, "sio", mock_sio)
+    monkeypatch.setattr(simulations_utils, "sio", mock_sio)
 

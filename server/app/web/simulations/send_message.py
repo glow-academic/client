@@ -6,12 +6,14 @@ import logging
 import uuid
 from typing import Any
 
+import socketio  # type: ignore
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from app.db import get_pool
-from app.utils.agent_helpers import (build_hint_agent, emit_hint_progress,
-                                     get_output_guardrails)
+from app.main import sio
+from app.utils.agent_helpers import build_hint_agent, get_output_guardrails
+from app.utils.websocket_emitters import emit_hint_progress
 from app.utils.agent_tools import (create_hint_tools, hint_progress,
                                    hint_results)
 from app.utils.agents import GenericAgent
@@ -20,7 +22,6 @@ from app.utils.chat import (format_chat_scenario,
 from app.utils.debug_info import DebugContext
 from app.utils.document import format_document_info
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import get_sio_instance
 from openai.types.responses import ResponseTextDeltaEvent
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,6 @@ async def _generate_hints_background_inline(
     chat_id: uuid.UUID,
     message_id: uuid.UUID,
     department_id: uuid.UUID,
-    sio_instance: Any,
 ) -> None:
     """
     Background task to generate hints for a completed simulation message.
@@ -132,7 +132,7 @@ async def _generate_hints_background_inline(
                     "chat_id": str(chat_id),
                     "message_id": str(message_id),
                 },
-                sio_instance,
+                sio,
                 chat_id,
             )
 
@@ -289,7 +289,7 @@ async def _generate_hints_background_inline(
                     ],
                     "hints_count": len(hint_ids),
                 },
-                sio_instance,
+                sio,
                 chat_id,
             )
             
@@ -303,9 +303,8 @@ async def _generate_hints_background_inline(
             )
             
             # Emit error event
-            if sio_instance:
-                try:
-                    await sio_instance.emit(
+            try:
+                await sio.emit(
                         "hint_generation_progress",
                         {
                             "type": "error",
@@ -320,7 +319,8 @@ async def _generate_hints_background_inline(
                     logger.warning(f"Failed to emit error event: {emit_error}")
 
 
-async def handle_send_simulation_message(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
     """Handle simulation message sending requests"""
     try:
         chat_id = data.get("chat_id")
@@ -367,9 +367,8 @@ async def handle_send_simulation_message(sid: str, data: dict[str, Any]) -> None
                         )
 
                         # Emit the error message to clients
-                        sio_instance = get_sio_instance()
                         if error_message:
-                            await sio_instance.emit(
+                            await sio.emit(
                                 "simulation_new_message",
                                 {
                                     "message_id": str(error_message["id"]),
@@ -387,8 +386,7 @@ async def handle_send_simulation_message(sid: str, data: dict[str, Any]) -> None
             logger.error(f"Failed to create error message in database: {db_error}")
 
         # Also emit the error event for backward compatibility
-        sio_instance = get_sio_instance()
-        await sio_instance.emit(
+        await sio.emit(
             "simulation_error",
             {"success": False, "message": str(e)},
             room=sid,
@@ -413,7 +411,6 @@ async def process_simulation_message_websocket(
     async with pool.acquire() as conn:
         try:
             # 1. Add the user message to the chat (skip if this is a retry)
-            sio_instance = get_sio_instance()
             if message and message.strip() != "" and not is_retry:
                 sql = load_sql("sql/v3/simulations/create_message.sql")
                 user_message_row = await conn.fetchrow(
@@ -426,7 +423,7 @@ async def process_simulation_message_websocket(
 
                 # 2. Emit user message to connected clients
                 logger.info(f"Emitting user message to room simulation_{chat_id}")
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_new_message",
                     {
                         "message_id": str(user_message["id"]),
@@ -456,7 +453,7 @@ async def process_simulation_message_websocket(
 
             # 4. Emit placeholder assistant message
             logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
-            await sio_instance.emit(
+            await sio.emit(
                 "simulation_new_message",
                 {
                     "message_id": str(assistant_message["id"]),
@@ -670,7 +667,7 @@ async def process_simulation_message_websocket(
                                 logger.info(
                                     f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
                                 )
-                                await sio_instance.emit(
+                                await sio.emit(
                                     "simulation_message_token",
                                     {
                                         "message_id": str(assistant_message["id"]),
@@ -727,8 +724,7 @@ async def process_simulation_message_websocket(
                 sql = load_sql("sql/v3/simulations/complete_message.sql")
                 await conn.execute(sql, error_text, str(assistant_message["id"]))
 
-                sio_instance = get_sio_instance()
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_message_complete",
                     {
                         "message_id": str(assistant_message["id"]),
@@ -738,7 +734,7 @@ async def process_simulation_message_websocket(
                     room=f"simulation_{chat_id}",
                 )
 
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_message_error",
                     {"chat_id": str(chat_id), "error": error_text},
                     room=f"simulation_{chat_id}",
@@ -760,7 +756,7 @@ async def process_simulation_message_websocket(
 
                     # Emit cancellation signal
                     logger.info(f"Emitting cancellation to room simulation_{chat_id}")
-                    await sio_instance.emit(
+                    await sio.emit(
                         "simulation_message_cancelled",
                         {
                             "message_id": str(assistant_message["id"]),
@@ -780,7 +776,7 @@ async def process_simulation_message_websocket(
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
                 logger.info(f"Emitting completion to room simulation_{chat_id}")
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_message_complete",
                     {
                         "message_id": str(assistant_message["id"]),
@@ -820,7 +816,6 @@ async def process_simulation_message_websocket(
                                 chat_id=chat_id,
                                 message_id=assistant_message["id"],
                                 department_id=uuid.UUID(hint_dept_id),
-                                sio_instance=sio_instance,
                             )
                         )
                 else:
@@ -828,8 +823,6 @@ async def process_simulation_message_websocket(
 
         except Exception as e:
             logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
-            sio_instance = get_sio_instance()
-
             # Best-effort: if we have already created a placeholder assistant message,
             # persist the error text onto it and mark it complete so the UI shows it.
             try:
@@ -839,7 +832,7 @@ async def process_simulation_message_websocket(
                     await conn.execute(sql, error_text, str(assistant_message["id"]))
 
                     # Emit a completion update using the same message so the client updates content
-                    await sio_instance.emit(
+                    await sio.emit(
                         "simulation_message_complete",
                         {
                             "message_id": str(assistant_message["id"]),
@@ -857,7 +850,7 @@ async def process_simulation_message_websocket(
             # Only emit explicit error event if not cancelled
             if "cancelled" not in str(e).lower() and "canceled" not in str(e).lower():
                 logger.info(f"Emitting error to room simulation_{chat_id}")
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_message_error",
                     {"chat_id": str(chat_id), "error": str(e)},
                     room=f"simulation_{chat_id}",

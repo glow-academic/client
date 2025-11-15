@@ -3,15 +3,18 @@
 import logging
 from typing import Any
 
+import socketio  # type: ignore
 from app.db import get_pool
 from app.extensions import cancel_active_run
+from app.main import sio
 from app.utils.sql_helper import load_sql
-from app.web.simulations.utils import emit_error, get_sio_instance
+from app.web.simulations.utils import emit_error
 
 logger = logging.getLogger(__name__)
 
 
-async def handle_stop_simulation(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
     """
     Handle simulation stop requests via WebSocket
     Replaces /simulations/stop endpoint
@@ -55,13 +58,11 @@ async def handle_stop_simulation(sid: str, data: dict[str, Any]) -> None:
                     "final_content": row["final_content"],
                 }
 
-            sio_instance = get_sio_instance()
-
             if result["success"] and result["cancelled_message_id"]:
                 logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
 
                 # Emit a cancellation / final content event so clients update UI
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_message_cancelled",
                     {
                         "message_id": str(result["cancelled_message_id"]),
@@ -72,7 +73,7 @@ async def handle_stop_simulation(sid: str, data: dict[str, Any]) -> None:
                 )
 
                 # Emit stop signal
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_stopped",
                     {
                         "chat_id": chat_id,
@@ -84,7 +85,7 @@ async def handle_stop_simulation(sid: str, data: dict[str, Any]) -> None:
 
             else:
                 logger.warning(f"No active simulation run found for chat {chat_id}")
-                await sio_instance.emit(
+                await sio.emit(
                     "simulation_stopped",
                     {
                         "chat_id": chat_id,

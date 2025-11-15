@@ -4,15 +4,18 @@ import logging
 import uuid
 from typing import Any
 
+import socketio  # type: ignore
 from app.db import get_pool
 from app.extensions import cancel_active_run
+from app.main import sio
 from app.utils.sql_helper import load_sql
-from app.web.assistants.utils import emit_assistant_error, get_sio_instance
+from app.web.assistants.utils import emit_assistant_error
 
 logger = logging.getLogger(__name__)
 
 
-async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
     """
     Handle assistant stop requests via WebSocket
     Replaces /assistants/stop endpoint
@@ -41,13 +44,11 @@ async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
             # Attempt to cancel the assistant run - inlined cancel_assistant_run
             success = await cancel_active_run(chat_id)
 
-            sio_instance = get_sio_instance()
-
             if success:
                 logger.info(f"Successfully cancelled assistant run for chat {chat_id}")
 
                 # Emit stop signal via WebSocket
-                await sio_instance.emit(
+                await sio.emit(
                     "assistant_stopped",
                     {
                         "chat_id": chat_id,
@@ -59,7 +60,7 @@ async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
 
             else:
                 logger.warning(f"No active assistant run found for chat {chat_id}")
-                await sio_instance.emit(
+                await sio.emit(
                     "assistant_stopped",
                     {
                         "chat_id": chat_id,

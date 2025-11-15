@@ -8,16 +8,18 @@ import warnings
 from collections.abc import AsyncGenerator
 from typing import Any
 
+import socketio  # type: ignore
 from agents import Runner, trace
 from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
                           TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_pool
+from app.main import sio
 from app.utils.agents import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
-from app.web.assistants.utils import emit_assistant_error, get_sio_instance
+from app.web.assistants.utils import emit_assistant_error
 from dotenv import load_dotenv
 from openai.types.responses import (ResponseFunctionToolCall,
                                     ResponseTextDeltaEvent)
@@ -31,7 +33,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 logger = logging.getLogger(__name__)
 
 
-async def handle_send_assistant_message(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
     """Handle assistant message sending requests"""
     try:
         chat_id = data.get("chat_id")
@@ -80,7 +83,6 @@ async def process_assistant_message_websocket(
         logger.error("Database pool not available")
         return
 
-    sio_instance = get_sio_instance()
     current_message = None
     accumulated_content = ""
     active_tool_calls = {}  # Track tool calls by ID
@@ -105,7 +107,7 @@ async def process_assistant_message_websocket(
             }
 
             # 2. Emit user message to connected clients
-            await sio_instance.emit(
+            await sio.emit(
                 "assistant_new_message",
                 {
                     "message_id": str(user_message["id"]),
@@ -313,7 +315,7 @@ async def process_assistant_message_websocket(
                                         )
 
                                         # Emit completion for current message
-                                        await sio_instance.emit(
+                                        await sio.emit(
                                             "message_complete",
                                             {
                                                 "message_id": str(current_message["id"]),
@@ -382,7 +384,7 @@ async def process_assistant_message_websocket(
                                             active_tool_calls[tool_call_id] = tool_call
 
                                         # Emit tool call created event (frontend will refetch tool calls)
-                                        await sio_instance.emit(
+                                        await sio.emit(
                                             "tool_call_created",
                                             {
                                                 "tool_call_id": str(tool_call["id"]),
@@ -430,7 +432,7 @@ async def process_assistant_message_websocket(
                                             del active_tool_calls[tool_call_id]
 
                                         # Emit tool call completed event (frontend will refetch tool calls)
-                                        await sio_instance.emit(
+                                        await sio.emit(
                                             "tool_call_completed",
                                             {
                                                 "tool_call_id": str(tool_call_record["id"])
@@ -464,7 +466,7 @@ async def process_assistant_message_websocket(
                                         }
 
                                         # Emit new placeholder message
-                                        await sio_instance.emit(
+                                        await sio.emit(
                                             "assistant_new_message",
                                             {
                                                 "message_id": str(current_message["id"]),
@@ -482,7 +484,7 @@ async def process_assistant_message_websocket(
                                     await conn.execute(sql, accumulated_content, current_message["id"])
 
                                     # Emit token update to connected clients
-                                    await sio_instance.emit(
+                                    await sio.emit(
                                         "assistant_message_token",
                                         {
                                             "message_id": str(current_message["id"]),
@@ -508,7 +510,7 @@ async def process_assistant_message_websocket(
                 )
 
                 # 5. Emit completion signal
-                await sio_instance.emit(
+                await sio.emit(
                     "assistant_message_complete",
                     {
                         "message_id": str(current_message["id"]),
@@ -531,7 +533,7 @@ async def process_assistant_message_websocket(
                     )
 
                     # Emit a cancellation event
-                    await sio_instance.emit(
+                    await sio.emit(
                         "assistant_message_cancelled",
                         {
                             "message_id": str(current_message["id"]),
@@ -546,7 +548,7 @@ async def process_assistant_message_websocket(
                     f"Error in process_assistant_message_websocket for chat {chat_id}: {e}",
                     exc_info=True,
                 )
-                await sio_instance.emit(
+                await sio.emit(
                     "assistant_error",
                     {"chat_id": str(chat_id), "error": str(e)},
                     room=f"assistant_{chat_id}",

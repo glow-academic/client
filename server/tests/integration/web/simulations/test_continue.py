@@ -2,7 +2,7 @@
 
 import asyncpg  # type: ignore
 import pytest
-from app.web.simulations.continue import handle_continue_simulation
+from app.web.simulations.continue import continue_simulation
 from tests.integration.web.conftest import MockSocketIO
 
 pytestmark = pytest.mark.asyncio
@@ -17,7 +17,7 @@ async def test_continue_simulation_missing_chat_id(
         "attempt_id": "00000000-0000-0000-0000-000000000000",
     }
 
-    await handle_continue_simulation(sid, data)
+    await continue_simulation(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("simulation_error")
@@ -34,7 +34,7 @@ async def test_continue_simulation_missing_attempt_id(
         "chat_id": "00000000-0000-0000-0000-000000000000",
     }
 
-    await handle_continue_simulation(sid, data)
+    await continue_simulation(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("simulation_error")
@@ -55,7 +55,7 @@ async def test_continue_simulation_chat_not_found(
         "attempt_id": fake_attempt_id,
     }
 
-    await handle_continue_simulation(sid, data)
+    await continue_simulation(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("simulation_error")
@@ -83,7 +83,7 @@ async def test_continue_simulation_attempt_not_found(
         "attempt_id": fake_attempt_id,
     }
 
-    await handle_continue_simulation(sid, data)
+    await continue_simulation(sid, data)
 
     # Verify error was emitted
     error_events = mock_sio.get_events("simulation_error")
