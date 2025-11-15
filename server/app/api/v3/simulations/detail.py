@@ -1,6 +1,7 @@
 """Simulation detail endpoint - v3 API following DHH principles."""
 
 import json
+from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
@@ -116,7 +117,9 @@ class SimulationDetailResponse(BaseModel):
 router = APIRouter()
 
 
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
+def parse_jsonb(
+    data: Mapping[str, object] | list[object] | str | None,
+) -> dict[str, Any] | list[Any] | None:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
@@ -310,7 +313,7 @@ async def get_simulation_detail(
             for did, ddata in department_mapping_data.items():
                 if isinstance(ddata, dict):
 
-                    def to_str_list(value: Any) -> list[str] | None:
+                    def to_str_list(value: Sequence[object] | None) -> list[str] | None:
                         if value is None:
                             return None
                         if isinstance(value, list):

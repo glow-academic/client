@@ -1,6 +1,7 @@
 """Logs list endpoint."""
 
-from typing import Annotated, Any, cast
+from collections.abc import Mapping
+from typing import Annotated, Any, TypeVar, cast
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -75,13 +76,19 @@ class LogsListResponse(BaseModel):
 router = APIRouter()
 
 
-def _parse_jsonb_to_model(  # noqa: ANN401
-    data: Any,
-    model_class: type[ActorData]
-    | type[SubjectData]
-    | type[ContextData]
-    | type[ErrorData],
-) -> ActorData | SubjectData | ContextData | ErrorData:
+TJSONModel = TypeVar(
+    "TJSONModel",
+    ActorData,
+    SubjectData,
+    ContextData,
+    ErrorData,
+)
+
+
+def _parse_jsonb_to_model(
+    data: Mapping[str, object] | None,
+    model_class: type[TJSONModel],
+) -> TJSONModel:
     """Parse JSONB data to Pydantic model."""
     if isinstance(data, dict):
         return model_class(**data)

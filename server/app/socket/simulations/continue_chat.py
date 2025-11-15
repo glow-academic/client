@@ -3,6 +3,7 @@
 import json
 import logging
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
@@ -191,7 +192,9 @@ async def _create_chat_for_scenario_inline(
         raise ValueError("Failed to fetch randomization data")
 
     # Parse JSONB aggregations (may be string or list)
-    def parse_jsonb(data: Any) -> list[dict[str, Any]]:
+    def parse_jsonb(
+        data: Sequence[object] | str | None,
+    ) -> list[dict[str, Any]]:
         if isinstance(data, str):
             try:
                 data = json.loads(data)
@@ -693,7 +696,7 @@ async def _run_grade_agent_inline(
 
         # Create tool use behavior to check when all required tools are called
         def tool_use_behavior(
-            tool_context: Any, tool_results: list[Any]
+            tool_context: object, tool_results: list[object]
         ) -> ToolsToFinalOutputResult:
             required_tools = ["summary"]
             for group in standard_groups:

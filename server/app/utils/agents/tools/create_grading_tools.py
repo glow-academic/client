@@ -2,7 +2,10 @@
 
 import logging
 import uuid
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any
+
+from agents import Tool
 
 from app.utils.agents.tools.create_grading_function import create_grading_function
 from app.utils.agents.tools.create_summary_function import create_summary_function
@@ -11,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def create_grading_tools(
-    standard_groups: list[Any],
-    standards: list[Any],
+    standard_groups: Sequence[Mapping[str, Any]],
+    standards: Sequence[Mapping[str, Any]],
     chat_id: uuid.UUID,
-    emit_progress_func: Any,
-) -> list[Any]:
+    emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]],
+) -> list[Tool]:
     """Create all grading function tools for the standard groups."""
     tools = []
     total_standard_groups = len(standard_groups)

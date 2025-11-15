@@ -26,7 +26,7 @@ def build_guardrail_agent(
 
     # Create tool use behavior to wait for evaluation tool to be called
     def tool_use_behavior(
-        tool_context: Any, tool_results: list[Any]
+        tool_context: object, tool_results: list[object]
     ) -> ToolsToFinalOutputResult:
         # Check if evaluation tool has been called
         evaluation_complete = guardrail_progress.get("evaluation", False)

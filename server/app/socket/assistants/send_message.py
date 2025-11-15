@@ -5,6 +5,7 @@ import logging
 import os
 import uuid
 import warnings
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -251,7 +252,9 @@ async def _send_assistant_message_impl(
                         )
 
                     # Parse JSONB arrays for messages and tool_calls (asyncpg returns JSONB as list/dict)
-                    def parse_jsonb(data: Any) -> list[dict[str, Any]]:
+                    def parse_jsonb(
+                        data: Sequence[object] | str | None,
+                    ) -> list[dict[str, Any]]:
                         if isinstance(data, str):
                             parsed = json.loads(data)
                             return parsed if isinstance(parsed, list) else []

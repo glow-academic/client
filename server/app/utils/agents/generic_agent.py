@@ -1,6 +1,6 @@
-from typing import Any
+from collections.abc import Callable
 
-from agents import Agent, ModelSettings, Tool
+from agents import Agent, ModelSettings, Tool, ToolsToFinalOutputResult
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.mcp.server import MCPServer
 from openai.types import Reasoning
@@ -18,6 +18,9 @@ Never expose internal debugging details to the end user in the visible content o
 """
 
 
+ToolUseBehavior = Callable[[object, list[object]], ToolsToFinalOutputResult]
+
+
 class GenericAgent:
     def __init__(
         self,
@@ -32,9 +35,9 @@ class GenericAgent:
         reasoning: str | None,
         tools: list[Tool] = None,
         parallel_tool_calls: bool = False,
-        tool_use_behavior: Any | None = None,
+        tool_use_behavior: ToolUseBehavior | None = None,
         mcp_servers: list[MCPServer] | None = None,
-        output_guardrails: list[Any] | None = None,
+        output_guardrails: list[object] | None = None,
     ) -> None:
         if tools is None:
             tools = []
@@ -49,7 +52,7 @@ class GenericAgent:
         self.parallel_tool_calls = parallel_tool_calls
         self.tool_use_behavior = tool_use_behavior
         self.mcp_servers = mcp_servers or []
-        self.output_guardrails: list[Any] = output_guardrails or []
+        self.output_guardrails: list[object] = output_guardrails or []
         self.base_url = base_url
         self.extra_body = None
         self.reasoning: Reasoning | None = None

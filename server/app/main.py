@@ -71,7 +71,7 @@ socket_path = f"{app_prefix}/socket.io" if app_prefix else "socket.io"
 allowed_origins = [origin]
 
 # Redis client for shared infrastructure (HTTP caching, health checks, etc.)
-redis_client: Any | None = None  # type: ignore
+redis_client: object | None = None
 
 # Global in-process store for active Runner results to support immediate cancel
 active_results: dict[str, dict[str, Any]] = {}
@@ -158,7 +158,7 @@ sio = socketio.AsyncServer(
 
 # Wrapper functions to access shared state (avoids circular dependencies)
 # These are defined after sio is created so they can reference it
-def get_redis_client() -> Any | None:
+def get_redis_client() -> object | None:
     """Get the Redis client instance."""
     return redis_client
 
@@ -173,7 +173,7 @@ def get_active_results_dict() -> dict[str, dict[str, Any]]:
     return active_results
 
 
-def get_sio_instance() -> Any:
+def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance."""
     return sio
 
@@ -336,7 +336,7 @@ from app.socket.simulations import (  # noqa: E402
     start_simulation,  # type: ignore
     stop_simulation,  # type: ignore
 )
-from app.socket.simulations.continue_chat import (
+from app.socket.simulations.continue_chat import (  # noqa: E402
     continue_simulation,  # type: ignore  # noqa: E402
 )
 

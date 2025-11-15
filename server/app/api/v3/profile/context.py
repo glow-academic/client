@@ -1,6 +1,7 @@
 """Profile context endpoint - get consolidated profile context."""
 
 import json
+from datetime import datetime
 from typing import Annotated, Any, cast
 
 import asyncpg
@@ -248,7 +249,7 @@ async def get_profile_context(
             for sp in simulatable_profiles_data:
                 if isinstance(sp, dict):
                     # Helper to convert datetime to ISO string if needed
-                    def to_iso_string(val: Any) -> str:
+                    def to_iso_string(val: datetime | str | None) -> str:
                         if val is None:
                             return ""
                         if isinstance(val, str):

@@ -2,9 +2,8 @@
 
 import logging
 import uuid
-from typing import Any
 
-from agents import function_tool
+from agents import Tool, function_tool
 from pydantic import Field
 
 from app.main import scenario_progress, scenario_results
@@ -12,7 +11,7 @@ from app.main import scenario_progress, scenario_results
 logger = logging.getLogger(__name__)
 
 
-def create_title_description_function(group_id: uuid.UUID | None) -> Any:
+def create_title_description_function(group_id: uuid.UUID | None) -> Tool:
     """Create a function tool for setting scenario title and description."""
 
     async def set_title_and_description(

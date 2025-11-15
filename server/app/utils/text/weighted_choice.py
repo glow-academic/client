@@ -1,10 +1,12 @@
 """Return one item chosen with probability proportional to its weight."""
 
 import random
-from typing import Any
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
-def weighted_choice(weighted_items: list[tuple[Any, float]]) -> Any | None:
+def weighted_choice(weighted_items: list[tuple[T, float]]) -> T | None:
     """Return one item chosen with probability proportional to its weight.
 
     Returns None when all weights are non-positive or list is empty.

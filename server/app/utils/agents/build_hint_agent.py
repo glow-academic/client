@@ -24,7 +24,7 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
 
     # Create tool use behavior - require all 3 hint tools to be called
     def tool_use_behavior(
-        tool_context: Any, tool_results: list[Any]
+        tool_context: object, tool_results: list[object]
     ) -> ToolsToFinalOutputResult:
         # Check if all three hint tools have been called
         hint_1_complete = hint_progress.get("hint_1", False)

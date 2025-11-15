@@ -9,7 +9,7 @@ from typing import Any, get_type_hints
 from pydantic import BaseModel
 
 
-def _get_first_pydantic_param(fn: Callable[..., Any]) -> type[BaseModel] | None:
+def _get_first_pydantic_param(fn: Callable[..., object]) -> type[BaseModel] | None:
     """Extract the first Pydantic model parameter from a function signature."""
     hints = get_type_hints(fn)
     sig = inspect.signature(fn)
@@ -22,7 +22,7 @@ def _get_first_pydantic_param(fn: Callable[..., Any]) -> type[BaseModel] | None:
     return None
 
 
-def _get_pydantic_return(fn: Callable[..., Any]) -> type[BaseModel] | None:
+def _get_pydantic_return(fn: Callable[..., object]) -> type[BaseModel] | None:
     """Extract the return type Pydantic model from a function signature."""
     hints = get_type_hints(fn)
     ret = hints.get("return")
@@ -31,7 +31,7 @@ def _get_pydantic_return(fn: Callable[..., Any]) -> type[BaseModel] | None:
     return None
 
 
-def _get_return_type(fn: Callable[..., Any]) -> Any | None:
+def _get_return_type(fn: Callable[..., object]) -> object | None:
     """Extract the return type from a function signature (Pydantic model or primitive)."""
     hints = get_type_hints(fn)
     return hints.get("return")
@@ -73,7 +73,7 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
     return schema
 
 
-def _extract_return_type_schema(return_type: Any) -> dict[str, str] | None:
+def _extract_return_type_schema(return_type: object) -> dict[str, str] | None:
     """Extract return type schema from a return type annotation.
 
     Returns None if the return type is None/void, otherwise returns a schema dict.
@@ -109,9 +109,9 @@ def _extract_return_type_schema(return_type: Any) -> dict[str, str] | None:
 
 def build_socket_contract(
     *,
-    client_to_server: list[Callable[..., Any]],
-    server_to_client: list[Callable[..., Any]],
-) -> dict[str, Any]:
+    client_to_server: list[Callable[..., object]],
+    server_to_client: list[Callable[..., object]],
+) -> dict[str, object]:
     """
     Given two lists of functions, infer payload/result Pydantic models and
     return a JSON-serializable contract dict.

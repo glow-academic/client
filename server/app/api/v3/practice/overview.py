@@ -115,7 +115,7 @@ class PracticeFilters(BaseModel):
     departmentIds: list[str] | None = None
 
 
-def _parse_json_strings_recursive(obj: Any) -> Any:
+def _parse_json_strings_recursive(obj: object) -> object:
     """Recursively parse JSON strings in nested structures."""
     if isinstance(obj, str):
         try:

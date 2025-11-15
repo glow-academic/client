@@ -3,6 +3,7 @@
 import json
 import random
 import uuid
+from collections.abc import Mapping
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -40,7 +41,9 @@ class RandomizeScenarioResponse(BaseModel):
 router = APIRouter()
 
 
-def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
+def parse_jsonb(
+    data: Mapping[str, object] | list[object] | str | None,
+) -> dict[str, Any] | list[Any] | None:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:

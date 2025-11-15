@@ -2,9 +2,10 @@
 
 import logging
 import uuid
+from collections.abc import Awaitable, Callable
 from typing import Any
 
-from agents import function_tool
+from agents import Tool, function_tool
 from pydantic import Field
 
 from app.main import grading_progress, grading_results
@@ -12,7 +13,9 @@ from app.main import grading_progress, grading_results
 logger = logging.getLogger(__name__)
 
 
-def create_summary_function(chat_id: uuid.UUID, emit_progress_func: Any) -> Any:
+def create_summary_function(
+    chat_id: uuid.UUID, emit_progress_func: Callable[[dict[str, Any]], Awaitable[None]]
+) -> Tool:
     """Create a function tool for recording the overall summary."""
 
     async def record_summary(

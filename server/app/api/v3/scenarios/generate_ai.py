@@ -177,7 +177,7 @@ async def generate_scenario_ai(
 
         # Create tool use behavior to check when all required tools are called
         def tool_use_behavior(
-            tool_context: Any, tool_results: list[Any]
+            tool_context: object, tool_results: list[object]
         ) -> ToolsToFinalOutputResult:
             required_tools = ["title_description"]
             if objectives_enabled:

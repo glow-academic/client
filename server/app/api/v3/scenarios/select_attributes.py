@@ -8,6 +8,7 @@ import json
 import logging
 import random
 import uuid
+from collections.abc import Sequence
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -42,7 +43,7 @@ class SelectAttributesResponse(BaseModel):
     parameterItemIds: list[str] = []
 
 
-def parse_jsonb(data: Any) -> list[dict[str, Any]]:
+def parse_jsonb(data: Sequence[object] | str | None) -> list[dict[str, Any]]:
     """Parse JSONB data with type safety."""
     if isinstance(data, str):
         try:
