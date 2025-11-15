@@ -35,10 +35,9 @@ export function SimulationControls({
   attemptId,
   attemptData,
 }: SimulationControlsProps) {
-  const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
+  const { socket, isConnected } = useProfile();
 
   // Extract data from attemptData
-  const attemptProfileId = attemptData?.attempt?.profileId || null;
   const simulation = attemptData?.simulation || null;
   const attempt = attemptData?.attempt || null;
   const chats = attemptData?.chats || [];
@@ -71,28 +70,6 @@ export function SimulationControls({
     displayedProgress: number;
     phase: "tools" | "summary" | null;
   } | null>(null);
-
-  // Check if current user is the owner of this attempt
-  // Allow buttons to show even if profile IDs aren't loaded yet (they'll be disabled by isActive)
-  const isAttemptOwner = useMemo(() => {
-    // If no attemptProfileId yet, assume owner (will be disabled by isActive if not)
-    if (!attemptProfileId) {
-      return true; // Show buttons, will be disabled if actually not owner
-    }
-    if (!activeProfile?.id || !effectiveProfile?.id) {
-      return true; // Show buttons, will be disabled if actually not owner
-    }
-    return (
-      (activeProfile.id === effectiveProfile.id &&
-        activeProfile.id === attemptProfileId) ||
-      activeProfile.role === "guest"
-    );
-  }, [
-    activeProfile?.id,
-    effectiveProfile?.id,
-    attemptProfileId,
-    activeProfile?.role,
-  ]);
 
   // Confirmation dialogs state
   const [confirmEndAllOpen, setConfirmEndAllOpen] = useState(false);
@@ -495,11 +472,6 @@ export function SimulationControls({
 
   // Don't show if no current chat
   if (!currentChat) {
-    return null;
-  }
-
-  // Don't show if user is not the owner
-  if (!isAttemptOwner) {
     return null;
   }
 

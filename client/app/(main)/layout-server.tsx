@@ -6,6 +6,7 @@ import { getSession, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { revalidateTag } from "next/cache";
+import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -40,11 +41,20 @@ type CreateFeedbackIn = InputOf<"/api/v3/feedback/create", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v3/feedback/create", "post">;
 type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
+type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
+type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
 
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
     return api.post("/profile/context", input);
+  }
+);
+
+/** ---- Cached fetch for attempt data ---- */
+const getAttemptFull = cache(
+  async (input: AttemptFullIn): Promise<AttemptFullOut> => {
+    return api.post("/attempts/full", input);
   }
 );
 
@@ -78,7 +88,31 @@ export async function getLayoutContextData() {
     },
   });
 
-  return { initial, snapshot };
+  // Read pathname from headers to check if we're on an attempt page
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "/";
+
+  // Extract attemptId from pathname if we're on an attempt page
+  const attemptMatch =
+    pathname.match(/\/home\/a\/([^/]+)/) ||
+    pathname.match(/\/practice\/a\/([^/]+)/);
+  const attemptId = attemptMatch ? attemptMatch[1] : null;
+
+  // Fetch attempt data if we have an attemptId
+  let attemptData: AttemptFullOut | null = null;
+  if (attemptId) {
+    try {
+      attemptData = await getAttemptFull({
+        body: { attemptId },
+      });
+    } catch {
+      // If attempt fetch fails, just continue without attempt data
+      // This can happen if the attempt doesn't exist or user doesn't have access
+      attemptData = null;
+    }
+  }
+
+  return { initial, snapshot, attemptData };
 }
 
 /** ---- Strongly-typed server actions for TATour (single source of truth) ---- */
@@ -203,6 +237,8 @@ export type {
   AssistantChatFullOut,
   AssistantChatListIn,
   AssistantChatListOut,
+  AttemptFullIn,
+  AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
   MarkChatCompleteIn,

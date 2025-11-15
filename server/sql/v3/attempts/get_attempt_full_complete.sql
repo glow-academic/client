@@ -796,7 +796,8 @@
                 'createdAt', ab.created_at,
                 'simulationId', ab.simulation_id::text,
                 'infiniteMode', ab.infinite_mode,
-                'archived', ab.archived
+                'archived', ab.archived,
+                'profileId', CASE WHEN cap.profile_id IS NOT NULL THEN cap.profile_id::text ELSE NULL END
             ) as attempt,
             jsonb_build_object(
                 'id', ab.sim_id::text,
@@ -863,5 +864,6 @@
         CROSS JOIN timer_data td
         CROSS JOIN metadata_computed md
         CROSS JOIN simulation_flags sf
+        CROSS JOIN current_attempt_profile cap
         LEFT JOIN rubric_structure_complete rsc ON true
         

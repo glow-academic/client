@@ -3707,6 +3707,8 @@ export interface components {
             infiniteMode: boolean;
             /** Archived */
             archived: boolean;
+            /** Profileid */
+            profileId?: string | null;
         };
         /** AttemptProfileItem */
         AttemptProfileItem: {

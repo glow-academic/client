@@ -140,10 +140,6 @@ export default function AttemptChat({
   );
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
-  const [endChatLoading, setEndChatLoading] = useState(false);
-  const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<
-    Set<string>
-  >(new Set());
   const [showResults, setShowResults] = useState(
     initialAttemptData.showResults ?? false
   );
@@ -278,8 +274,6 @@ export default function AttemptChat({
   // Metadata from v3
   const expectedChatCount = attemptData?.expectedChatCount || 1;
   const isSingleChatAttempt = attemptData?.isSingleChatAttempt ?? true;
-  const isLastAttempt = attemptData?.isLastAttempt ?? true;
-  const shouldShowControls = attemptData?.shouldShowControls ?? true;
 
   // Timer from v3 (server computed baseline) - convert backend format to frontend format
   const serverTimer = useMemo(() => {
@@ -497,69 +491,6 @@ export default function AttemptChat({
     }
   }, [currentChat, isStoppingMessage, socket]);
 
-  const endChat = useCallback(
-    async (chatId?: string, previousChatId?: string) => {
-      const targetChatId = chatId || currentChat?.id;
-      if (!targetChatId || !simulation?.departmentId || !socket) return;
-
-      setEndChatLoading(true);
-
-      try {
-        const continueData: {
-          chat_id: string;
-          attempt_id: string;
-          end_all: boolean;
-          previous_chat_id?: string;
-          department_id: string;
-        } = {
-          chat_id: targetChatId,
-          attempt_id: attemptId,
-          end_all: false,
-          department_id: simulation.departmentId,
-        };
-        if (previousChatId) {
-          continueData.previous_chat_id = previousChatId;
-        }
-        socket.emit("continue_simulation", continueData);
-      } catch (error) {
-        toast.error(`Failed to end chat: ${error}`);
-        setEndChatLoading(false);
-      }
-    },
-    [currentChat?.id, socket, attemptId, simulation?.departmentId]
-  );
-
-  const endAllChats = useCallback(
-    async (previousChatMap?: Record<string, string | null>) => {
-      if (!simulation || !attempt || !currentChat || !socket) return;
-
-      setEndChatLoading(true);
-
-      try {
-        const continueData: {
-          chat_id: string;
-          attempt_id: string;
-          end_all: boolean;
-          previous_chat_map?: Record<string, string | null>;
-          department_id: string;
-        } = {
-          chat_id: currentChat.id,
-          attempt_id: attemptId,
-          end_all: true,
-          department_id: simulation.departmentId,
-        };
-        if (previousChatMap) {
-          continueData.previous_chat_map = previousChatMap;
-        }
-        socket.emit("continue_simulation", continueData);
-      } catch (error) {
-        toast.error(`Failed to end all chats: ${error}`);
-        setEndChatLoading(false);
-      }
-    },
-    [simulation, attempt, currentChat, attemptId, socket]
-  );
-
   // Set up WebSocket event handlers for simulation events
   useEffect(() => {
     if (!socket) return;
@@ -766,7 +697,6 @@ export default function AttemptChat({
     }) => {
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
-      setEndChatLoading(false);
       toast.error(data.message);
       window.dispatchEvent(new CustomEvent("simulationError"));
     };
@@ -895,13 +825,9 @@ export default function AttemptChat({
 
     const handleChatEnded = (event: CustomEvent) => {
       if (event.detail.completedChatId === currentChatIdRef.current) {
-        setFreshlyCompletedChats((prev) =>
-          new Set(prev).add(event.detail.completedChatId)
-        );
         freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
         router.refresh();
-        setEndChatLoading(false);
 
         if (event.detail.nextChatId) {
           pendingNextChatIdRef.current = event.detail.nextChatId as string;
@@ -921,14 +847,12 @@ export default function AttemptChat({
     const handleSimulationError = () => {
       setIsSendingMessage(false);
       setIsStoppingMessage(false);
-      setEndChatLoading(false);
     };
 
     const handleEndAllCompleted = (event: CustomEvent) => {
       if (event.detail.attemptId === attemptId) {
         router.refresh();
         setShowResults(true);
-        setEndChatLoading(false);
       }
     };
 

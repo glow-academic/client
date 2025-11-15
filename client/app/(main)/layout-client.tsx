@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 
 import AssistantChat from "@/components/assistant/AssistantChat";
+import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -41,6 +42,7 @@ import type {
   AssistantChatFullOut,
   AssistantChatListIn,
   AssistantChatListOut,
+  AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
   LayoutContextResponse,
@@ -58,6 +60,7 @@ import type {
 // Inner component that uses the role context
 function MainLayoutContent({
   children,
+  attemptData,
   markIntroCompleteAction,
   markChatCompleteAction,
   getAssistantChatListAction,
@@ -67,6 +70,7 @@ function MainLayoutContent({
   refreshAnalyticsAction,
 }: {
   children: React.ReactNode;
+  attemptData: AttemptFullOut | null;
   markIntroCompleteAction: (
     input: MarkIntroCompleteIn
   ) => Promise<MarkIntroCompleteOut>;
@@ -276,6 +280,21 @@ function MainLayoutContent({
 
   const actionButton = getActionButton();
 
+  // Extract attemptId from pathname if we're on an attempt page
+  const attemptMatch =
+    pathname.match(/\/home\/a\/([^/]+)/) ||
+    pathname.match(/\/practice\/a\/([^/]+)/);
+  const attemptId = attemptMatch ? attemptMatch[1] : null;
+
+  // Check if we should show SimulationControls
+  // Only show if we have attemptData, attemptId, and the attempt belongs to the active profile
+  const shouldShowSimulationControls = useMemo(() => {
+    if (!attemptData || !attemptId || !activeProfile) {
+      return false;
+    }
+    return attemptData.attempt.profileId === activeProfile.id;
+  }, [attemptData, attemptId, activeProfile]);
+
   return (
     <>
       <AssistantChat
@@ -309,6 +328,16 @@ function MainLayoutContent({
               />
             )}
 
+            {/* SimulationControls - Show when on attempt page and attempt belongs to active profile */}
+            {shouldShowSimulationControls && attemptId && attemptData && (
+              <div className="pr-4">
+                <SimulationControls
+                  attemptId={attemptId}
+                  attemptData={attemptData}
+                />
+              </div>
+            )}
+
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
 
@@ -338,6 +367,7 @@ export function MainLayoutClient({
   children,
   initial,
   sessionSnapshot,
+  attemptData,
   markIntroCompleteAction,
   markChatCompleteAction,
   getAssistantChatListAction,
@@ -349,6 +379,7 @@ export function MainLayoutClient({
   children: React.ReactNode;
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
+  attemptData: AttemptFullOut | null;
   markIntroCompleteAction: (
     input: MarkIntroCompleteIn
   ) => Promise<MarkIntroCompleteOut>;
@@ -375,6 +406,7 @@ export function MainLayoutClient({
         <BreadcrumbProvider>
           <AnalyticsProvider>
             <MainLayoutContent
+              attemptData={attemptData}
               markIntroCompleteAction={markIntroCompleteAction}
               markChatCompleteAction={markChatCompleteAction}
               getAssistantChatListAction={getAssistantChatListAction}

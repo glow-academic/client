@@ -8086,6 +8086,17 @@
           "archived": {
             "type": "boolean",
             "title": "Archived"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
           }
         },
         "type": "object",

@@ -29,7 +29,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { formatTimestamp, getLogLevelVariant } from "@/utils/logs/log-utils";
+import { formatTimestamp, getLogLevelVariant } from "@/utils/logs";
 import {
   ColumnDef,
   ColumnFiltersState,
