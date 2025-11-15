@@ -86,21 +86,23 @@ async def _handle_assistant_chat(
 ) -> AsyncGenerator[str, None]:
     """Handle assistant chat processing."""
 
-    # Get all context data using SQL file
-    sql = load_sql("sql/v3/agents/get_assistant_run_context.sql")
+    # Get all context data, messages, and tool_calls in single consolidated SQL query
+    sql = load_sql("sql/v3/agents/get_assistant_run_context_complete.sql")
     context_row = await conn.fetchrow(sql, str(chat_id), str(department_id))
     
     if not context_row:
         raise ValueError(f"Chat {chat_id} not found or no assistant agent configured")
     
-    # Fetch messages and tool_calls separately using existing SQL files
-    sql_messages = load_sql("sql/v3/assistant/get_chat_messages.sql")
-    message_rows = await conn.fetch(sql_messages, str(chat_id))
-    messages = [dict(row) for row in message_rows]
+    # Parse JSONB arrays for messages and tool_calls (asyncpg returns JSONB as list/dict)
+    def parse_jsonb(data: Any) -> list[dict[str, Any]]:
+        if isinstance(data, str):
+            return json.loads(data)
+        if isinstance(data, list):
+            return data
+        return []
     
-    sql_tool_calls = load_sql("sql/v3/assistant/get_chat_tool_calls.sql")
-    tool_call_rows = await conn.fetch(sql_tool_calls, str(chat_id))
-    tool_calls = [dict(row) for row in tool_call_rows]
+    messages = parse_jsonb(context_row["messages"])
+    tool_calls = parse_jsonb(context_row["tool_calls"])
     
     # Build context dict from SQL result
     context_dict = {
