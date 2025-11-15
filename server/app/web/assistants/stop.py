@@ -1,0 +1,75 @@
+"""Handler for stop_assistant WebSocket event."""
+
+import logging
+import uuid
+from typing import Any
+
+from app.agents.collection.assistant import cancel_assistant_run
+from app.db import get_pool
+from app.web.assistants.utils import emit_assistant_error, get_sio_instance
+from app.utils.sql_helper import load_sql
+
+logger = logging.getLogger(__name__)
+
+
+async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
+    """
+    Handle assistant stop requests via WebSocket
+    Replaces /assistants/stop endpoint
+    """
+    try:
+        chat_id = data.get("chat_id")
+
+        if not chat_id:
+            await emit_assistant_error(sid, "Missing chat_id")
+            return
+
+        # Get connection from pool
+        pool = get_pool()
+        if not pool:
+            await emit_assistant_error(sid, "Database not available")
+            return
+
+        async with pool.acquire() as conn:
+            # Verify the chat exists
+            sql = load_sql("sql/v3/assistant/verify_chat_exists.sql")
+            chat_row = await conn.fetchrow(sql, chat_id)
+            if not chat_row:
+                await emit_assistant_error(sid, "Chat not found")
+                return
+
+            # Attempt to cancel the assistant run
+            success = cancel_assistant_run(uuid.UUID(chat_id))
+
+            sio_instance = get_sio_instance()
+
+            if success:
+                logger.info(f"Successfully cancelled assistant run for chat {chat_id}")
+
+                # Emit stop signal via WebSocket
+                await sio_instance.emit(
+                    "assistant_stopped",
+                    {
+                        "chat_id": chat_id,
+                        "success": True,
+                        "message": "Assistant stopped successfully",
+                    },
+                    room=f"assistant_{chat_id}",
+                )
+
+            else:
+                logger.warning(f"No active assistant run found for chat {chat_id}")
+                await sio_instance.emit(
+                    "assistant_stopped",
+                    {
+                        "chat_id": chat_id,
+                        "success": False,
+                        "message": "No active assistant run found",
+                    },
+                    room=f"assistant_{chat_id}",
+                )
+
+    except Exception as e:
+        logger.error(f"Error stopping assistant for {sid}: {str(e)}")
+        await emit_assistant_error(sid, f"Failed to stop assistant: {str(e)}")
+

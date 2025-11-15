@@ -1,9 +1,4 @@
-# for use with the websockets
-
-"""
-WebSocket handlers for assistant chat functionality
-Supports real-time message streaming and tool call handling
-"""
+"""Handler for send_assistant_message WebSocket event."""
 
 import json
 import logging
@@ -11,13 +6,10 @@ import uuid
 import warnings
 from typing import Any
 
-import socketio  # type: ignore
-from agents import gen_trace_id
-from app.agents.collection.assistant import (cancel_assistant_run,
-                                             run_assistant_agent)
-from app.agents.collection.title import run_title_agent
+from app.agents.collection.assistant import run_assistant_agent
 from app.db import get_pool
 from app.utils.sql_helper import load_sql
+from app.web.assistants.utils import emit_assistant_error, get_sio_instance
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -26,170 +18,37 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 logger = logging.getLogger(__name__)
 
 
-def get_sio_instance() -> socketio.AsyncServer:
-    """Get the Socket.IO server instance from main.py"""
-    from app.main import get_socketio_instance
-
-    return get_socketio_instance()
-
-
-async def handle_start_assistant(sid: str, data: dict[str, Any]) -> None:
-    """
-    Handle assistant start requests via WebSocket
-    Creates a new assistant chat and processes the initial message
-    """
+async def handle_send_assistant_message(sid: str, data: dict[str, Any]) -> None:
+    """Handle assistant message sending requests"""
     try:
-        logger.info(f"Received start_assistant request from {sid} with data: {data}")
-
-        profile_id = data.get("profile_id")
-        initial_message = data.get("initial_message")
+        chat_id = data.get("chat_id")
+        message = data.get("message")
         department_id = data.get("department_id")
-
-        if not profile_id or not initial_message:
-            logger.error(f"Missing profile_id or initial_message in request from {sid}")
-            await emit_assistant_error(sid, "Missing profile_id or initial_message")
-            return
 
         if not department_id:
             logger.error(f"Missing department_id in request from {sid}")
-            await emit_assistant_error(
-                sid, "Missing department_id - please refresh the page"
-            )
+            await emit_assistant_error(sid, "Missing department_id")
             return
 
-        logger.info(f"Processing assistant start: profile_id={profile_id}, sid={sid}")
-
-        # Get connection from pool
-        pool = get_pool()
-        if not pool:
-            await emit_assistant_error(sid, "Database not available")
+        if not chat_id or not message:
+            logger.error(f"Missing chat_id or message in request from {sid}")
+            await emit_assistant_error(sid, "Missing chat_id or message")
             return
 
-        async with pool.acquire() as conn:
-            # Verify profile exists
-            sql = load_sql("sql/v3/profile/verify_profile_exists.sql")
-            profile_row = await conn.fetchrow(sql, profile_id)
-            if not profile_row:
-                await emit_assistant_error(sid, "Profile not found")
-                return
+        logger.info(
+            f"Processing send_assistant_message from {sid}: {chat_id}, message: {message[:50]}..."
+        )
 
-            # Generate a trace id for the chat
-            trace_id = gen_trace_id()
+        # Process the message via WebSocket
+        await process_assistant_message_websocket(
+            chat_id=uuid.UUID(chat_id), message=message, department_id=department_id
+        )
 
-            # Create the assistant chat
-            from datetime import UTC, datetime
-            sql = load_sql("sql/v3/assistant/create_chat.sql")
-            chat_row = await conn.fetchrow(
-                sql,
-                datetime.now(UTC),
-                "New Chat",  # Will be updated by title agent
-                profile_id,
-                trace_id,
-            )
-            chat_id_uuid = chat_row["id"]  # Keep as UUID for run_title_agent
-            chat_id = str(chat_id_uuid)
-            logger.info(f"Created new assistant chat: {chat_id}")
-
-            # Ensure client is joined to the assistant room
-            sio_instance = get_sio_instance()
-            assistant_room = f"assistant_{chat_id}"
-            await sio_instance.enter_room(sid, assistant_room)
-            logger.info(f"Client {sid} joined assistant room {assistant_room}")
-
-            # Update the title with the title agent
-            chat_title = await run_title_agent(
-                chat_id_uuid,
-                initial_message,
-                department_id,
-                conn,  # type: ignore[arg-type]
-            )
-            logger.info(f"Chat title: {chat_title}")
-
-            # Emit title update to connected clients
-            await sio_instance.emit(
-                "title_updated",
-                {"chat_id": chat_id, "title": chat_title},
-                room=assistant_room,
-            )
-
-            # Emit success response with chat_id
-            await sio_instance.emit(
-                "assistant_started",
-                {
-                    "success": True,
-                    "message": "Assistant started successfully",
-                    "chat_id": chat_id,
-                },
-                room=sid,
-            )
-
-            logger.info(f"Assistant started successfully for {sid}: chat={chat_id}")
+        logger.info(f"Completed processing send_assistant_message for {chat_id}")
 
     except Exception as e:
-        logger.error(f"Error starting assistant for {sid}: {str(e)}")
-        await emit_assistant_error(sid, f"Failed to start assistant: {str(e)}")
-
-
-async def handle_stop_assistant(sid: str, data: dict[str, Any]) -> None:
-    """
-    Handle assistant stop requests via WebSocket
-    Replaces /assistants/stop endpoint
-    """
-    try:
-        chat_id = data.get("chat_id")
-
-        if not chat_id:
-            await emit_assistant_error(sid, "Missing chat_id")
-            return
-
-        # Get connection from pool
-        pool = get_pool()
-        if not pool:
-            await emit_assistant_error(sid, "Database not available")
-            return
-
-        async with pool.acquire() as conn:
-            # Verify the chat exists
-            sql = load_sql("sql/v3/assistant/verify_chat_exists.sql")
-            chat_row = await conn.fetchrow(sql, chat_id)
-            if not chat_row:
-                await emit_assistant_error(sid, "Chat not found")
-                return
-
-            # Attempt to cancel the assistant run
-            success = cancel_assistant_run(uuid.UUID(chat_id))
-
-            sio_instance = get_sio_instance()
-
-            if success:
-                logger.info(f"Successfully cancelled assistant run for chat {chat_id}")
-
-                # Emit stop signal via WebSocket
-                await sio_instance.emit(
-                    "assistant_stopped",
-                    {
-                        "chat_id": chat_id,
-                        "success": True,
-                        "message": "Assistant stopped successfully",
-                    },
-                    room=f"assistant_{chat_id}",
-                )
-
-            else:
-                logger.warning(f"No active assistant run found for chat {chat_id}")
-                await sio_instance.emit(
-                    "assistant_stopped",
-                    {
-                        "chat_id": chat_id,
-                        "success": False,
-                        "message": "No active assistant run found",
-                    },
-                    room=f"assistant_{chat_id}",
-                )
-
-    except Exception as e:
-        logger.error(f"Error stopping assistant for {sid}: {str(e)}")
-        await emit_assistant_error(sid, f"Failed to stop assistant: {str(e)}")
+        logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")
+        await emit_assistant_error(sid, f"Failed to send message: {str(e)}")
 
 
 async def process_assistant_message_websocket(
@@ -500,32 +359,3 @@ async def process_assistant_message_websocket(
                     room=f"assistant_{chat_id}",
                 )
 
-
-async def emit_assistant_error(sid: str, message: str) -> None:
-    """Helper function to emit assistant error messages to a specific client"""
-    sio_instance = get_sio_instance()
-    await sio_instance.emit(
-        "assistant_error", {"success": False, "message": message}, room=sid
-    )
-    logger.error(f"Emitted assistant error to {sid}: {message}")
-
-
-def register_assistant_events(sio: socketio.AsyncServer) -> None:
-    """Register all assistant WebSocket event handlers"""
-
-    logger.info("Starting registration of assistant WebSocket event handlers")
-
-    @sio.event  # type: ignore
-    async def start_assistant(sid: str, data: dict[str, Any]) -> None:
-        """Start a new assistant chat"""
-        logger.info(
-            f"start_assistant event triggered for sid={sid} with data keys: {list(data.keys())}"
-        )
-        await handle_start_assistant(sid, data)
-
-    @sio.event  # type: ignore
-    async def stop_assistant(sid: str, data: dict[str, Any]) -> None:
-        """Stop an active assistant"""
-        await handle_stop_assistant(sid, data)
-
-    logger.info("Successfully registered assistant WebSocket event handlers")
