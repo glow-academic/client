@@ -186,7 +186,7 @@ async def _create_chat_for_scenario_inline(
     # Step 2: Get all randomization data in a single query
     sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
     dept_uuids = [uuid.UUID(selected_dept_id_str)]
-    result = await conn.fetchrow(sql, dept_uuids)
+    result = await conn.fetchrow(sql, dept_uuids, scenario_id_uuid)
 
     if not result:
         raise ValueError("Failed to fetch randomization data")
