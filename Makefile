@@ -91,6 +91,11 @@ generate-test-schema:
 	@cd database && yarn generate-test-schema
 	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
+# Test paths (DRY)
+UNIT_TEST_PATH = server/tests/unit
+INTEGRATION_TEST_PATH = server/tests/integration
+E2E_TEST_PATH = server/tests/e2e
+
 # Run unit tests
 test-unit: check-venv
 	@if [ -n "$(ARGS)" ]; then \
@@ -98,7 +103,7 @@ test-unit: check-venv
 		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
 	else \
 		echo "Running unit tests..."; \
-		$(VENV_PYTHON) -m pytest server/tests/unit -v; \
+		$(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) -v; \
 	fi
 
 # Run integration tests
@@ -108,7 +113,7 @@ test-integration: check-venv
 		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
 	else \
 		echo "Running integration tests..."; \
-		$(VENV_PYTHON) -m pytest server/tests/integration -v; \
+		$(VENV_PYTHON) -m pytest $(INTEGRATION_TEST_PATH) -v; \
 	fi
 
 # Run all tests (unit + integration)
@@ -121,16 +126,16 @@ test: check-venv
 		$(MAKE) test-integration; \
 	fi
 
-# Run tests with coverage
+# Run tests with coverage (unit + integration only, excludes e2e)
 test-cov: check-venv
 	@if [ -n "$(ARGS)" ]; then \
 		echo "Running pytest with coverage on: $(ARGS)"; \
-		$(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html; \
+		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov -m "not e2e"; \
 	else \
-		echo "Running pytest tests with coverage..."; \
-		$(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html; \
+		echo "Running unit and integration tests with coverage..."; \
+		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) $(INTEGRATION_TEST_PATH) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	fi
-	@echo "✅ Coverage report generated"
+	@echo "✅ Coverage report generated at server/htmlcov/index.html"
 
 test-e2e: check-venv
 	@if [ -n "$(ARGS)" ]; then \
@@ -138,7 +143,7 @@ test-e2e: check-venv
 		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q; \
 	else \
 		echo "Running E2E tests (headless)..."; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q; \
+		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(E2E_TEST_PATH) -m e2e -q; \
 	fi
 	@echo "✅ E2E tests complete"
 
@@ -148,7 +153,7 @@ test-e2e-headed: check-venv
 		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q --headed; \
 	else \
 		echo "Running E2E tests (headed)..."; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest server/tests/e2e -m e2e -q --headed; \
+		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(E2E_TEST_PATH) -m e2e -q --headed; \
 	fi
 	@echo "✅ E2E tests complete"
 # Run client typecheck
@@ -197,7 +202,7 @@ run: check-venv
 	@echo "----------------------------------------"
 	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
 	exec 2>/dev/null; \
-	(redis-server --port $(REDIS_PORT) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
+	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
 	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
@@ -242,10 +247,9 @@ cleanup:
 	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
 	@find . -type f -name "*.pyd" -delete 2>/dev/null || true
 	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f -name ".coverage" -delete 2>/dev/null || true
+	@rm -rf server/.pytest_cache server/.mypy_cache server/.ruff_cache 2>/dev/null || true
+	@rm -rf server/htmlcov server/.coverage 2>/dev/null || true
+	@rm -f server/dump.rdb 2>/dev/null || true
 	@echo "✅ Cleanup complete"
 
 # Install client dependencies

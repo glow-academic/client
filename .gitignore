@@ -1,8 +1,13 @@
 .env
 .cursorignore
-.mypy_cache/
-.pytest_cache/
 
 history/*.sql
 .venv/
-dump.rdb
+
+# Server cache and coverage files
+server/.mypy_cache/
+server/.pytest_cache/
+server/.ruff_cache/
+server/.coverage
+server/htmlcov/
+server/dump.rdb
