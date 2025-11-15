@@ -6,7 +6,9 @@ import os
 import uuid
 import warnings
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import socketio  # type: ignore
 from agents import Runner, trace
@@ -15,12 +17,11 @@ from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
-from app.utils.chat.get_assistant_conversation_history import \
-    get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 from dotenv import load_dotenv
 from openai.types.responses import (ResponseFunctionToolCall,
+                                    ResponseFunctionToolCallParam,
                                     ResponseTextDeltaEvent)
 
 load_dotenv()
@@ -88,8 +89,6 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                     raise ValueError(f"Chat {chat_id_uuid} not found")
 
                 # 1. Add the user message to the chat
-                from datetime import UTC, datetime
-
                 sql = load_sql("sql/v3/assistant/create_message.sql")
                 user_message_row = await conn.fetchrow(
                     sql, chat_id_uuid, "user", message, True, datetime.now(UTC)
@@ -221,9 +220,89 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                     )
 
                     # Prepare conversation history from context data
-                    conversation_history = get_assistant_conversation_history(
-                        context.messages, context.tool_calls
+                    # Create a list of all conversation items with their timestamps
+                    conversation_items: list[dict[str, Any]] = []
+
+                    # Add messages to the list
+                    for message in context.messages:
+                        if message.get("role") == "user" and message.get("content"):
+                            user_item: TResponseInputItem = {
+                                "role": "user",
+                                "content": message["content"],
+                            }
+                            conversation_items.append(
+                                {
+                                    "timestamp": message.get("created_at"),
+                                    "type": "message",
+                                    "item": user_item,
+                                }
+                            )
+                        elif message.get("role") == "assistant" and message.get("content"):
+                            assistant_item: TResponseInputItem = {
+                                "role": "assistant",
+                                "content": message["content"],
+                            }
+                            conversation_items.append(
+                                {
+                                    "timestamp": message.get("created_at"),
+                                    "type": "message",
+                                    "item": assistant_item,
+                                }
+                            )
+
+                    # Add tool calls to the list
+                    for tool_call in context.tool_calls:
+                        # Add the tool call itself
+                        logger.info(f"Tool call arguments: {tool_call.get('tool_arguments')}")
+                        tool_call_item: ResponseFunctionToolCallParam = {
+                            "arguments": str(tool_call.get("tool_arguments"))
+                            if tool_call.get("tool_arguments")
+                            else json.dumps({}),
+                            "call_id": "call_" + str(tool_call.get("id")),
+                            "name": tool_call.get("tool_name", ""),
+                            "type": "function_call",
+                            "id": str(tool_call.get("id")),
+                            "status": "completed",
+                        }
+                        conversation_items.append(
+                            {
+                                "timestamp": tool_call.get("created_at"),
+                                "type": "tool_call",
+                                "item": tool_call_item,
+                            }
+                        )
+
+                        # Add the tool call output immediately after the tool call
+                        logger.info(f"Tool call result: {tool_call.get('tool_result')}")
+                        tool_call_output_item: TResponseInputItem = {
+                            "call_id": "call_" + str(tool_call.get("id")),
+                            "output": str(tool_call.get("tool_result"))
+                            if tool_call.get("tool_result")
+                            else json.dumps({}),
+                            "type": "function_call_output",
+                            "id": str(tool_call.get("id")),
+                            "status": "completed",
+                        }
+                        conversation_items.append(
+                            {
+                                "timestamp": tool_call.get("created_at"),
+                                "type": "tool_output",
+                                "item": tool_call_output_item,
+                            }
+                        )
+
+                    # Sort all items by timestamp
+                    conversation_items.sort(key=lambda x: x["timestamp"] or datetime.min)
+
+                    # Extract the conversation history in chronological order
+                    conversation_history: list[TResponseInputItem] = []
+                    for item in conversation_items:
+                        conversation_history.append(item["item"])
+
+                    logger.info(
+                        f"Chronologically ordered conversation history with {len(conversation_history)} items"
                     )
+
                     input_items.extend(conversation_history)
 
                     # Create agent instance with context data
@@ -251,9 +330,6 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                     runs_today_count = context_dict["runs_today_count"]
 
                     if req_per_day is not None and runs_today_count >= req_per_day:
-                        from datetime import timedelta
-                        from zoneinfo import ZoneInfo
-
                         earliest_run_created_at = context_dict[
                             "earliest_run_created_at"
                         ]
@@ -400,7 +476,6 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
 
                                             # Save tool call to database (without associating to a message)
                                             import json as json_module
-                                            from datetime import UTC, datetime
 
                                             sql = load_sql(
                                                 "sql/v3/assistant/create_tool_call.sql"
@@ -526,8 +601,6 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
 
                                         # Create assistant message if we don't have one yet
                                         if not current_message:
-                                            from datetime import UTC, datetime
-
                                             sql = load_sql(
                                                 "sql/v3/assistant/create_message.sql"
                                             )
