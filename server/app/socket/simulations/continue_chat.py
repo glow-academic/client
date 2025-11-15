@@ -12,19 +12,17 @@ from agents import Runner, ToolsToFinalOutputResult, trace
 from agents.items import TResponseInputItem
 from app.main import get_pool
 from app.main import sio
-from app.utils.agent_tools import (
-    create_grading_tools,
-    create_safe_field_name,
-    grading_progress,
-    grading_results,
-)
-from app.utils.agents import GenericAgent
-from app.utils.chat import format_chat_scenario, get_simulation_conversation_history
+from app.utils.agents.tools.create_grading_tools import create_grading_tools
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from app.utils.agents.tools.globals import grading_progress, grading_results
+from app.utils.agents.generic_agent import GenericAgent
+from app.utils.chat.format_chat_scenario import format_chat_scenario
+from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
-from app.utils.websocket_emitters import emit_grading_progress
+from app.utils.websocket.emit_grading_progress import emit_grading_progress
 
 logger = logging.getLogger(__name__)
 

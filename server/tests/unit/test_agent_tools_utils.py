@@ -6,20 +6,20 @@ import uuid
 from typing import Any
 
 import pytest
-from app.utils.agent_tools import (
-    create_classification_function,
-    create_classification_tools,
-    create_evaluation_function,
-    create_grading_function,
-    create_grading_tools,
-    create_guardrail_tools,
-    create_hint_function,
-    create_hint_tools,
-    create_objectives_function,
-    create_scenario_tools,
-    create_safe_field_name,
-    create_summary_function,
-    create_title_description_function,
+from app.utils.agents.tools.create_classification_function import create_classification_function
+from app.utils.agents.tools.create_classification_tools import create_classification_tools
+from app.utils.agents.tools.create_evaluation_function import create_evaluation_function
+from app.utils.agents.tools.create_grading_function import create_grading_function
+from app.utils.agents.tools.create_grading_tools import create_grading_tools
+from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
+from app.utils.agents.tools.create_hint_function import create_hint_function
+from app.utils.agents.tools.create_hint_tools import create_hint_tools
+from app.utils.agents.tools.create_objectives_function import create_objectives_function
+from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
+from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from app.utils.agents.tools.create_summary_function import create_summary_function
+from app.utils.agents.tools.create_title_description_function import create_title_description_function
+from app.utils.agents.tools.globals import (
     classification_progress,
     classification_results,
     grading_progress,

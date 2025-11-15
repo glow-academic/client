@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
-from app.utils.error_handler import handle_route_error
-from app.utils.http_cache import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 
 

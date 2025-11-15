@@ -8,17 +8,13 @@ from typing import Any
 import socketio  # type: ignore
 from agents import Runner, ToolsToFinalOutputResult, gen_trace_id, trace
 from agents.items import TResponseInputItem
-from app.main import get_pool
-from app.main import sio
-from app.utils.agent_tools import (
-    create_scenario_tools,
-    scenario_progress,
-    scenario_results,
-)
-from app.utils.agents import GenericAgent
+from app.main import get_pool, sio
+from app.utils.agents.generic_agent import GenericAgent
+from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
+from app.utils.agents.tools.globals import scenario_progress, scenario_results
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
-from app.utils.document import format_document_info
+from app.utils.document.format_document_info import format_document_info
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
@@ -192,9 +188,8 @@ async def start_simulation(sid: str, data: dict[str, Any]) -> None:
                         )
 
                     # Use shared helper function for selecting attributes
-                    from app.api.v3.scenarios.select_attributes import (
-                        select_scenario_attributes,
-                    )
+                    from app.api.v3.scenarios.select_attributes import \
+                        select_scenario_attributes
 
                     try:
                         selected_attributes = await select_scenario_attributes(

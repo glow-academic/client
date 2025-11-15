@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.utils.text_helpers import *  # type: ignore
+# Imports are done per-test to test individual functions
 
 
 class TestNormalize_Text:
@@ -15,7 +15,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_success(self) -> None:
         """Test successful normalize_text execution."""
-        from app.utils.text_helpers import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test basic normalization
         result = normalize_text("Hello World")
@@ -23,7 +23,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_accents(self) -> None:
         """Test normalize_text with accents."""
-        from app.utils.text_helpers import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test accent removal
         result = normalize_text("Café résumé")
@@ -31,7 +31,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_whitespace(self) -> None:
         """Test normalize_text with multiple whitespace."""
-        from app.utils.text_helpers import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test whitespace collapse
         result = normalize_text("Hello    World  \n\t  Test")
@@ -39,7 +39,7 @@ class TestNormalize_Text:
 
     def test_normalize_text_none(self) -> None:
         """Test normalize_text with None input."""
-        from app.utils.text_helpers import normalize_text
+        from app.utils.text.normalize_text import normalize_text
 
         # Test None handling
         result = normalize_text(None)
@@ -51,7 +51,7 @@ class TestTokenize:
 
     def test_tokenize_success(self) -> None:
         """Test successful tokenize execution."""
-        from app.utils.text_helpers import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test basic tokenization
         result = tokenize("Hello World Test")
@@ -59,7 +59,7 @@ class TestTokenize:
 
     def test_tokenize_empty(self) -> None:
         """Test tokenize with empty string."""
-        from app.utils.text_helpers import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test empty string
         result = tokenize("")
@@ -67,7 +67,7 @@ class TestTokenize:
 
     def test_tokenize_none(self) -> None:
         """Test tokenize with None input."""
-        from app.utils.text_helpers import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test None handling
         result = tokenize(None)
@@ -75,7 +75,7 @@ class TestTokenize:
 
     def test_tokenize_whitespace_only(self) -> None:
         """Test tokenize with whitespace only."""
-        from app.utils.text_helpers import tokenize
+        from app.utils.text.tokenize import tokenize
 
         # Test whitespace only
         result = tokenize("   \n\t  ")
@@ -87,7 +87,7 @@ class TestWeighted_Choice:
 
     def test_weighted_choice_success(self) -> None:
         """Test successful weighted_choice execution."""
-        from app.utils.text_helpers import weighted_choice
+        from app.utils.text.weighted_choice import weighted_choice
 
         # Test with valid weights
         items = [("a", 1.0), ("b", 2.0), ("c", 3.0)]
@@ -96,7 +96,7 @@ class TestWeighted_Choice:
 
     def test_weighted_choice_empty_list(self) -> None:
         """Test weighted_choice with empty list."""
-        from app.utils.text_helpers import weighted_choice
+        from app.utils.text.weighted_choice import weighted_choice
 
         # Test empty list
         result = weighted_choice([])
@@ -104,7 +104,7 @@ class TestWeighted_Choice:
 
     def test_weighted_choice_zero_weights(self) -> None:
         """Test weighted_choice with all zero weights."""
-        from app.utils.text_helpers import weighted_choice
+        from app.utils.text.weighted_choice import weighted_choice
 
         # Test zero weights
         items = [("a", 0.0), ("b", 0.0)]
@@ -113,7 +113,7 @@ class TestWeighted_Choice:
 
     def test_weighted_choice_negative_weights(self) -> None:
         """Test weighted_choice with negative weights."""
-        from app.utils.text_helpers import weighted_choice
+        from app.utils.text.weighted_choice import weighted_choice
 
         # Test negative weights (should be treated as 0)
         items = [("a", -1.0), ("b", -2.0)]
@@ -122,7 +122,7 @@ class TestWeighted_Choice:
 
     def test_weighted_choice_single_item(self) -> None:
         """Test weighted_choice with single item."""
-        from app.utils.text_helpers import weighted_choice
+        from app.utils.text.weighted_choice import weighted_choice
 
         # Test single item
         items = [("only", 1.0)]
@@ -135,7 +135,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_success(self) -> None:
         """Test successful weighted_sample_without_replacement execution."""
-        from app.utils.text_helpers import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
 
         # Test basic sampling
         items = ["a", "b", "c", "d"]
@@ -148,7 +148,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_k_greater_than_len(self) -> None:
         """Test weighted_sample_without_replacement with k > len(items)."""
-        from app.utils.text_helpers import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
 
         # Test k > len
         items = ["a", "b"]
@@ -160,7 +160,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_zero_scores(self) -> None:
         """Test weighted_sample_without_replacement with zero scores."""
-        from app.utils.text_helpers import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
 
         # Test zero scores (should fall back to uniform random)
         items = ["a", "b", "c"]
@@ -172,7 +172,7 @@ class TestWeighted_Sample_Without_Replacement:
 
     def test_weighted_sample_without_replacement_k_zero(self) -> None:
         """Test weighted_sample_without_replacement with k=0."""
-        from app.utils.text_helpers import weighted_sample_without_replacement
+        from app.utils.text.weighted_sample_without_replacement import weighted_sample_without_replacement
 
         # Test k=0
         items = ["a", "b", "c"]
@@ -189,7 +189,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading text file."""
-        from app.utils.text_helpers import read_document_content_for_similarity
+        from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
 
         # Create a temporary text file
         test_file = tmp_path / "test.txt"
@@ -205,7 +205,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading non-existent file."""
-        from app.utils.text_helpers import read_document_content_for_similarity
+        from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
 
         # Mock UPLOAD_FOLDER to use tmp_path
         monkeypatch.setattr("app.utils.text_helpers.UPLOAD_FOLDER", str(tmp_path))
@@ -217,7 +217,7 @@ class TestRead_Document_Content_For_Similarity:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test reading file with latin-1 encoding fallback."""
-        from app.utils.text_helpers import read_document_content_for_similarity
+        from app.utils.text.read_document_content_for_similarity import read_document_content_for_similarity
 
         # Create a file with latin-1 encoding
         test_file = tmp_path / "latin1.txt"

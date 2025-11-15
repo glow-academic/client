@@ -6,14 +6,13 @@ import uuid
 from typing import Any
 
 import pytest
-from app.utils.agent_helpers import (
-    build_guardrail_agent,
-    build_hint_agent,
-    get_input_guardrails,
-    get_output_guardrails,
-    run_guardrail_evaluation,
-)
-from app.utils.agent_tools import create_guardrail_tools, create_hint_tools
+from app.utils.agents.build_guardrail_agent import build_guardrail_agent
+from app.utils.agents.build_hint_agent import build_hint_agent
+from app.utils.agents.get_input_guardrails import get_input_guardrails
+from app.utils.agents.get_output_guardrails import get_output_guardrails
+from app.utils.agents.run_guardrail_evaluation import run_guardrail_evaluation
+from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
+from app.utils.agents.tools.create_hint_tools import create_hint_tools
 
 
 class TestBuild_Hint_Agent:

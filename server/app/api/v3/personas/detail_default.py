@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.main import get_db
-from app.utils.error_handler import handle_route_error
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     DepartmentMapping,
     DepartmentMappingItem,

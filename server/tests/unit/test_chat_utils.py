@@ -5,7 +5,7 @@ Tests for app.utils.chat
 from typing import Any
 
 import pytest
-from app.utils.chat import *  # type: ignore
+# Imports are done per-test to test individual functions
 
 
 class TestGet_Simulation_Conversation_History:
@@ -15,7 +15,7 @@ class TestGet_Simulation_Conversation_History:
         """Test successful get_simulation_conversation_history execution."""
         from datetime import datetime
 
-        from app.utils.chat import get_simulation_conversation_history
+        from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
 
         messages = [
             {
@@ -42,7 +42,7 @@ class TestGet_Simulation_Conversation_History:
         """Test that error messages are filtered out."""
         from datetime import datetime
 
-        from app.utils.chat import get_simulation_conversation_history
+        from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
 
         messages = [
             {
@@ -67,7 +67,7 @@ class TestGet_Simulation_Conversation_History:
         """Test handling of consecutive response messages."""
         from datetime import datetime
 
-        from app.utils.chat import get_simulation_conversation_history
+        from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
 
         messages = [
             {
@@ -95,7 +95,7 @@ class TestGet_Simulation_Conversation_History:
 
     def test_get_simulation_conversation_history_empty(self) -> None:
         """Test with empty messages list."""
-        from app.utils.chat import get_simulation_conversation_history
+        from app.utils.chat.get_simulation_conversation_history import get_simulation_conversation_history
 
         result = get_simulation_conversation_history([])
 
@@ -109,7 +109,7 @@ class TestGet_Assistant_Conversation_History:
         """Test successful get_assistant_conversation_history execution."""
         from datetime import datetime
 
-        from app.utils.chat import get_assistant_conversation_history
+        from app.utils.chat.get_assistant_conversation_history import get_assistant_conversation_history
 
         messages = [
             {
@@ -137,7 +137,7 @@ class TestGet_Assistant_Conversation_History:
         """Test get_assistant_conversation_history with tool calls."""
         from datetime import datetime
 
-        from app.utils.chat import get_assistant_conversation_history
+        from app.utils.chat.get_assistant_conversation_history import get_assistant_conversation_history
 
         messages = [
             {
@@ -171,7 +171,7 @@ class TestGet_Assistant_Conversation_History:
 
     def test_get_assistant_conversation_history_empty(self) -> None:
         """Test with empty messages and tool calls."""
-        from app.utils.chat import get_assistant_conversation_history
+        from app.utils.chat.get_assistant_conversation_history import get_assistant_conversation_history
 
         result = get_assistant_conversation_history([], [])
 
@@ -181,7 +181,7 @@ class TestGet_Assistant_Conversation_History:
         """Test that items are sorted chronologically."""
         from datetime import datetime
 
-        from app.utils.chat import get_assistant_conversation_history
+        from app.utils.chat.get_assistant_conversation_history import get_assistant_conversation_history
 
         messages = [
             {
@@ -210,7 +210,7 @@ class TestFormat_Chat_Scenario:
 
     def test_format_chat_scenario_success(self) -> None:
         """Test successful format_chat_scenario execution."""
-        from app.utils.chat import format_chat_scenario
+        from app.utils.chat.format_chat_scenario import format_chat_scenario
 
         problem_statement = "You are a customer service representative helping a user."
 
@@ -222,7 +222,7 @@ class TestFormat_Chat_Scenario:
 
     def test_format_chat_scenario_empty(self) -> None:
         """Test format_chat_scenario with empty string."""
-        from app.utils.chat import format_chat_scenario
+        from app.utils.chat.format_chat_scenario import format_chat_scenario
 
         result = format_chat_scenario("")
 

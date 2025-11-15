@@ -4,7 +4,8 @@ Tests for app.utils.csv
 
 from pathlib import Path
 
-from app.utils.csv import parse_csv_file, validate_csv_format  # type: ignore
+from app.utils.csv.parse_csv_file import parse_csv_file
+from app.utils.csv.validate_csv_format import validate_csv_format
 
 
 class TestParse_Csv_File:

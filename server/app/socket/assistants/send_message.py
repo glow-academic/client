@@ -10,21 +10,18 @@ from typing import Any
 
 import socketio  # type: ignore
 from agents import Runner, trace
-from agents.items import (
-    ReasoningItem,
-    ToolCallItem,
-    ToolCallOutputItem,
-    TResponseInputItem,
-)
+from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
+                          TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
-from app.main import get_pool
-from app.main import sio
-from app.utils.agents import GenericAgent
-from app.utils.chat import get_assistant_conversation_history
+from app.main import get_pool, sio
+from app.utils.agents.generic_agent import GenericAgent
+from app.utils.chat.get_assistant_conversation_history import \
+    get_assistant_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 from dotenv import load_dotenv
-from openai.types.responses import ResponseFunctionToolCall, ResponseTextDeltaEvent
+from openai.types.responses import (ResponseFunctionToolCall,
+                                    ResponseTextDeltaEvent)
 
 load_dotenv()
 
@@ -297,7 +294,8 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         )
 
                     # Store the result in active runs for potential cancellation using unified tracking
-                    from app.utils.websocket_utils import store_active_run
+                    from app.utils.websocket.store_active_run import \
+                        store_active_run
 
                     chat_id_str = context.chat_id
                     await store_active_run(chat_id_str, result)
@@ -596,7 +594,8 @@ async def send_assistant_message(sid: str, data: dict[str, Any]) -> None:
                         raise
                     finally:
                         # Clean up active run
-                        from app.utils.websocket_utils import remove_active_run
+                        from app.utils.websocket.remove_active_run import \
+                            remove_active_run
 
                         await remove_active_run(chat_id_str)
 

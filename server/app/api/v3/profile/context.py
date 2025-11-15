@@ -6,7 +6,7 @@ from typing import Annotated, Any, cast
 import asyncpg
 from app.api.v3.profile.detail import ProfileItem
 from app.main import get_db
-from app.utils.error_handler import handle_route_error
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.permissions import (
     ProfileRole,
     get_available_subsections_for_role,

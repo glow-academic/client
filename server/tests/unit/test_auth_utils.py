@@ -7,7 +7,9 @@ import os
 from unittest.mock import patch
 
 import pytest
-from app.utils.auth import decrypt_api_key, derive_key  # type: ignore
+from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.auth.derive_key import derive_key
+from app.utils.auth.encrypt_api_key import encrypt_api_key
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -117,8 +119,7 @@ class TestEncrypt_Api_Key:
         import os
         from unittest.mock import patch
 
-        from app.utils.auth import decrypt_api_key, encrypt_api_key
-
+        # decrypt_api_key and encrypt_api_key already imported at top
         # Mock environment variable
         with patch.dict(os.environ, {"SECRET_KEY": "test_secret_key"}):
             original_key = "my-secret-api-key"
@@ -139,7 +140,7 @@ class TestEncrypt_Api_Key:
         import os
         from unittest.mock import patch
 
-        from app.utils.auth import encrypt_api_key
+        from app.utils.auth.encrypt_api_key import encrypt_api_key
 
         # Test without SECRET_KEY
         with patch.dict(os.environ, {}, clear=True):

@@ -7,7 +7,7 @@ import socketio  # type: ignore
 from app.main import get_pool
 from app.main import sio
 from app.utils.sql_helper import load_sql
-from app.utils.websocket_utils import cancel_active_run
+from app.utils.websocket.cancel_active_run import cancel_active_run
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ async def stop_simulation(sid: str, data: dict[str, Any]) -> None:
 
         async with pool.acquire() as conn:
             # Attempt to cancel the simulation run and the in-process Runner immediately
-            from app.utils.websocket_utils import cancel_active_result
+            from app.utils.websocket.cancel_active_result import cancel_active_result
 
             # Try immediate in-process cancel first
             immediate = await cancel_active_result(str(chat_id))

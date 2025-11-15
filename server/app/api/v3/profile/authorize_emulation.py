@@ -4,7 +4,7 @@ from typing import Annotated
 
 import asyncpg
 from app.main import get_db
-from app.utils.http_cache import invalidate_tags
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel

@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.utils.text_helpers import normalize_text, tokenize
+from app.utils.text.normalize_text import normalize_text
+from app.utils.text.tokenize import tokenize
 
 
 def build_fuzzy_conditions(

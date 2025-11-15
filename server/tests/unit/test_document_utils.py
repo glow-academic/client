@@ -12,7 +12,7 @@ class TestFormat_Document_Info:
 
     def test_format_document_info_empty_list(self) -> None:
         """Test format_document_info with empty document list."""
-        from app.utils.document import format_document_info  # type: ignore
+        from app.utils.document.format_document_info import format_document_info  # type: ignore
 
         result = format_document_info([])
 
@@ -26,7 +26,7 @@ class TestFormat_Document_Info:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test format_document_info with text file."""
-        from app.utils.document import format_document_info  # type: ignore
+        from app.utils.document.format_document_info import format_document_info  # type: ignore
 
         # Create a temporary text file
         test_file = tmp_path / "test.txt"

@@ -3,7 +3,7 @@ Tests for app.utils.debug_info
 """
 
 import pytest
-from app.utils.debug_info import *  # type: ignore
+# Imports are done per-test to test individual functions
 
 
 @pytest.mark.skip(reason="Requires complex async mocking of ModelRunService")

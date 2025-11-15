@@ -1,0 +1,21 @@
+"""Remove a guest socket from Redis."""
+
+import logging
+
+from app.main import get_redis_client
+
+logger = logging.getLogger(__name__)
+
+
+async def remove_guest_socket(socket_id: str) -> None:
+    """Remove a guest socket from Redis."""
+    redis_client = get_redis_client()
+    if not redis_client:
+        return
+
+    try:
+        result = await redis_client.srem("guest_sockets", socket_id)  # type: ignore
+        _ = result  # Use result to avoid unused variable warning
+    except Exception as e:
+        logger.error(f"Redis error removing guest socket {socket_id}: {e}")
+

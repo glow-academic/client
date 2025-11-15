@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from app.main import sio
-from app.utils.websocket_utils import set_active_connection
+from app.utils.websocket.set_active_connection import set_active_connection
 
 logger = logging.getLogger(__name__)
 

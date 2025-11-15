@@ -10,16 +10,19 @@ import socketio  # type: ignore
 from agents import Runner, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
-from app.main import get_pool
-from app.main import sio
-from app.utils.agent_helpers import build_hint_agent, get_output_guardrails
-from app.utils.agent_tools import create_hint_tools, hint_progress, hint_results
-from app.utils.agents import GenericAgent
-from app.utils.chat import format_chat_scenario, get_simulation_conversation_history
+from app.main import get_pool, sio
+from app.utils.agents.build_hint_agent import build_hint_agent
+from app.utils.agents.generic_agent import GenericAgent
+from app.utils.agents.get_output_guardrails import get_output_guardrails
+from app.utils.agents.tools.create_hint_tools import create_hint_tools
+from app.utils.agents.tools.globals import hint_progress, hint_results
+from app.utils.chat.format_chat_scenario import format_chat_scenario
+from app.utils.chat.get_simulation_conversation_history import \
+    get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
-from app.utils.document import format_document_info
+from app.utils.document.format_document_info import format_document_info
 from app.utils.sql_helper import load_sql
-from app.utils.websocket_emitters import emit_hint_progress
+from app.utils.websocket.emit_hint_progress import emit_hint_progress
 from openai.types.responses import ResponseTextDeltaEvent
 
 logger = logging.getLogger(__name__)
@@ -428,14 +431,18 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                 try:
                     # Cooperative cancellation support using Redis flags
                     # We poll for a cancellation flag bound to this chat's active run ID
-                    from app.utils.websocket_utils import (
-                        get_active_run,
-                        is_run_cancelled,
-                        remove_active_result,
-                        store_active_events,
-                        store_active_result,
-                        store_active_run,
-                    )
+                    from app.utils.websocket.get_active_run import \
+                        get_active_run
+                    from app.utils.websocket.is_run_cancelled import \
+                        is_run_cancelled
+                    from app.utils.websocket.remove_active_result import \
+                        remove_active_result
+                    from app.utils.websocket.store_active_events import \
+                        store_active_events
+                    from app.utils.websocket.store_active_result import \
+                        store_active_result
+                    from app.utils.websocket.store_active_run import \
+                        store_active_run
 
                     # Get all context data in a single optimized query using SQL file
                     sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
@@ -693,7 +700,8 @@ async def send_simulation_message(sid: str, data: dict[str, Any]) -> None:
                             raise e
                     finally:
                         # Clean up the active run using unified tracking
-                        from app.utils.websocket_utils import remove_active_run
+                        from app.utils.websocket.remove_active_run import \
+                            remove_active_run
 
                         await remove_active_run(chat_id_str)
                         await remove_active_result(chat_id_str)

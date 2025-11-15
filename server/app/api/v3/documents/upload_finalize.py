@@ -11,8 +11,8 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from app.main import get_db
 from app.main import UPLOAD_FOLDER
-from app.utils.http_cache import invalidate_tags
-from app.utils.mime_utils import get_content_type
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
@@ -104,7 +104,7 @@ async def upload_finalize(
 
         # Handle CSV uploads
         if request.csv:
-            from app.utils.csv import parse_csv_file
+            from app.utils.csv.parse_csv_file import parse_csv_file
 
             logger.info(f"Processing CSV upload: fileId={request.fileId}")
 

@@ -6,7 +6,8 @@ import uuid
 from typing import Any
 
 import pytest
-from app.utils.websocket_emitters import emit_grading_progress, emit_hint_progress
+from app.utils.websocket.emit_grading_progress import emit_grading_progress
+from app.utils.websocket.emit_hint_progress import emit_hint_progress
 
 
 class TestEmitGradingProgress:
