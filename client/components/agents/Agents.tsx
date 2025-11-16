@@ -15,8 +15,8 @@ import type {
   DuplicateAgentIn,
   DuplicateAgentOut,
 } from "@/app/(main)/management/agents/page";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,
   AlertDialogAction,

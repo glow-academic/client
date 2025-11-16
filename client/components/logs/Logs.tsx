@@ -17,10 +17,10 @@ import type {
   GetHealthCheckOut,
   LogsListOut,
 } from "@/app/(main)/system/logs/page";
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

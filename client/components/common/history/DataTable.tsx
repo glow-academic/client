@@ -40,9 +40,9 @@ import type {
   BulkArchiveAttemptsIn,
   BulkArchiveAttemptsOut,
 } from "@/app/(main)/analytics/dashboard/page";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 // Legacy interface - no longer used
 

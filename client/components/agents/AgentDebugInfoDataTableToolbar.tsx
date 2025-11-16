@@ -3,8 +3,8 @@
 import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
 
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AgentDebugInfoRow } from "./AgentDebugInfo";

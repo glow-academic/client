@@ -5,8 +5,8 @@
  * 07/20/2025
  */
 
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -242,7 +242,7 @@ export default function LeaderboardTable({
         sortingFn: "basic",
       },
     ],
-    [currentUserId],
+    [currentUserId]
   );
 
   const table = useReactTable({
@@ -323,7 +323,7 @@ export default function LeaderboardTable({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext(),
+                          header.getContext()
                         )}
                   </TableHead>
                 ))}
@@ -372,7 +372,7 @@ export default function LeaderboardTable({
                         ) : (
                           flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext(),
+                            cell.getContext()
                           )
                         )}
                       </TableCell>

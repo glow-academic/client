@@ -8,8 +8,8 @@ import type {
   ProfileListItem,
   SearchStaffOut,
 } from "@/app/(main)/management/staff/page";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,

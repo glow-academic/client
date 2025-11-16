@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";

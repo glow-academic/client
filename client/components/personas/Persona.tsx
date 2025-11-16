@@ -31,7 +31,7 @@ import {
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import {
   AlertDialog,
   AlertDialogAction,

@@ -30,8 +30,8 @@ import type {
   ProfileListItem,
   SearchStaffOut,
 } from "@/app/(main)/management/staff/page";
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,

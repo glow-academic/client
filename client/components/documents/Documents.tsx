@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DocumentPreviewCard } from "@/components/documents/DocumentPreviewCard";
 import {
   AlertDialog,
@@ -91,9 +91,9 @@ import type {
 } from "@/app/(main)/management/parameters/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import {
   Table,
   TableBody,

@@ -31,8 +31,8 @@ import type {
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
 } from "@/app/(main)/system/departments/page";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
 import {
   ColumnDef,

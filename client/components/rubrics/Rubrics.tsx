@@ -35,8 +35,8 @@ import type {
   UpdateRubricIn,
   UpdateRubricOut,
 } from "@/app/(main)/management/rubrics/page";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import {
   AlertDialog,

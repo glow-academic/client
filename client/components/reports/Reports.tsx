@@ -7,7 +7,7 @@ import { ColumnDef, Row, Table as TableType } from "@tanstack/react-table";
 import { Clock, MessageCircle, Target, Timer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {

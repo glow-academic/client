@@ -3,11 +3,11 @@
 import { Table } from "@tanstack/react-table";
 import { Archive, Unlock, X } from "lucide-react";
 
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 export interface DataTableToolbarProps<TData> {

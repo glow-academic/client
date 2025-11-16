@@ -26,8 +26,8 @@ import type {
   DuplicateScenarioOut,
   ScenariosListOut,
 } from "@/app/(main)/create/scenarios/page";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,
   AlertDialogAction,

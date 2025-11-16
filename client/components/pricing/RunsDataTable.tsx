@@ -16,9 +16,9 @@ import {
 import { Bug } from "lucide-react";
 import * as React from "react";
 
-import { DataTableColumnHeader } from "@/components/common/history/DataTableColumnHeader";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
-import { DataTableViewOptions } from "@/components/common/history/DataTableViewOptions";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

@@ -59,8 +59,8 @@ import type {
   DuplicateParameterOut,
   ParametersListOut,
 } from "@/app/(main)/management/parameters/page";
-import { DataTableFacetedFilter } from "@/components/common/history/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/history/DataTablePagination";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
 
 export interface ParametersProps {

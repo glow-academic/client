@@ -9,6 +9,7 @@ import type {
   BulkArchiveAttemptsIn,
   BulkArchiveAttemptsOut,
 } from "@/app/(main)/analytics/dashboard/page";
+import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -20,7 +21,6 @@ import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
 import * as React from "react";
 import { DataTable } from "./DataTable";
-import { DataTableColumnHeader } from "./DataTableColumnHeader";
 import { DataTableRowActions } from "./DataTableRowActions";
 
 // New data structure for history items
