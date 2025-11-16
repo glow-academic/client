@@ -213,6 +213,8 @@ export default function ChatWidget({
               isLoadingChats={isLoadingChats}
               onPromptClick={handlePromptClick}
               variant="minimized"
+              onSendMessage={onSendMessage}
+              isSendingMessage={isSendingMessage}
             />
           ) : (
             <div className="flex items-center justify-center h-full p-6">

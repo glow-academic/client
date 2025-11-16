@@ -147,8 +147,10 @@ async def _send_assistant_message_impl(
     sid: str, data: SendAssistantMessagePayload
 ) -> None:
     """Handle assistant message sending requests"""
+    chat_id_for_error: str | None = None
     try:
         chat_id = data.chat_id
+        chat_id_for_error = chat_id
         message = data.message
         department_id = data.department_id
 
@@ -337,12 +339,17 @@ async def _send_assistant_message_impl(
                     # Create a list of all conversation items with their timestamps
                     conversation_items: list[dict[str, Any]] = []
 
-                    # Add messages to the list
+                    # Add messages to the list (filter out error messages)
                     for message in context.messages:
-                        if message.get("role") == "user" and message.get("content"):
+                        content = message.get("content", "")
+                        # Skip error messages (prefixed with "Error:")
+                        if content.startswith("Error:"):
+                            continue
+                            
+                        if message.get("role") == "user" and content:
                             user_item: TResponseInputItem = {
                                 "role": "user",
-                                "content": message["content"],
+                                "content": content,
                             }
                             conversation_items.append(
                                 {
@@ -351,12 +358,10 @@ async def _send_assistant_message_impl(
                                     "item": user_item,
                                 }
                             )
-                        elif message.get("role") == "assistant" and message.get(
-                            "content"
-                        ):
+                        elif message.get("role") == "assistant" and content:
                             assistant_item: TResponseInputItem = {
                                 "role": "assistant",
-                                "content": message["content"],
+                                "content": content,
                             }
                             conversation_items.append(
                                 {
@@ -853,6 +858,70 @@ async def _send_assistant_message_impl(
                         f"Error processing assistant message for chat {chat_id_uuid}: {e}",
                         exc_info=True,
                     )
+                    
+                    # Create or update error message in database
+                    error_text = f"Error: {str(e)}"
+                    try:
+                        if current_message:
+                            # Update existing message with error content
+                            sql = load_sql("sql/v3/assistant/complete_message.sql")
+                            await conn.execute(
+                                sql, error_text, True, current_message["id"]
+                            )
+                            
+                            # Emit completion update with error content
+                            await assistant_message_complete(
+                                AssistantMessageCompletePayload(
+                                    message_id=str(current_message["id"]),
+                                    chat_id=str(chat_id_uuid),
+                                    final_content=error_text,
+                                ),
+                                room=f"assistant_{chat_id_uuid}",
+                            )
+                            logger.info(
+                                f"Updated message {current_message['id']} with error content"
+                            )
+                        else:
+                            # Create new error message
+                            sql = load_sql("sql/v3/assistant/insert_error_message.sql")
+                            error_message_row = await conn.fetchrow(
+                                sql,
+                                chat_id_uuid,
+                                error_text,
+                                True,  # completed = True
+                            )
+                            
+                            # Emit the error message to clients
+                            if error_message_row:
+                                error_message_dict = dict(error_message_row)
+                                created_at = error_message_dict.get("created_at")
+                                created_at_str = (
+                                    created_at.isoformat()
+                                    if created_at and hasattr(created_at, "isoformat")
+                                    else str(created_at) if created_at else ""
+                                )
+                                
+                                await assistant_new_message(
+                                    AssistantNewMessagePayload(
+                                        message_id=str(error_message_dict.get("id", "")),
+                                        chat_id=str(chat_id_uuid),
+                                        role="assistant",
+                                        content=error_text,
+                                        completed=True,
+                                        created_at=created_at_str,
+                                    ),
+                                    room=f"assistant_{chat_id_uuid}",
+                                )
+                                logger.info(
+                                    f"Created error message in database for chat {chat_id_uuid}"
+                                )
+                    except Exception as db_error:
+                        logger.error(
+                            f"Failed to create/update error message in database: {db_error}",
+                            exc_info=True,
+                        )
+                    
+                    # Also emit error event for backward compatibility
                     await send_assistant_message_error(
                         SendAssistantMessageErrorPayload(
                             chat_id=str(chat_id_uuid), error=str(e)
@@ -864,9 +933,60 @@ async def _send_assistant_message_impl(
 
     except Exception as e:
         logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")
+        
+        # Try to create error message in database if we have a valid chat_id
+        try:
+            if chat_id_for_error:
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as conn:
+                        # Create an error message in the database
+                        sql = load_sql("sql/v3/assistant/insert_error_message.sql")
+                        error_text = f"Error: {str(e)}"
+                        error_message_row = await conn.fetchrow(
+                            sql,
+                            uuid.UUID(chat_id_for_error),
+                            error_text,
+                            True,  # completed = True
+                        )
+                        
+                        # Emit the error message to clients
+                        if error_message_row:
+                            error_message_dict = dict(error_message_row)
+                            created_at = error_message_dict.get("created_at")
+                            created_at_str = (
+                                created_at.isoformat()
+                                if created_at and hasattr(created_at, "isoformat")
+                                else str(created_at) if created_at else ""
+                            )
+                            
+                            await assistant_new_message(
+                                AssistantNewMessagePayload(
+                                    message_id=str(error_message_dict.get("id", "")),
+                                    chat_id=str(chat_id_for_error),
+                                    role="assistant",
+                                    content=error_text,
+                                    completed=True,
+                                    created_at=created_at_str,
+                                ),
+                                room=f"assistant_{chat_id_for_error}",
+                            )
+                            logger.info(
+                                f"Created error message in database for chat {chat_id_for_error}"
+                            )
+        except Exception as db_error:
+            logger.error(
+                f"Failed to create error message in database: {db_error}",
+                exc_info=True,
+            )
+        
+        # Also emit the error event for backward compatibility
         await send_assistant_message_error(
             SendAssistantMessageErrorPayload(
-                success=False, message=f"Failed to send message: {str(e)}"
+                success=False,
+                message=f"Failed to send message: {str(e)}",
+                chat_id=chat_id_for_error,
+                error=str(e),
             ),
             room=sid,
         )

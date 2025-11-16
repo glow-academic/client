@@ -168,6 +168,10 @@ export type ServerToClientEvents = {
     chat_id: string;
     attempt_id: string;
   }) => void;
+  end_chat_started: (payload: {
+    chat_id: string;
+    attempt_id: string;
+  }) => void;
   end_all_completed: (payload: {
     success: boolean;
     message: string;

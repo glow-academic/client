@@ -287,6 +287,12 @@
         "attempt_id": "string"
       }
     },
+    "end_chat_started": {
+      "payload": {
+        "chat_id": "string",
+        "attempt_id": "string"
+      }
+    },
     "end_all_completed": {
       "payload": {
         "success": "boolean",

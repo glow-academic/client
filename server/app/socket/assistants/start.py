@@ -60,6 +60,7 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
     Handle assistant start requests via WebSocket
     Creates a new assistant chat and processes the initial message
     """
+    chat_id = None  # Initialize to track if chat was created
     try:
         logger.info(f"Received start_assistant request from {sid} with data: {data}")
 
@@ -286,9 +287,72 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
 
     except Exception as e:
         logger.error(f"Error starting assistant for {sid}: {str(e)}")
+        
+        # Try to create error message in database if chat was created
+        chat_id_for_error = None
+        try:
+            # Check if chat_id was created
+            if chat_id:
+                chat_id_for_error = chat_id
+                pool = get_pool()
+                if pool:
+                    async with pool.acquire() as conn:
+                        # Create error message in database
+                        from datetime import UTC, datetime
+                        sql = load_sql("sql/v3/assistant/insert_error_message.sql")
+                        error_text = f"Error: {str(e)}"
+                        error_message_row = await conn.fetchrow(
+                            sql,
+                            uuid.UUID(chat_id),
+                            error_text,
+                            True,  # completed = True
+                        )
+                        
+                        # Emit the error message to clients
+                        if error_message_row:
+                            # Import assistant_new_message payload
+                            from app.socket.assistants.send_message import (
+                                AssistantNewMessagePayload,
+                                assistant_new_message,
+                            )
+                            
+                            # Convert asyncpg.Record to dict
+                            error_message_dict = dict(error_message_row)
+                            created_at = error_message_dict.get("created_at")
+                            created_at_str = (
+                                created_at.isoformat()
+                                if created_at and hasattr(created_at, "isoformat")
+                                else str(created_at) if created_at else ""
+                            )
+                            
+                            assistant_room = f"assistant_{chat_id}"
+                            await assistant_new_message(
+                                AssistantNewMessagePayload(
+                                    message_id=str(error_message_dict.get("id", "")),
+                                    chat_id=str(chat_id),
+                                    role="assistant",
+                                    content=error_text,
+                                    completed=True,
+                                    created_at=created_at_str,
+                                ),
+                                room=assistant_room,
+                            )
+                            logger.info(
+                                f"Created error message in database for chat {chat_id}"
+                            )
+        except Exception as db_error:
+            logger.error(
+                f"Failed to create error message in database: {db_error}",
+                exc_info=True,
+            )
+        
+        # Emit error event (backward compatibility and for toasts)
         await start_assistant_error(
             StartAssistantErrorPayload(
-                success=False, message=f"Failed to start assistant: {str(e)}"
+                success=False,
+                message=f"Failed to start assistant: {str(e)}",
+                chat_id=chat_id_for_error,
+                error=str(e),
             ),
             room=sid,
         )

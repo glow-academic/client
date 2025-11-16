@@ -61,6 +61,11 @@ class EndAllStartedPayload(BaseModel):
     attempt_id: str
 
 
+class EndChatStartedPayload(BaseModel):
+    chat_id: str
+    attempt_id: str
+
+
 class EndAllCompletedPayload(BaseModel):
     success: bool
     message: str
@@ -106,6 +111,10 @@ async def simulation_grading_progress(
 
 async def end_all_started(payload: EndAllStartedPayload, room: str) -> None:
     await sio.emit("end_all_started", payload.model_dump(), room=room)
+
+
+async def end_chat_started(payload: EndChatStartedPayload, room: str) -> None:
+    await sio.emit("end_chat_started", payload.model_dump(), room=room)
 
 
 async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
@@ -1066,6 +1075,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     room=f"simulation_{chat_id}",
                 )
                 logger.info(f"Emitted end_all_started for chat {chat_id}, attempt {attempt_id}")
+            else:
+                # If end_all is False, emit end_chat_started event immediately so all watchers see the loading state
+                await end_chat_started(
+                    EndChatStartedPayload(chat_id=chat_id, attempt_id=attempt_id),
+                    room=f"simulation_{chat_id}",
+                )
+                logger.info(f"Emitted end_chat_started for chat {chat_id}, attempt {attempt_id}")
 
             simulation_attempt = attempt_with_profile
             profile_id = attempt_with_profile.get("profile_id")

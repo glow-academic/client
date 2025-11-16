@@ -7,11 +7,26 @@
 "use client";
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowDown, CheckCircle, Loader2, Wrench } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  AlertCircle,
+  ArrowDown,
+  CheckCircle,
+  Loader2,
+  RotateCcw,
+  Wrench,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createFeedback } from "@/app/(main)/layout-server";
+import ReportProblem from "@/components/common/layout/ReportProblem";
 import type { AssistantChatFullResponse } from "./AssistantChat";
 import ChatStarterPrompts from "./ChatStarterPrompts";
 import GlowHeader from "./GlowHeader";
@@ -226,6 +241,8 @@ export interface ChatMessagesProps {
   onPromptClick?: (prompt: string) => void;
   showPrompts?: boolean;
   variant?: "expanded" | "minimized";
+  onSendMessage?: (message: string) => void;
+  isSendingMessage?: boolean;
 }
 
 export default function ChatMessages({
@@ -236,7 +253,10 @@ export default function ChatMessages({
   onPromptClick,
   showPrompts,
   variant = "expanded",
+  onSendMessage,
+  isSendingMessage = false,
 }: ChatMessagesProps) {
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   // Track if user is scrolled to bottom
@@ -246,6 +266,37 @@ export default function ChatMessages({
 
   // Debug logging removed - no client-side logging
   // useEffect(() => { ... }, [currentChatId, messages.length, toolCalls.length, isConnected]);
+
+  const handleRetry = useCallback(
+    (errorMessageId: string) => {
+      if (!onSendMessage) return;
+
+      // Find the previous user message to retry with
+      const sortedMessages = [...messages].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+
+      // Find the error message index
+      const errorMessageIndex = sortedMessages.findIndex(
+        (msg) => msg.id === errorMessageId,
+      );
+
+      if (errorMessageIndex === -1) return;
+
+      // Find the previous user message that came before this error
+      const previousUserMessage = sortedMessages
+        .slice(0, errorMessageIndex)
+        .reverse()
+        .find((msg) => msg.role === "user");
+
+      if (previousUserMessage) {
+        // Retry with the previous user message content
+        onSendMessage(previousUserMessage.content);
+      }
+    },
+    [messages, onSendMessage],
+  );
 
   const createTimeline = useCallback((): TimelineItem[] => {
     const timeline: TimelineItem[] = [];
@@ -401,13 +452,17 @@ export default function ChatMessages({
                 >
                   <div
                     // MODIFIED: Conditional padding and rounding
-                    className={`max-w-[80%] shadow-md ${
+                    className={`max-w-[80%] shadow-md relative ${
                       variant === "minimized"
                         ? "rounded-lg p-2"
                         : "rounded-xl p-4"
                     } ${
                       message.role === "user"
                         ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                        : message.role === "assistant" &&
+                          message.completed &&
+                          message.content.startsWith("Error:")
+                        ? "bg-white dark:bg-gray-800 border-2 border-red-500 dark:border-red-600 shadow-sm"
                         : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
                     }`}
                     data-testid={`assistant-message-${message.id}`}
@@ -431,6 +486,67 @@ export default function ChatMessages({
                         {/* MODIFIED: Pass variant to LoadingDots */}
                         <LoadingDots variant={variant} />
                       </div>
+                    ) : message.role === "assistant" &&
+                      message.completed &&
+                      message.content.startsWith("Error:") ? (
+                      // Show error messages with error styling and retry button
+                      <>
+                        <div
+                          className={`text-red-700 dark:text-red-400 pr-12 ${
+                            variant === "minimized"
+                              ? "text-xs leading-normal"
+                              : "text-sm leading-relaxed"
+                          }`}
+                        >
+                          <Markdown>{message.content}</Markdown>
+                        </div>
+                        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                          {/* Report Error Button */}
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <ReportProblem
+                                createFeedback={createFeedback}
+                                initialType="bug"
+                                initialMessage={`Error in assistant chat: ${message.content}\n\nChat ID: ${currentChatId}\nMessage ID: ${message.id}`}
+                                onDialogStateChange={setIsReportDialogOpen}
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                >
+                                  <AlertCircle className="h-4 w-4" />
+                                </Button>
+                              </ReportProblem>
+                            </TooltipTrigger>
+                            {!isReportDialogOpen && (
+                              <TooltipContent>
+                                <p>Report this error</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+
+                          {/* Retry Button */}
+                          {onSendMessage && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRetry(message.id)}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                  disabled={isSendingMessage}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Retry this message</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </>
                     ) : (
                       // MODIFIED: Conditional font size and leading
                       <div

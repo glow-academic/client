@@ -85,6 +85,7 @@ export default function AssistantChat({
     activeProfile,
     effectiveProfile,
     isConnected,
+    socket,
     joinRoom,
     leaveRoom,
     emitStartAssistant,
@@ -174,6 +175,133 @@ export default function AssistantChat({
     return [];
   }, [assistantData]);
 
+  // Set up WebSocket error event handlers and live message updates
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleStartAssistantError = (data: {
+      success: boolean;
+      message: string;
+      chat_id?: string;
+      error?: string;
+    }) => {
+      setIsSendingMessage(false);
+      toast.error(data.error || data.message || "Failed to start assistant");
+      
+      // Refetch chat data if chat_id is available to get error message from database
+      if (data.chat_id && data.chat_id === currentChatId && profileId && profileId !== "") {
+        fetchAssistantData();
+      }
+      
+      // Also dispatch DOM event for backward compatibility
+      window.dispatchEvent(
+        new CustomEvent("assistant_error", {
+          detail: { message: data.message, error: data.error, chat_id: data.chat_id },
+        })
+      );
+    };
+
+    const handleSendAssistantMessageError = (data: {
+      success?: boolean;
+      message?: string;
+      chat_id?: string;
+      error?: string;
+    }) => {
+      setIsSendingMessage(false);
+      toast.error(data.error || data.message || "Failed to send message");
+      
+      // Refetch chat data if chat_id is available to get error message from database
+      if (data.chat_id && data.chat_id === currentChatId && profileId && profileId !== "") {
+        fetchAssistantData();
+      }
+      
+      // Also dispatch DOM event for backward compatibility
+      window.dispatchEvent(
+        new CustomEvent("assistant_error", {
+          detail: { message: data.message, error: data.error, chat_id: data.chat_id },
+        })
+      );
+    };
+
+    const handleAssistantNewMessage = (data: {
+      message_id: string;
+      chat_id: string;
+      role: string;
+      content: string;
+      completed: boolean;
+      created_at: string;
+    }) => {
+      // Only handle messages for the current chat
+      if (data.chat_id !== currentChatId) return;
+
+      // Update local state optimistically for new messages (including error messages)
+      setAssistantData((prev) => {
+        if (!prev || !("messages" in prev)) return prev;
+        
+        // Check if message already exists
+        const messageIndex = prev.messages.findIndex(
+          (msg) => msg["id"] === data.message_id
+        );
+        
+        if (messageIndex >= 0) {
+          // Update existing message
+          return {
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg["id"] === data.message_id
+                ? {
+                    ...msg,
+                    content: data.content,
+                    completed: data.completed,
+                    updatedAt: data.created_at,
+                  }
+                : msg
+            ),
+          };
+        } else {
+          // Create new message if it doesn't exist
+          const newMessage: AssistantChatFullResponse["messages"][number] = {
+            id: data.message_id,
+            createdAt: data.created_at,
+            updatedAt: data.created_at,
+            completedAt: data.completed ? data.created_at : null,
+            chatId: data.chat_id,
+            role: data.role as "user" | "assistant",
+            content: data.content,
+            completed: data.completed,
+          };
+          return {
+            ...prev,
+            messages: [...prev.messages, newMessage],
+          };
+        }
+      });
+
+      // Dispatch DOM event for backward compatibility
+      window.dispatchEvent(
+        new CustomEvent("assistant_new_message", {
+          detail: {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            role: data.role,
+            content: data.content,
+            completed: data.completed,
+          },
+        })
+      );
+    };
+
+    socket.on("start_assistant_error", handleStartAssistantError);
+    socket.on("send_assistant_message_error", handleSendAssistantMessageError);
+    socket.on("assistant_new_message", handleAssistantNewMessage);
+
+    return () => {
+      socket.off("start_assistant_error", handleStartAssistantError);
+      socket.off("send_assistant_message_error", handleSendAssistantMessageError);
+      socket.off("assistant_new_message", handleAssistantNewMessage);
+    };
+  }, [socket, isConnected, currentChatId, profileId, fetchAssistantData]);
+
   // Set up assistant-specific event listeners
   useEffect(() => {
     if (!isConnected) return;
@@ -215,8 +343,23 @@ export default function AssistantChat({
       fetchAssistantData();
     };
 
-    const handleAssistantError = () => {
+    const handleAssistantError = async (event?: Event) => {
       setIsSendingMessage(false);
+      // Show toast with error message if available
+      if (event) {
+        const data = (event as CustomEvent).detail as {
+          message?: string;
+          error?: string;
+          chat_id?: string;
+        };
+        const errorMessage = data.error || data.message || "An error occurred";
+        toast.error(errorMessage);
+        
+        // Refetch chat data to get error message from database if chat_id is available
+        if (data.chat_id && data.chat_id === currentChatId && profileId && profileId !== "") {
+          await fetchAssistantData();
+        }
+      }
     };
 
     // Listen for title updates

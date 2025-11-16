@@ -212,6 +212,8 @@ export default function ChatDialog({
               isLoadingChats={isLoadingChats}
               onPromptClick={handlePromptClick}
               showPrompts={showPrompts}
+              onSendMessage={onSendMessage}
+              isSendingMessage={isSendingMessage}
             />
           </div>
           <div className="border-t">

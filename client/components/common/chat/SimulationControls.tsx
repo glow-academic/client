@@ -186,6 +186,20 @@ export function SimulationControls({
       setConfirmEndAllOpen(false);
     };
 
+    const handleEndChatStarted = (data: {
+      chat_id: string;
+      attempt_id: string;
+    }) => {
+      // Only handle if this event is for the current chat
+      if (!currentChatId || data.chat_id !== currentChatId) return;
+
+      // Set loading state - all watchers will see this
+      setEndChatLoading(true);
+      setEndingAction("endChat");
+      // Close confirmation dialog if still open
+      setConfirmEndChatOpen(false);
+    };
+
     const handleEndAllCompleted = (data: {
       success: boolean;
       message: string;
@@ -242,6 +256,7 @@ export function SimulationControls({
     socket.on("simulation_continued", handleSimulationContinued);
     socket.on("continue_simulation_error", handleSimulationError);
     socket.on("end_all_started", handleEndAllStarted);
+    socket.on("end_chat_started", handleEndChatStarted);
     socket.on("end_all_completed", handleEndAllCompleted);
     socket.on("simulation_grading_progress", handleSimulationGradingProgress);
 
@@ -249,6 +264,7 @@ export function SimulationControls({
       socket.off("simulation_continued", handleSimulationContinued);
       socket.off("continue_simulation_error", handleSimulationError);
       socket.off("end_all_started", handleEndAllStarted);
+      socket.off("end_chat_started", handleEndChatStarted);
       socket.off("end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulation_grading_progress",
