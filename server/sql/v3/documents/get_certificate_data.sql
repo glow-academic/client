@@ -97,7 +97,7 @@ simulation_results AS (
         cs.cohort_title,
         cs.simulation_id,
         cs.simulation_title,
-        COALESCE(ROUND(uss.avg_pct_over_expected::numeric, 2), 0) AS score,
+        COALESCE(ROUND(uss.avg_pct_over_expected::numeric)::int, 0) AS score,
         COALESCE(uss.passed, FALSE) AS passed
     FROM cohort_sims cs
     LEFT JOIN user_sim_status uss ON uss.simulation_id = cs.simulation_id AND uss.profile_id = $1

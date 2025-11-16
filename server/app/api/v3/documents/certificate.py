@@ -173,6 +173,13 @@ async def generate_certificate(
             if cohort_data:
                 story.append(Paragraph("Cohort Progress", header_style))
 
+                # Helper function to truncate text for table cells
+                def truncate_text(text: str, max_length: int = 24) -> str:
+                    """Truncate text to max_length and add ellipsis if needed."""
+                    if len(text) <= max_length:
+                        return text
+                    return text[:max_length - 3] + "..."
+
                 # Create table data
                 table_data = [["Cohort", "Simulation", "Score", "Status"]]
 
@@ -180,22 +187,27 @@ async def generate_certificate(
                     cohort_name = cohort.get("name", "Unknown Cohort")
                     simulations = cohort.get("simulations", [])
 
+                    # Truncate cohort name to prevent overlap (max 20 chars for 1.8 inch column)
+                    truncated_cohort_name = truncate_text(cohort_name)
+
                     for sim in simulations:
                         sim_name = sim.get("name", "Unknown Simulation")
                         score = sim.get("score", 0)
                         passed = sim.get("passed", False)
 
-                        score_text = f"{score}%" if score > 0 else "No attempts"
+                        # Ensure score is whole number (round to nearest integer)
+                        score_int = int(round(float(score))) if score > 0 else 0
+                        score_text = f"{score_int}%" if score_int > 0 else "No attempts"
                         status_text = (
                             "PASS"
                             if passed
                             else "FAIL"
-                            if score > 0
+                            if score_int > 0
                             else "Not attempted"
                         )
 
                         table_data.append(
-                            [cohort_name, sim_name, score_text, status_text]
+                            [truncated_cohort_name, sim_name, score_text, status_text]
                         )
 
                 # Create table
@@ -405,9 +417,11 @@ async def generate_certificate(
                     score = sim.get("score", 0)
                     passed = sim.get("passed", False)
 
-                    score_text = f"{score}%" if score > 0 else "No attempts"
+                    # Ensure score is whole number (round to nearest integer)
+                    score_int = int(round(float(score))) if score > 0 else 0
+                    score_text = f"{score_int}%" if score_int > 0 else "No attempts"
                     status_text = (
-                        "PASS" if passed else "FAIL" if score > 0 else "Not attempted"
+                        "PASS" if passed else "FAIL" if score_int > 0 else "Not attempted"
                     )
 
                     text_content.append(f"  - {sim_name}: {score_text} ({status_text})")
