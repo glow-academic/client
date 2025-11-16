@@ -189,7 +189,7 @@ export default function AttemptInput({
     <TooltipProvider>
       <CardFooter
         ref={inputPanelRef}
-        className="h-full px-4 pb-2 pt-0 border-t flex flex-col justify-end min-h-0"
+        className="h-full px-2 pb-1.5 pt-0 border-t flex flex-col justify-end min-h-0"
       >
         {/* --- Dynamic Input Area --- */}
         <div className="w-full flex items-end gap-2 shrink-0">

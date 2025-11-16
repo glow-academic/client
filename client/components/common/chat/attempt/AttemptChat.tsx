@@ -1351,10 +1351,10 @@ export default function AttemptChat({
             }
             className="md:flex-none"
           >
-            <Card className="h-full flex flex-col py-4">
+            <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none">
               <div className="h-full flex flex-col">
                 {/* Timer and Controls Header - consistent with main chat layout */}
-                <div className="p-4 pt-0 border-b flex flex-col gap-2">
+                <div className="p-2 pt-0 border-b flex flex-col gap-2">
                   {/* Mobile: Left-aligned vertical layout */}
                   <div className="md:hidden max-h-[200px] overflow-y-auto">
                     <div className="flex flex-col gap-3 py-2">
@@ -1962,11 +1962,11 @@ export default function AttemptChat({
                 </div>
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-                  <ScrollArea className="flex-1 px-2 min-h-0">
-                    <div className="space-y-4 py-4">
+                  <ScrollArea className="flex-1 px-1 min-h-0">
+                    <div className="space-y-4 py-2">
                       {/* Show rubric when toggle is on */}
                       {showGrades && displayChat && rubricStructure ? (
-                        <div className="space-y-4 py-4">
+                        <div className="space-y-4 py-2">
                           <TableRubric
                             standardGroups={
                               rubricStructure?.standardGroups || []
@@ -2042,11 +2042,11 @@ export default function AttemptChat({
                       maxSize={50}
                       className="hidden md:block"
                     >
-                      <Card className="h-full flex flex-col ml-4 p-0">
+                      <Card className="h-full flex flex-col ml-2 p-0 border-0 border-l-0 shadow-none rounded-l-none">
                         <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                           {/* Select dropdown directly above document */}
                           {filteredDocs.length > 1 && (
-                            <div className="p-3 pb-2 border-b">
+                            <div className="p-2 pb-1.5 border-b">
                               <DocumentSelect
                                 documents={filteredDocs}
                                 selectedDocumentId={selectedDocumentId}
@@ -2055,7 +2055,7 @@ export default function AttemptChat({
                             </div>
                           )}
                           {/* Document viewer with minimal padding */}
-                          <div className="flex-1 min-h-0 p-2">
+                          <div className="flex-1 min-h-0 px-1 py-3">
                             {selectedDocumentId &&
                               (() => {
                                 const document =
@@ -2228,7 +2228,7 @@ export default function AttemptChat({
           defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
           className="md:flex-none"
         >
-          <Card className="h-full flex flex-col py-4">
+          <Card className="h-full flex flex-col py-2 border-0 rounded-t-xl rounded-b-none">
             <TooltipProvider>
               <ResizablePanelGroup
                 ref={inputPanelGroupRef}
@@ -2243,7 +2243,7 @@ export default function AttemptChat({
                       onOpenChange={setShowObjectives}
                       className="border-b"
                     >
-                      <div className="p-4 pt-0 flex flex-col gap-2">
+                      <div className="p-2 pt-0 flex flex-col gap-2">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-4">
                             <div className="flex items-start gap-2">
@@ -2552,11 +2552,11 @@ export default function AttemptChat({
                     maxSize={50}
                     className="hidden md:block"
                   >
-                    <Card className="h-full flex flex-col ml-4 p-0">
+                    <Card className="h-full flex flex-col ml-2 p-0 border-0 border-l-0 shadow-none rounded-l-none">
                       <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                         {/* Select dropdown directly above document */}
                         {filteredDocs.length > 1 && (
-                          <div className="p-3 pb-2 border-b">
+                          <div className="p-2 pb-1.5 border-b">
                             <DocumentSelect
                               documents={filteredDocs}
                               selectedDocumentId={selectedDocumentId}
@@ -2565,7 +2565,7 @@ export default function AttemptChat({
                           </div>
                         )}
                         {/* Document viewer with minimal padding */}
-                        <div className="flex-1 min-h-0 p-2">
+                        <div className="flex-1 min-h-0 px-1 py-3">
                           {selectedDocumentId &&
                             (() => {
                               const document =

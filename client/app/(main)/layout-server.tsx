@@ -5,7 +5,7 @@
 import { getSession, update } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { headers } from "next/headers";
 import { cache } from "react";
 
@@ -51,12 +51,19 @@ const getLayoutContext = cache(
   }
 );
 
-/** ---- Cached fetch for attempt data ---- */
-const getAttemptFull = cache(
-  async (input: AttemptFullIn): Promise<AttemptFullOut> => {
-    return api.post("/attempts/full", input);
-  }
-);
+/** ---- Cached fetch for attempt data ----
+ * Cache key includes attemptId for per-attempt caching.
+ * Tags allow revalidateTag("attempts") and revalidateTag(`attempt:${attemptId}`) to invalidate.
+ * Uses same pattern as page component to ensure cache synchronization.
+ */
+const getAttemptFull = (attemptId: string) =>
+  unstable_cache(
+    async (input: AttemptFullIn): Promise<AttemptFullOut> => {
+      return api.post("/attempts/full", input);
+    },
+    ["attempts:full", attemptId],
+    { tags: ["attempts", `attempt:${attemptId}`] }
+  );
 
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
@@ -102,7 +109,7 @@ export async function getLayoutContextData() {
   let attemptData: AttemptFullOut | null = null;
   if (attemptId) {
     try {
-      attemptData = await getAttemptFull({
+      attemptData = await getAttemptFull(attemptId)({
         body: { attemptId },
       });
     } catch {
