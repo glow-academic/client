@@ -445,14 +445,19 @@ export default function AttemptMessages({
     }) => {
       // Only handle hints for the current chat
       if (data.chat_id === targetChatId && data.type === "complete") {
-        // Add message_id to set of messages with new hints
+        // Add message_id to set of messages with new hints (for red dot indicator)
         setMessagesWithNewHints((prev) => {
           const newSet = new Set(prev);
           newSet.add(data.message_id);
           return newSet;
         });
-        // Refresh server data to get updated hints
-        router.refresh();
+        // Note: router.refresh() is handled in AttemptChat.tsx after a short delay
+        // to allow database transaction to commit. The optimistic hints will show
+        // immediately, and server hints will replace them once available.
+        // Delay refresh slightly to ensure database transaction has committed
+        setTimeout(() => {
+          router.refresh();
+        }, 500);
       }
     };
 
@@ -657,7 +662,7 @@ export default function AttemptMessages({
                                             }
                                             size="sm"
                                             aria-label="Show hints"
-                                            className="flex-1 p-0 rounded-md relative"
+                                            className="flex-1 p-0 rounded-md relative overflow-visible"
                                           >
                                             <Lightbulb className="h-4 w-4" />
                                             {hasNewHints && (

@@ -161,6 +161,52 @@ export default function AttemptChat({
       });
       return updated;
     });
+    // Clear optimistic hints for chats that now have server hints with actual content
+    setOptimisticHints((prev) => {
+      const updated: Record<string, HintsByMessage[]> = {};
+      Object.entries(prev).forEach(([chatId, optimisticChatHints]) => {
+        const chatData = initialAttemptData?.chats?.find(
+          (c) => c.chat.id === chatId
+        );
+        const serverHints = chatData?.hints || [];
+
+        // Keep optimistic hints only if server doesn't have complete hints for all messages
+        // A hint is "complete" if it has hints with non-empty text
+        const serverHintsMap = new Map<string, HintsByMessage>();
+        serverHints.forEach((h) => {
+          serverHintsMap.set(h.messageId, h);
+        });
+
+        const missingOrIncompleteHints = optimisticChatHints.filter(
+          (optimisticHint) => {
+            const serverHint = serverHintsMap.get(optimisticHint.messageId);
+            // Keep optimistic hint if:
+            // 1. Server doesn't have hints for this messageId, OR
+            // 2. Server hints exist but don't have the same count as optimistic, OR
+            // 3. Server hints exist but don't have actual content (empty strings)
+            if (!serverHint) {
+              return true; // Server doesn't have this hint yet
+            }
+            // Check if server hints have the same count as optimistic hints
+            const serverHintCount = serverHint.hints.length;
+            const optimisticHintCount = optimisticHint.hints.length;
+            if (serverHintCount !== optimisticHintCount) {
+              return true; // Keep if counts don't match (server data incomplete)
+            }
+            // Check if server hints have actual content (non-empty hint text)
+            const hasContent = serverHint.hints.some(
+              (h) => h.hint && h.hint.trim().length > 0
+            );
+            return !hasContent; // Keep if server hints don't have content yet
+          }
+        );
+
+        if (missingOrIncompleteHints.length > 0) {
+          updated[chatId] = missingOrIncompleteHints;
+        }
+      });
+      return updated;
+    });
   }, [initialAttemptData]);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
@@ -253,6 +299,13 @@ export default function AttemptChat({
     Record<string, OptimisticGradingState>
   >({});
 
+  // Optimistic hints - updated in realtime from WebSocket events
+  // Structure: Record<chatId, Array<{ messageId: string, hints: Array<...> }>>
+  type HintsByMessage = ChatDataType["hints"][number];
+  const [optimisticHints, setOptimisticHints] = useState<
+    Record<string, HintsByMessage[]>
+  >({});
+
   // Grading states map - map chatId -> grading state (merged from server + optimistic)
   const gradingStatesByChatId = useMemo(() => {
     const map: Record<string, NonNullable<ChatDataType["gradingState"]>> = {};
@@ -310,14 +363,47 @@ export default function AttemptChat({
     return chatData?.messages ?? [];
   }, [attemptData, currentChat]);
 
-  // Hints - get hints for current chat
+  // Hints - get hints for current chat (merged from server + optimistic)
   const currentChatHints = useMemo(() => {
     if (!attemptData?.chats || !currentChat) return [];
     const chatData = attemptData.chats.find(
       (c) => c.chat.id === currentChat.id
     );
-    return chatData?.hints || [];
-  }, [attemptData, currentChat]);
+    const serverHints = chatData?.hints || [];
+    const optimisticChatHints = optimisticHints[currentChat.id] || [];
+
+    // Merge server hints with optimistic hints
+    // Prefer server hints when they have content, use optimistic hints as fallback
+    const hintsMap = new Map<string, HintsByMessage>();
+
+    // First add optimistic hints (as fallback for when server doesn't have them yet)
+    optimisticChatHints.forEach((hintGroup) => {
+      hintsMap.set(hintGroup.messageId, hintGroup);
+    });
+
+    // Then add/override with server hints (server hints take precedence when they have content)
+    serverHints.forEach((hintGroup) => {
+      const existingOptimistic = hintsMap.get(hintGroup.messageId);
+
+      // Check if server hints have actual content
+      const serverHasContent = hintGroup.hints.some(
+        (h) => h.hint && h.hint.trim().length > 0
+      );
+
+      if (serverHasContent) {
+        // Server has content, use it
+        hintsMap.set(hintGroup.messageId, hintGroup);
+      } else if (existingOptimistic) {
+        // Server doesn't have content yet, keep optimistic hints
+        // (optimistic hints already in map, no need to override)
+      } else {
+        // No optimistic hints, use server hints even if empty (better than nothing)
+        hintsMap.set(hintGroup.messageId, hintGroup);
+      }
+    });
+
+    return Array.from(hintsMap.values());
+  }, [attemptData, currentChat, optimisticHints]);
 
   // Get computed data from v3 response (server-side computations)
   const currentDynamicRubric = useMemo(() => {
@@ -977,6 +1063,70 @@ export default function AttemptChat({
       }
     };
 
+    const handleHintGenerationProgress = (data: {
+      type: string;
+      message: string;
+      error?: string;
+      chat_id: string;
+      message_id: string;
+      hint_ids?: string[];
+      hints_count?: number;
+    }) => {
+      // Only handle "complete" events to add optimistic hints
+      if (data.type === "complete" && data.message_id && data.hints_count) {
+        // Parse hint_ids to extract messageId and create hint entries
+        // hint_ids format: "messageId_0", "messageId_1", "messageId_2"
+        const hintIds = data.hint_ids || [];
+        const hints: HintsByMessage["hints"] = hintIds
+          .map((hintId, index) => {
+            // Extract idx from hintId (format: "messageId_idx")
+            const parts = hintId.split("_");
+            const lastPart = parts[parts.length - 1];
+            const idx =
+              parts.length > 1 && lastPart ? parseInt(lastPart, 10) : index;
+
+            // Create placeholder hint (will be replaced by server data on refresh)
+            return {
+              simulationMessageId: data.message_id,
+              hint: "", // Placeholder - will be replaced by server data
+              idx: isNaN(idx) ? index : idx,
+              createdAt: new Date().toISOString(),
+            };
+          })
+          .filter((h) => !isNaN(h.idx)); // Filter out invalid entries
+
+        // Add optimistic hints for this chat
+        setOptimisticHints((prev) => {
+          const chatHints = prev[data.chat_id] || [];
+          // Check if we already have hints for this messageId
+          const existingIndex = chatHints.findIndex(
+            (h) => h.messageId === data.message_id
+          );
+
+          const newHintGroup: HintsByMessage = {
+            messageId: data.message_id,
+            hints: hints,
+          };
+
+          if (existingIndex >= 0) {
+            // Update existing hints
+            const updated = [...chatHints];
+            updated[existingIndex] = newHintGroup;
+            return {
+              ...prev,
+              [data.chat_id]: updated,
+            };
+          } else {
+            // Add new hints
+            return {
+              ...prev,
+              [data.chat_id]: [...chatHints, newHintGroup],
+            };
+          }
+        });
+      }
+    };
+
     socket.on("simulation_new_message", handleSimulationNewMessage);
     socket.on("message_sent", handleMessageSent);
     socket.on("simulation_message_complete", handleSimulationMessageComplete);
@@ -992,6 +1142,7 @@ export default function AttemptChat({
     socket.on("stop_simulation_error", handleStopSimulationError);
     socket.on("continue_simulation_error", handleContinueSimulationError);
     socket.on("simulation_grading_progress", handleSimulationGradingProgress);
+    socket.on("hint_generation_progress", handleHintGenerationProgress);
 
     return () => {
       socket.off("simulation_new_message", handleSimulationNewMessage);
@@ -1018,6 +1169,7 @@ export default function AttemptChat({
         "simulation_grading_progress",
         handleSimulationGradingProgress
       );
+      socket.off("hint_generation_progress", handleHintGenerationProgress);
     };
   }, [
     socket,
