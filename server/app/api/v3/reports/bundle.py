@@ -4,6 +4,7 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.api.v3.reports.export import router as export_router
 from app.main import get_db
 from app.utils.analytics_query_builder import (
     build_base_filter, build_profile_and_analytics_filters)
@@ -17,8 +18,6 @@ from app.utils.schema import (AnalyticsFilters, MetricResponse,
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
-
-from app.api.v3.reports.export import router as export_router
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 router.include_router(export_router)

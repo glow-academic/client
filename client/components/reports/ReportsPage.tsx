@@ -129,14 +129,14 @@ export default function ReportsPage({ reportsData }: ReportsPageProps) {
       },
       timeSpent: {
         value:
-          (profile.metrics.timeSpent.hover?.["avgSessionMinutes"] as number) ??
+          (profile.metrics.timeSpent.currentValue as number) ??
+          (profile.metrics.timeSpent.hover?.["totalMinutes"] as number) ??
           0,
-        formattedValue: `${(profile.metrics.timeSpent.hover?.["avgSessionMinutes"] as number) ?? 0}m`,
+        formattedValue: `${(profile.metrics.timeSpent.currentValue as number) ?? (profile.metrics.timeSpent.hover?.["totalMinutes"] as number) ?? 0}m`,
         thresholds: { gray: 0, red: 90, yellow: 60, green: 30 },
         hover: profile.metrics.timeSpent.hover as {
-          avgSessionMinutes: number;
-          avgChatMinutes: number;
-          avgOverallMinutes: number;
+          totalMinutes: number;
+          totalHours: number;
         },
       },
       totalAttempts: {

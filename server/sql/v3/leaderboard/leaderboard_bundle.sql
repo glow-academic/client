@@ -12,14 +12,13 @@ profile_stats AS (
         p.first_name,
         p.last_name,
         COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
-        MAX(f.grade_percent) AS highest_score,
-        AVG(f.num_messages_total) AS avg_messages,
-        SUM(LEAST(f.time_taken_seconds / 60.0, 30.0)) FILTER (WHERE f.time_taken_seconds IS NOT NULL)::float AS total_time,
+        MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
+        AVG(f.num_messages_total) FILTER (WHERE f.num_messages_total IS NOT NULL) AS avg_messages,
+        COALESCE(SUM(LEAST(f.time_taken_seconds / 60.0, 30.0)) FILTER (WHERE f.time_taken_seconds IS NOT NULL), 0.0)::float AS total_time,
         ARRAY_AGG(DISTINCT f.simulation_id) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids,
         ARRAY_AGG(DISTINCT f.scenario_id) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
     FROM filt f
     JOIN profiles p ON f.profile_id = p.id
-    WHERE f.grade_percent IS NOT NULL
     GROUP BY f.profile_id, p.first_name, p.last_name
 ),
 -- Persona response times per profile
@@ -187,17 +186,17 @@ SELECT json_build_object(
                 'hover', '{}'::json
             ),
             'highestScoreAvg', json_build_object(
-                'hasData', true,
+                'hasData', highest_score IS NOT NULL,
                 'method', 'max',
-                'currentValue', ROUND(highest_score)::int,
+                'currentValue', ROUND(COALESCE(highest_score, 0))::int,
                 'trendData', '[]'::json,
                 'dataPoints', '[]'::json,
                 'hover', '{}'::json
             ),
             'messagesPerSession', json_build_object(
-                'hasData', true,
+                'hasData', avg_messages IS NOT NULL,
                 'method', 'avg',
-                'currentValue', ROUND(avg_messages)::int,
+                'currentValue', ROUND(COALESCE(avg_messages, 0))::int,
                 'trendData', '[]'::json,
                 'dataPoints', '[]'::json,
                 'hover', '{}'::json

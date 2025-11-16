@@ -17,13 +17,13 @@
                     fp.last_name,
                     fp.alias,
                     fp.role,
-                    AVG(f.grade_percent) AS avg_score,
-                    MAX(f.grade_percent) AS highest_score,
+                    AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS avg_score,
+                    MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
                     COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
-                    AVG(f.num_messages_total) AS avg_messages,
-                    AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
+                    AVG(f.num_messages_total) FILTER (WHERE f.num_messages_total IS NOT NULL) AS avg_messages,
+                    AVG(f.time_taken_seconds / 60.0) FILTER (WHERE f.time_taken_seconds IS NOT NULL) AS avg_time_minutes
                 FROM filtered_profiles fp
-                LEFT JOIN filt f ON f.profile_id = fp.id AND f.grade_percent IS NOT NULL
+                LEFT JOIN filt f ON f.profile_id = fp.id
                 GROUP BY fp.id, fp.first_name, fp.last_name, fp.alias, fp.role
             ),
             -- Total time spent per profile (SUM with 30-minute cap per chat, matching dashboard)
