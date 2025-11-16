@@ -2259,6 +2259,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/reports/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Reports
+         * @description Export reports data as CSV or ZIP file.
+         */
+        post: operations["export_reports_api_v3_reports_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/reports": {
         parameters: {
             query?: never;
@@ -5782,6 +5802,26 @@ export interface components {
             stack?: string | null;
             /** Message */
             message?: string | null;
+        };
+        /**
+         * ExportRequest
+         * @description Request to export reports data.
+         */
+        ExportRequest: {
+            filters: components["schemas"]["AnalyticsFilters"];
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Metrics */
+            metrics?: string[] | null;
+            /**
+             * Brightspaceformat
+             * @default false
+             */
+            brightspaceFormat: boolean;
         };
         /** FeedbackItem */
         FeedbackItem: {
@@ -14057,6 +14097,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_reports_api_v3_reports_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

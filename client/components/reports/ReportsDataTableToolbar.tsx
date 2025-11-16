@@ -7,7 +7,7 @@ import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacet
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BrightspaceExportButton } from "./BrightspaceExportButton";
+import { ExportButton } from "./ExportButton";
 // Import ReportsDataItem type
 interface ReportsDataItem {
   profile_id: string;
@@ -180,7 +180,7 @@ export function ReportsDataTableToolbar({
 
       <div className="flex items-center space-x-2 mb-2">
         {showExport && (
-          <BrightspaceExportButton table={table} simulations={simulations} />
+          <ExportButton table={table} simulations={simulations} />
         )}
 
         <DataTableViewOptions table={table} />

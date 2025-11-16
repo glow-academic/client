@@ -4843,6 +4843,53 @@
         ]
       }
     },
+    "/api/v3/reports/export": {
+      "post": {
+        "tags": [
+          "v3",
+          "reports",
+          "reports"
+        ],
+        "summary": "Export Reports",
+        "description": "Export reports data as CSV or ZIP file.",
+        "operationId": "export_reports_api_v3_reports_export_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports",
+          "reports"
+        ]
+      }
+    },
     "/api/v3/reports": {
       "post": {
         "tags": [
@@ -13279,6 +13326,80 @@
         "type": "object",
         "title": "ErrorData",
         "description": "Error JSONB data."
+      },
+      "ExportRequest": {
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/AnalyticsFilters"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          },
+          "brightspaceFormat": {
+            "type": "boolean",
+            "title": "Brightspaceformat",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "filters"
+        ],
+        "title": "ExportRequest",
+        "description": "Request to export reports data."
       },
       "FeedbackItem": {
         "properties": {

@@ -18,7 +18,10 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.api.v3.reports.export import router as export_router
+
 router = APIRouter(prefix="/reports", tags=["reports"])
+router.include_router(export_router)
 
 
 # Inline schemas
