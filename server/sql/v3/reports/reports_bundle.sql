@@ -19,7 +19,7 @@
                     fp.role,
                     AVG(f.grade_percent) AS avg_score,
                     MAX(f.grade_percent) AS highest_score,
-                    COUNT(f.attempt_id)::int AS total_attempts,
+                    COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
                     AVG(f.num_messages_total) AS avg_messages,
                     AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
                 FROM filtered_profiles fp

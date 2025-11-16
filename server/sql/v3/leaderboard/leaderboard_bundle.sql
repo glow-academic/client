@@ -11,7 +11,7 @@ profile_stats AS (
         f.profile_id,
         p.first_name,
         p.last_name,
-        COUNT(*)::int AS total_attempts,
+        COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
         MAX(f.grade_percent) AS highest_score,
         AVG(f.num_messages_total) AS avg_messages,
         SUM(LEAST(f.time_taken_seconds / 60.0, 30.0)) FILTER (WHERE f.time_taken_seconds IS NOT NULL)::float AS total_time,
