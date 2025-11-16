@@ -3638,6 +3638,12 @@ export interface components {
             showResults: boolean;
             /** Shouldshowcontrols */
             shouldShowControls: boolean;
+            /** Remainingscenarioscount */
+            remainingScenariosCount: number;
+            /** Islastremainingscenario */
+            isLastRemainingScenario: boolean;
+            /** Canpickmultiplealternatives */
+            canPickMultipleAlternatives: boolean;
             /** Isactive */
             isActive: boolean;
             rubricStructure?: components["schemas"]["RubricStructure"] | null;

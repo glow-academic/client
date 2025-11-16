@@ -257,9 +257,11 @@ export function SimulationControls({
     // Map to include chatId if a chat exists for this scenario
     return attemptData.allSimulationScenarios.map((scenarioData) => {
       // Find all chats for this scenario in the current attempt
+      // Use parentScenarioId to match correctly (child scenarios map to parent scenarios)
       const scenarioChats =
-        attemptData.chats?.filter((c) => c.scenario?.id === scenarioData.id) ||
-        [];
+        attemptData.chats?.filter(
+          (c) => c.chat.parentScenarioId === scenarioData.id
+        ) || [];
 
       // Check if this scenario has at least one chat with a grade (completed and graded)
       const hasGradedChat = scenarioChats.some(
@@ -281,6 +283,7 @@ export function SimulationControls({
     });
   }, [attemptData]);
 
+  // Use server-side calculation for remaining scenarios
   // Filter to only include scenarios without completed chats for End All permutations
   const remainingScenarios = useMemo(() => {
     return allSimulationScenarios.filter(
@@ -289,8 +292,12 @@ export function SimulationControls({
   }, [allSimulationScenarios]);
 
   const permutations = useMemo(() => {
-    // Only generate permutations for remaining scenarios (without completed chats)
-    if (remainingScenarios.length === 0) return [];
+    // Only generate permutations if multiple alternatives are allowed and there are remaining scenarios
+    if (
+      !attemptData?.canPickMultipleAlternatives ||
+      remainingScenarios.length === 0
+    )
+      return [];
 
     // Generate all permutations using cartesian product
     const generatePermutations = (
@@ -380,7 +387,7 @@ export function SimulationControls({
       if (b.totalPercentage === null) return -1;
       return b.totalPercentage - a.totalPercentage;
     });
-  }, [remainingScenarios]);
+  }, [remainingScenarios, attemptData?.canPickMultipleAlternatives]);
 
   // Get previous chats for current chat to show red dot indicator
   // Must be computed before early returns to maintain hook order
@@ -488,20 +495,26 @@ export function SimulationControls({
 
   // Handle End Session button click (ends whole session)
   const handleEndSession = () => {
-    // Use the actual count of remaining scenarios (without completed chats)
-    const remainingSessions = remainingScenarios.length;
+    // Use server-side calculation for remaining scenarios count
+    const remainingSessions =
+      attemptData?.remainingScenariosCount ?? remainingScenarios.length;
     setEndAllRemainingSessions(remainingSessions);
 
-    // If there are permutations available, select the best one by default
-    if (permutations && permutations.length > 0) {
+    // If there are permutations available and multiple alternatives are allowed, select the best one by default
+    if (
+      attemptData?.canPickMultipleAlternatives &&
+      permutations &&
+      permutations.length > 0
+    ) {
       setSelectedPermutation(permutations[0]!.id);
     }
 
     setConfirmEndAllOpen(true);
   };
 
-  // Determine if we should show combined button (1 remaining scenario) or separate buttons (2+ remaining)
-  const isLastRemainingScenario = remainingScenarios.length === 1;
+  // Use server-side calculation for isLastRemainingScenario
+  const isLastRemainingScenario =
+    attemptData?.isLastRemainingScenario ?? remainingScenarios.length === 1;
 
   return (
     <>
@@ -510,7 +523,7 @@ export function SimulationControls({
         {isLastRemainingScenario && shouldShowControls ? (
           <Button
             type="button"
-            variant="outline"
+            variant={isGrading ? "outline" : "default"}
             onClick={handleNextChat}
             disabled={endChatLoading}
             className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
@@ -605,13 +618,15 @@ export function SimulationControls({
           <AlertDialogHeader>
             <AlertDialogTitle>End all remaining sessions?</AlertDialogTitle>
             <AlertDialogDescription>
-              {permutations.length > 0
+              {attemptData?.canPickMultipleAlternatives &&
+              permutations.length > 0
                 ? `Choose which previous attempts to use for the ${endAllRemainingSessions} remaining session${endAllRemainingSessions === 1 ? "" : "s"}. Permutations are sorted by highest total score.`
                 : `This will mark ${endAllRemainingSessions} remaining session${endAllRemainingSessions === 1 ? "" : "s"} as incomplete, and their scores will not count.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {permutations.length > 0 ? (
+          {attemptData?.canPickMultipleAlternatives &&
+          permutations.length > 0 ? (
             <div className="flex-1 overflow-auto">
               <RadioGroup
                 value={selectedPermutation}
@@ -699,9 +714,13 @@ export function SimulationControls({
                   })
                 );
 
-                // Extract permutation map if one is selected
+                // Extract permutation map if one is selected and multiple alternatives are allowed
                 let previousChatMap: Record<string, string | null> | undefined;
-                if (selectedPermutation && permutations.length > 0) {
+                if (
+                  attemptData?.canPickMultipleAlternatives &&
+                  selectedPermutation &&
+                  permutations.length > 0
+                ) {
                   const selectedPerm = permutations.find(
                     (p) => p.id === selectedPermutation
                   );

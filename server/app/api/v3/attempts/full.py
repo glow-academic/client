@@ -236,6 +236,9 @@ class AttemptFullResponse(BaseModel):
     isLastAttempt: bool
     showResults: bool
     shouldShowControls: bool
+    remainingScenariosCount: int
+    isLastRemainingScenario: bool
+    canPickMultipleAlternatives: bool
     isActive: bool
     rubricStructure: RubricStructure | None = None
     allSimulationScenarios: list[AllSimulationScenarioItem]
@@ -411,6 +414,9 @@ async def get_attempt_full(
             isLastAttempt=get_result_field("isLastAttempt", True),
             showResults=get_result_field("showResults", False),
             shouldShowControls=get_result_field("shouldShowControls", True),
+            remainingScenariosCount=get_result_field("remainingScenariosCount", 0),
+            isLastRemainingScenario=get_result_field("isLastRemainingScenario", False),
+            canPickMultipleAlternatives=get_result_field("canPickMultipleAlternatives", True),
             isActive=get_result_field("isActive", True),
             rubricStructure=rubric_structure,
             allSimulationScenarios=all_simulation_scenarios,

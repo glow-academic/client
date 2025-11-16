@@ -7927,6 +7927,18 @@
             "type": "boolean",
             "title": "Shouldshowcontrols"
           },
+          "remainingScenariosCount": {
+            "type": "integer",
+            "title": "Remainingscenarioscount"
+          },
+          "isLastRemainingScenario": {
+            "type": "boolean",
+            "title": "Islastremainingscenario"
+          },
+          "canPickMultipleAlternatives": {
+            "type": "boolean",
+            "title": "Canpickmultiplealternatives"
+          },
           "isActive": {
             "type": "boolean",
             "title": "Isactive"
@@ -7963,6 +7975,9 @@
           "isLastAttempt",
           "showResults",
           "shouldShowControls",
+          "remainingScenariosCount",
+          "isLastRemainingScenario",
+          "canPickMultipleAlternatives",
           "isActive",
           "allSimulationScenarios"
         ],

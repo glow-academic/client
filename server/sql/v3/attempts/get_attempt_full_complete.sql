@@ -848,7 +848,23 @@
                         FROM simulation_root_scenarios_list srsl
                         LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
                     ), true)
-                END as should_show_controls
+                END as should_show_controls,
+                -- Count remaining scenarios (scenarios without completed chats)
+                COALESCE((
+                    SELECT COUNT(DISTINCT srsl.root_scenario_id)
+                    FROM simulation_root_scenarios_list srsl
+                    LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
+                    WHERE swcc.parent_scenario_id IS NULL
+                ), 0)::integer as remaining_scenarios_count,
+                -- Check if this is the last remaining scenario
+                COALESCE((
+                    SELECT COUNT(DISTINCT srsl.root_scenario_id)
+                    FROM simulation_root_scenarios_list srsl
+                    LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
+                    WHERE swcc.parent_scenario_id IS NULL
+                ), 0) = 1 as is_last_remaining_scenario,
+                -- Can pick multiple alternatives (not allowed for practice simulations)
+                NOT (SELECT sim_practice_simulation FROM attempt_base) as can_pick_multiple_alternatives
             FROM chats_with_all_data
         )
         SELECT 
@@ -893,6 +909,9 @@
             md.is_last_attempt as "isLastAttempt",
             md.show_results as "showResults",
             md.should_show_controls as "shouldShowControls",
+            md.remaining_scenarios_count as "remainingScenariosCount",
+            md.is_last_remaining_scenario as "isLastRemainingScenario",
+            md.can_pick_multiple_alternatives as "canPickMultipleAlternatives",
             NOT (COALESCE((td.timer->>'expired')::boolean, false) OR md.show_results) as "isActive",
             rsc.rubric_structure as "rubricStructure",
             COALESCE(
