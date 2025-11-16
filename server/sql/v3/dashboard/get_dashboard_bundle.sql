@@ -1893,7 +1893,12 @@
                             'name', cohort_name,
                             'passRate', ROUND(
                                 CASE 
-                                    WHEN total_students_seen > 0 THEN (100.0 * passed_students / total_students_seen)::numeric
+                                    -- Single profile mode: use attempt-based pass rate
+                                    WHEN $6::uuid IS NOT NULL AND total_attempts > 0 THEN 
+                                        COALESCE(pass_rate_attempts, 0)::numeric
+                                    -- Multi-profile mode: use student-based pass rate  
+                                    WHEN $6::uuid IS NULL AND total_students_seen > 0 THEN 
+                                        (100.0 * passed_students / total_students_seen)::numeric
                                     ELSE 0
                                 END, 2
                             )::float,

@@ -26,6 +26,15 @@
                 LEFT JOIN filt f ON f.profile_id = fp.id AND f.grade_percent IS NOT NULL
                 GROUP BY fp.id, fp.first_name, fp.last_name, fp.alias, fp.role
             ),
+            -- Total time spent per profile (SUM with 30-minute cap per chat, matching dashboard)
+            total_time_per_profile AS (
+                SELECT
+                    f.profile_id,
+                    SUM(LEAST(f.time_taken_seconds / 60.0, 30.0))::float AS total_time_minutes
+                FROM filt f
+                WHERE f.time_taken_seconds IS NOT NULL
+                GROUP BY f.profile_id
+            ),
             -- Completion percentage per profile (chat-level aggregation to match dashboard)
             completion_per_profile AS (
                 SELECT
@@ -303,6 +312,7 @@
             all_metrics AS (
                 SELECT
                     pm.*,
+                    COALESCE(tt.total_time_minutes, 0) AS total_time_minutes,
                     COALESCE(cp.completion_pct, 0) AS completion_pct,
                     COALESCE(fa.pass_rate, 0) AS first_attempt_pass_rate,
                     COALESCE(pp.avg_response_time, 0) AS persona_response_time,
@@ -321,6 +331,7 @@
                     COALESCE(psi.simulation_ids, ARRAY[]::text[]) AS simulation_ids,
                     COALESCE(psc.scenario_ids, ARRAY[]::text[]) AS scenario_ids
                 FROM profile_metrics pm
+                LEFT JOIN total_time_per_profile tt ON pm.profile_id = tt.profile_id
                 LEFT JOIN completion_per_profile cp ON pm.profile_id = cp.profile_id
                 LEFT JOIN first_attempt_per_profile fa ON pm.profile_id = fa.profile_id
                 LEFT JOIN persona_per_profile pp ON pm.profile_id = pp.profile_id
@@ -458,15 +469,14 @@
                             )
                         ),
                         'timeSpent', json_build_object(
-                            'hasData', avg_time_minutes IS NOT NULL AND avg_time_minutes > 0,
-                            'method', 'avg',
-                            'currentValue', ROUND(COALESCE(avg_time_minutes, 0))::int,
+                            'hasData', total_time_minutes IS NOT NULL AND total_time_minutes > 0,
+                            'method', 'sum',
+                            'currentValue', ROUND(COALESCE(total_time_minutes, 0))::int,
                             'trendData', '[]'::json,
                             'dataPoints', time_spent_points,
                             'hover', json_build_object(
-                                'avgSessionMinutes', ROUND(COALESCE(avg_time_minutes, 0))::int,
-                                'avgChatMinutes', ROUND(COALESCE(avg_time_minutes, 0))::int,
-                                'avgOverallMinutes', ROUND(COALESCE(avg_time_minutes, 0))::int
+                                'totalMinutes', ROUND(COALESCE(total_time_minutes, 0))::int,
+                                'totalHours', ROUND(COALESCE(total_time_minutes, 0)::numeric / 60.0, 1)
                             )
                         ),
                         'totalAttempts', json_build_object(

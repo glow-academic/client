@@ -14,7 +14,7 @@ profile_stats AS (
         COUNT(*)::int AS total_attempts,
         MAX(f.grade_percent) AS highest_score,
         AVG(f.num_messages_total) AS avg_messages,
-        AVG(f.time_taken_seconds / 60.0) AS avg_time,
+        SUM(LEAST(f.time_taken_seconds / 60.0, 30.0)) FILTER (WHERE f.time_taken_seconds IS NOT NULL)::float AS total_time,
         ARRAY_AGG(DISTINCT f.simulation_id) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids,
         ARRAY_AGG(DISTINCT f.scenario_id) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
     FROM filt f
@@ -211,9 +211,9 @@ SELECT json_build_object(
                 'hover', '{}'::json
             ),
             'timeSpentMinutes', json_build_object(
-                'hasData', true,
-                'method', 'avg',
-                'currentValue', ROUND(avg_time)::int,
+                'hasData', total_time IS NOT NULL AND total_time > 0,
+                'method', 'sum',
+                'currentValue', ROUND(COALESCE(total_time, 0))::int,
                 'trendData', '[]'::json,
                 'dataPoints', '[]'::json,
                 'hover', '{}'::json
