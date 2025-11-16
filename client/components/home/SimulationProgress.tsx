@@ -5,6 +5,8 @@
  * 07/20/2025
  */
 
+import { Skeleton } from "@/components/ui/skeleton";
+
 export enum ViewMode {
   TA = "ta",
   INSTRUCTIONAL = "instructional",
@@ -166,6 +168,35 @@ export default function SimulationProgress({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+export function SimulationProgressSkeleton() {
+  return (
+    <div className="flex items-center space-x-4 p-3 rounded-lg border bg-card/40">
+      {/* Title and Cohort Name */}
+      <div className="min-w-0 flex-shrink-0 w-64 space-y-2">
+        <Skeleton className="h-5 w-56" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+
+      {/* Progress Bar */}
+      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <Skeleton className="h-2 w-full rounded-full" />
+      </div>
+
+      {/* Status and Percentage */}
+      <div className="flex items-center space-x-2 min-w-[8rem]">
+        <Skeleton className="h-5 w-20 rounded-full" />
+        <Skeleton className="h-4 w-12" />
+      </div>
+
+      {/* Detailed counts */}
+      <div className="text-xs space-x-2">
+        <Skeleton className="h-4 w-20 inline-block" />
+        <Skeleton className="h-4 w-24 inline-block" />
+      </div>
     </div>
   );
 }

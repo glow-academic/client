@@ -14,9 +14,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
-import SimulationHistory from "../common/history/SimulationHistory";
+import { Skeleton } from "@/components/ui/skeleton";
+import SimulationHistory, {
+  HistorySkeleton,
+} from "../common/history/SimulationHistory";
 import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
-import PracticeZone from "./PracticeZone";
+import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
 export interface PracticeProps {
   practiceData: PracticeOut;
@@ -36,7 +39,7 @@ export default function Practice({ practiceData }: PracticeProps) {
   // Use WebSocket's specific simulation ID for precise loading state
   const loadingSimulation = startingSimulationId;
   const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
-    null,
+    null
   );
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   // Practice customize dialog state
@@ -59,23 +62,23 @@ export default function Practice({ practiceData }: PracticeProps) {
   // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
   const personaMapping = useMemo(
     () => bundle?.persona_mapping || {},
-    [bundle?.persona_mapping],
+    [bundle?.persona_mapping]
   );
   const scenarioMapping = useMemo(
     () => bundle?.scenario_mapping || {},
-    [bundle?.scenario_mapping],
+    [bundle?.scenario_mapping]
   );
   const parameterMapping = useMemo(
     () => bundle?.parameter_mapping || {},
-    [bundle?.parameter_mapping],
+    [bundle?.parameter_mapping]
   );
   const parameterItemMapping = useMemo(
     () => bundle?.parameter_item_mapping || {},
-    [bundle?.parameter_item_mapping],
+    [bundle?.parameter_item_mapping]
   );
   const simulationMapping = useMemo(
     () => bundle?.simulation_mapping || {},
-    [bundle?.simulation_mapping],
+    [bundle?.simulation_mapping]
   );
 
   // Normalize simulation items to ensure required fields are present
@@ -92,11 +95,11 @@ export default function Practice({ practiceData }: PracticeProps) {
   // Extract rubric mappings from practice overview data
   const standardGroupsMapping = useMemo(
     () => practiceOverview?.standard_groups_mapping || {},
-    [practiceOverview],
+    [practiceOverview]
   );
   const standardsMapping = useMemo(
     () => practiceOverview?.standards_mapping || {},
-    [practiceOverview],
+    [practiceOverview]
   );
 
   // Set up simulation-specific event listeners using global WebSocket
@@ -128,14 +131,14 @@ export default function Practice({ practiceData }: PracticeProps) {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener,
+      handleSimulationStarted as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener,
+        handleSimulationStarted as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
@@ -155,7 +158,7 @@ export default function Practice({ practiceData }: PracticeProps) {
 
         if (!isConnected) {
           toast.error(
-            "WebSocket not connected. Please wait for connection or refresh the page.",
+            "WebSocket not connected. Please wait for connection or refresh the page."
           );
           return;
         }
@@ -192,7 +195,7 @@ export default function Practice({ practiceData }: PracticeProps) {
       emitStartSimulation,
       loadingToastId,
       activeProfile,
-    ],
+    ]
   );
 
   if (!effectiveProfile) {
@@ -290,7 +293,7 @@ export default function Practice({ practiceData }: PracticeProps) {
               // Infinite mode - use WebSocket
               if (!isConnected) {
                 toast.error(
-                  "WebSocket not connected. Please refresh the page.",
+                  "WebSocket not connected. Please refresh the page."
                 );
                 return;
               }
@@ -315,7 +318,7 @@ export default function Practice({ practiceData }: PracticeProps) {
                 "Creating practice scenario...",
                 {
                   dismissible: true,
-                },
+                }
               ) as unknown as string;
 
               try {
@@ -332,7 +335,7 @@ export default function Practice({ practiceData }: PracticeProps) {
                     description:
                       "This feature is being updated. Please use existing scenarios.",
                     dismissible: true,
-                  },
+                  }
                 );
 
                 // Commenting out old code until re-implemented:
@@ -359,7 +362,7 @@ export default function Practice({ practiceData }: PracticeProps) {
                   {
                     id: "start-attempt",
                     dismissible: true,
-                  },
+                  }
                 );
               } finally {
                 setIsStartingAttempt(false);
@@ -389,5 +392,46 @@ export default function Practice({ practiceData }: PracticeProps) {
         />
       )}
     </TooltipProvider>
+  );
+}
+
+export function PracticeSkeleton() {
+  const HISTORY_ROWS = 5;
+
+  return (
+    <div className="space-y-12">
+      {/* Practice Zone */}
+      <section className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-32 rounded-lg" />
+            <Skeleton className="h-10 w-10 rounded-lg" />
+          </div>
+        </div>
+
+        <PracticeZoneSkeleton />
+      </section>
+
+      {/* Simulation history */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Skeleton className="h-6 w-40" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-28 rounded-lg" />
+            <Skeleton className="h-10 w-28 rounded-lg" />
+          </div>
+        </div>
+
+        <HistorySkeleton rows={HISTORY_ROWS} />
+      </section>
+    </div>
   );
 }

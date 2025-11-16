@@ -5,6 +5,7 @@
  * 07/20/2025
  */
 
+import TableRubric from "@/components/common/rubric/TableRubric";
 import {
   Card,
   CardContent,
@@ -19,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -27,7 +29,6 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { FileText, Info, Timer, User, Users } from "lucide-react";
-import TableRubric from "@/components/common/rubric/TableRubric";
 
 type StandardGroupMappingItem = {
   name: string;
@@ -126,7 +127,7 @@ export default function SimulationCard({
   const isEmulatingAnother = Boolean(
     effectiveProfile?.id &&
       activeProfile?.id &&
-      effectiveProfile.id !== activeProfile.id,
+      effectiveProfile.id !== activeProfile.id
   );
 
   // Get persona configuration and icon based on persona data
@@ -162,7 +163,9 @@ export default function SimulationCard({
     <div className="relative h-full">
       <Card
         data-testid={
-          type === "default" ? "permanent-simulation-card" : `simulation-card-${id}`
+          type === "default"
+            ? "permanent-simulation-card"
+            : `simulation-card-${id}`
         }
         data-simulation-id={id}
         className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full"
@@ -332,7 +335,7 @@ export default function SimulationCard({
                       window.dispatchEvent(
                         new CustomEvent("simulationButtonPressed", {
                           detail: { simulationId: id },
-                        }),
+                        })
                       );
                       onStartSimulation(id);
                     }}
@@ -365,7 +368,7 @@ export default function SimulationCard({
                 window.dispatchEvent(
                   new CustomEvent("simulationButtonPressed", {
                     detail: { simulationId: id },
-                  }),
+                  })
                 );
                 onStartSimulation(id);
               }}
@@ -393,10 +396,58 @@ export default function SimulationCard({
                 : type === "default"
                   ? "Start Simulation"
                   : hasPassed
-                    ? "Completed Simulations"
-                    : "Start Simulations"}
+                    ? "Start Simulation (Complete)"
+                    : "Start Simulation"}
             </button>
           )}
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}
+
+export function SimulationCardSkeleton() {
+  return (
+    <div className="relative h-full">
+      <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg rounded-lg flex flex-col h-full">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none select-none rounded-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-600 rounded-lg"></div>
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
+              backgroundSize: "20px 20px",
+            }}
+          ></div>
+        </div>
+
+        <CardHeader className="pb-1 relative z-10">
+          <div className="flex items-start justify-between">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-1 relative z-10 flex-1 flex flex-col justify-start">
+          <div className="flex flex-col justify-between h-full">
+            <Skeleton className="h-6 w-48 mb-1" />
+            <Skeleton className="h-4 w-full mt-1" />
+            <Skeleton className="h-4 w-3/4 mt-1" />
+          </div>
+
+          <div className="flex items-center space-x-3 text-xs mt-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+        </CardContent>
+
+        <CardFooter className="pt-0 relative z-10">
+          <Skeleton className="h-10 w-full rounded-lg" />
         </CardFooter>
       </Card>
     </div>

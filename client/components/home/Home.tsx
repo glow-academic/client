@@ -9,13 +9,21 @@ import type { HomeOut } from "@/app/(main)/home/page";
 
 import { useProfile } from "@/contexts/profile-context";
 
-import SimulationCard from "@/components/common/layout/SimulationCard";
+import SimulationCard, {
+  SimulationCardSkeleton,
+} from "@/components/common/layout/SimulationCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import SimulationHistory from "../common/history/SimulationHistory";
-import SimulationProgress, { ViewMode } from "./SimulationProgress";
+import SimulationHistory, {
+  HistorySkeleton,
+} from "../common/history/SimulationHistory";
+import SimulationProgress, {
+  SimulationProgressSkeleton,
+  ViewMode,
+} from "./SimulationProgress";
 
 export interface HomeProps {
   homeData: HomeOut;
@@ -476,6 +484,64 @@ export default function Home({ homeData }: HomeProps) {
           showArchive={false}
           singleProfile={true}
         />
+      </div>
+    </div>
+  );
+}
+
+export function HomeSkeleton() {
+  const PROGRESS_ROWS = 5;
+  const CARD_COUNT = 3;
+  const HISTORY_ROWS = 5;
+
+  return (
+    <div className="space-y-8">
+      {/* Header with title */}
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-64" />
+      </div>
+
+      {/* Progress Visualization Section */}
+      <div className="space-y-6">
+        <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+          {Array.from({ length: PROGRESS_ROWS }).map((_, index) => (
+            <SimulationProgressSkeleton key={`progress-${index}`} />
+          ))}
+        </div>
+      </div>
+
+      {/* Assignments List Section - Carousel */}
+      <div className="space-y-4">
+        {/* Header with navigation */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </div>
+        </div>
+
+        {/* Carousel container */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: CARD_COUNT }).map((_, index) => (
+            <SimulationCardSkeleton key={`card-${index}`} />
+          ))}
+        </div>
+
+        {/* Dots indicator */}
+        <div className="flex justify-center space-x-2 mt-4">
+          {Array.from({ length: CARD_COUNT }).map((_, index) => (
+            <Skeleton
+              key={`dot-${index}`}
+              className={`h-2 rounded-full ${index === 0 ? "w-6" : "w-2"}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* History Section */}
+      <div className="mt-12">
+        <HistorySkeleton rows={HISTORY_ROWS} />
       </div>
     </div>
   );

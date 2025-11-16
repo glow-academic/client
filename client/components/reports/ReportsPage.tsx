@@ -10,7 +10,7 @@
 
 import type { ReportsOut } from "@/app/(main)/analytics/reports/page";
 import { useMemo } from "react";
-import Reports from "./Reports";
+import Reports, { ReportsSkeleton } from "./Reports";
 
 interface ReportsPageProps {
   reportsData: ReportsOut;
@@ -160,6 +160,14 @@ export default function ReportsPage({ reportsData }: ReportsPageProps) {
         scenarioMapping={bundle?.scenario_mapping ?? {}}
         simulationMapping={bundle?.simulation_mapping ?? {}}
       />
+    </div>
+  );
+}
+
+export function ReportsPageSkeleton() {
+  return (
+    <div data-testid="reports-container">
+      <ReportsSkeleton />
     </div>
   );
 }

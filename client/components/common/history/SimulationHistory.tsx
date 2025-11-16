@@ -10,6 +10,7 @@ import type {
   BulkArchiveAttemptsOut,
 } from "@/app/(main)/analytics/dashboard/page";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +23,6 @@ import * as React from "react";
 import { DataTable } from "./DataTable";
 import { DataTableColumnHeader } from "./DataTableColumnHeader";
 import { DataTableRowActions } from "./DataTableRowActions";
-import { HistorySkeleton } from "./HistorySkeleton";
 
 // New data structure for history items
 export interface HistoryDataItem {
@@ -68,7 +68,7 @@ export interface SimulationHistoryProps {
 
   // Optional: Server action for bulk archiving attempts (only needed when showArchive is true)
   bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn,
+    input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
 }
 
@@ -113,7 +113,7 @@ export default function SimulationHistory({
         }
         return acc;
       },
-      [] as { value: string; label: string }[],
+      [] as { value: string; label: string }[]
     );
 
     return uniqueProfiles;
@@ -137,7 +137,7 @@ export default function SimulationHistory({
         }
         return acc;
       },
-      [] as { value: string; label: string }[],
+      [] as { value: string; label: string }[]
     );
 
     return uniqueSimulations;
@@ -188,7 +188,7 @@ export default function SimulationHistory({
           // Search in persona names
           if (
             item.personaNames.some((name) =>
-              name.toLowerCase().includes(searchValue),
+              name.toLowerCase().includes(searchValue)
             )
           ) {
             return true;
@@ -304,7 +304,7 @@ export default function SimulationHistory({
               filterFn: (
                 row: Row<HistoryDataItem>,
                 _id: string,
-                value: string[],
+                value: string[]
               ) => {
                 return value.includes(row.original.profileId);
               },
@@ -383,7 +383,7 @@ export default function SimulationHistory({
           if (!value || value.length === 0) return true;
           const scenarioIds = row.original.scenario_ids || [];
           return value.some((scenarioId: string) =>
-            scenarioIds.includes(scenarioId),
+            scenarioIds.includes(scenarioId)
           );
         },
       },
@@ -445,7 +445,7 @@ export default function SimulationHistory({
           if (!value || !Array.isArray(value) || value.length === 0)
             return true;
           return value.some((filterPersona: string) =>
-            personaNames?.includes(filterPersona),
+            personaNames?.includes(filterPersona)
           );
         },
       },
@@ -535,7 +535,7 @@ export default function SimulationHistory({
 
     // Filter data to only include entries for the current effective profile
     const profileData = data.filter(
-      (item) => item.profileId === effectiveProfile.id,
+      (item) => item.profileId === effectiveProfile.id
     );
 
     if (profileData.length === 0) return [];
@@ -618,5 +618,73 @@ export default function SimulationHistory({
         ? { bulkArchiveAttemptsAction }
         : {})}
     />
+  );
+}
+
+export function HistorySkeleton({ rows = 10 }: { rows?: number }) {
+  return (
+    <div className="space-y-4">
+      {/* Toolbar skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <Skeleton className="h-8 w-[250px]" /> {/* search */}
+          <Skeleton className="h-8 w-[120px]" /> {/* Name filter */}
+          <Skeleton className="h-8 w-[140px]" /> {/* Simulation filter */}
+          <Skeleton className="h-8 w-[160px]" /> {/* Scenarios filter */}
+          <Skeleton className="h-8 w-[70px]" /> {/* Reset */}
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-8 w-[150px]" /> {/* Export / View */}
+          <Skeleton className="h-8 w-[90px]" />
+        </div>
+      </div>
+
+      {/* Table skeleton */}
+      <div className="rounded-md border">
+        {/* header */}
+        <div className="grid grid-cols-6 gap-0 px-6 py-3 border-b">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-40 col-span-2" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-16 justify-self-end" />
+        </div>
+        {/* rows */}
+        <div className="divide-y">
+          {Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="grid grid-cols-6 gap-0 px-6 py-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-[90%] col-span-2" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-10" />
+                <Skeleton className="h-4 w-10" />
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-8 w-8" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pagination skeleton */}
+      <div className="flex items-center justify-end px-2">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-[70px]" />
+          </div>
+          <Skeleton className="h-4 w-24" />
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

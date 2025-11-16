@@ -1,6 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
-import SimulationCard from "@/components/common/layout/SimulationCard";
+import SimulationCard, {
+  SimulationCardSkeleton,
+} from "@/components/common/layout/SimulationCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ProfileItem = {
   id: string;
@@ -193,6 +196,40 @@ export default function PracticeZone({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+export function PracticeZoneSkeleton() {
+  const CARD_COUNT = 3;
+
+  return (
+    <div className="space-y-4">
+      {/* Header with navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-9 w-9 rounded-lg" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-9 w-9 rounded-lg" />
+        </div>
+      </div>
+
+      {/* Carousel container */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: CARD_COUNT }).map((_, index) => (
+          <SimulationCardSkeleton key={`practice-card-${index}`} />
+        ))}
+      </div>
+
+      {/* Dots indicator */}
+      <div className="flex justify-center space-x-2 mt-4">
+        {Array.from({ length: CARD_COUNT }).map((_, index) => (
+          <Skeleton
+            key={`practice-dot-${index}`}
+            className={`h-2 rounded-full ${index === 0 ? "w-6" : "w-2"}`}
+          />
+        ))}
+      </div>
     </div>
   );
 }

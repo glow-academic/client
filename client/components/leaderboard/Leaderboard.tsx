@@ -22,8 +22,8 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import AccoladeCard from "./AccoladeCard";
-import LeaderboardTable from "./LeaderboardTable";
+import AccoladeCard, { AccoladeCardSkeleton } from "./AccoladeCard";
+import LeaderboardTable, { LeaderboardTableSkeleton } from "./LeaderboardTable";
 
 type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
@@ -724,6 +724,24 @@ export default function Leaderboard({
               : { onViewReport: handleViewReport })}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+export function LeaderboardSkeleton() {
+  return (
+    <div className="space-y-6" data-testid="leaderboard-container">
+      <div className="space-y-8">
+        {/* Accolades Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <AccoladeCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Leaderboard Table Section */}
+        <LeaderboardTableSkeleton />
       </div>
     </div>
   );

@@ -14,10 +14,22 @@ import type {
   DashboardOut,
 } from "@/app/(main)/analytics/dashboard/page";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import SimulationHistory from "../common/history/SimulationHistory";
+import SimulationHistory, {
+  HistorySkeleton,
+} from "../common/history/SimulationHistory";
 import ScenarioPerformance from "./footer/ScenarioPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
 import SimulationComposition from "./footer/SimulationComposition";
@@ -943,6 +955,103 @@ export default function Dashboard({
           ? { bulkArchiveAttemptsAction }
           : {})}
       />
+    </div>
+  );
+}
+
+export function DashboardSkeleton() {
+  const HEADER_CARD_COUNT = 5;
+  const HISTORY_ROWS = 8;
+
+  return (
+    <div className="space-y-6">
+      {/* Header metrics carousel */}
+      <section className="space-y-4">
+        <div className="grid gap-4" style={{
+          gridTemplateColumns: `repeat(${HEADER_CARD_COUNT}, minmax(0, 1fr))`,
+          gridAutoRows: "1fr",
+        }}>
+          {Array.from({ length: HEADER_CARD_COUNT }).map((_, index) => (
+            <Card key={`header-card-${index}`} className="flex flex-col h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4 rounded-full" />
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col justify-center">
+                <Skeleton className="h-8 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="flex justify-center gap-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton
+              key={`header-indicator-${index}`}
+              className={`h-2 rounded-full ${index === 0 ? "w-6" : "w-2"}`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Main content (primary + secondary carousels) */}
+      <section className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-2 items-stretch">
+        {[0, 1].map((column) => (
+          <div key={`main-column-${column}`} className="flex flex-col space-y-4">
+            <Card className="min-h-[500px] max-h-[500px]">
+              <CardHeader className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-72 w-full rounded-2xl" />
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-center gap-2">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton
+                  key={`main-indicator-${column}-${index}`}
+                  className={`h-2 rounded-full ${index === 0 ? "w-6" : "w-2"}`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* Footer carousels */}
+      <section className="pb-8">
+        <div className="grid gap-6 items-stretch grid-cols-1 lg:grid-cols-2">
+          {[0, 1].map((column) => (
+            <div key={`footer-column-${column}`} className="flex flex-col space-y-4">
+              <Card className="min-h-[500px] max-h-[500px]">
+                <CardHeader className="space-y-2">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-28" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-64 w-full rounded-xl" />
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <Skeleton
+                    key={`footer-indicator-${column}-${index}`}
+                    className={`h-2 rounded-full ${index === 0 ? "w-6" : "w-2"}`}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Simulation history */}
+      <section className="space-y-4">
+        <HistorySkeleton rows={HISTORY_ROWS} />
+      </section>
     </div>
   );
 }
