@@ -275,20 +275,6 @@ export default function Home({ homeData }: HomeProps) {
     );
   }
 
-  if (!simulationItems.length) {
-    return (
-      <div>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">No Simulations Available</h1>
-          <p className="text-gray-600">
-            There are no simulations assigned to you. Please contact an
-            administrator.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {/* Header with title */}
@@ -298,155 +284,175 @@ export default function Home({ homeData }: HomeProps) {
         </h2>
       </div>
 
-      {/* Progress Visualization Section - All progress bars grouped together */}
-      <div className="space-y-6">
-        <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
-          {sortedProgressData.map((item) =>
-            item ? (
-              <SimulationProgress
-                key={item.id}
-                id={item.id}
-                viewMode={
-                  item.viewMode === "ta" ? ViewMode.TA : ViewMode.INSTRUCTIONAL
-                }
-                {...(item.cohortName && { cohortName: item.cohortName })}
-                {...(item.cohortNames &&
-                  !item.cohortName && { cohortName: item.cohortNames })}
-                simulationName={item.simulationName}
-                status={item.status || "not-started"}
-                completionPct={item.completionPct || 0}
-                {...(typeof item.passedCount === "number" && {
-                  passedCount: item.passedCount,
-                })}
-                {...(typeof item.inProgressCount === "number" && {
-                  inProgressCount: item.inProgressCount,
-                })}
-                {...(typeof item.notStartedCount === "number" && {
-                  notStartedCount: item.notStartedCount,
-                })}
-                {...(typeof item.passPct === "number" && {
-                  passPct: item.passPct,
-                })}
-              />
-            ) : null
-          )}
+      {!simulationItems.length ? (
+        <div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">
+              No Simulations Available
+            </h1>
+            <p className="text-gray-600">
+              There are no simulations assigned to you. Please contact an
+              administrator.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Progress Visualization Section - All progress bars grouped together */}
+          <div className="space-y-6">
+            <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
+              {sortedProgressData.map((item) =>
+                item ? (
+                  <SimulationProgress
+                    key={item.id}
+                    id={item.id}
+                    viewMode={
+                      item.viewMode === "ta"
+                        ? ViewMode.TA
+                        : ViewMode.INSTRUCTIONAL
+                    }
+                    {...(item.cohortName && { cohortName: item.cohortName })}
+                    {...(item.cohortNames &&
+                      !item.cohortName && { cohortName: item.cohortNames })}
+                    simulationName={item.simulationName}
+                    status={item.status || "not-started"}
+                    completionPct={item.completionPct || 0}
+                    {...(typeof item.passedCount === "number" && {
+                      passedCount: item.passedCount,
+                    })}
+                    {...(typeof item.inProgressCount === "number" && {
+                      inProgressCount: item.inProgressCount,
+                    })}
+                    {...(typeof item.notStartedCount === "number" && {
+                      notStartedCount: item.notStartedCount,
+                    })}
+                    {...(typeof item.passPct === "number" && {
+                      passPct: item.passPct,
+                    })}
+                  />
+                ) : null
+              )}
+            </div>
+          </div>
 
-      {/* Assignments List Section - All simulation cards in carousel */}
-      {sortedSimulations.length > 0 && (
-        <div className="space-y-4">
-          {/* Header with navigation */}
-          <div className="flex items-center justify-between">
-            {totalPages > 1 && (
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handlePrevious}
-                  disabled={!canScrollLeft}
-                  className={`p-2 rounded-lg transition-colors ${
-                    canScrollLeft
-                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
-                  }`}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {carouselIndex + 1} of {totalPages}
-                </span>
-                <button
-                  onClick={handleNext}
-                  disabled={!canScrollRight}
-                  className={`p-2 rounded-lg transition-colors ${
-                    canScrollRight
-                      ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-                      : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
-                  }`}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+          {/* Assignments List Section - All simulation cards in carousel */}
+          {sortedSimulations.length > 0 && (
+            <div className="space-y-4">
+              {/* Header with navigation */}
+              <div className="flex items-center justify-between">
+                {totalPages > 1 && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handlePrevious}
+                      disabled={!canScrollLeft}
+                      className={`p-2 rounded-lg transition-colors ${
+                        canScrollLeft
+                          ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                          : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                      }`}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {carouselIndex + 1} of {totalPages}
+                    </span>
+                    <button
+                      onClick={handleNext}
+                      disabled={!canScrollRight}
+                      className={`p-2 rounded-lg transition-colors ${
+                        canScrollRight
+                          ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                          : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                      }`}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Carousel container */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleSimulations.map((item) =>
-              item ? (
-                <SimulationCard
-                  key={item.id}
-                  id={item.id}
-                  {...(typeof item.timeLimit === "number" && {
-                    timeLimit: item.timeLimit,
-                  })}
-                  numSessions={
-                    typeof item.numSessions === "number" ? item.numSessions : 1
-                  }
-                  {...(typeof item.highestScore === "number" && {
-                    highestScore: item.highestScore,
-                  })}
-                  simulationTitle={item.simulationTitle}
-                  simulationDescription={item.simulationDescription || ""}
-                  standard_groups={item.standard_groups}
-                  standardGroupsMapping={
-                    standardGroupsMapping as Record<
-                      string,
-                      {
-                        name: string;
-                        description: string;
-                        points: number;
-                        passPoints: number;
+              {/* Carousel container */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {visibleSimulations.map((item) =>
+                  item ? (
+                    <SimulationCard
+                      key={item.id}
+                      id={item.id}
+                      {...(typeof item.timeLimit === "number" && {
+                        timeLimit: item.timeLimit,
+                      })}
+                      numSessions={
+                        typeof item.numSessions === "number"
+                          ? item.numSessions
+                          : 1
                       }
-                    >
-                  }
-                  standardsMapping={
-                    standardsMapping as Record<
-                      string,
-                      { name: string; description: string; points: number }
-                    >
-                  }
-                  {...(item.color && { color: item.color })}
-                  {...(item.icon && { icon: item.icon })}
-                  {...(typeof item.hasPassed === "boolean" && {
-                    hasPassed: item.hasPassed,
-                  })}
-                  {...(typeof item.passRate === "number" && {
-                    passRate: item.passRate,
-                  })}
-                  type="cohort"
-                  onStartSimulation={handleStartSimulation}
-                  loadingSimulation={loadingSimulation}
-                  effectiveProfile={{
-                    ...effectiveProfile,
-                    role: effectiveProfile.role as
-                      | "ta"
-                      | "instructional"
-                      | "superadmin"
-                      | "admin"
-                      | "guest",
-                  }}
-                />
-              ) : null
-            )}
-          </div>
+                      {...(typeof item.highestScore === "number" && {
+                        highestScore: item.highestScore,
+                      })}
+                      simulationTitle={item.simulationTitle}
+                      simulationDescription={item.simulationDescription || ""}
+                      standard_groups={item.standard_groups}
+                      standardGroupsMapping={
+                        standardGroupsMapping as Record<
+                          string,
+                          {
+                            name: string;
+                            description: string;
+                            points: number;
+                            passPoints: number;
+                          }
+                        >
+                      }
+                      standardsMapping={
+                        standardsMapping as Record<
+                          string,
+                          { name: string; description: string; points: number }
+                        >
+                      }
+                      {...(item.color && { color: item.color })}
+                      {...(item.icon && { icon: item.icon })}
+                      {...(typeof item.hasPassed === "boolean" && {
+                        hasPassed: item.hasPassed,
+                      })}
+                      {...(typeof item.passRate === "number" && {
+                        passRate: item.passRate,
+                      })}
+                      type="cohort"
+                      onStartSimulation={handleStartSimulation}
+                      loadingSimulation={loadingSimulation}
+                      effectiveProfile={{
+                        ...effectiveProfile,
+                        role: effectiveProfile.role as
+                          | "ta"
+                          | "instructional"
+                          | "superadmin"
+                          | "admin"
+                          | "guest",
+                      }}
+                    />
+                  ) : null
+                )}
+              </div>
 
-          {/* Dots indicator */}
-          {totalPages > 1 && (
-            <div className="flex justify-center space-x-2 mt-4">
-              {Array.from({ length: totalPages }, (_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCarouselIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === carouselIndex
-                      ? "bg-blue-500"
-                      : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                  }`}
-                />
-              ))}
+              {/* Dots indicator */}
+              {totalPages > 1 && (
+                <div className="flex justify-center space-x-2 mt-4">
+                  {Array.from({ length: totalPages }, (_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCarouselIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        index === carouselIndex
+                          ? "bg-blue-500"
+                          : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* History Section. Always show current user's history */}
