@@ -10,6 +10,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -24,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   HoverCard,
   HoverCardContent,
@@ -177,7 +179,7 @@ export function ReportsDataTable({
       simulation_id: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "averageScore", desc: true }, // Default sort by score descending
@@ -200,14 +202,20 @@ export function ReportsDataTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      pagination: {
+        pageSize: 100,
+      },
+    },
   });
 
   const renderWithHover = (
     key: string,
     content: React.ReactNode,
-    profileId: string,
+    profileId: string
   ) => {
     const item = data.find((d) => d.profile_id === profileId);
     let bullets: string[] = [];
@@ -323,7 +331,11 @@ export function ReportsDataTable({
                     <TableHead
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={`border-r py-1 text-xs text-center ${
+                      className={`border-r py-1 text-xs ${
+                        header.id === "profileName"
+                          ? "text-left"
+                          : "text-center"
+                      } ${
                         header.id === "select" ? "w-12" : ""
                       } ${header.column.getCanSort() ? "pl-4" : ""}`}
                     >
@@ -331,7 +343,7 @@ export function ReportsDataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -352,7 +364,7 @@ export function ReportsDataTable({
                     const key = cell.column.id;
                     const content = flexRender(
                       cell.column.columnDef.cell,
-                      cell.getContext(),
+                      cell.getContext()
                     );
                     const shouldHover = [
                       "averageScore",
@@ -369,15 +381,17 @@ export function ReportsDataTable({
                     return (
                       <TableCell
                         key={cell.id}
-                        className={`border-r px-2 py-1 text-center ${
-                          cell.column.id === "select" ? "w-12" : ""
-                        }`}
+                        className={`border-r px-2 py-1 ${
+                          cell.column.id === "profileName"
+                            ? "text-left"
+                            : "text-center"
+                        } ${cell.column.id === "select" ? "w-12" : ""}`}
                       >
                         {shouldHover
                           ? renderWithHover(
                               key,
                               content,
-                              row.original.profile_id,
+                              row.original.profile_id
                             )
                           : content}
                       </TableCell>
@@ -398,6 +412,7 @@ export function ReportsDataTable({
           </TableBody>
         </Table>
       </div>
+      <DataTablePagination table={table} staff={true} />
     </div>
   );
 }

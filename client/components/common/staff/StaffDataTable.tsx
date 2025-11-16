@@ -101,7 +101,7 @@ const formatLastActive = (timestamp: string | null): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60),
+    (now.getTime() - date.getTime()) / (1000 * 60)
   );
 
   if (diffInMinutes < 1) return "Just now";
@@ -146,7 +146,7 @@ export interface StaffDataTableProps {
       lastName?: string;
       alias?: string;
       role?: string;
-    }>,
+    }>
   ) => void;
   onPreview: (staff: ProfileListItem) => void;
   onEdit: (staff: ProfileListItem) => void;
@@ -238,7 +238,7 @@ export function StaffDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>(initialColumnVisibility);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "last_active", desc: true }, // Default sort by last active descending
@@ -418,7 +418,7 @@ export function StaffDataTable({
           const date = new Date(lastActive);
           const now = new Date();
           const diffInDays = Math.floor(
-            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+            (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
           );
 
           if (diffInDays < 7) return "recent";
@@ -495,7 +495,7 @@ export function StaffDataTable({
         enableColumnFilter: false,
       },
     ],
-    [cohortMapping, departmentMapping],
+    [cohortMapping, departmentMapping]
   );
 
   // Build columns with checkbox + actions, filtering out any pre-supplied actions/select
@@ -630,7 +630,7 @@ export function StaffDataTable({
     };
 
     const filtered = columns.filter(
-      (c) => c.id !== "select" && c.id !== "actions",
+      (c) => c.id !== "select" && c.id !== "actions"
     );
     return [checkboxColumn, ...filtered, actionsColumn];
   }, [
@@ -670,7 +670,7 @@ export function StaffDataTable({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 100,
       },
     },
   });
@@ -703,7 +703,10 @@ export function StaffDataTable({
           {...(cohortIds && cohortIds.length > 0 && { cohortIds })}
           {...(departmentIds && departmentIds.length > 0 && { departmentIds })}
         />
-        <div className="rounded-md border overflow-x-auto" data-testid="staff-table">
+        <div
+          className="rounded-md border overflow-x-auto"
+          data-testid="staff-table"
+        >
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -728,7 +731,7 @@ export function StaffDataTable({
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext(),
+                              header.getContext()
                             )}
                       </TableHead>
                     );
@@ -753,7 +756,7 @@ export function StaffDataTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )}
                       </TableCell>
                     ))}
@@ -772,7 +775,7 @@ export function StaffDataTable({
             </TableBody>
           </Table>
         </div>
-        <DataTablePagination table={table} />
+        <DataTablePagination table={table} staff={true} />
       </div>
     </TooltipProvider>
   );

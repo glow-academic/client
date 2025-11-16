@@ -178,7 +178,7 @@ export default function Reports({
         value: id,
         label: scenario.name,
       })),
-    [scenarioMapping],
+    [scenarioMapping]
   );
 
   // Build simulation options from mapping
@@ -188,7 +188,7 @@ export default function Reports({
         value: id,
         label: simulation.name,
       })),
-    [simulationMapping],
+    [simulationMapping]
   );
 
   // Build simulations array for ReportsDataTable
@@ -198,7 +198,7 @@ export default function Reports({
         id,
         title: simulation.name,
       })),
-    [simulationMapping],
+    [simulationMapping]
   );
 
   // Create comprehensive columns matching useReportColumns pattern
@@ -249,14 +249,22 @@ export default function Reports({
         const item = row.original;
         return (
           <div
-            className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0"
+            className="flex items-center space-x-1 cursor-pointer hover:text-primary hover:underline justify-start pl-1 py-0 max-w-[130px]"
             onClick={() => handleViewReport(item.profile_id)}
-            title="Click to view detailed report"
+            title={`${item.profileName}${item.profileAlias ? ` (${item.profileAlias})` : ""} - Click to view detailed report`}
             data-testid={`reports-profile-row-${item.profile_id}`}
           >
-            <div className="flex flex-col items-start">
-              <span className="text-xs font-medium">{item.profileName}</span>
-              <span className="text-xs text-muted-foreground">
+            <div className="flex flex-col items-start min-w-0 w-full">
+              <span
+                className="text-xs font-medium truncate w-full"
+                title={item.profileName}
+              >
+                {item.profileName}
+              </span>
+              <span
+                className="text-xs text-muted-foreground truncate w-full"
+                title={item.profileAlias}
+              >
                 {item.profileAlias}
               </span>
             </div>

@@ -18,14 +18,19 @@ import {
 export interface DataTablePaginationProps<TData> {
   table: Table<TData>;
   card?: boolean;
+  staff?: boolean;
 }
 
 export function DataTablePagination<TData>({
   table,
   card = false,
+  staff = false,
 }: DataTablePaginationProps<TData>) {
-  const pageSizeOptions = card ? [12, 24, 36, 48, 60] : [10, 20, 30, 40, 50];
+  const pageSizeOptions = staff ? [100, 200, 300, 500, 1000] :
+    card ? [12, 24, 36, 48, 60] : [10, 20, 30, 40, 50];
   const labelText = card ? "Items per page" : "Rows per page";
+  // Adjust width of the selector for staff mode: bigger for 1000
+  const selectWidth = staff ? "w-[85px]" : "w-[70px]";
 
   return (
     <div className="flex items-center justify-between px-2">
@@ -39,7 +44,7 @@ export function DataTablePagination<TData>({
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className={`h-8 ${selectWidth}`}>
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
