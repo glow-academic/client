@@ -16,7 +16,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
 import * as React from "react";
@@ -80,7 +79,6 @@ export default function SimulationHistory({
   isLoading = false,
   bulkArchiveAttemptsAction,
 }: SimulationHistoryProps) {
-  const { effectiveProfile } = useProfile();
   // Check if all attempts have the same profileId (only when singleProfile is true)
   const allSameProfile = React.useMemo(() => {
     if (!singleProfile || data.length === 0) {
@@ -529,69 +527,6 @@ export default function SimulationHistory({
     return attemptColumns;
   }, [allSameProfile, showArchive]);
 
-  // Derive cohort data from history items for the current profile
-  const cohortData = React.useMemo(() => {
-    if (!data || data.length === 0 || !effectiveProfile?.id) return [];
-
-    // Filter data to only include entries for the current effective profile
-    const profileData = data.filter(
-      (item) => item.profileId === effectiveProfile.id
-    );
-
-    if (profileData.length === 0) return [];
-
-    // Get profile name from any entry (they should all be the same)
-    const profileName = profileData[0]?.profileName || "Unknown User";
-
-    // Group by simulation to get the highest score for each simulation
-    const simulationMap = new Map<
-      string,
-      { name: string; score: number; passed: boolean }
-    >();
-
-    profileData.forEach((item) => {
-      const existing = simulationMap.get(item.simulation_id);
-      const currentScore = item.score || 0;
-      const passThreshold = item.passPct || 70;
-      const currentPassed = currentScore >= passThreshold;
-
-      // Keep the highest score for each simulation
-      if (!existing || currentScore > existing.score) {
-        simulationMap.set(item.simulation_id, {
-          name: item.simulationName,
-          score: currentScore,
-          passed: currentPassed,
-        });
-      }
-    });
-
-    // Convert to cohort data format
-    const simulations = Array.from(simulationMap.values());
-
-    // Calculate average score across all simulations
-    const averageScore =
-      simulations.length > 0
-        ? simulations.reduce((sum, sim) => sum + sim.score, 0) /
-          simulations.length
-        : 0;
-
-    // Get the average pass percentage threshold (use the first item's passPct as representative)
-    const averagePassThreshold =
-      profileData.length > 0 ? profileData[0]?.passPct || 70 : 70;
-
-    // Cohort is passed if average score meets the pass threshold
-    const cohortPassed = averageScore >= averagePassThreshold;
-
-    // Create cohort data with profile name and simulation results
-    return [
-      {
-        name: profileName,
-        passed: cohortPassed,
-        simulations: simulations,
-      },
-    ];
-  }, [data, effectiveProfile?.id]);
-
   // Create a key based on the data to force re-render when data changes
   const tableKey = React.useMemo(() => {
     if (!data || data.length === 0) return "empty";
@@ -613,7 +548,6 @@ export default function SimulationHistory({
       showExport={showExport}
       showArchive={showArchive}
       showAll={true} // Always show all since filtering is handled upstream
-      cohortData={cohortData}
       {...(showArchive && bulkArchiveAttemptsAction
         ? { bulkArchiveAttemptsAction }
         : {})}

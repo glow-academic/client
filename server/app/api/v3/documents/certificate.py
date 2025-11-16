@@ -1,6 +1,7 @@
 """Document certificate generation endpoint - v3 API following DHH principles."""
 
 import io
+import json
 import logging
 import os
 import subprocess
@@ -9,11 +10,11 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.main import get_db
+from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
-
-from app.main import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,7 @@ logger = logging.getLogger(__name__)
 class GenerateCertificateRequest(BaseModel):
     """Request to generate certificate."""
 
-    profileName: str
-    cohortData: list[dict[str, Any]]
+    profileId: str
 
 
 router = APIRouter()
@@ -36,28 +36,40 @@ async def generate_certificate(
 ) -> Response:
     """Generate a certificate PDF/text for a profile."""
     try:
-        profile_name = request.profileName
-        cohort_data = request.cohortData
+        # Load SQL query and fetch certificate data from database
+        sql_query = load_sql("sql/v3/documents/get_certificate_data.sql")
+        result = await conn.fetchrow(sql_query, request.profileId)
+
+        if not result:
+            raise HTTPException(
+                status_code=404, detail="Profile not found or no cohort data available"
+            )
+
+        # Parse JSON response
+        profile_name = result["profile_name"]
+        # asyncpg returns JSON as string, need to parse it
+        cohort_data_raw = result["cohort_data"]
+        if isinstance(cohort_data_raw, str):
+            cohort_data = json.loads(cohort_data_raw)
+        else:
+            cohort_data = cohort_data_raw
 
         # Try to generate PDF using reportlab
         try:
             # Drawing and Rect not used, removed to fix F401
             from reportlab.lib import colors  # type: ignore
             from reportlab.lib.pagesizes import letter  # type: ignore
-            from reportlab.lib.styles import (
-                ParagraphStyle,  # type: ignore
-                getSampleStyleSheet,  # type: ignore
-            )
+            from reportlab.lib.styles import ParagraphStyle  # type: ignore
+            from reportlab.lib.styles import \
+                getSampleStyleSheet  # type: ignore
             from reportlab.lib.units import inch  # type: ignore
-            from reportlab.platypus import (
-                Frame,  # type: ignore
-                PageTemplate,  # type: ignore
-                Paragraph,  # type: ignore
-                SimpleDocTemplate,  # type: ignore
-                Spacer,  # type: ignore
-                Table,  # type: ignore
-                TableStyle,  # type: ignore
-            )
+            from reportlab.platypus import Frame  # type: ignore
+            from reportlab.platypus import PageTemplate  # type: ignore
+            from reportlab.platypus import Paragraph  # type: ignore
+            from reportlab.platypus import SimpleDocTemplate  # type: ignore
+            from reportlab.platypus import Spacer  # type: ignore
+            from reportlab.platypus import Table  # type: ignore
+            from reportlab.platypus import TableStyle  # type: ignore
 
             # Create PDF in memory
             buffer = io.BytesIO()

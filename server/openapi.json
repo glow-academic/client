@@ -13438,23 +13438,14 @@
       },
       "GenerateCertificateRequest": {
         "properties": {
-          "profileName": {
+          "profileId": {
             "type": "string",
-            "title": "Profilename"
-          },
-          "cohortData": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Cohortdata"
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "profileName",
-          "cohortData"
+          "profileId"
         ],
         "title": "GenerateCertificateRequest",
         "description": "Request to generate certificate."

@@ -5878,12 +5878,8 @@ export interface components {
          * @description Request to generate certificate.
          */
         GenerateCertificateRequest: {
-            /** Profilename */
-            profileName: string;
-            /** Cohortdata */
-            cohortData: {
-                [key: string]: unknown;
-            }[];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * GenerateScenarioAIRequest

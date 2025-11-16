@@ -7,34 +7,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/contexts/profile-context";
 import { toast } from "sonner";
-interface CohortData {
-  name: string;
-  passed: boolean;
-  simulations: Array<{
-    name: string;
-    score: number;
-    passed: boolean;
-  }>;
-}
 
 export interface SingleProfileCertificateButtonProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
-  cohortData?: Array<{
-    name: string;
-    passed: boolean;
-    simulations: Array<{
-      name: string;
-      score: number;
-      passed: boolean;
-    }>;
-  }>;
 }
 
 export function SingleProfileCertificateButton<TData>({
   table,
   profileOptions: _profileOptions,
-  cohortData = [],
 }: SingleProfileCertificateButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [isGenerating, setIsGenerating] = useState(false);
@@ -51,10 +32,6 @@ export function SingleProfileCertificateButton<TData>({
       }
 
       const profileId = effectiveProfile.id;
-      const profileName = `${effectiveProfile.firstName} ${effectiveProfile.lastName}`;
-
-      // Use the pre-computed cohort data
-      const finalCohortData: CohortData[] = cohortData;
 
       // Call the certificate generation API
       const response = await fetch("/api/documents/certificate", {
@@ -64,8 +41,6 @@ export function SingleProfileCertificateButton<TData>({
         },
         body: JSON.stringify({
           profileId,
-          profileName,
-          cohortData: finalCohortData,
         }),
       });
 
@@ -96,7 +71,7 @@ export function SingleProfileCertificateButton<TData>({
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast?.success(`Certificate generated for ${profileName}`);
+      toast?.success("Certificate generated successfully");
     } catch {
       toast?.error("Failed to generate certificate");
     } finally {

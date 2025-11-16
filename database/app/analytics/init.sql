@@ -60,6 +60,19 @@ profile_cohorts_for_sim AS (
   FROM simulation_attempts sa
   LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 ),
+-- Pick one attempt per chat to avoid duplicate chat_id rows
+-- Prefer attempts with active profiles, then most recent
+chat_first_attempt AS (
+  SELECT DISTINCT ON (ac.chat_id)
+    ac.chat_id,
+    ac.attempt_id
+  FROM attempt_chats ac
+  JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+  LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
+  ORDER BY ac.chat_id, 
+    CASE WHEN ap.profile_id IS NOT NULL THEN 0 ELSE 1 END, -- prefer attempts with active profiles
+    sa.created_at DESC -- then most recent
+),
 -- Message counts per chat (total + by type)
 message_counts AS (
   SELECT
@@ -143,18 +156,29 @@ persona_first_dept AS (
     FROM persona_departments
     WHERE active = true
     ORDER BY persona_id, created_at
+),
+-- Pick one persona per scenario to avoid duplicate chat_id rows
+-- Note: There should only be one active persona per scenario due to unique constraint,
+-- but this ensures we only get one row even if data issues exist
+scenario_first_persona AS (
+    SELECT DISTINCT ON (scenario_id)
+        scenario_id,
+        persona_id
+    FROM scenario_personas
+    WHERE active = TRUE
+    ORDER BY scenario_id, persona_id
 )
 SELECT
   -- *** original columns kept in the same order as your "Old def" ***
   sc.id                         AS chat_id,
-  ac.attempt_id                 AS attempt_id,
+  sa.id                         AS attempt_id,
   ap.profile_id                 AS profile_id,
   sa.simulation_id              AS simulation_id,
 
   rm.root_scenario_id           AS scenario_id,
   rm.leaf_scenario_id           AS leaf_scenario_id,
 
-  sp.persona_id                 AS persona_id,
+  sfp.persona_id                AS persona_id,
   p.color                       AS persona_color,
 
   sim.practice_simulation       AS is_practice,
@@ -202,15 +226,15 @@ SELECT
     pfd.department_id
   ) AS department_id
 FROM simulation_chats sc
-JOIN attempt_chats ac ON ac.chat_id = sc.id
-JOIN simulation_attempts sa ON sa.id = ac.attempt_id
+JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
+JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
 JOIN profiles pr              ON pr.id = ap.profile_id
 JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
 JOIN root_map rm              ON rm.leaf_scenario_id = s.id
-LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = TRUE
-LEFT JOIN personas p          ON p.id = sp.persona_id
+LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
+LEFT JOIN personas p          ON p.id = sfp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
 LEFT JOIN rubrics r           ON r.id = lg.rubric_id
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
