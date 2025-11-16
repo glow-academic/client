@@ -1834,278 +1834,333 @@ export default function AttemptChat({
                   </div>
 
                   {/* Desktop: Original layout preserved exactly */}
-                  <div className="hidden md:flex md:flex-col md:gap-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-4">
-                        {/* Show scenario information */}
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {selectedScenario?.problemStatement ||
-                              scenario?.problemStatement ||
-                              "Session Results"}
-                          </span>
+                  <Collapsible
+                    open={showObjectives}
+                    onOpenChange={setShowObjectives}
+                    className="hidden md:block"
+                  >
+                    <div className="hidden md:flex md:flex-col md:gap-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-4">
+                          {/* Show scenario information */}
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {selectedScenario?.problemStatement ||
+                                scenario?.problemStatement ||
+                                "Session Results"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {/* Buttons and timer row */}
-                        <div className="flex items-center gap-2">
-                          {/* Objectives Toggle - show on desktop even in grading view */}
-                          {simulation?.objectivesEnabled &&
-                            (() => {
-                              const currentScenario = displayChat?.id
-                                ? scenariosByChatId[displayChat.id]
-                                : null;
-                              const hasObjectives =
-                                currentScenario?.objectives &&
-                                currentScenario.objectives.length > 0;
-                              return hasObjectives;
+                        <div className="flex flex-col items-end gap-2">
+                          {/* Buttons and timer row */}
+                          <div className="flex items-center gap-2">
+                            {/* Objectives Toggle - show on desktop even in grading view */}
+                            {simulation?.objectivesEnabled &&
+                              (() => {
+                                const currentScenario = displayChat?.id
+                                  ? scenariosByChatId[displayChat.id]
+                                  : null;
+                                const hasObjectives =
+                                  currentScenario?.objectives &&
+                                  currentScenario.objectives.length > 0;
+                                return hasObjectives;
+                              })() && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <CollapsibleTrigger asChild>
+                                        <Button
+                                          variant={
+                                            showObjectives
+                                              ? "default"
+                                              : "outline"
+                                          }
+                                          size="sm"
+                                          onClick={(e) => {
+                                            // Mobile: open modal, Desktop: use collapsible
+                                            if (window.innerWidth < 768) {
+                                              e.preventDefault();
+                                              setShowObjectivesModal(true);
+                                            }
+                                          }}
+                                          className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
+                                        >
+                                          <ListChecks className="h-4 w-4" />
+                                        </Button>
+                                      </CollapsibleTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {showObjectives
+                                          ? "Hide Objectives"
+                                          : "Show Objectives"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+
+                            {displayChat && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant={
+                                        showGrades ? "default" : "outline"
+                                      }
+                                      size="sm"
+                                      onClick={() => {
+                                        setShowGrades(!showGrades);
+                                        setUserHasManuallyToggledGrades(true);
+                                      }}
+                                      className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
+                                    >
+                                      <Table className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {showGrades
+                                        ? "Hide Rubric"
+                                        : "Show Rubric"}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+
+                            {/* Documents Toggle */}
+                            {(() => {
+                              const currentChatDocIds =
+                                displayChat?.documentIds || [];
+                              const hasDocumentsForCurrentChat =
+                                scenarioDocuments?.some((doc) =>
+                                  currentChatDocIds.includes(doc.document_id)
+                                );
+                              return hasDocumentsForCurrentChat;
                             })() && (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant={
-                                        showObjectivesModal
+                                        showDocuments || showDocumentModal
                                           ? "default"
                                           : "outline"
                                       }
                                       size="sm"
-                                      onClick={() =>
-                                        setShowObjectivesModal(true)
-                                      }
-                                      className={`p-2 ${showObjectivesModal ? "bg-primary text-primary-foreground" : ""}`}
+                                      onClick={() => {
+                                        // Mobile: open modal, Desktop: toggle panel
+                                        if (window.innerWidth < 768) {
+                                          setShowDocumentModal(true);
+                                        } else {
+                                          setShowDocuments(!showDocuments);
+                                        }
+                                      }}
+                                      className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
                                     >
-                                      <ListChecks className="h-4 w-4" />
+                                      <FileText className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>View Objectives</p>
+                                    <p>
+                                      {showDocuments || showDocumentModal
+                                        ? "Hide Documents"
+                                        : "Show Documents"}
+                                    </p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             )}
 
-                          {displayChat && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button
-                                    variant={showGrades ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => {
-                                      setShowGrades(!showGrades);
-                                      setUserHasManuallyToggledGrades(true);
-                                    }}
-                                    className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
+                                  <div
+                                    className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                      displayChat &&
+                                      allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === displayChat.id
+                                      )
+                                        ? allDynamicRubrics.find(
+                                            (rubric) =>
+                                              rubric.chatId === displayChat.id
+                                          )?.passed
+                                          ? "bg-green-100 dark:bg-green-900/30"
+                                          : "bg-red-100 dark:bg-red-900/30"
+                                        : displayChat && !displayChat.completed
+                                          ? "bg-red-100 dark:bg-red-900/30"
+                                          : aggregatedResults
+                                            ? aggregatedResults.passed
+                                              ? "bg-green-100 dark:bg-green-900/30"
+                                              : "bg-red-100 dark:bg-red-900/30"
+                                            : "bg-muted"
+                                    }`}
                                   >
-                                    <Table className="h-4 w-4" />
-                                  </Button>
+                                    {isInfiniteMode ? (
+                                      <InfinityIcon className="h-4 w-4" />
+                                    ) : (
+                                      <Clock className="h-4 w-4" />
+                                    )}
+                                    <span
+                                      className={`text-sm font-medium ${
+                                        displayChat && displayChat.completed
+                                          ? calculateTimeExceeded(displayChat) >
+                                              0 && simulation?.timeLimit
+                                            ? "text-red-500"
+                                            : ""
+                                          : ""
+                                      }`}
+                                      data-testid="timer"
+                                    >
+                                      {displayChat && displayChat.completed
+                                        ? formatTime(
+                                            calculateChatTimeTaken(displayChat)
+                                          )
+                                        : isInfiniteMode
+                                          ? infiniteLimitMinutes
+                                            ? formatTime(
+                                                infiniteLimitMinutes * 60
+                                              )
+                                            : formatTime(timer.elapsed || 0)
+                                          : simulation?.timeLimit && displayChat
+                                            ? formatTime(
+                                                calculateAdjustedTimeLimit(
+                                                  displayChat
+                                                )
+                                              )
+                                            : "No time limit"}
+                                    </span>
+                                  </div>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {showGrades ? "Hide Rubric" : "Show Rubric"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-
-                          {/* Documents Toggle */}
-                          {(() => {
-                            const currentChatDocIds =
-                              displayChat?.documentIds || [];
-                            const hasDocumentsForCurrentChat =
-                              scenarioDocuments?.some((doc) =>
-                                currentChatDocIds.includes(doc.document_id)
-                              );
-                            return hasDocumentsForCurrentChat;
-                          })() && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={
-                                      showDocuments || showDocumentModal
-                                        ? "default"
-                                        : "outline"
-                                    }
-                                    size="sm"
-                                    onClick={() => {
-                                      // Mobile: open modal, Desktop: toggle panel
-                                      if (window.innerWidth < 768) {
-                                        setShowDocumentModal(true);
-                                      } else {
-                                        setShowDocuments(!showDocuments);
-                                      }
-                                    }}
-                                    className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {showDocuments || showDocumentModal
-                                      ? "Hide Documents"
-                                      : "Show Documents"}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                    displayChat &&
-                                    allDynamicRubrics.find(
-                                      (rubric) =>
-                                        rubric.chatId === displayChat.id
-                                    )
-                                      ? allDynamicRubrics.find(
+                                {displayChat &&
+                                showGrades &&
+                                allDynamicRubrics.find(
+                                  (rubric) => rubric.chatId === displayChat.id
+                                ) ? (
+                                  <TooltipContent>
+                                    <p className="flex items-center flex-wrap gap-x-0">
+                                      <span>
+                                        {allDynamicRubrics.find(
                                           (rubric) =>
                                             rubric.chatId === displayChat.id
                                         )?.passed
-                                        ? "bg-green-100 dark:bg-green-900/30"
-                                        : "bg-red-100 dark:bg-red-900/30"
-                                      : displayChat && !displayChat.completed
-                                        ? "bg-red-100 dark:bg-red-900/30"
-                                        : aggregatedResults
-                                          ? aggregatedResults.passed
-                                            ? "bg-green-100 dark:bg-green-900/30"
-                                            : "bg-red-100 dark:bg-red-900/30"
-                                          : "bg-muted"
-                                  }`}
-                                >
-                                  {isInfiniteMode ? (
-                                    <InfinityIcon className="h-4 w-4" />
-                                  ) : (
-                                    <Clock className="h-4 w-4" />
-                                  )}
-                                  <span
-                                    className={`text-sm font-medium ${
-                                      displayChat && displayChat.completed
-                                        ? calculateTimeExceeded(displayChat) >
-                                            0 && simulation?.timeLimit
-                                          ? "text-red-500"
-                                          : ""
-                                        : ""
-                                    }`}
-                                    data-testid="timer"
-                                  >
-                                    {displayChat && displayChat.completed
-                                      ? formatTime(
-                                          calculateChatTimeTaken(displayChat)
+                                          ? "Passed"
+                                          : "Failed"}
+                                        (
+                                        {
+                                          allDynamicRubrics.find(
+                                            (rubric) =>
+                                              rubric.chatId === displayChat.id
+                                          )?.score
+                                        }
+                                        /
+                                        {
+                                          allDynamicRubrics.find(
+                                            (rubric) =>
+                                              rubric.chatId === displayChat.id
+                                          )?.totalPossiblePoints
+                                        }
                                         )
-                                      : isInfiniteMode
-                                        ? infiniteLimitMinutes
-                                          ? formatTime(
-                                              infiniteLimitMinutes * 60
-                                            )
-                                          : formatTime(timer.elapsed || 0)
-                                        : simulation?.timeLimit && displayChat
-                                          ? formatTime(
-                                              calculateAdjustedTimeLimit(
-                                                displayChat
-                                              )
-                                            )
-                                          : "No time limit"}
-                                  </span>
-                                </div>
-                              </TooltipTrigger>
-                              {displayChat &&
-                              showGrades &&
-                              allDynamicRubrics.find(
-                                (rubric) => rubric.chatId === displayChat.id
-                              ) ? (
-                                <TooltipContent>
-                                  <p className="flex items-center flex-wrap gap-x-0">
-                                    <span>
-                                      {allDynamicRubrics.find(
-                                        (rubric) =>
-                                          rubric.chatId === displayChat.id
-                                      )?.passed
-                                        ? "Passed"
-                                        : "Failed"}
-                                      (
-                                      {
-                                        allDynamicRubrics.find(
-                                          (rubric) =>
-                                            rubric.chatId === displayChat.id
-                                        )?.score
-                                      }
-                                      /
-                                      {
-                                        allDynamicRubrics.find(
-                                          (rubric) =>
-                                            rubric.chatId === displayChat.id
-                                        )?.totalPossiblePoints
-                                      }
-                                      )
-                                    </span>
-                                    {calculateTimeExceeded(displayChat) > 0 &&
-                                      simulation?.timeLimit && (
-                                        <span className="text-xs text-muted-foreground ml-2">
-                                          +
-                                          {formatTime(
-                                            calculateTimeExceeded(displayChat)
-                                          )}
-                                        </span>
-                                      )}
-                                  </p>
-                                </TooltipContent>
-                              ) : displayChat && !displayChat.completed ? (
-                                <TooltipContent>
-                                  <p>Incomplete</p>
-                                </TooltipContent>
-                              ) : aggregatedResults ? (
-                                <TooltipContent>
-                                  <p>
-                                    {((
-                                      aggregatedResults as {
-                                        overallPassed?: boolean;
-                                        passed?: boolean;
-                                      }
-                                    )?.overallPassed ??
-                                    (
-                                      aggregatedResults as {
-                                        overallPassed?: boolean;
-                                        passed?: boolean;
-                                      }
-                                    )?.passed)
-                                      ? "Passed"
-                                      : "Failed"}{" "}
-                                    (
-                                    {Math.round(
+                                      </span>
+                                      {calculateTimeExceeded(displayChat) > 0 &&
+                                        simulation?.timeLimit && (
+                                          <span className="text-xs text-muted-foreground ml-2">
+                                            +
+                                            {formatTime(
+                                              calculateTimeExceeded(displayChat)
+                                            )}
+                                          </span>
+                                        )}
+                                    </p>
+                                  </TooltipContent>
+                                ) : displayChat && !displayChat.completed ? (
+                                  <TooltipContent>
+                                    <p>Incomplete</p>
+                                  </TooltipContent>
+                                ) : aggregatedResults ? (
+                                  <TooltipContent>
+                                    <p>
+                                      {((
+                                        aggregatedResults as {
+                                          overallPassed?: boolean;
+                                          passed?: boolean;
+                                        }
+                                      )?.overallPassed ??
                                       (
                                         aggregatedResults as {
-                                          averageScore?: number;
-                                          percentage?: number;
+                                          overallPassed?: boolean;
+                                          passed?: boolean;
                                         }
-                                      )?.averageScore ??
+                                      )?.passed)
+                                        ? "Passed"
+                                        : "Failed"}{" "}
+                                      (
+                                      {Math.round(
                                         (
                                           aggregatedResults as {
                                             averageScore?: number;
                                             percentage?: number;
                                           }
-                                        )?.percentage ??
-                                        0
-                                    )}
-                                    /
-                                    {allDynamicRubrics?.[0]
-                                      ?.totalPossiblePoints || 100}{" "}
-                                    points)
-                                  </p>
-                                </TooltipContent>
-                              ) : null}
-                            </Tooltip>
-                          </TooltipProvider>
+                                        )?.averageScore ??
+                                          (
+                                            aggregatedResults as {
+                                              averageScore?: number;
+                                              percentage?: number;
+                                            }
+                                          )?.percentage ??
+                                          0
+                                      )}
+                                      /
+                                      {allDynamicRubrics?.[0]
+                                        ?.totalPossiblePoints || 100}{" "}
+                                      points)
+                                    </p>
+                                  </TooltipContent>
+                                ) : null}
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+
+                    {/* Objectives Collapsible Content - desktop graded view */}
+                    {simulation?.objectivesEnabled &&
+                      (() => {
+                        const currentScenario = displayChat?.id
+                          ? scenariosByChatId[displayChat.id]
+                          : null;
+                        const objectives = currentScenario?.objectives || [];
+                        return objectives.length > 0;
+                      })() && (
+                        <CollapsibleContent className="pt-2">
+                          <div className="px-4 pb-2">
+                            <ul className="space-y-2 list-none">
+                              {(() => {
+                                const currentScenario = displayChat?.id
+                                  ? scenariosByChatId[displayChat.id]
+                                  : null;
+                                const objectives =
+                                  currentScenario?.objectives || [];
+                                return objectives.map((objective, index) => (
+                                  <li
+                                    key={index}
+                                    className="font-normal flex items-start gap-2"
+                                  >
+                                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                    <span className="flex-1 -mt-0.5">
+                                      {objective}
+                                    </span>
+                                  </li>
+                                ));
+                              })()}
+                            </ul>
+                          </div>
+                        </CollapsibleContent>
+                      )}
+                  </Collapsible>
 
                   {/* Chat picker row - show when multi-chat attempt, right below the sections */}
                   {!isSingleChatAttempt && chatPicker && (

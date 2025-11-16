@@ -612,7 +612,7 @@ export default function AttemptMessages({
 
                             return (
                               <div
-                                className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-hidden`}
+                                className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-visible`}
                               >
                                 <Tooltip>
                                   <TooltipTrigger asChild>

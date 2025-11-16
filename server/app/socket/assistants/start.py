@@ -5,12 +5,11 @@ import uuid
 from typing import Any
 
 from agents import Runner, gen_trace_id, trace
-from pydantic import BaseModel, ValidationError
-
 from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
