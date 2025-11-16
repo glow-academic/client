@@ -138,31 +138,50 @@ async def export_reports(
             )
 
         if request.brightspaceFormat:
-            # Generate ZIP with one CSV per metric
+            # Generate CSV(s) for Brightspace format
+            # If only one metric, return single CSV; otherwise ZIP with multiple CSVs
+            if len(request.metrics) == 1:
+                # Single metric - return CSV directly
+                metric = request.metrics[0]
+                csv_data = generate_brightspace_csv(
+                    parsed_result, metric, simulation_mapping
+                )
+                csv_filename = f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
 
-            # Create ZIP file in memory
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                for metric in request.metrics:
-                    csv_data = generate_brightspace_csv(
-                        parsed_result, metric, simulation_mapping
-                    )
-                    filename = f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
-                    zip_file.writestr(filename, csv_data)
+                return Response(
+                    content=csv_data.encode("utf-8"),
+                    media_type="text/csv",
+                    headers={
+                        "Content-Disposition": f'attachment; filename="{csv_filename}"',
+                        "Cache-Control": "no-cache, no-store, must-revalidate",
+                        "Pragma": "no-cache",
+                        "Expires": "0",
+                    },
+                )
+            else:
+                # Multiple metrics - create ZIP file
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                    for metric in request.metrics:
+                        csv_data = generate_brightspace_csv(
+                            parsed_result, metric, simulation_mapping
+                        )
+                        filename = f"{metric}_export_{datetime.now().strftime('%Y-%m-%d')}.csv"
+                        zip_file.writestr(filename, csv_data)
 
-            zip_buffer.seek(0)
-            zip_filename = f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.zip"
+                zip_buffer.seek(0)
+                zip_filename = f"reports_export_{datetime.now().strftime('%Y-%m-%d')}.zip"
 
-            return Response(
-                content=zip_buffer.read(),
-                media_type="application/zip",
-                headers={
-                    "Content-Disposition": f'attachment; filename="{zip_filename}"',
-                    "Cache-Control": "no-cache, no-store, must-revalidate",
-                    "Pragma": "no-cache",
-                    "Expires": "0",
-                },
-            )
+                return Response(
+                    content=zip_buffer.read(),
+                    media_type="application/zip",
+                    headers={
+                        "Content-Disposition": f'attachment; filename="{zip_filename}"',
+                        "Cache-Control": "no-cache, no-store, must-revalidate",
+                        "Pragma": "no-cache",
+                        "Expires": "0",
+                    },
+                )
         else:
             # Generate single CSV with selected metrics
             csv_data = generate_regular_csv(parsed_result, request.metrics)

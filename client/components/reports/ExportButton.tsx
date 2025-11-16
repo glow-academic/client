@@ -177,9 +177,19 @@ export function ExportButton<TData>({
 
       // Extract filename from Content-Disposition header or use default
       const contentDisposition = response.headers.get("content-disposition");
-      let filename = brightspaceFormat
-        ? `reports_export_${new Date().toISOString().slice(0, 10)}.zip`
-        : `reports_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      const contentType = response.headers.get("content-type") || "";
+
+      // Determine default filename based on content type and format
+      let filename: string;
+      if (brightspaceFormat) {
+        // Brightspace format: ZIP if multiple metrics, CSV if single metric
+        const isZip = contentType.includes("application/zip");
+        filename = isZip
+          ? `reports_export_${new Date().toISOString().slice(0, 10)}.zip`
+          : `reports_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      } else {
+        filename = `reports_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      }
 
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
@@ -215,8 +225,8 @@ export function ExportButton<TData>({
   return (
     <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
       <PopoverTrigger asChild>
-        <Button variant="default" size="sm">
-          <Download className="mr-2 h-4 w-4" />
+        <Button variant="default" size="sm" className="group">
+          <Download className="mr-2 h-4 w-4 text-current" />
           Export {selectedRows > 0 ? `(${selectedRows})` : ""}
         </Button>
       </PopoverTrigger>
@@ -255,9 +265,11 @@ export function ExportButton<TData>({
 
             {brightspaceFormat && (
               <p className="text-xs text-muted-foreground">
-                Brightspace format exports one CSV file per selected metric,
-                packaged in a ZIP file. Each CSV follows Brightspace gradebook
-                import format.
+                Brightspace format exports one CSV file per selected metric.
+                {selectedMetrics.length > 1
+                  ? " Multiple metrics are packaged in a ZIP file."
+                  : " Single metric exports as a CSV file."}{" "}
+                Each CSV follows Brightspace gradebook import format.
               </p>
             )}
 
@@ -283,7 +295,9 @@ export function ExportButton<TData>({
                       {isExporting
                         ? "Exporting..."
                         : brightspaceFormat
-                          ? "Export to ZIP"
+                          ? selectedMetrics.length === 1
+                            ? "Export to CSV"
+                            : "Export to ZIP"
                           : "Export to CSV"}
                     </Button>
                   </span>

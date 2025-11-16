@@ -8,6 +8,7 @@
 
 import { PopoverProps } from "@radix-ui/react-popover";
 import {
+  AlertCircle,
   Award,
   BarChart,
   Check,
@@ -19,7 +20,6 @@ import {
   Timer,
   TrendingUp,
   X,
-  AlertCircle,
 } from "lucide-react";
 import * as React from "react";
 
@@ -310,12 +310,7 @@ interface MetricItemProps {
   onPeek: (metric: MetricOption) => void;
 }
 
-function MetricItem({
-  metric,
-  isSelected,
-  onSelect,
-  onPeek,
-}: MetricItemProps) {
+function MetricItem({ metric, isSelected, onSelect, onPeek }: MetricItemProps) {
   const ref = React.useRef<HTMLDivElement>(null);
   const IconComponent = metric.icon;
 
@@ -336,25 +331,27 @@ function MetricItem({
       key={metric.value}
       onSelect={onSelect}
       ref={ref}
-      className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
+      className="group data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center gap-3 w-full">
-        <div className="p-2 rounded-lg shadow-sm flex-shrink-0 bg-primary/10">
-          <IconComponent className="h-4 w-4 text-primary" />
+        <div className="p-2 rounded-lg shadow-sm flex-shrink-0 bg-primary/10 border border-transparent group-data-[selected=true]:bg-primary/20 group-data-[selected=true]:border-primary-foreground">
+          <IconComponent className="h-4 w-4 text-primary group-data-[selected=true]:text-primary-foreground stroke-current" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{metric.label}</div>
           {metric.description && (
-            <div className="text-sm text-muted-foreground truncate">
+            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground/80">
               {metric.description}
             </div>
           )}
         </div>
         <Check
-          className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}
+          className={cn(
+            "ml-auto stroke-current",
+            isSelected ? "opacity-100" : "opacity-0"
+          )}
         />
       </div>
     </CommandItem>
   );
 }
-
