@@ -71,7 +71,6 @@ import TableRubric from "@/components/common/rubric/TableRubric";
 import { Progress } from "@/components/ui/progress";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import AttemptInput from "./AttemptInput";
@@ -124,7 +123,6 @@ export default function AttemptChat({
     },
     [handleUpdateChatCreatedAt]
   );
-  const isMobile = useIsMobile();
 
   // Initialize state from server snapshot
   const [attemptData, setAttemptData] = useState<AttemptFullResponse | null>(
@@ -1356,13 +1354,334 @@ export default function AttemptChat({
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
                 {/* Timer and Controls Header - consistent with main chat layout */}
-                <Collapsible
-                  open={showObjectives}
-                  onOpenChange={setShowObjectives}
-                  className="border-b"
-                >
-                  <div className="p-4 pt-0 flex flex-col gap-2">
-                    <div className="flex items-start justify-between gap-1">
+                <div className="p-4 pt-0 border-b flex flex-col gap-2">
+                  {/* Mobile: Left-aligned vertical layout */}
+                  <div className="md:hidden max-h-[200px] overflow-y-auto">
+                    <div className="flex flex-col gap-3 py-2">
+                      {/* Row 1: Control buttons and timer - split layout */}
+                      <div className="flex items-center gap-2">
+                        {/* Left side: Control buttons */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Objectives Toggle - show on mobile even in grading view */}
+                          {simulation?.objectivesEnabled &&
+                            (() => {
+                              const currentScenario = displayChat?.id
+                                ? scenariosByChatId[displayChat.id]
+                                : null;
+                              const hasObjectives =
+                                currentScenario?.objectives &&
+                                currentScenario.objectives.length > 0;
+                              return hasObjectives;
+                            })() && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant={
+                                        showObjectivesModal
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                      size="sm"
+                                      onClick={() =>
+                                        setShowObjectivesModal(true)
+                                      }
+                                      className={`p-2 ${showObjectivesModal ? "bg-primary text-primary-foreground" : ""}`}
+                                    >
+                                      <ListChecks className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>View Objectives</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+
+                          {displayChat && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={showGrades ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => {
+                                      setShowGrades(!showGrades);
+                                      setUserHasManuallyToggledGrades(true);
+                                    }}
+                                    className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
+                                  >
+                                    <Table className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {showGrades ? "Hide Rubric" : "Show Rubric"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+
+                          {/* Documents Toggle */}
+                          {(() => {
+                            const currentChatDocIds =
+                              displayChat?.documentIds || [];
+                            const hasDocumentsForCurrentChat =
+                              scenarioDocuments?.some((doc) =>
+                                currentChatDocIds.includes(doc.document_id)
+                              );
+                            return hasDocumentsForCurrentChat;
+                          })() && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowDocumentModal(true)}
+                                    className="p-2"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>View Documents</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+
+                        {/* Right side: Timer */}
+                        <div className="flex-1 flex justify-end">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                    displayChat &&
+                                    allDynamicRubrics.find(
+                                      (rubric) =>
+                                        rubric.chatId === displayChat.id
+                                    )
+                                      ? allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === displayChat.id
+                                        )?.passed
+                                        ? "bg-green-100 dark:bg-green-900/30"
+                                        : "bg-red-100 dark:bg-red-900/30"
+                                      : displayChat && !displayChat.completed
+                                        ? "bg-red-100 dark:bg-red-900/30"
+                                        : aggregatedResults
+                                          ? aggregatedResults.passed
+                                            ? "bg-green-100 dark:bg-green-900/30"
+                                            : "bg-red-100 dark:bg-red-900/30"
+                                          : "bg-muted"
+                                  }`}
+                                >
+                                  {isInfiniteMode ? (
+                                    <InfinityIcon className="h-4 w-4" />
+                                  ) : (
+                                    <Clock className="h-4 w-4" />
+                                  )}
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      displayChat && displayChat.completed
+                                        ? calculateTimeExceeded(displayChat) >
+                                            0 && simulation?.timeLimit
+                                          ? "text-red-500"
+                                          : ""
+                                        : ""
+                                    }`}
+                                    data-testid="timer"
+                                  >
+                                    {displayChat && displayChat.completed
+                                      ? formatTime(
+                                          calculateChatTimeTaken(displayChat)
+                                        )
+                                      : isInfiniteMode
+                                        ? infiniteLimitMinutes
+                                          ? formatTime(
+                                              infiniteLimitMinutes * 60
+                                            )
+                                          : formatTime(timer.elapsed || 0)
+                                        : simulation?.timeLimit && displayChat
+                                          ? formatTime(
+                                              calculateAdjustedTimeLimit(
+                                                displayChat
+                                              )
+                                            )
+                                          : "No time limit"}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              {displayChat &&
+                              showGrades &&
+                              allDynamicRubrics.find(
+                                (rubric) => rubric.chatId === displayChat.id
+                              ) ? (
+                                <TooltipContent>
+                                  <p className="flex items-center flex-wrap gap-x-0">
+                                    <span>
+                                      {allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === displayChat.id
+                                      )?.passed
+                                        ? "Passed"
+                                        : "Failed"}
+                                      (
+                                      {
+                                        allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === displayChat.id
+                                        )?.score
+                                      }
+                                      /
+                                      {
+                                        allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === displayChat.id
+                                        )?.totalPossiblePoints
+                                      }
+                                      )
+                                    </span>
+                                    {calculateTimeExceeded(displayChat) > 0 &&
+                                      simulation?.timeLimit && (
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                          +
+                                          {formatTime(
+                                            calculateTimeExceeded(displayChat)
+                                          )}
+                                        </span>
+                                      )}
+                                  </p>
+                                </TooltipContent>
+                              ) : displayChat && !displayChat.completed ? (
+                                <TooltipContent>
+                                  <p>Incomplete</p>
+                                </TooltipContent>
+                              ) : aggregatedResults ? (
+                                <TooltipContent>
+                                  <p>
+                                    {((
+                                      aggregatedResults as {
+                                        overallPassed?: boolean;
+                                        passed?: boolean;
+                                      }
+                                    )?.overallPassed ??
+                                    (
+                                      aggregatedResults as {
+                                        overallPassed?: boolean;
+                                        passed?: boolean;
+                                      }
+                                    )?.passed)
+                                      ? "Passed"
+                                      : "Failed"}{" "}
+                                    (
+                                    {Math.round(
+                                      (
+                                        aggregatedResults as {
+                                          averageScore?: number;
+                                          percentage?: number;
+                                        }
+                                      )?.averageScore ??
+                                        (
+                                          aggregatedResults as {
+                                            averageScore?: number;
+                                            percentage?: number;
+                                          }
+                                        )?.percentage ??
+                                        0
+                                    )}
+                                    /
+                                    {allDynamicRubrics?.[0]
+                                      ?.totalPossiblePoints || 100}{" "}
+                                    points)
+                                  </p>
+                                </TooltipContent>
+                              ) : null}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Scenario picker */}
+                      {!isSingleChatAttempt && chatPicker && (
+                        <div className="w-full">
+                          <Select
+                            value={chats[currentChatIndex]?.id || ""}
+                            onValueChange={(chatId) => {
+                              const chatIndex = chats.findIndex(
+                                (chat) => chat.id === chatId
+                              );
+                              if (chatIndex !== undefined && chatIndex >= 0) {
+                                setCurrentChatIndex(chatIndex);
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select chat to view results" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {chats?.map((chat: Chat) => {
+                                // Find rubric result for this chat
+                                const rubricResult = allDynamicRubrics.find(
+                                  (rubric) => rubric.chatId === chat.id
+                                );
+
+                                return (
+                                  <SelectItem key={chat.id} value={chat.id}>
+                                    <div className="flex items-center gap-2">
+                                      {chat.completed && !rubricResult ? (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-xs"
+                                        >
+                                          Incomplete
+                                        </Badge>
+                                      ) : rubricResult ? (
+                                        <Badge
+                                          variant={
+                                            rubricResult.passed
+                                              ? "default"
+                                              : "destructive"
+                                          }
+                                          className={`text-xs ${
+                                            rubricResult.passed
+                                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                                          }`}
+                                        >
+                                          {rubricResult.passed
+                                            ? "Pass"
+                                            : "Fail"}
+                                        </Badge>
+                                      ) : null}
+                                      <span>{chat.title}</span>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Row 3: Scenario description */}
+                      <div className="text-left text-sm md:text-base">
+                        <span className="font-medium">
+                          {selectedScenario?.problemStatement ||
+                            scenario?.problemStatement ||
+                            "Session Results"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Desktop: Original layout preserved exactly */}
+                  <div className="hidden md:flex md:flex-col md:gap-2">
+                    <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
                         {/* Show scenario information */}
                         <div className="flex items-center gap-2">
@@ -1407,55 +1726,7 @@ export default function AttemptChat({
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            {/* Objectives Toggle - only show if simulation has objectives enabled and current chat scenario has objectives, hide in grading mode and results view */}
-                            {simulation?.objectivesEnabled &&
-                              (() => {
-                                const currentScenario = displayChat?.id
-                                  ? scenariosByChatId[displayChat.id]
-                                  : null;
-                                const hasObjectives =
-                                  currentScenario?.objectives &&
-                                  currentScenario.objectives.length > 0;
-                                return hasObjectives;
-                              })() &&
-                              !showGrades &&
-                              !showResults && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <CollapsibleTrigger asChild>
-                                        <Button
-                                          variant={
-                                            showObjectives
-                                              ? "default"
-                                              : "outline"
-                                          }
-                                          size="sm"
-                                          onClick={(e) => {
-                                            // Mobile: open modal, Desktop: use collapsible
-                                            if (isMobile) {
-                                              e.preventDefault();
-                                              setShowObjectivesModal(true);
-                                            }
-                                          }}
-                                          className={`p-2 ${showObjectives ? "bg-primary text-primary-foreground" : ""}`}
-                                        >
-                                          <ListChecks className="h-4 w-4" />
-                                        </Button>
-                                      </CollapsibleTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>
-                                        {showObjectives
-                                          ? "Hide Objectives"
-                                          : "Show Objectives"}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-
-                            {/* Documents Toggle - only show if current chat has documents */}
+                            {/* Documents Toggle */}
                             {(() => {
                               const currentChatDocIds =
                                 displayChat?.documentIds || [];
@@ -1473,14 +1744,9 @@ export default function AttemptChat({
                                         showDocuments ? "default" : "outline"
                                       }
                                       size="sm"
-                                      onClick={() => {
-                                        // Mobile: open modal, Desktop: toggle panel
-                                        if (isMobile) {
-                                          setShowDocumentModal(true);
-                                        } else {
-                                          setShowDocuments(!showDocuments);
-                                        }
-                                      }}
+                                      onClick={() =>
+                                        setShowDocuments(!showDocuments)
+                                      }
                                       className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                     >
                                       <FileText className="h-4 w-4" />
@@ -1647,50 +1913,15 @@ export default function AttemptChat({
                             </TooltipProvider>
                           </div>
                         </div>
-                        {/* Chat picker row - show when multi-chat attempt */}
-                        {!isSingleChatAttempt && chatPicker && (
-                          <div className="flex justify-end">{chatPicker}</div>
-                        )}
                       </div>
-                    </div>
 
-                    {/* Objectives Collapsible Content - Desktop Only, hide in grading mode */}
-                    {simulation?.objectivesEnabled &&
-                      (() => {
-                        const currentScenario = displayChat?.id
-                          ? scenariosByChatId[displayChat.id]
-                          : null;
-                        const objectives = currentScenario?.objectives || [];
-                        return objectives.length > 0;
-                      })() &&
-                      !showGrades && (
-                        <CollapsibleContent className="pt-2 hidden md:block">
-                          <div className="px-4 pb-2">
-                            <ul className="space-y-2 list-none">
-                              {(() => {
-                                const currentScenario = displayChat?.id
-                                  ? scenariosByChatId[displayChat.id]
-                                  : null;
-                                const objectives =
-                                  currentScenario?.objectives || [];
-                                return objectives.map((objective, index) => (
-                                  <li
-                                    key={index}
-                                    className="font-normal flex items-start gap-2"
-                                  >
-                                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                    <span className="flex-1 -mt-0.5">
-                                      {objective}
-                                    </span>
-                                  </li>
-                                ));
-                              })()}
-                            </ul>
-                          </div>
-                        </CollapsibleContent>
+                      {/* Show completion status for completed attempts */}
+                      {!isSingleChatAttempt && chatPicker && (
+                        <div className="flex justify-end">{chatPicker}</div>
                       )}
+                    </div>
                   </div>
-                </Collapsible>
+                </div>
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                   <ScrollArea className="flex-1 px-4 min-h-0">

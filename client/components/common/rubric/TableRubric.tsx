@@ -125,88 +125,53 @@ export default function TableRubric({
                     key={groupId}
                     className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}
                   >
-                    <TableCell className="font-medium align-top p-2 text-xs">
-                      <div className="break-words whitespace-normal overflow-hidden px-2 py-1">
+                    <TableCell className="font-medium p-2 text-xs">
+                      <div className="break-words whitespace-normal">
                         {groupInfo?.name || "Unknown Group"}
                       </div>
                     </TableCell>
                     <TableCell
-                      className={`whitespace-normal text-xs align-top p-2 ${
-                        achievedStandard
-                          ? isPassed
-                            ? "bg-green-200 dark:bg-green-900/40"
-                            : "bg-red-200 dark:bg-red-900/40"
-                          : ""
+                      className={`p-2 text-xs cursor-pointer transition-colors ${
+                        isPassed
+                          ? "bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50"
+                          : achievedStandard
+                            ? "bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50"
+                            : ""
                       }`}
-                      role={achievedStandard ? "button" : undefined}
-                      tabIndex={achievedStandard ? 0 : -1}
-                      onKeyDown={(e) => {
-                        const target = e.target as HTMLElement;
-                        if (
-                          target.closest(
-                            "textarea, input, button, select, [contenteditable='true']",
-                          )
-                        ) {
-                          return;
-                        }
-                        if (
-                          (e.key === "Enter" || e.key === " ") &&
-                          achievedStandardId
-                        ) {
-                          e.preventDefault();
-                          setFlippedCells((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(achievedStandardId))
-                              next.delete(achievedStandardId);
-                            else next.add(achievedStandardId);
-                            return next;
-                          });
-                        }
-                      }}
                       onClick={() => {
                         if (achievedStandardId) {
                           setFlippedCells((prev) => {
                             const next = new Set(prev);
-                            if (next.has(achievedStandardId))
+                            if (next.has(achievedStandardId)) {
                               next.delete(achievedStandardId);
-                            else next.add(achievedStandardId);
+                            } else {
+                              next.add(achievedStandardId);
+                            }
                             return next;
                           });
                         }
                       }}
                     >
                       {achievedStandard ? (
-                        (() => {
-                          const feedbackText =
-                            gradingState?.feedbackByStandardId?.[
-                              achievedStandardId || ""
-                            ];
-                          const frontContent = (
-                            <div className="text-xs leading-tight">
-                              {feedbackText || achievedStandard.description}
-                            </div>
-                          );
-                          const backContent = (
-                            <div className="text-xs leading-tight">
-                              {achievedStandard.description}
-                            </div>
-                          );
-
-                          return isFlipped ? (
-                            <div className={`flip3d is-flipped`} data-dir={1}>
-                              <div className="face front">{frontContent}</div>
-                              <div className="face back">{backContent}</div>
+                        <div className="text-center">
+                          {isFlipped ? (
+                            <div className="text-xs whitespace-normal break-words">
+                              {gradingState?.feedbackByStandardId?.[
+                                achievedStandardId || ""
+                              ] || "No feedback provided"}
                             </div>
                           ) : (
-                            <div className={`flip3d`} data-dir={-1}>
-                              <div className="face front">{frontContent}</div>
-                              <div className="face back">{backContent}</div>
+                            <div className="font-semibold">
+                              {achievedStandard.name} ({achievedStandard.points})
                             </div>
-                          );
-                        })()
+                          )}
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {isFlipped ? "Tap to show name" : "Tap to show feedback"}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-xs text-muted-foreground">
-                          Not achieved
+                        <div className="text-center text-muted-foreground">
+                          No score
                         </div>
                       )}
                     </TableCell>
