@@ -276,6 +276,13 @@ async def _generate_hints_background_inline(
             input_items.insert(0, chat_scenario)
             input_items.extend(conversation_history)
 
+            # Add developer message at the end to explicitly request hint generation
+            developer_message: TResponseInputItem = {
+                "role": "developer",
+                "content": "Now please generate the hints based on the previous conversation. You must call all three hint tools (provide_hint_1, provide_hint_2, and provide_hint_3) to provide short, concise guidance for the GTA.",
+            }
+            input_items.append(developer_message)
+
             # Check rate limit
             profile_id_uuid = (
                 uuid.UUID(context["profile_id"]) if context["profile_id"] else None
@@ -377,15 +384,15 @@ async def _generate_hints_background_inline(
                     sql_insert = """
                         INSERT INTO simulation_hints (simulation_message_id, idx, hint)
                         VALUES ($1::uuid, $2, $3)
-                        RETURNING simulation_message_id::text, idx
+                        RETURNING simulation_message_id, idx
                     """
                     hint_result_row = await conn.fetchrow(
                         sql_insert, str(message_id), next_idx, hint_text
                     )
                     hint_result = {
-                        "simulation_message_id": hint_result_row[
+                        "simulation_message_id": str(hint_result_row[
                             "simulation_message_id"
-                        ],
+                        ]),
                         "idx": hint_result_row["idx"],
                     }
                     hint_ids.append(hint_result)
