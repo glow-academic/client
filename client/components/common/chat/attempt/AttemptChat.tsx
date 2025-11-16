@@ -2005,6 +2005,11 @@ export default function AttemptChat({
                             isActive={!timer.expired && !showResults}
                             simulation={simulation}
                             currentChatHints={currentChatHints}
+                            scenario={
+                              displayChat?.id
+                                ? scenariosByChatId[displayChat.id] || null
+                                : scenario
+                            }
                           />
                         </div>
                       ) : (
@@ -2485,7 +2490,7 @@ export default function AttemptChat({
                               100
                             );
                           })()}
-                          className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+                          className="w-full bg-transparent rounded-full [&>div]:rounded-l-full [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
                         />
                       </div>
                     )}
@@ -2498,6 +2503,11 @@ export default function AttemptChat({
                       isActive={!timer.expired && !showResults}
                       simulation={simulation}
                       currentChatHints={currentChatHints}
+                      scenario={
+                        displayChat?.id
+                          ? scenariosByChatId[displayChat.id] || null
+                          : scenario
+                      }
                     />
                   </div>
                 </ResizablePanel>

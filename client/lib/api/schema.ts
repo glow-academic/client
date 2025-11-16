@@ -9291,6 +9291,12 @@ export interface components {
             active: boolean;
             /** Personaid */
             personaId: string | null;
+            /** Personaname */
+            personaName?: string | null;
+            /** Personaicon */
+            personaIcon?: string | null;
+            /** Personacolor */
+            personaColor?: string | null;
             /** Createdat */
             createdAt: string;
             /** Updatedat */

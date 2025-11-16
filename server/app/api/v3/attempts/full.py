@@ -78,6 +78,9 @@ class ScenarioItem(BaseModel):
     departmentId: str | None
     active: bool
     personaId: str | None
+    personaName: str | None = None
+    personaIcon: str | None = None
+    personaColor: str | None = None
     createdAt: str
     updatedAt: str
     generated: bool

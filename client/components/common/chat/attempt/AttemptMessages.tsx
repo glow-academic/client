@@ -41,6 +41,7 @@ import Markdown from "@/components/common/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useProfile } from "@/contexts/profile-context";
+import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { useRouter } from "next/navigation";
 
 export interface AttemptMessagesProps {
@@ -70,7 +71,33 @@ export interface AttemptMessagesProps {
       createdAt: string;
     }>;
   }>;
+  scenario?: {
+    personaName?: string | null;
+    personaIcon?: string | null;
+    personaColor?: string | null;
+  } | null;
 }
+
+// Utility function to generate gradient from hex color (same as PersonaPicker)
+const generateGradientFromHex = (hexColor: string): string => {
+  // Remove # if present
+  const cleanHex = hexColor.replace("#", "");
+
+  // Convert to RGB
+  const r = parseInt(cleanHex.substr(0, 2), 16);
+  const g = parseInt(cleanHex.substr(2, 2), 16);
+  const b = parseInt(cleanHex.substr(4, 2), 16);
+
+  // Create a lighter variant for the gradient (brighter like simulation cards)
+  const lighterR = Math.min(255, r + 60);
+  const lighterG = Math.min(255, g + 60);
+  const lighterB = Math.min(255, b + 60);
+
+  // Convert back to hex
+  const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+
+  return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+};
 
 export default function AttemptMessages({
   chatId,
@@ -82,6 +109,7 @@ export default function AttemptMessages({
   isActive,
   simulation,
   currentChatHints = [],
+  scenario,
 }: AttemptMessagesProps) {
   const { socket } = useProfile();
   const router = useRouter();
@@ -557,6 +585,26 @@ export default function AttemptMessages({
                             const isSelected =
                               selectedHintMessageId === currentResponse.id;
 
+                            // Get persona data from scenario
+                            const personaName =
+                              scenario?.personaName || "Assistant";
+                            const personaIcon = scenario?.personaIcon;
+                            const personaColor = scenario?.personaColor;
+
+                            // Get icon component - use persona icon if available, otherwise default to MessageSquare
+                            const IconComponent = personaIcon
+                              ? getPersonaIconComponent(personaIcon) ||
+                                MessageSquare
+                              : MessageSquare;
+
+                            // Generate gradient style if persona color is available
+                            const buttonStyle = personaColor
+                              ? {
+                                  background:
+                                    generateGradientFromHex(personaColor),
+                                }
+                              : undefined;
+
                             return (
                               <div
                                 className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-hidden`}
@@ -566,15 +614,16 @@ export default function AttemptMessages({
                                     <Button
                                       variant="secondary"
                                       size="sm"
-                                      aria-label="Assistant"
+                                      aria-label={personaName}
                                       className="flex-1 p-0 rounded-md"
+                                      style={buttonStyle}
                                       tabIndex={-1}
                                     >
-                                      <MessageSquare className="h-4 w-4" />
+                                      <IconComponent className="h-4 w-4 text-white" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>Assistant</p>
+                                    <p>{personaName}</p>
                                   </TooltipContent>
                                 </Tooltip>
                                 {shouldShowHintsButton ? (

@@ -22258,6 +22258,39 @@
             ],
             "title": "Personaid"
           },
+          "personaName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaname"
+          },
+          "personaIcon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaicon"
+          },
+          "personaColor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personacolor"
+          },
           "createdAt": {
             "type": "string",
             "title": "Createdat"

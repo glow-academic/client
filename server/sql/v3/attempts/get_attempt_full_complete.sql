@@ -195,6 +195,9 @@
                     'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), ''),
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
+                    'personaName', CASE WHEN p.name IS NOT NULL THEN p.name ELSE NULL END,
+                    'personaIcon', CASE WHEN p.icon IS NOT NULL THEN p.icon ELSE NULL END,
+                    'personaColor', CASE WHEN p.color IS NOT NULL THEN p.color ELSE NULL END,
                     'createdAt', s.created_at,
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
@@ -212,6 +215,7 @@
             LEFT JOIN scenarios s ON s.id = ssl.scenario_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+            LEFT JOIN personas p ON p.id = sp.persona_id
             LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = ssl.scenario_id
             ORDER BY ssl.position
         ),
@@ -233,6 +237,9 @@
                     'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), NULL),
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
+                    'personaName', CASE WHEN p.name IS NOT NULL THEN p.name ELSE NULL END,
+                    'personaIcon', CASE WHEN p.icon IS NOT NULL THEN p.icon ELSE NULL END,
+                    'personaColor', CASE WHEN p.color IS NOT NULL THEN p.color ELSE NULL END,
                     'createdAt', s.created_at,
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
@@ -255,6 +262,7 @@
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             CROSS JOIN scenario_ids_list sil
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
+            LEFT JOIN personas p ON p.id = sp.persona_id
             WHERE s.id = ANY(sil.scenario_ids)
         ),
         simulation_flags AS (
@@ -924,6 +932,9 @@
                             'departmentId', scenario_data->>'departmentId',
                             'active', (scenario_data->>'active')::boolean,
                             'personaId', CASE WHEN scenario_data->>'personaId' != '' THEN scenario_data->>'personaId' ELSE NULL END,
+                            'personaName', CASE WHEN scenario_data->>'personaName' != '' THEN scenario_data->>'personaName' ELSE NULL END,
+                            'personaIcon', CASE WHEN scenario_data->>'personaIcon' != '' THEN scenario_data->>'personaIcon' ELSE NULL END,
+                            'personaColor', CASE WHEN scenario_data->>'personaColor' != '' THEN scenario_data->>'personaColor' ELSE NULL END,
                             'createdAt', scenario_data->>'createdAt',
                             'updatedAt', scenario_data->>'updatedAt',
                             'generated', (scenario_data->>'generated')::boolean,
