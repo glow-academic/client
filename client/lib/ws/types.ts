@@ -133,6 +133,7 @@ export type ServerToClientEvents = {
     message_id: string;
     hint_ids: string[];
     hints_count: number;
+    hints: { idx: number; hint: string }[];
   }) => void;
   simulation_grading_progress: (payload: {
     type: string;

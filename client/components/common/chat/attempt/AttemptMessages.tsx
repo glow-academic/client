@@ -441,6 +441,7 @@ export default function AttemptMessages({
       message_id: string;
       hint_ids?: string[];
       hints_count?: number;
+      hints?: Array<{ idx: number; hint: string }>;
       error?: string;
     }) => {
       // Only handle hints for the current chat

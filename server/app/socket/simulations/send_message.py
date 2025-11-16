@@ -32,6 +32,12 @@ class SendSimulationMessageErrorPayload(BaseModel):
     message: str
 
 
+class HintItem(BaseModel):
+    """Individual hint item with index and text."""
+    idx: int
+    hint: str
+
+
 class HintGenerationProgressPayload(BaseModel):
     type: str
     message: str | None = None
@@ -40,6 +46,7 @@ class HintGenerationProgressPayload(BaseModel):
     message_id: str
     hint_ids: list[str] | None = None
     hints_count: int | None = None
+    hints: list[HintItem] | None = None
 
 
 class SimulationNewMessagePayload(BaseModel):
@@ -369,6 +376,7 @@ async def _generate_hints_background_inline(
 
             # Create SimulationHints records using direct SQL
             hint_ids: list[dict[str, Any]] = []
+            hints_for_event: list[HintItem] = []
             for i, hint_text in enumerate([hint_1, hint_2, hint_3], 1):
                 if hint_text:  # Only save non-empty hints
                     # Get the next idx for this message
@@ -400,6 +408,13 @@ async def _generate_hints_background_inline(
                         "idx": hint_result_row["idx"],
                     }
                     hint_ids.append(hint_result)
+                    # Store hint text for event emission
+                    hints_for_event.append(
+                        HintItem(
+                            idx=hint_result_row["idx"],
+                            hint=hint_text,
+                        )
+                    )
                     logger.info(
                         f"Created hint {i} (idx={hint_result['idx']}): {hint_text[:80]}..."
                     )
@@ -420,6 +435,7 @@ async def _generate_hints_background_inline(
                         f"{h['simulation_message_id']}_{h['idx']}" for h in hint_ids
                     ],
                     hints_count=len(hint_ids),
+                    hints=hints_for_event,
                 ),
                 room=f"simulation_{chat_id}",
             )

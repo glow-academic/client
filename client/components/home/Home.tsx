@@ -74,8 +74,9 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      // Invalidate cache before navigation to ensure fresh data
+      // Invalidate cache and refresh current page before navigation to ensure fresh data
       await revalidateAttemptAction(attemptId);
+      router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(`/home/a/${attemptId}`);
     };
 

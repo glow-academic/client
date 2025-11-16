@@ -88,6 +88,45 @@ def _get_return_type(fn: Callable[..., object]) -> object | None:
     return hints.get("return")
 
 
+def _extract_nested_model_schema(model: type[BaseModel]) -> str:
+    """Extract schema from a nested Pydantic model and return as inline object type string.
+    
+    Returns a string like "object{idx:number,hint:string}" that can be parsed by TypeScript generator.
+    """
+    fields: list[str] = []
+    for field_name, field_info in model.model_fields.items():
+        annotation = field_info.annotation
+        # Handle Optional types
+        if annotation is not None:
+            origin = get_origin(annotation)
+            if origin is not None:
+                is_union = (
+                    origin is Union
+                    or str(origin) in ("typing.Union", "types.UnionType")
+                    or (hasattr(origin, "__name__") and origin.__name__ == "UnionType")
+                )
+                if is_union:
+                    args = get_args(annotation)
+                    if type(None) in args:
+                        non_none_args = [a for a in args if a is not type(None)]
+                        if non_none_args:
+                            annotation = non_none_args[0]
+        
+        # Map to simple type strings
+        if annotation is str or "str" in str(annotation):
+            field_type = "string"
+        elif annotation in (int, float) or "int" in str(annotation) or "float" in str(annotation):
+            field_type = "number"
+        elif annotation is bool or "bool" in str(annotation):
+            field_type = "boolean"
+        else:
+            field_type = "string"  # Default
+        
+        fields.append(f"{field_name}:{field_type}")
+    
+    return f"object{{{','.join(fields)}}}"
+
+
 def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
     """Extract simple type strings from Pydantic model fields."""
     schema: dict[str, str] = {}
@@ -120,8 +159,13 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
                 args = get_args(annotation)
                 if args:
                     element_type = args[0]
-                    # Determine the element type string
-                    if element_type is str or (hasattr(element_type, "__name__") and element_type.__name__ == "str"):
+                    # Check if element type is a Pydantic model (nested object)
+                    if isinstance(element_type, type) and issubclass(element_type, BaseModel):
+                        # Extract nested model schema and create inline object type
+                        nested_schema = _extract_nested_model_schema(element_type)
+                        schema[field_name] = f"{nested_schema}[]"
+                    # Determine the element type string for primitives
+                    elif element_type is str or (hasattr(element_type, "__name__") and element_type.__name__ == "str"):
                         schema[field_name] = "string[]"
                     elif element_type in (int, float) or (hasattr(element_type, "__name__") and element_type.__name__ in ("int", "float")):
                         schema[field_name] = "number[]"

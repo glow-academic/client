@@ -20,11 +20,23 @@ interface WsContract {
 
 // Map JSON type strings to TypeScript types
 function jsonTypeToTsType(jsonType: string): string {
-  // Handle array types like "string[]", "number[]", etc.
+  // Handle array types like "string[]", "number[]", "object{...}[]", etc.
   if (jsonType.endsWith("[]")) {
     const elementType = jsonType.slice(0, -2);
     const tsElementType = jsonTypeToTsType(elementType);
     return `${tsElementType}[]`;
+  }
+
+  // Handle inline object types like "object{idx:number,hint:string}"
+  if (jsonType.startsWith("object{") && jsonType.endsWith("}")) {
+    const fieldsStr = jsonType.slice(7, -1); // Extract content between "object{" and "}"
+    const fields = fieldsStr.split(",");
+    const tsFields = fields.map((field) => {
+      const [name, type] = field.split(":");
+      const tsType = jsonTypeToTsType(type.trim());
+      return `${name.trim()}: ${tsType}`;
+    });
+    return `{ ${tsFields.join("; ")} }`;
   }
 
   switch (jsonType) {

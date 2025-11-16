@@ -12,7 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/api/v3/home", "post">;
@@ -98,6 +98,8 @@ export async function revalidateAttempt(attemptId: string): Promise<void> {
   // Invalidate attempt-level cache
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
+  // Invalidate home page cache so data refreshes when user returns
+  revalidatePath("/home");
   // Note: Chat-specific tags can be added here if chat IDs are known
   // For now, invalidating attempt-level cache ensures all chats refresh
 }

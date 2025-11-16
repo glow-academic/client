@@ -11,7 +11,7 @@ import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PracticeIn = InputOf<"/api/v3/practice", "post">;
@@ -40,6 +40,9 @@ export async function revalidateAttempt(attemptId: string): Promise<void> {
   // Invalidate attempt-level cache
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
+  // Invalidate practice page cache so data refreshes when user returns
+  revalidateTag("practice");
+  revalidatePath("/practice");
   // Note: Chat-specific tags can be added here if chat IDs are known
   // For now, invalidating attempt-level cache ensures all chats refresh
 }

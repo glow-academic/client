@@ -1071,29 +1071,43 @@ export default function AttemptChat({
       message_id: string;
       hint_ids?: string[];
       hints_count?: number;
+      hints?: Array<{ idx: number; hint: string }>;
     }) => {
       // Only handle "complete" events to add optimistic hints
       if (data.type === "complete" && data.message_id && data.hints_count) {
-        // Parse hint_ids to extract messageId and create hint entries
-        // hint_ids format: "messageId_0", "messageId_1", "messageId_2"
-        const hintIds = data.hint_ids || [];
-        const hints: HintsByMessage["hints"] = hintIds
-          .map((hintId, index) => {
-            // Extract idx from hintId (format: "messageId_idx")
-            const parts = hintId.split("_");
-            const lastPart = parts[parts.length - 1];
-            const idx =
-              parts.length > 1 && lastPart ? parseInt(lastPart, 10) : index;
+        // Use hints from event if available (includes hint text), otherwise fall back to hint_ids
+        let hints: HintsByMessage["hints"] = [];
 
-            // Create placeholder hint (will be replaced by server data on refresh)
-            return {
-              simulationMessageId: data.message_id,
-              hint: "", // Placeholder - will be replaced by server data
-              idx: isNaN(idx) ? index : idx,
-              createdAt: new Date().toISOString(),
-            };
-          })
-          .filter((h) => !isNaN(h.idx)); // Filter out invalid entries
+        if (data.hints && data.hints.length > 0) {
+          // Use hint text from event for immediate display
+          hints = data.hints.map((h) => ({
+            simulationMessageId: data.message_id,
+            hint: h.hint, // Use actual hint text from event
+            idx: h.idx,
+            createdAt: new Date().toISOString(),
+          }));
+        } else {
+          // Fallback: Parse hint_ids to extract messageId and create hint entries
+          // hint_ids format: "messageId_0", "messageId_1", "messageId_2"
+          const hintIds = data.hint_ids || [];
+          hints = hintIds
+            .map((hintId, index) => {
+              // Extract idx from hintId (format: "messageId_idx")
+              const parts = hintId.split("_");
+              const lastPart = parts[parts.length - 1];
+              const idx =
+                parts.length > 1 && lastPart ? parseInt(lastPart, 10) : index;
+
+              // Create placeholder hint (will be replaced by server data on refresh)
+              return {
+                simulationMessageId: data.message_id,
+                hint: "", // Placeholder - will be replaced by server data
+                idx: isNaN(idx) ? index : idx,
+                createdAt: new Date().toISOString(),
+              };
+            })
+            .filter((h) => !isNaN(h.idx)); // Filter out invalid entries
+        }
 
         // Add optimistic hints for this chat
         setOptimisticHints((prev) => {
