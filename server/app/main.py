@@ -437,8 +437,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.connections.join_chat import joined_chat
         from app.socket.connections.stop_chat import chat_stopped
         from app.socket.simulations.continue_chat import (
-            continue_simulation_error, end_all_completed, simulation_continued,
-            simulation_grading_progress)
+            continue_simulation_error, end_all_completed, end_all_started,
+            simulation_continued, simulation_grading_progress)
         from app.socket.simulations.send_message import (
             hint_generation_progress, message_sent,
             send_simulation_message_error, simulation_message_complete,
@@ -481,6 +481,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             hint_generation_progress,
             simulation_grading_progress,
             simulation_continued,
+            end_all_started,
             end_all_completed,
             # Connection events
             connection_confirmed,

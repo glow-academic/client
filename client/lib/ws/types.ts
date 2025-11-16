@@ -163,9 +163,14 @@ export type ServerToClientEvents = {
     is_attempt_finished: boolean;
     simulation_grade_id: string;
   }) => void;
+  end_all_started: (payload: {
+    chat_id: string;
+    attempt_id: string;
+  }) => void;
   end_all_completed: (payload: {
     success: boolean;
     message: string;
+    chat_id: string;
     attempt_id: string;
     completed_chat_ids: string[];
     next_chat_ids: string[];

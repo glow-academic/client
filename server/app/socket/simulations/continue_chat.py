@@ -56,9 +56,15 @@ class SimulationGradingProgressPayload(BaseModel):
     summary_preview: str | None = None
 
 
+class EndAllStartedPayload(BaseModel):
+    chat_id: str
+    attempt_id: str
+
+
 class EndAllCompletedPayload(BaseModel):
     success: bool
     message: str
+    chat_id: str
     attempt_id: str | None = None
     completed_chat_ids: list[str] | None = None
     next_chat_ids: list[str | None] | None = None
@@ -96,6 +102,10 @@ async def simulation_grading_progress(
     await sio.emit(
         "simulation_grading_progress", payload.model_dump(exclude_none=True), room=room
     )
+
+
+async def end_all_started(payload: EndAllStartedPayload, room: str) -> None:
+    await sio.emit("end_all_started", payload.model_dump(), room=room)
 
 
 async def end_all_completed(payload: EndAllCompletedPayload, room: str) -> None:
@@ -1049,6 +1059,14 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 logger.error(f"Emitted error to {sid}: Attempt not found")
                 return
 
+            # If end_all is True, emit end_all_started event immediately so all watchers see the loading state
+            if end_all:
+                await end_all_started(
+                    EndAllStartedPayload(chat_id=chat_id, attempt_id=attempt_id),
+                    room=f"simulation_{chat_id}",
+                )
+                logger.info(f"Emitted end_all_started for chat {chat_id}, attempt {attempt_id}")
+
             simulation_attempt = attempt_with_profile
             profile_id = attempt_with_profile.get("profile_id")
 
@@ -1591,6 +1609,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 payload_obj = EndAllCompletedPayload(
                     success=True,
                     message="Ended all chats for this attempt",
+                    chat_id=chat_id,
                     attempt_id=attempt_id,
                     completed_chat_ids=completed_chat_ids if completed_chat_ids else None,
                     next_chat_ids=next_chat_ids if next_chat_ids else None,

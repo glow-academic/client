@@ -129,9 +129,8 @@ export function SimulationControls({
         return;
       }
 
-      setEndChatLoading(true);
-      setEndingAction("endAll");
-
+      // Don't set local state here - let WebSocket events drive the state
+      // Server will emit end_all_started event which all watchers will receive
       try {
         const continueData: {
           chat_id: string;
@@ -149,6 +148,7 @@ export function SimulationControls({
         socket.emit("continue_simulation", continueData);
       } catch (error) {
         toast.error(`Failed to end all chats: ${error}`);
+        // Only reset on error - success/completion handled by WebSocket events
         setEndChatLoading(false);
         setEndingAction(null);
       }
@@ -166,6 +166,37 @@ export function SimulationControls({
     };
 
     const handleSimulationError = () => {
+      setEndChatLoading(false);
+      setEndingAction(null);
+    };
+
+    const handleEndAllStarted = (data: {
+      chat_id: string;
+      attempt_id: string;
+    }) => {
+      // Only handle if this event is for the current chat
+      if (!currentChatId || data.chat_id !== currentChatId) return;
+
+      // Set loading state - all watchers will see this
+      setEndChatLoading(true);
+      setEndingAction("endAll");
+      // Close confirmation dialog if still open
+      setConfirmEndAllOpen(false);
+    };
+
+    const handleEndAllCompleted = (data: {
+      success: boolean;
+      message: string;
+      chat_id: string;
+      attempt_id: string;
+      completed_chat_ids?: string[];
+      next_chat_ids?: (string | null)[];
+      all_completed?: boolean;
+    }) => {
+      // Only handle if this event is for the current chat
+      if (!currentChatId || data.chat_id !== currentChatId) return;
+
+      // Reset loading state - all watchers will see this
       setEndChatLoading(false);
       setEndingAction(null);
     };
@@ -208,11 +239,15 @@ export function SimulationControls({
 
     socket.on("simulation_continued", handleSimulationContinued);
     socket.on("continue_simulation_error", handleSimulationError);
+    socket.on("end_all_started", handleEndAllStarted);
+    socket.on("end_all_completed", handleEndAllCompleted);
     socket.on("simulation_grading_progress", handleSimulationGradingProgress);
 
     return () => {
       socket.off("simulation_continued", handleSimulationContinued);
       socket.off("continue_simulation_error", handleSimulationError);
+      socket.off("end_all_started", handleEndAllStarted);
+      socket.off("end_all_completed", handleEndAllCompleted);
       socket.off(
         "simulation_grading_progress",
         handleSimulationGradingProgress
