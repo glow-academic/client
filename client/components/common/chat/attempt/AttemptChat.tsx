@@ -2084,7 +2084,7 @@ export default function AttemptChat({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className={`flex items-center gap-2 px-3 py-1 rounded-full w-[80px] overflow-x-auto ${
+                                    className={`flex items-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto ${
                                       !attempt?.infiniteMode &&
                                       currentChat?.completed &&
                                       currentDynamicRubric &&
@@ -2099,9 +2099,9 @@ export default function AttemptChat({
                                     }`}
                                   >
                                     {attempt?.infiniteMode ? (
-                                      <InfinityIcon className="h-4 w-4" />
+                                      <InfinityIcon className="h-4 w-4 flex-shrink-0" />
                                     ) : (
-                                      <Clock className="h-4 w-4" />
+                                      <Clock className="h-4 w-4 flex-shrink-0" />
                                     )}
                                     <span
                                       className={`text-sm font-medium ${

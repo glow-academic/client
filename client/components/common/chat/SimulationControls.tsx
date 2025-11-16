@@ -544,7 +544,7 @@ export function SimulationControls({
             {shouldShowControls && remainingScenarios.length > 1 && (
               <Button
                 type="button"
-                variant="outline"
+                variant={isGrading ? "outline" : "default"}
                 onClick={handleNextChat}
                 disabled={endChatLoading}
                 className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"

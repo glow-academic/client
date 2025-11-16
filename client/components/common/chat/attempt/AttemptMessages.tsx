@@ -506,22 +506,26 @@ export default function AttemptMessages({
                               <p>You</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                aria-label="Next"
-                                className="flex-1 p-0 rounded-md"
-                                tabIndex={-1}
-                              >
-                                <ArrowRight className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Next</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          {/* Temporarily hide Next button while preserving height of 'You' button. We will add this back later when we support branching of messages. */}
+                          {false && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  aria-label="Next"
+                                  className="flex-1 p-0 rounded-md"
+                                  tabIndex={-1}
+                                >
+                                  <ArrowRight className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Next</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          <div className="flex-1" />
                         </div>
                       </div>
                     </div>
