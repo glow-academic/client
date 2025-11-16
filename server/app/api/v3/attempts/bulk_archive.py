@@ -1,15 +1,17 @@
 """Attempts bulk archive endpoint."""
 
+import logging
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 # Inline request/response schemas
@@ -60,9 +62,22 @@ async def bulk_archive_attempts(
             count=count,
         )
 
-        # Invalidate cache after mutation
-        await invalidate_tags(tags)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+        # Refresh analytics materialized view to update is_archived/is_general flags
+        # This is critical because archiving changes these computed columns
+        try:
+            refresh_sql = load_sql("sql/v3/analytics/refresh_materialized_view.sql")
+            await conn.execute(refresh_sql)
+        except Exception as refresh_error:
+            # Log error but don't fail the archive operation
+            # The view will be stale until next manual refresh or next archive operation
+            logger.warning(
+                f"Failed to refresh analytics view after bulk archive: {refresh_error}",
+                exc_info=True,
+            )
+
+        # Invalidate cache after mutation (includes analytics cache)
+        await invalidate_tags(tags + ["analytics"])
+        response.headers["X-Invalidate-Tags"] = ",".join(tags + ["analytics"])
 
         return result_data
     except HTTPException:

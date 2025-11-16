@@ -127,7 +127,11 @@ export async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
-  return api.post("/attempts/bulk-archive", input);
+  const result = await api.post("/attempts/bulk-archive", input);
+  // Revalidate the dashboard page to refetch data with updated archive status
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/analytics/dashboard");
+  return result;
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

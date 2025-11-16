@@ -4,8 +4,7 @@
 WITH update_attempts AS (
     -- Update attempts that exist in the provided array
     UPDATE simulation_attempts
-    SET archived = $1,
-        updated_at = NOW()
+    SET archived = $1
     WHERE id = ANY($2::uuid[])
     RETURNING id
 )

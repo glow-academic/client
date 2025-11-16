@@ -4,7 +4,24 @@
             -- =====================================================
             WITH filt AS (
                 SELECT * FROM analytics a
-                WHERE a.attempt_created_at >= $1 AND a.attempt_created_at < $2 AND (a.is_general = TRUE) AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) AND ($6::uuid IS NOT NULL OR cardinality($4::text[]) = 0 OR a.profile_role = ANY($4::profile_role[])) AND (cardinality($3::uuid[]) = 0 OR (a.cohort_ids && $3::uuid[] OR a.profile_cohort_ids && $3::uuid[])) AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                WHERE a.attempt_created_at >= $1 
+                    AND a.attempt_created_at < $2 
+                    AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
+                    AND (
+                        $5::text[] IS NULL OR (
+                            ('general' = ANY($5::text[]) AND a.is_general = TRUE) OR
+                            ('practice' = ANY($5::text[]) AND a.is_practice = TRUE) OR
+                            ('archived' = ANY($5::text[]) AND a.is_archived = TRUE)
+                        )
+                    )
+                    -- Exclude archived attempts unless 'archived' is explicitly in the filter list
+                    AND (
+                        'archived' = ANY($5::text[]) OR a.is_archived = FALSE
+                    )
+                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) 
+                    AND ($6::uuid IS NOT NULL OR cardinality($4::text[]) = 0 OR a.profile_role = ANY($4::profile_role[])) 
+                    AND (cardinality($3::uuid[]) = 0 OR (a.cohort_ids && $3::uuid[] OR a.profile_cohort_ids && $3::uuid[])) 
+                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
             ),
             
             -- =====================================================
@@ -68,6 +85,10 @@
                     ('general' = ANY($5::text[]) AND a.is_general = TRUE) OR
                     ('practice' = ANY($5::text[]) AND a.is_practice = TRUE) OR
                     ('archived' = ANY($5::text[]) AND a.is_archived = TRUE)
+                )
+                -- Exclude archived attempts unless 'archived' is explicitly in the filter list
+                AND (
+                    'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                 )
                 AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
                 AND (
@@ -973,6 +994,10 @@
                             ('archived' = ANY ($5::text[]) AND a.is_archived)
                         )
                     )
+                    -- Exclude archived attempts unless 'archived' is explicitly in the filter list
+                    AND (
+                        'archived' = ANY($5::text[]) OR a.is_archived = FALSE
+                    )
                     AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
             ),
             latest_grade_for_skills AS (
@@ -1389,7 +1414,6 @@
                     aj.persona_ids_distinct
                 FROM history_attempt_joined aj
                 ORDER BY aj.attempt_date DESC, aj.attempt_id
-                LIMIT 100
             ),
             history_persona_labels AS (
                 SELECT

@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import {
@@ -75,6 +76,7 @@ export function DataTable<TData, TValue>({
   endDate: _endDate,
   bulkArchiveAttemptsAction,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
@@ -251,12 +253,15 @@ export function DataTable<TData, TValue>({
       table.resetRowSelection();
       setShowArchiveDialog(false);
       setArchiveAction(null);
+
+      // Refresh the page to refetch data with updated archive status
+      router.refresh();
     } catch {
       toast.error("Failed to update simulation archive status");
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, table, bulkArchiveAttemptsAction]);
+  }, [archiveAction, table, bulkArchiveAttemptsAction, router]);
 
   return (
     <div className="space-y-4">
@@ -343,9 +348,6 @@ export function DataTable<TData, TValue>({
                 : `Are you sure you want to unarchive ${unarchiveCount} simulation attempt${unarchiveCount > 1 ? "s" : ""}? They will be visible again in the main simulation list.`}
               <br />
               <br />
-              <span className="text-sm text-muted-foreground">
-                This action cannot be undone.
-              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
