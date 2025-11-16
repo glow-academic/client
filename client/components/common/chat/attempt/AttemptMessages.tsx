@@ -509,7 +509,7 @@ export default function AttemptMessages({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="default"
+                                variant="outline"
                                 size="sm"
                                 aria-label="Next"
                                 className="flex-1 p-0 rounded-md"
@@ -560,7 +560,7 @@ export default function AttemptMessages({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
-                                      variant="default"
+                                      variant="secondary"
                                       size="sm"
                                       aria-label="Assistant"
                                       className="flex-1 p-0 rounded-md"

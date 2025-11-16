@@ -1362,7 +1362,7 @@ export default function AttemptChat({
                   className="border-b"
                 >
                   <div className="p-4 pt-0 flex flex-col gap-2">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-1">
                       <div className="flex items-center gap-4">
                         {/* Show scenario information */}
                         <div className="flex items-center gap-2">
@@ -2084,7 +2084,7 @@ export default function AttemptChat({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                    className={`flex items-center gap-2 px-3 py-1 rounded-full w-[80px] overflow-x-auto ${
                                       !attempt?.infiniteMode &&
                                       currentChat?.completed &&
                                       currentDynamicRubric &&
