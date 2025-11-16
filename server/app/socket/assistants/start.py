@@ -147,6 +147,27 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             await sio.enter_room(sid, assistant_room)
             logger.info(f"Client {sid} joined assistant room {assistant_room}")
 
+            # Emit success response with chat_id immediately so client knows chat was created
+            await assistant_started(
+                AssistantStartedPayload(
+                    success=True,
+                    message="Assistant started successfully",
+                    chat_id=chat_id,
+                ),
+                room=sid,
+            )
+
+            # Process the initial message with the assistant agent (reuse send_message logic)
+            # This will create the user message, create assistant message, stream the response, etc.
+            from app.socket.assistants.send_message import (
+                SendAssistantMessagePayload, _send_assistant_message_impl)
+
+            send_message_payload = SendAssistantMessagePayload(
+                chat_id=chat_id, message=initial_message, is_retry=False
+            )
+            await _send_assistant_message_impl(sid, send_message_payload)
+
+            # 4. Generate title after assistant response completes
             # Update the title with the title agent (inlined run_title_agent)
             # Get all agent/model/provider/chat data in single query using SQL file
             sql = load_sql("sql/v3/agents/get_title_run_context.sql")
@@ -271,16 +292,6 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             await title_updated(
                 TitleUpdatedPayload(chat_id=chat_id, title=chat_title),
                 room=assistant_room,
-            )
-
-            # Emit success response with chat_id
-            await assistant_started(
-                AssistantStartedPayload(
-                    success=True,
-                    message="Assistant started successfully",
-                    chat_id=chat_id,
-                ),
-                room=sid,
             )
 
             logger.info(f"Assistant started successfully for {sid}: chat={chat_id}")

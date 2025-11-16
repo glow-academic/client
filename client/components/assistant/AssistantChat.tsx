@@ -298,9 +298,148 @@ export default function AssistantChat({
       );
     };
 
+    const handleAssistantMessageToken = (data: {
+      message_id: string;
+      chat_id: string;
+      token: string;
+      accumulated_content: string;
+    }) => {
+      // Only handle tokens for the current chat
+      if (data.chat_id !== currentChatId) return;
+
+      // Update local state optimistically for streaming
+      setAssistantData((prev) => {
+        if (!prev || !("messages" in prev)) return prev;
+        const messageIndex = prev.messages.findIndex(
+          (msg) => msg["id"] === data.message_id
+        );
+        if (messageIndex >= 0) {
+          // Update existing message
+          return {
+            ...prev,
+            messages: prev.messages.map((msg) =>
+              msg["id"] === data.message_id
+                ? { ...msg, content: data.accumulated_content }
+                : msg
+            ),
+          };
+        } else {
+          // Create new message if it doesn't exist
+          const newMessage: AssistantChatFullResponse["messages"][number] = {
+            id: data.message_id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            completedAt: null,
+            chatId: data.chat_id,
+            role: "assistant",
+            content: data.accumulated_content,
+            completed: false,
+          };
+          return {
+            ...prev,
+            messages: [...prev.messages, newMessage],
+          };
+        }
+      });
+    };
+
+    const handleAssistantMessageComplete = (data: {
+      message_id: string;
+      chat_id: string;
+      final_content: string;
+    }) => {
+      // Only handle completion for the current chat
+      if (data.chat_id !== currentChatId) return;
+
+      setIsSendingMessage(false);
+
+      // Update local state with final content
+      setAssistantData((prev) => {
+        if (!prev || !("messages" in prev)) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map((msg) =>
+            msg["id"] === data.message_id
+              ? {
+                  ...msg,
+                  content: data.final_content,
+                  completed: true,
+                  completedAt: new Date().toISOString(),
+                }
+              : msg
+          ),
+        };
+      });
+
+      // Refetch to get updated messages
+      fetchAssistantData();
+    };
+
+    const handleAssistantMessageCancelled = (data: {
+      message_id: string;
+      chat_id: string;
+      final_content: string;
+    }) => {
+      // Only handle cancellation for the current chat
+      if (data.chat_id !== currentChatId) return;
+
+      setIsSendingMessage(false);
+
+      // Update local state with final content
+      setAssistantData((prev) => {
+        if (!prev || !("messages" in prev)) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map((msg) =>
+            msg["id"] === data.message_id
+              ? {
+                  ...msg,
+                  content: data.final_content,
+                  completed: true,
+                  completedAt: new Date().toISOString(),
+                }
+              : msg
+          ),
+        };
+      });
+
+      // Refetch to get updated state
+      fetchAssistantData();
+    };
+
+    const handleAssistantStartedSocket = (data: {
+      success: boolean;
+      message: string;
+      chat_id: string;
+    }) => {
+      // Dispatch DOM event for cross-component communication
+      window.dispatchEvent(
+        new CustomEvent("assistant_started", {
+          detail: { chat_id: data.chat_id },
+        })
+      );
+    };
+
+    const handleTitleUpdatedSocket = (data: {
+      chat_id: string;
+      title: string;
+    }) => {
+      // Dispatch DOM event for cross-component communication
+      window.dispatchEvent(
+        new CustomEvent("title_updated", {
+          detail: { chat_id: data.chat_id, title: data.title },
+        })
+      );
+    };
+
     socket.on("start_assistant_error", handleStartAssistantError);
     socket.on("send_assistant_message_error", handleSendAssistantMessageError);
     socket.on("assistant_new_message", handleAssistantNewMessage);
+    socket.on("assistant_message_token", handleAssistantMessageToken);
+    socket.on("assistant_message_complete", handleAssistantMessageComplete);
+    socket.on("assistant_message_cancelled", handleAssistantMessageCancelled);
+    socket.on("assistant_started", handleAssistantStartedSocket);
+    socket.on("title_updated", handleTitleUpdatedSocket);
 
     return () => {
       socket.off("start_assistant_error", handleStartAssistantError);
@@ -309,6 +448,14 @@ export default function AssistantChat({
         handleSendAssistantMessageError
       );
       socket.off("assistant_new_message", handleAssistantNewMessage);
+      socket.off("assistant_message_token", handleAssistantMessageToken);
+      socket.off("assistant_message_complete", handleAssistantMessageComplete);
+      socket.off(
+        "assistant_message_cancelled",
+        handleAssistantMessageCancelled
+      );
+      socket.off("assistant_started", handleAssistantStartedSocket);
+      socket.off("title_updated", handleTitleUpdatedSocket);
     };
   }, [socket, isConnected, currentChatId, profileId, fetchAssistantData]);
 
@@ -338,19 +485,6 @@ export default function AssistantChat({
           }
         }
       }
-    };
-
-    // Listen for assistant message completion to reset loading state and refresh
-    const handleAssistantMessageComplete = () => {
-      setIsSendingMessage(false);
-      // Refetch to get updated messages
-      fetchAssistantData();
-    };
-
-    const handleAssistantMessageCancelled = () => {
-      setIsSendingMessage(false);
-      // Refetch to get updated state
-      fetchAssistantData();
     };
 
     const handleAssistantError = async (event?: Event) => {
@@ -422,91 +556,22 @@ export default function AssistantChat({
       await fetchAssistantData();
     };
 
-    // Listen for message token events (streaming)
-    const handleAssistantMessageToken = (event: Event) => {
-      const data = (event as CustomEvent).detail as {
-        messageId?: string;
-        chatId?: string;
-        accumulatedContent?: string;
-      };
-      if (data.messageId && data.chatId && data.accumulatedContent) {
-        // Update local state optimistically for streaming
-        setAssistantData((prev) => {
-          if (!prev || !("messages" in prev)) return prev;
-          const messageIndex = prev.messages.findIndex(
-            (msg) => msg["id"] === data.messageId
-          );
-          if (messageIndex >= 0) {
-            // Update existing message
-            return {
-              ...prev,
-              messages: prev.messages.map((msg) =>
-                msg["id"] === data.messageId
-                  ? { ...msg, content: data.accumulatedContent! }
-                  : msg
-              ),
-            };
-          } else {
-            // Create new message if it doesn't exist
-            const newMessage: AssistantChatFullResponse["messages"][number] = {
-              id: data.messageId!,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              completedAt: null,
-              chatId: data.chatId!,
-              role: "assistant",
-              content: data.accumulatedContent!,
-              completed: false,
-            };
-            return {
-              ...prev,
-              messages: [...prev.messages, newMessage],
-            };
-          }
-        });
-      }
-    };
-
-    // Add event listeners
+    // Add event listeners (only for cross-component communication)
     window.addEventListener("assistant_started", handleAssistantStarted);
-    window.addEventListener(
-      "assistant_message_complete",
-      handleAssistantMessageComplete
-    );
-    window.addEventListener(
-      "assistant_message_cancelled",
-      handleAssistantMessageCancelled
-    );
     window.addEventListener("assistant_error", handleAssistantError);
     window.addEventListener("title_updated", handleTitleUpdated);
     window.addEventListener("tool_call_created", handleToolCallCreated);
     window.addEventListener("tool_call_completed", handleToolCallCompleted);
-    window.addEventListener(
-      "assistant_message_token",
-      handleAssistantMessageToken
-    );
 
     return () => {
       // Remove event listeners
       window.removeEventListener("assistant_started", handleAssistantStarted);
-      window.removeEventListener(
-        "assistant_message_complete",
-        handleAssistantMessageComplete
-      );
-      window.removeEventListener(
-        "assistant_message_cancelled",
-        handleAssistantMessageCancelled
-      );
       window.removeEventListener("assistant_error", handleAssistantError);
       window.removeEventListener("title_updated", handleTitleUpdated);
       window.removeEventListener("tool_call_created", handleToolCallCreated);
       window.removeEventListener(
         "tool_call_completed",
         handleToolCallCompleted
-      );
-      window.removeEventListener(
-        "assistant_message_token",
-        handleAssistantMessageToken
       );
     };
   }, [
