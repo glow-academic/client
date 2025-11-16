@@ -180,6 +180,9 @@ async def export_reports(
     """Export reports data as CSV or ZIP file."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Request: {request}")
 
     try:
         # Use the same reports_bundle.sql query that the reports view uses

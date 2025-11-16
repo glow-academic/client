@@ -69,6 +69,9 @@ async def get_reports(
 ) -> ReportsBundleResponse:
     """Get reports bundle with aggregated metrics per profile and entity mappings."""
     tags = ["reports"]  # From router tags
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Filters: {filters}")
 
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()

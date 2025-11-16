@@ -4,8 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { ReportsPageSkeleton } from "@/components/reports/ReportsPage";
+import { ReportsSkeleton } from "@/components/reports/Reports";
 
 export default function Loading() {
-  return <ReportsPageSkeleton />;
+  return <ReportsSkeleton />;
 }

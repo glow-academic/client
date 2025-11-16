@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 
-import ReportsPage from "@/components/reports/ReportsPage";
+import Reports from "@/components/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -63,7 +63,8 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
       endDate: parsedFilters.endDate || defaults.endDate,
       cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
       roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters || defaults.simulationFilters) as typeof defaults.simulationFilters,
+      simulationFilters: (parsedFilters.simulationFilters ||
+        defaults.simulationFilters) as typeof defaults.simulationFilters,
       departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
     };
   }
@@ -122,7 +123,7 @@ export default async function ReportsFullPage({
 
   return (
     <div className="space-y-6" data-page="reports-index">
-      <ReportsPage reportsData={reportsData} />
+      <Reports reportsData={reportsData} filters={filters} />
     </div>
   );
 }
