@@ -55,11 +55,34 @@ async function getReportsFilters(searchParams?: URLSearchParams) {
   };
 
   // If search params are provided, merge them with defaults
+  let filters = defaults;
   if (searchParams) {
-    return searchParamsToFilters(searchParams, defaults);
+    const parsedFilters = searchParamsToFilters(searchParams, defaults);
+    filters = {
+      startDate: parsedFilters.startDate || defaults.startDate,
+      endDate: parsedFilters.endDate || defaults.endDate,
+      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
+      roles: parsedFilters.roles || defaults.roles,
+      simulationFilters: (parsedFilters.simulationFilters || defaults.simulationFilters) as typeof defaults.simulationFilters,
+      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
+    };
   }
 
-  return defaults;
+  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
+  const cohortIds =
+    filters.cohortIds && filters.cohortIds.length > 0
+      ? filters.cohortIds
+      : profileContext.cohortIds || [];
+  const departmentIds =
+    filters.departmentIds && filters.departmentIds.length > 0
+      ? filters.departmentIds
+      : profileContext.departmentIds || [];
+
+  return {
+    ...filters,
+    cohortIds,
+    departmentIds,
+  };
 }
 
 export const metadata: Metadata = {

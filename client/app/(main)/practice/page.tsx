@@ -47,14 +47,11 @@ export default async function PracticePage() {
   });
 
   // Build practice filters (only profileId and departmentIds)
+  // Always pass departmentIds (never empty array) - use all IDs from profile context
   const practiceFiltersBody: PracticeIn["body"] = {
     profileId: session?.effectiveProfileId || "guest-profile-id",
+    departmentIds: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
   };
-
-  // Only include departmentIds if they exist
-  if (profileContext.departmentIds && profileContext.departmentIds.length > 0) {
-    practiceFiltersBody.departmentIds = profileContext.departmentIds;
-  }
 
   const practiceFilters: PracticeIn = {
     body: practiceFiltersBody,

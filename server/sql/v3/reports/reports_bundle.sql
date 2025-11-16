@@ -1,6 +1,6 @@
 
             -- Start from profiles to include all matching profiles, even without attempts
-            WITH filtered_profiles AS (
+            filtered_profiles AS (
                 SELECT p.id, p.first_name, p.last_name, p.alias, p.role
                 FROM profiles p
                 WHERE {PROFILE_WHERE_CLAUSE}
@@ -512,10 +512,7 @@
                                 OR f.scenario_id = s.id
                             )
                       )
-                      AND (
-                          sd.department_id IN (SELECT DISTINCT department_id FROM filt WHERE department_id IS NOT NULL)
-                          OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
-                      )
+                      -- Department filtering removed - departments are already filtered at profile level
                 ), '{}'::jsonb),
                 'simulation_mapping', COALESCE((
                     SELECT jsonb_object_agg(
@@ -530,9 +527,6 @@
                     WHERE sim.active = true
                       -- Only include simulations that appear in the filtered data (respects simulationFilters)
                       AND sim.id IN (SELECT DISTINCT simulation_id FROM filt WHERE simulation_id IS NOT NULL)
-                      AND (
-                          sd.department_id IN (SELECT DISTINCT department_id FROM filt WHERE department_id IS NOT NULL)
-                          OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true)
-                      )
+                      -- Department filtering removed - departments are already filtered at profile level
                 ), '{}'::jsonb)
             ) AS result

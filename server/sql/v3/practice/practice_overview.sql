@@ -66,7 +66,7 @@ filt_all AS (
     FROM analytics a, resolve_profile_id rpi
     WHERE a.profile_id = rpi.resolved_profile_id
       AND a.is_practice = TRUE
-      AND (cardinality($2::uuid[]) = 0 OR a.department_id = ANY($2::uuid[]))
+      -- Department filtering removed - departments are already filtered at profile level via profile_departments
 ),
 -- 4) Per-attempt progression (completed-only average - lifetime)
 attempt_progress AS (

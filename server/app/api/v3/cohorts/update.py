@@ -4,13 +4,12 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class UpdateCohortRequest(BaseModel):
@@ -52,7 +51,7 @@ async def update_cohort(
         # Handle None description (cohorts.description is NOT NULL, so use empty string)
         description = request.description if request.description is not None else ""
 
-        # Single consolidated query: updates cohort and department relationships
+        # Single consolidated query: updates cohort, department, profile, and simulation relationships
         sql_query = load_sql("sql/v3/cohorts/update_cohort_complete.sql")
         sql_params = (
             uuid.UUID(request.cohortId),
@@ -60,6 +59,8 @@ async def update_cohort(
             description,
             request.active,
             request.department_ids if request.department_ids else [],
+            request.profile_ids if request.profile_ids else [],
+            request.simulation_ids if request.simulation_ids else [],
         )
 
         async with transaction(conn):
@@ -67,9 +68,6 @@ async def update_cohort(
 
             if not result:
                 raise HTTPException(status_code=404, detail="Cohort not found")
-
-            # Note: Profile and simulation associations are not updated in this endpoint.
-            # Use dedicated endpoints (add-profiles, remove-profiles) for managing these relationships.
 
         result = UpdateCohortResponse(
             success=True,

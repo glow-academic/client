@@ -2,7 +2,36 @@
             -- =====================================================
             -- DASHBOARD BUNDLE QUERY - ALL METRICS IN ONE QUERY
             -- =====================================================
-            WITH filt AS (
+            -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
+            -- Gets simulations linked to cohorts + practice simulations without cohorts
+            WITH filtered_simulation_ids AS (
+                SELECT DISTINCT s.id AS simulation_id
+                FROM simulations s
+                WHERE s.active = TRUE
+                  AND (
+                      -- If cohort_ids provided, get simulations linked to those cohorts
+                      (cardinality($3::uuid[]) > 0 AND EXISTS (
+                          SELECT 1 
+                          FROM cohort_simulations cs 
+                          WHERE cs.simulation_id = s.id 
+                            AND cs.cohort_id = ANY($3::uuid[])
+                            AND cs.active = TRUE
+                      ))
+                      OR
+                      -- Always include practice simulations without cohorts
+                      (s.practice_simulation = TRUE 
+                       AND NOT EXISTS (
+                           SELECT 1 
+                           FROM cohort_simulations cs2 
+                           WHERE cs2.simulation_id = s.id 
+                             AND cs2.active = TRUE
+                       ))
+                      OR
+                      -- If no cohort_ids provided, include all simulations
+                      (cardinality($3::uuid[]) = 0)
+                  )
+            ),
+            filt AS (
                 SELECT * FROM analytics a
                 WHERE a.attempt_created_at >= $1 
                     AND a.attempt_created_at < $2 
@@ -20,8 +49,9 @@
                     )
                     AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) 
                     AND ($6::uuid IS NOT NULL OR cardinality($4::text[]) = 0 OR a.profile_role = ANY($4::profile_role[])) 
-                    AND (cardinality($3::uuid[]) = 0 OR (a.cohort_ids && $3::uuid[] OR a.profile_cohort_ids && $3::uuid[])) 
-                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                    -- Filter by simulation_ids from cohorts (new filtering order)
+                    AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                    -- Department filtering removed - now handled via profile_departments join at profile level
             ),
             
             -- =====================================================
@@ -90,14 +120,15 @@
                 AND (
                     'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                 )
-                AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
+                -- Department filtering removed - now handled via profile_departments join at profile level
                 AND (
                     $6::uuid IS NOT NULL
                     OR cardinality($4::text[]) = 0
                     OR a.profile_role = ANY($4::profile_role[])
                 )
                 AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
-                AND (cardinality($3::uuid[]) = 0 OR (a.cohort_ids && $3::uuid[] OR a.profile_cohort_ids && $3::uuid[]))
+                -- Filter by simulation_ids from cohorts (new filtering order)
+                AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
             ),
             first_attempts AS (
@@ -982,8 +1013,9 @@
                 FROM analytics a
                 WHERE a.chat_created_at >= $1
                     AND a.chat_created_at < $2
-                    AND (cardinality($7::uuid[]) = 0 OR a.department_id = ANY($7::uuid[]))
-                    AND ($3::uuid[] IS NULL OR cardinality($3::uuid[]) = 0 OR (a.cohort_ids && $3::uuid[] OR a.profile_cohort_ids && $3::uuid[]))
+                    -- Department filtering removed - now handled via profile_departments join at profile level
+                    -- Filter by simulation_ids from cohorts (new filtering order)
+                    AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                     AND ($3::uuid[] IS NOT NULL AND cardinality($3::uuid[]) > 0 OR $4::profile_role[] IS NULL OR cardinality($4::profile_role[]) = 0 OR a.profile_role = ANY($4::profile_role[])
                          OR ($6::uuid IS NOT NULL AND a.profile_id = $6::uuid))
                     AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
@@ -1339,7 +1371,6 @@
                     a.attempt_id,
                     a.simulation_id,
                     MIN(a.attempt_created_at) AS attempt_date,
-                    a.department_id,
                     COALESCE(MAX(a.sim_scenario_count), 0) AS sim_scenario_count,
                     COUNT(*) FILTER (WHERE a.completed AND a.grade_percent IS NOT NULL) AS completed_with_grade,
                     SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
@@ -1347,7 +1378,7 @@
                     ARRAY_AGG(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct
                 FROM filt a
                 JOIN simulations s ON s.id = a.simulation_id
-                GROUP BY a.attempt_id, a.simulation_id, a.department_id
+                GROUP BY a.attempt_id, a.simulation_id
             ),
             history_attempt_joined AS (
                 SELECT
@@ -1386,7 +1417,6 @@
                     aj.pass_pct,
                     aj.infinite_mode,
                     aj.attempt_date,
-                    aj.department_id,
                     CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
                     COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
                     CASE
@@ -1453,7 +1483,6 @@
                        COALESCE(pl.persona_colors, ARRAY[]::text[]) AS persona_colors,
                        fr.score_percent,
                        fr.simulation_id,
-                       fr.department_id,
                        COALESCE(fr.scenario_ids_assigned, ARRAY[]::uuid[])::text[] AS scenario_ids,
                        COALESCE(sn.names, ARRAY[]::text[]) AS scenario_titles,
                        fr.is_archived,
@@ -1954,7 +1983,6 @@
                     'personaColors', persona_colors,
                     'score', score_percent,
                     'simulation_id', simulation_id::text,
-                    'department_id', department_id::text,
                     'scenario_ids', scenario_ids,
                     'scenario_titles', scenario_titles,
                     'isArchived', is_archived,

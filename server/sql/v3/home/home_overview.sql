@@ -15,6 +15,35 @@
 -- The WHERE clause for 'filt' CTE is inserted at the marked location below
 
 WITH 
+-- Filter simulations by cohorts (new filtering order: cohorts → simulations)
+-- Gets simulations linked to cohorts + practice simulations without cohorts
+filtered_simulation_ids AS (
+    SELECT DISTINCT s.id AS simulation_id
+    FROM simulations s
+    WHERE s.active = TRUE
+      AND (
+          -- If cohort_ids provided, get simulations linked to those cohorts
+          (cardinality($4::uuid[]) > 0 AND EXISTS (
+              SELECT 1 
+              FROM cohort_simulations cs 
+              WHERE cs.simulation_id = s.id 
+                AND cs.cohort_id = ANY($4::uuid[])
+                AND cs.active = TRUE
+          ))
+          OR
+          -- Always include practice simulations without cohorts
+          (s.practice_simulation = TRUE 
+           AND NOT EXISTS (
+               SELECT 1 
+               FROM cohort_simulations cs2 
+               WHERE cs2.simulation_id = s.id 
+                 AND cs2.active = TRUE
+           ))
+          OR
+          -- If no cohort_ids provided, include all simulations
+          (cardinality($4::uuid[]) = 0)
+      )
+),
 -- Resolve guest-profile-id to actual profile ID
 resolve_profile_id AS (
     SELECT 
@@ -41,11 +70,14 @@ profile_role_lookup AS (
 ),
 -- Filter analytics for items: for TA mode include profileId filter
 -- NOTE: WHERE clause here is built dynamically - see route implementation
+-- Also filter by simulation_ids from cohorts (new filtering order)
 filt AS (
     SELECT a.* 
     FROM analytics a, profile_role_lookup prl, resolve_profile_id rpi
     WHERE {WHERE_CLAUSE_PLACEHOLDER}
       AND (NOT prl.is_ta_mode OR a.profile_id = rpi.resolved_profile_id)
+      -- Filter by simulation_ids from cohorts (new filtering order)
+      AND (cardinality($4::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
 ),
 -- Get cohort-simulation pairs (includes empty cohorts)
 cohort_sim AS (

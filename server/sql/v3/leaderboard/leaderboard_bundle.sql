@@ -1,6 +1,7 @@
 -- Leaderboard bundle query - complete leaderboard metrics with all profile data
 -- WHERE clause is built dynamically and inserted at {WHERE_CLAUSE} placeholder
 -- Parameters are passed from the WHERE clause builder
+-- Simulation filtering by cohorts is handled inline in the WHERE clause
 
 WITH filt AS (
     SELECT * FROM analytics a WHERE {WHERE_CLAUSE}

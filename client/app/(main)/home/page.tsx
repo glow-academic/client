@@ -55,11 +55,35 @@ async function getHomeFilters(searchParams?: URLSearchParams) {
   };
 
   // If search params are provided, merge them with defaults
+  let filters = defaults;
   if (searchParams) {
-    return searchParamsToFilters(searchParams, defaults);
+    const parsedFilters = searchParamsToFilters(searchParams, defaults);
+    filters = {
+      startDate: parsedFilters.startDate || defaults.startDate,
+      endDate: parsedFilters.endDate || defaults.endDate,
+      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
+      roles: parsedFilters.roles || defaults.roles,
+      simulationFilters: (parsedFilters.simulationFilters ||
+        defaults.simulationFilters) as typeof defaults.simulationFilters,
+      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
+    };
   }
 
-  return defaults;
+  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
+  const cohortIds =
+    filters.cohortIds && filters.cohortIds.length > 0
+      ? filters.cohortIds
+      : profileContext.cohortIds || [];
+  const departmentIds =
+    filters.departmentIds && filters.departmentIds.length > 0
+      ? filters.departmentIds
+      : profileContext.departmentIds || [];
+
+  return {
+    ...filters,
+    cohortIds,
+    departmentIds,
+  };
 }
 
 export const metadata: Metadata = {
@@ -93,23 +117,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 
   // Extract subset for Home: startDate, endDate (required)
-  // Only include optional fields if they have values
+  // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
   const homeFiltersBody: HomeIn["body"] = {
     startDate: defaultFilters.startDate,
     endDate: defaultFilters.endDate,
+    cohortIds: defaultFilters.cohortIds, // Always non-empty
+    departmentIds: defaultFilters.departmentIds, // Always non-empty
   };
 
-  // Add optional fields only if they have values
-  if (defaultFilters.cohortIds && defaultFilters.cohortIds.length > 0) {
-    homeFiltersBody.cohortIds = defaultFilters.cohortIds;
-  }
   // profileId is left empty/null for main home metrics
   // historyProfileId is used only for history showRetry calculation
   if (session?.effectiveProfileId) {
     homeFiltersBody.historyProfileId = session.effectiveProfileId;
-  }
-  if (defaultFilters.departmentIds && defaultFilters.departmentIds.length > 0) {
-    homeFiltersBody.departmentIds = defaultFilters.departmentIds;
   }
 
   const homeFilters: HomeIn = {
