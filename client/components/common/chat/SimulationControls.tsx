@@ -39,7 +39,6 @@ export function SimulationControls({
 
   // Extract data from attemptData
   const attempt = attemptData?.attempt || null;
-  const chats = attemptData?.chats || [];
   const currentChatIndex = attemptData?.currentChatIndex ?? 0;
   const shouldShowControls = attemptData?.shouldShowControls ?? true;
 
@@ -389,9 +388,33 @@ export function SimulationControls({
     return attemptData?.chats.find((c) => c.chat.id === currentChat?.id);
   }, [attemptData?.chats, currentChat?.id]);
 
+  // Get previous chats for current chat
+  // Prefer using previousChats directly from chat data (server-computed, uses parent scenario ID)
+  // Fallback to allSimulationScenarios if chat data doesn't have previousChats
   const previousChats = useMemo(() => {
-    return currentChatData?.previousChats || [];
-  }, [currentChatData?.previousChats]);
+    if (!currentChatData) return [];
+
+    // First try: Use previousChats directly from chat data (server-computed with parent scenario ID)
+    const chatPreviousChats = currentChatData.previousChats || [];
+    if (chatPreviousChats.length > 0) {
+      return chatPreviousChats;
+    }
+
+    // Fallback: Use parentScenarioId from chat to find in allSimulationScenarios
+    if (!allSimulationScenarios.length) return [];
+
+    const parentScenarioId =
+      currentChatData.chat.parentScenarioId || currentChatData.scenario?.id;
+
+    if (!parentScenarioId) return [];
+
+    // Find the matching scenario in allSimulationScenarios
+    const matchingScenario = allSimulationScenarios.find(
+      (s) => s.scenarioId === parentScenarioId
+    );
+
+    return matchingScenario?.previousChats || [];
+  }, [currentChatData, allSimulationScenarios]);
 
   const hasPreviousChats = previousChats.length > 0;
 
@@ -756,11 +779,8 @@ export function SimulationControls({
           </AlertDialogHeader>
           <div className="py-4">
             {(() => {
-              const currentChatData = chats.find(
-                (c) => c.chat.id === currentChat?.id
-              );
-              const previousChats = currentChatData?.previousChats || [];
-
+              // Use the same previousChats logic as the red dot indicator
+              // Get from allSimulationScenarios using the parent scenario ID
               if (previousChats.length === 0) {
                 return null;
               }

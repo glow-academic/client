@@ -625,12 +625,24 @@ async def _send_simulation_message_impl(
                     }
 
                     # Extract department_id from context
-                    if not context.get("department_id"):
-                        raise ValueError(
-                            f"Failed to get department_id from run context for chat {chat_id_uuid}"
+                    # SQL query includes fallback: scenario -> profile -> any active department
+                    # department_id should always be present due to SQL fallback logic
+                    # but handle edge case where no departments exist in system
+                    department_id_str = context.get("department_id")
+                    if not department_id_str:
+                        await send_simulation_message_error(
+                            SendSimulationMessageErrorPayload(
+                                success=False,
+                                message="No active departments found in system",
+                            ),
+                            room=sid,
                         )
+                        logger.error(
+                            f"Emitted error to {sid}: No active departments found in system for chat {chat_id_uuid}"
+                        )
+                        return
 
-                    department_id = uuid.UUID(context["department_id"])
+                    department_id = uuid.UUID(str(department_id_str))
 
                     input_items: list[TResponseInputItem] = []
 

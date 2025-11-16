@@ -63,6 +63,7 @@ class ChatItem(BaseModel):
     updatedAt: str
     title: str
     scenarioId: str
+    parentScenarioId: str | None = None
     attemptId: str
     completed: bool
     completedAt: str | None
@@ -136,11 +137,23 @@ class PreviousChat(BaseModel):
     percentage: float | None
 
 
+class GradeItem(BaseModel):
+    id: str
+    createdAt: str
+    simulationChatId: str
+    rubricId: str
+    description: str | None
+    passed: bool
+    score: int
+    timeTaken: int | None
+
+
 class ChatData(BaseModel):
     chat: ChatItem
     scenario: ScenarioItem | None
     messages: list[MessageItem]
     hints: list[HintsByMessage]
+    grade: GradeItem | None = None
     gradingState: GradingState | None = None
     dynamicRubric: DynamicRubric | None = None
     previousChats: list[PreviousChat]
@@ -307,6 +320,11 @@ async def get_attempt_full(
             )
             messages = [MessageItem(**m) for m in chat_data.get("messages", [])]
             hints = [HintsByMessage(**h) for h in chat_data.get("hints", [])]
+            grade = (
+                GradeItem(**chat_data["grade"])
+                if chat_data.get("grade")
+                else None
+            )
             grading_state = (
                 GradingState(**chat_data["gradingState"])
                 if chat_data.get("gradingState")
@@ -327,6 +345,7 @@ async def get_attempt_full(
                     scenario=scenario,
                     messages=messages,
                     hints=hints,
+                    grade=grade,
                     gradingState=grading_state,
                     dynamicRubric=dynamic_rubric,
                     previousChats=previous_chats,

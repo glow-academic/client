@@ -8710,6 +8710,16 @@
             "type": "array",
             "title": "Hints"
           },
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "gradingState": {
             "anyOf": [
               {
@@ -8769,6 +8779,17 @@
           "scenarioId": {
             "type": "string",
             "title": "Scenarioid"
+          },
+          "parentScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parentscenarioid"
           },
           "attemptId": {
             "type": "string",
@@ -13542,6 +13563,68 @@
         ],
         "title": "GenerateScenarioAIResponse",
         "description": "Response from AI scenario generation."
+      },
+      "GradeItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "simulationChatId": {
+            "type": "string",
+            "title": "Simulationchatid"
+          },
+          "rubricId": {
+            "type": "string",
+            "title": "Rubricid"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "timeTaken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timetaken"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "simulationChatId",
+          "rubricId",
+          "description",
+          "passed",
+          "score",
+          "timeTaken"
+        ],
+        "title": "GradeItem"
       },
       "GradingState": {
         "properties": {

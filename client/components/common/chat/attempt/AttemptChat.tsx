@@ -669,8 +669,9 @@ export default function AttemptChat({
       success: boolean;
       message: string;
       completed_chat_id: string;
-      next_chat_id: string;
-      is_attempt_finished: boolean;
+      next_chat_id: string | null;
+      is_attempt_finished: boolean | null;
+      simulation_grade_id?: string | null;
     }) => {
       if (data.completed_chat_id === currentChatIdRef.current) {
         freshlyCompletedChatsRef.current.add(data.completed_chat_id);

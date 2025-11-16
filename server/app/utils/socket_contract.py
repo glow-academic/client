@@ -4,16 +4,67 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import Any, get_type_hints
+from typing import Any, Union, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
 
+def _get_pydantic_model_from_module(
+    fn: Callable[..., object], model_name: str
+) -> type[BaseModel] | None:
+    """Look for a Pydantic model in the function's module by name."""
+    module = inspect.getmodule(fn)
+    if module is None:
+        return None
+    model = getattr(module, model_name, None)
+    if isinstance(model, type) and issubclass(model, BaseModel):
+        return model
+    return None
+
+
 def _get_first_pydantic_param(fn: Callable[..., object]) -> type[BaseModel] | None:
-    """Extract the first Pydantic model parameter from a function signature."""
+    """Extract the first Pydantic model parameter from a function signature.
+    
+    For Socket.IO handlers with pattern (sid: str, data: dict[str, Any]),
+    looks for a Pydantic model in the module matching {FunctionName}Payload.
+    """
     hints = get_type_hints(fn)
     sig = inspect.signature(fn)
-    for param in sig.parameters.values():
+    params = list(sig.parameters.values())
+    
+    # Check if this is a Socket.IO handler pattern: (sid: str, data: dict[str, Any])
+    if len(params) >= 2:
+        first_param = params[0]
+        second_param = params[1]
+        first_param_type = hints.get(first_param.name)
+        
+        # Check if first param is sid: str (Socket.IO pattern)
+        if (
+            first_param.name == "sid"
+            and (first_param_type is str or str(first_param_type) == "str")
+        ):
+            # Look for Pydantic model in module with naming pattern: {FunctionName}Payload
+            # Convert snake_case to PascalCase: join_chat -> JoinChatPayload
+            fn_name = fn.__name__
+            # Convert snake_case to PascalCase
+            parts = fn_name.split("_")
+            pascal_case = "".join(word.capitalize() for word in parts)
+            model_name = f"{pascal_case}Payload"
+            
+            model = _get_pydantic_model_from_module(fn, model_name)
+            if model is not None:
+                return model
+            
+            # Also try with first letter capitalized: JoinChatPayload (already done above)
+            # Try alternative: just capitalize first letter
+            alt_model_name = f"{fn_name[0].upper()}{fn_name[1:]}Payload"
+            if alt_model_name != model_name:
+                model = _get_pydantic_model_from_module(fn, alt_model_name)
+                if model is not None:
+                    return model
+    
+    # Standard check: look for Pydantic model as any parameter
+    for param in params:
         if param.name == "return":
             continue
         t = hints.get(param.name)
@@ -42,21 +93,46 @@ def _extract_simple_payload_schema(model: type[BaseModel]) -> dict[str, str]:
     schema: dict[str, str] = {}
     for field_name, field_info in model.model_fields.items():
         annotation = field_info.annotation
-        # Handle Optional types
-        if annotation is not None and hasattr(annotation, "__origin__"):
-            origin = getattr(annotation, "__origin__", None)
-            if origin is type(None) or (
-                origin is not None
-                and hasattr(origin, "__args__")
-                and type(None) in getattr(annotation, "__args__", [])
-            ):
-                args = [
-                    a
-                    for a in getattr(annotation, "__args__", [])
-                    if a is not type(None)
-                ]
+        # Handle Optional types (Union with None)
+        if annotation is not None:
+            origin = get_origin(annotation)
+            # Check if it's a Union type that includes None (Optional)
+            # Union types can be represented as types.UnionType (Python 3.10+) or typing.Union
+            if origin is not None:
+                # Check if it's a Union type (either typing.Union or types.UnionType)
+                is_union = (
+                    origin is Union
+                    or str(origin) in ("typing.Union", "types.UnionType")
+                    or (hasattr(origin, "__name__") and origin.__name__ == "UnionType")
+                )
+                if is_union:
+                    args = get_args(annotation)
+                    # If it's a Union and one of the args is None, extract the non-None type
+                    if type(None) in args:
+                        non_none_args = [a for a in args if a is not type(None)]
+                        if non_none_args:
+                            annotation = non_none_args[0]
+        
+        # Handle list types (list[str], List[str], etc.)
+        if annotation is not None:
+            origin = get_origin(annotation)
+            if origin is list:
+                args = get_args(annotation)
                 if args:
-                    annotation = args[0]
+                    element_type = args[0]
+                    # Determine the element type string
+                    if element_type is str or (hasattr(element_type, "__name__") and element_type.__name__ == "str"):
+                        schema[field_name] = "string[]"
+                    elif element_type in (int, float) or (hasattr(element_type, "__name__") and element_type.__name__ in ("int", "float")):
+                        schema[field_name] = "number[]"
+                    elif element_type is bool or (hasattr(element_type, "__name__") and element_type.__name__ == "bool"):
+                        schema[field_name] = "boolean[]"
+                    else:
+                        schema[field_name] = "string[]"  # Default to string[]
+                else:
+                    schema[field_name] = "string[]"  # Default to string[] if no args
+                continue
+        
         # Map to simple type strings
         if annotation is str or "str" in str(annotation):
             schema[field_name] = "string"

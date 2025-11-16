@@ -20,6 +20,13 @@ interface WsContract {
 
 // Map JSON type strings to TypeScript types
 function jsonTypeToTsType(jsonType: string): string {
+  // Handle array types like "string[]", "number[]", etc.
+  if (jsonType.endsWith("[]")) {
+    const elementType = jsonType.slice(0, -2);
+    const tsElementType = jsonTypeToTsType(elementType);
+    return `${tsElementType}[]`;
+  }
+
   switch (jsonType) {
     case "string":
       return "string";
@@ -95,6 +102,10 @@ function generateClientToServerEvents(contract: WsContract): string {
     events.push(
       `  ${eventName}: (payload: ${payloadType}) => ${functionReturnType};`
     );
+  }
+  // If no events, return empty object type
+  if (events.length === 0) {
+    return `export type ClientToServerEvents = {\n\n};`;
   }
   return `export type ClientToServerEvents = {\n${events.join("\n")}\n};`;
 }

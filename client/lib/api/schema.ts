@@ -3954,6 +3954,7 @@ export interface components {
             messages: components["schemas"]["MessageItem"][];
             /** Hints */
             hints: components["schemas"]["HintsByMessage"][];
+            grade?: components["schemas"]["GradeItem"] | null;
             gradingState?: components["schemas"]["GradingState"] | null;
             dynamicRubric?: components["schemas"]["DynamicRubric"] | null;
             /** Previouschats */
@@ -3971,6 +3972,8 @@ export interface components {
             title: string;
             /** Scenarioid */
             scenarioId: string;
+            /** Parentscenarioid */
+            parentScenarioId?: string | null;
             /** Attemptid */
             attemptId: string;
             /** Completed */
@@ -5914,6 +5917,25 @@ export interface components {
             description: string;
             /** Objectives */
             objectives: string[];
+        };
+        /** GradeItem */
+        GradeItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Simulationchatid */
+            simulationChatId: string;
+            /** Rubricid */
+            rubricId: string;
+            /** Description */
+            description: string | null;
+            /** Passed */
+            passed: boolean;
+            /** Score */
+            score: number;
+            /** Timetaken */
+            timeTaken: number | null;
         };
         /** GradingState */
         GradingState: {

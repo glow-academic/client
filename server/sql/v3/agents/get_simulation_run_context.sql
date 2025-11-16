@@ -12,6 +12,33 @@ WITH scenario_dept AS (
     INNER JOIN scenarios s ON s.id = sc.scenario_id
     WHERE sc.id = $1::uuid
 ),
+profile_dept AS (
+    -- Get first department from profile's accessible departments
+    SELECT d.id as department_id
+    FROM departments d
+    JOIN profile_departments pd ON pd.department_id = d.id
+    JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
+    JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
+    WHERE ac.chat_id = $1::uuid 
+      AND ap.active = true 
+      AND d.active = true
+    LIMIT 1
+),
+any_active_dept AS (
+    -- Get any active department as last resort
+    SELECT id as department_id
+    FROM departments
+    WHERE active = true
+    LIMIT 1
+),
+resolved_dept AS (
+    -- Resolve department_id with fallback: scenario -> profile -> any active
+    SELECT COALESCE(
+        (SELECT department_id FROM scenario_dept),
+        (SELECT department_id FROM profile_dept),
+        (SELECT department_id FROM any_active_dept)
+    ) as department_id
+),
 profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
@@ -47,8 +74,7 @@ SELECT
     
     -- Scenario data
     s.id::text as scenario_id,
-    (SELECT sd.department_id::text FROM scenario_departments sd 
-     WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id,
+    (SELECT department_id::text FROM resolved_dept) as department_id,
     sps.problem_statement,
     
     -- Persona data (via scenario_personas junction)
@@ -108,9 +134,8 @@ INNER JOIN simulations sim ON sim.id = sa.simulation_id
 LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
 LEFT JOIN personas p ON p.id = sp.persona_id
 -- Try department-specific persona prompt first, fall back to default prompt
-LEFT JOIN scenario_dept sc_dept ON sc_dept.scenario_id = s.id
 LEFT JOIN persona_department_prompts pdp_prompt ON pdp_prompt.persona_id = p.id 
-    AND pdp_prompt.department_id = sc_dept.department_id
+    AND pdp_prompt.department_id = (SELECT department_id FROM resolved_dept)
     AND pdp_prompt.active = true
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = pdp_prompt.prompt_id
 LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
@@ -123,6 +148,7 @@ LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents d ON d.id = sd.document_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
+CROSS JOIN resolved_dept
 WHERE sc.id = $1::uuid
 GROUP BY sc.id, sc.title, sc.trace_id,
          sa.id, sa.simulation_id,

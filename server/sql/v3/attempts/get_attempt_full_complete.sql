@@ -72,39 +72,34 @@
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
             ORDER BY ss.position
         ),
-        -- Get root scenarios for this simulation (for controls check)
-        -- Root scenarios are those with parent_id = child_id in scenario_tree, or scenarios without a parent
+        -- Get parent scenarios from simulation_scenarios (for controls check)
+        -- Uses simulation_scenarios as the source of truth
         simulation_root_scenarios_list AS (
             SELECT DISTINCT
-                COALESCE(
-                    (SELECT st.parent_id 
-                     FROM scenario_tree st 
-                     WHERE st.child_id = ss.scenario_id 
-                       AND st.parent_id = st.child_id 
-                     LIMIT 1),
-                    ss.scenario_id
-                ) as root_scenario_id,
-                MIN(ss.position) as position
+                ss.scenario_id as root_scenario_id,
+                ss.position
             FROM simulation_scenarios ss
             CROSS JOIN attempt_base ab
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
-            GROUP BY COALESCE(
-                (SELECT st.parent_id 
-                 FROM scenario_tree st 
-                 WHERE st.child_id = ss.scenario_id 
-                   AND st.parent_id = st.child_id 
-                 LIMIT 1),
-                ss.scenario_id
-            )
-            ORDER BY MIN(ss.position)
+            ORDER BY ss.position
         ),
-        -- Find previous completed chats with same scenario_id from other attempts by same profile
+        -- Find previous completed chats from other attempts by same profile
+        -- Maps child scenarios to parent scenarios for matching with simulation_scenarios
         -- Use latest grade per chat (DISTINCT ON)
         -- Include ALL simulation scenarios, not just ones in chats_base
         previous_chats_with_grades AS (
             SELECT DISTINCT ON (sc.id)
                 sc.id as chat_id,
-                sc.scenario_id,
+                sc.scenario_id as child_scenario_id,
+                -- Map child scenario to parent scenario for matching
+                COALESCE(
+                    (SELECT st.parent_id 
+                     FROM scenario_tree st 
+                     WHERE st.child_id = sc.scenario_id 
+                       AND st.parent_id != st.child_id 
+                     LIMIT 1),
+                    sc.scenario_id
+                ) as parent_scenario_id,
                 ac2.attempt_id,
                 sa2.simulation_id,
                 sc.title,
@@ -122,7 +117,15 @@
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
               AND scg.id IS NOT NULL
-              AND sc.scenario_id = ssl.scenario_id  -- Include ALL simulation scenarios
+              -- Match parent scenario IDs (child scenarios are mapped to their parents)
+              AND COALESCE(
+                    (SELECT st.parent_id 
+                     FROM scenario_tree st 
+                     WHERE st.child_id = sc.scenario_id 
+                       AND st.parent_id != st.child_id 
+                     LIMIT 1),
+                    sc.scenario_id
+                  ) = ssl.scenario_id
               AND ac2.attempt_id != $1
             ORDER BY sc.id, scg.created_at DESC
         ),
@@ -153,7 +156,7 @@
         ),
         previous_chats_for_scenarios AS (
             SELECT 
-                pwg.scenario_id,
+                pwg.parent_scenario_id as scenario_id,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
@@ -177,7 +180,7 @@
             FROM previous_chats_with_grades pwg
             LEFT JOIN previous_attempt_time_aggregation pat ON pat.attempt_id = pwg.attempt_id
             LEFT JOIN previous_attempt_rubric_points parp ON parp.simulation_id = pwg.simulation_id
-            GROUP BY pwg.scenario_id
+            GROUP BY pwg.parent_scenario_id
         ),
         -- All simulation scenarios with their previous chats (for permutation generation)
         -- This MUST include ALL scenarios, even if they have no previous chats
@@ -317,7 +320,8 @@
             GROUP BY sm.chat_id
         ),
         grades_data AS (
-                SELECT 
+            -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
+            SELECT DISTINCT ON (scg.simulation_chat_id)
                 scg.simulation_chat_id as chat_id,
                 jsonb_build_object(
                     'id', scg.id::text,
@@ -332,6 +336,7 @@
             FROM simulation_chat_grades scg
             CROSS JOIN chat_ids_list cil
             WHERE scg.simulation_chat_id = ANY(cil.chat_ids)
+            ORDER BY scg.simulation_chat_id, scg.created_at DESC
         ),
         feedbacks_grouped AS (
             SELECT 
@@ -583,6 +588,15 @@
         chats_with_all_data AS (
             SELECT 
                 cb.id as chat_id,
+                -- Map child scenario ID to parent scenario ID for matching with allSimulationScenarios
+                COALESCE(
+                    (SELECT st.parent_id 
+                     FROM scenario_tree st 
+                     WHERE st.child_id = cb.scenario_id 
+                       AND st.parent_id != st.child_id 
+                     LIMIT 1),
+                    cb.scenario_id
+                ) as parent_scenario_id,
                 jsonb_build_object(
                     'chat', jsonb_build_object(
                         'id', cb.id::text,
@@ -590,6 +604,14 @@
                         'updatedAt', cb.updated_at,
                         'title', cb.title,
                         'scenarioId', cb.scenario_id::text,
+                        'parentScenarioId', COALESCE(
+                            (SELECT st.parent_id::text 
+                             FROM scenario_tree st 
+                             WHERE st.child_id = cb.scenario_id 
+                               AND st.parent_id != st.child_id 
+                             LIMIT 1),
+                            cb.scenario_id::text
+                        ),
                         'attemptId', cb.attempt_id::text,
                         'completed', cb.completed,
                         'completedAt', CASE 
@@ -611,7 +633,20 @@
                     'feedbacks', COALESCE(fg.feedbacks, '[]'::jsonb),
                     'dynamicRubric', drpc.dynamic_rubric,
                     'gradingState', gspc.grading_state,
-                    'previousChats', COALESCE(pcf.previous_chats, '[]'::jsonb)
+                    -- Use parent scenario ID to get previous chats from previous_chats_for_scenarios
+                    'previousChats', COALESCE(
+                        (SELECT previous_chats 
+                         FROM previous_chats_for_scenarios pcf2 
+                         WHERE pcf2.scenario_id = COALESCE(
+                             (SELECT st.parent_id 
+                              FROM scenario_tree st 
+                              WHERE st.child_id = cb.scenario_id 
+                                AND st.parent_id != st.child_id 
+                              LIMIT 1),
+                             cb.scenario_id
+                         )),
+                        '[]'::jsonb
+                    )
                 ) as chat_data,
                 cb.completed,
                 cb.created_at,
@@ -624,7 +659,6 @@
             LEFT JOIN feedbacks_grouped fg ON fg.grade_id = (gd.grade->>'id')::uuid
             LEFT JOIN dynamic_rubric_per_chat drpc ON drpc.chat_id = cb.id
             LEFT JOIN grading_state_per_chat gspc ON gspc.chat_id = cb.id
-            LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = cb.scenario_id
         ),
         aggregated_results_data AS (
             SELECT 
@@ -724,29 +758,42 @@
             CROSS JOIN attempt_base ab
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
         ),
-        -- Check if every root scenario has at least one graded chat
-        -- A scenario is considered complete only if it has at least one chat with a grade
-        -- Completed chats can be for any child scenario in the root's tree
+        -- Check if every parent scenario from simulation_scenarios has at least one graded chat
+        -- A scenario is considered complete only if it has a chat (linked via attempt_chats) with a grade
+        -- Uses simulation_scenarios as the source of truth
         scenarios_with_completed_chats AS (
-            SELECT DISTINCT
-                COALESCE(
-                    (SELECT st.parent_id 
-                     FROM scenario_tree st 
-                     WHERE st.child_id = cb.scenario_id 
-                       AND st.parent_id = st.child_id 
-                     LIMIT 1),
-                    cb.scenario_id
-                ) as root_scenario_id
-            FROM chats_base cb
-            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = cb.id
-            WHERE cb.completed = true
+            SELECT DISTINCT ss.scenario_id as parent_scenario_id
+            FROM simulation_scenarios ss
+            CROSS JOIN attempt_base ab
+            JOIN attempt_chats ac ON ac.attempt_id = ab.id
+            JOIN simulation_chats sc ON sc.id = ac.chat_id
+            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            WHERE ss.simulation_id = ab.simulation_id
+              AND ss.active = true
+              -- Map child scenario to parent scenario via scenario_tree
+              -- If no mapping exists, assume child_id = parent_id (scenario is its own parent)
+              AND (
+                EXISTS (
+                  SELECT 1 FROM scenario_tree st 
+                  WHERE st.parent_id = ss.scenario_id 
+                    AND st.child_id = sc.scenario_id
+                )
+                OR sc.scenario_id = ss.scenario_id
+              )
         ),
         metadata_computed AS (
             SELECT 
                 COALESCE(
-                    (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
-                     FROM chats_with_all_data
+                    (SELECT row_num - 1
+                     FROM (
+                         SELECT 
+                             chat_id,
+                             completed,
+                             ROW_NUMBER() OVER (ORDER BY created_at) as row_num
+                         FROM chats_with_all_data
+                     ) ranked
                      WHERE completed = false
+                     ORDER BY row_num
                      LIMIT 1),
                     0
                 ) as current_chat_index,
@@ -760,32 +807,46 @@
                     -- Use simulation scenario count when available
                     WHEN (SELECT total_scenarios FROM simulation_scenario_count) > 0 THEN
                         COALESCE(
-                            (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
-                             FROM chats_with_all_data
+                            (SELECT row_num - 1
+                             FROM (
+                                 SELECT 
+                                     chat_id,
+                                     completed,
+                                     ROW_NUMBER() OVER (ORDER BY created_at) as row_num
+                                 FROM chats_with_all_data
+                             ) ranked
                              WHERE completed = false
+                             ORDER BY row_num
                              LIMIT 1),
                             0
                         ) = (SELECT total_scenarios FROM simulation_scenario_count) - 1
                     -- Fallback to created chats count
                     ELSE
                         COALESCE(
-                            (SELECT ROW_NUMBER() OVER (ORDER BY created_at) - 1
-                             FROM chats_with_all_data
+                            (SELECT row_num - 1
+                             FROM (
+                                 SELECT 
+                                     chat_id,
+                                     completed,
+                                     ROW_NUMBER() OVER (ORDER BY created_at) as row_num
+                                 FROM chats_with_all_data
+                             ) ranked
                              WHERE completed = false
+                             ORDER BY row_num
                              LIMIT 1),
                             0
                         ) = COUNT(*) - 1
                 END as is_last_attempt,
                 COALESCE(BOOL_AND(completed), false) as show_results,
-                -- Show controls only if there are root scenarios without completed chats (work remaining)
-                -- Hide controls if every root scenario has at least one completed chat
-                -- Completed chats can be for any child scenario in the root's tree
+                -- Show controls only if there are parent scenarios from simulation_scenarios without graded chats (work remaining)
+                -- Hide controls if every parent scenario has at least one graded chat
+                -- Uses simulation_scenarios as the source of truth
                 CASE 
                     WHEN (SELECT COUNT(*) FROM simulation_root_scenarios_list) = 0 THEN false
                     ELSE COALESCE((
-                        SELECT COUNT(DISTINCT srsl.root_scenario_id) != COUNT(DISTINCT swcc.root_scenario_id)
+                        SELECT COUNT(DISTINCT srsl.root_scenario_id) != COUNT(DISTINCT swcc.parent_scenario_id)
                         FROM simulation_root_scenarios_list srsl
-                        LEFT JOIN scenarios_with_completed_chats swcc ON swcc.root_scenario_id = srsl.root_scenario_id
+                        LEFT JOIN scenarios_with_completed_chats swcc ON swcc.parent_scenario_id = srsl.root_scenario_id
                     ), true)
                 END as should_show_controls
             FROM chats_with_all_data
