@@ -1,5 +1,5 @@
 /**
- * PracticeSelector.tsx
+ * AttemptSelector.tsx
  * Multi-select selector for general/practice/archived content selection
  */
 "use client";
@@ -24,7 +24,7 @@ import {
 import { SimulationFilter } from "@/contexts/analytics-context";
 import { cn } from "@/lib/utils";
 
-export interface PracticeSelectorProps {
+export interface AttemptSelectorProps {
   options?: SimulationFilter[]; // defaults to ["general", "practice", "archived"]
   selected?: SimulationFilter[]; // any subset of options
   onChange?: (selected: SimulationFilter[]) => void;
@@ -39,14 +39,14 @@ const LABEL: Record<SimulationFilter, string> = {
   archived: "Archived",
 };
 
-export default function PracticeSelector({
+export default function AttemptSelector({
   options = ["general", "practice", "archived"],
   selected = [],
   onChange,
-  placeholder = "Simulations",
+  placeholder = "Attempts",
   className,
   hideSelectedChips = true,
-}: PracticeSelectorProps) {
+}: AttemptSelectorProps) {
   const [open, setOpen] = React.useState(false);
 
   const handleSelect = (value: SimulationFilter) => {
@@ -69,7 +69,7 @@ export default function PracticeSelector({
       const labels = selected.map((s) => LABEL[s]).join(" + ");
       return labels;
     }
-    if (selected.length === 3) return "Simulations";
+    if (selected.length === 3) return "Attempts";
     return `${selected.length} selected`;
   };
 
@@ -115,7 +115,7 @@ export default function PracticeSelector({
         <PopoverContent align="end" className="w-[220px] p-0">
           <Command loop>
             <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
-              <CommandInput placeholder="Search simulations..." />
+              <CommandInput placeholder="Search attempts..." />
               <CommandEmpty>No options found.</CommandEmpty>
               {selected.length > 0 && (
                 <CommandGroup heading="Actions">
@@ -127,7 +127,7 @@ export default function PracticeSelector({
                   </CommandItem>
                 </CommandGroup>
               )}
-              <CommandGroup heading="Simulations">
+              <CommandGroup heading="Attempts">
                 {options.map((opt) => {
                   const isSelected = selected.includes(opt);
                   return (
@@ -154,3 +154,4 @@ export default function PracticeSelector({
     </div>
   );
 }
+

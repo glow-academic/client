@@ -20,12 +20,12 @@ import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
+import AttemptSelector from "./analytics/AttemptSelector";
 import {
   CohortSelector,
   Cohort as CohortSelectorCohort,
 } from "./analytics/CohortSelector";
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
-import PracticeSelector from "./analytics/PracticeSelector";
 
 type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface AnalyticsFiltersProps {
@@ -131,13 +131,13 @@ export function AnalyticsFilters({
   }, [isRefreshing, spinning]);
 
   // Local UI state to distinguish between "empty (all)" and "specific selections"
-  const [practiceSelected, setPracticeSelected] = useState<SimulationFilter[]>(
+  const [attemptSelected, setAttemptSelected] = useState<SimulationFilter[]>(
     () => {
       const vals: SimulationFilter[] = [];
       if (simulationFilters.includes("general")) vals.push("general");
       if (simulationFilters.includes("practice")) vals.push("practice");
       if (simulationFilters.includes("archived")) vals.push("archived");
-      // When all three are enabled functionally, start with empty to indicate "All simulations"
+      // When all three are enabled functionally, start with empty to indicate "All attempts"
       return vals.length === 3 ? [] : vals;
     }
   );
@@ -151,12 +151,12 @@ export function AnalyticsFilters({
 
     // Update local state if it doesn't match the context
     if (
-      currentFilters.length !== practiceSelected.length ||
-      !currentFilters.every((filter) => practiceSelected.includes(filter))
+      currentFilters.length !== attemptSelected.length ||
+      !currentFilters.every((filter) => attemptSelected.includes(filter))
     ) {
-      setPracticeSelected(currentFilters);
+      setAttemptSelected(currentFilters);
     }
-  }, [simulationFilters, practiceSelected]);
+  }, [simulationFilters, attemptSelected]);
 
   // Convert to DateRange for the date picker component
   const dateRange: DateRange = {
@@ -231,19 +231,19 @@ export function AnalyticsFilters({
       <div className="flex items-center gap-2">
         {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
         {!homePage && (
-          <PracticeSelector
-            selected={practiceSelected}
+          <AttemptSelector
+            selected={attemptSelected}
             onChange={(vals) => {
               // Update UI state first
-              setPracticeSelected(vals);
-              // Empty selection means all simulations (all three modes on)
+              setAttemptSelected(vals);
+              // Empty selection means all attempts (all three modes on)
               if (vals.length === 0) {
                 setSimulationFilters(["general", "practice", "archived"]);
                 return;
               }
               setSimulationFilters(vals);
             }}
-            placeholder="Simulations"
+            placeholder="Attempts"
           />
         )}
 
