@@ -498,8 +498,8 @@ export default function ScenarioPerformance({
 
         {/* Actionable Insights */}
         {actionableInsight && (
-          <div className="p-3 bg-muted rounded-lg -mt-2">
-            <p className="text-sm text-muted-foreground text-center">
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {actionableInsight}
             </p>
           </div>

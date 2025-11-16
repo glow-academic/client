@@ -27,6 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
@@ -49,7 +50,6 @@ type ScenarioFact = {
   totalAttempts: number;
   completedAttempts: number;
 };
-import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
 
 function CustomBarTooltip({
   active,
@@ -182,7 +182,7 @@ export default function SimulationPerformance({
         id,
         title: simulationMapping[id]?.name || "Unknown",
       })),
-    [simulationMapping, validSimulationIds],
+    [simulationMapping, validSimulationIds]
   );
 
   useEffect(() => {
@@ -201,7 +201,7 @@ export default function SimulationPerformance({
       scenarioFacts
         .filter((f) => f.simulationId === selectedSimulationId)
         .sort((a, b) => a.scenarioName.localeCompare(b.scenarioName)),
-    [scenarioFacts, selectedSimulationId],
+    [scenarioFacts, selectedSimulationId]
   );
 
   const status = useMemo(() => {
@@ -217,32 +217,8 @@ export default function SimulationPerformance({
   // Create lookup for custom tooltip
   const dataByName = useMemo(
     () => Object.fromEntries(data.map((d) => [d.scenarioName, d] as const)),
-    [data],
+    [data]
   );
-
-  // Data-driven insight
-  const dataInsight = useMemo(() => {
-    if (!data.length) return null;
-
-    const avgScore = data.reduce((s, d) => s + d.avgScore, 0) / data.length;
-    const avgSuccess =
-      data.reduce((s, d) => s + d.successRate, 0) / data.length;
-    const totalAttempts = data.reduce((s, d) => s + d.totalAttempts, 0);
-
-    const topPerformer = data.reduce((best, current) =>
-      current.avgScore > best.avgScore ? current : best,
-    );
-
-    const underperformers = data.filter((d) => d.avgScore < avgScore * 0.8);
-
-    if (avgScore >= 80) {
-      return `Strong performance across scenarios (${avgScore.toFixed(0)}% avg score). ${topPerformer.scenarioName} leads with ${topPerformer.avgScore}% score.`;
-    } else if (underperformers.length > 0) {
-      return `Performance varies significantly. Focus on improving ${underperformers.map((u) => u.scenarioName).join(", ")} which score below ${(avgScore * 0.8).toFixed(0)}%.`;
-    } else {
-      return `Moderate performance (${avgScore.toFixed(0)}% avg score, ${avgSuccess.toFixed(0)}% success rate) across ${data.length} scenarios with ${totalAttempts} total attempts.`;
-    }
-  }, [data]);
 
   return (
     <Card className="w-full h-full flex flex-col relative">
@@ -277,7 +253,7 @@ export default function SimulationPerformance({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-0 flex-1 flex flex-col">
+      <CardContent className="flex-1 flex flex-col gap-2">
         {/* Chart */}
         <div className="min-h-[300px] h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -312,7 +288,7 @@ export default function SimulationPerformance({
                   if (!payload) return null;
                   // Only show the two series we care about (order stable)
                   const items = payload.filter((p) =>
-                    ["Average Score", "Success Rate"].includes(String(p.value)),
+                    ["Average Score", "Success Rate"].includes(String(p.value))
                   );
                   return (
                     <div className="flex flex-col gap-1 p-2 rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm">
@@ -350,19 +326,10 @@ export default function SimulationPerformance({
           </ResponsiveContainer>
         </div>
 
-        {/* Data-driven Insight */}
-        {dataInsight && (
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground text-center">
-              {dataInsight}
-            </p>
-          </div>
-        )}
-
         {/* Actionable Insights */}
         {actionableInsight && (
           <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {actionableInsight}
             </p>
           </div>
@@ -415,7 +382,7 @@ function SimPicker({
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4 shrink-0",
-                    value === s.id ? "opacity-100" : "opacity-0",
+                    value === s.id ? "opacity-100" : "opacity-0"
                   )}
                 />
                 <div className="flex-1 min-w-0">

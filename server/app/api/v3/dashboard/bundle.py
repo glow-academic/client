@@ -5,31 +5,21 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AnalyticsFilters,
-    DataPoint,
-    Method,
-    MetricResponse,
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    SimulationFilter,
-    SimulationMapping,
-    SimulationMappingItem,
-    TrendData,
-)
+from app.utils.schema import (AnalyticsFilters, DataPoint, Method,
+                              MetricResponse, ParameterItemMapping,
+                              ParameterItemMappingItem, ParameterMapping,
+                              ParameterMappingItem, RubricMapping,
+                              RubricMappingItem, SimulationFilter,
+                              SimulationMapping, SimulationMappingItem,
+                              TrendData)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -810,21 +800,41 @@ def _compute_skill_performance_insight(radar_data: list[SkillRadarData]) -> str 
 
     weak_skills = [skill for skill in radar_data if skill.value < 0.5]
     strong_skills = [skill for skill in radar_data if skill.value >= 0.8]
+    moderate_skills = [
+        skill
+        for skill in radar_data
+        if skill.value >= 0.5 and skill.value < 0.8
+    ]
 
+    # Large skill gap - prioritize weakest area
     if skill_gap > 0.4:
         weakest_skill = min(radar_data, key=lambda s: s.value)
-        return f"Large skill gap - focus on {weakest_skill.metric} ({round(weakest_skill.value * 100)}%)."
+        return f"Large skill gap detected ({round(skill_gap * 100)}%) - focus on {weakest_skill.metric} ({round(weakest_skill.value * 100)}%) to balance skillset."
 
+    # Multiple weak areas
     if len(weak_skills) > 1:
-        return "Multiple weak areas - focus on fundamentals."
+        weak_names = ", ".join([s.metric for s in weak_skills])
+        return f"Multiple areas need attention: {weak_names}. Focus on fundamentals to build a strong foundation."
 
+    # Single weak skill
     if len(weak_skills) == 1:
-        return f"Focus on improving {weak_skills[0].metric} to balance skillset."
+        return f"Focus on improving {weak_skills[0].metric} ({round(weak_skills[0].value * 100)}%) to balance skillset."
 
+    # All skills are strong
     if len(strong_skills) == len(radar_data):
-        return f"Excellent proficiency across all skills (avg {round(avg_proficiency * 100)}%)."
+        return f"Excellent proficiency across all skills (avg {round(avg_proficiency * 100)}%) - maintain consistency and consider advanced challenges."
 
-    return None
+    # Moderate performance - provide balanced insight
+    if len(moderate_skills) > 0 and avg_proficiency >= 0.6:
+        return f"Balanced performance across skills (avg {round(avg_proficiency * 100)}%). Continue building proficiency in all areas."
+
+    # General insight for other cases
+    if avg_proficiency >= 0.7:
+        return f"Strong overall performance (avg {round(avg_proficiency * 100)}%) with {len(strong_skills)} skill(s) exceeding 80% proficiency."
+    elif avg_proficiency >= 0.5:
+        return f"Moderate performance (avg {round(avg_proficiency * 100)}%) - focus on consistent practice to improve across all competencies."
+    else:
+        return f"Performance below target (avg {round(avg_proficiency * 100)}%) - review fundamentals and provide additional support."
 
 
 def _compute_scenario_performance_insight(
@@ -856,11 +866,26 @@ def _compute_scenario_performance_insight(
 
     best_param_item = max(avg_scores.items(), key=lambda x: x[1])
     worst_param_item = min(avg_scores.items(), key=lambda x: x[1])
+    performance_gap = best_param_item[1] - worst_param_item[1]
+    overall_avg = sum(avg_scores.values()) / len(avg_scores)
 
-    if best_param_item[1] - worst_param_item[1] > 20:
-        return f"Performance varies significantly by scenario attributes ({best_param_item[1] - worst_param_item[1]:.0f}% gap). Review challenging scenarios."
+    # Significant performance variation
+    if performance_gap > 20:
+        return f"Performance varies significantly by scenario attributes ({performance_gap:.0f}% gap between best and worst). Review challenging scenarios to identify improvement opportunities."
 
-    return None
+    # Moderate variation
+    elif performance_gap > 10:
+        return f"Moderate performance variation ({performance_gap:.0f}% gap) across scenario attributes. Consider targeted support for lower-performing scenarios."
+
+    # Consistent performance - provide positive insight
+    elif overall_avg >= 75:
+        return f"Consistent strong performance (avg {overall_avg:.0f}%) across scenario attributes. Performance is well-balanced."
+
+    elif overall_avg >= 60:
+        return f"Consistent moderate performance (avg {overall_avg:.0f}%) across scenario attributes. Continue building proficiency."
+
+    else:
+        return f"Performance below target (avg {overall_avg:.0f}%) across scenario attributes. Review training materials and provide additional support."
 
 
 def _compute_scenario_stats_insight(
@@ -872,12 +897,16 @@ def _compute_scenario_stats_insight(
 
     total_correlation = 0.0
     correlation_count = 0
+    total_score = 0.0
+    total_attempts = 0
 
     by_parameter: dict[str, list[NumericAttemptFact]] = {}
     for fact in numeric_attempt_facts:
         if fact.parameterId not in by_parameter:
             by_parameter[fact.parameterId] = []
         by_parameter[fact.parameterId].append(fact)
+        total_score += fact.score * fact.attempts
+        total_attempts += fact.attempts
 
     for facts in by_parameter.values():
         if len(facts) < 2:
@@ -898,15 +927,45 @@ def _compute_scenario_stats_insight(
             total_correlation += correlation
             correlation_count += 1
 
+    overall_avg_score = (
+        total_score / total_attempts if total_attempts > 0 else 0.0
+    )
+
     if correlation_count > 0:
         avg_correlation = total_correlation / correlation_count
 
+        # Strong positive correlation
         if avg_correlation > 0.5:
-            return "Higher difficulty levels correlate with better performance - consider increasing challenge."
-        elif avg_correlation < -0.5:
-            return "Performance decreases at higher difficulty - review training progression."
+            return f"Strong positive correlation (r={avg_correlation:.2f}) - higher parameter levels correlate with better performance (avg {overall_avg_score:.0f}%). Consider increasing challenge levels."
 
-    return None
+        # Moderate positive correlation
+        elif avg_correlation > 0.2:
+            return f"Moderate positive correlation (r={avg_correlation:.2f}) - performance tends to improve with higher parameter levels. Monitor progression carefully."
+
+        # Strong negative correlation
+        elif avg_correlation < -0.5:
+            return f"Strong negative correlation (r={avg_correlation:.2f}) - performance decreases at higher parameter levels (avg {overall_avg_score:.0f}%). Review training progression and difficulty scaling."
+
+        # Moderate negative correlation
+        elif avg_correlation < -0.2:
+            return f"Moderate negative correlation (r={avg_correlation:.2f}) - performance may decline with higher parameter levels. Consider adjusting difficulty curve."
+
+        # Weak correlation - provide general insight based on performance
+        else:
+            if overall_avg_score >= 75:
+                return f"Weak correlation (r={avg_correlation:.2f}) between parameter levels and performance. Strong overall performance (avg {overall_avg_score:.0f}%) suggests consistent quality across difficulty levels."
+            elif overall_avg_score >= 60:
+                return f"Weak correlation (r={avg_correlation:.2f}) between parameter levels and performance. Moderate overall performance (avg {overall_avg_score:.0f}%) - focus on consistent improvement."
+            else:
+                return f"Weak correlation (r={avg_correlation:.2f}) between parameter levels and performance. Below target performance (avg {overall_avg_score:.0f}%) - review training materials and support."
+
+    # No correlation computed (insufficient data points) - provide insight based on overall performance
+    if overall_avg_score >= 75:
+        return f"Strong overall performance (avg {overall_avg_score:.0f}%) across scenario characteristics. Performance is consistent regardless of parameter levels."
+    elif overall_avg_score >= 60:
+        return f"Moderate overall performance (avg {overall_avg_score:.0f}%) across scenario characteristics. Continue building proficiency across all difficulty levels."
+    else:
+        return f"Performance below target (avg {overall_avg_score:.0f}%) across scenario characteristics. Review training materials and provide additional support."
 
 
 def _compute_simulation_performance_insight(

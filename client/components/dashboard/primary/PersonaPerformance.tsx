@@ -338,7 +338,7 @@ export default function PersonaPerformance({
                     {/* Actionable Insights */}
                     {actionableInsights && actionableInsights[persona.name] && (
                       <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {actionableInsights[persona.name]}
                         </p>
                       </div>

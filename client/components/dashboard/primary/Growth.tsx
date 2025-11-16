@@ -298,10 +298,10 @@ export default function Growth({
           {/* Actionable Insights */}
           {normalizedInsight && (
             <div
-              className="p-3 bg-muted rounded-lg text-left flex-shrink-0 w-full"
+              className="p-3 bg-muted rounded-lg flex-shrink-0 w-full"
               data-testid="growth-insight"
             >
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground line-clamp-2">
                 {normalizedInsight}
               </p>
             </div>

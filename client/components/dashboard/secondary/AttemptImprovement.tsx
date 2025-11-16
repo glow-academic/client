@@ -233,8 +233,8 @@ export default function AttemptImprovement({
 
           {/* Actionable Insights */}
           {actionableInsight && (
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">
+            <div className="px-3 pt-3 pb-2 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground line-clamp-2">
                 {actionableInsight}
               </p>
             </div>

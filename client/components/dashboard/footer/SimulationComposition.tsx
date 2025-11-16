@@ -656,8 +656,10 @@ export default function SimulationComposition({
 
         {/* Actionable Insights */}
         {actionableInsight && (
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">{actionableInsight}</p>
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {actionableInsight}
+            </p>
           </div>
         )}
       </CardContent>

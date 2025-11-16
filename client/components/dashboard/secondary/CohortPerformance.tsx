@@ -332,8 +332,8 @@ export default function CohortPerformance({
 
                     {/* Actionable insight inside the modal */}
                     {actionableInsights && actionableInsights[cohort.id] && (
-                      <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {actionableInsights[cohort.id]}
                         </p>
                       </div>
