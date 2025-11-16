@@ -480,22 +480,13 @@ attempt_history_data AS (
     LEFT JOIN practice_persona_labels pl ON pl.attempt_id = fr.attempt_id
     LEFT JOIN practice_scenario_names sn ON sn.attempt_id = fr.attempt_id
 ),
-simulation_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            sim.id::text,
-            jsonb_build_object(
-                'name', sim.title, 
-                'description', sim.description,
-                'time_limit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = sim.id AND stl.active = true LIMIT 1),
-                'department_ids', CASE 
-                    WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
-                    ELSE NULL::jsonb
-                END
-            )
-        ),
-        '{}'::jsonb
-    ) as mapping
+simulation_data AS (
+    SELECT
+        sim.id,
+        sim.title,
+        sim.description,
+        (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = sim.id AND stl.active = true LIMIT 1) as time_limit,
+        sdd.department_ids
     FROM simulations sim
     LEFT JOIN (
         SELECT 
@@ -512,6 +503,39 @@ simulation_mapping_data AS (
         (cardinality($2::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $2::text[])
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true))
 ),
+simulation_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            sim.id::text,
+            jsonb_build_object(
+                'name', sim.title, 
+                'description', sim.description,
+                'time_limit', sim.time_limit,
+                'department_ids', CASE 
+                    WHEN sim.department_ids IS NOT NULL THEN to_jsonb(sim.department_ids)
+                    ELSE NULL::jsonb
+                END
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM simulation_data sim
+),
+persona_data AS (
+    SELECT
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.color,
+        p.icon
+    FROM personas p
+    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
+    WHERE p.active = true
+    GROUP BY p.id, p.name, p.description, p.color, p.icon
+    HAVING 
+        (cardinality($2::uuid[]) = 0 OR COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($2::uuid[])) > 0)
+        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
+),
 persona_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -525,23 +549,22 @@ persona_mapping_data AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM personas p
-    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.color, p.icon
-    HAVING 
-        (cardinality($2::uuid[]) = 0 OR COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY($2::uuid[])) > 0)
-        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
+    FROM persona_data p
 ),
-scenario_mapping_data AS (
-    SELECT COALESCE(
-        jsonb_object_agg(
-            s.id::text,
-            jsonb_build_object('name', s.name, 'description', COALESCE(sps.problem_statement, ''))
-        ),
-        '{}'::jsonb
-    ) as mapping
+practice_scenario_ids AS (
+    SELECT DISTINCT ss.scenario_id
+    FROM simulation_scenarios ss
+    JOIN simulations sim ON sim.id = ss.simulation_id
+    WHERE sim.active = true
+      AND sim.practice_simulation = true
+),
+scenario_data AS (
+    SELECT
+        s.id,
+        s.name,
+        COALESCE(sps.problem_statement, '') as description
     FROM scenarios s
+    JOIN practice_scenario_ids psi ON psi.scenario_id = s.id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE s.active = true
@@ -550,14 +573,23 @@ scenario_mapping_data AS (
         (cardinality($2::uuid[]) = 0 OR COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
 ),
-parameter_mapping_data AS (
+scenario_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            par.id::text,
-            jsonb_build_object('name', par.name, 'description', par.description, 'numerical', par.numerical, 'document_parameter', par.document_parameter)
+            s.id::text,
+            jsonb_build_object('name', s.name, 'description', s.description)
         ),
         '{}'::jsonb
     ) as mapping
+    FROM scenario_data s
+),
+parameter_data AS (
+    SELECT
+        par.id,
+        par.name,
+        COALESCE(par.description, '') as description,
+        par.numerical,
+        par.document_parameter
     FROM parameters par
     JOIN parameter_items pi ON pi.parameter_id = par.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
@@ -570,6 +602,35 @@ parameter_mapping_data AS (
                   JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
                   WHERE pi2.parameter_id = par.id AND pid2.active = true))
 ),
+parameter_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            par.id::text,
+            jsonb_build_object('name', par.name, 'description', par.description, 'numerical', par.numerical, 'document_parameter', par.document_parameter)
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM parameter_data par
+),
+parameter_item_data AS (
+    SELECT
+        pi.id,
+        pi.name,
+        COALESCE(pi.description, '') as description,
+        pi.parameter_id,
+        par.name as parameter_name,
+        pi.value
+    FROM parameter_items pi
+    JOIN parameters par ON pi.parameter_id = par.id
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    WHERE par.active = true
+      AND par.practice_parameter = true
+    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, par.id, par.name, pi.value
+    HAVING 
+        (cardinality($2::uuid[]) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($2::uuid[])) > 0)
+        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                  WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
+),
 parameter_item_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -578,23 +639,13 @@ parameter_item_mapping_data AS (
                 'name', pi.name,
                 'description', pi.description,
                 'parameter_id', pi.parameter_id::text,
-                'parameter_name', par.name,
+                'parameter_name', pi.parameter_name,
                 'value', pi.value
             )
         ),
         '{}'::jsonb
     ) as mapping
-    FROM parameter_items pi
-    JOIN parameters par ON pi.parameter_id = par.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE par.active = true
-      AND par.practice_parameter = true
-      AND pi.default_item = true
-    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, par.name, pi.value
-    HAVING 
-        (cardinality($2::uuid[]) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($2::uuid[])) > 0)
-        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                  WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
+    FROM parameter_item_data pi
 )
 SELECT json_build_object(
     'mode', 'practice',

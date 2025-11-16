@@ -16,6 +16,7 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     AnalyticsFilters,
     ScenarioMapping,
+    ScenarioMappingItem,
     SimulationMapping,
 )
 from app.utils.sql_helper import load_sql
@@ -148,18 +149,44 @@ async def get_leaderboard(
             except (json.JSONDecodeError, ValueError):
                 simulation_mapping = {}
 
-        scenario_mapping: dict[str, Any] = {}
-        if isinstance(parsed_result.get("scenario_mapping"), dict):
-            scenario_mapping = parsed_result["scenario_mapping"]
-        elif isinstance(parsed_result.get("scenario_mapping"), str):
+        # Parse scenario mapping and transform to ScenarioMappingItem format
+        scenario_mapping: ScenarioMapping = {}
+        scenario_mapping_raw = parsed_result.get("scenario_mapping")
+        if isinstance(scenario_mapping_raw, str):
             try:
-                scenario_mapping = json.loads(parsed_result["scenario_mapping"])
+                scenario_mapping_raw = json.loads(scenario_mapping_raw)
             except (json.JSONDecodeError, ValueError):
-                scenario_mapping = {}
+                scenario_mapping_raw = {}
+        
+        if isinstance(scenario_mapping_raw, dict):
+            for scenario_id, scenario_data in scenario_mapping_raw.items():
+                if isinstance(scenario_data, dict):
+                    persona_ids = []
+                    if scenario_data.get("persona_ids"):
+                        persona_ids = (
+                            scenario_data["persona_ids"]
+                            if isinstance(scenario_data["persona_ids"], list)
+                            else [scenario_data["persona_ids"]]
+                        )
+                    elif scenario_data.get("persona_id"):
+                        persona_ids = [str(scenario_data["persona_id"])]
+
+                    scenario_mapping[str(scenario_id)] = ScenarioMappingItem(
+                        name=scenario_data.get("name", ""),
+                        description=scenario_data.get("description", ""),
+                        persona_ids=persona_ids,
+                        persona_mapping={},
+                        document_mapping={},
+                        parameter_item_mapping={},
+                        parameter_item_ids=[],
+                        document_ids=[],
+                    )
 
         # Ensure mappings are in the correct format
         parsed_result["simulation_mapping"] = simulation_mapping
-        parsed_result["scenario_mapping"] = scenario_mapping
+        parsed_result["scenario_mapping"] = {
+            k: v.model_dump() for k, v in scenario_mapping.items()
+        }
 
         # Validate and return response
         response_data = LeaderboardBundleResponse.model_validate(parsed_result)

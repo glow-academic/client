@@ -47,6 +47,18 @@ export function DataTableToolbar<TData>({
   const scenariosColumn = table.getColumn("scenarios");
   const infiniteModeColumn = table.getColumn("infiniteMode");
 
+  // Determine visibility of each filter
+  const nameFilterVisible =
+    profileIdColumn !== null && profileOptions.length > 0;
+  const simulationFilterVisible = simulationOptions.length > 0;
+  const scenariosFilterVisible = scenarioOptions.length > 0;
+
+  // Show mode filter only when NOT all 3 other filters are visible
+  const shouldShowModeFilter =
+    infiniteModeColumn &&
+    infiniteModeOptions.length > 0 &&
+    !(nameFilterVisible && simulationFilterVisible && scenariosFilterVisible);
+
   // Helper functions to normalize id and archived fields
   const getArchived = (o: unknown) => {
     const obj = o as Record<string, unknown>;
@@ -115,8 +127,8 @@ export function DataTableToolbar<TData>({
             />
           )}
 
-          {/* Infinite Mode filter */}
-          {infiniteModeColumn && infiniteModeOptions.length > 0 && (
+          {/* Mode filter - only show when not all 3 other filters are visible */}
+          {shouldShowModeFilter && (
             <DataTableFacetedFilter
               column={infiniteModeColumn}
               title="Mode"

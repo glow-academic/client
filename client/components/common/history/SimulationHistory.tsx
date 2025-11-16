@@ -161,7 +161,7 @@ export default function SimulationHistory({
     }));
   }, [data]);
 
-  // Create infinite mode options
+  // Create mode options (infinite, standard)
   const infiniteModeOptions = React.useMemo(() => {
     const hasInfinite = data.some((item) => item.infiniteMode);
     const hasStandard = data.some((item) => !item.infiniteMode);
@@ -256,15 +256,16 @@ export default function SimulationHistory({
           return value.some((v) => rowIds.includes(v));
         },
       },
-      // Hidden faceting column for Infinite Mode
+      // Hidden faceting column for Mode (infinite, standard)
       {
         id: "infiniteMode",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: HistoryDataItem) =>
-          row.infiniteMode ? "infinite" : "standard",
+        accessorFn: (row: HistoryDataItem) => {
+          return row.infiniteMode ? "infinite" : "standard";
+        },
         filterFn: (row, _id, value: string[]) => {
           if (!value || value.length === 0) return true;
           const mode = row.original.infiniteMode ? "infinite" : "standard";

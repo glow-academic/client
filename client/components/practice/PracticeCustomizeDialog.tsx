@@ -127,12 +127,12 @@ export function PracticeCustomizeDialog({
   // Build valid IDs from mappings (server already filtered to relevant items)
   const validSimulationIds = useMemo(
     () => Object.keys(simulationMapping),
-    [simulationMapping],
+    [simulationMapping]
   );
 
   const validPersonaIds = useMemo(
     () => Object.keys(personaMapping),
-    [personaMapping],
+    [personaMapping]
   );
 
   // Build arrays from mappings for components that need them
@@ -147,7 +147,7 @@ export function PracticeCustomizeDialog({
             ? sc.persona_ids[0]
             : undefined,
       })),
-    [scenarioMapping],
+    [scenarioMapping]
   );
 
   const personas = useMemo(
@@ -156,7 +156,7 @@ export function PracticeCustomizeDialog({
         id,
         name: p.name,
       })),
-    [personaMapping],
+    [personaMapping]
   );
 
   const handleStartAttempt = async () => {
@@ -189,14 +189,14 @@ export function PracticeCustomizeDialog({
 
       // Find base default practice scenario for this persona
       const baseScenario = scenarios.find((s) =>
-        s.name.toLowerCase().includes(selectedPersona.name.toLowerCase()),
+        s.name.toLowerCase().includes(selectedPersona.name.toLowerCase())
       );
 
       // Use first available practice simulation (server filtered to practice only)
       const firstSimulationId = validSimulationIds[0];
       if (!firstSimulationId || !baseScenario) {
         toast.error(
-          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`,
+          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
         );
         return;
       }
@@ -213,13 +213,16 @@ export function PracticeCustomizeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]" data-testid="practice-customize-dialog">
+      <DialogContent
+        className="sm:max-w-[600px]"
+        data-testid="practice-customize-dialog"
+      >
         <DialogHeader>
           <DialogTitle>Customize Practice Session</DialogTitle>
           <DialogDescription className="hidden">
             {isInfiniteMode
-              ? "Start an infinite practice session with a specific simulation. Toggle to Focus Mode to practice with a single target persona."
-              : "Practice with a single target persona and specific parameter set in Focus Mode. Toggle to Infinite Mode for extended practice sessions."}
+              ? "Start an infinite practice session with a specific simulation. Toggle to Standard Mode to practice with a single target persona."
+              : "Practice with a single target persona and specific parameter set in Standard Mode. Toggle to Infinite Mode for extended practice sessions."}
           </DialogDescription>
         </DialogHeader>
 
@@ -240,7 +243,7 @@ export function PracticeCustomizeDialog({
                   ) : (
                     <>
                       <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                      Focus Mode
+                      Standard Mode
                     </>
                   )}
                 </Label>
@@ -253,7 +256,7 @@ export function PracticeCustomizeDialog({
               </div>
               <p className="text-xs text-muted-foreground pl-5">
                 {isInfiniteMode
-                  ? "Start an infinite practice session with a specific simulation. Toggle to view Focus Mode."
+                  ? "Start an infinite practice session with a specific simulation. Toggle to view Standard Mode."
                   : "Practice with a single target persona and specific parameter set. Toggle to view Infinite Mode."}
               </p>
             </div>
@@ -261,7 +264,10 @@ export function PracticeCustomizeDialog({
 
           {isInfiniteMode ? (
             <div className="grid gap-4">
-              <div className="grid gap-2" data-testid="practice-simulation-picker">
+              <div
+                className="grid gap-2"
+                data-testid="practice-simulation-picker"
+              >
                 <SimulationPicker
                   simulationMapping={simulationMapping}
                   validSimulationIds={validSimulationIds}
@@ -305,10 +311,13 @@ export function PracticeCustomizeDialog({
                   onSelect={setSelectedPersonaIds}
                   multiSelect={false}
                   label="Target Persona"
-                  description="Choose the target persona you'll practice with in focus mode."
+                  description="Choose the target persona you'll practice with in standard mode."
                 />
               </div>
-              <div className="grid gap-2" data-testid="practice-parameter-selector">
+              <div
+                className="grid gap-2"
+                data-testid="practice-parameter-selector"
+              >
                 <ParameterSelector
                   parameterMapping={
                     parameterMapping as Parameters<

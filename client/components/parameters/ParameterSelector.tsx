@@ -530,24 +530,46 @@ export function ParameterSelector({
                       disabled={itemIds.length === 0 || disabled}
                     />
 
-                    {hasSelection && (
+                    {hasSelection && selectedItemIds.length > 0 && (
                       <div className="space-y-1 mt-6">
-                        {selectedItemIds.slice(0, 3).map((id) => {
-                          const item = parameterItemMapping[id];
-                          return item ? (
-                            <p
-                              key={id}
-                              className="text-xs text-muted-foreground"
-                            >
-                              {item.name}: {item.description}
-                            </p>
-                          ) : null;
-                        })}
-                        {selectedItemIds.length > 3 && (
-                          <p className="text-xs text-muted-foreground">
-                            +{selectedItemIds.length - 3} more
-                          </p>
-                        )}
+                        {(() => {
+                          // Sort selected items by their numerical values to get start and end
+                          const sortedItems = selectedItemIds
+                            .map((id) => {
+                              const item = parameterItemMapping[id];
+                              if (!item) return null;
+                              const value = parseFloat(item.value);
+                              return { id, item, value: isNaN(value) ? 0 : value };
+                            })
+                            .filter((item): item is { id: string; item: typeof parameterItemMapping[string]; value: number } => item !== null)
+                            .sort((a, b) => a.value - b.value);
+
+                          if (sortedItems.length === 0) return null;
+
+                          const startItem = sortedItems[0];
+                          const endItem = sortedItems.length > 1 ? sortedItems[sortedItems.length - 1] : null;
+
+                          return (
+                            <>
+                              {/* Show start value */}
+                              <p
+                                key={startItem.id}
+                                className="text-xs text-muted-foreground"
+                              >
+                                {startItem.item.name}: {startItem.item.description}
+                              </p>
+                              {/* Show end value only if different from start */}
+                              {endItem && endItem.id !== startItem.id && (
+                                <p
+                                  key={endItem.id}
+                                  className="text-xs text-muted-foreground"
+                                >
+                                  {endItem.item.name}: {endItem.item.description}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
