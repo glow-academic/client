@@ -11,16 +11,16 @@
 import type { PricingOut } from "@/app/(main)/analytics/pricing/page";
 import { format } from "date-fns";
 import { useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -54,6 +54,95 @@ const COLOR_PALETTE = [
   "#f97316",
 ];
 
+// Custom tooltip content that sorts items by value descending
+function SortedChartTooltipContent({
+  active,
+  payload,
+  label,
+  chartConfig,
+}: {
+  active?: boolean;
+  payload?: TooltipProps<number, string>["payload"];
+  label?: string;
+  chartConfig: Record<string, { label: string; color: string }>;
+}) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  // Filter out items with zero or near-zero values and items without config, then sort by value descending
+  const filteredAndSortedPayload = [...payload]
+    .filter((item) => {
+      const value = typeof item.value === "number" ? item.value : 0;
+      // Filter out items with value less than 0.01 (essentially $0.00)
+      if (value < 0.01) {
+        return false;
+      }
+
+      // Filter out items that don't have a matching config entry
+      const modelId = String(item.dataKey || item.name || "");
+      const configItem = (
+        chartConfig as Record<string, { label: string; color: string }>
+      )[modelId];
+
+      return !!configItem;
+    })
+    .sort((a, b) => {
+      const aValue = typeof a.value === "number" ? a.value : 0;
+      const bValue = typeof b.value === "number" ? b.value : 0;
+      return bValue - aValue;
+    });
+
+  // Don't show tooltip if no items after filtering
+  if (filteredAndSortedPayload.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="border-border/50 bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      {label && <div className="font-medium mb-1">{label}</div>}
+      <div className="grid gap-1.5">
+        {filteredAndSortedPayload.map((item, index) => {
+          // Use dataKey (modelId) to look up config, fallback to name
+          const modelId = String(item.dataKey || item.name || "");
+          const configItem = (
+            chartConfig as Record<string, { label: string; color: string }>
+          )[modelId];
+
+          // This should never happen due to filtering above, but add as safety check
+          if (!configItem) {
+            return null;
+          }
+
+          const label = configItem.label || modelId;
+          const color = configItem.color;
+          const value = typeof item.value === "number" ? item.value : 0;
+
+          return (
+            <div
+              key={item.dataKey || item.name || index}
+              className="flex w-full flex-wrap items-center gap-2"
+            >
+              <div
+                className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                style={{
+                  backgroundColor: color,
+                }}
+              />
+              <div className="flex flex-1 justify-between items-center leading-none gap-4">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="text-foreground font-mono font-medium tabular-nums">
+                  {currency(value)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface PricingProps {
   pricingData: PricingOut;
 }
@@ -66,19 +155,19 @@ export default function Pricing({ pricingData }: PricingProps) {
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
     () => pricingData?.model_mapping || {},
-    [pricingData],
+    [pricingData]
   );
   const profileMapping = useMemo(
     () => pricingData?.profile_mapping || {},
-    [pricingData],
+    [pricingData]
   );
   const agentMapping = useMemo(
     () => pricingData?.agent_mapping || {},
-    [pricingData],
+    [pricingData]
   );
   const personaMapping = useMemo(
     () => pricingData?.persona_mapping || {},
-    [pricingData],
+    [pricingData]
   );
 
   // Compute spend per run and aggregate by day, filtered by agents/personas/profiles; series per model
@@ -94,7 +183,7 @@ export default function Pricing({ pricingData }: PricingProps) {
 
     // Build include sets (empty selection means All)
     const includeModels = new Set(
-      selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping),
+      selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping)
     );
     const includeActors = new Set(selectedActorIds); // Combined agents and personas
     const includeProfiles = new Set(selectedProfileIds);
@@ -158,12 +247,16 @@ export default function Pricing({ pricingData }: PricingProps) {
       .map(([_, { dateLabel, values }]) => {
         const row: Record<string, number | string> = { date: dateLabel };
         for (const id of includeModels) {
-          row[id] = Number((values[id] || 0).toFixed(2));
+          const value = Number((values[id] || 0).toFixed(2));
+          // Only include non-zero values to prevent rendering empty areas
+          if (value > 0) {
+            row[id] = value;
+          }
         }
         row["total"] = Number(
           Object.values(values)
             .reduce((s, v) => s + (v || 0), 0)
-            .toFixed(2),
+            .toFixed(2)
         );
         return row;
       });
@@ -306,7 +399,7 @@ export default function Pricing({ pricingData }: PricingProps) {
                 Object.entries(chartConfig).map(([k, v]) => [
                   k,
                   { label: v.label, color: v.color },
-                ]),
+                ])
               )}
               className="aspect-[16/7]"
             >
@@ -323,16 +416,9 @@ export default function Pricing({ pricingData }: PricingProps) {
                   axisLine={false}
                 />
                 <ChartTooltip
-                  content={<ChartTooltipContent />}
-                  formatter={(value: number, name: string) => [
-                    currency(value),
-                    (
-                      chartConfig as Record<
-                        string,
-                        { label: string; color: string }
-                      >
-                    )[name]?.label || name,
-                  ]}
+                  content={
+                    <SortedChartTooltipContent chartConfig={chartConfig} />
+                  }
                 />
                 <ChartLegend content={<ChartLegendContent />} />
 

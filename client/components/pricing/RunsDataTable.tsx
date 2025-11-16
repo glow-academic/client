@@ -322,9 +322,27 @@ export function RunsDataTable({
   // Filter rows by search
   const filteredRows = React.useMemo(() => {
     if (!runIdSearch) return rows;
-    return rows.filter((r) =>
-      r.id.toLowerCase().includes(runIdSearch.toLowerCase()),
-    );
+    const searchLower = runIdSearch.toLowerCase();
+    return rows.filter((r) => {
+      // Search across model, persona, agent, name, and debug info
+      const matchesModel = r.modelName?.toLowerCase().includes(searchLower);
+      const matchesPersona = r.personaName?.toLowerCase().includes(searchLower);
+      const matchesAgent = r.agentName?.toLowerCase().includes(searchLower);
+      const matchesProfile = r.profileName?.toLowerCase().includes(searchLower);
+      
+      // Search debug info content if present
+      const matchesDebugInfo = r.debugInfo?.some((debugItem) =>
+        debugItem.content?.toLowerCase().includes(searchLower)
+      );
+      
+      return (
+        matchesModel ||
+        matchesPersona ||
+        matchesAgent ||
+        matchesProfile ||
+        matchesDebugInfo
+      );
+    });
   }, [rows, runIdSearch]);
 
   const table = useReactTable({
@@ -501,7 +519,12 @@ export function RunsDataTable({
   const actorIdFilterColumn = table.getColumn("actorIdFilter");
   const modelIdFilterColumn = table.getColumn("modelIdFilter");
   const profileIdFilterColumn = table.getColumn("profileIdFilter");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    selectedModelIds.length > 0 ||
+    selectedActorIds.length > 0 ||
+    selectedProfileIds.length > 0 ||
+    runIdSearch.length > 0;
 
   return (
     <div className="space-y-3">
@@ -510,7 +533,7 @@ export function RunsDataTable({
         <div className="flex flex-1 items-center space-x-2">
           {/* Search bar */}
           <Input
-            placeholder="Search by run ID..."
+            placeholder="Search by model, persona, agent, name, debug info..."
             value={runIdSearch}
             onChange={(e) => setRunIdSearch(e.target.value)}
             className="h-8 w-[200px]"
@@ -542,13 +565,10 @@ export function RunsDataTable({
               options={profileOptions}
             />
           )}
-        </div>
-        <div className="flex items-center space-x-2">
+
           {isFiltered && (
             <Button
               variant="ghost"
-              size="sm"
-              className="h-8 px-2 lg:px-3"
               onClick={() => {
                 table.resetColumnFilters();
                 setSelectedModelIds([]);
@@ -556,11 +576,14 @@ export function RunsDataTable({
                 setSelectedProfileIds([]);
                 setRunIdSearch("");
               }}
+              className="h-8 px-2 lg:px-3"
             >
               Reset
               <X className="ml-2 h-4 w-4" />
             </Button>
           )}
+        </div>
+        <div className="flex items-center space-x-2">
           <DataTableViewOptions table={table} />
         </div>
       </div>
