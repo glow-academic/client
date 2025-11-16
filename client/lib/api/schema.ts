@@ -6207,6 +6207,20 @@ export interface components {
         LeaderboardBundleResponse: {
             /** Data */
             data: components["schemas"]["LeaderboardRow"][];
+            /**
+             * Simulation Mapping
+             * @default {}
+             */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /**
+             * Scenario Mapping
+             * @default {}
+             */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
         };
         /**
          * LeaderboardMetric
@@ -6255,6 +6269,16 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
+            /**
+             * Simulationids
+             * @default []
+             */
+            simulationIds: string[];
+            /**
+             * Scenarioids
+             * @default []
+             */
+            scenarioIds: string[];
             metrics: components["schemas"]["LeaderboardMetrics"];
         };
         /**

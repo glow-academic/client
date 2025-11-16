@@ -114,6 +114,8 @@ export function RunsDataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       actorId: false, // Hide the filter column
+      modelIdFilter: false,
+      profileIdFilter: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -144,8 +146,24 @@ export function RunsDataTable({
         cell: ({ row }) => (
           <div className="text-sm">{row.getValue("modelName")}</div>
         ),
+        enableHiding: true,
         filterFn: (row, _id, value) => {
           return (value as string[]).includes(row.original.modelId || "");
+        },
+      },
+      // Hidden faceting column for Model (IDs)
+      {
+        id: "modelIdFilter",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ModelRunRow) => row.modelId || "",
+        filterFn: (row, _id, value: string[]) => {
+          if (!value || value.length === 0) return true;
+          const modelId = row.original.modelId || "";
+          // Additive filtering: keep row if modelId is in selected values
+          return value.includes(modelId);
         },
       },
       {
@@ -156,8 +174,24 @@ export function RunsDataTable({
         cell: ({ row }) => (
           <div className="text-sm">{row.getValue("profileName")}</div>
         ),
+        enableHiding: true,
         filterFn: (row, _id, value) => {
           return (value as string[]).includes(row.original.profileId || "");
+        },
+      },
+      // Hidden faceting column for Profile/Name (IDs)
+      {
+        id: "profileIdFilter",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ModelRunRow) => row.profileId || "",
+        filterFn: (row, _id, value: string[]) => {
+          if (!value || value.length === 0) return true;
+          const profileId = row.original.profileId || "";
+          // Additive filtering: keep row if profileId is in selected values
+          return value.includes(profileId);
         },
       },
       {
@@ -316,6 +350,8 @@ export function RunsDataTable({
       },
       columnVisibility: {
         actorIdFilter: false,
+        modelIdFilter: false,
+        profileIdFilter: false,
       },
     },
   });
@@ -388,7 +424,83 @@ export function RunsDataTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table.getState().columnFilters]);
 
+  // Sync selectedModelIds with table filter
+  React.useEffect(() => {
+    const modelIdFilterColumn = table.getColumn("modelIdFilter");
+    if (modelIdFilterColumn) {
+      const currentFilter = modelIdFilterColumn.getFilterValue() as string[] | undefined;
+      const currentIds = currentFilter || [];
+      const selectedIds = selectedModelIds || [];
+      if (
+        currentIds.length !== selectedIds.length ||
+        !currentIds.every((id) => selectedIds.includes(id)) ||
+        !selectedIds.every((id) => currentIds.includes(id))
+      ) {
+        modelIdFilterColumn.setFilterValue(
+          selectedModelIds.length > 0 ? selectedModelIds : undefined
+        );
+      }
+    }
+  }, [selectedModelIds, table]);
+
+  // Sync table filter changes back to selectedModelIds
+  React.useEffect(() => {
+    const modelIdFilterColumn = table.getColumn("modelIdFilter");
+    if (modelIdFilterColumn) {
+      const filterValue = modelIdFilterColumn.getFilterValue() as string[] | undefined;
+      const newModelIds = filterValue || [];
+      const currentIds = selectedModelIds || [];
+      if (
+        newModelIds.length !== currentIds.length ||
+        !newModelIds.every((id) => currentIds.includes(id)) ||
+        !currentIds.every((id) => newModelIds.includes(id))
+      ) {
+        setSelectedModelIds(newModelIds);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table.getState().columnFilters]);
+
+  // Sync selectedProfileIds with table filter
+  React.useEffect(() => {
+    const profileIdFilterColumn = table.getColumn("profileIdFilter");
+    if (profileIdFilterColumn) {
+      const currentFilter = profileIdFilterColumn.getFilterValue() as string[] | undefined;
+      const currentIds = currentFilter || [];
+      const selectedIds = selectedProfileIds || [];
+      if (
+        currentIds.length !== selectedIds.length ||
+        !currentIds.every((id) => selectedIds.includes(id)) ||
+        !selectedIds.every((id) => currentIds.includes(id))
+      ) {
+        profileIdFilterColumn.setFilterValue(
+          selectedProfileIds.length > 0 ? selectedProfileIds : undefined
+        );
+      }
+    }
+  }, [selectedProfileIds, table]);
+
+  // Sync table filter changes back to selectedProfileIds
+  React.useEffect(() => {
+    const profileIdFilterColumn = table.getColumn("profileIdFilter");
+    if (profileIdFilterColumn) {
+      const filterValue = profileIdFilterColumn.getFilterValue() as string[] | undefined;
+      const newProfileIds = filterValue || [];
+      const currentIds = selectedProfileIds || [];
+      if (
+        newProfileIds.length !== currentIds.length ||
+        !newProfileIds.every((id) => currentIds.includes(id)) ||
+        !currentIds.every((id) => newProfileIds.includes(id))
+      ) {
+        setSelectedProfileIds(newProfileIds);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table.getState().columnFilters]);
+
   const actorIdFilterColumn = table.getColumn("actorIdFilter");
+  const modelIdFilterColumn = table.getColumn("modelIdFilter");
+  const profileIdFilterColumn = table.getColumn("profileIdFilter");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -405,39 +517,13 @@ export function RunsDataTable({
           />
 
           {/* Model filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 border-dashed">
-                Models{" "}
-                {selectedModelIds.length > 0 && `(${selectedModelIds.length})`}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-0">
-              <Command>
-                <CommandInput placeholder="Search models..." />
-                <CommandEmpty>No models found.</CommandEmpty>
-                <CommandList>
-                  {modelOptions.map((m) => {
-                    const checked = selectedModelIds.includes(m.value);
-                    return (
-                      <CommandItem
-                        key={m.value}
-                        onSelect={() => {
-                          const next = new Set(selectedModelIds);
-                          if (checked) next.delete(m.value);
-                          else next.add(m.value);
-                          setSelectedModelIds(Array.from(next));
-                        }}
-                      >
-                        <Checkbox checked={checked} className="mr-2" />
-                        <span className="truncate">{m.label}</span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          {modelIdFilterColumn && modelOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={modelIdFilterColumn}
+              title="Model"
+              options={modelOptions}
+            />
+          )}
 
           {/* Agent/Persona filter - merged */}
           {actorIdFilterColumn && actorOptions.length > 0 && (
@@ -448,41 +534,14 @@ export function RunsDataTable({
             />
           )}
 
-          {/* Profile filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 border-dashed">
-                People{" "}
-                {selectedProfileIds.length > 0 &&
-                  `(${selectedProfileIds.length})`}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-0">
-              <Command>
-                <CommandInput placeholder="Search people..." />
-                <CommandEmpty>No people found.</CommandEmpty>
-                <CommandList>
-                  {profileOptions.map((p) => {
-                    const checked = selectedProfileIds.includes(p.value);
-                    return (
-                      <CommandItem
-                        key={p.value}
-                        onSelect={() => {
-                          const next = new Set(selectedProfileIds);
-                          if (checked) next.delete(p.value);
-                          else next.add(p.value);
-                          setSelectedProfileIds(Array.from(next));
-                        }}
-                      >
-                        <Checkbox checked={checked} className="mr-2" />
-                        <span className="truncate">{p.label}</span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          {/* Name filter */}
+          {profileIdFilterColumn && profileOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={profileIdFilterColumn}
+              title="Name"
+              options={profileOptions}
+            />
+          )}
         </div>
         <div className="flex items-center space-x-2">
           {isFiltered && (

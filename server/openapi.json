@@ -14484,6 +14484,22 @@
             },
             "type": "array",
             "title": "Data"
+          },
+          "simulation_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SimulationMappingItem"
+            },
+            "type": "object",
+            "title": "Simulation Mapping",
+            "default": {}
+          },
+          "scenario_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ScenarioMappingItem"
+            },
+            "type": "object",
+            "title": "Scenario Mapping",
+            "default": {}
           }
         },
         "type": "object",
@@ -14600,6 +14616,22 @@
           "lastName": {
             "type": "string",
             "title": "Lastname"
+          },
+          "simulationIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulationids",
+            "default": []
+          },
+          "scenarioIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenarioids",
+            "default": []
           },
           "metrics": {
             "$ref": "#/components/schemas/LeaderboardMetrics"

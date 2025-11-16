@@ -469,6 +469,9 @@ export default function Leaderboard({
       const rows = hydratedRows.map((r) => ({
         id: r.profileId,
         name: `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim() || r.profileId,
+        profileId: r.profileId, // Add profileId for filtering
+        simulationIds: r.simulationIds || [], // Add simulation IDs for filtering
+        scenarioIds: r.scenarioIds || [], // Add scenario IDs for filtering
         timeSpentMinutes: getCurrentValue(r.metrics.timeSpentMinutes),
         improvementRatePerDay: getCurrentValue(r.metrics.improvementRatePerDay),
         messagesPerSession: getCurrentValue(r.metrics.messagesPerSession),
@@ -481,17 +484,8 @@ export default function Leaderboard({
         ),
       }));
 
-      // Sort by highest score descending
-      const sortedByHighestScore = rows.sort(
-        (a, b) => b.highestScoreAvg - a.highestScoreAvg,
-      );
-
-      // Take top 25% based on highest score
-      const topCount = Math.max(
-        1,
-        Math.ceil(sortedByHighestScore.length * 0.25),
-      );
-      return sortedByHighestScore.slice(0, topCount);
+      // Server already returns top 25%, just sort by highest score descending
+      return rows.sort((a, b) => b.highestScoreAvg - a.highestScoreAvg);
     }
     return [];
   }, [hydratedRows]);
@@ -719,6 +713,8 @@ export default function Leaderboard({
           <LeaderboardTable
             data={processedLeaderboardData}
             currentUserId={effectiveProfile?.id || ""}
+            simulationMapping={leaderboardData?.simulation_mapping}
+            scenarioMapping={leaderboardData?.scenario_mapping}
             {...(shouldDisableNavigation
               ? {}
               : { onViewReport: handleViewReport })}

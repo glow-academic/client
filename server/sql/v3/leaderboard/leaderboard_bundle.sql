@@ -13,7 +13,9 @@ profile_stats AS (
         COUNT(*)::int AS total_attempts,
         MAX(f.grade_percent) AS highest_score,
         AVG(f.num_messages_total) AS avg_messages,
-        AVG(f.time_taken_seconds / 60.0) AS avg_time
+        AVG(f.time_taken_seconds / 60.0) AS avg_time,
+        ARRAY_AGG(DISTINCT f.simulation_id) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids,
+        ARRAY_AGG(DISTINCT f.scenario_id) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
     FROM filt f
     JOIN profiles p ON f.profile_id = p.id
     WHERE f.grade_percent IS NOT NULL
@@ -101,12 +103,79 @@ all_stats AS (
     LEFT JOIN improvement_per_profile ip ON ps.profile_id = ip.profile_id
     LEFT JOIN perfect_per_profile pf ON ps.profile_id = pf.profile_id
     LEFT JOIN quickest_per_profile qp ON ps.profile_id = qp.profile_id
+),
+-- Get all unique simulation IDs for mapping
+all_simulation_ids AS (
+    SELECT DISTINCT unnest(simulation_ids) AS simulation_id
+    FROM profile_stats
+    WHERE simulation_ids IS NOT NULL
+),
+simulation_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            s.id::text,
+            jsonb_build_object(
+                'name', s.title,
+                'description', COALESCE(s.description, ''),
+                'time_limit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = s.id AND stl.active = true LIMIT 1),
+                'department_ids', CASE 
+                    WHEN (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+                          FROM simulation_departments sd
+                          WHERE sd.simulation_id = s.id AND sd.active = true) IS NOT NULL 
+                    THEN to_jsonb((SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
+                                   FROM simulation_departments sd
+                                   WHERE sd.simulation_id = s.id AND sd.active = true))
+                    ELSE NULL::jsonb
+                END
+            )
+        ) FILTER (WHERE s.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_simulation_ids asi
+    LEFT JOIN simulations s ON s.id = asi.simulation_id
+    WHERE s.active = true
+),
+-- Get all unique scenario IDs for mapping
+all_scenario_ids AS (
+    SELECT DISTINCT unnest(scenario_ids) AS scenario_id
+    FROM profile_stats
+    WHERE scenario_ids IS NOT NULL
+),
+scenario_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            sc.id::text,
+            jsonb_build_object(
+                'name', sc.name,
+                'description', COALESCE((SELECT sps.problem_statement FROM scenario_problem_statements sps WHERE sps.scenario_id = sc.id AND sps.active = true LIMIT 1), '')
+            )
+        ) FILTER (WHERE sc.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_scenario_ids asci
+    LEFT JOIN scenarios sc ON sc.id = asci.scenario_id
+    WHERE sc.active = true
+),
+-- Get top 25% of profiles by highest score
+ranked_stats AS (
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (ORDER BY highest_score DESC) as rank,
+        COUNT(*) OVER () as total_count
+    FROM all_stats
+),
+top_25_percent AS (
+    SELECT *
+    FROM ranked_stats
+    WHERE rank <= GREATEST(1, CEIL(total_count * 0.25)::int)
 )
 SELECT json_build_object(
     'data', COALESCE((SELECT json_agg(json_build_object(
         'profileId', profile_id::text,
         'firstName', first_name,
         'lastName', last_name,
+        'simulationIds', COALESCE(simulation_ids, ARRAY[]::uuid[])::text[],
+        'scenarioIds', COALESCE(scenario_ids, ARRAY[]::uuid[])::text[],
         'metrics', json_build_object(
             'totalAttempts', json_build_object(
                 'hasData', true,
@@ -173,5 +242,7 @@ SELECT json_build_object(
                 'hover', '{}'::json
             )
         )
-    ) ORDER BY highest_score DESC) FROM all_stats), '[]'::json)
+    ) ORDER BY highest_score DESC) FROM top_25_percent), '[]'::json),
+    'simulation_mapping', COALESCE((SELECT mapping FROM simulation_mapping_data LIMIT 1), '{}'::jsonb),
+    'scenario_mapping', COALESCE((SELECT mapping FROM scenario_mapping_data LIMIT 1), '{}'::jsonb)
 ) AS result

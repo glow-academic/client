@@ -161,6 +161,18 @@ export default function SimulationHistory({
     }));
   }, [data]);
 
+  // Create infinite mode options
+  const infiniteModeOptions = React.useMemo(() => {
+    const hasInfinite = data.some((item) => item.infiniteMode);
+    const hasStandard = data.some((item) => !item.infiniteMode);
+    const options: { value: string; label: string }[] = [];
+    if (hasInfinite)
+      options.push({ value: "infinite", label: "Infinite Mode" });
+    if (hasStandard)
+      options.push({ value: "standard", label: "Standard Mode" });
+    return options;
+  }, [data]);
+
   // Create column definitions that work with the new data structure
   const columns = React.useMemo(() => {
     const attemptColumns: ColumnDef<HistoryDataItem>[] = [
@@ -242,6 +254,22 @@ export default function SimulationHistory({
           const rowIds = (row.getValue("scenarios") as string[]) ?? [];
           // keep row if it contains ANY selected scenario
           return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Infinite Mode
+      {
+        id: "infiniteMode",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: HistoryDataItem) =>
+          row.infiniteMode ? "infinite" : "standard",
+        filterFn: (row, _id, value: string[]) => {
+          if (!value || value.length === 0) return true;
+          const mode = row.original.infiniteMode ? "infinite" : "standard";
+          // Additive filtering: keep row if mode is in selected values
+          return value.includes(mode);
         },
       },
       // Date column
@@ -561,6 +589,7 @@ export default function SimulationHistory({
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
+      infiniteModeOptions={infiniteModeOptions}
       showExport={showExport}
       showArchive={showArchive}
       showAll={true} // Always show all since filtering is handled upstream

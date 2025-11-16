@@ -15,6 +15,7 @@ export interface DataTableToolbarProps<TData> {
   profileOptions?: { value: string; label: string }[];
   simulationOptions?: { value: string; label: string }[];
   scenarioOptions?: { value: string; label: string }[];
+  infiniteModeOptions?: { value: string; label: string }[];
   isAdmin?: boolean;
   showExport?: boolean;
   showAll?: boolean;
@@ -29,6 +30,7 @@ export function DataTableToolbar<TData>({
   profileOptions = [],
   simulationOptions = [],
   scenarioOptions = [],
+  infiniteModeOptions = [],
   isAdmin = false,
   showExport = true,
   showAll = false,
@@ -43,6 +45,7 @@ export function DataTableToolbar<TData>({
   const profileIdColumn = showAll ? table.getColumn("profileId") : null;
   const simulationIdColumn = table.getColumn("simulationId");
   const scenariosColumn = table.getColumn("scenarios");
+  const infiniteModeColumn = table.getColumn("infiniteMode");
 
   // Helper functions to normalize id and archived fields
   const getArchived = (o: unknown) => {
@@ -109,6 +112,15 @@ export function DataTableToolbar<TData>({
               column={scenariosColumn}
               title="Scenarios"
               options={scenarioOptions}
+            />
+          )}
+
+          {/* Infinite Mode filter */}
+          {infiniteModeColumn && infiniteModeOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={infiniteModeColumn}
+              title="Mode"
+              options={infiniteModeOptions}
             />
           )}
 

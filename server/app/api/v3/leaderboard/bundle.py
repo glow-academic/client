@@ -13,7 +13,11 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import AnalyticsFilters
+from app.utils.schema import (
+    AnalyticsFilters,
+    ScenarioMapping,
+    SimulationMapping,
+)
 from app.utils.sql_helper import load_sql
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
@@ -51,6 +55,8 @@ class LeaderboardRow(BaseModel):
     profileId: str
     firstName: str
     lastName: str
+    simulationIds: list[str] = []
+    scenarioIds: list[str] = []
     metrics: LeaderboardMetrics
 
 
@@ -58,6 +64,8 @@ class LeaderboardBundleResponse(BaseModel):
     """Leaderboard bundle response."""
 
     data: list[LeaderboardRow]
+    simulation_mapping: SimulationMapping = {}
+    scenario_mapping: ScenarioMapping = {}
 
 
 @router.post("", response_model=LeaderboardBundleResponse)
@@ -129,6 +137,29 @@ async def get_leaderboard(
                 return obj
 
         parsed_result = parse_json_strings_recursive(parsed_result)
+
+        # Parse simulation and scenario mappings
+        simulation_mapping: dict[str, Any] = {}
+        if isinstance(parsed_result.get("simulation_mapping"), dict):
+            simulation_mapping = parsed_result["simulation_mapping"]
+        elif isinstance(parsed_result.get("simulation_mapping"), str):
+            try:
+                simulation_mapping = json.loads(parsed_result["simulation_mapping"])
+            except (json.JSONDecodeError, ValueError):
+                simulation_mapping = {}
+
+        scenario_mapping: dict[str, Any] = {}
+        if isinstance(parsed_result.get("scenario_mapping"), dict):
+            scenario_mapping = parsed_result["scenario_mapping"]
+        elif isinstance(parsed_result.get("scenario_mapping"), str):
+            try:
+                scenario_mapping = json.loads(parsed_result["scenario_mapping"])
+            except (json.JSONDecodeError, ValueError):
+                scenario_mapping = {}
+
+        # Ensure mappings are in the correct format
+        parsed_result["simulation_mapping"] = simulation_mapping
+        parsed_result["scenario_mapping"] = scenario_mapping
 
         # Validate and return response
         response_data = LeaderboardBundleResponse.model_validate(parsed_result)

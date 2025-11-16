@@ -6,6 +6,7 @@
  */
 
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,9 @@ import { useMemo, useState } from "react";
 export interface LeaderboardData {
   id: string;
   name: string;
+  profileId: string;
+  simulationIds: string[];
+  scenarioIds: string[];
   highestScoreAvg: number;
   timeSpentMinutes: number;
   messagesPerSession: number;
@@ -54,6 +58,8 @@ export interface LeaderboardData {
 export interface LeaderboardTableProps {
   data: LeaderboardData[];
   currentUserId: string;
+  simulationMapping?: Record<string, { name: string; description?: string }>;
+  scenarioMapping?: Record<string, { name: string; description?: string }>;
   onViewReport?: (profileId: string) => void;
 }
 
@@ -67,12 +73,17 @@ const getInitials = (name: string) =>
 export default function LeaderboardTable({
   data,
   currentUserId,
+  simulationMapping = {},
+  scenarioMapping = {},
   onViewReport,
 }: LeaderboardTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     improvementRatePerDay: false,
     personaResponseSeconds: false,
     quickestPassMinutes: false,
+    profileId: false,
+    simulationIds: false,
+    scenarioIds: false,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -93,6 +104,22 @@ export default function LeaderboardTable({
           return <div className="font-bold text-lg w-[80px]">-</div>;
         },
         enableSorting: false,
+      },
+      // Hidden faceting column for Name (Profile IDs)
+      {
+        id: "profileId",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: LeaderboardData) => row.profileId,
+        filterFn: (row, _id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
+          const profileId = row.original.profileId;
+          // Additive filtering: keep row if profileId is in selected values
+          return value.includes(profileId);
+        },
       },
       {
         accessorKey: "name",
@@ -119,6 +146,36 @@ export default function LeaderboardTable({
         filterFn: (row, _, value) => {
           const name = row.getValue("name") as string;
           return name.toLowerCase().includes(value.toLowerCase());
+        },
+      },
+      // Hidden faceting column for Simulation (IDs)
+      {
+        id: "simulationIds",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: LeaderboardData) => row.simulationIds ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("simulationIds") as string[]) ?? [];
+          if (!value || value.length === 0) return true;
+          // Additive filtering: keep row if it contains ANY selected simulation
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Scenarios (IDs)
+      {
+        id: "scenarioIds",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: LeaderboardData) => row.scenarioIds ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("scenarioIds") as string[]) ?? [];
+          if (!value || value.length === 0) return true;
+          // Additive filtering: keep row if it contains ANY selected scenario
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -261,12 +318,44 @@ export default function LeaderboardTable({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    initialState: {
+      columnVisibility: {
+        profileId: false,
+        simulationIds: false,
+        scenarioIds: false,
+      },
+    },
   });
 
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const nameColumn = table.getColumn("name");
+  const profileIdColumn = table.getColumn("profileId");
+  const simulationIdsColumn = table.getColumn("simulationIds");
+  const scenarioIdsColumn = table.getColumn("scenarioIds");
+
+  // Build filter options from mappings
+  const profileOptions = useMemo(() => {
+    return data.map((row) => ({
+      value: row.profileId,
+      label: row.name,
+    }));
+  }, [data]);
+
+  const simulationOptions = useMemo(() => {
+    return Object.entries(simulationMapping).map(([id, sim]) => ({
+      value: id,
+      label: sim.name,
+    }));
+  }, [simulationMapping]);
+
+  const scenarioOptions = useMemo(() => {
+    return Object.entries(scenarioMapping).map(([id, scenario]) => ({
+      value: id,
+      label: scenario.name,
+    }));
+  }, [scenarioMapping]);
 
   if (data.length === 0) {
     return (
@@ -293,6 +382,33 @@ export default function LeaderboardTable({
           </div>
 
           <div className="flex items-center space-x-2 flex-wrap mb-2">
+            {/* Name filter */}
+            {profileIdColumn && profileOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={profileIdColumn}
+                title="Name"
+                options={profileOptions}
+              />
+            )}
+
+            {/* Simulation filter */}
+            {simulationIdsColumn && simulationOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={simulationIdsColumn}
+                title="Simulation"
+                options={simulationOptions}
+              />
+            )}
+
+            {/* Scenarios filter */}
+            {scenarioIdsColumn && scenarioOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={scenarioIdsColumn}
+                title="Scenarios"
+                options={scenarioOptions}
+              />
+            )}
+
             {isFiltered && (
               <Button
                 variant="ghost"

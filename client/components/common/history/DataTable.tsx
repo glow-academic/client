@@ -53,6 +53,7 @@ export interface DataTableProps<TData, TValue> {
   profileOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
   scenarioOptions?: { value: string; label: string }[];
+  infiniteModeOptions?: { value: string; label: string }[];
   showExport?: boolean;
   showArchive?: boolean;
   showAll?: boolean;
@@ -69,6 +70,7 @@ export function DataTable<TData, TValue>({
   profileOptions,
   simulationOptions,
   scenarioOptions = [],
+  infiniteModeOptions = [],
   showExport = true,
   showArchive = false,
   showAll = false,
@@ -78,12 +80,13 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
+  const     [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       search: false,
       profileId: false,
       simulationId: false,
       scenarios: false,
+      infiniteMode: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -184,6 +187,7 @@ export function DataTable<TData, TValue>({
         profileId: false,
         simulationId: false,
         scenarios: false,
+        infiniteMode: false,
       },
     },
   });
@@ -270,6 +274,7 @@ export function DataTable<TData, TValue>({
         profileOptions={profileOptions}
         simulationOptions={simulationOptions}
         scenarioOptions={scenarioOptions}
+        infiniteModeOptions={infiniteModeOptions}
         showExport={showExport}
         showAll={showAll}
         showArchive={showArchive}
