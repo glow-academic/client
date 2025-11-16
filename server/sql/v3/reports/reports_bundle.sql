@@ -1,31 +1,40 @@
 
-            WITH filt AS (
-                SELECT * FROM analytics a WHERE {WHERE_CLAUSE}
+            -- Start from profiles to include all matching profiles, even without attempts
+            WITH filtered_profiles AS (
+                SELECT p.id, p.first_name, p.last_name, p.alias, p.role
+                FROM profiles p
+                WHERE {PROFILE_WHERE_CLAUSE}
+            ),
+            filt AS (
+                SELECT a.* FROM analytics a
+                WHERE {ANALYTICS_WHERE_CLAUSE}
+                  AND a.profile_id IN (SELECT id FROM filtered_profiles)
             ),
             profile_metrics AS (
                 SELECT
-                    f.profile_id,
-                    p.first_name,
-                    p.last_name,
-                    p.alias,
-                    p.role,
+                    fp.id AS profile_id,
+                    fp.first_name,
+                    fp.last_name,
+                    fp.alias,
+                    fp.role,
                     AVG(f.grade_percent) AS avg_score,
                     MAX(f.grade_percent) AS highest_score,
-                    COUNT(*)::int AS total_attempts,
+                    COUNT(f.attempt_id)::int AS total_attempts,
                     AVG(f.num_messages_total) AS avg_messages,
                     AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
-                FROM filt f
-                JOIN profiles p ON f.profile_id = p.id
-                WHERE f.grade_percent IS NOT NULL
-                GROUP BY f.profile_id, p.first_name, p.last_name, p.alias, p.role
+                FROM filtered_profiles fp
+                LEFT JOIN filt f ON f.profile_id = fp.id AND f.grade_percent IS NOT NULL
+                GROUP BY fp.id, fp.first_name, fp.last_name, fp.alias, fp.role
             ),
             -- Completion percentage per profile (chat-level aggregation to match dashboard)
             completion_per_profile AS (
                 SELECT
-                    f.profile_id,
+                    fp.id AS profile_id,
                     (100.0 * AVG((f.completed)::int))::float AS completion_pct
-                FROM filt f
-                GROUP BY f.profile_id
+                FROM filtered_profiles fp
+                LEFT JOIN filt f ON f.profile_id = fp.id
+                GROUP BY fp.id
+                HAVING COUNT(f.attempt_id) > 0
             ),
             -- First attempt pass rate per profile (all-time earliest attempts, then filter to window)
             earliest_attempts_all_time AS (
@@ -37,17 +46,26 @@
                     a.rubric_pass_points,
                     a.rubric_points
                 FROM analytics a
-                WHERE a.profile_id IN (SELECT DISTINCT profile_id FROM filt)
+                WHERE a.profile_id IN (SELECT id FROM filtered_profiles)
                 ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
+            ),
+            filt_date_range AS (
+                SELECT 
+                    MIN(attempt_created_at) AS min_date,
+                    MAX(attempt_created_at) AS max_date
+                FROM filt
+                WHERE attempt_created_at IS NOT NULL
             ),
             first_attempts AS (
                 SELECT
                     ea.profile_id,
                     ea.grade_percent >= (ea.rubric_pass_points * 100.0 / NULLIF(ea.rubric_points, 0)) AS passed
                 FROM earliest_attempts_all_time ea
-                JOIN filt f ON f.profile_id = ea.profile_id
-                WHERE ea.attempt_created_at >= (SELECT MIN(attempt_created_at) FROM filt)
-                  AND ea.attempt_created_at <= (SELECT MAX(attempt_created_at) FROM filt)
+                CROSS JOIN filt_date_range fdr
+                WHERE EXISTS (SELECT 1 FROM filt f WHERE f.profile_id = ea.profile_id)
+                  AND fdr.min_date IS NOT NULL
+                  AND ea.attempt_created_at >= fdr.min_date
+                  AND ea.attempt_created_at <= fdr.max_date
             ),
             first_attempt_per_profile AS (
                 SELECT
@@ -259,7 +277,7 @@
                 FROM stagnation_flags_per_profile sf
                 GROUP BY sf.profile_id
             ),
-            -- Join all metrics together
+            -- Join all metrics together - start from profile_metrics to include all profiles
             all_metrics AS (
                 SELECT
                     pm.*,
@@ -268,16 +286,16 @@
                     COALESCE(pp.avg_response_time, 0) AS persona_response_time,
                     COALESCE(ep.efficiency, 0) AS session_efficiency,
                     COALESCE(sp.stagnation_rate, 0) AS stagnation_rate,
-                    asdp.data_points AS avg_score_points,
-                    cdp.data_points AS completion_points,
-                    fadp.data_points AS first_attempt_points,
-                    hsdp.data_points AS highest_score_points,
-                    mdp.data_points AS messages_points,
-                    ptdp.data_points AS persona_time_points,
-                    tsdp.data_points AS time_spent_points,
-                    tadp.data_points AS total_attempts_points,
-                    edp.data_points AS efficiency_points,
-                    sdp.data_points AS stagnation_points
+                    COALESCE(asdp.data_points, '[]'::json) AS avg_score_points,
+                    COALESCE(cdp.data_points, '[]'::json) AS completion_points,
+                    COALESCE(fadp.data_points, '[]'::json) AS first_attempt_points,
+                    COALESCE(hsdp.data_points, '[]'::json) AS highest_score_points,
+                    COALESCE(mdp.data_points, '[]'::json) AS messages_points,
+                    COALESCE(ptdp.data_points, '[]'::json) AS persona_time_points,
+                    COALESCE(tsdp.data_points, '[]'::json) AS time_spent_points,
+                    COALESCE(tadp.data_points, '[]'::json) AS total_attempts_points,
+                    COALESCE(edp.data_points, '[]'::json) AS efficiency_points,
+                    COALESCE(sdp.data_points, '[]'::json) AS stagnation_points
                 FROM profile_metrics pm
                 LEFT JOIN completion_per_profile cp ON pm.profile_id = cp.profile_id
                 LEFT JOIN first_attempt_per_profile fa ON pm.profile_id = fa.profile_id
@@ -304,11 +322,11 @@
                     'role', role,
                     'metrics', json_build_object(
                         'averageScore', json_build_object(
-                            'hasData', avg_score IS NOT NULL,
+                            'hasData', avg_score IS NOT NULL AND avg_score > 0,
                             'method', 'avg',
                             'currentValue', ROUND(COALESCE(avg_score, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(avg_score_points, '[]'::json),
+                            'dataPoints', avg_score_points,
                             'hover', json_build_object(
                                 'mean', ROUND(COALESCE(avg_score, 0))::int,
                                 'median', ROUND(COALESCE(avg_score, 0))::int,
@@ -320,7 +338,7 @@
                             'method', 'rate',
                             'currentValue', ROUND(COALESCE(completion_pct, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(completion_points, '[]'::json),
+                            'dataPoints', completion_points,
                             'hover', COALESCE(json_build_object(
                                 'completed', 0,
                                 'total', 0,
@@ -332,7 +350,7 @@
                             'method', 'rate',
                             'currentValue', ROUND(COALESCE(first_attempt_pass_rate, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(first_attempt_points, '[]'::json),
+                            'dataPoints', first_attempt_points,
                             'hover', COALESCE(json_build_object(
                                 'passed', 0,
                                 'total', 0,
@@ -344,7 +362,7 @@
                             'method', 'max',
                             'currentValue', ROUND(COALESCE(highest_score, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(highest_score_points, '[]'::json),
+                            'dataPoints', highest_score_points,
                             'hover', COALESCE(json_build_object(
                                 'top', ARRAY[ROUND(COALESCE(highest_score, 0))::int]
                             ), json_build_object('top', ARRAY[0]))
@@ -354,7 +372,7 @@
                             'method', 'avg',
                             'currentValue', ROUND(COALESCE(avg_messages, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(messages_points, '[]'::json),
+                            'dataPoints', messages_points,
                             'hover', CASE 
                                 WHEN avg_messages IS NOT NULL THEN json_build_object(
                                     'mean', ROUND(avg_messages)::int,
@@ -373,7 +391,7 @@
                             'method', 'avg',
                             'currentValue', ROUND(COALESCE(persona_response_time, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(persona_time_points, '[]'::json),
+                            'dataPoints', persona_time_points,
                             'hover', CASE 
                                 WHEN persona_response_time IS NOT NULL AND persona_response_time > 0 THEN json_build_object(
                                     'meanSeconds', ROUND(persona_response_time)::int,
@@ -392,7 +410,7 @@
                             'method', 'avg',
                             'currentValue', ROUND(COALESCE(session_efficiency, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(efficiency_points, '[]'::json),
+                            'dataPoints', efficiency_points,
                             'hover', json_build_object(
                                 'avgScorePercent', 0,
                                 'avgMinutes', 0,
@@ -404,7 +422,7 @@
                             'method', 'rate',
                             'currentValue', ROUND(COALESCE(stagnation_rate, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(stagnation_points, '[]'::json),
+                            'dataPoints', stagnation_points,
                             'hover', json_build_object(
                                 'tracked', 0,
                                 'stagnant', 0,
@@ -412,11 +430,11 @@
                             )
                         ),
                         'timeSpent', json_build_object(
-                            'hasData', avg_time_minutes IS NOT NULL,
+                            'hasData', avg_time_minutes IS NOT NULL AND avg_time_minutes > 0,
                             'method', 'avg',
                             'currentValue', ROUND(COALESCE(avg_time_minutes, 0))::int,
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(time_spent_points, '[]'::json),
+                            'dataPoints', time_spent_points,
                             'hover', json_build_object(
                                 'avgSessionMinutes', ROUND(COALESCE(avg_time_minutes, 0))::int,
                                 'avgChatMinutes', ROUND(COALESCE(avg_time_minutes, 0))::int,
@@ -426,11 +444,11 @@
                         'totalAttempts', json_build_object(
                             'hasData', true,
                             'method', 'countDistinct',
-                            'currentValue', total_attempts,
+                            'currentValue', COALESCE(total_attempts, 0),
                             'trendData', '[]'::json,
-                            'dataPoints', COALESCE(total_attempts_points, '[]'::json),
+                            'dataPoints', total_attempts_points,
                             'hover', json_build_object(
-                                'attempts', total_attempts,
+                                'attempts', COALESCE(total_attempts, 0),
                                 'uniqueSimulations', 0,
                                 'perSimulationMean', 0
                             )
@@ -472,4 +490,3 @@
                       )
                 ), '{}'::jsonb)
             ) AS result
-        

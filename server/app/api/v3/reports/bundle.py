@@ -4,24 +4,19 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
-from app.utils.analytics_query_builder import build_base_filter
+from app.utils.analytics_query_builder import (
+    build_base_filter, build_profile_and_analytics_filters)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AnalyticsFilters,
-    MetricResponse,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-)
+from app.utils.schema import (AnalyticsFilters, MetricResponse,
+                              ScenarioMapping, ScenarioMappingItem,
+                              SimulationMapping, SimulationMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -89,8 +84,9 @@ async def get_reports(
         # Load SQL template
         sql_template = load_sql("sql/v3/reports/reports_bundle.sql")
 
-        # Build WHERE clause dynamically using analytics query builder utility
-        where_clause, params = build_base_filter(
+        # Build separate WHERE clauses for profiles and analytics
+        # This allows including all matching profiles even if they have no attempts
+        profile_where, analytics_where, params = build_profile_and_analytics_filters(
             start_date=filters.startDate,
             end_date=filters.endDate,
             cohort_ids=filters.cohortIds,
@@ -102,8 +98,9 @@ async def get_reports(
             department_ids=filters.departmentIds,
         )
 
-        # Replace WHERE clause placeholder in SQL template
-        sql_query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
+        # Replace WHERE clause placeholders in SQL template
+        sql_query = sql_template.replace("{PROFILE_WHERE_CLAUSE}", profile_where)
+        sql_query = sql_query.replace("{ANALYTICS_WHERE_CLAUSE}", analytics_where)
         sql_params = tuple(params)
 
         # Execute query
