@@ -1437,10 +1437,12 @@ export default function AttemptChat({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
-                                    variant="outline"
+                                    variant={
+                                      showDocumentModal ? "default" : "outline"
+                                    }
                                     size="sm"
                                     onClick={() => setShowDocumentModal(true)}
-                                    className="p-2"
+                                    className={`p-2 ${showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
                                   >
                                     <FileText className="h-4 w-4" />
                                   </Button>
@@ -1741,20 +1743,27 @@ export default function AttemptChat({
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant={
-                                        showDocuments ? "default" : "outline"
+                                        showDocuments || showDocumentModal
+                                          ? "default"
+                                          : "outline"
                                       }
                                       size="sm"
-                                      onClick={() =>
-                                        setShowDocuments(!showDocuments)
-                                      }
-                                      className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
+                                      onClick={() => {
+                                        // Mobile: open modal, Desktop: toggle panel
+                                        if (window.innerWidth < 768) {
+                                          setShowDocumentModal(true);
+                                        } else {
+                                          setShowDocuments(!showDocuments);
+                                        }
+                                      }}
+                                      className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
                                     >
                                       <FileText className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>
-                                      {showDocuments
+                                      {showDocuments || showDocumentModal
                                         ? "Hide Documents"
                                         : "Show Documents"}
                                     </p>
@@ -1924,7 +1933,7 @@ export default function AttemptChat({
                 </div>
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-                  <ScrollArea className="flex-1 px-4 min-h-0">
+                  <ScrollArea className="flex-1 px-2 min-h-0">
                     <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
                       {showGrades && displayChat && rubricStructure ? (
@@ -2286,7 +2295,9 @@ export default function AttemptChat({
                                   <TooltipTrigger asChild>
                                     <Button
                                       variant={
-                                        showDocuments ? "default" : "outline"
+                                        showDocuments || showDocumentModal
+                                          ? "default"
+                                          : "outline"
                                       }
                                       size="sm"
                                       onClick={() => {
@@ -2297,14 +2308,14 @@ export default function AttemptChat({
                                           setShowDocuments(!showDocuments);
                                         }
                                       }}
-                                      className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
+                                      className={`p-2 ${showDocuments || showDocumentModal ? "bg-primary text-primary-foreground" : ""}`}
                                     >
                                       <FileText className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>
-                                      {showDocuments
+                                      {showDocuments || showDocumentModal
                                         ? "Hide Documents"
                                         : "Show Documents"}
                                     </p>
