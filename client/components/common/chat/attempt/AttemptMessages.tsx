@@ -618,7 +618,7 @@ export default function AttemptMessages({
                                       </TooltipContent>
                                     </Tooltip>
                                     <PopoverContent
-                                      className="w-96 p-0"
+                                      className="w-96 p-4"
                                       align="start"
                                       side="top"
                                       sideOffset={35}
