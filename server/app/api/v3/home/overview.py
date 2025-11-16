@@ -128,6 +128,9 @@ async def get_home_overview(
     Home always shows general simulations only (no simulationFilters parameter).
     """
     tags = ["home"]  # From router tags
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Filters: {filters}")
 
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()

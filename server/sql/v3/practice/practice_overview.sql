@@ -1,5 +1,6 @@
 -- Practice overview query - complete analytics with embedded history and all entity mappings
 -- Parameters: $1 = profile_id (uuid), $2 = department_ids (uuid[])
+-- Note: profile_id serves as historyProfileId for practice (same person)
 
 WITH
 -- Resolve guest-profile-id to actual profile ID
@@ -11,6 +12,15 @@ resolve_profile_id AS (
             WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
             ELSE $1::uuid
         END as resolved_profile_id
+),
+-- Get all cohorts (active + inactive) linked to profile_id for history preservation
+-- This ensures history includes attempts from cohorts the user was in, even if they left
+profile_cohorts_all AS (
+    SELECT DISTINCT cp.cohort_id
+    FROM cohort_profiles cp
+    JOIN resolve_profile_id rpi ON cp.profile_id = rpi.resolved_profile_id
+    WHERE rpi.resolved_profile_id IS NOT NULL
+    -- No active filter - include inactive links for history
 ),
 -- 1) Simulation meta (practice only)
 sim_meta AS (

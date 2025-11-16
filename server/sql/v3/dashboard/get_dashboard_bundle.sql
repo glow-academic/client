@@ -2,9 +2,38 @@
             -- =====================================================
             -- DASHBOARD BUNDLE QUERY - ALL METRICS IN ONE QUERY
             -- =====================================================
+            WITH
+            -- Resolve historyProfileId to actual profile ID (for history cohort expansion)
+            resolve_history_profile_id AS (
+                SELECT 
+                    CASE 
+                        WHEN $8::text = 'guest-profile-id' THEN
+                            (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+                        WHEN $8::text IS NULL OR $8::text = '' THEN NULL::uuid
+                        ELSE $8::uuid
+                    END as resolved_history_profile_id
+            ),
+            -- Get all cohorts (active + inactive) linked to historyProfileId for history preservation
+            history_profile_cohorts AS (
+                SELECT DISTINCT cp.cohort_id
+                FROM cohort_profiles cp
+                JOIN resolve_history_profile_id rhpi ON cp.profile_id = rhpi.resolved_history_profile_id
+                WHERE rhpi.resolved_history_profile_id IS NOT NULL
+                -- No active filter - include inactive links for history
+            ),
+            -- Expanded cohort list for history: union of provided cohortIds + historyProfileId cohorts
+            expanded_history_cohort_ids AS (
+                SELECT DISTINCT cohort_id
+                FROM (
+                    SELECT unnest($3::uuid[]) as cohort_id
+                    WHERE cardinality($3::uuid[]) > 0
+                    UNION
+                    SELECT cohort_id FROM history_profile_cohorts
+                ) combined
+            ),
             -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
             -- Gets simulations linked to cohorts + practice simulations without cohorts
-            WITH filtered_simulation_ids AS (
+            filtered_simulation_ids AS (
                 SELECT DISTINCT s.id AS simulation_id
                 FROM simulations s
                 WHERE s.active = TRUE
@@ -29,6 +58,34 @@
                       OR
                       -- If no cohort_ids provided, include all simulations
                       (cardinality($3::uuid[]) = 0)
+                  )
+            ),
+            -- Filter simulations for history using expanded cohort list (includes historyProfileId cohorts)
+            filtered_simulation_ids_for_history AS (
+                SELECT DISTINCT s.id AS simulation_id
+                FROM simulations s
+                WHERE s.active = TRUE
+                  AND (
+                      -- If expanded cohort list has cohorts, get simulations linked to those cohorts
+                      ((SELECT COUNT(*) FROM expanded_history_cohort_ids) > 0 AND EXISTS (
+                          SELECT 1 
+                          FROM cohort_simulations cs 
+                          WHERE cs.simulation_id = s.id 
+                            AND cs.cohort_id IN (SELECT cohort_id FROM expanded_history_cohort_ids)
+                            AND cs.active = TRUE
+                      ))
+                      OR
+                      -- Always include practice simulations without cohorts
+                      (s.practice_simulation = TRUE 
+                       AND NOT EXISTS (
+                           SELECT 1 
+                           FROM cohort_simulations cs2 
+                           WHERE cs2.simulation_id = s.id 
+                             AND cs2.active = TRUE
+                       ))
+                      OR
+                      -- If no cohort filter, include all simulations
+                      ((SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0)
                   )
             ),
             filt AS (
@@ -937,6 +994,7 @@
                         FROM cohort_profiles cp
                         JOIN profiles p ON p.id = cp.profile_id
                         WHERE cp.cohort_id = c.id
+                            AND cp.active = true  -- Only active cohort memberships for non-history queries
                             AND (cardinality($4::text[]) = 0 OR p.role = ANY($4::profile_role[]))
                     ) AS profile_ids,
                     ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id) AS simulation_ids
@@ -1365,7 +1423,28 @@
             -- =====================================================
             -- HISTORY DATA (matching home query structure)
             -- =====================================================
-            
+            -- Filter analytics for history using expanded cohort list
+            filt_for_history AS (
+                SELECT * FROM analytics a
+                WHERE a.attempt_created_at >= $1 
+                    AND a.attempt_created_at < $2 
+                    AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
+                    AND (
+                        $5::text[] IS NULL OR (
+                            ('general' = ANY($5::text[]) AND a.is_general = TRUE) OR
+                            ('practice' = ANY($5::text[]) AND a.is_practice = TRUE) OR
+                            ('archived' = ANY($5::text[]) AND a.is_archived = TRUE)
+                        )
+                    )
+                    -- Exclude archived attempts unless 'archived' is explicitly in the filter list
+                    AND (
+                        'archived' = ANY($5::text[]) OR a.is_archived = FALSE
+                    )
+                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) 
+                    AND ($6::uuid IS NOT NULL OR cardinality($4::text[]) = 0 OR a.profile_role = ANY($4::profile_role[])) 
+                    -- Filter by simulation_ids from expanded cohort list (includes historyProfileId cohorts)
+                    AND ((SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids_for_history))
+            ),
             history_attempt_rollup AS (
                 SELECT
                     a.attempt_id,
@@ -1376,7 +1455,7 @@
                     SUM(COALESCE(a.grade_percent, 0)) AS sum_grade_percent_zero_fill,
                     ARRAY_AGG(DISTINCT a.scenario_id) FILTER (WHERE a.scenario_id IS NOT NULL) AS leaf_scenarios_seen,
                     ARRAY_AGG(DISTINCT a.persona_id) FILTER (WHERE a.persona_id IS NOT NULL) AS persona_ids_distinct
-                FROM filt a
+                FROM filt_for_history a
                 JOIN simulations s ON s.id = a.simulation_id
                 GROUP BY a.attempt_id, a.simulation_id
             ),

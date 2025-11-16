@@ -1,4 +1,4 @@
-
+            WITH
             -- Start from profiles to include all matching profiles, even without attempts
             filtered_profiles AS (
                 SELECT p.id, p.first_name, p.last_name, p.alias, p.role

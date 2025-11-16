@@ -608,7 +608,7 @@ export default function Cohorts({
             <AlertDialogAction
               onClick={handleLeave}
               disabled={isLeaving}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-white"
               data-testid="btn-confirm-leave"
             >
               {isLeaving ? "Leaving..." : "Leave Cohort"}

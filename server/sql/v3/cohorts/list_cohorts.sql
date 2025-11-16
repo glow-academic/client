@@ -92,17 +92,7 @@ SELECT
     END as can_delete,
     true as can_duplicate,
     CASE
-        WHEN up.role = 'instructional' 
-            AND uic.cohort_id IS NOT NULL
-            AND (
-                SELECT COUNT(*) > 1
-                FROM cohort_profiles cp2
-                JOIN profiles p2 ON p2.id = cp2.profile_id
-                WHERE cp2.cohort_id = c.id
-                    AND cp2.active = true
-                    AND p2.role = 'instructional'
-            )
-        THEN true
+        WHEN uic.cohort_id IS NOT NULL THEN true
         ELSE false
     END as can_leave,
     (

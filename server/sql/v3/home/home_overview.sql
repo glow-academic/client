@@ -54,6 +54,34 @@ resolve_profile_id AS (
             ELSE $3::uuid
         END as resolved_profile_id
 ),
+-- Resolve historyProfileId to actual profile ID (for history cohort expansion)
+resolve_history_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $12::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
+            ELSE $12::uuid
+        END as resolved_history_profile_id
+),
+-- Get all cohorts (active + inactive) linked to historyProfileId for history preservation
+history_profile_cohorts AS (
+    SELECT DISTINCT cp.cohort_id
+    FROM cohort_profiles cp
+    JOIN resolve_history_profile_id rhpi ON cp.profile_id = rhpi.resolved_history_profile_id
+    WHERE rhpi.resolved_history_profile_id IS NOT NULL
+    -- No active filter - include inactive links for history
+),
+-- Expanded cohort list for history: union of provided cohortIds + historyProfileId cohorts
+expanded_history_cohort_ids AS (
+    SELECT DISTINCT cohort_id
+    FROM (
+        SELECT unnest($10::uuid[]) as cohort_id
+        WHERE cardinality($10::uuid[]) > 0
+        UNION
+        SELECT cohort_id FROM history_profile_cohorts
+    ) combined
+),
 -- Look up profile role if profileId provided
 profile_role_lookup AS (
     SELECT 
@@ -135,7 +163,7 @@ user_sim_status AS (
     FROM attempt_avg aa
     GROUP BY aa.profile_id, aa.simulation_id
 ),
--- Cohort membership CTE
+-- Cohort membership CTE (for non-history queries - only active memberships)
 cohort_membership AS (
     SELECT
         cp.profile_id,
@@ -148,7 +176,8 @@ cohort_membership AS (
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN profiles p ON p.id = cp.profile_id
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
-    WHERE (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
+    WHERE cp.active = true  -- Only active cohort memberships for non-history queries
+      AND (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
       AND (cardinality($6::profile_role[]) = 0 OR p.role = ANY($6::profile_role[]))
     GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, p.role, c.id
     HAVING 
@@ -464,7 +493,7 @@ history_attempts AS (
       AND (($9::text IS NULL OR $9::text = '' OR $9::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $9::text = 'guest-profile-id' THEN (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1) ELSE $9::uuid END)
       AND (cardinality($11::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $11::uuid[]::text[])
 ),
--- Get cohorts for each attempt's profile
+-- Get cohorts for each attempt's profile (includes inactive links for history)
 history_attempt_cohorts AS (
     SELECT
         ha.attempt_id,
@@ -474,15 +503,25 @@ history_attempt_cohorts AS (
     LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
     LEFT JOIN cohorts c ON c.id = cp.cohort_id AND c.active = TRUE
     LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
-    WHERE (cardinality($10::uuid[]) = 0 OR c.id = ANY($10::uuid[]))
+    WHERE (
+        -- If no cohort filter, include all attempts
+        (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0
+        -- Otherwise, only include cohorts in the expanded list (includes historyProfileId cohorts)
+        OR c.id IN (SELECT cohort_id FROM expanded_history_cohort_ids)
+    )
     GROUP BY ha.attempt_id
 ),
--- Filter attempts by cohort membership
+-- Filter attempts by cohort membership (uses expanded cohort list)
 history_attempts_filtered AS (
     SELECT ha.*
     FROM history_attempts ha
     JOIN history_attempt_cohorts hac ON hac.attempt_id = ha.attempt_id
-    WHERE (cardinality($10::uuid[]) = 0 OR cardinality(hac.cohort_ids) > 0)
+    WHERE (
+        -- If no cohort filter, include all attempts
+        (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0
+        -- Otherwise, only include attempts with matching cohorts
+        OR cardinality(hac.cohort_ids) > 0
+    )
 ),
 -- Aggregate chats per attempt
 history_chat_rollup AS (
