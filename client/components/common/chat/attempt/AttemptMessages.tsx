@@ -10,7 +10,9 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
   RotateCcw,
+  User,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -411,14 +413,49 @@ export default function AttemptMessages({
                   <div key={group.groupId} className="space-y-3">
                     {/* User message */}
                     <div className="flex justify-end mb-3">
-                      <div className="max-w-[80%]">
+                      <div className="max-w-[80%] flex items-stretch gap-2">
                         <div
-                          className="bg-primary text-primary-foreground rounded-lg p-3"
+                          className="bg-primary text-primary-foreground rounded-lg p-3 flex-1"
                           data-testid={`message-${group.userMessage.id}`}
                           data-message-id={group.userMessage.id}
                           data-message-type="user"
                         >
                           <Markdown>{group.userMessage.content}</Markdown>
+                        </div>
+                        {/* Right-aligned stacked controls (test) */}
+                        <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                aria-label="You"
+                                className="flex-1 p-0 rounded-md"
+                                tabIndex={-1}
+                              >
+                                <User className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>You</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                aria-label="You"
+                                className="flex-1 p-0 rounded-md"
+                                tabIndex={-1}
+                              >
+                                <User className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>You</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>
@@ -426,198 +463,237 @@ export default function AttemptMessages({
                     {/* Assistant response(s) */}
                     {group.responses.length > 0 && (
                       <div className="flex justify-start mb-3">
-                        <div className="max-w-[80%] relative group p-2 -m-2">
-                          {(() => {
-                            const currentResponse = getCurrentResponse(
-                              group.groupId
-                            );
-                            if (!currentResponse) return null;
+                        <div className="max-w-[80%] flex items-stretch gap-2">
+                          {/* Left-aligned stacked controls (test) */}
+                          <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  aria-label="Assistant"
+                                  className="flex-1 p-0 rounded-md"
+                                  tabIndex={-1}
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Assistant</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  aria-label="Assistant"
+                                  className="flex-1 p-0 rounded-md"
+                                  tabIndex={-1}
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Assistant</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="relative group p-2 -m-2 flex-1">
+                            {(() => {
+                              const currentResponse = getCurrentResponse(
+                                group.groupId
+                              );
+                              if (!currentResponse) return null;
 
-                            return (
-                              <>
-                                {/* Show loading state for empty/incomplete messages, otherwise show content */}
-                                {!currentResponse.completed &&
-                                currentResponse.content === "" ? (
-                                  <div
-                                    className="bg-muted rounded-lg p-3"
-                                    data-testid={`message-${currentResponse.id}`}
-                                    data-message-id={currentResponse.id}
-                                    data-message-type="assistant"
-                                  >
-                                    <div className="flex items-center">
-                                      <LoadingDots />
-                                    </div>
-                                  </div>
-                                ) : currentResponse.completed &&
+                              return (
+                                <>
+                                  {/* Show loading state for empty/incomplete messages, otherwise show content */}
+                                  {!currentResponse.completed &&
                                   currentResponse.content === "" ? (
-                                  // Show "No response" for completed messages with empty content
-                                  <div
-                                    className="bg-muted rounded-lg p-3"
-                                    data-testid={`message-${currentResponse.id}`}
-                                    data-message-id={currentResponse.id}
-                                    data-message-type="assistant"
-                                  >
-                                    <span className="text-gray-500 italic">
-                                      No response
-                                    </span>
-                                  </div>
-                                ) : currentResponse.completed &&
-                                  currentResponse.content.startsWith(
-                                    "Error:"
-                                  ) ? (
-                                  // Show error messages in red with retry button (only if no successful responses exist)
-                                  <div
-                                    className="bg-red-50 border border-red-200 rounded-lg p-3 relative"
-                                    data-testid={`message-${currentResponse.id}`}
-                                    data-message-id={currentResponse.id}
-                                    data-message-type="assistant"
-                                  >
-                                    <div className="text-red-700 pr-12">
+                                    <div
+                                      className="bg-muted rounded-lg p-3"
+                                      data-testid={`message-${currentResponse.id}`}
+                                      data-message-id={currentResponse.id}
+                                      data-message-type="assistant"
+                                    >
+                                      <div className="flex items-center">
+                                        <LoadingDots />
+                                      </div>
+                                    </div>
+                                  ) : currentResponse.completed &&
+                                    currentResponse.content === "" ? (
+                                    // Show "No response" for completed messages with empty content
+                                    <div
+                                      className="bg-muted rounded-lg p-3"
+                                      data-testid={`message-${currentResponse.id}`}
+                                      data-message-id={currentResponse.id}
+                                      data-message-type="assistant"
+                                    >
+                                      <span className="text-gray-500 italic">
+                                        No response
+                                      </span>
+                                    </div>
+                                  ) : currentResponse.completed &&
+                                    currentResponse.content.startsWith(
+                                      "Error:"
+                                    ) ? (
+                                    // Show error messages in red with retry button (only if no successful responses exist)
+                                    <div
+                                      className="bg-red-50 border border-red-200 rounded-lg p-3 relative"
+                                      data-testid={`message-${currentResponse.id}`}
+                                      data-message-id={currentResponse.id}
+                                      data-message-type="assistant"
+                                    >
+                                      <div className="text-red-700 pr-12">
+                                        <Markdown>
+                                          {currentResponse.content}
+                                        </Markdown>
+                                      </div>
+                                      {(() => {
+                                        // Check if there are any non-error responses in this group
+                                        const hasSuccessfulResponse =
+                                          group.responses.some(
+                                            (response) =>
+                                              response.completed &&
+                                              !response.content.startsWith(
+                                                "Error:"
+                                              )
+                                          );
+
+                                        return (
+                                          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                            {/* Report Error Button - Always shown for error messages */}
+                                            <Tooltip>
+                                              <TooltipTrigger>
+                                                <ReportProblem
+                                                  createFeedback={
+                                                    createFeedback
+                                                  }
+                                                  initialType="bug"
+                                                  initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
+                                                  onDialogStateChange={
+                                                    setIsReportDialogOpen
+                                                  }
+                                                >
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                                  >
+                                                    <AlertCircle className="h-4 w-4" />
+                                                  </Button>
+                                                </ReportProblem>
+                                              </TooltipTrigger>
+                                              {!isReportDialogOpen && (
+                                                <TooltipContent>
+                                                  <p>Report this error</p>
+                                                </TooltipContent>
+                                              )}
+                                            </Tooltip>
+
+                                            {/* Retry Button - Only shown if no successful responses exist */}
+                                            {!hasSuccessfulResponse && (
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                      handleRetry(
+                                                        messages.indexOf(
+                                                          currentResponse
+                                                        )
+                                                      )
+                                                    }
+                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                                    disabled={
+                                                      currentChat?.completed ||
+                                                      isSendingMessage ||
+                                                      (simulation?.timeLimit
+                                                        ? !isActive
+                                                        : false)
+                                                    }
+                                                  >
+                                                    <RotateCcw className="h-4 w-4" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Retry this message</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  ) : (
+                                    <div
+                                      className="bg-muted rounded-lg p-3 relative"
+                                      data-testid={`message-${currentResponse.id}`}
+                                      data-message-id={currentResponse.id}
+                                      data-message-type="assistant"
+                                    >
                                       <Markdown>
                                         {currentResponse.content}
                                       </Markdown>
                                     </div>
-                                    {(() => {
-                                      // Check if there are any non-error responses in this group
-                                      const hasSuccessfulResponse =
-                                        group.responses.some(
-                                          (response) =>
-                                            response.completed &&
-                                            !response.content.startsWith(
-                                              "Error:"
+                                  )}
+
+                                  {/* Response navigation and rating (right) - add a row only when chevrons exist */}
+                                  {group.responses.length > 1 && (
+                                    <div className="flex items-center justify-between gap-0 mt-1">
+                                      {/* Thumbs rating (left side) - show on hover */}
+
+                                      {/* Response navigation (right side) - always visible */}
+                                      <div className="flex items-center gap-0">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleResponseNavigation(
+                                              group.groupId,
+                                              "prev"
                                             )
-                                        );
-
-                                      return (
-                                        <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                                          {/* Report Error Button - Always shown for error messages */}
-                                          <Tooltip>
-                                            <TooltipTrigger>
-                                              <ReportProblem
-                                                createFeedback={createFeedback}
-                                                initialType="bug"
-                                                initialMessage={`Error in simulation chat: ${currentResponse.content}\n\nChat ID: ${targetChatId}\nMessage ID: ${currentResponse.id}`}
-                                                onDialogStateChange={
-                                                  setIsReportDialogOpen
-                                                }
-                                              >
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
-                                                >
-                                                  <AlertCircle className="h-4 w-4" />
-                                                </Button>
-                                              </ReportProblem>
-                                            </TooltipTrigger>
-                                            {!isReportDialogOpen && (
-                                              <TooltipContent>
-                                                <p>Report this error</p>
-                                              </TooltipContent>
-                                            )}
-                                          </Tooltip>
-
-                                          {/* Retry Button - Only shown if no successful responses exist */}
-                                          {!hasSuccessfulResponse && (
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  onClick={() =>
-                                                    handleRetry(
-                                                      messages.indexOf(
-                                                        currentResponse
-                                                      )
-                                                    )
-                                                  }
-                                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
-                                                  disabled={
-                                                    currentChat?.completed ||
-                                                    isSendingMessage ||
-                                                    (simulation?.timeLimit
-                                                      ? !isActive
-                                                      : false)
-                                                  }
-                                                >
-                                                  <RotateCcw className="h-4 w-4" />
-                                                </Button>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                <p>Retry this message</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
-                                ) : (
-                                  <div
-                                    className="bg-muted rounded-lg p-3 relative"
-                                    data-testid={`message-${currentResponse.id}`}
-                                    data-message-id={currentResponse.id}
-                                    data-message-type="assistant"
-                                  >
-                                    <Markdown>
-                                      {currentResponse.content}
-                                    </Markdown>
-                                  </div>
-                                )}
-
-                                {/* Response navigation and rating (right) - add a row only when chevrons exist */}
-                                {group.responses.length > 1 && (
-                                  <div className="flex items-center justify-between gap-0 mt-1">
-                                    {/* Thumbs rating (left side) - show on hover */}
-
-                                    {/* Response navigation (right side) - always visible */}
-                                    <div className="flex items-center gap-0">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                          handleResponseNavigation(
-                                            group.groupId,
-                                            "prev"
-                                          )
-                                        }
-                                        disabled={
-                                          (responseVersions[group.groupId] ??
-                                            group.responses.length - 1) === 0
-                                        }
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        <ChevronLeft className="h-3 w-3" />
-                                      </Button>
-                                      <span className="text-xs text-muted-foreground px-1">
-                                        {(responseVersions[group.groupId] ??
-                                          group.responses.length - 1) + 1}
-                                        /{group.responses.length}
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                          handleResponseNavigation(
-                                            group.groupId,
-                                            "next"
-                                          )
-                                        }
-                                        disabled={
-                                          (responseVersions[group.groupId] ??
-                                            group.responses.length - 1) ===
-                                          group.responses.length - 1
-                                        }
-                                        className="h-6 w-6 p-0"
-                                      >
-                                        <ChevronRight className="h-3 w-3" />
-                                      </Button>
+                                          }
+                                          disabled={
+                                            (responseVersions[group.groupId] ??
+                                              group.responses.length - 1) === 0
+                                          }
+                                          className="h-6 w-6 p-0"
+                                        >
+                                          <ChevronLeft className="h-3 w-3" />
+                                        </Button>
+                                        <span className="text-xs text-muted-foreground px-1">
+                                          {(responseVersions[group.groupId] ??
+                                            group.responses.length - 1) + 1}
+                                          /{group.responses.length}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleResponseNavigation(
+                                              group.groupId,
+                                              "next"
+                                            )
+                                          }
+                                          disabled={
+                                            (responseVersions[group.groupId] ??
+                                              group.responses.length - 1) ===
+                                            group.responses.length - 1
+                                          }
+                                          className="h-6 w-6 p-0"
+                                        >
+                                          <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                      </div>
                                     </div>
-                                  </div>
-                                )}
-                              </>
-                            );
-                          })()}
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
                         </div>
                       </div>
                     )}

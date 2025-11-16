@@ -5,17 +5,18 @@ import os
 from typing import Any
 
 from agents.items import TResponseInputItem
-from openai.types.responses.response_input_image_param import ResponseInputImageParam
-from openai.types.responses.response_input_item_param import Message
-from openai.types.responses.response_input_message_content_list_param import (
-    ResponseInputMessageContentListParam,
-)
-from openai.types.responses.response_input_text_param import ResponseInputTextParam
-
 from app.main import UPLOAD_FOLDER
-from app.utils.document.pdf_pages_to_image_data_urls import pdf_pages_to_image_data_urls
+from app.utils.document.pdf_pages_to_image_data_urls import \
+    pdf_pages_to_image_data_urls
 from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 from app.utils.document.read_text_file import read_text_file
+from openai.types.responses.response_input_image_param import \
+    ResponseInputImageParam
+from openai.types.responses.response_input_item_param import Message
+from openai.types.responses.response_input_message_content_list_param import \
+    ResponseInputMessageContentListParam
+from openai.types.responses.response_input_text_param import \
+    ResponseInputTextParam
 
 
 def format_document_info(
@@ -148,5 +149,5 @@ def format_document_info(
         # Fallback to a minimal text item if nothing could be built
         content_items.append({"type": "input_text", "text": "No documents provided"})
 
-    result_msg: Message = {"role": "user", "content": content_items}
+    result_msg: Message = {"role": "developer", "content": content_items}
     return result_msg

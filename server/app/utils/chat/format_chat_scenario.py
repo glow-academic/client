@@ -16,6 +16,6 @@ def format_chat_scenario(problem_statement: str | None) -> TResponseInputItem:
     # Handle None values defensively
     statement = problem_statement if problem_statement is not None else ""
     return {
-        "role": "user",
+        "role": "developer",
         "content": f"The following is the scenario for the chat: {statement}",
     }
