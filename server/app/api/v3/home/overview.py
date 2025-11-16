@@ -73,6 +73,7 @@ class AttemptHistoryRow(BaseModel):
     isArchived: bool
     showView: bool
     showContinue: bool
+    showRetry: bool
     practiceSimulation: bool
     passPct: int | None = None
     department_ids: list[str] | None = None  # Simulation's department associations
@@ -100,7 +101,8 @@ class HomeFilters(BaseModel):
     startDate: str
     endDate: str
     cohortIds: list[str] | None = None
-    profileId: str | None = None
+    profileId: str | None = None  # Used for main home metrics filtering
+    historyProfileId: str | None = None  # Used only for history showRetry calculation
     departmentIds: list[str] | None = None
 
 
@@ -171,8 +173,10 @@ async def get_home_overview(
         # $5: department_ids
         # $6: roles (hardcoded to ["ta"])
         # $7, $8: history dates
-        # $9: history_profile_id
+        # $9: history_profile_id (legacy, kept for compatibility)
         # $10, $11: history cohort_ids, dept_ids
+        # $12: historyProfileId (used for showRetry calculation)
+        history_profile_id = filters.historyProfileId
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
@@ -182,9 +186,10 @@ async def get_home_overview(
             ["ta"],  # $6
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $7
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $8
-            profile_id if profile_id else None,  # $9
+            profile_id if profile_id else None,  # $9 (legacy)
             filters.cohortIds if filters.cohortIds else [],  # $10
             filters.departmentIds if filters.departmentIds else [],  # $11
+            history_profile_id if history_profile_id else None,  # $12
         ]
         sql_params = tuple(params)
 

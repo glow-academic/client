@@ -103,8 +103,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (defaultFilters.cohortIds && defaultFilters.cohortIds.length > 0) {
     homeFiltersBody.cohortIds = defaultFilters.cohortIds;
   }
+  // profileId is left empty/null for main home metrics
+  // historyProfileId is used only for history showRetry calculation
   if (session?.effectiveProfileId) {
-    homeFiltersBody.profileId = session.effectiveProfileId;
+    homeFiltersBody.historyProfileId = session.effectiveProfileId;
   }
   if (defaultFilters.departmentIds && defaultFilters.departmentIds.length > 0) {
     homeFiltersBody.departmentIds = defaultFilters.departmentIds;

@@ -26,6 +26,7 @@ export interface DataTableRowActionsProps {
   showArchive?: boolean;
   canView?: boolean; // from SQL showView
   canContinue?: boolean; // from SQL showContinue
+  showRetry?: boolean; // from SQL showRetry
 }
 
 export function DataTableRowActions({
@@ -40,8 +41,9 @@ export function DataTableRowActions({
   attemptCreatedAt,
   archived: _archived = false,
   showArchive: _showArchive = false,
-  canView,
+  canView: _canView,
   canContinue,
+  showRetry,
 }: DataTableRowActionsProps) {
   const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
     useProfile();
@@ -69,9 +71,6 @@ export function DataTableRowActions({
     isCurrentUser &&
     (!infiniteMode || isInfiniteWindowOpen);
 
-  // View if server says it CAN view OR continue is not allowed by the checks above
-  const wantView = Boolean(canView) || !wantContinue;
-
   const buttonText = wantContinue ? "Continue" : "View";
   const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id;
   const linkHref = `/${isPractice ? "practice" : "home"}/a/${id}`;
@@ -88,8 +87,8 @@ export function DataTableRowActions({
         </Button>
       </Link>
 
-      {/* Retry: matches the old behavior → show when it would be View (i.e., completed) and practice */}
-      {wantView && isPractice && (simulationId ?? "") !== "" && (
+      {/* Retry: show when server indicates showRetry is true */}
+      {showRetry && (simulationId ?? "") !== "" && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

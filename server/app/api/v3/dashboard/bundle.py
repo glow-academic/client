@@ -50,6 +50,7 @@ class AttemptHistoryRow(BaseModel):
     isArchived: bool
     showView: bool
     showContinue: bool
+    showRetry: bool
     practiceSimulation: bool
     passPct: int | None = None
     department_ids: list[str] | None = Field(
@@ -1428,7 +1429,8 @@ async def get_dashboard(
     try:
         sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
-        # Build parameters in the same order as the query expects ($1-$7)
+        # Build parameters in the same order as the query expects ($1-$8)
+        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id, $7: department_ids, $8: historyProfileId
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         cohort_ids = filters.cohortIds or []
@@ -1443,6 +1445,7 @@ async def get_dashboard(
         )
         profile_id = filters.profileId
         department_ids = filters.departmentIds or []
+        history_profile_id = filters.historyProfileId
 
         sql_params = (
             start_dt,
@@ -1452,6 +1455,7 @@ async def get_dashboard(
             sim_filters,
             profile_id,
             department_ids,
+            history_profile_id,
         )
 
         # Execute query

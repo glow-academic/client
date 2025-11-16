@@ -76,6 +76,8 @@ interface DashboardPageProps {
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
+  const session = await getSession();
+
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -94,9 +96,20 @@ export default async function DashboardPage({
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
+  // Add historyProfileId from session to request body (not search params)
+  // profileId is left null for main dashboard metrics (not used for filtering)
+  // historyProfileId is used only for history showRetry calculation
+  const dashboardRequestBody = {
+    ...filters,
+    profileId: null, // Not used for main dashboard metrics
+    ...(session?.effectiveProfileId && {
+      historyProfileId: session.effectiveProfileId,
+    }),
+  };
+
   // Fetch dashboard data server-side
   const dashboardData = await api.post("/dashboard", {
-    body: filters,
+    body: dashboardRequestBody,
   });
 
   return (

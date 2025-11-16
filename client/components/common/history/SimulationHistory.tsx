@@ -44,6 +44,7 @@ export interface HistoryDataItem {
   isArchived: boolean;
   showView: boolean;
   showContinue: boolean;
+  showRetry?: boolean; // Whether to show retry button (computed server-side)
   practiceSimulation?: boolean; // Needed for routing to /practice/ vs /home/
   passPct: number; // Pass percentage threshold for this simulation
   cohortNames: string[];
@@ -516,6 +517,7 @@ export default function SimulationHistory({
               })()}
               canView={item.showView}
               canContinue={item.showContinue}
+              showRetry={item.showRetry ?? false}
               archived={item.isArchived}
               showArchive={showArchive}
             />

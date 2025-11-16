@@ -127,11 +127,17 @@ export default async function ReportsPage({
     }
   });
 
-  // Get filters from search params or defaults, then set profileId
+  // Get filters from search params or defaults, then set profileId and historyProfileId
+  // profileId is used for filtering main dashboard metrics for this profile
+  // historyProfileId is used only for history showRetry calculation
   const defaultFilters = await getProfileReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
-  const dashboardFilters = { ...defaultFilters, profileId };
+  const dashboardFilters = {
+    ...defaultFilters,
+    profileId,  // Used for main dashboard metrics filtering
+    historyProfileId: profileId,  // Used for history showRetry calculation
+  };
 
   // Fetch profile detail and dashboard data server-side
   const [profileData, dashboardData] = await Promise.all([

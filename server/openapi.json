@@ -7680,6 +7680,17 @@
             ],
             "title": "Profileid"
           },
+          "historyProfileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historyprofileid"
+          },
           "departmentIds": {
             "anyOf": [
               {
@@ -14026,6 +14037,17 @@
               }
             ],
             "title": "Profileid"
+          },
+          "historyProfileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historyprofileid"
           },
           "departmentIds": {
             "anyOf": [
@@ -22793,6 +22815,10 @@
             "type": "boolean",
             "title": "Showcontinue"
           },
+          "showRetry": {
+            "type": "boolean",
+            "title": "Showretry"
+          },
           "practiceSimulation": {
             "type": "boolean",
             "title": "Practicesimulation"
@@ -22847,6 +22873,7 @@
           "isArchived",
           "showView",
           "showContinue",
+          "showRetry",
           "practiceSimulation",
           "cohortNames"
         ],
@@ -23409,6 +23436,10 @@
             "type": "boolean",
             "title": "Showcontinue"
           },
+          "showRetry": {
+            "type": "boolean",
+            "title": "Showretry"
+          },
           "practiceSimulation": {
             "type": "boolean",
             "title": "Practicesimulation"
@@ -23463,6 +23494,7 @@
           "isArchived",
           "showView",
           "showContinue",
+          "showRetry",
           "practiceSimulation",
           "cohortNames"
         ],

@@ -1385,6 +1385,7 @@
                         OR (aj.sim_scenario_count IS NOT NULL
                             AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
                     ) AS show_continue,
+                    ($8::uuid IS NOT NULL AND aj.profile_id = $8::uuid) AS show_retry,
                     aj.persona_ids_distinct
                 FROM history_attempt_joined aj
                 ORDER BY aj.attempt_date DESC, aj.attempt_id
@@ -1434,6 +1435,7 @@
                        fr.is_archived,
                        fr.show_view,
                        fr.show_continue,
+                       fr.show_retry,
                        fr.practice_simulation,
                        fr.pass_pct,
                        ARRAY[]::text[] AS cohort_names
@@ -1934,6 +1936,7 @@
                     'isArchived', is_archived,
                     'showView', show_view,
                     'showContinue', show_continue,
+                    'showRetry', show_retry,
                     'practiceSimulation', practice_simulation,
                     'passPct', pass_pct,
                     'cohortNames', cohort_names

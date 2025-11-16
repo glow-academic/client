@@ -214,7 +214,8 @@ class AnalyticsFilters(BaseModel):
     cohortIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
-    profileId: str | None = None
+    profileId: str | None = None  # Used for main dashboard metrics filtering
+    historyProfileId: str | None = None  # Used only for history showRetry calculation
     departmentIds: list[str] | None = None
 
 

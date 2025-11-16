@@ -3524,6 +3524,8 @@ export interface components {
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
             /** Profileid */
             profileId?: string | null;
+            /** Historyprofileid */
+            historyProfileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
         };
@@ -6071,6 +6073,8 @@ export interface components {
             cohortIds?: string[] | null;
             /** Profileid */
             profileId?: string | null;
+            /** Historyprofileid */
+            historyProfileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
         };
@@ -9471,6 +9475,8 @@ export interface components {
             showView: boolean;
             /** Showcontinue */
             showContinue: boolean;
+            /** Showretry */
+            showRetry: boolean;
             /** Practicesimulation */
             practiceSimulation: boolean;
             /** Passpct */
@@ -9723,6 +9729,8 @@ export interface components {
             showView: boolean;
             /** Showcontinue */
             showContinue: boolean;
+            /** Showretry */
+            showRetry: boolean;
             /** Practicesimulation */
             practiceSimulation: boolean;
             /** Passpct */
