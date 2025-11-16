@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type GrowthDataPoint = {
   date: string;
@@ -137,7 +138,7 @@ export default function Growth({
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
     return metricsWithFormatters.filter((metric) =>
-      selectedMetrics.includes(metric.id),
+      selectedMetrics.includes(metric.id)
     );
   }, [metricsWithFormatters, selectedMetrics]);
 
@@ -164,7 +165,7 @@ export default function Growth({
   // Normalize to a string once
   const normalizedInsight = useMemo(
     () => (actionableInsight ?? "").trim(),
-    [actionableInsight],
+    [actionableInsight]
   );
 
   if (!hasDataAvailable) {
@@ -258,7 +259,7 @@ export default function Growth({
                   formatter={(value: number, _name: string, item: any) => {
                     const id = String(item?.dataKey ?? "");
                     const metric = metricsWithFormatters.find(
-                      (m) => m.id === id,
+                      (m) => m.id === id
                     );
 
                     // Prefer the metric's own formatter if present
@@ -297,13 +298,8 @@ export default function Growth({
 
           {/* Actionable Insights */}
           {normalizedInsight && (
-            <div
-              className="p-3 bg-muted rounded-lg flex-shrink-0 w-full"
-              data-testid="growth-insight"
-            >
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {normalizedInsight}
-              </p>
+            <div className="flex-shrink-0 w-full" data-testid="growth-insight">
+              <TruncatedInsight text={normalizedInsight} />
             </div>
           )}
         </div>

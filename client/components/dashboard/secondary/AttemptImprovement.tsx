@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { TruncatedInsight } from "../TruncatedInsight";
 import { TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -232,13 +233,7 @@ export default function AttemptImprovement({
           </div>
 
           {/* Actionable Insights */}
-          {actionableInsight && (
-            <div className="px-3 pt-3 pb-2 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {actionableInsight}
-              </p>
-            </div>
-          )}
+          {actionableInsight && <TruncatedInsight text={actionableInsight} />}
         </div>
       </CardContent>
     </Card>

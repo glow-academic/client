@@ -566,6 +566,16 @@
                 LEFT JOIN growth_stagnation gst ON gst.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_time_spent gts ON gts.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_total_attempts gta ON gta.date = to_char(s.d, 'YYYY-MM-DD')
+                WHERE gas.value IS NOT NULL 
+                   OR gpr.value IS NOT NULL 
+                   OR gcr.value IS NOT NULL 
+                   OR gfapr.value IS NOT NULL 
+                   OR gm.value IS NOT NULL 
+                   OR gpt.value IS NOT NULL 
+                   OR ge.value IS NOT NULL 
+                   OR gst.value IS NOT NULL 
+                   OR gts.value IS NOT NULL 
+                   OR gta.value IS NOT NULL
             ),
             growth_window AS (
                 SELECT AVG(average_score) FILTER (WHERE date_val >= (SELECT MAX(date_val) FROM growth_chart_dates) - interval '7 days') AS last_avg,

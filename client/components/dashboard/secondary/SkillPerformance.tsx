@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { TruncatedInsight } from "../TruncatedInsight";
 import { GraduationCap } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -239,13 +240,7 @@ export default function SkillPerformance({
         </div>
 
         {/* Actionable Insights */}
-        {actionableInsight && (
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {actionableInsight}
-            </p>
-          </div>
-        )}
+        {actionableInsight && <TruncatedInsight text={actionableInsight} />}
       </CardContent>
     </Card>
   );

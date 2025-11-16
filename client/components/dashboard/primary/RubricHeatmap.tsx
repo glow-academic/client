@@ -28,6 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
 
 type RubricHeatmapCell = {
@@ -396,10 +397,8 @@ export default function RubricHeatmap({
 
           {/* Actionable Insights */}
           {actionableInsight && (
-            <div className="p-3 bg-muted rounded-lg flex-shrink-0 w-full">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {actionableInsight}
-              </p>
+            <div className="flex-shrink-0 w-full">
+              <TruncatedInsight text={actionableInsight} />
             </div>
           )}
 

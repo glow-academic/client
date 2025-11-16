@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
 import { Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -337,11 +338,7 @@ export default function PersonaPerformance({
 
                     {/* Actionable Insights */}
                     {actionableInsights && actionableInsights[persona.name] && (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {actionableInsights[persona.name]}
-                        </p>
-                      </div>
+                      <TruncatedInsight text={actionableInsights[persona.name]} />
                     )}
                   </div>
                 </DialogContent>

@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { TruncatedInsight } from "../TruncatedInsight";
 import { BarChart3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -332,11 +333,7 @@ export default function CohortPerformance({
 
                     {/* Actionable insight inside the modal */}
                     {actionableInsights && actionableInsights[cohort.id] && (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {actionableInsights[cohort.id]}
-                        </p>
-                      </div>
+                      <TruncatedInsight text={actionableInsights[cohort.id]} />
                     )}
                   </DialogContent>
                 </Dialog>

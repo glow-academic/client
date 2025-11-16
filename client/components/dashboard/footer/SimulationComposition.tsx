@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { TruncatedInsight } from "../TruncatedInsight";
 import {
   Table,
   TableBody,
@@ -655,13 +656,7 @@ export default function SimulationComposition({
         </div>
 
         {/* Actionable Insights */}
-        {actionableInsight && (
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {actionableInsight}
-            </p>
-          </div>
-        )}
+        {actionableInsight && <TruncatedInsight text={actionableInsight} />}
       </CardContent>
     </Card>
   );

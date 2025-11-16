@@ -32,6 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -378,13 +379,7 @@ export default function ScenarioStats({
           </div>
 
           {/* Actionable Insights */}
-          {actionableInsight && (
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {actionableInsight}
-              </p>
-            </div>
-          )}
+          {actionableInsight && <TruncatedInsight text={actionableInsight} />}
         </CardContent>
       </Card>
     </TooltipProvider>
