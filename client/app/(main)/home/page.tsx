@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { revalidateTag } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/api/v3/home", "post">;
@@ -91,6 +92,16 @@ export const metadata: Metadata = {
   description: `Home page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
+/** ---- Server action to revalidate attempt cache when simulation starts ---- */
+export async function revalidateAttempt(attemptId: string): Promise<void> {
+  "use server";
+  // Invalidate attempt-level cache
+  revalidateTag("attempts");
+  revalidateTag(`attempt:${attemptId}`);
+  // Note: Chat-specific tags can be added here if chat IDs are known
+  // For now, invalidating attempt-level cache ensures all chats refresh
+}
+
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
@@ -140,7 +151,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div className="space-y-6">
-      <Home homeData={homeData} />
+      <Home homeData={homeData} revalidateAttemptAction={revalidateAttempt} />
     </div>
   );
 }

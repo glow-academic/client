@@ -297,10 +297,11 @@ function MainLayoutContent({
 
   return (
     <>
-      <AssistantChat
-        getAssistantChatList={getAssistantChatListAction}
-        getAssistantChatFull={getAssistantChatFullAction}
-      />
+      {shouldShowChatComponents && canShowChatComponents && <AssistantChat
+          getAssistantChatList={getAssistantChatListAction}
+          getAssistantChatFull={getAssistantChatFullAction}
+        />
+      }
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}

@@ -87,6 +87,7 @@
         -- Maps child scenarios to parent scenarios for matching with simulation_scenarios
         -- Use latest grade per chat (DISTINCT ON)
         -- Include ALL simulation scenarios, not just ones in chats_base
+        -- Exclude previous chats if current attempt is a practice simulation
         previous_chats_with_grades AS (
             SELECT DISTINCT ON (sc.id)
                 sc.id as chat_id,
@@ -113,6 +114,7 @@
             JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
             CROSS JOIN current_attempt_profile cap
             CROSS JOIN simulation_scenarios_list ssl
+            CROSS JOIN attempt_base ab
             LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
@@ -127,6 +129,9 @@
                     sc.scenario_id
                   ) = ssl.scenario_id
               AND ac2.attempt_id != $1
+              -- Exclude previous chats if current attempt is a practice simulation
+              -- Practice simulations must always go through manual grading
+              AND ab.sim_practice_simulation = false
             ORDER BY sc.id, scg.created_at DESC
         ),
         -- Aggregate timeTaken from all completed chats per previous attempt

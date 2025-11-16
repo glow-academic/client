@@ -41,6 +41,8 @@ export function SimulationControls({
   const attempt = attemptData?.attempt || null;
   const currentChatIndex = attemptData?.currentChatIndex ?? 0;
   const shouldShowControls = attemptData?.shouldShowControls ?? true;
+  const isPracticeSimulation =
+    attemptData?.simulation?.practiceSimulation ?? false;
 
   // Find current chat from server data
   const currentChat = useMemo(() => {
@@ -458,13 +460,16 @@ export function SimulationControls({
     return matchingScenario?.previousChats || [];
   }, [currentChatData, allSimulationScenarios]);
 
-  const hasPreviousChats = previousChats.length > 0;
+  // For practice simulations, never show previous chats (must always go through manual grading)
+  const hasPreviousChats = !isPracticeSimulation && previousChats.length > 0;
 
   // Check if there's a better previous attempt (higher score or passed when current failed)
   // Must be before early returns to maintain hook order
+  // Practice simulations never have better previous attempts (must always go through manual grading)
   const currentGrade = currentChatData?.dynamicRubric;
   const hasBetterPreviousAttempt = useMemo(() => {
-    if (!hasPreviousChats || !currentGrade) return false;
+    if (isPracticeSimulation || !hasPreviousChats || !currentGrade)
+      return false;
 
     const currentScore = currentGrade.score || 0;
     const currentPassed = currentGrade.passed || false;
@@ -477,7 +482,7 @@ export function SimulationControls({
       // Better if: previous passed and current didn't, OR previous has higher score
       return (prevPassed && !currentPassed) || prevScore > currentScore;
     });
-  }, [hasPreviousChats, currentGrade, previousChats]);
+  }, [isPracticeSimulation, hasPreviousChats, currentGrade, previousChats]);
 
   // Don't show buttons if attemptData is not available
   if (!attemptData) {
@@ -501,9 +506,10 @@ export function SimulationControls({
   const handleNextChat = () => {
     const totalMessages = currentMessages.length;
 
-    // If there are previous chats available, bypass the "no messages" warning
+    // Practice simulations cannot use previous chats - must always go through manual grading
+    // If there are previous chats available (and not a practice simulation), bypass the "no messages" warning
     // and go directly to the previous chats selection dialog
-    if (hasPreviousChats) {
+    if (hasPreviousChats && !isPracticeSimulation) {
       setShowPreviousChatsDialog(true);
       setSelectedPreviousChatId(""); // Default to "continue normally"
       return;

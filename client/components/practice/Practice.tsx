@@ -23,9 +23,13 @@ import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
 export interface PracticeProps {
   practiceData: PracticeOut;
+  revalidateAttemptAction: (attemptId: string) => Promise<void>;
 }
 
-export default function Practice({ practiceData }: PracticeProps) {
+export default function Practice({
+  practiceData,
+  revalidateAttemptAction,
+}: PracticeProps) {
   const router = useRouter();
 
   const {
@@ -105,7 +109,7 @@ export default function Practice({ practiceData }: PracticeProps) {
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
     // Listen for successful simulation starts to handle navigation
-    const handleSimulationStarted = (event: CustomEvent) => {
+    const handleSimulationStarted = async (event: CustomEvent) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -114,6 +118,8 @@ export default function Practice({ practiceData }: PracticeProps) {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
+      // Invalidate cache before navigation to ensure fresh data
+      await revalidateAttemptAction(attemptId);
       router.push(`/practice/a/${attemptId}`);
     };
 
@@ -131,21 +137,21 @@ export default function Practice({ practiceData }: PracticeProps) {
 
     window.addEventListener(
       "simulationStarted",
-      handleSimulationStarted as EventListener
+      handleSimulationStarted as unknown as EventListener
     );
     window.addEventListener("simulationError", handleSimulationError);
 
     return () => {
       window.removeEventListener(
         "simulationStarted",
-        handleSimulationStarted as EventListener
+        handleSimulationStarted as unknown as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId]);
+  }, [router, loadingToastId, revalidateAttemptAction]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {

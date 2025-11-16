@@ -11,7 +11,7 @@ import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PracticeIn = InputOf<"/api/v3/practice", "post">;
@@ -33,6 +33,16 @@ export const metadata: Metadata = {
   title: "Practice",
   description: `Practice page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
+
+/** ---- Server action to revalidate attempt cache when simulation starts ---- */
+export async function revalidateAttempt(attemptId: string): Promise<void> {
+  "use server";
+  // Invalidate attempt-level cache
+  revalidateTag("attempts");
+  revalidateTag(`attempt:${attemptId}`);
+  // Note: Chat-specific tags can be added here if chat IDs are known
+  // For now, invalidating attempt-level cache ensures all chats refresh
+}
 
 export default async function PracticePage() {
   const session = await getSession();
@@ -62,7 +72,10 @@ export default async function PracticePage() {
 
   return (
     <div className="space-y-6">
-      <Practice practiceData={practiceData} />
+      <Practice
+        practiceData={practiceData}
+        revalidateAttemptAction={revalidateAttempt}
+      />
     </div>
   );
 }

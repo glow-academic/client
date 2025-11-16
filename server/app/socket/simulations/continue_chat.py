@@ -1119,6 +1119,21 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 logger.error(f"Emitted error to {sid}: Simulation not found")
                 return
 
+            # Practice simulations cannot use previous chats - must always go through manual grading
+            is_practice_simulation = bool(simulation.get("practice_simulation", False))
+            if is_practice_simulation and (previous_chat_id or previous_chat_map):
+                await continue_simulation_error(
+                    ContinueSimulationErrorPayload(
+                        success=False,
+                        message="Practice simulations cannot reuse previous attempts. Manual grading is required.",
+                    ),
+                    room=sid,
+                )
+                logger.warning(
+                    f"Emitted error to {sid}: Attempted to reuse previous chat for practice simulation"
+                )
+                return
+
             # Load scenarios for this simulation from junction table
             sql = load_sql("sql/v3/simulations/get_simulation_scenarios_ordered.sql")
             scenario_links = await conn.fetch(sql, str(simulation["id"]))
