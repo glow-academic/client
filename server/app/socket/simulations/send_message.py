@@ -382,17 +382,21 @@ async def _generate_hints_background_inline(
 
                     # Insert the hint
                     sql_insert = """
-                        INSERT INTO simulation_hints (simulation_message_id, idx, hint)
-                        VALUES ($1::uuid, $2, $3)
-                        RETURNING simulation_message_id, idx
+                        WITH inserted AS (
+                            INSERT INTO simulation_hints (simulation_message_id, idx, hint)
+                            VALUES ($1::uuid, $2::integer, $3::text)
+                            RETURNING simulation_message_id, idx
+                        )
+                        SELECT 
+                            simulation_message_id::text as simulation_message_id,
+                            idx::integer as idx
+                        FROM inserted
                     """
                     hint_result_row = await conn.fetchrow(
                         sql_insert, str(message_id), next_idx, hint_text
                     )
                     hint_result = {
-                        "simulation_message_id": str(hint_result_row[
-                            "simulation_message_id"
-                        ]),
+                        "simulation_message_id": hint_result_row["simulation_message_id"],
                         "idx": hint_result_row["idx"],
                     }
                     hint_ids.append(hint_result)

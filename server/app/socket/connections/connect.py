@@ -81,19 +81,46 @@ async def connect(
             profile_id = None
 
     if profile_id:
-        # Check if another socket is already active for this profile
-        old_sid = await get_socket_owner(profile_id)
-        if old_sid and old_sid != sid:
-            logger.warning(
-                f"Profile {profile_id} already has active socket {old_sid}. "
-                f"Closing old connection and accepting new one {sid}."
-            )
-            # Clean up the entire old session for this profile
-            await cleanup_profile_connection(profile_id, "new socket takeover")
-            # Forcefully disconnect the old socket from the server-side
-            await sio.disconnect(old_sid)
+        # Check if this is the default guest profile
+        # Default guest profile is allowed to have multiple simultaneous instances
+        is_default_guest = False
+        try:
+            from app.main import get_pool
+            from app.utils.sql_helper import load_sql
 
-        # Store socket ownership
+            pool = get_pool()
+            if pool:
+                async with pool.acquire() as conn:
+                    sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
+                    guest_row = await conn.fetchrow(sql)
+                    if guest_row:
+                        default_guest_id = str(guest_row["id"])
+                        is_default_guest = profile_id == default_guest_id
+                        if is_default_guest:
+                            logger.info(
+                                f"Profile {profile_id} is default guest - allowing multiple instances"
+                            )
+        except Exception as e:
+            logger.error(f"Error checking if profile is default guest: {e}")
+            # On error, assume not default guest and enforce single-instance restriction
+
+        # Check if another socket is already active for this profile
+        # Skip this check for default guest profile to allow multiple instances
+        if not is_default_guest:
+            old_sid = await get_socket_owner(profile_id)
+            if old_sid and old_sid != sid:
+                logger.warning(
+                    f"Profile {profile_id} already has active socket {old_sid}. "
+                    f"Closing old connection and accepting new one {sid}."
+                )
+                # Clean up the entire old session for this profile
+                await cleanup_profile_connection(profile_id, "new socket takeover")
+                # Forcefully disconnect the old socket from the server-side
+                await sio.disconnect(old_sid)
+
+        # Store socket ownership (for default guest, this allows multiple entries)
+        # Note: For default guest, multiple sockets can coexist, so we don't overwrite
+        # the socket_owner entry. However, we still track it for room management.
         await set_socket_owner(profile_id, sid)
         await sio.enter_room(sid, profile_id)
 

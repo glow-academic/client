@@ -40,10 +40,10 @@ request_limit_upsert AS (
     FROM profile_update pu
     WHERE $5::int IS NOT NULL
         AND EXISTS (SELECT 1 FROM profile_update)
-    ON CONFLICT (profile_id, active) 
-    WHERE active = true
+    ON CONFLICT (profile_id)
     DO UPDATE SET 
         requests_per_day = EXCLUDED.requests_per_day,
+        active = true,
         updated_at = NOW()
 )
 -- Return profile info (always returns a row if profile exists)
