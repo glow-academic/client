@@ -95,7 +95,7 @@ class AssistantMessageCancelledPayload(BaseModel):
 class SendAssistantMessagePayload(BaseModel):
     chat_id: str
     message: str
-    department_id: str
+    is_retry: bool = False
 
 
 # Emit helper functions
@@ -152,18 +152,7 @@ async def _send_assistant_message_impl(
         chat_id = data.chat_id
         chat_id_for_error = chat_id
         message = data.message
-        department_id = data.department_id
-
-        if not department_id:
-            logger.error(f"Missing department_id in request from {sid}")
-            await send_assistant_message_error(
-                SendAssistantMessageErrorPayload(
-                    success=False, message="Missing department_id"
-                ),
-                room=sid,
-            )
-            logger.error(f"Emitted assistant error to {sid}: Missing department_id")
-            return
+        is_retry = data.is_retry
 
         if not chat_id or not message:
             logger.error(f"Missing chat_id or message in request from {sid}")
@@ -197,34 +186,62 @@ async def _send_assistant_message_impl(
 
         async with pool.acquire() as conn:
             try:
-                # Verify the chat exists
+                # Verify the chat exists and get profile_id
                 sql = load_sql("sql/v3/assistant/verify_chat_exists.sql")
                 chat_row = await conn.fetchrow(sql, chat_id_uuid)
                 if not chat_row:
                     raise ValueError(f"Chat {chat_id_uuid} not found")
 
-                # 1. Add the user message to the chat
-                sql = load_sql("sql/v3/assistant/create_message.sql")
-                user_message_row = await conn.fetchrow(
-                    sql, chat_id_uuid, "user", message, True, datetime.now(UTC)
+                # Get profile_id from chat
+                profile_id_row = await conn.fetchrow(
+                    "SELECT profile_id FROM assistant_chats WHERE id = $1::uuid",
+                    chat_id_uuid,
                 )
-                user_message = {
-                    "id": user_message_row["id"],
-                    "created_at": user_message_row["created_at"],
-                }
+                if not profile_id_row:
+                    raise ValueError(f"Chat {chat_id_uuid} profile not found")
 
-                # 2. Emit user message to connected clients
-                await assistant_new_message(
-                    AssistantNewMessagePayload(
-                        message_id=str(user_message["id"]),
-                        chat_id=str(chat_id_uuid),
-                        role="user",
-                        content=message,
-                        completed=True,
-                        created_at=user_message["created_at"].isoformat(),
-                    ),
-                    room=f"assistant_{chat_id_uuid}",
-                )
+                profile_id = profile_id_row["profile_id"]
+                
+                # Get primary department_id from profile
+                sql_get_profile = load_sql("sql/v3/profile/get_profile.sql")
+                profile_row = await conn.fetchrow(sql_get_profile, str(profile_id))
+                if not profile_row:
+                    raise ValueError(f"Profile {profile_id} not found")
+
+                department_id = profile_row.get("primary_department_id")
+                if not department_id:
+                    raise ValueError(
+                        "No department found for profile. Please contact support."
+                    )
+
+                # 1. Add the user message to the chat (skip if this is a retry)
+                if message and message.strip() != "" and not is_retry:
+                    sql = load_sql("sql/v3/assistant/create_message.sql")
+                    user_message_row = await conn.fetchrow(
+                        sql, chat_id_uuid, "user", message, True, datetime.now(UTC)
+                    )
+                    user_message = {
+                        "id": user_message_row["id"],
+                        "created_at": user_message_row["created_at"],
+                    }
+
+                    # 2. Emit user message to connected clients
+                    await assistant_new_message(
+                        AssistantNewMessagePayload(
+                            message_id=str(user_message["id"]),
+                            chat_id=str(chat_id_uuid),
+                            role="user",
+                            content=message,
+                            completed=True,
+                            created_at=user_message["created_at"].isoformat(),
+                        ),
+                        room=f"assistant_{chat_id_uuid}",
+                    )
+                else:
+                    if is_retry:
+                        logger.info(
+                            f"Skipping user message creation for retry in chat {chat_id_uuid}"
+                        )
 
                 logger.info(f"Processing assistant message for chat {chat_id_uuid}")
 
@@ -244,8 +261,11 @@ async def _send_assistant_message_impl(
                     sql = load_sql(
                         "sql/v3/agents/get_assistant_run_context_complete.sql"
                     )
+                    department_id_uuid = (
+                        uuid.UUID(str(department_id)) if department_id else None
+                    )
                     context_row = await conn.fetchrow(
-                        sql, str(chat_id_uuid), str(department_id)
+                        sql, str(chat_id_uuid), str(department_id_uuid)
                     )
 
                     if not context_row:
@@ -479,7 +499,7 @@ async def _send_assistant_message_impl(
                     )
                     model_run_row = await conn.fetchrow(
                         sql_create_run,
-                        str(department_id),
+                        department_id_uuid,
                         context.model_id,
                         context.agent_id,
                         "agent",

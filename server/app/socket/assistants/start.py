@@ -37,7 +37,6 @@ class AssistantStartedPayload(BaseModel):
 class StartAssistantPayload(BaseModel):
     profile_id: str
     initial_message: str
-    department_id: str
 
 
 # Emit helper functions
@@ -66,7 +65,6 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
 
         profile_id = data.profile_id
         initial_message = data.initial_message
-        department_id = data.department_id
 
         if not profile_id or not initial_message:
             logger.error(f"Missing profile_id or initial_message in request from {sid}")
@@ -78,20 +76,6 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             )
             logger.error(
                 f"Emitted assistant error to {sid}: Missing profile_id or initial_message"
-            )
-            return
-
-        if not department_id:
-            logger.error(f"Missing department_id in request from {sid}")
-            await start_assistant_error(
-                StartAssistantErrorPayload(
-                    success=False,
-                    message="Missing department_id - please refresh the page",
-                ),
-                room=sid,
-            )
-            logger.error(
-                f"Emitted assistant error to {sid}: Missing department_id - please refresh the page"
             )
             return
 
@@ -110,9 +94,9 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             return
 
         async with pool.acquire() as conn:
-            # Verify profile exists
-            sql = load_sql("sql/v3/profile/verify_profile_exists.sql")
-            profile_row = await conn.fetchrow(sql, uuid.UUID(profile_id))
+            # Verify profile exists and get primary department_id
+            sql = load_sql("sql/v3/profile/get_profile.sql")
+            profile_row = await conn.fetchrow(sql, profile_id)
             if not profile_row:
                 await start_assistant_error(
                     StartAssistantErrorPayload(
@@ -121,6 +105,21 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
                     room=sid,
                 )
                 logger.error(f"Emitted assistant error to {sid}: Profile not found")
+                return
+
+            # Get primary department_id from profile
+            department_id = profile_row.get("primary_department_id")
+            if not department_id:
+                await start_assistant_error(
+                    StartAssistantErrorPayload(
+                        success=False,
+                        message="No department found for profile. Please contact support.",
+                    ),
+                    room=sid,
+                )
+                logger.error(
+                    f"Emitted assistant error to {sid}: No department found for profile"
+                )
                 return
 
             # Generate a trace id for the chat
@@ -152,9 +151,10 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             # Get all agent/model/provider/chat data in single query using SQL file
             sql = load_sql("sql/v3/agents/get_title_run_context.sql")
             # Pass as UUID objects - asyncpg needs explicit types for parameter inference
-            context_row = await conn.fetchrow(
-                sql, chat_id_uuid, uuid.UUID(str(department_id))
+            department_id_uuid = (
+                uuid.UUID(str(department_id)) if department_id else None
             )
+            context_row = await conn.fetchrow(sql, chat_id_uuid, department_id_uuid)
 
             if not context_row:
                 raise ValueError(
@@ -227,7 +227,7 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
             sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
             model_run_row = await conn.fetchrow(
                 sql_create_run,
-                uuid.UUID(str(department_id)),
+                department_id_uuid,
                 uuid.UUID(context["model_id"]),
                 uuid.UUID(context["agent_id"]),
                 "agent",
@@ -313,9 +313,8 @@ async def _start_assistant_impl(sid: str, data: StartAssistantPayload) -> None:
                             # Import assistant_new_message payload
                             from app.socket.assistants.send_message import (
                                 AssistantNewMessagePayload,
-                                assistant_new_message,
-                            )
-                            
+                                assistant_new_message)
+
                             # Convert asyncpg.Record to dict
                             error_message_dict = dict(error_message_row)
                             created_at = error_message_dict.get("created_at")

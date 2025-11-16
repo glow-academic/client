@@ -80,18 +80,7 @@ export default function AssistantChat({
   getAssistantChatFull,
 }: AssistantChatProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
-  const {
-    departmentIds,
-    activeProfile,
-    effectiveProfile,
-    isConnected,
-    socket,
-    joinRoom,
-    leaveRoom,
-    emitStartAssistant,
-    emitSendAssistantMessage,
-    emitStopAssistant,
-  } = useProfile();
+  const { activeProfile, effectiveProfile, isConnected, socket } = useProfile();
 
   // Check if user has permission to see chat components (instructional, admin, superadmin only)
   const canShowChatComponents = useMemo(() => {
@@ -187,16 +176,25 @@ export default function AssistantChat({
     }) => {
       setIsSendingMessage(false);
       toast.error(data.error || data.message || "Failed to start assistant");
-      
+
       // Refetch chat data if chat_id is available to get error message from database
-      if (data.chat_id && data.chat_id === currentChatId && profileId && profileId !== "") {
+      if (
+        data.chat_id &&
+        data.chat_id === currentChatId &&
+        profileId &&
+        profileId !== ""
+      ) {
         fetchAssistantData();
       }
-      
+
       // Also dispatch DOM event for backward compatibility
       window.dispatchEvent(
         new CustomEvent("assistant_error", {
-          detail: { message: data.message, error: data.error, chat_id: data.chat_id },
+          detail: {
+            message: data.message,
+            error: data.error,
+            chat_id: data.chat_id,
+          },
         })
       );
     };
@@ -209,16 +207,25 @@ export default function AssistantChat({
     }) => {
       setIsSendingMessage(false);
       toast.error(data.error || data.message || "Failed to send message");
-      
+
       // Refetch chat data if chat_id is available to get error message from database
-      if (data.chat_id && data.chat_id === currentChatId && profileId && profileId !== "") {
+      if (
+        data.chat_id &&
+        data.chat_id === currentChatId &&
+        profileId &&
+        profileId !== ""
+      ) {
         fetchAssistantData();
       }
-      
+
       // Also dispatch DOM event for backward compatibility
       window.dispatchEvent(
         new CustomEvent("assistant_error", {
-          detail: { message: data.message, error: data.error, chat_id: data.chat_id },
+          detail: {
+            message: data.message,
+            error: data.error,
+            chat_id: data.chat_id,
+          },
         })
       );
     };
@@ -237,12 +244,12 @@ export default function AssistantChat({
       // Update local state optimistically for new messages (including error messages)
       setAssistantData((prev) => {
         if (!prev || !("messages" in prev)) return prev;
-        
+
         // Check if message already exists
         const messageIndex = prev.messages.findIndex(
           (msg) => msg["id"] === data.message_id
         );
-        
+
         if (messageIndex >= 0) {
           // Update existing message
           return {
@@ -297,7 +304,10 @@ export default function AssistantChat({
 
     return () => {
       socket.off("start_assistant_error", handleStartAssistantError);
-      socket.off("send_assistant_message_error", handleSendAssistantMessageError);
+      socket.off(
+        "send_assistant_message_error",
+        handleSendAssistantMessageError
+      );
       socket.off("assistant_new_message", handleAssistantNewMessage);
     };
   }, [socket, isConnected, currentChatId, profileId, fetchAssistantData]);
@@ -354,9 +364,14 @@ export default function AssistantChat({
         };
         const errorMessage = data.error || data.message || "An error occurred";
         toast.error(errorMessage);
-        
+
         // Refetch chat data to get error message from database if chat_id is available
-        if (data.chat_id && data.chat_id === currentChatId && profileId && profileId !== "") {
+        if (
+          data.chat_id &&
+          data.chat_id === currentChatId &&
+          profileId &&
+          profileId !== ""
+        ) {
           await fetchAssistantData();
         }
       }
@@ -500,31 +515,47 @@ export default function AssistantChat({
     profileId,
     getAssistantChatFull,
     getAssistantChatList,
+    currentChatId,
   ]);
 
   // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
-    if (!isConnected) return;
+    if (!socket || !isConnected) return;
 
     if (currentChatId) {
       // Leave previous room if any
       if (currentRoomRef.current && currentRoomRef.current !== currentChatId) {
-        leaveRoom(currentRoomRef.current, "assistant");
+        socket.emit("leave_chat", {
+          chat_id: currentRoomRef.current,
+          chat_type: "assistant",
+        });
       }
 
       // Join new room
-      joinRoom(currentChatId, "assistant");
+      socket.emit("join_chat", {
+        chat_id: currentChatId,
+        chat_type: "assistant",
+      });
       currentRoomRef.current = currentChatId;
     } else if (currentRoomRef.current) {
       // Leave current room when no chat is selected
-      leaveRoom(currentRoomRef.current, "assistant");
+      socket.emit("leave_chat", {
+        chat_id: currentRoomRef.current,
+        chat_type: "assistant",
+      });
       currentRoomRef.current = null;
     }
 
     return () => {
-      // Cleanup handled by main useEffect
+      // Cleanup: leave room when component unmounts or chat changes
+      if (socket && currentRoomRef.current) {
+        socket.emit("leave_chat", {
+          chat_id: currentRoomRef.current,
+          chat_type: "assistant",
+        });
+      }
     };
-  }, [currentChatId, isConnected, joinRoom, leaveRoom]);
+  }, [currentChatId, isConnected, socket]);
 
   // UI state management methods
   const openWidget = useCallback(async () => {
@@ -574,7 +605,7 @@ export default function AssistantChat({
   );
 
   const sendMessage = useCallback(
-    async (message: string) => {
+    async (message: string, isRetry?: boolean) => {
       if (!isConnected) {
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
@@ -604,13 +635,6 @@ export default function AssistantChat({
           return;
         }
 
-        // Validate department_id is available
-        if (departmentIds.length === 0 || !departmentIds[0]) {
-          toast.error("No department found. Please contact support.");
-          setIsSendingMessage(false);
-          return;
-        }
-
         // Check if this is the first message in a new chat (no chat selected)
         // or if the existing chat has title "New Chat"
         const existingChat = chatId
@@ -618,16 +642,25 @@ export default function AssistantChat({
           : null;
         const isFirstMessage = !chatId || existingChat?.title === "New Chat";
 
+        if (!socket) {
+          toast.error("WebSocket not connected. Please refresh the page.");
+          setIsSendingMessage(false);
+          return;
+        }
+
         if (isFirstMessage) {
           // Server will create the chat and process the initial message
-          emitStartAssistant({
+          socket.emit("start_assistant", {
             profile_id: activeProfile.id,
             initial_message: message,
-            department_id: departmentIds[0],
           });
         } else {
           // For subsequent messages, send via WebSocket
-          emitSendAssistantMessage({ chat_id: chatId, message });
+          socket.emit("send_assistant_message", {
+            chat_id: chatId,
+            message,
+            is_retry: isRetry ?? false,
+          });
         }
       } catch {
         toast.error("Failed to send message");
@@ -643,9 +676,7 @@ export default function AssistantChat({
       isSendingMessage,
       chats,
       activeProfile?.id,
-      emitStartAssistant,
-      emitSendAssistantMessage,
-      departmentIds,
+      socket,
     ]
   );
 
@@ -655,7 +686,7 @@ export default function AssistantChat({
       return;
     }
 
-    if (!isConnected) {
+    if (!socket || !isConnected) {
       toast.error("WebSocket not connected. Please refresh the page.");
       return;
     }
@@ -663,12 +694,12 @@ export default function AssistantChat({
     setIsStoppingMessage(true);
 
     try {
-      emitStopAssistant({ chat_id: currentChatId });
+      socket.emit("stop_assistant", { chat_id: currentChatId });
     } catch {
       toast.error("Failed to stop message");
       setIsStoppingMessage(false);
     }
-  }, [currentChatId, isConnected, emitStopAssistant]);
+  }, [currentChatId, isConnected, socket]);
 
   // Only render chat components if user has permission
   if (!canShowChatComponents) {

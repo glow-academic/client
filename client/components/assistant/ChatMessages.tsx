@@ -241,7 +241,7 @@ export interface ChatMessagesProps {
   onPromptClick?: (prompt: string) => void;
   showPrompts?: boolean;
   variant?: "expanded" | "minimized";
-  onSendMessage?: (message: string) => void;
+  onSendMessage?: (message: string, isRetry?: boolean) => void;
   isSendingMessage?: boolean;
 }
 
@@ -292,7 +292,7 @@ export default function ChatMessages({
 
       if (previousUserMessage) {
         // Retry with the previous user message content
-        onSendMessage(previousUserMessage.content);
+        onSendMessage(previousUserMessage.content, true);
       }
     },
     [messages, onSendMessage],

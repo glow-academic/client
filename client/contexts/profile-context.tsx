@@ -109,18 +109,6 @@ interface ProfileContextType {
     infinite?: boolean;
     infinite_time_limit?: number | null;
   }) => void;
-  joinRoom: (roomId: string, roomType: "assistant" | "simulation") => void;
-  leaveRoom: (roomId: string, roomType: "assistant" | "simulation") => void;
-  emitStartAssistant: (data: {
-    profile_id: string;
-    initial_message: string;
-    department_id: string;
-  }) => void;
-  emitSendAssistantMessage: (data: {
-    chat_id: string;
-    message: string;
-  }) => void;
-  emitStopAssistant: (data: { chat_id: string }) => void;
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -381,70 +369,6 @@ export function ProfileProviderClient({
     [isConnected]
   );
 
-  const joinRoom = useCallback(
-    (roomId: string, roomType: "assistant" | "simulation") => {
-      if (!socketRef.current || !isConnected) {
-        return;
-      }
-      socketRef.current.emit("join_chat", {
-        chat_id: roomId,
-        chat_type: roomType,
-      });
-      currentRoomsRef.current.add(roomId);
-    },
-    [isConnected]
-  );
-
-  const leaveRoom = useCallback(
-    (roomId: string, roomType: "assistant" | "simulation") => {
-      if (!socketRef.current) {
-        return;
-      }
-      socketRef.current.emit("leave_chat", {
-        chat_id: roomId,
-        chat_type: roomType,
-      });
-      currentRoomsRef.current.delete(roomId);
-    },
-    []
-  );
-
-  const emitStartAssistant = useCallback(
-    (data: {
-      profile_id: string;
-      initial_message: string;
-      department_id: string;
-    }) => {
-      if (!socketRef.current || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-      socketRef.current.emit("start_assistant", data);
-    },
-    [isConnected]
-  );
-
-  const emitSendAssistantMessage = useCallback(
-    (data: { chat_id: string; message: string }) => {
-      if (!socketRef.current || !isConnected) {
-        return;
-      }
-      socketRef.current.emit("send_assistant_message", data);
-    },
-    [isConnected]
-  );
-
-  const emitStopAssistant = useCallback(
-    (data: { chat_id: string }) => {
-      if (!socketRef.current || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-      socketRef.current.emit("stop_assistant", data);
-    },
-    [isConnected]
-  );
-
   const value: ProfileContextType = {
     // Profile data
     activeProfile: resolvedActiveProfile,
@@ -486,11 +410,6 @@ export function ProfileProviderClient({
     isConnected,
     startingSimulationId,
     emitStartSimulation,
-    joinRoom,
-    leaveRoom,
-    emitStartAssistant,
-    emitSendAssistantMessage,
-    emitStopAssistant,
   };
 
   return (

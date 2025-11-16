@@ -201,12 +201,11 @@ export type ClientToServerEvents = {
   send_assistant_message: (payload: {
     chat_id: string;
     message: string;
-    department_id: string;
+    is_retry: boolean;
   }) => void;
   start_assistant: (payload: {
     profile_id: string;
     initial_message: string;
-    department_id: string;
   }) => void;
   stop_assistant: (payload: {
     chat_id: string;
