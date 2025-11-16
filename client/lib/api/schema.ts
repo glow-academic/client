@@ -7168,6 +7168,16 @@ export interface components {
             alias: string | null;
             /** Role */
             role: string;
+            /**
+             * Simulationids
+             * @default []
+             */
+            simulationIds: string[];
+            /**
+             * Scenarioids
+             * @default []
+             */
+            scenarioIds: string[];
             metrics: components["schemas"]["ProfileMetrics"];
         };
         /**

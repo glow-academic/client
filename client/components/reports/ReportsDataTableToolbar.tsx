@@ -112,6 +112,7 @@ interface ReportsDataItem {
 
 export interface ReportsDataTableToolbarProps {
   table: Table<ReportsDataItem>;
+  profileOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
   simulations: Array<{ id: string; title: string }>;
@@ -120,6 +121,7 @@ export interface ReportsDataTableToolbarProps {
 
 export function ReportsDataTableToolbar({
   table,
+  profileOptions,
   scenarioOptions,
   simulationOptions,
   simulations,
@@ -129,8 +131,9 @@ export function ReportsDataTableToolbar({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   const profileNameColumn = table.getColumn("profileName");
-  // Cohort filter removed (handled at top-level)
-  // Role filter removed; handled at a higher level
+  const profileIdColumn = table.getColumn("profileId");
+  const scenariosColumn = table.getColumn("scenarios");
+  const simulationsColumn = table.getColumn("simulations");
 
   return (
     <div className="flex items-center justify-between">
@@ -147,19 +150,28 @@ export function ReportsDataTableToolbar({
         </div>
 
         <div className="flex items-center space-x-2 flex-wrap mb-2">
-          {/* Scenario Filter */}
-          {scenarioOptions.length > 0 && table.getColumn("scenario_id") && (
+          {/* Name Filter */}
+          {profileIdColumn && profileOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={table.getColumn("scenario_id")!}
+              column={profileIdColumn}
+              title="Name"
+              options={profileOptions}
+            />
+          )}
+
+          {/* Scenario Filter */}
+          {scenariosColumn && scenarioOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={scenariosColumn}
               title="Scenario"
               options={scenarioOptions}
             />
           )}
 
           {/* Simulation Filter */}
-          {simulationOptions.length > 0 && table.getColumn("simulation_id") && (
+          {simulationsColumn && simulationOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={table.getColumn("simulation_id")!}
+              column={simulationsColumn}
               title="Simulation"
               options={simulationOptions}
             />

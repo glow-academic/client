@@ -35,8 +35,8 @@ interface ReportsDataItem {
   profile_id: string;
   profileName: string;
   profileAlias: string;
-  scenario_id?: string; // Used for filter construction like history
-  simulation_id?: string; // Used for filter construction like history
+  scenario_ids: string[]; // Array of scenario IDs for filtering
+  simulation_ids: string[]; // Array of simulation IDs for filtering
 
   // The 10 core metrics with pre-computed values, thresholds, and hover data
   averageScore: {
@@ -170,6 +170,30 @@ export default function Reports({
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
   };
+
+  // Build profile options from data
+  const profileOptions = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    const uniqueProfiles = data.reduce(
+      (acc, item) => {
+        if (
+          item?.profile_id &&
+          item?.profileName &&
+          !acc.find((p) => p.value === item.profile_id)
+        ) {
+          acc.push({
+            value: item.profile_id,
+            label: item.profileName,
+          });
+        }
+        return acc;
+      },
+      [] as { value: string; label: string }[]
+    );
+
+    return uniqueProfiles;
+  }, [data]);
 
   // Build scenario options from mapping
   const scenarioOptions = useMemo(
@@ -550,29 +574,45 @@ export default function Reports({
 
     // Hidden columns for filtering
     {
-      accessorKey: "scenario_id",
-      header: "Scenario ID",
+      accessorKey: "profile_id",
+      id: "profileId",
+      header: () => null,
       cell: () => null,
+      enableHiding: true,
       enableSorting: false,
-      enableHiding: false,
-      enableColumnFilter: true,
-      filterFn: (row, _, value) => {
-        const item = row.original;
-        if (!value || value.length === 0) return true;
-        return item.scenario_id ? value.includes(item.scenario_id) : false;
+      filterFn: (row, _id, value) => {
+        if (!value || !Array.isArray(value) || value.length === 0) return true;
+        const profileId = row.original.profile_id;
+        // Additive filtering: keep row if profileId is in selected values
+        return value.includes(profileId);
       },
     },
     {
-      accessorKey: "simulation_id",
-      header: "Simulation ID",
+      id: "scenarios",
+      header: () => null,
       cell: () => null,
+      enableHiding: true,
       enableSorting: false,
-      enableHiding: false,
-      enableColumnFilter: true,
-      filterFn: (row, _, value) => {
-        const item = row.original;
+      accessorFn: (row: ReportsDataItem) => row.scenario_ids ?? [],
+      filterFn: (row, _id, value: string[]) => {
+        const rowIds = (row.getValue("scenarios") as string[]) ?? [];
         if (!value || value.length === 0) return true;
-        return item.simulation_id ? value.includes(item.simulation_id) : false;
+        // Additive filtering: keep row if it contains ANY selected scenario
+        return value.some((v) => rowIds.includes(v));
+      },
+    },
+    {
+      id: "simulations",
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+      enableSorting: false,
+      accessorFn: (row: ReportsDataItem) => row.simulation_ids ?? [],
+      filterFn: (row, _id, value: string[]) => {
+        const rowIds = (row.getValue("simulations") as string[]) ?? [];
+        if (!value || value.length === 0) return true;
+        // Additive filtering: keep row if it contains ANY selected simulation
+        return value.some((v) => rowIds.includes(v));
       },
     },
   ];
@@ -582,6 +622,7 @@ export default function Reports({
       <ReportsDataTable
         columns={columns}
         data={data}
+        profileOptions={profileOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
         simulations={simulations}
@@ -649,21 +690,6 @@ export function ReportsSkeleton() {
                 <TableHead>
                   <Skeleton className="h-4 w-28" />
                 </TableHead>
-                <TableHead>
-                  <Skeleton className="h-4 w-32" />
-                </TableHead>
-                <TableHead>
-                  <Skeleton className="h-4 w-28" />
-                </TableHead>
-                <TableHead>
-                  <Skeleton className="h-4 w-32" />
-                </TableHead>
-                <TableHead>
-                  <Skeleton className="h-4 w-28" />
-                </TableHead>
-                <TableHead>
-                  <Skeleton className="h-4 w-24" />
-                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -695,21 +721,6 @@ export function ReportsSkeleton() {
                   </TableCell>
                   <TableCell className="text-center">
                     <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-16" />
                   </TableCell>
                 </TableRow>
               ))}

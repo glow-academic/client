@@ -48,6 +48,8 @@ class ProfileDataEnhanced(BaseModel):
     lastName: str
     alias: str | None
     role: str
+    simulationIds: list[str] = []
+    scenarioIds: list[str] = []
     metrics: ProfileMetrics
 
 

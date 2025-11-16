@@ -150,6 +150,7 @@ interface ReportsDataItem {
 export interface ReportsDataTableProps {
   columns: ColumnDef<ReportsDataItem>[];
   data: ReportsDataItem[];
+  profileOptions: { value: string; label: string }[];
   scenarioOptions: { value: string; label: string }[];
   simulationOptions: { value: string; label: string }[];
   simulations: Array<{ id: string; title: string }>;
@@ -160,6 +161,7 @@ export interface ReportsDataTableProps {
 export function ReportsDataTable({
   columns,
   data,
+  profileOptions,
   scenarioOptions,
   simulationOptions,
   simulations,
@@ -175,8 +177,9 @@ export function ReportsDataTable({
       taCohortIds: false,
       personaResponseTimes: false,
       stagnationRate: false,
-      scenario_id: false,
-      simulation_id: false,
+      profileId: false,
+      scenarios: false,
+      simulations: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -316,6 +319,7 @@ export function ReportsDataTable({
     <div className="space-y-2">
       <ReportsDataTableToolbar
         table={table}
+        profileOptions={profileOptions}
         scenarioOptions={scenarioOptions}
         simulationOptions={simulationOptions}
         simulations={simulations}

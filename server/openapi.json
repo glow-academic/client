@@ -16991,6 +16991,22 @@
             "type": "string",
             "title": "Role"
           },
+          "simulationIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulationids",
+            "default": []
+          },
+          "scenarioIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenarioids",
+            "default": []
+          },
           "metrics": {
             "$ref": "#/components/schemas/ProfileMetrics"
           }

@@ -277,6 +277,28 @@
                 FROM stagnation_flags_per_profile sf
                 GROUP BY sf.profile_id
             ),
+            -- Extract unique simulation_ids and scenario_ids per profile for filtering
+            profile_simulation_ids AS (
+                SELECT
+                    f.profile_id,
+                    ARRAY_AGG(DISTINCT f.simulation_id::text) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids
+                FROM filt f
+                GROUP BY f.profile_id
+            ),
+            profile_scenario_ids AS (
+                SELECT
+                    f.profile_id,
+                    ARRAY_AGG(DISTINCT COALESCE(
+                        (SELECT st.parent_id::text 
+                         FROM scenario_tree st 
+                         WHERE st.child_id = f.scenario_id 
+                           AND st.parent_id != st.child_id 
+                         LIMIT 1),
+                        f.scenario_id::text
+                    )) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
+                FROM filt f
+                GROUP BY f.profile_id
+            ),
             -- Join all metrics together - start from profile_metrics to include all profiles
             all_metrics AS (
                 SELECT
@@ -295,7 +317,9 @@
                     COALESCE(tsdp.data_points, '[]'::json) AS time_spent_points,
                     COALESCE(tadp.data_points, '[]'::json) AS total_attempts_points,
                     COALESCE(edp.data_points, '[]'::json) AS efficiency_points,
-                    COALESCE(sdp.data_points, '[]'::json) AS stagnation_points
+                    COALESCE(sdp.data_points, '[]'::json) AS stagnation_points,
+                    COALESCE(psi.simulation_ids, ARRAY[]::text[]) AS simulation_ids,
+                    COALESCE(psc.scenario_ids, ARRAY[]::text[]) AS scenario_ids
                 FROM profile_metrics pm
                 LEFT JOIN completion_per_profile cp ON pm.profile_id = cp.profile_id
                 LEFT JOIN first_attempt_per_profile fa ON pm.profile_id = fa.profile_id
@@ -312,6 +336,8 @@
                 LEFT JOIN total_attempts_data_points tadp ON pm.profile_id = tadp.profile_id
                 LEFT JOIN efficiency_data_points edp ON pm.profile_id = edp.profile_id
                 LEFT JOIN stagnation_data_points sdp ON pm.profile_id = sdp.profile_id
+                LEFT JOIN profile_simulation_ids psi ON pm.profile_id = psi.profile_id
+                LEFT JOIN profile_scenario_ids psc ON pm.profile_id = psc.profile_id
             )
             SELECT json_build_object(
                 'data', COALESCE((SELECT json_agg(json_build_object(
@@ -320,6 +346,8 @@
                     'lastName', last_name,
                     'alias', alias,
                     'role', role,
+                    'simulationIds', simulation_ids,
+                    'scenarioIds', scenario_ids,
                     'metrics', json_build_object(
                         'averageScore', json_build_object(
                             'hasData', avg_score IS NOT NULL AND avg_score > 0,
@@ -464,9 +492,26 @@
                         )
                     )
                     FROM scenarios s
+                    -- Only include parent scenarios (where parent_id = child_id in scenario_tree)
+                    JOIN scenario_tree st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
                     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
                     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
                     WHERE s.active = true
+                      -- Only include parent scenarios that have child scenarios appearing in the filtered data
+                      AND EXISTS (
+                          SELECT 1 FROM filt f
+                          WHERE f.scenario_id IS NOT NULL
+                            AND (
+                                -- Child scenario maps to this parent scenario
+                                EXISTS (
+                                    SELECT 1 FROM scenario_tree st
+                                    WHERE st.child_id = f.scenario_id
+                                      AND st.parent_id = s.id
+                                )
+                                -- OR child scenario IS the parent scenario (no child variant)
+                                OR f.scenario_id = s.id
+                            )
+                      )
                       AND (
                           sd.department_id IN (SELECT DISTINCT department_id FROM filt WHERE department_id IS NOT NULL)
                           OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
@@ -483,7 +528,8 @@
                     FROM simulations sim
                     LEFT JOIN simulation_departments sd ON sd.simulation_id = sim.id AND sd.active = true
                     WHERE sim.active = true
-                      AND sim.practice_simulation = true
+                      -- Only include simulations that appear in the filtered data (respects simulationFilters)
+                      AND sim.id IN (SELECT DISTINCT simulation_id FROM filt WHERE simulation_id IS NOT NULL)
                       AND (
                           sd.department_id IN (SELECT DISTINCT department_id FROM filt WHERE department_id IS NOT NULL)
                           OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true)

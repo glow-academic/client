@@ -28,8 +28,8 @@ export default function ReportsPage({ reportsData }: ReportsPageProps) {
       profile_id: profile.profileId,
       profileName: `${profile.firstName} ${profile.lastName}`,
       profileAlias: profile.alias ?? "",
-      scenario_id: "", // Not used for reports
-      simulation_id: "", // Not used for reports
+      scenario_ids: profile.scenarioIds ?? [],
+      simulation_ids: profile.simulationIds ?? [],
 
       // Metrics already have hover data from server
       averageScore: {

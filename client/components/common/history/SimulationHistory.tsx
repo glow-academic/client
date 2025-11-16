@@ -204,6 +204,13 @@ export default function SimulationHistory({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
+        filterFn: (row, _id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
+          const profileId = row.original.profileId;
+          // Additive filtering: keep row if profileId is in selected values
+          return value.includes(profileId);
+        },
       },
       // Hidden faceting column for Simulation (IDs)
       {
@@ -213,6 +220,13 @@ export default function SimulationHistory({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
+        filterFn: (row, _id, value) => {
+          if (!value || !Array.isArray(value) || value.length === 0)
+            return true;
+          const simulationId = row.original.simulation_id;
+          // Additive filtering: keep row if simulationId is in selected values
+          return value.includes(simulationId);
+        },
       },
       // Hidden faceting column for Scenarios (IDs)
       {
