@@ -14,7 +14,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Lightbulb, Loader2, Send, Square } from "lucide-react";
+import { Loader2, Send, Square } from "lucide-react";
 
 // Tooltip
 import {
@@ -24,17 +24,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Popover
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-import HintDisplay from "@/components/common/chat/HintDisplay";
-import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 
 export interface AttemptInputProps {
@@ -68,8 +58,8 @@ export interface AttemptInputProps {
 export default function AttemptInput({
   isAttemptOwner = true,
   onHeightChange,
-  currentMessages,
-  currentChatHints,
+  currentMessages: _currentMessages,
+  currentChatHints: _currentChatHints,
   currentChat,
   sendMessage,
   stopMessage,
@@ -80,79 +70,8 @@ export default function AttemptInput({
   scenario,
   readOnly = false,
 }: AttemptInputProps) {
-  const { socket } = useProfile();
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
-  const router = useRouter();
   const [newMessage, setNewMessage] = useState("");
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
-  // Get messages from props
-  const messages = useMemo(() => currentMessages || [], [currentMessages]);
-
-  // Get the most recent assistant message
-  const latestAssistantMessage = useMemo(() => {
-    return messages
-      .filter((msg) => msg.type === "response")
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )[0];
-  }, [messages]);
-
-  // Get hints from props
-  const hintsData = useMemo(() => {
-    if (!latestAssistantMessage?.id) return [];
-    const hintsForMessage = currentChatHints.find(
-      (h) => h.messageId === latestAssistantMessage.id
-    );
-    return (hintsForMessage?.hints || []) as Array<{
-      simulationMessageId: string;
-      hint: string;
-      idx: number;
-      createdAt: string;
-    }>;
-  }, [currentChatHints, latestAssistantMessage?.id]);
-  const hintsHookLoading = false; // Always false with SSR
-
-  // Listen for hint generation progress via WebSocket events
-  useEffect(() => {
-    if (
-      !socket ||
-      !simulation?.practiceSimulation ||
-      !latestAssistantMessage?.id
-    ) {
-      return;
-    }
-
-    const handleHintGenerationProgress = (data: {
-      type: string;
-      message: string;
-      chat_id: string;
-      message_id: string;
-      hint_ids?: string[];
-      hints_count?: number;
-      error?: string;
-    }) => {
-      // Only handle hints for the current message
-      if (data.message_id === latestAssistantMessage.id) {
-        if (data.type === "complete") {
-          // Refresh server data to get updated hints (even if 0 hints were generated)
-          router.refresh();
-        }
-      }
-    };
-
-    socket.on("hint_generation_progress", handleHintGenerationProgress);
-
-    return () => {
-      socket.off("hint_generation_progress", handleHintGenerationProgress);
-    };
-  }, [
-    socket,
-    simulation?.practiceSimulation,
-    latestAssistantMessage?.id,
-    router,
-  ]);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -213,7 +132,6 @@ export default function AttemptInput({
   // --- Effects ---
   useEffect(() => {
     setNewMessage("");
-    setIsPopoverOpen(false); // Close popover when chat changes
   }, [currentChat?.id]);
 
   // Auto-resize the textarea based on content
@@ -314,54 +232,6 @@ export default function AttemptInput({
           </div>
 
           <div className="flex gap-2">
-            {/* Hints toggle button - only show for practice simulations */}
-            {simulation?.practiceSimulation && (
-              <Popover
-                open={isPopoverOpen}
-                onOpenChange={setIsPopoverOpen}
-                modal={false}
-              >
-                <motion.div
-                  layout
-                  key="hints-btn"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          className="min-h-[40px] h-[40px] px-3"
-                          variant={isPopoverOpen ? "secondary" : "outline"}
-                        >
-                          <Lightbulb className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{isPopoverOpen ? "Hide Hints" : "Show Hints"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </motion.div>
-                <PopoverContent
-                  className="w-96 p-0"
-                  align="end"
-                  side="top"
-                  sideOffset={8}
-                  onInteractOutside={(e) => e.preventDefault()}
-                  onEscapeKeyDown={(e) => e.preventDefault()}
-                >
-                  <HintDisplay
-                    hints={hintsData}
-                    isLoading={hintsHookLoading}
-                    onClose={() => setIsPopoverOpen(false)}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
-
             {/* Always show the send/stop button, just disable as needed */}
             <motion.div
               layout

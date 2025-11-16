@@ -8,8 +8,10 @@
 import {
   AlertCircle,
   ArrowDown,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
+  Lightbulb,
   MessageSquare,
   RotateCcw,
   User,
@@ -18,6 +20,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Tooltip
@@ -29,10 +36,12 @@ import {
 } from "@/components/ui/tooltip";
 
 import { createFeedback } from "@/app/(main)/layout-server";
+import HintDisplay from "@/components/common/chat/HintDisplay";
 import Markdown from "@/components/common/chat/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useProfile } from "@/contexts/profile-context";
+import { useRouter } from "next/navigation";
 
 export interface AttemptMessagesProps {
   chatId?: string;
@@ -48,7 +57,19 @@ export interface AttemptMessagesProps {
   sendMessage: (message: string, isRetry?: boolean) => void;
   isSendingMessage: boolean;
   isActive: boolean;
-  simulation: { timeLimit?: number | null } | null;
+  simulation: {
+    timeLimit?: number | null;
+    practiceSimulation?: boolean;
+  } | null;
+  currentChatHints?: Array<{
+    messageId: string;
+    hints: Array<{
+      simulationMessageId: string;
+      hint: string;
+      idx: number;
+      createdAt: string;
+    }>;
+  }>;
 }
 
 export default function AttemptMessages({
@@ -60,12 +81,22 @@ export default function AttemptMessages({
   isSendingMessage,
   isActive,
   simulation,
+  currentChatHints = [],
 }: AttemptMessagesProps) {
   const { socket } = useProfile();
+  const router = useRouter();
   const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const targetChatId = chatId || currentChat?.id;
+
+  // State for hints modal
+  const [selectedHintMessageId, setSelectedHintMessageId] = useState<
+    string | null
+  >(null);
+  const [messagesWithNewHints, setMessagesWithNewHints] = useState<Set<string>>(
+    new Set()
+  );
 
   // State to track which response version is shown for each message group
   const [responseVersions, setResponseVersions] = useState<
@@ -369,6 +400,41 @@ export default function AttemptMessages({
     };
   }, [socket, targetChatId]);
 
+  // Listen for hint generation progress via WebSocket events
+  useEffect(() => {
+    if (!socket || !simulation?.practiceSimulation) {
+      return;
+    }
+
+    const handleHintGenerationProgress = (data: {
+      type: string;
+      message: string;
+      chat_id: string;
+      message_id: string;
+      hint_ids?: string[];
+      hints_count?: number;
+      error?: string;
+    }) => {
+      // Only handle hints for the current chat
+      if (data.chat_id === targetChatId && data.type === "complete") {
+        // Add message_id to set of messages with new hints
+        setMessagesWithNewHints((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(data.message_id);
+          return newSet;
+        });
+        // Refresh server data to get updated hints
+        router.refresh();
+      }
+    };
+
+    socket.on("hint_generation_progress", handleHintGenerationProgress);
+
+    return () => {
+      socket.off("hint_generation_progress", handleHintGenerationProgress);
+    };
+  }, [socket, simulation?.practiceSimulation, targetChatId, router]);
+
   return (
     <div
       className="flex-1 flex flex-col p-0 min-h-0 relative"
@@ -422,7 +488,7 @@ export default function AttemptMessages({
                         >
                           <Markdown>{group.userMessage.content}</Markdown>
                         </div>
-                        {/* Right-aligned stacked controls (test) */}
+                        {/* Right-aligned stacked controls (You + Next) */}
                         <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -445,15 +511,15 @@ export default function AttemptMessages({
                               <Button
                                 variant="default"
                                 size="sm"
-                                aria-label="You"
+                                aria-label="Next"
                                 className="flex-1 p-0 rounded-md"
                                 tabIndex={-1}
                               >
-                                <User className="h-4 w-4" />
+                                <ArrowRight className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>You</p>
+                              <p>Next</p>
                             </TooltipContent>
                           </Tooltip>
                         </div>
@@ -464,41 +530,111 @@ export default function AttemptMessages({
                     {group.responses.length > 0 && (
                       <div className="flex justify-start mb-3">
                         <div className="max-w-[80%] flex items-stretch gap-2">
-                          {/* Left-aligned stacked controls (test) */}
-                          <div className="flex flex-col gap-1 w-9 h-[52px] min-h-[52px] max-h-[52px] overflow-hidden">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  aria-label="Assistant"
-                                  className="flex-1 p-0 rounded-md"
-                                  tabIndex={-1}
-                                >
-                                  <MessageSquare className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Assistant</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  aria-label="Assistant"
-                                  className="flex-1 p-0 rounded-md"
-                                  tabIndex={-1}
-                                >
-                                  <MessageSquare className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Assistant</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
+                          {/* Left-aligned stacked controls (assistant + optional hints) */}
+                          {(() => {
+                            const currentResponse = getCurrentResponse(
+                              group.groupId
+                            );
+                            if (!currentResponse) return null;
+
+                            const hintsForMessage =
+                              currentChatHints.find(
+                                (h) => h.messageId === currentResponse.id
+                              )?.hints || [];
+                            const shouldShowHintsButton =
+                              simulation?.practiceSimulation &&
+                              hintsForMessage.length > 0;
+                            const containerHeightClass = shouldShowHintsButton
+                              ? "h-[52px] min-h-[52px] max-h-[52px]"
+                              : "h-[26px] min-h-[26px] max-h-[26px]";
+                            const hasNewHints = messagesWithNewHints.has(
+                              currentResponse.id
+                            );
+                            const isSelected =
+                              selectedHintMessageId === currentResponse.id;
+
+                            return (
+                              <div
+                                className={`flex flex-col gap-1 w-9 ${containerHeightClass} overflow-hidden`}
+                              >
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      aria-label="Assistant"
+                                      className="flex-1 p-0 rounded-md"
+                                      tabIndex={-1}
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Assistant</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                {shouldShowHintsButton ? (
+                                  <Popover
+                                    open={isSelected}
+                                    onOpenChange={(open) => {
+                                      if (open) {
+                                        setSelectedHintMessageId(
+                                          currentResponse.id
+                                        );
+                                        // Clear new hints indicator when opening popover
+                                        if (hasNewHints) {
+                                          setMessagesWithNewHints((prev) => {
+                                            const newSet = new Set(prev);
+                                            newSet.delete(currentResponse.id);
+                                            return newSet;
+                                          });
+                                        }
+                                      } else {
+                                        setSelectedHintMessageId(null);
+                                      }
+                                    }}
+                                    modal={false}
+                                  >
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant={
+                                              isSelected ? "default" : "outline"
+                                            }
+                                            size="sm"
+                                            aria-label="Show hints"
+                                            className="flex-1 p-0 rounded-md relative"
+                                          >
+                                            <Lightbulb className="h-4 w-4" />
+                                            {hasNewHints && (
+                                              <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                                            )}
+                                          </Button>
+                                        </PopoverTrigger>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Show hints</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                    <PopoverContent
+                                      className="w-96 p-0"
+                                      align="start"
+                                      side="top"
+                                      sideOffset={35}
+                                    >
+                                      <HintDisplay
+                                        hints={hintsForMessage}
+                                        onClose={() =>
+                                          setSelectedHintMessageId(null)
+                                        }
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                ) : null}
+                              </div>
+                            );
+                          })()}
                           <div className="relative group p-2 -m-2 flex-1">
                             {(() => {
                               const currentResponse = getCurrentResponse(

@@ -1735,6 +1735,7 @@ export default function AttemptChat({
                             isSendingMessage={isSendingMessage}
                             isActive={!timer.expired && !showResults}
                             simulation={simulation}
+                            currentChatHints={currentChatHints}
                           />
                         </div>
                       ) : (
@@ -2225,6 +2226,7 @@ export default function AttemptChat({
                       isSendingMessage={isSendingMessage}
                       isActive={!timer.expired && !showResults}
                       simulation={simulation}
+                      currentChatHints={currentChatHints}
                     />
                   </div>
                 </ResizablePanel>
