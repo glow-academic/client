@@ -17,6 +17,7 @@ import { Bug } from "lucide-react";
 import * as React from "react";
 
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { X } from "lucide-react";
 import { useProfile } from "@/contexts/profile-context";
 import { format } from "date-fns";
 
@@ -86,12 +88,10 @@ export interface RunsDataTableProps {
   agentMapping: Record<string, string>;
   personaMapping: Record<string, string>;
   selectedModelIds: string[];
-  selectedAgentIds: string[];
-  selectedPersonaIds: string[];
+  selectedActorIds: string[]; // Combined agent/persona IDs
   selectedProfileIds: string[];
   setSelectedModelIds: (ids: string[]) => void;
-  setSelectedAgentIds: (ids: string[]) => void;
-  setSelectedPersonaIds: (ids: string[]) => void;
+  setSelectedActorIds: (ids: string[]) => void;
   setSelectedProfileIds: (ids: string[]) => void;
 }
 
@@ -102,19 +102,19 @@ export function RunsDataTable({
   agentMapping,
   personaMapping,
   selectedModelIds,
-  selectedAgentIds,
-  selectedPersonaIds,
+  selectedActorIds,
   selectedProfileIds,
   setSelectedModelIds,
-  setSelectedAgentIds,
-  setSelectedPersonaIds,
+  setSelectedActorIds,
   setSelectedProfileIds,
 }: RunsDataTableProps) {
   const { effectiveProfile } = useProfile();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
   const [runIdSearch, setRunIdSearch] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>({
+      actorId: false, // Hide the filter column
+    });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
   );
@@ -171,13 +171,36 @@ export function RunsDataTable({
             row.original.agentName || row.original.personaName || "";
           return <div className="text-sm">{label}</div>;
         },
+        enableHiding: true,
         filterFn: (row, _id, value) => {
           const selected = (value as string[] | undefined) ?? [];
           const { agentId, personaId } = row.original;
           if (!selected?.length) return true;
+          // Additive filtering: keep row if agentId or personaId is in selected values
           if (agentId && selected.includes(agentId)) return true;
           if (personaId && selected.includes(personaId)) return true;
           return false;
+        },
+      },
+      // Hidden faceting column for Actor (Agent/Persona IDs)
+      {
+        id: "actorIdFilter",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: ModelRunRow) => {
+          // Return array of IDs that this row matches (agentId and/or personaId)
+          const ids: string[] = [];
+          if (row.agentId) ids.push(row.agentId);
+          if (row.personaId) ids.push(row.personaId);
+          return ids;
+        },
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("actorIdFilter") as string[]) ?? [];
+          if (!value || value.length === 0) return true;
+          // Additive filtering: keep row if it contains ANY selected actor ID
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -291,6 +314,9 @@ export function RunsDataTable({
       pagination: {
         pageSize: 10,
       },
+      columnVisibility: {
+        actorIdFilter: false,
+      },
     },
   });
 
@@ -308,6 +334,62 @@ export function RunsDataTable({
       label: name,
     }));
   }, [profileMapping]);
+
+  // Combine agent and persona mappings into single actor options
+  const actorOptions = React.useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    // Add agents
+    Object.entries(agentMapping).forEach(([id, name]) => {
+      options.push({ value: id, label: name });
+    });
+    // Add personas
+    Object.entries(personaMapping).forEach(([id, name]) => {
+      options.push({ value: id, label: name });
+    });
+    return options;
+  }, [agentMapping, personaMapping]);
+
+  // Initialize table filter from props (only on mount or when props change externally)
+  React.useEffect(() => {
+    const actorIdFilterColumn = table.getColumn("actorIdFilter");
+    if (actorIdFilterColumn) {
+      const currentFilter = actorIdFilterColumn.getFilterValue() as string[] | undefined;
+      const currentIds = currentFilter || [];
+      const selectedIds = selectedActorIds || [];
+      // Only update if they're different (avoid unnecessary updates)
+      if (
+        currentIds.length !== selectedIds.length ||
+        !currentIds.every((id) => selectedIds.includes(id)) ||
+        !selectedIds.every((id) => currentIds.includes(id))
+      ) {
+        actorIdFilterColumn.setFilterValue(
+          selectedActorIds.length > 0 ? selectedActorIds : undefined
+        );
+      }
+    }
+  }, [selectedActorIds, table]);
+
+  // Sync table filter changes back to selectedActorIds when user interacts with filter
+  React.useEffect(() => {
+    const actorIdFilterColumn = table.getColumn("actorIdFilter");
+    if (actorIdFilterColumn) {
+      const filterValue = actorIdFilterColumn.getFilterValue() as string[] | undefined;
+      const newActorIds = filterValue || [];
+      const currentIds = selectedActorIds || [];
+      // Only update if they're different (avoid circular updates)
+      if (
+        newActorIds.length !== currentIds.length ||
+        !newActorIds.every((id) => currentIds.includes(id)) ||
+        !currentIds.every((id) => newActorIds.includes(id))
+      ) {
+        setSelectedActorIds(newActorIds);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table.getState().columnFilters]);
+
+  const actorIdFilterColumn = table.getColumn("actorIdFilter");
+  const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
     <div className="space-y-3">
@@ -357,76 +439,14 @@ export function RunsDataTable({
             </PopoverContent>
           </Popover>
 
-          {/* Agent filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 border-dashed">
-                Agents{" "}
-                {selectedAgentIds.length > 0 && `(${selectedAgentIds.length})`}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-0">
-              <Command>
-                <CommandInput placeholder="Search agents..." />
-                <CommandEmpty>No agents found.</CommandEmpty>
-                <CommandList>
-                  {Object.entries(agentMapping).map(([id, name]) => {
-                    const checked = selectedAgentIds.includes(id);
-                    return (
-                      <CommandItem
-                        key={id}
-                        onSelect={() => {
-                          const next = new Set(selectedAgentIds);
-                          if (checked) next.delete(id);
-                          else next.add(id);
-                          setSelectedAgentIds(Array.from(next));
-                        }}
-                      >
-                        <Checkbox checked={checked} className="mr-2" />
-                        <span className="truncate">{name}</span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* Persona filter */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 border-dashed">
-                Personas{" "}
-                {selectedPersonaIds.length > 0 &&
-                  `(${selectedPersonaIds.length})`}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-72 p-0">
-              <Command>
-                <CommandInput placeholder="Search personas..." />
-                <CommandEmpty>No personas found.</CommandEmpty>
-                <CommandList>
-                  {Object.entries(personaMapping).map(([id, name]) => {
-                    const checked = selectedPersonaIds.includes(id);
-                    return (
-                      <CommandItem
-                        key={id}
-                        onSelect={() => {
-                          const next = new Set(selectedPersonaIds);
-                          if (checked) next.delete(id);
-                          else next.add(id);
-                          setSelectedPersonaIds(Array.from(next));
-                        }}
-                      >
-                        <Checkbox checked={checked} className="mr-2" />
-                        <span className="truncate">{name}</span>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          {/* Agent/Persona filter - merged */}
+          {actorIdFilterColumn && actorOptions.length > 0 && (
+            <DataTableFacetedFilter
+              column={actorIdFilterColumn}
+              title="Agent/Persona"
+              options={actorOptions}
+            />
+          )}
 
           {/* Profile filter */}
           <Popover>
@@ -465,24 +485,21 @@ export function RunsDataTable({
           </Popover>
         </div>
         <div className="flex items-center space-x-2">
-          {(selectedModelIds.length > 0 ||
-            selectedAgentIds.length > 0 ||
-            selectedPersonaIds.length > 0 ||
-            selectedProfileIds.length > 0 ||
-            runIdSearch) && (
+          {isFiltered && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2"
+              className="h-8 px-2 lg:px-3"
               onClick={() => {
+                table.resetColumnFilters();
                 setSelectedModelIds([]);
-                setSelectedAgentIds([]);
-                setSelectedPersonaIds([]);
+                setSelectedActorIds([]);
                 setSelectedProfileIds([]);
                 setRunIdSearch("");
               }}
             >
-              Reset filters
+              Reset
+              <X className="ml-2 h-4 w-4" />
             </Button>
           )}
           <DataTableViewOptions table={table} />

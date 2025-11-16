@@ -60,8 +60,7 @@ interface PricingProps {
 
 export default function Pricing({ pricingData }: PricingProps) {
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
-  const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
+  const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]); // Combined agent/persona IDs
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
   // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
@@ -97,8 +96,7 @@ export default function Pricing({ pricingData }: PricingProps) {
     const includeModels = new Set(
       selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping),
     );
-    const includeAgents = new Set(selectedAgentIds);
-    const includePersonas = new Set(selectedPersonaIds);
+    const includeActors = new Set(selectedActorIds); // Combined agents and personas
     const includeProfiles = new Set(selectedProfileIds);
 
     const byDay = new Map<
@@ -117,14 +115,11 @@ export default function Pricing({ pricingData }: PricingProps) {
       const runPersonaId = run.persona_id;
 
       if (!modelId || !includeModels.has(modelId)) continue;
+      // Check if run matches any selected actor (agent or persona) - additive filtering
       if (
-        includeAgents.size > 0 &&
-        (!runAgentId || !includeAgents.has(runAgentId))
-      )
-        continue;
-      if (
-        includePersonas.size > 0 &&
-        (!runPersonaId || !includePersonas.has(runPersonaId))
+        includeActors.size > 0 &&
+        (!runAgentId || !includeActors.has(runAgentId)) &&
+        (!runPersonaId || !includeActors.has(runPersonaId))
       )
         continue;
       if (
@@ -205,8 +200,7 @@ export default function Pricing({ pricingData }: PricingProps) {
     modelRuns,
     modelMapping,
     selectedModelIds,
-    selectedAgentIds,
-    selectedPersonaIds,
+    selectedActorIds,
     selectedProfileIds,
   ]);
 
@@ -405,12 +399,10 @@ export default function Pricing({ pricingData }: PricingProps) {
           agentMapping={agentMapping}
           personaMapping={personaMapping}
           selectedModelIds={selectedModelIds}
-          selectedAgentIds={selectedAgentIds}
-          selectedPersonaIds={selectedPersonaIds}
+          selectedActorIds={selectedActorIds}
           selectedProfileIds={selectedProfileIds}
           setSelectedModelIds={setSelectedModelIds}
-          setSelectedAgentIds={setSelectedAgentIds}
-          setSelectedPersonaIds={setSelectedPersonaIds}
+          setSelectedActorIds={setSelectedActorIds}
           setSelectedProfileIds={setSelectedProfileIds}
         />
       </div>
