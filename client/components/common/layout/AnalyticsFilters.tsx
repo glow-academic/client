@@ -7,13 +7,13 @@
 
 "use client";
 
-import { ProfileRolePicker } from "@/components/common/forms/ProfileRolePicker";
-import { Button } from "@/components/ui/button";
-import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import type {
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
 } from "@/app/(main)/layout-server";
+import { ProfileRolePicker } from "@/components/common/forms/ProfileRolePicker";
+import { Button } from "@/components/ui/button";
+import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { RefreshCw } from "lucide-react";
@@ -31,9 +31,7 @@ type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
-  refreshAnalytics: (
-    input: RefreshAnalyticsIn,
-  ) => Promise<RefreshAnalyticsOut>;
+  refreshAnalytics: (input: RefreshAnalyticsIn) => Promise<RefreshAnalyticsOut>;
 }
 
 export function AnalyticsFilters({
@@ -141,7 +139,7 @@ export function AnalyticsFilters({
       if (simulationFilters.includes("archived")) vals.push("archived");
       // When all three are enabled functionally, start with empty to indicate "All simulations"
       return vals.length === 3 ? [] : vals;
-    },
+    }
   );
 
   // Keep local selection in sync when context flags change externally
@@ -186,7 +184,7 @@ export function AnalyticsFilters({
 
   // Get selected cohorts for the picker
   const selectedCohorts = cohortOptions.filter((cohort) =>
-    selectedCohortIds.includes(cohort.id),
+    selectedCohortIds.includes(cohort.id)
   );
 
   // Automatically filter available roles and remove invalid selections when cohorts are selected
@@ -195,7 +193,7 @@ export function AnalyticsFilters({
       // When cohorts are selected, only allow "ta" and "instructional" roles
       // Remove any existing selections that aren't "ta" or "instructional"
       const validRoles = selectedRoles.filter(
-        (role) => role === "ta" || role === "instructional",
+        (role) => role === "ta" || role === "instructional"
       );
       if (validRoles.length !== selectedRoles.length) {
         setSelectedRoles(validRoles);
@@ -217,7 +215,7 @@ export function AnalyticsFilters({
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
-    selectedDepartmentIds.includes(department.id),
+    selectedDepartmentIds.includes(department.id)
   );
 
   const handleDepartmentSelect = (departments: typeof departmentOptions) => {
@@ -245,7 +243,7 @@ export function AnalyticsFilters({
               }
               setSimulationFilters(vals);
             }}
-            placeholder="All simulations"
+            placeholder="Simulations"
           />
         )}
 
@@ -259,7 +257,7 @@ export function AnalyticsFilters({
             }
             selectedRoles={selectedRoles}
             onChange={handleRoleSelect}
-            placeholder="All roles"
+            placeholder="Roles"
           />
         )}
 

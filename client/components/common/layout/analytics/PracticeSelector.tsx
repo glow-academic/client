@@ -43,7 +43,7 @@ export default function PracticeSelector({
   options = ["general", "practice", "archived"],
   selected = [],
   onChange,
-  placeholder = "All simulations",
+  placeholder = "Simulations",
   className,
   hideSelectedChips = true,
 }: PracticeSelectorProps) {
@@ -69,7 +69,7 @@ export default function PracticeSelector({
       const labels = selected.map((s) => LABEL[s]).join(" + ");
       return labels;
     }
-    if (selected.length === 3) return "All simulations";
+    if (selected.length === 3) return "Simulations";
     return `${selected.length} selected`;
   };
 
