@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
-import { RotateCcw } from "lucide-react";
+import { ArrowRight, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
@@ -26,7 +26,6 @@ export interface DataTableRowActionsProps {
   showArchive?: boolean;
   canView?: boolean; // from SQL showView
   canContinue?: boolean; // from SQL showContinue
-  showRetry?: boolean; // from SQL showRetry
 }
 
 export function DataTableRowActions({
@@ -43,7 +42,6 @@ export function DataTableRowActions({
   showArchive: _showArchive = false,
   canView: _canView,
   canContinue,
-  showRetry,
 }: DataTableRowActionsProps) {
   const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
     useProfile();
@@ -75,6 +73,35 @@ export function DataTableRowActions({
   const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id;
   const linkHref = `/${isPractice ? "practice" : "home"}/a/${id}`;
 
+  // Determine if we should show Retry or Try button
+  // Only show if not emulating (effectiveProfile.id === activeProfile.id)
+  const isNotEmulating = effectiveProfile?.id === activeProfile?.id;
+  const isOwnAttempt = activeProfile?.id === profileId;
+  const shouldShowRetry =
+    isNotEmulating && isOwnAttempt && (simulationId ?? "") !== "";
+  const shouldShowTry =
+    isNotEmulating && !isOwnAttempt && (simulationId ?? "") !== "";
+
+  const handleStartSimulation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (disabledForEmulation || !isConnected) return;
+    setIsRetrying(true);
+    try {
+      const profileIdForEmit =
+        effectiveProfile?.role === "guest"
+          ? ""
+          : String(effectiveProfile?.id || "");
+      emitStartSimulation({
+        simulation_id: String(simulationId),
+        profile_id: profileIdForEmit,
+        scenario_id: null, // optional: pick first scenario id if you want
+      });
+    } finally {
+      setTimeout(() => setIsRetrying(false), 2000);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <Link href={linkHref}>
@@ -87,8 +114,8 @@ export function DataTableRowActions({
         </Button>
       </Link>
 
-      {/* Retry: show when server indicates showRetry is true */}
-      {showRetry && (simulationId ?? "") !== "" && (
+      {/* Retry: show when attempt belongs to activeProfile and not emulating */}
+      {shouldShowRetry && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -96,29 +123,9 @@ export function DataTableRowActions({
               variant="outline"
               size="icon"
               aria-label="Retry"
-              className={`h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground ${
-                disabledForEmulation ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={isRetrying || disabledForEmulation}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (disabledForEmulation || !isConnected) return;
-                setIsRetrying(true);
-                try {
-                  const profileIdForEmit =
-                    effectiveProfile?.role === "guest"
-                      ? ""
-                      : String(effectiveProfile?.id || "");
-                  emitStartSimulation({
-                    simulation_id: String(simulationId),
-                    profile_id: profileIdForEmit,
-                    scenario_id: null, // optional: pick first scenario id if you want
-                  });
-                } finally {
-                  setTimeout(() => setIsRetrying(false), 2000);
-                }
-              }}
+              className="h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              disabled={isRetrying}
+              onClick={handleStartSimulation}
             >
               <RotateCcw
                 className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
@@ -126,11 +133,31 @@ export function DataTableRowActions({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            {disabledForEmulation ? (
-              <p>You can't start a simulation on behalf of another user.</p>
-            ) : (
-              <p>Retry</p>
-            )}
+            <p>Retry</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Start Simulation: show when attempt belongs to different profile and not emulating */}
+      {shouldShowTry && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Start Simulation"
+              className="h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              disabled={isRetrying}
+              onClick={handleStartSimulation}
+            >
+              <ArrowRight
+                className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Try Simulation</p>
           </TooltipContent>
         </Tooltip>
       )}

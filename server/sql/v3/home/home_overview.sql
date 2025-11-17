@@ -732,7 +732,6 @@ final_rows AS (
                 AND aj.sim_scenario_count IS NOT NULL
                 AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
         ) AS show_continue,
-        (($12::text IS NOT NULL AND $12::text != '' AND $12::text != 'guest-profile-id') AND aj.profile_id = $12::uuid) AS show_retry,
         aj.persona_ids_distinct
     FROM attempt_joined aj
 ),
@@ -782,7 +781,6 @@ attempt_history_data AS (
                 'isArchived', fr.is_archived,
                 'showView', fr.show_view,
                 'showContinue', fr.show_continue,
-                'showRetry', fr.show_retry,
                 'practiceSimulation', COALESCE(fr.practice_simulation, false),
                 'passPct', fr.pass_pct,
                 'department_ids', fr.department_ids,

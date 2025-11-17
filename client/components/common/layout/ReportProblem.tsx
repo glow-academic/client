@@ -28,7 +28,7 @@ import type {
   CreateFeedbackOut,
 } from "@/app/(main)/layout-server";
 import { ProfileContext } from "@/contexts/profile-context";
-import { MessageSquare } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -95,14 +95,14 @@ export default function ReportProblem({
 
   // Handle successful feedback creation
   const handleSuccess = async () => {
-    toast.success("Feedback submitted successfully! Thank you for your input.");
+    toast.success("Problem reported successfully! Thank you for your input.");
     setIsOpen(false);
     resetForm();
   };
 
   // Handle feedback creation errors
   const handleError = async (_error: Error) => {
-    toast.error("Failed to submit feedback. Please try again.");
+    toast.error("Failed to report problem. Please try again.");
   };
 
   const resetForm = () => {
@@ -119,7 +119,7 @@ export default function ReportProblem({
     const newErrors: FormErrors = {};
 
     if (!formData.type.trim()) {
-      newErrors.type = "Please select a feedback type";
+      newErrors.type = "Please select a problem type";
     }
 
     if (!formData.message.trim()) {
@@ -148,7 +148,7 @@ export default function ReportProblem({
     }
 
     if (!createFeedback) {
-      toast.error("Feedback functionality is not available");
+      toast.error("Problem reporting functionality is not available");
       return;
     }
 
@@ -166,12 +166,12 @@ export default function ReportProblem({
         await handleSuccess();
       } else {
         await handleError(
-          new Error(result.message || "Failed to submit feedback"),
+          new Error(result.message || "Failed to report problem"),
         );
       }
     } catch (error) {
       await handleError(
-        error instanceof Error ? error : new Error("Failed to submit feedback"),
+        error instanceof Error ? error : new Error("Failed to report problem"),
       );
     } finally {
       setIsSubmitting(false);
@@ -191,8 +191,8 @@ export default function ReportProblem({
       <DialogTrigger asChild>
         {children || (
           <Button variant="ghost" size="sm" className="w-full justify-start">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Feedback
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Report Problem
           </Button>
         )}
       </DialogTrigger>
@@ -215,7 +215,7 @@ export default function ReportProblem({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Feedback</DialogTitle>
+          <DialogTitle>Report Problem</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function ReportProblem({
               onValueChange={(value) => handleInputChange("type", value)}
             >
               <SelectTrigger className={errors.type ? "border-red-500" : ""}>
-                <SelectValue placeholder="Select feedback type" />
+                <SelectValue placeholder="Select problem type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="bug">🐛 Bug</SelectItem>

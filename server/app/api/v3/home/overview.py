@@ -68,7 +68,6 @@ class AttemptHistoryRow(BaseModel):
     isArchived: bool
     showView: bool
     showContinue: bool
-    showRetry: bool
     practiceSimulation: bool
     passPct: int | None = None
     department_ids: list[str] | None = None  # Simulation's department associations

@@ -53,13 +53,13 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
+  AlertCircle,
   Brain,
   ChartBar,
   ChevronRight,
   ChevronsUpDown,
   Home,
   LogOut,
-  MessageSquare,
   Search,
   Settings,
   Sparkles,
@@ -726,8 +726,8 @@ export function UnifiedSidebar({
                   <div className="relative group">
                     <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-700 dark:text-purple-200 shadow-none hover:shadow-md">
                       <div className="flex items-center justify-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="font-medium text-sm">Feedback</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span className="font-medium text-sm">Report Problem</span>
                       </div>
                     </div>
                   </div>

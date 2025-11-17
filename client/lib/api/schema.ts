@@ -9602,8 +9602,6 @@ export interface components {
             showView: boolean;
             /** Showcontinue */
             showContinue: boolean;
-            /** Showretry */
-            showRetry: boolean;
             /** Practicesimulation */
             practiceSimulation: boolean;
             /** Passpct */
@@ -9856,8 +9854,6 @@ export interface components {
             showView: boolean;
             /** Showcontinue */
             showContinue: boolean;
-            /** Showretry */
-            showRetry: boolean;
             /** Practicesimulation */
             practiceSimulation: boolean;
             /** Passpct */
