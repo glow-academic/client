@@ -151,7 +151,7 @@ async def _create_chat_for_scenario_inline(
 
     # Convert asyncpg UUID to Python UUID
     parent_scenario_id_uuid = uuid.UUID(str(parent_scenario["id"]))
-    profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
+    profile_id_uuid = uuid.UUID(str(profile_id)) if profile_id else None
 
     # Get department_ids from scenario_departments junction table (for better department selection)
     sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
@@ -859,27 +859,19 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
 
             # Get current chat's scenario_id to exclude it from next scenario selection
             # (for normal grading, we don't want to create another chat for the current scenario)
-            # Map child scenario ID to parent ID for comparison with scenario_links (which contain parent IDs)
+            # Recursively map child scenario ID to root parent ID for comparison with scenario_links (which contain parent IDs)
             current_chat_child_scenario_id = str(chat.get("scenario_id"))
-            sql = """
-                SELECT COALESCE(
-                    (SELECT parent_id::text 
-                     FROM scenario_tree 
-                     WHERE child_id = $1::uuid AND parent_id != child_id 
-                     LIMIT 1),
-                    $1::text
-                ) as parent_id
-            """
+            sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
             current_chat_parent_row = await conn.fetchrow(sql, current_chat_child_scenario_id)
             current_chat_scenario_id = (
-                current_chat_parent_row["parent_id"]
-                if current_chat_parent_row
+                str(current_chat_parent_row["root_scenario_id"])
+                if current_chat_parent_row and current_chat_parent_row.get("root_scenario_id")
                 else current_chat_child_scenario_id
             )
 
             # Also get scenarios that already have chats (even without grades) to avoid duplicates
             # This prevents creating multiple chats for the same scenario in the same attempt
-            # Map child scenario IDs to parent IDs for comparison with scenario_links (which contain parent IDs)
+            # Recursively map child scenario IDs to root parent IDs for comparison with scenario_links (which contain parent IDs)
             existing_scenario_ids = set()
             if existing_chats:
                 child_scenario_ids = [
@@ -888,22 +880,25 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     if ec.get("scenario_id")
                 ]
                 if child_scenario_ids:
-                    # Batch query to map all child IDs to parent IDs
-                    sql = """
-                        SELECT DISTINCT
-                            sc.scenario_id::text as child_id,
-                            COALESCE(
-                                (SELECT parent_id::text 
-                                 FROM scenario_tree 
-                                 WHERE child_id = sc.scenario_id AND parent_id != child_id 
-                                 LIMIT 1),
-                                sc.scenario_id::text
-                            ) as parent_id
-                        FROM unnest($1::uuid[]) as sc(scenario_id)
-                    """
-                    parent_mappings = await conn.fetch(sql, child_scenario_ids)
+                    # Batch query to recursively map all child IDs to root parent IDs
+                    sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                    parent_mappings = []
+                    for child_id in child_scenario_ids:
+                        root_row = await conn.fetchrow(sql, child_id)
+                        if root_row and root_row.get("root_scenario_id"):
+                            parent_mappings.append({
+                                "child_id": child_id,
+                                "parent_id": str(root_row["root_scenario_id"])
+                            })
+                    # Filter to only include parents that are actually in scenario_links
+                    # This prevents excluding scenarios from other simulations/scenarios
+                    scenario_links_parent_ids = {
+                        str(sl["scenario_id"]) for sl in scenario_links
+                    }
                     existing_scenario_ids = {
-                        str(row["parent_id"]) for row in parent_mappings
+                        row["parent_id"]
+                        for row in parent_mappings
+                        if row["parent_id"] in scenario_links_parent_ids
                     }
 
             # Find the next scenario index that doesn't have a graded chat
@@ -942,21 +937,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     and prev_chat_info["has_grade"]
                     and prev_chat_info["scenario_id"]
                 ):
-                    # Map child scenario ID to parent ID for comparison with scenario_links
+                    # Recursively map child scenario ID to root parent ID for comparison with scenario_links
                     prev_chat_child_scenario_id = str(prev_chat_info["scenario_id"])
-                    sql = """
-                        SELECT COALESCE(
-                            (SELECT parent_id::text 
-                             FROM scenario_tree 
-                             WHERE child_id = $1::uuid AND parent_id != child_id 
-                             LIMIT 1),
-                            $1::text
-                        ) as parent_id
-                    """
+                    sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
                     prev_chat_parent_row = await conn.fetchrow(sql, prev_chat_child_scenario_id)
                     prev_chat_parent_scenario_id = (
-                        prev_chat_parent_row["parent_id"]
-                        if prev_chat_parent_row
+                        str(prev_chat_parent_row["root_scenario_id"])
+                        if prev_chat_parent_row and prev_chat_parent_row.get("root_scenario_id")
                         else prev_chat_child_scenario_id
                     )
                     scenarios_with_grades_set.add(prev_chat_parent_scenario_id)
@@ -999,7 +986,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 await conn.execute(sql, chat_id)
 
                 # Get scenario IDs that already have chats in this attempt
-                # Map child scenario IDs to parent IDs for comparison with scenario_links (which contain parent IDs)
+                # Recursively map child scenario IDs to root parent IDs for comparison with scenario_links (which contain parent IDs)
                 existing_scenario_ids = set()
                 if existing_chats:
                     child_scenario_ids = [
@@ -1008,22 +995,25 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                         if ec.get("scenario_id")
                     ]
                     if child_scenario_ids:
-                        # Batch query to map all child IDs to parent IDs
-                        sql = """
-                            SELECT DISTINCT
-                                sc.scenario_id::text as child_id,
-                                COALESCE(
-                                    (SELECT parent_id::text 
-                                     FROM scenario_tree 
-                                     WHERE child_id = sc.scenario_id AND parent_id != child_id 
-                                     LIMIT 1),
-                                    sc.scenario_id::text
-                                ) as parent_id
-                            FROM unnest($1::uuid[]) as sc(scenario_id)
-                        """
-                        parent_mappings = await conn.fetch(sql, child_scenario_ids)
+                        # Batch query to recursively map all child IDs to root parent IDs
+                        sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                        parent_mappings = []
+                        for child_id in child_scenario_ids:
+                            root_row = await conn.fetchrow(sql, child_id)
+                            if root_row and root_row.get("root_scenario_id"):
+                                parent_mappings.append({
+                                    "child_id": child_id,
+                                    "parent_id": str(root_row["root_scenario_id"])
+                                })
+                        # Filter to only include parents that are actually in scenario_links
+                        # This prevents excluding scenarios from other simulations/scenarios
+                        scenario_links_parent_ids = {
+                            str(sl["scenario_id"]) for sl in scenario_links
+                        }
                         existing_scenario_ids = {
-                            str(row["parent_id"]) for row in parent_mappings
+                            row["parent_id"]
+                            for row in parent_mappings
+                            if row["parent_id"] in scenario_links_parent_ids
                         }
 
                 # Process ALL scenarios in the simulation
@@ -1050,21 +1040,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                                 and prev_chat_info["has_grade"]
                                 and prev_chat_info["scenario_id"]
                             ):
-                                # Map child scenario ID to parent ID for comparison with scenario_links
+                                # Recursively map child scenario ID to root parent ID for comparison with scenario_links
                                 prev_chat_child_scenario_id = str(prev_chat_info["scenario_id"])
-                                sql = """
-                                    SELECT COALESCE(
-                                        (SELECT parent_id::text 
-                                         FROM scenario_tree 
-                                         WHERE child_id = $1::uuid AND parent_id != child_id 
-                                         LIMIT 1),
-                                        $1::text
-                                    ) as parent_id
-                                """
+                                sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
                                 prev_chat_parent_row = await conn.fetchrow(sql, prev_chat_child_scenario_id)
                                 prev_chat_parent_scenario_id = (
-                                    prev_chat_parent_row["parent_id"]
-                                    if prev_chat_parent_row
+                                    str(prev_chat_parent_row["root_scenario_id"])
+                                    if prev_chat_parent_row and prev_chat_parent_row.get("root_scenario_id")
                                     else prev_chat_child_scenario_id
                                 )
                                 scenarios_with_grades_set.add(prev_chat_parent_scenario_id)
@@ -1093,46 +1075,81 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
             if not end_all and scenario_links:
                 next_scenario_id = None
                 if is_infinite_mode:
-                    # Cycle through the configured scenarios indefinitely
-                    # Find the next scenario without a graded chat, cycling if needed
-                    # Exclude the current chat's scenario (it will be graded but doesn't have a grade yet)
-                    # Also exclude scenarios that already have chats (to prevent duplicates)
+                    # Cycle through the configured scenarios indefinitely in order (1,2,3,1,2,3...)
+                    # Compute last used scenario index to continue from where we left off
                     num_scenarios = len(scenario_links)
-                    if num_scenarios > 0:
-                        # Start from next_index and cycle until we find one without a graded chat
-                        for offset in range(num_scenarios):
-                            cycling_index = (next_index + offset) % num_scenarios
-                            scenario_id_str = str(
-                                scenario_links[cycling_index]["scenario_id"]
+                    last_used_index = 0  # Default to start from beginning
+                    
+                    if num_scenarios > 0 and existing_chats:
+                        # Get the most recent chat's scenario
+                        # Query for the most recent chat with created_at to get accurate ordering
+                        sql = """
+                            SELECT sc.scenario_id, sc.created_at
+                            FROM attempt_chats ac
+                            JOIN simulation_chats sc ON sc.id = ac.chat_id
+                            WHERE ac.attempt_id = $1::uuid
+                            ORDER BY sc.created_at DESC
+                            LIMIT 1
+                        """
+                        most_recent_row = await conn.fetchrow(sql, attempt_id)
+                        if most_recent_row:
+                            most_recent_child_scenario_id = str(most_recent_row["scenario_id"])
+                        else:
+                            most_recent_child_scenario_id = ""
+                        
+                        if most_recent_child_scenario_id:
+                            # Recursively map child scenario ID to root parent scenario ID
+                            sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
+                            parent_row = await conn.fetchrow(sql, most_recent_child_scenario_id)
+                            most_recent_parent_id = (
+                                str(parent_row["root_scenario_id"]) 
+                                if parent_row and parent_row.get("root_scenario_id")
+                                else most_recent_child_scenario_id
                             )
-                            # Skip scenarios that:
-                            # 1. Already have grades OR
-                            # 2. Are the current chat's scenario OR
-                            # 3. Already have a chat in this attempt
-                            if (
-                                scenario_id_str not in scenarios_with_grades_set
-                                and scenario_id_str != current_chat_scenario_id
-                                and scenario_id_str not in existing_scenario_ids
-                            ):
-                                next_scenario_id = scenario_links[cycling_index][
-                                    "scenario_id"
-                                ]
-                                break
+                            
+                            # Find the index of this parent scenario in scenario_links
+                            for idx, scenario_link in enumerate(scenario_links):
+                                if str(scenario_link["scenario_id"]) == most_recent_parent_id:
+                                    last_used_index = idx
+                                    break
+                    
+                    # Start cycling from the next scenario after the last used one
+                    # Only exclude current_chat_scenario_id to avoid immediate duplication
+                    start_index = (last_used_index + 1) % num_scenarios
+                    
+                    # Cycle through scenarios starting from start_index
+                    for offset in range(num_scenarios):
+                        cycling_index = (start_index + offset) % num_scenarios
+                        scenario_id_str = str(scenario_links[cycling_index]["scenario_id"])
+                        
+                        # Only exclude the current chat's scenario (will be graded but doesn't have grade yet)
+                        if scenario_id_str != current_chat_scenario_id:
+                            next_scenario_id = scenario_links[cycling_index]["scenario_id"]
+                            break
                 elif next_index is not None and next_index < len(scenario_links):
                     # Use the next scenario that doesn't have a graded chat
                     # (next_index already excludes current_chat_scenario_id)
                     next_scenario_id = scenario_links[next_index]["scenario_id"]
 
                 if next_scenario_id is not None:
-                    # Double-check that this scenario doesn't already have a graded chat,
-                    # is not the current chat's scenario, and doesn't already have a chat
-                    # (it might have been created between the query and now)
+                    # Double-check that this scenario is valid
                     scenario_id_str = str(next_scenario_id)
-                    if (
-                        scenario_id_str not in scenarios_with_grades_set
-                        and scenario_id_str != current_chat_scenario_id
-                        and scenario_id_str not in existing_scenario_ids
-                    ):
+                    # For infinite mode, only check that it's not the current chat's scenario
+                    # For normal mode, check grades and existing chats as well
+                    should_create = False
+                    if is_infinite_mode:
+                        should_create = scenario_id_str != current_chat_scenario_id
+                    else:
+                        # Double-check that this scenario doesn't already have a graded chat,
+                        # is not the current chat's scenario, and doesn't already have a chat
+                        # (it might have been created between the query and now)
+                        should_create = (
+                            scenario_id_str not in scenarios_with_grades_set
+                            and scenario_id_str != current_chat_scenario_id
+                            and scenario_id_str not in existing_scenario_ids
+                        )
+                    
+                    if should_create:
                         created_next_chat = await _create_chat_for_scenario_inline(
                             conn,
                             scenario_id_str,
@@ -1187,23 +1204,15 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     # and recalculate next_index (similar to previous_chat_id handling)
                     # This is mainly for tracking purposes - the next chat was already created correctly
                     # because we excluded current_chat_scenario_id and existing_scenario_ids when creating it
-                    # Map child scenario ID to parent ID (scenarios_with_grades_set uses parent IDs from simulation_scenarios)
+                    # Recursively map child scenario ID to root parent ID (scenarios_with_grades_set uses parent IDs from simulation_scenarios)
                     graded_chat_child_scenario_id = str(chat.get("scenario_id"))
                     if graded_chat_child_scenario_id:
-                        # Map to parent ID from scenario_tree
-                        sql = """
-                            SELECT COALESCE(
-                                (SELECT parent_id::text 
-                                 FROM scenario_tree 
-                                 WHERE child_id = $1::uuid AND parent_id != child_id 
-                                 LIMIT 1),
-                                $1::text
-                            ) as parent_id
-                        """
+                        # Recursively map to root parent ID from scenario_tree
+                        sql = load_sql("sql/v3/scenarios/get_root_scenario_id.sql")
                         graded_chat_parent_row = await conn.fetchrow(sql, graded_chat_child_scenario_id)
                         graded_chat_parent_scenario_id = (
-                            graded_chat_parent_row["parent_id"]
-                            if graded_chat_parent_row
+                            str(graded_chat_parent_row["root_scenario_id"])
+                            if graded_chat_parent_row and graded_chat_parent_row.get("root_scenario_id")
                             else graded_chat_child_scenario_id
                         )
                         # Only add if this parent scenario is actually in simulation_scenarios
@@ -1273,17 +1282,21 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
             # Determine if attempt is finished: ALL parent scenarios from simulation_scenarios 
             # must have at least one graded chat (linked via attempt_chats)
             # This uses simulation_scenarios as the source of truth
-            sql = load_sql("sql/v3/simulations/get_scenarios_with_grades.sql")
-            scenarios_with_grades_for_finished_check = await conn.fetch(sql, attempt_id)
-            scenarios_with_grades_for_finished = {
-                str(row["parent_scenario_id"]) for row in scenarios_with_grades_for_finished_check
-            }
-            # Check if all parent scenarios from simulation_scenarios have graded chats
-            all_parent_scenario_ids = {str(sl["scenario_id"]) for sl in scenario_links}
-            is_attempt_finished: bool = (
-                len(all_parent_scenario_ids) > 0 
-                and all_parent_scenario_ids.issubset(scenarios_with_grades_for_finished)
-            )
+            # For infinite mode, attempts never finish (they cycle indefinitely)
+            if is_infinite_mode:
+                is_attempt_finished = False
+            else:
+                sql = load_sql("sql/v3/simulations/get_scenarios_with_grades.sql")
+                scenarios_with_grades_for_finished_check = await conn.fetch(sql, attempt_id)
+                scenarios_with_grades_for_finished = {
+                    str(row["parent_scenario_id"]) for row in scenarios_with_grades_for_finished_check
+                }
+                # Check if all parent scenarios from simulation_scenarios have graded chats
+                all_parent_scenario_ids = {str(sl["scenario_id"]) for sl in scenario_links}
+                is_attempt_finished = (
+                    len(all_parent_scenario_ids) > 0 
+                    and all_parent_scenario_ids.issubset(scenarios_with_grades_for_finished)
+                )
 
             # Include chats created from previous_chat_map handling
             total_created_chats = created_chats_count + created_chats_count_map
@@ -1347,7 +1360,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 )
 
     except Exception as e:
-        logger.error(f"Error continuing simulation for {sid}: {str(e)}")
+        logger.error(f"Error continuing simulation for {sid}: {str(e)}", exc_info=True)
         await continue_simulation_error(
             ContinueSimulationErrorPayload(
                 success=False, message=f"Failed to continue simulation: {str(e)}"
@@ -1364,10 +1377,18 @@ async def continue_simulation(sid: str, data: dict[str, Any]) -> None:
         validated = ContinueSimulationPayload(**data)
         await _continue_simulation_impl(sid, validated)
     except ValidationError as e:
-        logger.error(f"Validation error in continue_simulation for {sid}: {e}")
+        logger.error(f"Validation error in continue_simulation for {sid}: {e}", exc_info=True)
         await continue_simulation_error(
             ContinueSimulationErrorPayload(
                 success=False, message=f"Invalid payload: {str(e)}"
+            ),
+            room=sid,
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in continue_simulation wrapper for {sid}: {str(e)}", exc_info=True)
+        await continue_simulation_error(
+            ContinueSimulationErrorPayload(
+                success=False, message=f"Unexpected error: {str(e)}"
             ),
             room=sid,
         )

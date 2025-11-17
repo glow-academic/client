@@ -83,6 +83,101 @@
             WHERE ss.simulation_id = ab.simulation_id AND ss.active = true
             ORDER BY ss.position
         ),
+        -- Recursively map all child scenarios to their root parent scenarios
+        -- This includes scenarios from current attempt and will be extended for previous chats
+        scenario_root_mapping AS (
+            WITH RECURSIVE scenario_ancestors AS (
+                -- Base case: start with all unique scenario IDs from current attempt's chats
+                SELECT DISTINCT
+                    sc.scenario_id as child_scenario_id,
+                    sc.scenario_id as ancestor_id,
+                    0 as depth
+                FROM simulation_chats sc
+                JOIN attempt_chats ac ON ac.chat_id = sc.id
+                WHERE ac.attempt_id = $1
+                
+                UNION ALL
+                
+                -- Recursive case: traverse up the tree
+                SELECT 
+                    sa.child_scenario_id,
+                    COALESCE(
+                        (SELECT st.parent_id 
+                         FROM scenario_tree st 
+                         WHERE st.child_id = sa.ancestor_id 
+                           AND st.parent_id != st.child_id 
+                         LIMIT 1),
+                        sa.ancestor_id
+                    ) as ancestor_id,
+                    sa.depth + 1 as depth
+                FROM scenario_ancestors sa
+                WHERE sa.depth < 100  -- Safety limit
+                  AND EXISTS (
+                      SELECT 1 FROM scenario_tree st 
+                      WHERE st.child_id = sa.ancestor_id 
+                        AND st.parent_id != st.child_id
+                  )
+            )
+            SELECT DISTINCT
+                child_scenario_id,
+                ancestor_id as root_scenario_id
+            FROM scenario_ancestors
+            WHERE depth = (
+                SELECT MAX(depth) 
+                FROM scenario_ancestors sa2 
+                WHERE sa2.child_scenario_id = scenario_ancestors.child_scenario_id
+            )
+        ),
+        -- Recursively map previous chat scenarios to their root parent scenarios
+        previous_chat_scenario_root_mapping AS (
+            WITH RECURSIVE scenario_ancestors AS (
+                -- Base case: start with all unique scenario IDs from previous chats
+                SELECT DISTINCT
+                    sc.scenario_id as child_scenario_id,
+                    sc.scenario_id as ancestor_id,
+                    0 as depth
+                FROM simulation_chats sc
+                JOIN attempt_chats ac2 ON ac2.chat_id = sc.id
+                JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
+                JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
+                CROSS JOIN current_attempt_profile cap
+                WHERE ap2.profile_id = cap.profile_id
+                  AND sc.completed = true
+                  AND EXISTS (SELECT 1 FROM simulation_chat_grades scg WHERE scg.simulation_chat_id = sc.id)
+                  AND ac2.attempt_id != $1
+                
+                UNION ALL
+                
+                -- Recursive case: traverse up the tree
+                SELECT 
+                    sa.child_scenario_id,
+                    COALESCE(
+                        (SELECT st.parent_id 
+                         FROM scenario_tree st 
+                         WHERE st.child_id = sa.ancestor_id 
+                           AND st.parent_id != st.child_id 
+                         LIMIT 1),
+                        sa.ancestor_id
+                    ) as ancestor_id,
+                    sa.depth + 1 as depth
+                FROM scenario_ancestors sa
+                WHERE sa.depth < 100  -- Safety limit
+                  AND EXISTS (
+                      SELECT 1 FROM scenario_tree st 
+                      WHERE st.child_id = sa.ancestor_id 
+                        AND st.parent_id != st.child_id
+                  )
+            )
+            SELECT DISTINCT
+                child_scenario_id,
+                ancestor_id as root_scenario_id
+            FROM scenario_ancestors
+            WHERE depth = (
+                SELECT MAX(depth) 
+                FROM scenario_ancestors sa2 
+                WHERE sa2.child_scenario_id = scenario_ancestors.child_scenario_id
+            )
+        ),
         -- Find previous completed chats from other attempts by same profile
         -- Maps child scenarios to parent scenarios for matching with simulation_scenarios
         -- Use latest grade per chat (DISTINCT ON)
@@ -92,13 +187,11 @@
             SELECT DISTINCT ON (sc.id)
                 sc.id as chat_id,
                 sc.scenario_id as child_scenario_id,
-                -- Map child scenario to parent scenario for matching
+                -- Recursively map child scenario to root parent scenario for matching
                 COALESCE(
-                    (SELECT st.parent_id 
-                     FROM scenario_tree st 
-                     WHERE st.child_id = sc.scenario_id 
-                       AND st.parent_id != st.child_id 
-                     LIMIT 1),
+                    (SELECT pcsrm.root_scenario_id 
+                     FROM previous_chat_scenario_root_mapping pcsrm 
+                     WHERE pcsrm.child_scenario_id = sc.scenario_id),
                     sc.scenario_id
                 ) as parent_scenario_id,
                 ac2.attempt_id,
@@ -119,15 +212,13 @@
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
               AND scg.id IS NOT NULL
-              -- Match parent scenario IDs (child scenarios are mapped to their parents)
+              -- Match root parent scenario IDs (child scenarios are recursively mapped to their root parents)
               AND COALESCE(
-                    (SELECT st.parent_id 
-                     FROM scenario_tree st 
-                     WHERE st.child_id = sc.scenario_id 
-                       AND st.parent_id != st.child_id 
-                     LIMIT 1),
+                    (SELECT pcsrm.root_scenario_id 
+                     FROM previous_chat_scenario_root_mapping pcsrm 
+                     WHERE pcsrm.child_scenario_id = sc.scenario_id),
                     sc.scenario_id
-                  ) = ssl.scenario_id
+                ) = ssl.scenario_id
               AND ac2.attempt_id != $1
               -- Exclude previous chats if current attempt is a practice simulation
               -- Practice simulations must always go through manual grading
@@ -601,13 +692,11 @@
         chats_with_all_data AS (
             SELECT 
                 cb.id as chat_id,
-                -- Map child scenario ID to parent scenario ID for matching with allSimulationScenarios
+                -- Recursively map child scenario ID to root parent scenario ID for matching with allSimulationScenarios
                 COALESCE(
-                    (SELECT st.parent_id 
-                     FROM scenario_tree st 
-                     WHERE st.child_id = cb.scenario_id 
-                       AND st.parent_id != st.child_id 
-                     LIMIT 1),
+                    (SELECT srm.root_scenario_id 
+                     FROM scenario_root_mapping srm 
+                     WHERE srm.child_scenario_id = cb.scenario_id),
                     cb.scenario_id
                 ) as parent_scenario_id,
                 jsonb_build_object(
@@ -618,11 +707,9 @@
                         'title', cb.title,
                         'scenarioId', cb.scenario_id::text,
                         'parentScenarioId', COALESCE(
-                            (SELECT st.parent_id::text 
-                             FROM scenario_tree st 
-                             WHERE st.child_id = cb.scenario_id 
-                               AND st.parent_id != st.child_id 
-                             LIMIT 1),
+                            (SELECT srm.root_scenario_id::text 
+                             FROM scenario_root_mapping srm 
+                             WHERE srm.child_scenario_id = cb.scenario_id),
                             cb.scenario_id::text
                         ),
                         'attemptId', cb.attempt_id::text,
@@ -646,16 +733,14 @@
                     'feedbacks', COALESCE(fg.feedbacks, '[]'::jsonb),
                     'dynamicRubric', drpc.dynamic_rubric,
                     'gradingState', gspc.grading_state,
-                    -- Use parent scenario ID to get previous chats from previous_chats_for_scenarios
+                    -- Use root parent scenario ID to get previous chats from previous_chats_for_scenarios
                     'previousChats', COALESCE(
                         (SELECT previous_chats 
                          FROM previous_chats_for_scenarios pcf2 
                          WHERE pcf2.scenario_id = COALESCE(
-                             (SELECT st.parent_id 
-                              FROM scenario_tree st 
-                              WHERE st.child_id = cb.scenario_id 
-                                AND st.parent_id != st.child_id 
-                              LIMIT 1),
+                             (SELECT srm.root_scenario_id 
+                              FROM scenario_root_mapping srm 
+                              WHERE srm.child_scenario_id = cb.scenario_id),
                              cb.scenario_id
                          )),
                         '[]'::jsonb
@@ -783,14 +868,15 @@
             JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
             WHERE ss.simulation_id = ab.simulation_id
               AND ss.active = true
-              -- Map child scenario to parent scenario via scenario_tree
+              -- Recursively map child scenario to root parent scenario via scenario_tree
               -- If no mapping exists, assume child_id = parent_id (scenario is its own parent)
               AND (
-                EXISTS (
-                  SELECT 1 FROM scenario_tree st 
-                  WHERE st.parent_id = ss.scenario_id 
-                    AND st.child_id = sc.scenario_id
-                )
+                COALESCE(
+                    (SELECT srm.root_scenario_id 
+                     FROM scenario_root_mapping srm 
+                     WHERE srm.child_scenario_id = sc.scenario_id),
+                    sc.scenario_id
+                ) = ss.scenario_id
                 OR sc.scenario_id = ss.scenario_id
               )
         ),

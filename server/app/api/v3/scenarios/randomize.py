@@ -129,6 +129,9 @@ async def randomize_scenario_attributes(
     # Build lookup maps
     active_personas = []
     for p in personas_data:
+        if "id" not in p:
+            logger.warning("Skipping persona entry missing 'id' field")
+            continue
         active_personas.append(
             {
                 **p,
@@ -138,6 +141,9 @@ async def randomize_scenario_attributes(
 
     active_documents = []
     for d in documents_data:
+        if "id" not in d:
+            logger.warning("Skipping document entry missing 'id' field")
+            continue
         active_documents.append(
             {
                 **d,
@@ -147,6 +153,9 @@ async def randomize_scenario_attributes(
 
     active_parameters = []
     for p in parameters_data:
+        if "id" not in p:
+            logger.warning("Skipping parameter entry missing 'id' field")
+            continue
         active_parameters.append(
             {
                 **p,
@@ -156,6 +165,9 @@ async def randomize_scenario_attributes(
 
     all_parameter_items = []
     for pi in parameter_items_data:
+        if "id" not in pi or "parameter_id" not in pi:
+            logger.warning("Skipping parameter item entry missing 'id' or 'parameter_id' field")
+            continue
         all_parameter_items.append(
             {
                 **pi,
@@ -164,13 +176,17 @@ async def randomize_scenario_attributes(
             }
         )
 
-    document_parameter_items_junction = [
-        {
-            "document_id": uuid.UUID(str(j["document_id"])),
-            "parameter_item_id": uuid.UUID(str(j["parameter_item_id"])),
-        }
-        for j in document_parameter_items_data
-    ]
+    document_parameter_items_junction = []
+    for j in document_parameter_items_data:
+        if "document_id" not in j or "parameter_item_id" not in j:
+            logger.warning("Skipping document_parameter_item junction entry missing required fields")
+            continue
+        document_parameter_items_junction.append(
+            {
+                "document_id": uuid.UUID(str(j["document_id"])),
+                "parameter_item_id": uuid.UUID(str(j["parameter_item_id"])),
+            }
+        )
 
     parameter_items_by_id: dict[uuid.UUID, dict[str, Any]] = {}
     for pi in all_parameter_items:
@@ -195,9 +211,9 @@ async def randomize_scenario_attributes(
         logger.info(
             f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}"
         )
-        # If 0 or 2+ personas, randomly pick ONE
-        if len(scenario_persona_ids) == 0 or len(scenario_persona_ids) >= 2:
-            scenario_persona_ids = [random.choice(scenario_persona_ids)] if scenario_persona_ids else []
+        # If 2+ personas, randomly pick ONE. If 0 personas, leave empty.
+        if len(scenario_persona_ids) >= 2:
+            scenario_persona_ids = [random.choice(scenario_persona_ids)]
             logger.info(f"Randomly selected ONE persona: {scenario_persona_ids}")
     elif persona_ids:
         # Use provided personas, but enforce single active

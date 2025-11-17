@@ -294,15 +294,56 @@
                 FROM filt f
                 GROUP BY f.profile_id
             ),
+            -- Recursively map child scenarios to root parent scenarios
+            scenario_root_mapping AS (
+                WITH RECURSIVE scenario_ancestors AS (
+                    -- Base case: start with all unique scenario IDs from filt
+                    SELECT DISTINCT
+                        f.scenario_id as child_scenario_id,
+                        f.scenario_id as ancestor_id,
+                        0 as depth
+                    FROM filt f
+                    WHERE f.scenario_id IS NOT NULL
+                    
+                    UNION ALL
+                    
+                    -- Recursive case: traverse up the tree
+                    SELECT 
+                        sa.child_scenario_id,
+                        COALESCE(
+                            (SELECT st.parent_id 
+                             FROM scenario_tree st 
+                             WHERE st.child_id = sa.ancestor_id 
+                               AND st.parent_id != st.child_id 
+                             LIMIT 1),
+                            sa.ancestor_id
+                        ) as ancestor_id,
+                        sa.depth + 1 as depth
+                    FROM scenario_ancestors sa
+                    WHERE sa.depth < 100  -- Safety limit
+                      AND EXISTS (
+                          SELECT 1 FROM scenario_tree st 
+                          WHERE st.child_id = sa.ancestor_id 
+                            AND st.parent_id != st.child_id
+                      )
+                )
+                SELECT DISTINCT
+                    child_scenario_id,
+                    ancestor_id as root_scenario_id
+                FROM scenario_ancestors
+                WHERE depth = (
+                    SELECT MAX(depth) 
+                    FROM scenario_ancestors sa2 
+                    WHERE sa2.child_scenario_id = scenario_ancestors.child_scenario_id
+                )
+            ),
             profile_scenario_ids AS (
                 SELECT
                     f.profile_id,
                     ARRAY_AGG(DISTINCT COALESCE(
-                        (SELECT st.parent_id::text 
-                         FROM scenario_tree st 
-                         WHERE st.child_id = f.scenario_id 
-                           AND st.parent_id != st.child_id 
-                         LIMIT 1),
+                        (SELECT srm.root_scenario_id::text 
+                         FROM scenario_root_mapping srm 
+                         WHERE srm.child_scenario_id = f.scenario_id),
                         f.scenario_id::text
                     )) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
                 FROM filt f
