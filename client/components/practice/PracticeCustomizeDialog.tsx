@@ -218,7 +218,6 @@ export function PracticeCustomizeDialog({
       onStartAttempt({
         simulationId: selectedSimulationId,
         timeLimit: parseInt(infiniteTimeLimit),
-        ...(departmentId && { departmentId }),
       });
     } else {
       const selectedPersonaId = selectedPersonaIds[0];
@@ -311,20 +310,6 @@ export function PracticeCustomizeDialog({
 
           {isInfiniteMode ? (
             <div className="grid gap-4">
-              <div
-                className="grid gap-2"
-                data-testid="practice-department-picker"
-              >
-                <Label>Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={validDepartmentIds}
-                  selectedIds={selectedDepartmentIds}
-                  onSelect={setSelectedDepartmentIds}
-                  multiSelect={false}
-                  placeholder="Select department (optional)"
-                />
-              </div>
               <div
                 className="grid gap-2"
                 data-testid="practice-simulation-picker"

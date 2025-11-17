@@ -146,368 +146,43 @@ async def _create_chat_for_scenario_inline(
     if not parent_scenario:
         return None
 
-    # Randomly fill any null attributes using SQL files
-    scenario = dict(parent_scenario)
-    import random
+    # Use randomization function to select attributes and create child scenario
+    from app.api.v3.scenarios.randomize import randomize_scenario_attributes
 
-    parent_scenario_id_uuid = scenario["id"]
+    # Convert asyncpg UUID to Python UUID
+    parent_scenario_id_uuid = uuid.UUID(str(parent_scenario["id"]))
+    profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
 
-    # Step 1: Select department_id first
-    # Priority 1: Get department_ids from scenario_departments junction table
+    # Get department_ids from scenario_departments junction table (for better department selection)
     sql = load_sql("sql/v3/scenarios/get_scenario_departments.sql")
     scenario_dept_rows = await conn.fetch(sql, parent_scenario_id_uuid)
-    scenario_dept_ids = [row["department_id"] for row in scenario_dept_rows]
+    scenario_dept_ids = [uuid.UUID(str(row["department_id"])) for row in scenario_dept_rows] if scenario_dept_rows else None
 
-    selected_dept_id: uuid.UUID | None = None
-    if scenario_dept_ids:
-        # Randomly select one department from scenario's departments
-        selected_dept_id = random.choice(scenario_dept_ids)
-        logger.info(
-            f"Selected department_id from scenario_departments: {selected_dept_id}"
-        )
-    else:
-        # Cross-department scenario - need to pick a department
-        if profile_id:
-            # Get user's accessible departments
-            sql = load_sql("sql/v3/profile/get_departments_for_profile.sql")
-            profile_dept_rows = await conn.fetch(sql, profile_id)
-            profile_dept_ids = [row["id"] for row in profile_dept_rows]
-            if profile_dept_ids:
-                selected_dept_id = random.choice(profile_dept_ids)
-                logger.info(
-                    f"Selected department_id from user's accessible departments: {selected_dept_id}"
-                )
-            else:
-                logger.warning(
-                    f"No accessible departments found for profile {profile_id}"
-                )
-        else:
-            # No profile_id - get all active departments
-            sql = load_sql("sql/v3/departments/get_all_active_departments.sql")
-            all_dept_rows = await conn.fetch(sql)
-            all_dept_ids = [row["id"] for row in all_dept_rows]
-            if all_dept_ids:
-                selected_dept_id = random.choice(all_dept_ids)
-                logger.info(
-                    f"Selected department_id from all active departments: {selected_dept_id}"
-                )
-            else:
-                logger.warning("No active departments found in database")
-
-    if not selected_dept_id:
-        raise ValueError(
-            "Cannot proceed without a department_id - no departments available"
-        )
-
-    selected_dept_id_str = str(selected_dept_id)
-
-    # Step 2: Get all randomization data in a single query
-    sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
-    dept_uuids = [uuid.UUID(selected_dept_id_str)]
-    result = await conn.fetchrow(sql, dept_uuids, parent_scenario_id_uuid)
-
-    if not result:
-        raise ValueError("Failed to fetch randomization data")
-
-    # Parse JSONB aggregations (may be string or list)
-    def parse_jsonb(
-        data: Sequence[object] | str | None,
-    ) -> list[dict[str, Any]]:
-        if isinstance(data, str):
-            try:
-                data = json.loads(data)
-            except json.JSONDecodeError:
-                return []
-        if not isinstance(data, list):
-            return []
-        return [dict(item) for item in data]
-
-    personas_data = parse_jsonb(result.get("personas", []))
-    documents_data = parse_jsonb(result.get("documents", []))
-    parameters_data = parse_jsonb(result.get("parameters", []))
-    parameter_items_data = parse_jsonb(result.get("parameter_items", []))
-    document_parameter_items_data = parse_jsonb(
-        result.get("document_parameter_items", [])
+    # Call randomization function which handles attribute selection and child creation
+    randomized_result = await randomize_scenario_attributes(
+        conn=conn,
+        persona_ids=None,
+        document_ids=None,
+        parameter_item_ids=None,
+        department_ids=scenario_dept_ids,  # Use scenario's departments if available
+        scenario_id=parent_scenario_id_uuid,
+        profile_id=profile_id_uuid,
+        targets=None,  # Randomize all
     )
 
-    # Convert UUIDs and build lookup maps
-    active_personas = []
-    for p in personas_data:
-        active_personas.append(
-            {
-                **p,
-                "id": uuid.UUID(str(p["id"])),
-            }
-        )
+    new_scenario_id = randomized_result["child_scenario_id"]
+    if not new_scenario_id:
+        raise ValueError("Failed to create child scenario")
 
-    active_documents = []
-    for d in documents_data:
-        active_documents.append(
-            {
-                **d,
-                "id": uuid.UUID(str(d["id"])),
-            }
-        )
-
-    active_parameters = []
-    for p in parameters_data:
-        active_parameters.append(
-            {
-                **p,
-                "id": uuid.UUID(str(p["id"])),
-            }
-        )
-
-    all_parameter_items = []
-    for pi in parameter_items_data:
-        all_parameter_items.append(
-            {
-                **pi,
-                "id": uuid.UUID(str(pi["id"])),
-                "parameter_id": uuid.UUID(str(pi["parameter_id"])),
-            }
-        )
-
-    document_parameter_items_junction = [
-        {
-            "document_id": uuid.UUID(str(j["document_id"])),
-            "parameter_item_id": uuid.UUID(str(j["parameter_item_id"])),
-        }
-        for j in document_parameter_items_data
-    ]
-
-    # Build lookup maps for efficiency
-    parameter_items_by_id: dict[uuid.UUID, dict[str, Any]] = {}
-    for pi in all_parameter_items:
-        parameter_items_by_id[pi["id"]] = pi
-
-    parameter_items_by_param_id: dict[uuid.UUID, list[dict[str, Any]]] = {}
-    for pi in all_parameter_items:
-        param_id = pi["parameter_id"]
-        if param_id not in parameter_items_by_param_id:
-            parameter_items_by_param_id[param_id] = []
-        parameter_items_by_param_id[param_id].append(pi)
-
-    documents_by_id: dict[uuid.UUID, dict[str, Any]] = {}
-    for d in active_documents:
-        documents_by_id[d["id"]] = d
-
-    # Step 3: Get personas (priority: existing links from parent, then random selection)
-    scenario_persona_ids: list[uuid.UUID] = []
-
-    # Priority 1: Check for existing persona links in parent scenario
-    sql = load_sql("sql/v3/scenarios/get_scenario_persona_links.sql")
-    existing_persona_links = await conn.fetchrow(sql, parent_scenario_id_uuid)
-    if existing_persona_links and existing_persona_links.get("persona_ids"):
-        scenario_persona_ids = [
-            uuid.UUID(p) for p in existing_persona_links["persona_ids"]
-        ]
-        logger.info(
-            f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}"
-        )
-
-    # Priority 2: Random persona selection if still none (filtered by selected department)
-    if not scenario_persona_ids:
-        if active_personas:
-            # Randomly select 1-3 personas
-            num_personas = random.randint(1, min(3, len(active_personas)))
-            selected_personas = random.sample(active_personas, num_personas)
-            scenario_persona_ids = [p["id"] for p in selected_personas]
-            logger.info(
-                f"Randomly selected {len(scenario_persona_ids)} persona_ids: {scenario_persona_ids}"
-            )
-        else:
-            logger.info("No active personas found")
-
-    # Step 4: Get objectives from parent scenario (first 3 by idx)
-    sql = load_sql("sql/v3/scenarios/get_scenario_objectives_top_n.sql")
-    objectives_data = await conn.fetch(sql, parent_scenario_id_uuid, 3)
-    scenario_objectives = [obj["objective"] for obj in objectives_data]
     logger.info(
-        f"Found {len(scenario_objectives)} objectives from parent scenario: {scenario_objectives}"
-    )
-
-    # Step 5: Get most recent active problem statement from parent scenario
-    sql = load_sql("sql/v3/scenarios/get_scenario_problem_statement_active.sql")
-    problem_statement_row = await conn.fetchrow(sql, parent_scenario_id_uuid)
-    scenario_problem_statement = (
-        problem_statement_row["problem_statement"] if problem_statement_row else None
-    )
-    logger.info(f"Found problem statement from parent: {scenario_problem_statement}")
-
-    # Step 6: Get existing documents and parameters from parent scenario junction tables
-    sql = load_sql("sql/v3/scenarios/get_scenario_document_links.sql")
-    doc_links = await conn.fetch(sql, parent_scenario_id_uuid)
-    existing_doc_ids = [link["document_id"] for link in doc_links]
-
-    sql = load_sql("sql/v3/scenarios/get_scenario_parameter_links.sql")
-    param_links = await conn.fetch(sql, parent_scenario_id_uuid)
-    existing_param_ids = [link["parameter_item_id"] for link in param_links]
-
-    # Step 8: Random document selection if documents still don't exist
-    scenario_documents: list[uuid.UUID] = []
-    if not existing_doc_ids:
-        # First, get parameter items for this scenario (for document matching)
-        doc_matching_param_item_ids = (
-            existing_param_ids.copy() if existing_param_ids else []
-        )
-
-        # If no parameter items, randomly select one per active parameter
-        if not doc_matching_param_item_ids and active_parameters:
-            for param in active_parameters:
-                param_items = parameter_items_by_param_id.get(param["id"], [])
-                if param_items:
-                    selected_item = random.choice(param_items)
-                    doc_matching_param_item_ids.append(selected_item["id"])
-
-        # Try to find documents that match parameter items via document_parameter_items junction
-        matching_documents = []
-        if doc_matching_param_item_ids:
-            matching_documents = [
-                documents_by_id[j["document_id"]]
-                for j in document_parameter_items_junction
-                if j["parameter_item_id"] in doc_matching_param_item_ids
-                and j["document_id"] in documents_by_id
-            ]
-            logger.info(
-                f"Found {len(matching_documents)} documents matching parameter items"
-            )
-
-        if matching_documents:
-            # Select 1 document from matching documents
-            selected_doc = random.choice(matching_documents)
-            scenario_documents = [selected_doc["id"]]
-            logger.info(
-                f"Selected document via parameter items: {selected_doc['id']} ({selected_doc['name']})"
-            )
-        elif active_documents:
-            # Fallback to text similarity scoring (simplified - just random selection for now)
-            logger.info("No documents match parameter items, using random selection")
-            selected_doc = random.choice(active_documents)
-            scenario_documents = [selected_doc["id"]]
-            logger.info(
-                f"Randomly selected document: {selected_doc['id']} ({selected_doc['name']})"
-            )
-        else:
-            logger.info("No active documents found")
-    else:
-        scenario_documents = existing_doc_ids
-        logger.info(
-            f"Scenario already has {len(existing_doc_ids)} documents, keeping them"
-        )
-
-    # Step 9: Random parameter item selection if no parameters linked via junction
-    scenario_parameter_item_ids = []
-    if not existing_param_ids:
-        if active_parameters:
-            # For each active parameter, randomly select one parameter item
-            for param in active_parameters:
-                param_items = parameter_items_by_param_id.get(param["id"], [])
-                if param_items:
-                    selected_item = random.choice(param_items)
-                    scenario_parameter_item_ids.append(selected_item["id"])
-            logger.info(
-                f"Randomly selected {len(scenario_parameter_item_ids)} parameter items"
-            )
-        else:
-            logger.info("No active parameters found")
-    else:
-        scenario_parameter_item_ids = existing_param_ids
-        logger.info(
-            f"Scenario already has {len(existing_param_ids)} parameter items, keeping them"
-        )
-
-    # Step 7: Create NEW child scenario variant (NEVER modify parent scenario)
-    # Copy attributes from parent scenario
-    sql = load_sql("sql/v3/scenarios/insert_scenario_variant.sql")
-    new_scenario_row = await conn.fetchrow(
-        sql,
-        scenario["name"],  # scenario name ($1)
-        True,  # generated = True ($2)
-        True,  # active = True ($3)
-        scenario["hints_enabled"],  # hints_enabled ($4)
-        scenario["objectives_enabled"],  # objectives_enabled ($5)
-        scenario["image_input_enabled"],  # image_input_enabled ($6)
-        scenario["copy_paste_allowed"],  # copy_paste_allowed ($7)
-        scenario["input_guardrail_enabled"],  # input_guardrail_enabled ($8)
-        scenario["output_guardrail_enabled"],  # output_guardrail_enabled ($9)
-    )
-    new_scenario_id = new_scenario_row["id"]
-    logger.info(
-        f"Created child scenario variant {new_scenario_id} for parent {parent_scenario_id_uuid}"
-    )
-
-    # Step 8: Copy problem statement to child scenario
-    if scenario_problem_statement:
-        sql = load_sql("sql/v3/scenarios/insert_scenario_problem_statement.sql")
-        await conn.fetchrow(
-            sql,
-            new_scenario_id,
-            scenario_problem_statement,
-            True,  # active = True
-        )
-        logger.info(f"Created problem statement for child scenario {new_scenario_id}")
-
-    # Step 9: Copy objectives to child scenario
-    if scenario_objectives:
-        sql = load_sql("sql/v3/scenarios/insert_scenario_objective.sql")
-        for idx, objective in enumerate(scenario_objectives[:3]):  # Limit to 3
-            await conn.execute(sql, new_scenario_id, idx, objective)
-        logger.info(
-            f"Inserted {min(len(scenario_objectives), 3)} objectives for child scenario {new_scenario_id}"
-        )
-
-    # Step 10: Create scenario_tree edge linking parent -> child
-    sql = load_sql("sql/v3/scenarios/insert_scenario_tree_edge.sql")
-    await conn.execute(
-        sql,
-        parent_scenario_id_uuid,  # parent (original scenario from simulation)
-        new_scenario_id,  # child (new variant)
-        True,  # active
-    )
-    logger.info(
-        f"Created scenario_tree edge: parent={parent_scenario_id_uuid} -> child={new_scenario_id}"
-    )
-
-    # Step 11: Link personas to child scenario (not parent)
-    # Note: Only ONE persona can be active per scenario (constraint: scenario_personas_one_active_per_scenario)
-    if scenario_persona_ids:
-        sql = load_sql("sql/v3/scenarios/insert_scenario_persona_link.sql")
-        for idx, pid in enumerate(scenario_persona_ids):
-            # Only the first persona is active, rest are inactive
-            is_active = idx == 0
-            await conn.execute(sql, new_scenario_id, pid, is_active)
-        logger.info(
-            f"Linked {len(scenario_persona_ids)} persona(s) to child scenario {new_scenario_id}"
-        )
-
-    # Step 12: Link documents to child scenario (not parent)
-    if scenario_documents:
-        sql = load_sql("sql/v3/scenarios/insert_scenario_document_link.sql")
-        for doc_id in scenario_documents:
-            await conn.execute(sql, new_scenario_id, doc_id, True)
-        logger.info(
-            f"Linked {len(scenario_documents)} document(s) to child scenario {new_scenario_id}"
-        )
-
-    # Step 13: Link parameter items to child scenario (not parent)
-    if scenario_parameter_item_ids:
-        sql = load_sql("sql/v3/scenarios/insert_scenario_parameter_link.sql")
-        for param_id in scenario_parameter_item_ids:
-            await conn.execute(sql, new_scenario_id, param_id, True)
-        logger.info(
-            f"Linked {len(scenario_parameter_item_ids)} parameter item(s) to child scenario {new_scenario_id}"
-        )
-
-    # Step 14: Link department to child scenario (not parent)
-    sql = load_sql("sql/v3/scenarios/insert_scenario_department_link.sql")
-    await conn.execute(sql, new_scenario_id, selected_dept_id, True)
-    logger.info(
-        f"Linked department {selected_dept_id} to child scenario {new_scenario_id}"
+        f"Created child scenario variant {new_scenario_id} for parent {parent_scenario_id_uuid} "
+        f"with persona_id={randomized_result['persona_id']}, "
+        f"document_ids={randomized_result['document_ids']}, "
+        f"parameter_item_ids={randomized_result['parameter_item_ids']}"
     )
 
     # Step 15: Create chat using child scenario ID (not parent)
-    chat_title = scenario["name"]
+    chat_title = parent_scenario.get("name", "")
     trace_id = gen_trace_id()
 
     sql = load_sql("sql/v3/simulations/create_simulation_chat.sql")

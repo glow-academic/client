@@ -1549,7 +1549,7 @@
           "scenarios"
         ],
         "summary": "Randomize Scenario Sections",
-        "description": "Suggest randomized persona/documents/parameters based on current inputs.",
+        "description": "Randomize scenario attributes and optionally create child scenario variant.",
         "operationId": "randomize_scenario_sections_api_v3_scenarios_randomize_post",
         "requestBody": {
           "content": {
@@ -17656,6 +17656,28 @@
             "type": "array",
             "title": "Targets",
             "default": []
+          },
+          "scenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -17695,6 +17717,17 @@
             "type": "array",
             "title": "Parameteritemids",
             "default": []
+          },
+          "childScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Childscenarioid"
           }
         },
         "type": "object",

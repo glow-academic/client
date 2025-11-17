@@ -44,6 +44,7 @@ async def _create_practice_scenario_impl(
     Handle practice scenario creation requests via WebSocket.
     Creates a customized scenario variant if needed (Option A), then calls
     the normal start_simulation workflow to handle generation and randomization.
+    Only handles standard mode - infinite mode should use start_simulation directly.
     """
     try:
         logger.info(
@@ -80,70 +81,42 @@ async def _create_practice_scenario_impl(
                         "No default guest profile found; proceeding without profile_id"
                     )
 
-            if data.infinite_mode:
-                # Infinite mode: use provided simulation_id, create variant with selected attributes
-                if not data.simulation_id:
-                    await create_practice_scenario_error(
-                        CreatePracticeScenarioErrorPayload(
-                            success=False, message="Missing simulation_id for infinite mode"
-                        ),
-                        room=sid,
-                    )
-                    return
-
-                simulation_id = data.simulation_id
-
-                # Get first scenario from simulation
-                sql = load_sql("sql/v3/simulations/get_simulation_scenarios_ordered.sql")
-                scenario_links = await conn.fetch(sql, simulation_id)
-                if not scenario_links:
-                    await create_practice_scenario_error(
-                        CreatePracticeScenarioErrorPayload(
-                            success=False,
-                            message="No scenarios found in simulation",
-                        ),
-                        room=sid,
-                    )
-                    return
-
-                parent_scenario_id = str(scenario_links[0]["scenario_id"])
-            else:
-                # Standard mode: find practice simulation with persona
-                if not data.persona_id:
-                    await create_practice_scenario_error(
-                        CreatePracticeScenarioErrorPayload(
-                            success=False, message="Missing persona_id for standard mode"
-                        ),
-                        room=sid,
-                    )
-                    return
-
-                # Find practice simulation with persona
-                department_ids = (
-                    [data.department_id] if data.department_id else []
+            # Standard mode: find practice simulation with persona
+            if not data.persona_id:
+                await create_practice_scenario_error(
+                    CreatePracticeScenarioErrorPayload(
+                        success=False, message="Missing persona_id"
+                    ),
+                    room=sid,
                 )
-                sql = load_sql(
-                    "sql/v3/practice/find_practice_simulation_with_persona.sql"
-                )
-                result = await conn.fetchrow(
-                    sql, data.persona_id, department_ids
-                )
+                return
 
-                if not result:
-                    await create_practice_scenario_error(
-                        CreatePracticeScenarioErrorPayload(
-                            success=False,
-                            message=f"No practice simulation found for persona {data.persona_id}",
-                        ),
-                        room=sid,
-                    )
-                    return
+            # Find practice simulation with persona
+            department_ids = (
+                [data.department_id] if data.department_id else []
+            )
+            sql = load_sql(
+                "sql/v3/practice/find_practice_simulation_with_persona.sql"
+            )
+            result = await conn.fetchrow(
+                sql, data.persona_id, department_ids
+            )
 
-                simulation_id = result["simulation_id"]
-                parent_scenario_id = result["scenario_id"]
-                logger.info(
-                    f"Found practice simulation {simulation_id} with scenario {parent_scenario_id}"
+            if not result:
+                await create_practice_scenario_error(
+                    CreatePracticeScenarioErrorPayload(
+                        success=False,
+                        message=f"No practice simulation found for persona {data.persona_id}",
+                    ),
+                    room=sid,
                 )
+                return
+
+            simulation_id = result["simulation_id"]
+            parent_scenario_id = result["scenario_id"]
+            logger.info(
+                f"Found practice simulation {simulation_id} with scenario {parent_scenario_id}"
+            )
 
             # Get parent scenario
             sql = load_sql("sql/v3/scenarios/get_scenario_by_id.sql")
@@ -194,10 +167,9 @@ async def _create_practice_scenario_impl(
                 return
 
             # Determine if we need to create a customized scenario variant
-            # Only create variant if customization is needed (persona/parameters selected in standard mode)
+            # Only create variant if customization is needed (persona/parameters selected)
             needs_customization = (
-                not data.infinite_mode
-                and (data.persona_id or (data.parameter_item_ids and len(data.parameter_item_ids) > 0))
+                data.persona_id or (data.parameter_item_ids and len(data.parameter_item_ids) > 0)
             )
 
             scenario_id_override: str | None = None
@@ -263,15 +235,15 @@ async def _create_practice_scenario_impl(
             # This will handle scenario generation, randomization, and all other logic
             logger.info(
                 f"Calling start_simulation with simulation_id={simulation_id}, "
-                f"scenario_id={scenario_id_override}, infinite={data.infinite_mode}"
+                f"scenario_id={scenario_id_override}"
             )
 
             start_payload = StartSimulationPayload(
                 simulation_id=simulation_id,
                 profile_id=profile_id if profile_id else None,
                 scenario_id=scenario_id_override,
-                infinite=data.infinite_mode,
-                infinite_time_limit=data.infinite_time_limit,
+                infinite=False,
+                infinite_time_limit=None,
             )
 
             # Call the normal simulation start handler

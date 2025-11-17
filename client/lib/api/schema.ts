@@ -710,7 +710,7 @@ export interface paths {
         put?: never;
         /**
          * Randomize Scenario Sections
-         * @description Suggest randomized persona/documents/parameters based on current inputs.
+         * @description Randomize scenario attributes and optionally create child scenario variant.
          */
         post: operations["randomize_scenario_sections_api_v3_scenarios_randomize_post"];
         delete?: never;
@@ -7421,6 +7421,10 @@ export interface components {
              * @default []
              */
             targets: string[];
+            /** Scenarioid */
+            scenarioId?: string | null;
+            /** Profileid */
+            profileId?: string | null;
         };
         /**
          * RandomizeScenarioResponse
@@ -7446,6 +7450,8 @@ export interface components {
              * @default []
              */
             parameterItemIds: string[];
+            /** Childscenarioid */
+            childScenarioId?: string | null;
         };
         /**
          * ReasoningMappingItem

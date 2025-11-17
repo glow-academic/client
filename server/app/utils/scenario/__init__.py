@@ -1,4 +1,4 @@
-# utils/scenario.py
+"""Scenario utility functions."""
 
 from typing import Any
 
@@ -41,3 +41,7 @@ def format_parameter_item_info(
         "role": "user",
         "content": content,
     }
+
+
+__all__ = ["format_parameter_item_info"]
+
