@@ -43,6 +43,14 @@ type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
 type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
 type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
 type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
+type SearchSimulatableProfilesIn = InputOf<
+  "/api/v3/profile/search-simulatable-profiles",
+  "post"
+>;
+type SearchSimulatableProfilesOut = OutputOf<
+  "/api/v3/profile/search-simulatable-profiles",
+  "post"
+>;
 
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
@@ -238,6 +246,13 @@ export async function refreshAnalytics(
   return api.post("/analytics/refresh", input);
 }
 
+/** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
+export async function searchSimulatableProfiles(
+  input: SearchSimulatableProfilesIn
+): Promise<SearchSimulatableProfilesOut> {
+  return api.post("/profile/search-simulatable-profiles", input);
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   AssistantChatFullIn,
@@ -254,6 +269,8 @@ export type {
   MarkIntroCompleteOut,
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
+  SearchSimulatableProfilesIn,
+  SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };

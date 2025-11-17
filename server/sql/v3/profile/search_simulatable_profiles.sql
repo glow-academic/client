@@ -1,0 +1,72 @@
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+requester_role AS (
+    SELECT role
+    FROM profiles p, resolve_profile_id rpi
+    WHERE p.id = rpi.resolved_profile_id
+),
+simulatable_data AS (
+    SELECT 
+        p.id,
+        p.first_name,
+        p.last_name,
+        p.alias,
+        p.role,
+        p.active,
+        p.viewed_intro,
+        p.viewed_chat,
+        p.default_profile,
+        COALESCE(prl.requests_per_day, 0) as req_per_day,
+        p.last_login,
+        pa.last_active,
+        p.created_at,
+        p.updated_at,
+        pd.department_id as primary_department_id
+    FROM profiles p
+    CROSS JOIN requester_role rr
+    LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    LEFT JOIN LATERAL (
+        SELECT last_active 
+        FROM profile_activity 
+        WHERE profile_id = p.id 
+        ORDER BY created_at DESC 
+        LIMIT 1
+    ) pa ON true
+    WHERE p.id != (SELECT resolved_profile_id FROM resolve_profile_id)
+      AND CASE 
+        WHEN rr.role = 'superadmin' THEN true
+        WHEN rr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
+        WHEN rr.role = 'instructional' THEN p.role IN ('ta', 'guest')
+        ELSE false
+      END
+      {search_where_clause}
+    ORDER BY p.first_name, p.last_name
+    LIMIT $2
+)
+SELECT 
+    jsonb_agg(jsonb_build_object(
+        'id', sp.id::text,
+        'first_name', sp.first_name,
+        'last_name', sp.last_name,
+        'alias', sp.alias,
+        'role', sp.role,
+        'active', sp.active,
+        'viewed_intro', sp.viewed_intro,
+        'viewed_chat', sp.viewed_chat,
+        'default_profile', sp.default_profile,
+        'req_per_day', sp.req_per_day,
+        'last_login', CASE WHEN sp.last_login IS NOT NULL THEN sp.last_login::text ELSE NULL END,
+        'last_active', CASE WHEN sp.last_active IS NOT NULL THEN sp.last_active::text ELSE NULL END,
+        'created_at', sp.created_at::text,
+        'updated_at', sp.updated_at::text,
+        'primary_department_id', CASE WHEN sp.primary_department_id IS NOT NULL THEN sp.primary_department_id::text ELSE NULL END
+    ) ORDER BY sp.first_name, sp.last_name) as profiles
+FROM simulatable_data sp
+

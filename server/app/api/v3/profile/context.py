@@ -88,7 +88,6 @@ class ProfileContextResponse(BaseModel):
     cohortIds: list[str]
     simulations: SimulationsData
     simulationIds: list[str]
-    simulatableProfiles: list[ProfileItem]
     earliestAttemptDate: str | None  # ISO datetime of earliest simulation attempt
     availableSections: list[str]  # Sections available to the effective profile's role
     redirectPath: str  # Default redirect path for the effective profile's role
@@ -240,44 +239,6 @@ async def get_profile_context(
                         )
                     )
 
-        # Parse simulatable profiles from JSONB (may be string or list)
-        simulatable_profiles = []
-        simulatable_profiles_data = result["simulatable_profiles"]
-        if isinstance(simulatable_profiles_data, str):
-            simulatable_profiles_data = json.loads(simulatable_profiles_data)
-        if simulatable_profiles_data and isinstance(simulatable_profiles_data, list):
-            for sp in simulatable_profiles_data:
-                if isinstance(sp, dict):
-                    # Helper to convert datetime to ISO string if needed
-                    def to_iso_string(val: datetime | str | None) -> str:
-                        if val is None:
-                            return ""
-                        if isinstance(val, str):
-                            return val  # Already a string (from JSONB)
-                        return val.isoformat()  # type: ignore
-
-                    simulatable_profiles.append(
-                        ProfileItem(
-                            id=sp["id"],
-                            firstName=sp["first_name"],
-                            lastName=sp["last_name"],
-                            alias=sp["alias"],
-                            role=sp["role"],
-                            active=sp["active"],
-                            viewedIntro=sp["viewed_intro"],
-                            viewedChat=sp["viewed_chat"],
-                            defaultProfile=sp["default_profile"],
-                            reqPerDay=sp["req_per_day"],
-                            lastLogin=to_iso_string(sp.get("last_login")),
-                            lastActive=to_iso_string(sp.get("last_active")),
-                            createdAt=to_iso_string(sp.get("created_at")),
-                            updatedAt=to_iso_string(sp.get("updated_at")),
-                            primaryDepartmentId=sp["primary_department_id"]
-                            if sp.get("primary_department_id")
-                            else None,
-                        )
-                    )
-
         # Parse earliest attempt date
         earliest_attempt_date = None
         if result["earliest_attempt_date"]:
@@ -303,7 +264,6 @@ async def get_profile_context(
             cohortIds=cohort_ids_list,
             simulations=SimulationsData(items=simulations),
             simulationIds=simulation_ids_list,
-            simulatableProfiles=simulatable_profiles,
             earliestAttemptDate=earliest_attempt_date,
             availableSections=available_sections,
             redirectPath=redirect_path,

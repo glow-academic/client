@@ -169,43 +169,6 @@ sim_data AS (
     ) sdd ON sdd.simulation_id = s.id
     WHERE s.active = true
 ),
-simulatable_data AS (
-    -- Profiles that the actual user can emulate (based on actual user's role)
-    SELECT 
-        p.id,
-        p.first_name,
-        p.last_name,
-        p.alias,
-        p.role,
-        p.active,
-        p.viewed_intro,
-        p.viewed_chat,
-        p.default_profile,
-        COALESCE(prl.requests_per_day, 0) as req_per_day,
-        p.last_login,
-        pa.last_active,
-        p.created_at,
-        p.updated_at,
-        pd.department_id as primary_department_id
-    FROM profiles p
-    CROSS JOIN actual_profile_role pr  -- ✅ Use actual user's role, not effective
-    LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN LATERAL (
-        SELECT last_active 
-        FROM profile_activity 
-        WHERE profile_id = p.id 
-        ORDER BY created_at DESC 
-        LIMIT 1
-    ) pa ON true
-    WHERE p.id != (SELECT resolved_actual_profile_id FROM resolve_profile_ids)  -- Don't include actual user in emulation list
-      AND CASE 
-        WHEN pr.role = 'superadmin' THEN true
-        WHEN pr.role = 'admin' THEN p.role IN ('instructional', 'ta', 'guest')
-        WHEN pr.role = 'instructional' THEN p.role IN ('ta', 'guest')
-        ELSE false
-      END
-),
 earliest_attempt AS (
     -- Earliest attempt for the effective profile
     SELECT MIN(sa.created_at) as earliest
@@ -285,27 +248,6 @@ SELECT
         FROM sim_data s),
         '[]'::jsonb
     ) as simulations,
-    COALESCE(
-        (SELECT jsonb_agg(jsonb_build_object(
-            'id', sp.id::text,
-            'first_name', sp.first_name,
-            'last_name', sp.last_name,
-            'alias', sp.alias,
-            'role', sp.role,
-            'active', sp.active,
-            'viewed_intro', sp.viewed_intro,
-            'viewed_chat', sp.viewed_chat,
-            'default_profile', sp.default_profile,
-            'req_per_day', sp.req_per_day,
-            'last_login', sp.last_login,
-            'last_active', sp.last_active,
-            'created_at', sp.created_at,
-            'updated_at', sp.updated_at,
-            'primary_department_id', sp.primary_department_id::text
-        ) ORDER BY sp.first_name, sp.last_name)
-        FROM simulatable_data sp),
-        '[]'::jsonb
-    ) as simulatable_profiles,
     (SELECT earliest FROM earliest_attempt) as earliest_attempt_date
 FROM emulation_validation ev
 CROSS JOIN actual_profile_data apd

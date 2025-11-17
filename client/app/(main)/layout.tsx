@@ -15,6 +15,7 @@ import {
   markChatComplete,
   markIntroComplete,
   refreshAnalytics,
+  searchSimulatableProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
 
@@ -37,6 +38,7 @@ export default async function MainLayout({
       switchEffectiveProfileAction={switchEffectiveProfile}
       createFeedbackAction={createFeedback}
       refreshAnalyticsAction={refreshAnalytics}
+      searchSimulatableProfilesAction={searchSimulatableProfiles}
     >
       {/* Only the PAGE AREA suspends */}
       <Suspense fallback={<AppShell.ContentSkeleton />}>{children}</Suspense>

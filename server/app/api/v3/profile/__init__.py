@@ -10,6 +10,9 @@ from .mark_chat_complete import router as mark_chat_complete_router
 from .mark_intro_complete import router as mark_intro_complete_router
 from .overview import router as overview_router
 from .search import router as search_router
+from .search_simulatable_profiles import (
+    router as search_simulatable_profiles_router,
+)
 from .simulation_report import router as simulation_report_router
 from .staff import router as staff_router
 from .update import router as update_router
@@ -26,6 +29,7 @@ router.include_router(mark_intro_complete_router)
 router.include_router(mark_chat_complete_router)
 router.include_router(overview_router)
 router.include_router(search_router)
+router.include_router(search_simulatable_profiles_router)
 router.include_router(simulation_report_router)
 # Include staff management routers
 router.include_router(staff_router)

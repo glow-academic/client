@@ -7,6 +7,8 @@
 import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
+  SearchSimulatableProfilesIn,
+  SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
@@ -53,7 +55,6 @@ import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Brain,
   ChartBar,
-  Check,
   ChevronRight,
   ChevronsUpDown,
   Home,
@@ -71,6 +72,7 @@ import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { EmulateProfileModal } from "./EmulateProfileModal";
 import { SidebarSkeleton } from "./SidebarSkeleton";
 
 export interface UnifiedSidebarProps
@@ -81,6 +83,9 @@ export interface UnifiedSidebarProps
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
+  searchSimulatableProfiles: (
+    input: SearchSimulatableProfilesIn
+  ) => Promise<SearchSimulatableProfilesOut>;
 }
 
 interface ClassData {
@@ -120,6 +125,7 @@ export function UnifiedSidebar({
   onSectionChange,
   switchEffectiveProfile,
   createFeedback,
+  searchSimulatableProfiles,
   ...props
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
@@ -127,14 +133,10 @@ export function UnifiedSidebar({
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
-  const [isEmulateDialogOpen, setIsEmulateDialogOpen] = useState(false);
+  const [isEmulateModalOpen, setIsEmulateModalOpen] = useState(false);
 
   // Get sidebar context to close mobile sidebar on navigation
   const { isMobile, setOpenMobile } = useSidebar();
-
-  // Create a ref for the profile search input
-  const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Use the profile context
   const {
@@ -142,7 +144,6 @@ export function UnifiedSidebar({
     effectiveProfile,
     isLoading,
     cohorts,
-    simulatableProfiles,
     availableSections,
   } = useProfile();
 
@@ -156,48 +157,6 @@ export function UnifiedSidebar({
       isSubItem: true,
     }));
   }, [cohorts, effectiveProfile]);
-
-  // Create the final profile list for the dropdown, organized by priority
-  const profileOptions = React.useMemo(() => {
-    if (!activeProfile) return [];
-
-    const options = [];
-
-    // 1. Start with the user's own profile (activeProfile)
-    options.push(activeProfile);
-
-    // 2. Add profiles with defaultProfile = true
-    if (simulatableProfiles) {
-      const defaultProfiles = simulatableProfiles.filter(
-        (profile) => profile.defaultProfile
-      );
-      options.push(...defaultProfiles);
-    }
-
-    // 3. Add the rest of the simulatable profiles
-    if (simulatableProfiles) {
-      const regularProfiles = simulatableProfiles.filter(
-        (profile) => !profile.defaultProfile
-      );
-      options.push(...regularProfiles);
-    }
-
-    // Apply search filter if profileSearchTerm exists
-    if (profileSearchTerm.trim()) {
-      return options.filter(
-        (profile) =>
-          `${profile.firstName} ${profile.lastName}`
-            .toLowerCase()
-            .includes(profileSearchTerm.toLowerCase()) ||
-          profile.role
-            .toLowerCase()
-            .includes(profileSearchTerm.toLowerCase()) ||
-          profile.alias?.toLowerCase().includes(profileSearchTerm.toLowerCase())
-      );
-    }
-
-    return options;
-  }, [activeProfile, simulatableProfiles, profileSearchTerm]);
 
   // Build navigation menu based on role with search filtering
   const navMain = useMemo(() => {
@@ -485,25 +444,35 @@ export function UnifiedSidebar({
     [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
-  const handleProfileSelect = async (profileId: string) => {
+  // Handle exit emulation
+  const handleExitEmulation = useCallback(async () => {
+    if (!activeProfile?.id) return;
+
     try {
       const result = await switchEffectiveProfile({
-        targetProfileId: profileId,
+        targetProfileId: activeProfile.id,
         fullEmulation: false,
-        emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours TTL for emulation
+        emulationTTL: null,
       });
 
       if (!result.ok) {
-        toast.error(result.reason || "Failed to switch profile");
+        toast.error(result.reason || "Failed to exit emulation");
         return;
       }
 
+      toast.success("Emulation exited successfully");
       // Session updated server-side, refresh to pick up changes
       router.refresh();
     } catch {
-      toast.error("Failed to switch profile");
+      toast.error("Failed to exit emulation");
     }
-  };
+  }, [activeProfile?.id, switchEffectiveProfile, router]);
+
+  // Check if currently emulating
+  const isEmulating = activeProfile && effectiveProfile && activeProfile.id !== effectiveProfile.id;
+
+  // Check if user can emulate (instructional and higher)
+  const canEmulate = activeProfile && ["instructional", "admin", "superadmin"].includes(activeProfile.role);
 
   // Watch for profile changes and redirect if current page is not accessible
   // TEMPORARILY DISABLED: Let users manually navigate from access denied screen for debugging
@@ -572,19 +541,10 @@ export function UnifiedSidebar({
     <>
       <Sidebar {...props}>
         <SidebarHeader>
-          {/* Profile Switcher */}
+          {/* Profile Dropdown */}
           <SidebarMenu>
             <SidebarMenuItem>
-              <DropdownMenu
-                onOpenChange={(open) => {
-                  if (open) {
-                    // Focus the search input when the dropdown opens
-                    setTimeout(() => {
-                      profileSearchInputRef.current?.focus();
-                    }, 0);
-                  }
-                }}
-              >
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
@@ -595,76 +555,109 @@ export function UnifiedSidebar({
                       style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                     >
                       <AvatarFallback>
-                        {getInitials(
-                          `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
-                        )}
+                        {!effectiveProfile
+                          ? "GU"
+                          : getInitials(
+                              effectiveProfile?.firstName +
+                                " " +
+                                effectiveProfile?.lastName
+                            )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5 leading-none text-left">
-                      <span className="font-medium truncate">{`${effectiveProfile.firstName} ${effectiveProfile.lastName}`}</span>
+                      <span className="font-medium truncate">{`${effectiveProfile?.firstName || "Guest"} ${effectiveProfile?.lastName || "User"}`}</span>
                       {/* Capitalize the role for display */}
                       <span className="text-xs capitalize">
-                        {effectiveProfile.role}
+                        {effectiveProfile?.role || "guest"}
                       </span>
                     </div>
                     <ChevronsUpDown className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-64"
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Search input for profiles */}
-                  <div className="px-2 py-1.5">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                      <input
-                        ref={profileSearchInputRef}
-                        type="text"
-                        placeholder="Search profiles..."
-                        value={profileSearchTerm}
-                        onChange={(e) => setProfileSearchTerm(e.target.value)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        className="w-full pl-7 pr-2 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <DropdownMenuSeparator />
-
-                  <div className="max-h-60 overflow-y-auto">
-                    {profileOptions.map((profile) => (
-                      <DropdownMenuItem
-                        key={profile.id}
-                        onSelect={() => handleProfileSelect(profile.id)}
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar
+                        className="h-8 w-8 outline outline-muted-foreground"
+                        style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                       >
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            className="h-6 w-6 text-xs outline outline-muted-foreground"
-                            style={{
-                              outlineWidth: "1px",
-                              outlineStyle: "solid",
-                            }}
-                          >
-                            <AvatarFallback>
-                              {getInitials(
-                                `${profile.firstName} ${profile.lastName}`
+                        <AvatarFallback>
+                          {!activeProfile
+                            ? "GU"
+                            : getInitials(
+                                activeProfile?.firstName +
+                                  " " +
+                                  activeProfile?.lastName
                               )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col leading-tight">
-                            <span>{`${profile.firstName} ${profile.lastName}`}</span>
-                            <span className="text-xs capitalize text-muted-foreground">
-                              {profile.role}
-                            </span>
-                          </div>
-                        </div>
-                        {profile.id === effectiveProfile.id && (
-                          <Check className="ml-auto size-4" />
-                        )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">
+                          {!activeProfile
+                            ? "Guest User"
+                            : activeProfile?.firstName +
+                              " " +
+                              activeProfile?.lastName}
+                        </span>
+                        <span className="truncate text-xs">
+                          {!activeProfile
+                            ? "Not logged in"
+                            : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {/* Emulate or Exit Emulation */}
+                  {isEmulating ? (
+                    <>
+                      <DropdownMenuItem onClick={handleExitEmulation}>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Exit Emulation
                       </DropdownMenuItem>
-                    ))}
-                  </div>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : canEmulate ? (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => setIsEmulateModalOpen(true)}
+                        className="group text-white hover:text-white focus:text-white data-[highlighted]:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2 text-white group-hover:text-white/90" />
+                        Emulate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : null}
+                  {/* Profile - Hidden from guests */}
+                  {activeProfile && activeProfile.role !== "guest" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => handleSectionChangeWithClose("profile")}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={handleLoginOrLogout}
+                    disabled={isLoggingOut}
+                    className={
+                      isLoggingOut ? "opacity-70 cursor-not-allowed" : ""
+                    }
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {isLoggingOut
+                      ? "Logging out..."
+                      : activeProfile?.role === "guest" || !activeProfile
+                        ? "Log in"
+                        : "Logout"}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </SidebarMenuItem>
@@ -758,10 +751,9 @@ export function UnifiedSidebar({
           })}
         </SidebarContent>
 
-        {/* User Profile in Footer */}
+        {/* Report Problem Button in Footer */}
         <SidebarFooter>
           <SidebarMenu>
-            {/* Report Problem Button - Enhanced with bubble styling */}
             <SidebarMenuItem>
               <div className="px-2 pb-2">
                 <ReportProblem createFeedback={createFeedback}>
@@ -776,186 +768,19 @@ export function UnifiedSidebar({
                 </ReportProblem>
               </div>
             </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton
-                    size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                  >
-                    <Avatar
-                      className="h-8 w-8 outline outline-muted-foreground"
-                      style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-                    >
-                      <AvatarFallback>
-                        {!activeProfile
-                          ? "GU"
-                          : getInitials(
-                              activeProfile?.firstName +
-                                " " +
-                                activeProfile?.lastName
-                            )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        {!activeProfile
-                          ? "Guest User"
-                          : activeProfile?.firstName +
-                            " " +
-                            activeProfile?.lastName}
-                      </span>
-                      <span className="truncate text-xs">
-                        {!activeProfile
-                          ? "Not logged in"
-                          : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
-                      </span>
-                    </div>
-                    <ChevronRight className="ml-auto size-4" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                  side="bottom"
-                  align="end"
-                  sideOffset={4}
-                >
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                      <Avatar
-                        className="h-8 w-8 outline outline-muted-foreground"
-                        style={{ outlineWidth: "1px", outlineStyle: "solid" }}
-                      >
-                        <AvatarFallback>
-                          {!activeProfile
-                            ? "GU"
-                            : getInitials(
-                                activeProfile?.firstName +
-                                  " " +
-                                  activeProfile?.lastName
-                              )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">
-                          {!activeProfile
-                            ? "Guest User"
-                            : activeProfile?.firstName +
-                              " " +
-                              activeProfile?.lastName}
-                        </span>
-                        <span className="truncate text-xs">
-                          {!activeProfile
-                            ? "Not logged in"
-                            : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
-                        </span>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {activeProfile &&
-                    activeProfile.role === "superadmin" &&
-                    effectiveProfile.id !== activeProfile.id && (
-                      <>
-                        <DropdownMenuItem
-                          onClick={() => setIsEmulateDialogOpen(true)}
-                          className="group text-white hover:text-white focus:text-white data-[highlighted]:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                        >
-                          <Sparkles className="h-4 w-4 mr-2 text-white group-hover:text-white/90" />
-                          Emulate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
-                  {activeProfile && (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => handleSectionChangeWithClose("profile")}
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem
-                    onClick={handleLoginOrLogout}
-                    disabled={isLoggingOut}
-                    className={
-                      isLoggingOut ? "opacity-70 cursor-not-allowed" : ""
-                    }
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    {isLoggingOut
-                      ? "Logging out..."
-                      : activeProfile?.role === "guest" || !activeProfile
-                        ? "Log in"
-                        : "Logout"}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
 
         <SidebarRail />
       </Sidebar>
 
-      {/* Emulate Confirmation Dialog */}
-      <Dialog open={isEmulateDialogOpen} onOpenChange={setIsEmulateDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Enable Emulation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 text-sm">
-            <p>
-              You are about to enable emulation. You will be embodied as{" "}
-              {effectiveProfile?.firstName} {effectiveProfile?.lastName} and may
-              take simulations on their behalf.
-            </p>
-            <p className="font-medium">
-              The only way to exit emulation is to log out.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEmulateDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              onClick={async () => {
-                try {
-                  const result = await switchEffectiveProfile({
-                    targetProfileId: effectiveProfile.id,
-                    fullEmulation: true,
-                    emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours
-                  });
-
-                  if (!result.ok) {
-                    toast.error(result.reason || "Emulation not allowed");
-                    return;
-                  }
-
-                  // Session updated server-side, refresh to pick up changes
-                  router.refresh();
-                } catch {
-                  toast.error("Failed to enable emulation");
-                }
-                setIsEmulateDialogOpen(false);
-              }}
-            >
-              <span className="inline-flex items-center">
-                <Sparkles className="h-4 w-4 mr-2 text-white group-hover:text-white/90" />
-                Enable Emulation
-              </span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Emulate Profile Modal */}
+      <EmulateProfileModal
+        open={isEmulateModalOpen}
+        onOpenChange={setIsEmulateModalOpen}
+        searchSimulatableProfiles={searchSimulatableProfiles}
+        switchEffectiveProfile={switchEffectiveProfile}
+      />
     </>
   );
 }

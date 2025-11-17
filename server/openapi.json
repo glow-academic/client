@@ -433,6 +433,53 @@
         ]
       }
     },
+    "/api/v3/profile/search-simulatable-profiles": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile"
+        ],
+        "summary": "Search Simulatable Profiles",
+        "description": "Search profiles that can be emulated by the requester.",
+        "operationId": "search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchSimulatableProfilesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchSimulatableProfilesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile"
+        ]
+      }
+    },
     "/api/v3/profile/simulation-report": {
       "post": {
         "tags": [
@@ -16962,13 +17009,6 @@
             "type": "array",
             "title": "Simulationids"
           },
-          "simulatableProfiles": {
-            "items": {
-              "$ref": "#/components/schemas/ProfileItem"
-            },
-            "type": "array",
-            "title": "Simulatableprofiles"
-          },
           "earliestAttemptDate": {
             "anyOf": [
               {
@@ -17002,7 +17042,6 @@
           "cohortIds",
           "simulations",
           "simulationIds",
-          "simulatableProfiles",
           "earliestAttemptDate",
           "availableSections",
           "redirectPath"
@@ -19063,6 +19102,53 @@
         ],
         "title": "ScenariosListResponse",
         "description": "Response for scenarios list endpoint."
+      },
+      "SearchSimulatableProfilesRequest": {
+        "properties": {
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 200
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "SearchSimulatableProfilesRequest",
+        "description": "Request for simulatable profiles search."
+      },
+      "SearchSimulatableProfilesResponse": {
+        "properties": {
+          "profiles": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileItem"
+            },
+            "type": "array",
+            "title": "Profiles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profiles"
+        ],
+        "title": "SearchSimulatableProfilesResponse",
+        "description": "Response for simulatable profiles search endpoint."
       },
       "SearchStaffRequest": {
         "properties": {

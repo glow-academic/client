@@ -89,7 +89,6 @@ interface ProfileContextType {
   simulations: SimulationContextItem[];
   simulationIds: string[];
   cohortMemberCounts: Record<string, number>;
-  simulatableProfiles: ProfileItem[];
   earliestAttemptDate: string | null;
 
   // Permissions data (from server)
@@ -463,7 +462,6 @@ export function ProfileProviderClient({
     simulations: initial.simulations.items ?? [],
     simulationIds: initial.simulationIds ?? [],
     cohortMemberCounts: initial.cohorts.memberCounts ?? {},
-    simulatableProfiles: initial.simulatableProfiles ?? [],
     earliestAttemptDate: initial.earliestAttemptDate ?? null,
 
     // Permissions data (from server)

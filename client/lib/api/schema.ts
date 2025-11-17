@@ -225,6 +225,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/profile/search-simulatable-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Simulatable Profiles
+         * @description Search profiles that can be emulated by the requester.
+         */
+        post: operations["search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/profile/simulation-report": {
         parameters: {
             query?: never;
@@ -7174,8 +7194,6 @@ export interface components {
             simulations: components["schemas"]["SimulationsData"];
             /** Simulationids */
             simulationIds: string[];
-            /** Simulatableprofiles */
-            simulatableProfiles: components["schemas"]["ProfileItem"][];
             /** Earliestattemptdate */
             earliestAttemptDate: string | null;
             /** Availablesections */
@@ -8030,6 +8048,29 @@ export interface components {
             department_options: {
                 [key: string]: string;
             }[];
+        };
+        /**
+         * SearchSimulatableProfilesRequest
+         * @description Request for simulatable profiles search.
+         */
+        SearchSimulatableProfilesRequest: {
+            /** Query */
+            query?: string | null;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * SearchSimulatableProfilesResponse
+         * @description Response for simulatable profiles search endpoint.
+         */
+        SearchSimulatableProfilesResponse: {
+            /** Profiles */
+            profiles: components["schemas"]["ProfileItem"][];
         };
         /**
          * SearchStaffRequest
@@ -11075,6 +11116,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_simulatable_profiles_api_v3_profile_search_simulatable_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchSimulatableProfilesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchSimulatableProfilesResponse"];
                 };
             };
             /** @description Validation Error */

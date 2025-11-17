@@ -53,6 +53,8 @@ import type {
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
   SafeSessionSnapshot,
+  SearchSimulatableProfilesIn,
+  SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
@@ -68,6 +70,7 @@ function MainLayoutContent({
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
+  searchSimulatableProfilesAction,
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
@@ -90,6 +93,9 @@ function MainLayoutContent({
   refreshAnalyticsAction: (
     input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
+  searchSimulatableProfilesAction: (
+    input: SearchSimulatableProfilesIn
+  ) => Promise<SearchSimulatableProfilesOut>;
 }) {
   const pathname = usePathname() || "/";
 
@@ -308,6 +314,7 @@ function MainLayoutContent({
           onSectionChange={handleSectionChange}
           switchEffectiveProfile={switchEffectiveProfileAction}
           createFeedback={createFeedbackAction}
+          searchSimulatableProfiles={searchSimulatableProfilesAction}
         />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -376,6 +383,7 @@ export function MainLayoutClient({
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
+  searchSimulatableProfilesAction,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse;
@@ -400,6 +408,9 @@ export function MainLayoutClient({
   refreshAnalyticsAction: (
     input: RefreshAnalyticsIn
   ) => Promise<RefreshAnalyticsOut>;
+  searchSimulatableProfilesAction: (
+    input: SearchSimulatableProfilesIn
+  ) => Promise<SearchSimulatableProfilesOut>;
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
@@ -415,6 +426,7 @@ export function MainLayoutClient({
               switchEffectiveProfileAction={switchEffectiveProfileAction}
               createFeedbackAction={createFeedbackAction}
               refreshAnalyticsAction={refreshAnalyticsAction}
+              searchSimulatableProfilesAction={searchSimulatableProfilesAction}
             >
               {children}
             </MainLayoutContent>
