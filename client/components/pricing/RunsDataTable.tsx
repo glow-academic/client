@@ -529,15 +529,17 @@ export function RunsDataTable({
   return (
     <div className="space-y-3">
       {/* Filters + Search */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center space-x-2">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="flex flex-1 items-center space-x-2 flex-wrap">
           {/* Search bar */}
-          <Input
-            placeholder="Search by model, persona, agent, name, debug info..."
-            value={runIdSearch}
-            onChange={(e) => setRunIdSearch(e.target.value)}
-            className="h-8 w-[200px]"
-          />
+          <div className="w-full md:w-auto mb-2 md:mb-0">
+            <Input
+              placeholder="Search by model, persona, agent, name, debug info..."
+              value={runIdSearch}
+              onChange={(e) => setRunIdSearch(e.target.value)}
+              className="h-8 w-full md:w-[200px]"
+            />
+          </div>
 
           {/* Model filter */}
           {modelIdFilterColumn && modelOptions.length > 0 && (
@@ -576,7 +578,7 @@ export function RunsDataTable({
                 setSelectedProfileIds([]);
                 setRunIdSearch("");
               }}
-              className="h-8 px-2 lg:px-3"
+              className="h-8 px-2 lg:px-3 hidden md:flex"
             >
               Reset
               <X className="ml-2 h-4 w-4" />
@@ -588,7 +590,7 @@ export function RunsDataTable({
         </div>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <table className="w-full">
           <thead className="bg-muted/50">
             {table.getHeaderGroups().map((headerGroup) => (

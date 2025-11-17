@@ -26,14 +26,14 @@ export function AgentDebugInfoDataTableToolbar({
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2 flex-wrap">
-        <div className="mb-2">
+        <div className="mb-2 w-full md:w-auto">
           <Input
             placeholder="Search content..."
             value={(contentColumn?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               contentColumn?.setFilterValue(event.target.value)
             }
-            className="h-8 w-[150px] lg:w-[300px]"
+            className="h-8 w-full md:w-[150px] lg:w-[300px]"
           />
         </div>
 
@@ -50,7 +50,7 @@ export function AgentDebugInfoDataTableToolbar({
             <Button
               variant="ghost"
               onClick={() => table.resetColumnFilters()}
-              className="h-8 px-2 lg:px-3"
+              className="h-8 px-2 lg:px-3 hidden md:flex"
             >
               Reset
               <X className="ml-2 h-4 w-4" />

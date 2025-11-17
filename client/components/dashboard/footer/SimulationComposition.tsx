@@ -22,7 +22,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TruncatedInsight } from "../TruncatedInsight";
 import {
   Table,
   TableBody,
@@ -32,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type SimulationFact = {
   simulationId: string;
@@ -57,7 +57,8 @@ type SimulationParameterFactNumeric = {
   scenarioCount: number;
 };
 
-import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
 } from "../SimulationCompositionPicker";
@@ -132,7 +133,7 @@ export default function SimulationComposition({
         name: param.name,
         description: param.description || "",
       })),
-    [parameterMapping],
+    [parameterMapping]
   );
 
   const allParameterItems = useMemo(
@@ -143,7 +144,7 @@ export default function SimulationComposition({
         description: item.description || "",
         parameterId: item.parameter_id,
       })),
-    [parameterItemMapping],
+    [parameterItemMapping]
   );
 
   const [config, setConfig] = useState<SimulationCompositionConfig>({
@@ -152,6 +153,18 @@ export default function SimulationComposition({
     bottomPercentage: 25,
     description: "Top 25% vs Bottom 25% - Best vs Worst",
   });
+
+  // Track mobile viewport for responsive design
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Create a global color mapping for parameter items
   const parameterItemColorMap = useMemo(() => {
@@ -171,7 +184,7 @@ export default function SimulationComposition({
 
       if (!colorMap.has(key)) {
         const isNumeric = simulationParameterFactsNumeric.some(
-          (nf) => nf.parameterId === fact.parameterId,
+          (nf) => nf.parameterId === fact.parameterId
         );
         colorMap.set(key, getParameterColor(key, isNumeric));
       }
@@ -198,7 +211,7 @@ export default function SimulationComposition({
 
     // Sort simulations by average score
     const sortedSims = [...simulationFacts].sort(
-      (a, b) => b.avgScore - a.avgScore,
+      (a, b) => b.avgScore - a.avgScore
     );
 
     let topCount: number;
@@ -208,11 +221,11 @@ export default function SimulationComposition({
       case "percentile":
         topCount = Math.max(
           1,
-          Math.floor((config.topPercentage / 100) * sortedSims.length),
+          Math.floor((config.topPercentage / 100) * sortedSims.length)
         );
         bottomCount = Math.max(
           1,
-          Math.floor((config.bottomPercentage / 100) * sortedSims.length),
+          Math.floor((config.bottomPercentage / 100) * sortedSims.length)
         );
         break;
       case "quartile":
@@ -226,14 +239,14 @@ export default function SimulationComposition({
         const variance =
           sortedSims.reduce(
             (sum, sim) => sum + Math.pow(sim.avgScore - avgScore, 2),
-            0,
+            0
           ) / sortedSims.length;
         const stdDev = Math.sqrt(variance);
         topCount = sortedSims.filter(
-          (sim) => sim.avgScore >= avgScore + stdDev,
+          (sim) => sim.avgScore >= avgScore + stdDev
         ).length;
         bottomCount = sortedSims.filter(
-          (sim) => sim.avgScore <= avgScore - stdDev,
+          (sim) => sim.avgScore <= avgScore - stdDev
         ).length;
         break;
       default:
@@ -251,7 +264,7 @@ export default function SimulationComposition({
       simulationParameterFactsNumeric,
       allParameters,
       allParameterItems,
-      parameterItemColorMap,
+      parameterItemColorMap
     );
 
     // Build parameter composition for low performers
@@ -261,7 +274,7 @@ export default function SimulationComposition({
       simulationParameterFactsNumeric,
       allParameters,
       allParameterItems,
-      parameterItemColorMap,
+      parameterItemColorMap
     );
 
     // Build detailed simulation information
@@ -277,7 +290,7 @@ export default function SimulationComposition({
         simulationParameterFactsCategorical,
         simulationParameterFactsNumeric,
         allParameters,
-        allParameterItems,
+        allParameterItems
       ),
     }));
 
@@ -293,7 +306,7 @@ export default function SimulationComposition({
         simulationParameterFactsCategorical,
         simulationParameterFactsNumeric,
         allParameters,
-        allParameterItems,
+        allParameterItems
       ),
     }));
 
@@ -361,15 +374,29 @@ export default function SimulationComposition({
                 : "bg-gray-400"
         }`}
       />
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+      <CardHeader className={cn("pb-3", isMobile && "pb-2")}>
+        <div
+          className={cn(
+            "flex",
+            isMobile ? "flex-col gap-2" : "items-center justify-between"
+          )}
+        >
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+            <CardTitle
+              className={cn(
+                "flex items-center gap-2",
+                isMobile ? "text-sm" : "text-base"
+              )}
+            >
+              <BarChart3 className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
               Simulation Composition
             </CardTitle>
-            <CardDescription>
-              High vs low performing simulations
+            <CardDescription
+              className={cn(isMobile ? "text-[10px]" : "text-xs")}
+            >
+              {isMobile
+                ? "High vs low performing"
+                : "High vs low performing simulations"}
             </CardDescription>
           </div>
           <SimulationCompositionPicker
@@ -383,35 +410,83 @@ export default function SimulationComposition({
         {highPerforming.length === 0 &&
           lowPerforming.length === 0 &&
           simulationFacts.length > 0 && (
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground mb-2">
+            <div
+              className={cn(
+                "text-center bg-muted/50 rounded-lg",
+                isMobile ? "p-2" : "p-4"
+              )}
+            >
+              <p
+                className={cn(
+                  "text-muted-foreground",
+                  isMobile ? "text-xs mb-1" : "text-sm mb-2"
+                )}
+              >
                 No significant differences found between high and low performing
                 simulations.
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p
+                className={cn(
+                  "text-muted-foreground",
+                  isMobile ? "text-[10px]" : "text-xs"
+                )}
+              >
                 Showing top 3 most common attributes across all simulations.
               </p>
             </div>
           )}
 
         {/* Parameter Comparison Table */}
-        <div className="flex-1 min-h-[260px]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div
+          className={cn("flex-1", isMobile ? "min-h-[180px]" : "min-h-[260px]")}
+        >
+          <div
+            className={cn(
+              "grid items-start",
+              isMobile
+                ? "grid-cols-1 gap-2"
+                : "grid-cols-1 lg:grid-cols-2 gap-4"
+            )}
+          >
             {/* High Performing Side */}
             <Dialog>
               <DialogTrigger asChild>
-                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm">
-                  <div className="text-center mb-3">
-                    <h3 className="font-semibold text-green-600 flex items-center justify-center gap-1 text-sm">
-                      <TrendingUp className="h-3 w-3" />
+                <div
+                  className={cn(
+                    "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm",
+                    isMobile ? "p-2" : "p-3"
+                  )}
+                >
+                  <div
+                    className={cn("text-center", isMobile ? "mb-2" : "mb-3")}
+                  >
+                    <h3
+                      className={cn(
+                        "font-semibold text-green-600 flex items-center justify-center gap-1",
+                        isMobile ? "text-xs" : "text-sm"
+                      )}
+                    >
+                      <TrendingUp
+                        className={cn(isMobile ? "h-2.5 w-2.5" : "h-3 w-3")}
+                      />
                       {getMethodLabel(true)}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+                      className={cn(
+                        "text-muted-foreground",
+                        isMobile ? "text-[10px]" : "text-xs"
+                      )}
+                    >
                       {highPerformingDetails.length} simulations
                     </p>
                   </div>
                   <div className="flex-1">
-                    <div className="max-h-64 overflow-auto rounded-md">
+                    <div
+                      className={cn(
+                        "overflow-auto rounded-md",
+                        isMobile ? "max-h-48" : "max-h-64"
+                      )}
+                    >
                       <Table className="w-full table-fixed">
                         <colgroup>
                           <col className="w-[75%]" />
@@ -419,39 +494,71 @@ export default function SimulationComposition({
                         </colgroup>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="p-2 text-xs leading-snug">
+                            <TableHead
+                              className={cn(
+                                "leading-snug",
+                                isMobile ? "p-1 text-[10px]" : "p-2 text-xs"
+                              )}
+                            >
                               Parameter
                             </TableHead>
-                            <TableHead className="p-2 text-xs leading-snug w-16 text-right">
+                            <TableHead
+                              className={cn(
+                                "leading-snug text-right shrink-0",
+                                isMobile
+                                  ? "p-1 text-[10px] w-12"
+                                  : "p-2 text-xs w-16"
+                              )}
+                            >
                               Count
                             </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {highPerforming.slice(0, 5).map((item, index) => (
-                            <TableRow
-                              key={`high-${index}`}
-                              className="hover:bg-muted/50"
-                            >
-                              <TableCell className="p-2 text-xs leading-snug">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div
-                                    className="w-2 h-2 rounded-full shrink-0"
-                                    style={{ backgroundColor: item.color }}
-                                  />
-                                  <span
-                                    className="truncate text-xs"
-                                    title={item.name}
-                                  >
-                                    {item.name}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="p-2 text-xs font-mono tabular-nums text-right w-16 shrink-0">
-                                {item.value}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {highPerforming
+                            .slice(0, isMobile ? 4 : 5)
+                            .map((item, index) => (
+                              <TableRow
+                                key={`high-${index}`}
+                                className="hover:bg-muted/50"
+                              >
+                                <TableCell
+                                  className={cn(
+                                    "leading-snug",
+                                    isMobile ? "p-1" : "p-2"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div
+                                      className={cn(
+                                        "rounded-full shrink-0",
+                                        isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
+                                      )}
+                                      style={{ backgroundColor: item.color }}
+                                    />
+                                    <span
+                                      className={cn(
+                                        "truncate",
+                                        isMobile ? "text-[10px]" : "text-xs"
+                                      )}
+                                      title={item.name}
+                                    >
+                                      {item.name}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell
+                                  className={cn(
+                                    "font-mono tabular-nums text-right shrink-0",
+                                    isMobile
+                                      ? "p-1 text-[10px] w-12"
+                                      : "p-2 text-xs w-16"
+                                  )}
+                                >
+                                  {item.value}
+                                </TableCell>
+                              </TableRow>
+                            ))}
                         </TableBody>
                       </Table>
                     </div>
@@ -528,58 +635,118 @@ export default function SimulationComposition({
             {/* Low Performing Side */}
             <Dialog>
               <DialogTrigger asChild>
-                <div className="cursor-pointer hover:bg-muted/50 rounded-lg p-3 transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm">
-                  <div className="text-center mb-3">
-                    <h3 className="font-semibold text-red-600 flex items-center justify-center gap-1 text-sm">
-                      <TrendingDown className="h-3 w-3" />
-                      {getMethodLabel(false)}
+                <div
+                  className={cn(
+                    "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm",
+                    isMobile ? "p-1.5" : "p-3"
+                  )}
+                >
+                  <div
+                    className={cn("text-center", isMobile ? "mb-1.5" : "mb-3")}
+                  >
+                    <h3
+                      className={cn(
+                        "font-semibold text-red-600 flex items-center justify-center gap-0.5",
+                        isMobile ? "text-[10px]" : "text-sm"
+                      )}
+                    >
+                      <TrendingDown
+                        className={cn(isMobile ? "h-2 w-2" : "h-3 w-3")}
+                      />
+                      <span className="truncate">{getMethodLabel(false)}</span>
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {lowPerformingDetails.length} simulations
+                    <p
+                      className={cn(
+                        "text-muted-foreground",
+                        isMobile ? "text-[9px] mt-0.5" : "text-xs"
+                      )}
+                    >
+                      {lowPerformingDetails.length} sims
                     </p>
                   </div>
                   <div className="flex-1">
-                    <div className="max-h-64 overflow-auto rounded-md">
+                    <div
+                      className={cn(
+                        "overflow-auto rounded-md",
+                        isMobile ? "max-h-36" : "max-h-64"
+                      )}
+                    >
                       <Table className="w-full table-fixed">
                         <colgroup>
-                          <col className="w-[75%]" />
-                          <col className="w-[25%]" />
+                          <col
+                            className={cn(isMobile ? "w-[70%]" : "w-[75%]")}
+                          />
+                          <col
+                            className={cn(isMobile ? "w-[30%]" : "w-[25%]")}
+                          />
                         </colgroup>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="p-2 text-xs leading-snug">
-                              Parameter
+                            <TableHead
+                              className={cn(
+                                "leading-tight",
+                                isMobile ? "p-0.5 text-[9px]" : "p-2 text-xs"
+                              )}
+                            >
+                              {isMobile ? "Param" : "Parameter"}
                             </TableHead>
-                            <TableHead className="p-2 text-xs leading-snug w-16 text-right">
-                              Count
+                            <TableHead
+                              className={cn(
+                                "leading-tight text-right shrink-0",
+                                isMobile
+                                  ? "p-0.5 text-[9px] w-8"
+                                  : "p-2 text-xs w-16"
+                              )}
+                            >
+                              #
                             </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {lowPerforming.slice(0, 5).map((item, index) => (
-                            <TableRow
-                              key={`low-${index}`}
-                              className="hover:bg-muted/50"
-                            >
-                              <TableCell className="p-2 text-xs leading-snug">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div
-                                    className="w-2 h-2 rounded-full shrink-0"
-                                    style={{ backgroundColor: item.color }}
-                                  />
-                                  <span
-                                    className="truncate text-xs"
-                                    title={item.name}
-                                  >
-                                    {item.name}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="p-2 text-xs font-mono tabular-nums text-right w-16 shrink-0">
-                                {item.value}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {lowPerforming
+                            .slice(0, isMobile ? 3 : 5)
+                            .map((item, index) => (
+                              <TableRow
+                                key={`low-${index}`}
+                                className="hover:bg-muted/50"
+                              >
+                                <TableCell
+                                  className={cn(
+                                    "leading-tight",
+                                    isMobile ? "p-0.5" : "p-2"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <div
+                                      className={cn(
+                                        "rounded-full shrink-0",
+                                        isMobile ? "w-1 h-1" : "w-2 h-2"
+                                      )}
+                                      style={{ backgroundColor: item.color }}
+                                    />
+                                    <span
+                                      className={cn(
+                                        "truncate",
+                                        isMobile ? "text-[9px]" : "text-xs"
+                                      )}
+                                      title={item.name}
+                                    >
+                                      {item.name}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell
+                                  className={cn(
+                                    "font-mono tabular-nums text-right shrink-0",
+                                    isMobile
+                                      ? "p-0.5 text-[9px] w-8"
+                                      : "p-2 text-xs w-16"
+                                  )}
+                                >
+                                  {item.value}
+                                </TableCell>
+                              </TableRow>
+                            ))}
                         </TableBody>
                       </Table>
                     </div>
@@ -656,7 +823,9 @@ export default function SimulationComposition({
         </div>
 
         {/* Actionable Insights */}
-        {actionableInsight && <TruncatedInsight text={actionableInsight} />}
+        {actionableInsight && (
+          <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+        )}
       </CardContent>
     </Card>
   );
@@ -707,7 +876,7 @@ function buildParameterComposition(
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: LocalParameter[],
   allParameterItems: LocalParameterItem[],
-  parameterItemColorMap: Map<string, string>,
+  parameterItemColorMap: Map<string, string>
 ): HighLowPerforming[] {
   const parameterCounts = new Map<
     string,
@@ -726,7 +895,7 @@ function buildParameterComposition(
     if (simulations.some((sim) => sim.simulationId === fact.simulationId)) {
       const parameter = allParameters.find((p) => p.id === fact.parameterId);
       const parameterItem = allParameterItems.find(
-        (pi) => pi.id === fact.parameterItemId,
+        (pi) => pi.id === fact.parameterItemId
       );
 
       if (parameter && parameterItem) {
@@ -801,7 +970,7 @@ function buildParameterBreakdown(
   categoricalFacts: SimulationParameterFactCategorical[],
   numericFacts: SimulationParameterFactNumeric[],
   allParameters: LocalParameter[],
-  allParameterItems: LocalParameterItem[],
+  allParameterItems: LocalParameterItem[]
 ): { parameterName: string; parameterValue: string; isNumerical: boolean }[] {
   const breakdown: {
     parameterName: string;
@@ -814,7 +983,7 @@ function buildParameterBreakdown(
     if (fact.simulationId === simulationId) {
       const parameter = allParameters.find((p) => p.id === fact.parameterId);
       const parameterItem = allParameterItems.find(
-        (pi) => pi.id === fact.parameterItemId,
+        (pi) => pi.id === fact.parameterItemId
       );
 
       if (parameter && parameterItem) {

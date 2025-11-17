@@ -85,6 +85,7 @@ export function SingleProfileCertificateButton<TData>({
       size="sm"
       onClick={handleCertificateGeneration}
       disabled={isGenerating}
+      className="w-full md:w-auto"
     >
       {isGenerating ? (
         <>

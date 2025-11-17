@@ -94,6 +94,7 @@ import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Table,
   TableBody,
@@ -167,6 +168,7 @@ export default function Documents({
 }: DocumentsProps) {
   const router = useRouter();
   const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const isMobile = useIsMobile();
 
   // State management
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -1241,20 +1243,22 @@ export default function Documents({
             className="flex items-center justify-between"
             data-testid="documents-toolbar"
           >
-            <div className="flex flex-1 items-center space-x-2">
-              <Input
-                data-testid="documents-search"
-                placeholder="Filter documents..."
-                value={
-                  (table.getColumn("name")?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table.getColumn("name")?.setFilterValue(event.target.value)
-                }
-                className="h-8 w-[150px] lg:w-[250px]"
-                aria-label="Search documents by name"
-                aria-controls="documents-list"
-              />
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              <div className="w-full md:w-auto mb-2 md:mb-0">
+                <Input
+                  data-testid="documents-search"
+                  placeholder="Filter documents..."
+                  value={
+                    (table.getColumn("name")?.getFilterValue() as string) ?? ""
+                  }
+                  onChange={(event) =>
+                    table.getColumn("name")?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                  aria-label="Search documents by name"
+                  aria-controls="documents-list"
+                />
+              </div>
               {table.getColumn("type") && (
                 <DataTableFacetedFilter
                   column={table.getColumn("type")!}
@@ -1281,7 +1285,7 @@ export default function Documents({
                 <Button
                   variant="ghost"
                   onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3"
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset
                   <X className="ml-2 h-4 w-4" />
@@ -1348,27 +1352,29 @@ export default function Documents({
                 </>
               )}
 
-              {/* View mode toggle */}
-              <div className="flex items-center space-x-1 border rounded-md">
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="h-8 px-3"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="h-8 px-3"
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
-              </div>
+              {/* View mode toggle - hidden on mobile */}
+              {!isMobile && (
+                <div className="flex items-center space-x-1 border rounded-md">
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="h-8 px-3"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className="h-8 px-3"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
 
-              <DataTableViewOptions table={table} />
+              {!isMobile && <DataTableViewOptions table={table} />}
             </div>
           </div>
 

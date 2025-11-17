@@ -346,13 +346,13 @@ export default function Parameters({
         aria-label={`parameter card ${parameter.name}`}
       >
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <CardTitle className="text-lg flex items-center gap-2">
                 {getParameterIcon(parameter)}
-                {parameter.name}
+                <span className="truncate">{parameter.name}</span>
               </CardTitle>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex flex-wrap items-center gap-2 mt-1">
                 <Badge variant="outline">
                   {count} {count === 1 ? "item" : "items"}
                 </Badge>
@@ -373,7 +373,7 @@ export default function Parameters({
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {parameter.can_edit ? (
                 <Button
                   variant="outline"
@@ -386,8 +386,10 @@ export default function Parameters({
                   aria-label={`Edit ${parameter.name}`}
                   data-testid="btn-edit-parameter"
                   title={`Edit ${parameter.name}`}
+                  className="h-9 px-3"
                 >
-                  <Edit className="h-4 w-4" />
+                  <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Edit</span>
                 </Button>
               ) : (
                 <Button
@@ -401,8 +403,10 @@ export default function Parameters({
                   aria-label={`View ${parameter.name}`}
                   data-testid="btn-view-parameter"
                   title={`View ${parameter.name}`}
+                  className="h-9 px-3"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">View</span>
                 </Button>
               )}
               {parameter.can_duplicate && (
@@ -417,12 +421,16 @@ export default function Parameters({
                   aria-label={`Duplicate ${parameter.name}`}
                   data-testid="btn-duplicate-parameter"
                   title={`Duplicate ${parameter.name}`}
+                  className="h-9 px-3"
                 >
                   {isDuplicating === parameter.parameter_id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-4 w-4 md:mr-0 mr-2" />
                   )}
+                  <span className="md:hidden">
+                    {isDuplicating === parameter.parameter_id ? "Duplicating..." : "Duplicate"}
+                  </span>
                 </Button>
               )}
               {parameter.can_delete && (
@@ -435,8 +443,10 @@ export default function Parameters({
                   aria-label={`Delete ${parameter.name}`}
                   data-testid="btn-delete-parameter"
                   title={`Delete ${parameter.name}`}
+                  className="h-9 px-3"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Delete</span>
                 </Button>
               )}
             </div>
@@ -493,7 +503,7 @@ export default function Parameters({
             data-testid="parameters-toolbar"
           >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="mb-2">
+              <div className="w-full md:w-auto mb-2 md:mb-0">
                 <Input
                   data-testid="parameters-search"
                   placeholder="Search parameters..."
@@ -501,7 +511,7 @@ export default function Parameters({
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
-                  className="h-8 w-[150px] lg:w-[250px]"
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
                   aria-label="Search parameters by name"
                   aria-controls="parameters-grid"
                 />
@@ -530,7 +540,7 @@ export default function Parameters({
                   <Button
                     variant="ghost"
                     onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3"
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
                     Reset
                     <X className="ml-2 h-4 w-4" />

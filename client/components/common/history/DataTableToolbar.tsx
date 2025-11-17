@@ -88,64 +88,89 @@ export function DataTableToolbar<TData>({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder="Search by name, simulation, or scenarios..."
-            value={
-              (table.getColumn("search")?.getFilterValue() as string) ?? ""
-            }
-            onChange={(event) =>
-              table.getColumn("search")?.setFilterValue(event.target.value)
-            }
-            className="h-8 w-[150px] lg:w-[250px]"
-          />
-          {/* Name filter - only show if profileId column exists and has options */}
-          {profileIdColumn && profileOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={profileIdColumn}
-              title="Name"
-              options={profileOptions}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+          {/* Mobile: If showExport, wrap search and certificate button in 50/50 flex */}
+          {showExport ? (
+            <div className="flex gap-2 w-full md:w-auto md:flex-initial">
+              <Input
+                placeholder="Search by name, simulation, or scenarios..."
+                value={
+                  (table.getColumn("search")?.getFilterValue() as string) ?? ""
+                }
+                onChange={(event) =>
+                  table.getColumn("search")?.setFilterValue(event.target.value)
+                }
+                className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
+              />
+              <div className="flex-1 md:hidden">
+                <SingleProfileCertificateButton
+                  table={table}
+                  profileOptions={profileOptions}
+                />
+              </div>
+            </div>
+          ) : (
+            <Input
+              placeholder="Search by name, simulation, or scenarios..."
+              value={
+                (table.getColumn("search")?.getFilterValue() as string) ?? ""
+              }
+              onChange={(event) =>
+                table.getColumn("search")?.setFilterValue(event.target.value)
+              }
+              className="h-8 w-full md:w-[150px] lg:w-[250px]"
             />
           )}
+          {/* Filters - separate row on mobile to prevent flicker */}
+          <div className="flex items-center space-x-2 flex-wrap">
+            {/* Name filter - only show if profileId column exists and has options */}
+            {profileIdColumn && profileOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={profileIdColumn}
+                title="Name"
+                options={profileOptions}
+              />
+            )}
 
-          {/* Simulation filter */}
-          {simulationIdColumn && simulationOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={simulationIdColumn}
-              title="Simulation"
-              options={simulationOptions}
-            />
-          )}
+            {/* Simulation filter */}
+            {simulationIdColumn && simulationOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={simulationIdColumn}
+                title="Simulation"
+                options={simulationOptions}
+              />
+            )}
 
-          {/* Scenarios filter */}
-          {scenariosColumn && scenarioOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={scenariosColumn}
-              title="Scenarios"
-              options={scenarioOptions}
-            />
-          )}
+            {/* Scenarios filter */}
+            {scenariosColumn && scenarioOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={scenariosColumn}
+                title="Scenarios"
+                options={scenarioOptions}
+              />
+            )}
 
-          {/* Mode filter - only show when not all 3 other filters are visible */}
-          {shouldShowModeFilter && (
-            <DataTableFacetedFilter
-              column={infiniteModeColumn}
-              title="Mode"
-              options={infiniteModeOptions}
-            />
-          )}
+            {/* Mode filter - only show when not all 3 other filters are visible */}
+            {shouldShowModeFilter && (
+              <DataTableFacetedFilter
+                column={infiniteModeColumn}
+                title="Mode"
+                options={infiniteModeOptions}
+              />
+            )}
 
-          {isFiltered && (
-            <Button
-              variant="ghost"
-              onClick={() => table.resetColumnFilters()}
-              className="h-8 px-2 lg:px-3"
-            >
-              Reset
-              <X className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                onClick={() => table.resetColumnFilters()}
+                className="h-8 px-2 lg:px-3 hidden md:flex"
+              >
+                Reset
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           {/* Select All Rows button - only show when showArchive is true, some rows are selected, but not all filtered */}
@@ -191,13 +216,14 @@ export function DataTableToolbar<TData>({
             </>
           )}
 
+          {/* Certificate button - only show on desktop when showExport is true (mobile is handled above in search area) */}
           {showExport && (
-            <>
+            <div className="hidden md:flex">
               <SingleProfileCertificateButton
                 table={table}
                 profileOptions={profileOptions}
               />
-            </>
+            </div>
           )}
 
           <DataTableViewOptions table={table} isAdmin={isAdmin} />

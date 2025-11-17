@@ -16,17 +16,10 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { useProfile } from "@/contexts/profile-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SimulationHistory, {
   HistorySkeleton,
 } from "../common/history/SimulationHistory";
@@ -55,7 +48,7 @@ interface DashboardProps {
   profileId?: string;
   dashboardData: DashboardOut;
   bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn,
+    input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
 }
 
@@ -85,7 +78,7 @@ export default function Dashboard({
   // Get thresholds from server (or use defaults if not available)
   const thresholds = useMemo(
     () => bundle?.thresholds ?? { danger: 60, warning: 75, success: 85 },
-    [bundle?.thresholds],
+    [bundle?.thresholds]
   );
 
   // Get trend analysis from server (computed server-side)
@@ -230,7 +223,7 @@ export default function Dashboard({
         stagnationRate: point.stagnationRate ?? null,
         timeSpent: point.timeSpent ?? null,
         totalAttempts: point.totalAttempts ?? null,
-      }),
+      })
     );
 
     // Normalize PersonaPerformance trendData to ensure score is always present
@@ -260,10 +253,10 @@ export default function Dashboard({
           row.map((cell) => ({
             ...cell,
             pValue: cell.pValue ?? null,
-          })),
+          }))
         ),
         insights: matrix.insights ?? null,
-      }),
+      })
     );
 
     // Normalize windowAverages to ensure last and prev are always present
@@ -321,7 +314,7 @@ export default function Dashboard({
     // Normalize simulation_mapping to convert undefined to null for exactOptionalPropertyTypes
     // For CohortPerformance: optional department_ids and time_limit
     const normalizedSimulationMapping = Object.entries(
-      bundle.simulation_mapping,
+      bundle.simulation_mapping
     ).reduce(
       (acc, [key, value]) => {
         const normalized: {
@@ -351,12 +344,12 @@ export default function Dashboard({
           department_ids?: string[] | null;
           time_limit?: number | null;
         }
-      >,
+      >
     );
 
     // For AttemptImprovement: required department_ids (must always be present)
     const normalizedSimulationMappingRequired = Object.entries(
-      bundle.simulation_mapping,
+      bundle.simulation_mapping
     ).reduce(
       (acc, [key, value]) => {
         acc[key] = {
@@ -369,7 +362,7 @@ export default function Dashboard({
       {} as Record<
         string,
         { name: string; description: string; department_ids: string[] | null }
-      >,
+      >
     );
 
     // Normalize CohortPerformance dailyData to convert null to undefined
@@ -502,25 +495,55 @@ export default function Dashboard({
     ];
   }, [bundle, thresholds]);
 
-  // Header pagination logic
-  const HEADER_CARDS_PER_PAGE = 5;
+  // Header pagination logic - responsive cards per page
+  // Mobile: 2 cards per page, Desktop: 5 cards per page
+  const HEADER_CARDS_PER_PAGE_MOBILE = 2;
+  const HEADER_CARDS_PER_PAGE_DESKTOP = 5;
+
+  // Use a state to track window size for responsive behavior
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check window size on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const headerCardsPerPage = isMobile
+    ? HEADER_CARDS_PER_PAGE_MOBILE
+    : HEADER_CARDS_PER_PAGE_DESKTOP;
+
+  // Reset carousel index when switching between mobile/desktop to prevent out-of-bounds
+  useEffect(() => {
+    const maxPages = Math.ceil(headerComponents.length / headerCardsPerPage);
+    if (headerCarouselIndex >= maxPages) {
+      setHeaderCarouselIndex(0);
+    }
+  }, [
+    isMobile,
+    headerComponents.length,
+    headerCardsPerPage,
+    headerCarouselIndex,
+  ]);
+
   const totalHeaderPages = Math.ceil(
-    headerComponents.length / HEADER_CARDS_PER_PAGE,
+    headerComponents.length / headerCardsPerPage
   );
 
   const getVisibleHeaderComponents = () => {
-    const startIndex = headerCarouselIndex * HEADER_CARDS_PER_PAGE;
-    return headerComponents.slice(
-      startIndex,
-      startIndex + HEADER_CARDS_PER_PAGE,
-    );
+    const startIndex = headerCarouselIndex * headerCardsPerPage;
+    return headerComponents.slice(startIndex, startIndex + headerCardsPerPage);
   };
 
   // Navigation functions
   const navigateHeader = (direction: "prev" | "next") => {
     if (direction === "prev") {
       setHeaderCarouselIndex(
-        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages,
+        (prev: number) => (prev - 1 + totalHeaderPages) % totalHeaderPages
       );
     } else {
       setHeaderCarouselIndex((prev: number) => (prev + 1) % totalHeaderPages);
@@ -555,7 +578,7 @@ export default function Dashboard({
 
     if (direction === "prev") {
       setLeftFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length,
+        (prev: number) => (prev - 1 + length) % length
       );
     } else {
       setLeftFooterCarouselIndex((prev: number) => (prev + 1) % length);
@@ -568,7 +591,7 @@ export default function Dashboard({
 
     if (direction === "prev") {
       setRightFooterCarouselIndex(
-        (prev: number) => (prev - 1 + length) % length,
+        (prev: number) => (prev - 1 + length) % length
       );
     } else {
       setRightFooterCarouselIndex((prev: number) => (prev + 1) % length);
@@ -603,7 +626,7 @@ export default function Dashboard({
             <div
               className="grid gap-4"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(HEADER_CARDS_PER_PAGE, headerComponents.length)}, 1fr)`,
+                gridTemplateColumns: `repeat(${Math.min(headerCardsPerPage, headerComponents.length)}, 1fr)`,
                 gridAutoRows: "1fr",
               }}
             >
@@ -967,10 +990,13 @@ export function DashboardSkeleton() {
     <div className="space-y-6">
       {/* Header metrics carousel */}
       <section className="space-y-4">
-        <div className="grid gap-4" style={{
-          gridTemplateColumns: `repeat(${HEADER_CARD_COUNT}, minmax(0, 1fr))`,
-          gridAutoRows: "1fr",
-        }}>
+        <div
+          className="grid gap-4"
+          style={{
+            gridTemplateColumns: `repeat(${HEADER_CARD_COUNT}, minmax(0, 1fr))`,
+            gridAutoRows: "1fr",
+          }}
+        >
           {Array.from({ length: HEADER_CARD_COUNT }).map((_, index) => (
             <Card key={`header-card-${index}`} className="flex flex-col h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -997,7 +1023,10 @@ export function DashboardSkeleton() {
       {/* Main content (primary + secondary carousels) */}
       <section className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-2 items-stretch">
         {[0, 1].map((column) => (
-          <div key={`main-column-${column}`} className="flex flex-col space-y-4">
+          <div
+            key={`main-column-${column}`}
+            className="flex flex-col space-y-4"
+          >
             <Card className="min-h-[500px] max-h-[500px]">
               <CardHeader className="space-y-2">
                 <Skeleton className="h-5 w-40" />
@@ -1024,7 +1053,10 @@ export function DashboardSkeleton() {
       <section className="pb-8">
         <div className="grid gap-6 items-stretch grid-cols-1 lg:grid-cols-2">
           {[0, 1].map((column) => (
-            <div key={`footer-column-${column}`} className="flex flex-col space-y-4">
+            <div
+              key={`footer-column-${column}`}
+              className="flex flex-col space-y-4"
+            >
               <Card className="min-h-[500px] max-h-[500px]">
                 <CardHeader className="space-y-2">
                   <Skeleton className="h-5 w-32" />

@@ -258,11 +258,11 @@ export function Simulations({
       role="gridcell"
     >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{simulation.name}</CardTitle>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg truncate">{simulation.name}</CardTitle>
             <div className="mt-1 space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">
                   <Timer className="h-3 w-3 mr-1" />
                   {simulation.time_limit
@@ -282,7 +282,7 @@ export function Simulations({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             {simulation.can_edit ? (
               <Button
                 variant="outline"
@@ -291,8 +291,10 @@ export function Simulations({
                 onClick={() => handleEdit(simulation.simulation_id)}
                 aria-label={`Edit ${simulation.name}`}
                 title={`Edit ${simulation.name}`}
+                className="h-9 px-3"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">Edit</span>
               </Button>
             ) : (
               <Button
@@ -302,8 +304,10 @@ export function Simulations({
                 onClick={() => handleEdit(simulation.simulation_id)}
                 aria-label={`View ${simulation.name}`}
                 title={`View ${simulation.name}`}
+                className="h-9 px-3"
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">View</span>
               </Button>
             )}
             {simulation.can_duplicate && (
@@ -320,12 +324,16 @@ export function Simulations({
                 }
                 aria-label={`Duplicate ${simulation.name}`}
                 title={`Duplicate ${simulation.name}`}
+                className="h-9 px-3"
               >
                 {isDuplicating === simulation.simulation_id ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-4 w-4 md:mr-0 mr-2" />
                 )}
+                <span className="md:hidden">
+                  {isDuplicating === simulation.simulation_id ? "Duplicating..." : "Duplicate"}
+                </span>
               </Button>
             )}
             {simulation.can_delete && (
@@ -338,8 +346,10 @@ export function Simulations({
                 }
                 aria-label={`Delete ${simulation.name}`}
                 title={`Delete ${simulation.name}`}
+                className="h-9 px-3"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">Delete</span>
               </Button>
             )}
           </div>
@@ -374,7 +384,7 @@ export function Simulations({
           data-testid="simulations-toolbar"
         >
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="mb-2">
+            <div className="w-full md:w-auto mb-2 md:mb-0">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -384,7 +394,7 @@ export function Simulations({
                   onChange={(event) =>
                     nameColumn?.setFilterValue(event.target.value)
                   }
-                  className="h-8 w-[150px] lg:w-[250px] pl-8"
+                  className="h-8 w-full md:w-[150px] lg:w-[250px] pl-8"
                   aria-label="Search simulations by name"
                   aria-controls="simulations-grid"
                 />
@@ -423,7 +433,7 @@ export function Simulations({
                 <Button
                   variant="ghost"
                   onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3"
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset
                   <X className="ml-2 h-4 w-4" />

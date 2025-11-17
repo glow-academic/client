@@ -25,7 +25,7 @@ import {
 import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
 import { Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -83,6 +83,16 @@ export default function PersonaPerformance({
   thresholds,
 }: PersonaPerformanceProps) {
   const [selectedSimulations, setSelectedSimulations] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Filter chart data based on selected simulations
   const filteredChartData = useMemo(() => {
@@ -338,7 +348,10 @@ export default function PersonaPerformance({
 
                     {/* Actionable Insights */}
                     {actionableInsights && actionableInsights[persona.name] && (
-                      <TruncatedInsight text={actionableInsights[persona.name]} />
+                      <TruncatedInsight 
+                        text={actionableInsights[persona.name]} 
+                        isMobile={isMobile} 
+                      />
                     )}
                   </div>
                 </DialogContent>

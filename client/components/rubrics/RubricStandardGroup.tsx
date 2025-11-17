@@ -876,7 +876,7 @@ export default function RubricStandardGroup({
       <Collapsible open={isOpen} onOpenChange={() => onToggle(index)}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div
                   className={`p-2 rounded-lg ${colorClasses.bg} flex-shrink-0`}
@@ -913,7 +913,7 @@ export default function RubricStandardGroup({
                           rows={4}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">Max Points</Label>
                           <Input
@@ -967,7 +967,7 @@ export default function RubricStandardGroup({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {!isEditing && mode === "edit" && (
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -975,8 +975,10 @@ export default function RubricStandardGroup({
                         e.stopPropagation();
                         setIsEditing(true);
                       }}
+                      className="h-9 px-3"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Edit</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -985,15 +987,17 @@ export default function RubricStandardGroup({
                         e.stopPropagation();
                         handleDeleteGroup();
                       }}
+                      className="h-9 px-3"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                      <span className="md:hidden">Delete</span>
                     </Button>
                   </div>
                 )}
                 {isOpen ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 )}
               </div>
             </div>
@@ -1001,22 +1005,35 @@ export default function RubricStandardGroup({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-20">Points</TableHead>
-                  <TableHead className="min-w-[250px] w-64">Name</TableHead>
-                  <TableHead className="w-full">Description</TableHead>
-                  {isEditing && <TableHead className="w-20">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleStandards.map((standard, standardIndex) => (
-                  <TableRow
-                    key={standard.id || `new-${standardIndex}`}
-                    className="h-auto"
-                  >
-                    <TableCell className="w-20 py-4">
+            {/* Mobile: Stacked card view */}
+            <div className="md:hidden space-y-4">
+              {visibleStandards.map((standard, standardIndex) => (
+                <div
+                  key={standard.id || `new-${standardIndex}`}
+                  className="border rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <Input
+                          value={standard.name}
+                          onChange={(e) =>
+                            handleStandardInputChange(
+                              standardIndex,
+                              "name",
+                              e.target.value
+                            )
+                          }
+                          className="text-sm font-medium w-full"
+                          placeholder="Standard name"
+                        />
+                      ) : (
+                        <span className="font-medium text-sm block">
+                          {standard.name}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {isEditing ? (
                         <Input
                           type="number"
@@ -1028,7 +1045,7 @@ export default function RubricStandardGroup({
                               e.target.value
                             )
                           }
-                          className="text-sm w-16"
+                          className="text-sm w-20"
                           min="0"
                           max={groupFormData.points}
                         />
@@ -1039,65 +1056,143 @@ export default function RubricStandardGroup({
                           {standard.points}
                         </Badge>
                       )}
-                    </TableCell>
-                    <TableCell className="min-w-[250px] w-64 py-4">
-                      {isEditing ? (
-                        <Input
-                          value={standard.name}
-                          onChange={(e) =>
-                            handleStandardInputChange(
-                              standardIndex,
-                              "name",
-                              e.target.value
-                            )
-                          }
-                          className="text-sm w-full"
-                          placeholder="Standard name"
-                        />
-                      ) : (
-                        <span className="font-medium truncate block">
-                          {standard.name}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="w-full max-w-0 py-4">
-                      {isEditing ? (
-                        <Textarea
-                          value={standard.description}
-                          onChange={(e) =>
-                            handleStandardInputChange(
-                              standardIndex,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                          className="text-sm min-h-[60px] max-w-full"
-                          rows={2}
-                          placeholder="Standard description"
-                        />
-                      ) : (
-                        <div className="w-full overflow-hidden py-2">
-                          <span className="text-sm leading-relaxed line-clamp-2 block truncate">
-                            {standard.description}
-                          </span>
-                        </div>
-                      )}
-                    </TableCell>
-                    {isEditing && (
-                      <TableCell className="w-20 py-4">
+                      {isEditing && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteStandard(standardIndex)}
+                          className="h-8 w-8 p-0"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      </TableCell>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    {isEditing ? (
+                      <Textarea
+                        value={standard.description}
+                        onChange={(e) =>
+                          handleStandardInputChange(
+                            standardIndex,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                        className="text-sm min-h-[80px] w-full"
+                        rows={3}
+                        placeholder="Standard description"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {standard.description}
+                      </p>
                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: Table view */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">Points</TableHead>
+                    <TableHead className="min-w-[250px] w-64">Name</TableHead>
+                    <TableHead className="w-full">Description</TableHead>
+                    {isEditing && <TableHead className="w-20">Actions</TableHead>}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {visibleStandards.map((standard, standardIndex) => (
+                    <TableRow
+                      key={standard.id || `new-${standardIndex}`}
+                      className="h-auto"
+                    >
+                      <TableCell className="w-20 py-4">
+                        {isEditing ? (
+                          <Input
+                            type="number"
+                            value={standard.points}
+                            onChange={(e) =>
+                              handleStandardInputChange(
+                                standardIndex,
+                                "points",
+                                e.target.value
+                              )
+                            }
+                            className="text-sm w-16"
+                            min="0"
+                            max={groupFormData.points}
+                          />
+                        ) : (
+                          <Badge
+                            className={`font-semibold ${getPointColorClass(parseInt(standard.points), parseInt(groupFormData.points))}`}
+                          >
+                            {standard.points}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="min-w-[250px] w-64 py-4">
+                        {isEditing ? (
+                          <Input
+                            value={standard.name}
+                            onChange={(e) =>
+                              handleStandardInputChange(
+                                standardIndex,
+                                "name",
+                                e.target.value
+                              )
+                            }
+                            className="text-sm w-full"
+                            placeholder="Standard name"
+                          />
+                        ) : (
+                          <span className="font-medium truncate block">
+                            {standard.name}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="w-full max-w-0 py-4">
+                        {isEditing ? (
+                          <Textarea
+                            value={standard.description}
+                            onChange={(e) =>
+                              handleStandardInputChange(
+                                standardIndex,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            className="text-sm min-h-[60px] max-w-full"
+                            rows={2}
+                            placeholder="Standard description"
+                          />
+                        ) : (
+                          <div className="w-full overflow-hidden py-2">
+                            <span className="text-sm leading-relaxed line-clamp-2 block truncate">
+                              {standard.description}
+                            </span>
+                          </div>
+                        )}
+                      </TableCell>
+                      {isEditing && (
+                        <TableCell className="w-20 py-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteStandard(standardIndex)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
             {/* Add New Standard Button - Only show when editing */}
             {isEditing && (
@@ -1107,6 +1202,7 @@ export default function RubricStandardGroup({
                     onClick={handleAddStandard}
                     size="sm"
                     variant="outline"
+                    className="w-full sm:w-auto"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Standard
@@ -1121,15 +1217,16 @@ export default function RubricStandardGroup({
 
             {/* Save/Cancel buttons - Only show when editing */}
             {isEditing && (
-              <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4 pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={handleCancel}
                   disabled={isUpdating}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={isUpdating}>
+                <Button onClick={handleSave} disabled={isUpdating} className="w-full sm:w-auto">
                   {isUpdating
                     ? "Saving..."
                     : mode === "create"

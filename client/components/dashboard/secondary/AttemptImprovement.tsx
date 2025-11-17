@@ -8,9 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TruncatedInsight } from "../TruncatedInsight";
 import { TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -22,6 +21,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type AttemptRow = {
   attempt: string;
@@ -64,6 +64,16 @@ export default function AttemptImprovement({
   thresholds,
 }: AttemptImprovementProps) {
   const [selected, setSelected] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // If sims selected, recompute chart from facts; else use server aggregate
   const displayData = useMemo<AttemptRow[]>(() => {
@@ -233,7 +243,9 @@ export default function AttemptImprovement({
           </div>
 
           {/* Actionable Insights */}
-          {actionableInsight && <TruncatedInsight text={actionableInsight} />}
+          {actionableInsight && (
+            <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+          )}
         </div>
       </CardContent>
     </Card>

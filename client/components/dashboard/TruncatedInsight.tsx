@@ -6,9 +6,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 
-export function TruncatedInsight({ text }: { text: string }) {
+export function TruncatedInsight({
+  text,
+  isMobile = false,
+}: {
+  text: string;
+  isMobile?: boolean;
+}) {
   const textRef = useRef<HTMLParagraphElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
 
@@ -17,8 +24,8 @@ export function TruncatedInsight({ text }: { text: string }) {
       if (textRef.current) {
         // For line-clamp-2, check if scrollHeight exceeds 2 lines
         // Approximate 2 lines: line-height (1.25rem for text-sm) * 2 = ~2.5rem = 40px
-        // Add some tolerance for padding/margins
-        const lineHeight = 20; // ~1.25rem for text-sm
+        // For mobile, use smaller line height
+        const lineHeight = isMobile ? 16 : 20; // ~1rem for text-xs, ~1.25rem for text-sm
         const maxHeight = lineHeight * 2;
         const isOverflowing =
           textRef.current.scrollHeight > maxHeight ||
@@ -38,11 +45,17 @@ export function TruncatedInsight({ text }: { text: string }) {
       clearTimeout(timeoutId);
       window.removeEventListener("resize", checkTruncation);
     };
-  }, [text]);
+  }, [text, isMobile]);
 
   const content = (
-    <div className="p-3 bg-muted rounded-lg">
-      <p ref={textRef} className="text-sm text-muted-foreground line-clamp-2">
+    <div className={cn("bg-muted rounded-lg", isMobile ? "p-2" : "p-3")}>
+      <p
+        ref={textRef}
+        className={cn(
+          "text-muted-foreground line-clamp-2",
+          isMobile ? "text-xs" : "text-sm"
+        )}
+      >
         {text}
       </p>
     </div>
@@ -56,11 +69,12 @@ export function TruncatedInsight({ text }: { text: string }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent className="max-w-md">
-          <p className="text-sm">{text}</p>
+        <TooltipContent
+          className={cn(isMobile ? "max-w-[calc(100vw-2rem)]" : "max-w-md")}
+        >
+          <p className={cn(isMobile ? "text-xs" : "text-sm")}>{text}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 }
-

@@ -8,10 +8,16 @@ import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 // Default date range for the past month
@@ -80,6 +86,8 @@ export function DatePickerWithRange({
   };
 
   const displayRange = dateRange || localDateRange;
+  const isMobile = useIsMobile();
+  const [open, setOpen] = React.useState(false);
 
   // Calculate the best default month to show - prioritize the start date if it exists
   const getDefaultMonth = () => {
@@ -92,10 +100,17 @@ export function DatePickerWithRange({
     return new Date();
   };
 
-  return (
-    <div className={cn("flex", className)}>
-      <Popover>
-        <PopoverTrigger asChild>
+  // Format date for mobile (compact format)
+  const formatMobileDate = (date: Date) => {
+    return format(date, "MMM d");
+  };
+
+  // Format date for desktop (full format)
+  const formatDesktopDate = (date: Date) => {
+    return format(date, "LLL dd, y");
+  };
+
+  const dateButton = (
           <Button
             id="date"
             variant={"secondary"}
@@ -109,17 +124,54 @@ export function DatePickerWithRange({
             {displayRange?.from ? (
               displayRange.to ? (
                 <>
-                  {format(displayRange.from, "LLL dd, y")} -{" "}
-                  {format(displayRange.to, "LLL dd, y")}
+            {isMobile
+              ? `${formatMobileDate(displayRange.from)} - ${formatMobileDate(displayRange.to)}`
+              : `${formatDesktopDate(displayRange.from)} - ${formatDesktopDate(displayRange.to)}`}
                 </>
               ) : (
-                format(displayRange.from, "LLL dd, y")
+          isMobile
+            ? formatMobileDate(displayRange.from)
+            : formatDesktopDate(displayRange.from)
               )
             ) : (
               <span>Filter by date</span>
             )}
           </Button>
-        </PopoverTrigger>
+  );
+
+  // On mobile, use Dialog; on desktop, use Popover
+  if (isMobile) {
+    return (
+      <div className={cn("flex", className)}>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>{dateButton}</DialogTrigger>
+          <DialogContent className="w-auto p-0">
+            <div className="p-12">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={getDefaultMonth()}
+                selected={displayRange}
+                onSelect={(range) => {
+                  handleDateChange(range);
+                  // Close dialog when both dates are selected
+                  if (range?.from && range?.to) {
+                    setOpen(false);
+                  }
+                }}
+                numberOfMonths={1}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex", className)}>
+      <Popover>
+        <PopoverTrigger asChild>{dateButton}</PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="end">
           <Calendar
             initialFocus

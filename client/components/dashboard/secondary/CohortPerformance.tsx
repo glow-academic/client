@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { TruncatedInsight } from "../TruncatedInsight";
 import { BarChart3 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -95,6 +95,16 @@ export default function CohortPerformance({
 }: CohortPerformanceProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const isSingleProfileMode = !!profileId;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Recompute cohort metrics from selected sims using cohortFacts (attempt-weighted)
   const displayCohorts = useMemo<CohortRow[]>(() => {
@@ -333,7 +343,10 @@ export default function CohortPerformance({
 
                     {/* Actionable insight inside the modal */}
                     {actionableInsights && actionableInsights[cohort.id] && (
-                      <TruncatedInsight text={actionableInsights[cohort.id]} />
+                      <TruncatedInsight 
+                        text={actionableInsights[cohort.id]} 
+                        isMobile={isMobile} 
+                      />
                     )}
                   </DialogContent>
                 </Dialog>

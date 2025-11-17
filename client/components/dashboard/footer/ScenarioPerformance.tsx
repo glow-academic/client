@@ -55,7 +55,7 @@ type ScenarioAttributeScenarioFact = {
 };
 
 import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
   Cell,
@@ -182,6 +182,16 @@ export default function ScenarioPerformance({
   thresholds,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Build parameters from mapping
   const allParameters = useMemo(
@@ -498,7 +508,9 @@ export default function ScenarioPerformance({
         </div>
 
         {/* Actionable Insights */}
-        {actionableInsight && <TruncatedInsight text={actionableInsight} />}
+        {actionableInsight && (
+          <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+        )}
       </CardContent>
     </Card>
   );

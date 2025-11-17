@@ -57,6 +57,7 @@ type GrowthDataResponse = {
 
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   CartesianGrid,
   Legend,
@@ -98,6 +99,16 @@ export default function Growth({
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
   ]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Transform availableMetrics to include formatter functions
   const metricsWithFormatters = useMemo(() => {
@@ -299,7 +310,7 @@ export default function Growth({
           {/* Actionable Insights */}
           {normalizedInsight && (
             <div className="flex-shrink-0 w-full" data-testid="growth-insight">
-              <TruncatedInsight text={normalizedInsight} />
+              <TruncatedInsight text={normalizedInsight} isMobile={isMobile} />
             </div>
           )}
         </div>

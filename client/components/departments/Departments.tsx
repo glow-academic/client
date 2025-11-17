@@ -248,13 +248,13 @@ export default function Departments({
       aria-label={`department card ${department.title || "Unnamed Department"}`}
     >
       <CardHeader>
-        <div className="flex justify-between items-start">
-          <div className="space-y-2 flex-1">
-            <CardTitle className="text-base">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="space-y-2 flex-1 min-w-0">
+            <CardTitle className="text-base truncate">
               {department.title || "Unnamed Department"}
             </CardTitle>
             <div className="mt-1 space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="text-xs">
                   <DollarSign className="h-3 w-3 mr-1" />$
                   {department.total_price_spent.toFixed(2)}
@@ -269,7 +269,7 @@ export default function Departments({
               {department.description || "No description available"}
             </p>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
             {department.can_edit ? (
               <Button
                 variant="outline"
@@ -278,8 +278,10 @@ export default function Departments({
                 aria-label={`Edit department ${department.title}`}
                 data-testid="btn-edit-department"
                 title={`Edit department ${department.title}`}
+                className="h-9 px-3"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">Edit</span>
               </Button>
             ) : (
               <Button
@@ -289,8 +291,10 @@ export default function Departments({
                 aria-label={`View department ${department.title}`}
                 data-testid="btn-view-department"
                 title={`View department ${department.title}`}
+                className="h-9 px-3"
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">View</span>
               </Button>
             )}
             {department.can_duplicate && (
@@ -305,12 +309,16 @@ export default function Departments({
                 aria-label={`Duplicate department ${department.title}`}
                 data-testid="btn-duplicate-department"
                 title={`Duplicate department ${department.title}`}
+                className="h-9 px-3"
               >
                 {isDuplicating === department.department_id ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-4 w-4 md:mr-0 mr-2" />
                 )}
+                <span className="md:hidden">
+                  {isDuplicating === department.department_id ? "Duplicating..." : "Duplicate"}
+                </span>
               </Button>
             )}
             {department.can_delete && (
@@ -323,8 +331,10 @@ export default function Departments({
                 aria-label={`Delete department ${department.title}`}
                 data-testid="btn-delete-department"
                 title={`Delete department ${department.title}`}
+                className="h-9 px-3"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">Delete</span>
               </Button>
             )}
           </div>
@@ -356,7 +366,7 @@ export default function Departments({
           data-testid="departments-toolbar"
         >
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="mb-2">
+            <div className="w-full md:w-auto mb-2 md:mb-0">
               <Input
                 data-testid="departments-search"
                 placeholder="Search departments..."
@@ -364,7 +374,7 @@ export default function Departments({
                 onChange={(event) =>
                   nameColumn?.setFilterValue(event.target.value)
                 }
-                className="h-8 w-[150px] lg:w-[250px]"
+                className="h-8 w-full md:w-[150px] lg:w-[250px]"
                 aria-label="Search departments by name"
                 aria-controls="departments-grid"
               />
@@ -393,7 +403,7 @@ export default function Departments({
                 <Button
                   variant="ghost"
                   onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3"
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset
                   <X className="ml-2 h-4 w-4" />

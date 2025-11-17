@@ -4,6 +4,12 @@
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
+import type {
+  CreateFeedbackIn,
+  CreateFeedbackOut,
+  SwitchEffectiveProfileParams,
+  SwitchEffectiveProfileResult,
+} from "@/app/(main)/layout-server";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -40,14 +46,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
-import type {
-  CreateFeedbackIn,
-  CreateFeedbackOut,
-  SwitchEffectiveProfileParams,
-  SwitchEffectiveProfileResult,
-} from "@/app/(main)/layout-server";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   Brain,
@@ -77,11 +78,9 @@ export interface UnifiedSidebarProps
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams,
+    input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
-  createFeedback: (
-    input: CreateFeedbackIn,
-  ) => Promise<CreateFeedbackOut>;
+  createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
 }
 
 interface ClassData {
@@ -131,6 +130,9 @@ export function UnifiedSidebar({
   const [profileSearchTerm, setProfileSearchTerm] = React.useState("");
   const [isEmulateDialogOpen, setIsEmulateDialogOpen] = useState(false);
 
+  // Get sidebar context to close mobile sidebar on navigation
+  const { isMobile, setOpenMobile } = useSidebar();
+
   // Create a ref for the profile search input
   const profileSearchInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -167,7 +169,7 @@ export function UnifiedSidebar({
     // 2. Add profiles with defaultProfile = true
     if (simulatableProfiles) {
       const defaultProfiles = simulatableProfiles.filter(
-        (profile) => profile.defaultProfile,
+        (profile) => profile.defaultProfile
       );
       options.push(...defaultProfiles);
     }
@@ -175,7 +177,7 @@ export function UnifiedSidebar({
     // 3. Add the rest of the simulatable profiles
     if (simulatableProfiles) {
       const regularProfiles = simulatableProfiles.filter(
-        (profile) => !profile.defaultProfile,
+        (profile) => !profile.defaultProfile
       );
       options.push(...regularProfiles);
     }
@@ -190,9 +192,7 @@ export function UnifiedSidebar({
           profile.role
             .toLowerCase()
             .includes(profileSearchTerm.toLowerCase()) ||
-          profile.alias
-            ?.toLowerCase()
-            .includes(profileSearchTerm.toLowerCase()),
+          profile.alias?.toLowerCase().includes(profileSearchTerm.toLowerCase())
       );
     }
 
@@ -430,7 +430,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.section?.toLowerCase().includes(searchTerm.toLowerCase()),
+                item.section?.toLowerCase().includes(searchTerm.toLowerCase())
             ) || [],
         }))
         .filter((section) => section.items.length > 0);
@@ -444,7 +444,19 @@ export function UnifiedSidebar({
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
-    pathname,
+    pathname
+  );
+
+  // Wrapper function that closes mobile sidebar on section change
+  const handleSectionChangeWithClose = useCallback(
+    (section: string) => {
+      handleSectionChange(section);
+      // Close mobile sidebar after navigation
+      if (isMobile) {
+        setOpenMobile(false);
+      }
+    },
+    [handleSectionChange, isMobile, setOpenMobile]
   );
 
   const handleItemClick = useCallback(
@@ -462,10 +474,15 @@ export function UnifiedSidebar({
         handleSectionChange(item.section);
       }
 
+      // Close mobile sidebar after navigation
+      if (isMobile) {
+        setOpenMobile(false);
+      }
+
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating],
+    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
   const handleProfileSelect = async (profileId: string) => {
@@ -530,7 +547,7 @@ export function UnifiedSidebar({
           return "Logged out successfully";
         } catch (error) {
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out",
+            typeof error === "string" ? error : "Failed to log out"
           );
         } finally {
           setIsLoggingOut(false);
@@ -540,7 +557,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      },
+      }
     );
   };
 
@@ -579,7 +596,7 @@ export function UnifiedSidebar({
                     >
                       <AvatarFallback>
                         {getInitials(
-                          `${effectiveProfile.firstName} ${effectiveProfile.lastName}`,
+                          `${effectiveProfile.firstName} ${effectiveProfile.lastName}`
                         )}
                       </AvatarFallback>
                     </Avatar>
@@ -631,7 +648,7 @@ export function UnifiedSidebar({
                           >
                             <AvatarFallback>
                               {getInitials(
-                                `${profile.firstName} ${profile.lastName}`,
+                                `${profile.firstName} ${profile.lastName}`
                               )}
                             </AvatarFallback>
                           </Avatar>
@@ -777,7 +794,7 @@ export function UnifiedSidebar({
                           : getInitials(
                               activeProfile?.firstName +
                                 " " +
-                                activeProfile?.lastName,
+                                activeProfile?.lastName
                             )}
                       </AvatarFallback>
                     </Avatar>
@@ -816,7 +833,7 @@ export function UnifiedSidebar({
                             : getInitials(
                                 activeProfile?.firstName +
                                   " " +
-                                  activeProfile?.lastName,
+                                  activeProfile?.lastName
                               )}
                         </AvatarFallback>
                       </Avatar>
@@ -854,7 +871,7 @@ export function UnifiedSidebar({
                   {activeProfile && (
                     <>
                       <DropdownMenuItem
-                        onClick={() => handleSectionChange("profile")}
+                        onClick={() => handleSectionChangeWithClose("profile")}
                       >
                         <User className="h-4 w-4 mr-2" />
                         Profile

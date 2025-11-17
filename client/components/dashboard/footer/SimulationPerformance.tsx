@@ -175,6 +175,16 @@ export default function SimulationPerformance({
   thresholds,
 }: SimulationPerformanceProps) {
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Build picker options from mapping
   const pickerOptions = useMemo(
@@ -234,14 +244,22 @@ export default function SimulationPerformance({
                 : "bg-gray-400"
         }`}
       />
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+      <CardHeader className={cn("pb-3", isMobile && "pb-2")}>
+        <div className={cn(
+          "flex",
+          isMobile ? "flex-col gap-2" : "items-center justify-between"
+        )}>
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+            <CardTitle className={cn(
+              "flex items-center gap-2",
+              isMobile ? "text-sm" : "text-base"
+            )}>
+              <BarChart3 className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
               Simulation Performance
             </CardTitle>
-            <CardDescription className="text-sm">
+            <CardDescription className={cn(
+              isMobile ? "text-[10px]" : "text-sm"
+            )}>
               Performance trends for simulations
             </CardDescription>
           </div>
@@ -250,17 +268,26 @@ export default function SimulationPerformance({
             options={pickerOptions}
             value={selectedSimulationId}
             onChange={setSelectedSimulationId}
+            isMobile={isMobile}
           />
         </div>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-2">
         {/* Chart */}
-        <div className="min-h-[300px] h-[300px]">
+        <div className={cn(
+          "flex-1 min-h-0",
+          isMobile ? "min-h-[250px]" : "min-h-[300px]"
+        )}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
-              margin={{ top: 10, right: 10, bottom: X_AXIS_HEIGHT, left: 10 }}
+              margin={{ 
+                top: 10, 
+                right: isMobile ? 5 : 10, 
+                bottom: X_AXIS_HEIGHT, 
+                left: isMobile ? 5 : 10 
+              }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
@@ -268,11 +295,12 @@ export default function SimulationPerformance({
                 interval={0} // don't skip ticks
                 tickLine={false}
                 axisLine={true}
-                tick={<WrappedTick maxWidth={90} />}
+                tick={<WrappedTick maxWidth={isMobile ? 60 : 90} />}
                 height={X_AXIS_HEIGHT} // <- match margin.bottom exactly
                 tickMargin={2} // <- minimal extra space
+                fontSize={isMobile ? 8 : 10}
               />
-              <YAxis domain={[0, 100]} fontSize={10} />
+              <YAxis domain={[0, 100]} fontSize={isMobile ? 8 : 10} />
               <Tooltip
                 content={
                   <CustomBarTooltip
@@ -284,7 +312,7 @@ export default function SimulationPerformance({
                 layout="vertical"
                 align="right"
                 verticalAlign="top"
-                wrapperStyle={{ right: 8, top: 8 }}
+                wrapperStyle={{ right: isMobile ? 4 : 8, top: 8 }}
                 content={({ payload }) => {
                   if (!payload) return null;
                   // Only show the two series we care about (order stable)
@@ -292,14 +320,23 @@ export default function SimulationPerformance({
                     ["Average Score", "Success Rate"].includes(String(p.value))
                   );
                   return (
-                    <div className="flex flex-col gap-1 p-2 rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm">
+                    <div className={cn(
+                      "flex flex-col rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm",
+                      isMobile ? "gap-0.5 p-1" : "gap-1 p-2"
+                    )}>
                       {items.map((p) => (
                         <div
                           key={String(p.value)}
-                          className="flex items-center gap-2 text-[10px] leading-none"
+                          className={cn(
+                            "flex items-center gap-1 leading-none",
+                            isMobile ? "text-[9px]" : "text-[10px]"
+                          )}
                         >
                           <span
-                            className="inline-block w-2 h-2 rounded"
+                            className={cn(
+                              "inline-block rounded",
+                              isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
+                            )}
                             style={{ background: p.color }}
                           />
                           <span className="whitespace-nowrap">
@@ -328,7 +365,11 @@ export default function SimulationPerformance({
         </div>
 
         {/* Actionable Insights */}
-        {actionableInsight && <TruncatedInsight text={actionableInsight} />}
+        {actionableInsight && (
+          <div className={cn(isMobile && "px-0")}>
+            <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -338,10 +379,12 @@ function SimPicker({
   options,
   value,
   onChange,
+  isMobile = false,
 }: {
   options: { id: string; title: string }[];
   value: string;
   onChange: (id: string) => void;
+  isMobile?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.id === value);
@@ -352,15 +395,24 @@ function SimPicker({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-64 justify-between text-sm h-8"
+          className={cn(
+            "justify-between h-8",
+            isMobile ? "w-full text-xs" : "w-64 text-sm"
+          )}
         >
           <span className="truncate text-left">
             {selected ? selected.title : "Select simulation..."}
           </span>
-          <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+          <ChevronsUpDown className={cn(
+            "ml-2 shrink-0 opacity-50",
+            isMobile ? "h-2.5 w-2.5" : "h-3 w-3"
+          )} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0">
+      <PopoverContent className={cn(
+        "p-0",
+        isMobile ? "w-[calc(100vw-2rem)]" : "w-64"
+      )}>
         <Command>
           <CommandInput placeholder="Search simulations..." />
           <CommandEmpty>No simulation found.</CommandEmpty>
@@ -376,12 +428,16 @@ function SimPicker({
               >
                 <Check
                   className={cn(
-                    "mr-2 h-4 w-4 shrink-0",
+                    "mr-2 shrink-0",
+                    isMobile ? "h-3 w-3" : "h-4 w-4",
                     value === s.id ? "opacity-100" : "opacity-0"
                   )}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{s.title}</div>
+                  <div className={cn(
+                    "font-medium truncate",
+                    isMobile ? "text-xs" : "text-sm"
+                  )}>{s.title}</div>
                 </div>
               </CommandItem>
             ))}

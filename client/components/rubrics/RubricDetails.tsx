@@ -428,7 +428,7 @@ export default function RubricDetails({
           )}
         </div>
       )}
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap gap-2 justify-end">
         {isEditing ? (
           <>
             <Button
@@ -436,6 +436,7 @@ export default function RubricDetails({
               onClick={handleCancel}
               disabled={isCreating || isUpdating}
               data-testid="btn-cancel-rubric"
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -443,6 +444,7 @@ export default function RubricDetails({
               onClick={handleSave}
               disabled={isCreating || isUpdating || isReadonly}
               data-testid="btn-save-rubric"
+              className="w-full sm:w-auto"
             >
               {isCreating || isUpdating
                 ? isCreateMode
@@ -461,6 +463,7 @@ export default function RubricDetails({
               onClick={() => setIsEditing(true)}
               disabled={isReadonly}
               data-testid="btn-edit-rubric"
+              className="w-full sm:w-auto"
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit

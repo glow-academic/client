@@ -585,6 +585,7 @@ export default function Parameter({
                 size="sm"
                 variant="default"
                 data-testid="btn-add-parameter-item"
+                className="w-full sm:w-auto"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add Item
@@ -592,37 +593,47 @@ export default function Parameter({
             </div>
 
             {parameterItemsFormData.some((i) => !i.isDeleted) ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-48">Name</TableHead>
-                    <TableHead className="w-80">Description</TableHead>
-                    {formData?.numerical && (
-                      <TableHead className="w-32">Value (Number)</TableHead>
-                    )}
-                    <TableHead className="w-64">Departments</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile: Stacked card view */}
+                <div className="md:hidden space-y-4">
                   {parameterItemsFormData.map((item, itemIndex) =>
                     item.isDeleted ? null : (
-                      <TableRow key={item.id || `new-${itemIndex}`}>
-                        <TableCell className="w-48">
-                          <Input
-                            value={item.name}
-                            onChange={(e) =>
-                              handleParameterItemInputChange(
-                                itemIndex,
-                                "name",
-                                e.target.value,
-                              )
-                            }
-                            className="text-sm"
-                            placeholder="Item name"
-                          />
-                        </TableCell>
-                        <TableCell className="w-80">
+                      <div
+                        key={item.id || `new-${itemIndex}`}
+                        className="border rounded-lg p-4 space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <Input
+                              value={item.name}
+                              onChange={(e) =>
+                                handleParameterItemInputChange(
+                                  itemIndex,
+                                  "name",
+                                  e.target.value,
+                                )
+                              }
+                              className="text-sm font-medium w-full"
+                              placeholder="Item name"
+                            />
+                          </div>
+                          {item.canDelete !== false && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleDeleteParameterItem(itemIndex)
+                              }
+                              aria-label="Delete parameter item"
+                              className="h-8 w-8 p-0 flex-shrink-0"
+                              data-testid="btn-delete-parameter-item"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        <div>
                           <Textarea
                             value={item.description}
                             onChange={(e) =>
@@ -632,13 +643,16 @@ export default function Parameter({
                                 e.target.value,
                               )
                             }
-                            className="text-sm min-h-[96px]"
-                            rows={4}
+                            className="text-sm min-h-[80px] w-full"
+                            rows={3}
                             placeholder="Item description"
                           />
-                        </TableCell>
+                        </div>
                         {formData?.numerical && (
-                          <TableCell className="w-32">
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">
+                              Value (Number)
+                            </Label>
                             <Input
                               type="number"
                               value={item.value}
@@ -649,12 +663,15 @@ export default function Parameter({
                                   e.target.value,
                                 )
                               }
-                              className="text-sm"
+                              className="text-sm w-full"
                               placeholder="0"
                             />
-                          </TableCell>
+                          </div>
                         )}
-                        <TableCell className="w-64">
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-1 block">
+                            Departments
+                          </Label>
                           <DepartmentPicker
                             mapping={departmentMapping}
                             validIds={validDepartmentIds}
@@ -670,38 +687,126 @@ export default function Parameter({
                             multiSelect={true}
                             triggerProps={{ "data-testid": "picker-department" }}
                           />
-                        </TableCell>
-                        <TableCell className="w-20">
-                          <div className="flex items-center gap-1">
-                            {item.canDelete !== false && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteParameterItem(itemIndex)
-                                    }
-                                    aria-label="Delete parameter item"
-                                    className="pb-1"
-                                    data-testid="btn-delete-parameter-item"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  Delete parameter item
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                      </div>
                     ),
                   )}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop: Table view */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-48">Name</TableHead>
+                        <TableHead className="w-80">Description</TableHead>
+                        {formData?.numerical && (
+                          <TableHead className="w-32">Value (Number)</TableHead>
+                        )}
+                        <TableHead className="w-64">Departments</TableHead>
+                        <TableHead className="w-20">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parameterItemsFormData.map((item, itemIndex) =>
+                        item.isDeleted ? null : (
+                          <TableRow key={item.id || `new-${itemIndex}`}>
+                            <TableCell className="w-48">
+                              <Input
+                                value={item.name}
+                                onChange={(e) =>
+                                  handleParameterItemInputChange(
+                                    itemIndex,
+                                    "name",
+                                    e.target.value,
+                                  )
+                                }
+                                className="text-sm"
+                                placeholder="Item name"
+                              />
+                            </TableCell>
+                            <TableCell className="w-80">
+                              <Textarea
+                                value={item.description}
+                                onChange={(e) =>
+                                  handleParameterItemInputChange(
+                                    itemIndex,
+                                    "description",
+                                    e.target.value,
+                                  )
+                                }
+                                className="text-sm min-h-[96px]"
+                                rows={4}
+                                placeholder="Item description"
+                              />
+                            </TableCell>
+                            {formData?.numerical && (
+                              <TableCell className="w-32">
+                                <Input
+                                  type="number"
+                                  value={item.value}
+                                  onChange={(e) =>
+                                    handleParameterItemInputChange(
+                                      itemIndex,
+                                      "value",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="text-sm"
+                                  placeholder="0"
+                                />
+                              </TableCell>
+                            )}
+                            <TableCell className="w-64">
+                              <DepartmentPicker
+                                mapping={departmentMapping}
+                                validIds={validDepartmentIds}
+                                selectedIds={item.departmentIds || []}
+                                onSelect={(ids) =>
+                                  handleParameterItemInputChange(
+                                    itemIndex,
+                                    "departmentIds",
+                                    ids.length > 0 ? ids : null,
+                                  )
+                                }
+                                placeholder="All Departments"
+                                multiSelect={true}
+                                triggerProps={{ "data-testid": "picker-department" }}
+                              />
+                            </TableCell>
+                            <TableCell className="w-20">
+                              <div className="flex items-center gap-1">
+                                {item.canDelete !== false && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleDeleteParameterItem(itemIndex)
+                                        }
+                                        aria-label="Delete parameter item"
+                                        className="pb-1"
+                                        data-testid="btn-delete-parameter-item"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Delete parameter item
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ),
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No parameter items added yet.</p>
@@ -713,12 +818,13 @@ export default function Parameter({
           </div>
 
           {/* Form Actions */}
-          <div className="flex gap-2 justify-end pt-4 border-t">
+          <div className="flex flex-col sm:flex-row gap-2 justify-end pt-4 border-t">
             <Button
               type="button"
               variant="outline"
               onClick={() => router.push("/management/parameters")}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
             >
               Back
             </Button>
@@ -750,6 +856,7 @@ export default function Parameter({
                       })),
                     ))
               }
+              className="w-full sm:w-auto"
             >
               {isSubmitting
                 ? isEditMode

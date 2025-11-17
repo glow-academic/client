@@ -1084,243 +1084,257 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
     <div className="space-y-6" data-testid="reports-table-container">
       <div className="space-y-2">
         {/* Toolbar */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="mb-2">
-              <Input
-                placeholder="Search profiles by name or alias..."
-                value={(profileNameColumn?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                  profileNameColumn?.setFilterValue(event.target.value)
-                }
-                className="h-8 w-[150px] lg:w-[250px]"
-              />
+        <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+              {/* Mobile: Wrap search and export button in 50/50 flex */}
+              <div className="flex gap-2 w-full md:w-auto md:flex-initial mb-2 md:mb-0">
+                <Input
+                  placeholder="Search profiles by name or alias..."
+                  value={(profileNameColumn?.getFilterValue() as string) ?? ""}
+                  onChange={(event) =>
+                    profileNameColumn?.setFilterValue(event.target.value)
+                  }
+                  className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
+                />
+                {/* Export Button - Mobile */}
+                <div className="flex-1 md:flex-initial md:w-auto md:hidden">
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      className="group w-full"
+                    >
+                      <Download className="mr-2 h-4 w-4 text-current" />
+                      Export {selectedRows > 0 ? `(${selectedRows})` : ""}
+                    </Button>
+                  </PopoverTrigger>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 flex-wrap mb-2">
+                {/* Name Filter */}
+                {profileIdColumn && profileOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={profileIdColumn}
+                    title="Name"
+                    options={profileOptions}
+                  />
+                )}
+
+                {/* Scenario Filter */}
+                {scenariosColumn && scenarioOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={scenariosColumn}
+                    title="Scenario"
+                    options={scenarioOptions}
+                  />
+                )}
+
+                {/* Simulation Filter */}
+                {simulationsColumn && simulationOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={simulationsColumn}
+                    title="Simulation"
+                    options={simulationOptions}
+                  />
+                )}
+
+                {isFiltered && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
+                  >
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {/* Name Filter */}
-              {profileIdColumn && profileOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={profileIdColumn}
-                  title="Name"
-                  options={profileOptions}
-                />
-              )}
-
-              {/* Scenario Filter */}
-              {scenariosColumn && scenarioOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={scenariosColumn}
-                  title="Scenario"
-                  options={scenarioOptions}
-                />
-              )}
-
-              {/* Simulation Filter */}
-              {simulationsColumn && simulationOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={simulationsColumn}
-                  title="Simulation"
-                  options={simulationOptions}
-                />
-              )}
-
-              {isFiltered && (
-                <Button
-                  variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3"
-                >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2 mb-2">
-            {/* Export Button */}
-            <Popover
-              open={exportPopoverOpen}
-              onOpenChange={setExportPopoverOpen}
-            >
+            <div className="flex items-center space-x-2 mb-2">
+              {/* Export Button - Desktop */}
               <PopoverTrigger asChild>
-                <Button variant="default" size="sm" className="group">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  className="group hidden md:inline-flex"
+                >
                   <Download className="mr-2 h-4 w-4 text-current" />
                   Export {selectedRows > 0 ? `(${selectedRows})` : ""}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-96 p-4" align="end">
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <ExportPicker
-                      selectedMetrics={selectedMetrics}
-                      onSelect={setSelectedMetrics}
-                      label="Metrics"
-                      placeholder={
-                        brightspaceFormat
-                          ? "Choose at least one metric..."
-                          : selectedMetrics.length === 0
-                            ? "All metrics selected"
-                            : "Select metrics to export..."
-                      }
-                      description="Choose one or more metrics to include in the export."
-                    />
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="brightspace"
-                        checked={brightspaceFormat}
-                        onCheckedChange={(checked) =>
-                          setBrightspaceFormat(checked === true)
-                        }
-                      />
-                      <label
-                        htmlFor="brightspace"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Brightspace Format
-                      </label>
-                    </div>
-
-                    {brightspaceFormat && (
-                      <p className="text-xs text-muted-foreground">
-                        Brightspace format exports one CSV file per selected
-                        metric.
-                        {selectedMetrics.length > 1
-                          ? " Multiple metrics are packaged in a ZIP file."
-                          : " Single metric exports as a CSV file."}{" "}
-                        Each CSV follows Brightspace gradebook import format.
-                      </p>
-                    )}
-
-                    {!brightspaceFormat && (
-                      <p className="text-xs text-muted-foreground">
-                        Regular format exports a single CSV file with the
-                        selected metrics.
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="pt-2 flex justify-end">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="w-full">
-                            <Button
-                              size="sm"
-                              className="w-full"
-                              onClick={handleExport}
-                              disabled={isExportDisabled}
-                            >
-                              {isExporting
-                                ? "Exporting..."
-                                : brightspaceFormat
-                                  ? selectedMetrics.length === 1
-                                    ? "Export to CSV"
-                                    : "Export to ZIP"
-                                  : "Export to CSV"}
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        {brightspaceFormat && selectedMetrics.length === 0 && (
-                          <TooltipContent>
-                            <p>
-                              Brightspace export requires at least one metric
-                            </p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <DataTableViewOptions table={table} />
+              <DataTableViewOptions table={table} />
+            </div>
           </div>
-        </div>
+          {/* Shared Popover Content */}
+          <PopoverContent className="w-96 p-4" align="end">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <ExportPicker
+                  selectedMetrics={selectedMetrics}
+                  onSelect={setSelectedMetrics}
+                  label="Metrics"
+                  placeholder={
+                    brightspaceFormat
+                      ? "Choose at least one metric..."
+                      : selectedMetrics.length === 0
+                        ? "All metrics selected"
+                        : "Select metrics to export..."
+                  }
+                  description="Choose one or more metrics to include in the export."
+                />
 
-        {/* Table */}
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="h-8">
-                  {headerGroup.headers.map((header) => {
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="brightspace-desktop"
+                    checked={brightspaceFormat}
+                    onCheckedChange={(checked) =>
+                      setBrightspaceFormat(checked === true)
+                    }
+                  />
+                  <label
+                    htmlFor="brightspace-desktop"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Brightspace Format
+                  </label>
+                </div>
+
+                {brightspaceFormat && (
+                  <p className="text-xs text-muted-foreground">
+                    Brightspace format exports one CSV file per selected metric.
+                    {selectedMetrics.length > 1
+                      ? " Multiple metrics are packaged in a ZIP file."
+                      : " Single metric exports as a CSV file."}{" "}
+                    Each CSV follows Brightspace gradebook import format.
+                  </p>
+                )}
+
+                {!brightspaceFormat && (
+                  <p className="text-xs text-muted-foreground">
+                    Regular format exports a single CSV file with the selected
+                    metrics.
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="w-full">
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={handleExport}
+                          disabled={isExportDisabled}
+                        >
+                          {isExporting
+                            ? "Exporting..."
+                            : brightspaceFormat
+                              ? selectedMetrics.length === 1
+                                ? "Export to CSV"
+                                : "Export to ZIP"
+                              : "Export to CSV"}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {brightspaceFormat && selectedMetrics.length === 0 && (
+                      <TooltipContent>
+                        <p>Brightspace export requires at least one metric</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="h-8">
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={`border-r py-1 text-xs ${
+                        header.id === "profileName"
+                          ? "text-left"
+                          : "text-center"
+                      } ${header.id === "select" ? "w-12" : ""} ${
+                        header.column.getCanSort() ? "pl-4" : ""
+                      }`}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() =>
+                    router.push(
+                      `/analytics/reports/p/${row.original.profileId}`
+                    )
+                  }
+                >
+                  {row.getVisibleCells().map((cell) => {
                     return (
-                      <TableHead
-                        key={header.id}
-                        colSpan={header.colSpan}
-                        className={`border-r py-1 text-xs ${
-                          header.id === "profileName"
+                      <TableCell
+                        key={cell.id}
+                        className={`border-r px-2 py-1 ${
+                          cell.column.id === "profileName"
                             ? "text-left"
                             : "text-center"
-                        } ${header.id === "select" ? "w-12" : ""} ${
-                          header.column.getCanSort() ? "pl-4" : ""
-                        }`}
+                        } ${cell.column.id === "select" ? "w-12" : ""}`}
                       >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
                     );
                   })}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="h-6 hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() =>
-                      router.push(
-                        `/analytics/reports/p/${row.original.profileId}`
-                      )
-                    }
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      return (
-                        <TableCell
-                          key={cell.id}
-                          className={`border-r px-2 py-1 ${
-                            cell.column.id === "profileName"
-                              ? "text-left"
-                              : "text-center"
-                          } ${cell.column.id === "select" ? "w-12" : ""}`}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center px-6"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination */}
-        <DataTablePagination table={table} staff={true} />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center px-6"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      {/* Pagination */}
+      <DataTablePagination table={table} staff={true} />
     </div>
   );
 }

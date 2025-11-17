@@ -483,73 +483,58 @@ export default function Providers({
       data-testid="provider-card"
       data-provider-id={provider.provider_id}
     >
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="text-sm px-3 py-1">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <Badge variant="secondary" className="text-sm px-3 py-1 flex-shrink-0">
             {provider.name}
           </Badge>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground truncate">
             {provider.description}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {provider.can_edit && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() =>
-                    router.push(`/system/providers/p/${provider.provider_id}`)
-                  }
-                  aria-label={`Edit provider ${provider.name}`}
-                  data-testid="btn-edit-provider"
-                  title={`Edit provider ${provider.name}`}
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Provider Settings</p>
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() =>
+                router.push(`/system/providers/p/${provider.provider_id}`)
+              }
+              aria-label={`Edit provider ${provider.name}`}
+              data-testid="btn-edit-provider"
+              title={`Edit provider ${provider.name}`}
+              className="h-9 px-3"
+            >
+              <Settings className="h-4 w-4 md:mr-0 mr-2" />
+              <span className="md:hidden">Settings</span>
+            </Button>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicateProviderClick(provider)}
-                disabled={false}
-                aria-label={`Duplicate provider ${provider.name}`}
-                data-testid="btn-duplicate-provider"
-                title={`Duplicate provider ${provider.name}`}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Duplicate Provider</p>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDuplicateProviderClick(provider)}
+            disabled={false}
+            aria-label={`Duplicate provider ${provider.name}`}
+            data-testid="btn-duplicate-provider"
+            title={`Duplicate provider ${provider.name}`}
+            className="h-9 px-3"
+          >
+            <Copy className="h-4 w-4 md:mr-0 mr-2" />
+            <span className="md:hidden">Duplicate</span>
+          </Button>
           {provider.can_delete && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteProviderClick(provider)}
-                  aria-label={`Delete provider ${provider.name}`}
-                  data-testid="btn-delete-provider"
-                  title={`Delete provider ${provider.name}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Delete Provider</p>
-              </TooltipContent>
-            </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDeleteProviderClick(provider)}
+              aria-label={`Delete provider ${provider.name}`}
+              data-testid="btn-delete-provider"
+              title={`Delete provider ${provider.name}`}
+              className="h-9 px-3"
+            >
+              <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+              <span className="md:hidden">Delete</span>
+            </Button>
           )}
         </div>
       </div>
@@ -568,17 +553,17 @@ export default function Providers({
               aria-label={`model card ${model.name || "Unnamed Model"}`}
             >
               <CardHeader className="flex-0">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+                  <div className="space-y-1 flex-1 min-w-0">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Cpu className="h-4 w-4" />
-                      {model.name}
+                      <Cpu className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{model.name}</span>
                     </CardTitle>
                     <CardDescription className="text-xs line-clamp-2">
                       {model.description}
                     </CardDescription>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1 flex-shrink-0">
                     {model.custom_model && (
                       <Badge variant="default">Custom</Badge>
                     )}
@@ -588,7 +573,7 @@ export default function Providers({
                   </div>
                 </div>
               </CardHeader>
-              <CardFooter className="mt-auto flex justify-end gap-2">
+              <CardFooter className="mt-auto flex flex-wrap justify-end gap-2">
                 {model.can_edit && (
                   <Button
                     variant="outline"
@@ -597,8 +582,10 @@ export default function Providers({
                     aria-label={`Edit model ${model.name}`}
                     data-testid="btn-edit-model"
                     title={`Edit model ${model.name}`}
+                    className="h-9 px-3"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
                   </Button>
                 )}
                 <Button
@@ -609,8 +596,10 @@ export default function Providers({
                   aria-label={`Duplicate model ${model.name}`}
                   data-testid="btn-duplicate-model"
                   title={`Duplicate model ${model.name}`}
+                  className="h-9 px-3"
                 >
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">Duplicate</span>
                 </Button>
                 {model.can_delete && (
                   <Button
@@ -620,8 +609,10 @@ export default function Providers({
                     aria-label={`Delete model ${model.name}`}
                     data-testid="btn-delete-model"
                     title={`Delete model ${model.name}`}
+                    className="h-9 px-3"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Delete</span>
                   </Button>
                 )}
               </CardFooter>
@@ -662,7 +653,7 @@ export default function Providers({
               data-testid="providers-toolbar"
             >
               <div className="flex flex-1 items-center space-x-2 flex-wrap">
-                <div className="mb-2">
+                <div className="w-full md:w-auto mb-2 md:mb-0">
                   <Input
                     data-testid="providers-search"
                     placeholder="Search models..."
@@ -670,7 +661,7 @@ export default function Providers({
                     onChange={(event) =>
                       nameColumn?.setFilterValue(event.target.value)
                     }
-                    className="h-8 w-[150px] lg:w-[250px]"
+                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
                     aria-label="Search models by name"
                     aria-controls="providers-grid"
                   />
@@ -705,7 +696,7 @@ export default function Providers({
                     <Button
                       variant="ghost"
                       onClick={() => table.resetColumnFilters()}
-                      className="h-8 px-2 lg:px-3"
+                      className="h-8 px-2 lg:px-3 hidden md:flex"
                     >
                       Reset
                       <X className="ml-2 h-4 w-4" />

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -39,6 +40,7 @@ export function AnalyticsFilters({
   reportPage = false,
   refreshAnalytics,
 }: AnalyticsFiltersProps) {
+  const isMobile = useIsMobile();
   const {
     startDate,
     endDate,
@@ -229,6 +231,47 @@ export function AnalyticsFilters({
   return (
     <div className="pr-4">
       <div className="flex items-center gap-2">
+        {/* On mobile, only show refresh button and date picker */}
+        {isMobile ? (
+          <>
+            {/* Date Range Picker - only show if it was allowed on desktop */}
+            <DatePickerWithRange
+              dateRange={dateRange}
+              setDateRange={handleDateRangeChange}
+              className="w-auto"
+            />
+
+            {/* Refresh Button */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh analytics data"
+            >
+              <RefreshCw
+                ref={iconRef}
+                aria-hidden
+                onAnimationIteration={() => {
+                  if (requestStop) {
+                    // clear fallback
+                    if (iconRef.current?.__fallbackStop) {
+                      clearTimeout(iconRef.current.__fallbackStop);
+                      iconRef.current.__fallbackStop = undefined;
+                    }
+                    setSpinning(false); // remove animate-spin at a lap boundary
+                    setRequestStop(false);
+                    spinStartRef.current = null;
+                  }
+                }}
+                className={`h-4 w-4 will-change-transform ${
+                  spinning ? "animate-spin" : ""
+                }`}
+              />
+            </Button>
+          </>
+        ) : (
+          <>
         {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
         {!homePage && (
           <AttemptSelector
@@ -314,6 +357,8 @@ export function AnalyticsFilters({
             }`}
           />
         </Button>
+          </>
+        )}
       </div>
     </div>
   );

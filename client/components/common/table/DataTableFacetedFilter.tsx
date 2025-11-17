@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -36,6 +37,13 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
 }: DataTableFacetedFilterProps<TData, TValue>) {
+  const isMobile = useIsMobile();
+
+  // Hide faceted filters on mobile
+  if (isMobile) {
+    return null;
+  }
+
   // Early return if column doesn't exist
   if (!column) {
     return null;

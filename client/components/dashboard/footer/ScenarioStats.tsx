@@ -35,7 +35,7 @@ import {
 import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
 import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
   Bar,
@@ -140,6 +140,16 @@ export default function ScenarioStats({
   thresholds,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Build all parameters from mapping
   const allParameters = useMemo(
@@ -379,7 +389,9 @@ export default function ScenarioStats({
           </div>
 
           {/* Actionable Insights */}
-          {actionableInsight && <TruncatedInsight text={actionableInsight} />}
+          {actionableInsight && (
+            <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+          )}
         </CardContent>
       </Card>
     </TooltipProvider>

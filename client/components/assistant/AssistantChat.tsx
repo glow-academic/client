@@ -773,7 +773,7 @@ export default function AssistantChat({
 
   return (
     <>
-      <ChatFab up={false} onOpenWidget={openWidget} uiState={uiState} />
+      <ChatFab up={false} onOpenWidget={openWidget} onExpand={expand} uiState={uiState} />
       <ChatWidget
         up={false}
         uiState={uiState}

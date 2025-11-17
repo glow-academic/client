@@ -240,6 +240,7 @@ export default function SimulationCard({
                         standardGroups={standard_groups}
                         standardGroupsMapping={standardGroupsMapping}
                         standardsMapping={standardsMapping}
+                        showFullStandardsOnMobile={true}
                       />
                     ) : (
                       <p className="text-sm text-gray-500">

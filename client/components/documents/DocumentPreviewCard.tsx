@@ -119,29 +119,29 @@ export function DocumentPreviewCard({
       >
         {/* Action buttons - moved to top right */}
         {showActions && (
-          <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
+              className="h-8 w-8 md:h-7 md:w-7 p-0 bg-white/90 backdrop-blur-sm"
               onClick={handlePreview}
               aria-label={`Preview document ${documentItem.name}`}
               data-testid="btn-preview-document"
             >
-              <Eye className="h-3 w-3" />
+              <Eye className="h-3.5 w-3.5 md:h-3 md:w-3" />
             </Button>
             {onEdit && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 bg-white/90 backdrop-blur-sm"
+                className="h-8 w-8 md:h-7 md:w-7 p-0 bg-white/90 backdrop-blur-sm"
                 onClick={() => onEdit(documentItem)}
                 aria-label={`Edit document ${documentItem.name}`}
                 data-testid="btn-edit-document"
               >
-                <Edit className="h-3 w-3" />
+                <Edit className="h-3.5 w-3.5 md:h-3 md:w-3" />
               </Button>
             )}
             {onDelete && canDelete && (
@@ -149,12 +149,12 @@ export function DocumentPreviewCard({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
+                className="h-8 w-8 md:h-7 md:w-7 p-0 text-destructive hover:text-destructive bg-white/90 backdrop-blur-sm"
                 onClick={() => onDelete(documentItem)}
                 aria-label={`Delete document ${documentItem.name}`}
                 data-testid="btn-delete-document"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3.5 w-3.5 md:h-3 md:w-3" />
               </Button>
             )}
           </div>

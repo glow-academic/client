@@ -45,6 +45,10 @@ export interface TableRubricProps {
 
   // Optional: grading state for visualization (from v2 server-side)
   gradingState?: GradingState;
+
+  // Optional: show full standards table on mobile (with horizontal scroll)
+  // When false (default), shows simplified 2-column view on mobile
+  showFullStandardsOnMobile?: boolean;
 }
 
 export default function TableRubric({
@@ -52,6 +56,7 @@ export default function TableRubric({
   standardGroupsMapping,
   standardsMapping,
   gradingState,
+  showFullStandardsOnMobile = false,
 }: TableRubricProps) {
   const [flippedCells, setFlippedCells] = React.useState<Set<string>>(
     () => new Set<string>(),
@@ -94,8 +99,9 @@ export default function TableRubric({
 
   return (
     <div className="space-y-6 w-full">
-      {/* Mobile: 2-column simplified view */}
-      <div className="md:hidden">
+      {/* Mobile: 2-column simplified view (only when showFullStandardsOnMobile is false) */}
+      {!showFullStandardsOnMobile && (
+        <div className="md:hidden">
         <Table className="w-full text-sm">
           <TableHeader>
             <TableRow>
@@ -181,10 +187,17 @@ export default function TableRubric({
             )}
           </TableBody>
         </Table>
-      </div>
+        </div>
+      )}
 
-      {/* Desktop: Full table view */}
-      <div className="hidden md:block overflow-auto max-h-[70vh]">
+      {/* Desktop: Full table view (also shown on mobile when showFullStandardsOnMobile is true) */}
+      <div
+        className={
+          showFullStandardsOnMobile
+            ? "block overflow-auto max-h-[70vh]"
+            : "hidden md:block overflow-auto max-h-[70vh]"
+        }
+      >
         <Table className="min-w-[600px] text-sm table-fixed">
           <TableHeader className="sticky top-0 z-10">
             <TableRow>

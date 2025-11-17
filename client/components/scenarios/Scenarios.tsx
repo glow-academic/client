@@ -398,8 +398,8 @@ export function Scenarios({
       }`}
     >
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="space-y-2 flex-1">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div className="space-y-2 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               {showDropdown && (
                 <Button
@@ -415,7 +415,7 @@ export function Scenarios({
                   )}
                 </Button>
               )}
-              <CardTitle className="text-lg flex-1 min-w-0">
+              <CardTitle className="text-lg flex-1 min-w-0 truncate">
                 {scenario.title || "Unnamed Scenario"}
               </CardTitle>
               <div className="flex gap-1 flex-wrap flex-shrink-0">
@@ -427,25 +427,20 @@ export function Scenarios({
               </div>
             </div>
           </div>
-          <div className="flex gap-2 items-center ml-4">
+          <div className="flex flex-wrap gap-2 items-center">
             {scenario.generated ? (
               // For generated scenarios: only show preview and duplicate
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      data-testid="btn-view-scenario"
-                      onClick={() => handleView(scenario.scenario_id)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>View Scenario Details</p>
-                  </TooltipContent>
-                </Tooltip>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="btn-view-scenario"
+                  onClick={() => handleView(scenario.scenario_id)}
+                  className="h-9 px-3"
+                >
+                  <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                  <span className="md:hidden">View</span>
+                </Button>
                 {scenario.can_duplicate && (
                   <Button
                     variant="outline"
@@ -455,9 +450,16 @@ export function Scenarios({
                       handleDuplicate(scenario.scenario_id, scenario.title)
                     }
                     disabled={isDuplicating === scenario.scenario_id}
+                    className="h-9 px-3"
                   >
-                    <Copy className="h-4 w-4" />
-                    {isDuplicating === scenario.scenario_id ? "..." : ""}
+                    {isDuplicating === scenario.scenario_id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                    ) : (
+                      <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                    )}
+                    <span className="md:hidden">
+                      {isDuplicating === scenario.scenario_id ? "Duplicating..." : "Duplicate"}
+                    </span>
                   </Button>
                 )}
               </>
@@ -470,25 +472,22 @@ export function Scenarios({
                     size="sm"
                     data-testid="btn-edit-scenario"
                     onClick={() => handleEdit(scenario.scenario_id)}
+                    className="h-9 px-3"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Edit</span>
                   </Button>
                 ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid="btn-view-scenario"
-                        onClick={() => handleView(scenario.scenario_id)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View Scenario Details</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="btn-view-scenario"
+                    onClick={() => handleView(scenario.scenario_id)}
+                    className="h-9 px-3"
+                  >
+                    <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">View</span>
+                  </Button>
                 )}
                 {scenario.can_duplicate && (
                   <Button
@@ -499,9 +498,16 @@ export function Scenarios({
                       handleDuplicate(scenario.scenario_id, scenario.title)
                     }
                     disabled={isDuplicating === scenario.scenario_id}
+                    className="h-9 px-3"
                   >
-                    <Copy className="h-4 w-4" />
-                    {isDuplicating === scenario.scenario_id ? "..." : ""}
+                    {isDuplicating === scenario.scenario_id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 mr-2" />
+                    ) : (
+                      <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                    )}
+                    <span className="md:hidden">
+                      {isDuplicating === scenario.scenario_id ? "Duplicating..." : "Duplicate"}
+                    </span>
                   </Button>
                 )}
 
@@ -516,8 +522,10 @@ export function Scenarios({
                         scenario.title || "Unnamed Scenario"
                       )
                     }
+                    className="h-9 px-3"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 md:mr-0 mr-2" />
+                    <span className="md:hidden">Delete</span>
                   </Button>
                 )}
               </>
@@ -586,7 +594,7 @@ export function Scenarios({
             data-testid="scenarios-toolbar"
           >
             <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="mb-2">
+              <div className="w-full md:w-auto mb-2 md:mb-0">
                 <Input
                   data-testid="scenarios-search"
                   placeholder="Search scenarios..."
@@ -594,7 +602,7 @@ export function Scenarios({
                   onChange={(event) =>
                     titleColumn?.setFilterValue(event.target.value)
                   }
-                  className="h-8 w-[150px] lg:w-[250px]"
+                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
                   aria-label="Search scenarios by name"
                   aria-controls="scenarios-grid"
                 />
@@ -632,7 +640,7 @@ export function Scenarios({
                   <Button
                     variant="ghost"
                     onClick={() => table.resetColumnFilters()}
-                    className="h-8 px-2 lg:px-3"
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
                     Reset
                     <X className="ml-2 h-4 w-4" />

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { TruncatedInsight } from "../TruncatedInsight";
 import { GraduationCap } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -64,6 +64,16 @@ export default function SkillPerformance({
   thresholds,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Default to first valid rubric if none selected
   const activeRubricId = useMemo(() => {
@@ -240,7 +250,9 @@ export default function SkillPerformance({
         </div>
 
         {/* Actionable Insights */}
-        {actionableInsight && <TruncatedInsight text={actionableInsight} />}
+        {actionableInsight && (
+          <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+        )}
       </CardContent>
     </Card>
   );

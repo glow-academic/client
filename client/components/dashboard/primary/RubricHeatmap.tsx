@@ -28,8 +28,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type RubricHeatmapCell = {
   rubricId: string;
@@ -61,6 +61,7 @@ import { Info, TrendingUp } from "lucide-react";
 import {
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -94,6 +95,18 @@ export default function RubricHeatmap({
     row: number | null;
     col: number | null;
   }>({ row: null, col: null });
+
+  // Track mobile viewport for responsive design
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Filter matrices by selected rubrics
   const filteredMatrices = useMemo(() => {
@@ -196,15 +209,26 @@ export default function RubricHeatmap({
                 : "bg-gray-400"
         }`}
       />
-      <CardHeader className="pb-3">
+      <CardHeader className={cn("pb-3", isMobile && "pb-2")}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingUp className="h-4 w-4" />
-              Skill Area Correlation Matrix
+            <CardTitle
+              className={cn(
+                "flex items-center gap-2",
+                isMobile ? "text-sm" : "text-base"
+              )}
+            >
+              <TrendingUp className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+              {isMobile
+                ? "Correlation Matrix"
+                : "Skill Area Correlation Matrix"}
             </CardTitle>
-            <CardDescription className="text-xs">
-              Correlation between skill areas (standard groups)
+            <CardDescription
+              className={cn(isMobile ? "text-[10px]" : "text-xs")}
+            >
+              {isMobile
+                ? "Correlation between skill areas"
+                : "Correlation between skill areas (standard groups)"}
             </CardDescription>
           </div>
           <RubricPicker
@@ -213,7 +237,7 @@ export default function RubricHeatmap({
             selectedIds={selectedRubrics}
             onSelect={setSelectedRubrics}
             placeholder="Filter by rubric..."
-            buttonClassName="w-48"
+            buttonClassName={cn(isMobile ? "w-full sm:w-48" : "w-48")}
           />
         </div>
       </CardHeader>
@@ -226,27 +250,38 @@ export default function RubricHeatmap({
                 <TableHeader>
                   <TableRow>
                     {/* The first empty cell for alignment */}
-                    <TableHead className="p-1 w-12"></TableHead>
+                    <TableHead
+                      className={cn("p-1", isMobile ? "w-8" : "w-12")}
+                    ></TableHead>
                     {(deferredMatrix.standardGroups || []).map(
                       (group, colIndex) => (
                         <TableHead
                           key={group.id}
                           className={cn(
-                            "p-1 h-30 w-24 relative", // Increased width from w-16 to w-24
-                            hoveredCell.col === colIndex && "bg-muted", // Highlight on hover
+                            "p-1 h-30 relative",
+                            isMobile ? "w-16" : "w-24",
+                            hoveredCell.col === colIndex && "bg-muted" // Highlight on hover
                           )}
                         >
                           {/* Rotated Label */}
                           <div
-                            className="absolute bottom-2 left-1/2 -translate-x-1/2"
+                            className={cn(
+                              "absolute bottom-2 left-1/2 -translate-x-1/2",
+                              isMobile && "bottom-1"
+                            )}
                             style={{ writingMode: "vertical-rl" }}
                           >
-                            <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
+                            <span
+                              className={cn(
+                                "font-normal text-muted-foreground whitespace-nowrap",
+                                isMobile ? "text-[10px]" : "text-xs"
+                              )}
+                            >
                               {group.shortName}
                             </span>
                           </div>
                         </TableHead>
-                      ),
+                      )
                     )}
                   </TableRow>
                 </TableHeader>
@@ -262,8 +297,9 @@ export default function RubricHeatmap({
                         {/* This is now the row header, not part of the grid */}
                         <TableCell
                           className={cn(
-                            "font-medium text-xs p-1 text-right text-muted-foreground",
-                            hoveredCell.row === rowIndex && "bg-muted", // Highlight on hover
+                            "font-medium p-1 text-right text-muted-foreground",
+                            isMobile ? "text-[10px]" : "text-xs",
+                            hoveredCell.row === rowIndex && "bg-muted" // Highlight on hover
                           )}
                         >
                           {group.shortName}
@@ -287,7 +323,10 @@ export default function RubricHeatmap({
                             return (
                               <TableCell
                                 key={colIndex}
-                                className="text-center p-1 w-20"
+                                className={cn(
+                                  "text-center p-1",
+                                  isMobile ? "w-12" : "w-20"
+                                )}
                                 onMouseEnter={() =>
                                   setHoveredThrottled(rowIndex, colIndex)
                                 }
@@ -296,7 +335,12 @@ export default function RubricHeatmap({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div
-                                        className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
+                                        className={cn(
+                                          "rounded-sm flex items-center justify-center font-mono",
+                                          isMobile
+                                            ? "w-12 h-5 text-[10px]"
+                                            : "w-20 h-6 text-xs"
+                                        )}
                                         style={{ backgroundColor: cell.color }}
                                       >
                                         <span
@@ -304,7 +348,7 @@ export default function RubricHeatmap({
                                             "font-semibold",
                                             Math.abs(cell.correlation) >= 0.7
                                               ? "text-white"
-                                              : "text-gray-800",
+                                              : "text-gray-800"
                                           )}
                                         >
                                           {cell.correlation.toFixed(2)}
@@ -326,7 +370,12 @@ export default function RubricHeatmap({
                                   </Tooltip>
                                 ) : (
                                   <div
-                                    className="w-20 h-6 rounded-sm flex items-center justify-center text-xs font-mono"
+                                    className={cn(
+                                      "rounded-sm flex items-center justify-center font-mono",
+                                      isMobile
+                                        ? "w-12 h-5 text-[10px]"
+                                        : "w-20 h-6 text-xs"
+                                    )}
                                     style={{ backgroundColor: cell.color }}
                                   >
                                     <span
@@ -334,7 +383,7 @@ export default function RubricHeatmap({
                                         "font-semibold",
                                         Math.abs(cell.correlation) >= 0.7
                                           ? "text-white"
-                                          : "text-gray-800",
+                                          : "text-gray-800"
                                       )}
                                     >
                                       {cell.correlation.toFixed(2)}
@@ -343,10 +392,10 @@ export default function RubricHeatmap({
                                 )}
                               </TableCell>
                             );
-                          },
+                          }
                         )}
                       </TableRow>
-                    ),
+                    )
                   )}
                 </TableBody>
               </Table>
@@ -354,31 +403,67 @@ export default function RubricHeatmap({
           </TooltipProvider>
 
           {/* Legend and Correlation Info */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground flex-shrink-0 w-full">
+          <div
+            className={cn(
+              "flex flex-shrink-0 w-full text-muted-foreground",
+              isMobile
+                ? "flex-col gap-2 text-[10px]"
+                : "items-center justify-between text-xs"
+            )}
+          >
             {/* Legend */}
-            <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "flex items-center",
+                isMobile ? "gap-2 flex-wrap" : "gap-3"
+              )}
+            >
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span>Strong Positive</span>
+                <span>{isMobile ? "Strong +" : "Strong Positive"}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-red-500" />
-                <span>Strong Negative</span>
+                <span>{isMobile ? "Strong -" : "Strong Negative"}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 rounded-full bg-gray-300" />
-                <span>Weak/No Correlation</span>
+                <span>{isMobile ? "Weak" : "Weak/No Correlation"}</span>
               </div>
             </div>
 
             {/* Correlation Info */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
+                <div
+                  className={cn(
+                    "bg-background/90 backdrop-blur-sm border rounded-md shadow-sm",
+                    isMobile ? "px-1.5 py-0.5" : "px-2 py-1"
+                  )}
+                >
                   <div className="flex items-center gap-1">
-                    <span className="text-xs font-medium">Pearson r:</span>
-                    <span className="text-xs font-bold">Matrix</span>
-                    <Info className="h-3 w-3 text-muted-foreground" />
+                    <span
+                      className={cn(
+                        "font-medium",
+                        isMobile ? "text-[10px]" : "text-xs"
+                      )}
+                    >
+                      Pearson r:
+                    </span>
+                    <span
+                      className={cn(
+                        "font-bold",
+                        isMobile ? "text-[10px]" : "text-xs"
+                      )}
+                    >
+                      Matrix
+                    </span>
+                    <Info
+                      className={cn(
+                        "text-muted-foreground",
+                        isMobile ? "h-2.5 w-2.5" : "h-3 w-3"
+                      )}
+                    />
                   </div>
                 </div>
               </TooltipTrigger>
@@ -398,7 +483,7 @@ export default function RubricHeatmap({
           {/* Actionable Insights */}
           {actionableInsight && (
             <div className="flex-shrink-0 w-full">
-              <TruncatedInsight text={actionableInsight} />
+              <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
             </div>
           )}
 

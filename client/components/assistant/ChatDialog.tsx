@@ -6,6 +6,7 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,7 @@ export default function ChatDialog({
   onSendMessage,
   onStopMessage,
 }: ChatDialogProps) {
+  const isMobile = useIsMobile();
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
 
@@ -170,21 +172,23 @@ export default function ChatDialog({
                   </TooltipContent>
                 </Tooltip>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={onOpenWidget}
-                    className="h-8 w-8 relative z-10"
-                  >
-                    <Minimize2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Minimize to Widget</p>
-                </TooltipContent>
-              </Tooltip>
+              {!isMobile && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={onOpenWidget}
+                      className="h-8 w-8 relative z-10"
+                    >
+                      <Minimize2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Minimize to Widget</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

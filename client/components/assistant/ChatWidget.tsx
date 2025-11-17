@@ -6,6 +6,7 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Select,
@@ -67,10 +68,12 @@ export default function ChatWidget({
   onSendMessage,
   onStopMessage,
 }: ChatWidgetProps) {
+  const isMobile = useIsMobile();
   const [promptToSet, setPromptToSet] = useState<string>("");
   const [showPrompts, setShowPrompts] = useState(true);
 
-  if (uiState !== "widget") {
+  // Hide widget on mobile - mobile should only use popup mode
+  if (uiState !== "widget" || isMobile) {
     return null;
   }
 

@@ -6,6 +6,7 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import type { ChatUIState } from "./AssistantChat";
@@ -14,9 +15,11 @@ export interface ChatFabProps {
   up: boolean;
   uiState: ChatUIState;
   onOpenWidget: () => void;
+  onExpand: () => void;
 }
 
-export default function ChatFab({ up = false, uiState, onOpenWidget }: ChatFabProps) {
+export default function ChatFab({ up = false, uiState, onOpenWidget, onExpand }: ChatFabProps) {
+  const isMobile = useIsMobile();
 
   // or if the currrent route is home/a/...
   const pathname = usePathname() || "/";
@@ -27,7 +30,12 @@ export default function ChatFab({ up = false, uiState, onOpenWidget }: ChatFabPr
   }
 
   const handleClick = () => {
-    onOpenWidget();
+    // On mobile, directly open popup (expanded). On desktop, open widget.
+    if (isMobile) {
+      onExpand();
+    } else {
+      onOpenWidget();
+    }
   };
 
   // show normal fixed button if up is true

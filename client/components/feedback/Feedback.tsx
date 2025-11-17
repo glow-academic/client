@@ -312,14 +312,14 @@ export default function Feedback({
         {/* Toolbar */}
         <div className="flex items-center justify-between">
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="mb-2">
+            <div className="mb-2 w-full md:w-auto">
               <Input
                 placeholder="Search feedback or author..."
                 value={(messageColumn?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
                   messageColumn?.setFilterValue(event.target.value)
                 }
-                className="h-8 w-[150px] lg:w-[250px]"
+                className="h-8 w-full md:w-[150px] lg:w-[250px]"
               />
             </div>
 
@@ -352,7 +352,7 @@ export default function Feedback({
                 <Button
                   variant="ghost"
                   onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3"
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset
                   <X className="ml-2 h-4 w-4" />
