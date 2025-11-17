@@ -1492,12 +1492,13 @@ export default function AttemptChat({
     );
   }
 
-  // In infinite mode, force chat view until time has expired
+  // In infinite mode, force chat view until time has expired OR attempt is inactive
   const isAttemptInfinite = Boolean(attempt?.infiniteMode);
   const hasTimeLimit = Boolean(simulation?.timeLimit);
   const timeRemaining = timer.remaining;
+  const isAttemptActive = attemptData?.isActive ?? true; // Default to true for backwards compatibility
   const shouldForceChatView =
-    isAttemptInfinite && (!hasTimeLimit || (timeRemaining ?? 1) > 0);
+    isAttemptInfinite && isAttemptActive && (!hasTimeLimit || (timeRemaining ?? 1) > 0);
 
   // Show results screen (but not during active infinite mode)
   if (showResults && !shouldForceChatView) {

@@ -43,6 +43,9 @@ export function SimulationControls({
   const shouldShowControls = attemptData?.shouldShowControls ?? true;
   const isPracticeSimulation =
     attemptData?.simulation?.practiceSimulation ?? false;
+  const isInfiniteMode = attemptData?.attempt?.infiniteMode ?? false;
+  const showResults = attemptData?.showResults ?? false;
+  const isActive = attemptData?.isActive ?? true;
 
   // Find current chat from server data
   const currentChat = useMemo(() => {
@@ -75,6 +78,8 @@ export function SimulationControls({
   const [confirmEndAllOpen, setConfirmEndAllOpen] = useState(false);
   const [endAllRemainingSessions, setEndAllRemainingSessions] = useState(0);
   const [confirmEndChatOpen, setConfirmEndChatOpen] = useState(false);
+  const [isEndingSessionFromZeroMessages, setIsEndingSessionFromZeroMessages] =
+    useState(false);
   const [showPreviousChatsDialog, setShowPreviousChatsDialog] = useState(false);
   const [selectedPreviousChatId, setSelectedPreviousChatId] = useState<
     string | null
@@ -505,8 +510,9 @@ export function SimulationControls({
     return null;
   }
 
-  // Don't show buttons if server says not to (not all scenarios have completed chats)
-  if (shouldShowControls === false) {
+  // Don't show buttons if server says not to (unless in infinite mode)
+  // In infinite mode, buttons should always be available for cycling/ending
+  if (shouldShowControls === false && !isInfiniteMode) {
     return null;
   }
 
@@ -515,8 +521,11 @@ export function SimulationControls({
     return null;
   }
 
-  // Note: We still show buttons even when showResults is true or timer expired
-  // They will be disabled instead (handled by isActive check)
+  // Hide buttons when attempt is done (showResults is true or isActive is false)
+  // This applies to both infinite mode and normal mode
+  if (showResults || !isActive) {
+    return null;
+  }
 
   // Handle Next Chat button click (moves to next chat)
   const handleNextChat = () => {
@@ -531,8 +540,9 @@ export function SimulationControls({
       return;
     }
 
-    // Only show "no messages" warning if no previous chats exist
-    if (totalMessages < 2) {
+    // Show confirmation if chat has 0 messages and no previous chats are available
+    // This will mark the chat as incomplete
+    if (totalMessages === 0 && !hasPreviousChats) {
       setConfirmEndChatOpen(true);
       return;
     }
@@ -552,6 +562,22 @@ export function SimulationControls({
 
   // Handle End Session button click (ends whole session)
   const handleEndSession = () => {
+    const totalMessages = currentMessages.length;
+
+    // Show confirmation if current chat has 0 messages and no previous chats are available
+    // This will mark the current chat as incomplete
+    if (totalMessages === 0 && !hasPreviousChats) {
+      setIsEndingSessionFromZeroMessages(true);
+      setConfirmEndChatOpen(true);
+      return;
+    }
+
+    // In infinite mode, skip confirmation dialog and end directly
+    if (isInfiniteMode) {
+      endAllChats();
+      return;
+    }
+
     // Use server-side calculation for remaining scenarios count
     const remainingSessions =
       attemptData?.remainingScenariosCount ?? remainingScenarios.length;
@@ -576,42 +602,65 @@ export function SimulationControls({
   return (
     <>
       <div className="flex gap-2">
-        {/* If only 1 remaining scenario, show "Next Chat" button styled but with "End Session" text */}
-        {isLastRemainingScenario && shouldShowControls ? (
-          <Button
-            type="button"
-            variant={isGrading ? "outline" : "default"}
-            onClick={handleNextChat}
-            disabled={endChatLoading}
-            className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-            data-tour-end-chat
-          >
-            {/* Red dot indicator for previous chats - overlays on top right corner */}
-            {hasPreviousChats && (
-              <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
-            )}
+        {/* Infinite mode: Always show both buttons for cycling/ending */}
+        {isInfiniteMode ? (
+          <>
+            {/* Next Chat button - always visible in infinite mode to cycle through scenarios */}
+            <Button
+              type="button"
+              variant={isGrading ? "outline" : "default"}
+              onClick={handleNextChat}
+              disabled={endChatLoading}
+              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+              data-tour-end-chat
+            >
+              {/* Red dot indicator for previous chats - overlays on top right corner */}
+              {hasPreviousChats && (
+                <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+              )}
 
-            {/* Grading progress overlay - fills from left to right */}
-            {isGrading && gradingProgress ? (
-              <span
-                className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
-                style={{
-                  width: `${gradingProgress.displayedProgress}%`,
-                }}
-              />
-            ) : null}
+              {/* Grading progress overlay - fills from left to right */}
+              {isGrading && gradingProgress ? (
+                <span
+                  className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                  style={{
+                    width: `${gradingProgress.displayedProgress}%`,
+                  }}
+                />
+              ) : null}
 
-            {/* Button text - "End Session" but functionally it's Next Chat */}
-            <span className="relative z-10">
-              {endChatLoading && endingAction === "endChat"
+              {/* Button text */}
+              <span className="relative z-10">
+                {endChatLoading && endingAction === "endChat"
+                  ? "Ending..."
+                  : "Next Chat"}
+              </span>
+            </Button>
+
+            {/* End Session button - always visible in infinite mode to stop cycling */}
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleEndSession}
+              disabled={endChatLoading}
+              className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+              data-tour-end-all
+            >
+              {/* Red dot indicator for better previous attempts - overlays on top right corner */}
+              {hasBetterPreviousAttempt && (
+                <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+              )}
+
+              {endChatLoading && endingAction === "endAll"
                 ? "Ending..."
                 : "End Session"}
-            </span>
-          </Button>
+            </Button>
+          </>
         ) : (
           <>
-            {/* Next Chat button - only show if there are 2+ remaining scenarios */}
-            {shouldShowControls && remainingScenarios.length > 1 && (
+            {/* Normal mode: Use existing logic */}
+            {/* If only 1 remaining scenario, show "Next Chat" button styled but with "End Session" text */}
+            {isLastRemainingScenario && shouldShowControls ? (
               <Button
                 type="button"
                 variant={isGrading ? "outline" : "default"}
@@ -635,36 +684,72 @@ export function SimulationControls({
                   />
                 ) : null}
 
-                {/* Button text */}
+                {/* Button text - "End Session" but functionally it's Next Chat */}
                 <span className="relative z-10">
                   {endChatLoading && endingAction === "endChat"
                     ? "Ending..."
-                    : "Next Chat"}
+                    : "End Session"}
                 </span>
               </Button>
-            )}
+            ) : (
+              <>
+                {/* Next Chat button - only show if there are 2+ remaining scenarios */}
+                {shouldShowControls && remainingScenarios.length > 1 && (
+                  <Button
+                    type="button"
+                    variant={isGrading ? "outline" : "default"}
+                    onClick={handleNextChat}
+                    disabled={endChatLoading}
+                    className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                    data-tour-end-chat
+                  >
+                    {/* Red dot indicator for previous chats - overlays on top right corner */}
+                    {hasPreviousChats && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                    )}
 
-            {/* End Session button - show when there are remaining scenarios OR when all scenarios have graded chats */}
-            {(shouldShowControls && remainingScenarios.length >= 1) ||
-            !shouldShowControls ? (
-              <Button
-                type="button"
-                variant={shouldShowControls ? "destructive" : "outline"}
-                onClick={handleEndSession}
-                disabled={endChatLoading}
-                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-                data-tour-end-all
-              >
-                {/* Red dot indicator for better previous attempts - overlays on top right corner */}
-                {hasBetterPreviousAttempt && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                    {/* Grading progress overlay - fills from left to right */}
+                    {isGrading && gradingProgress ? (
+                      <span
+                        className="absolute inset-0 bg-blue-500/20 transition-all duration-100 ease-out"
+                        style={{
+                          width: `${gradingProgress.displayedProgress}%`,
+                        }}
+                      />
+                    ) : null}
+
+                    {/* Button text */}
+                    <span className="relative z-10">
+                      {endChatLoading && endingAction === "endChat"
+                        ? "Ending..."
+                        : "Next Chat"}
+                    </span>
+                  </Button>
                 )}
 
-                {endChatLoading && endingAction === "endAll"
-                  ? "Ending..."
-                  : "End Session"}
-              </Button>
-            ) : null}
+                {/* End Session button - show when there are remaining scenarios OR when all scenarios have graded chats */}
+                {(shouldShowControls && remainingScenarios.length >= 1) ||
+                !shouldShowControls ? (
+                  <Button
+                    type="button"
+                    variant={shouldShowControls ? "destructive" : "outline"}
+                    onClick={handleEndSession}
+                    disabled={endChatLoading}
+                    className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
+                    data-tour-end-all
+                  >
+                    {/* Red dot indicator for better previous attempts - overlays on top right corner */}
+                    {hasBetterPreviousAttempt && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-3 h-3 border-2 border-white shadow-sm z-10" />
+                    )}
+
+                    {endChatLoading && endingAction === "endAll"
+                      ? "Ending..."
+                      : "End Session"}
+                  </Button>
+                ) : null}
+              </>
+            )}
           </>
         )}
       </div>
@@ -804,34 +889,60 @@ export function SimulationControls({
       {/* Confirm End Chat (no messages) Dialog */}
       <AlertDialog
         open={confirmEndChatOpen}
-        onOpenChange={setConfirmEndChatOpen}
+        onOpenChange={(open) => {
+          setConfirmEndChatOpen(open);
+          if (!open) {
+            setIsEndingSessionFromZeroMessages(false);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>End chat now?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isEndingSessionFromZeroMessages
+                ? "End session now?"
+                : "End chat now?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You have not sent any messages in this chat. Ending now will mark
-              this chat as incomplete and the score will not count.
+              {isEndingSessionFromZeroMessages ? (
+                <>
+                  You have not sent any messages in this chat. Ending the
+                  session now will mark this chat as incomplete and the score
+                  will not count.
+                </>
+              ) : (
+                <>
+                  You have not sent any messages in this chat. Ending now will
+                  mark this chat as incomplete and the score will not count.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                // Dispatch endChatButtonPressed event for tour progression and navigating state management
-                window.dispatchEvent(
-                  new CustomEvent("endChatButtonPressed", {
-                    detail: {
-                      chatId: currentChat.id,
-                      attemptId: attemptId,
-                    },
-                  })
-                );
-                setConfirmEndChatOpen(false);
-                endChat();
+                if (isEndingSessionFromZeroMessages) {
+                  // End the entire session
+                  setIsEndingSessionFromZeroMessages(false);
+                  setConfirmEndChatOpen(false);
+                  endAllChats();
+                } else {
+                  // Dispatch endChatButtonPressed event for tour progression and navigating state management
+                  window.dispatchEvent(
+                    new CustomEvent("endChatButtonPressed", {
+                      detail: {
+                        chatId: currentChat.id,
+                        attemptId: attemptId,
+                      },
+                    })
+                  );
+                  setConfirmEndChatOpen(false);
+                  endChat();
+                }
               }}
             >
-              End Chat
+              {isEndingSessionFromZeroMessages ? "End Session" : "End Chat"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

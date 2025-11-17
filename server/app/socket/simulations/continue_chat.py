@@ -1266,17 +1266,19 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                         await conn.execute(sql, str(existing_chat["id"]))
 
                 # Calculate and create remaining chats in order
-                start_index = len(existing_chats)
-                total_needed = max(0, len(scenario_links) - start_index)
+                # Skip creating remaining chats in infinite mode - just stop here
+                if not is_infinite_mode:
+                    start_index = len(existing_chats)
+                    total_needed = max(0, len(scenario_links) - start_index)
 
-                for offset in range(total_needed):
-                    next_id = scenario_links[start_index + offset]["scenario_id"]
-                    created = await _create_chat_for_scenario_inline(
-                        conn, str(next_id), attempt_id, profile_id, mark_completed=True
-                    )
-                    if created is None:
-                        break
-                    created_chats_count += 1
+                    for offset in range(total_needed):
+                        next_id = scenario_links[start_index + offset]["scenario_id"]
+                        created = await _create_chat_for_scenario_inline(
+                            conn, str(next_id), attempt_id, profile_id, mark_completed=True
+                        )
+                        if created is None:
+                            break
+                        created_chats_count += 1
 
             # Determine if attempt is finished: ALL parent scenarios from simulation_scenarios 
             # must have at least one graded chat (linked via attempt_chats)
