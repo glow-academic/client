@@ -153,11 +153,18 @@ export default function SimulationCard({
   };
 
   const gradientClass = getGradientClass();
-  const iconColor = color
-    ? color.startsWith("#")
-      ? color
-      : `#${color}`
-    : "rgb(168, 85, 247)"; // purple-500 default
+  // For cohort simulations (non-practice), use status-based colors
+  // For practice simulations (default), use color prop or default purple
+  const iconColor =
+    type === "cohort"
+      ? hasPassed
+        ? "#22c55e" // green-500 when passed
+        : "#9333ea" // purple-600 when not passed
+      : color
+        ? color.startsWith("#")
+          ? color
+          : `#${color}`
+        : "rgb(168, 85, 247)"; // purple-500 default for practice
 
   const backgroundGradient =
     type === "default"
