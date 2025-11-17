@@ -6,6 +6,7 @@
  */
 
 import TableRubric from "@/components/common/rubric/TableRubric";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
-import { FileText, Info, Timer, User, Users } from "lucide-react";
+import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
 
 type StandardGroupMappingItem = {
   name: string;
@@ -100,6 +101,7 @@ export interface SimulationCardProps {
   passRate?: number;
   type: "default" | "cohort";
   onStartSimulation: (id: string) => void;
+  onStartInfiniteMode?: (id: string) => void;
   loadingSimulation: string | null;
   effectiveProfile: ProfileItem;
 }
@@ -120,6 +122,7 @@ export default function SimulationCard({
   passRate,
   type,
   onStartSimulation,
+  onStartInfiniteMode,
   loadingSimulation,
   effectiveProfile,
 }: SimulationCardProps) {
@@ -150,6 +153,11 @@ export default function SimulationCard({
   };
 
   const gradientClass = getGradientClass();
+  const iconColor = color
+    ? color.startsWith("#")
+      ? color
+      : `#${color}`
+    : "rgb(168, 85, 247)"; // purple-500 default
 
   const backgroundGradient =
     type === "default"
@@ -215,9 +223,17 @@ export default function SimulationCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <DialogTrigger asChild>
-                        <button className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative z-20">
-                          <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="relative z-20"
+                          style={{
+                            borderColor: iconColor,
+                            color: iconColor,
+                          }}
+                        >
+                          <Table className="h-4 w-4" />
+                        </Button>
                       </DialogTrigger>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -368,6 +384,64 @@ export default function SimulationCard({
                 <p>You cannot start simulations on behalf of another user.</p>
               </TooltipContent>
             </Tooltip>
+          ) : type === "default" && onStartInfiniteMode ? (
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("simulationButtonPressed", {
+                      detail: { simulationId: id },
+                    })
+                  );
+                  onStartSimulation(id);
+                }}
+                disabled={loadingSimulation !== null}
+                data-testid={`start-simulation-${id}`}
+                className={`flex-1 text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+                  loadingSimulation === id
+                    ? "animate-pulse cursor-not-allowed"
+                    : "hover:scale-105 cursor-pointer"
+                } disabled:opacity-70 ${
+                  typeof gradientClass === "string" &&
+                  !gradientClass.startsWith("linear-gradient")
+                    ? `bg-gradient-to-r ${gradientClass}`
+                    : ""
+                }`}
+                style={{
+                  ...(typeof gradientClass === "string" &&
+                    gradientClass.startsWith("linear-gradient") && {
+                      background: gradientClass,
+                    }),
+                }}
+              >
+                {loadingSimulation === id ? "Starting..." : "Start Simulation"}
+              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => {
+                      if (onStartInfiniteMode) {
+                        onStartInfiniteMode(id);
+                      }
+                    }}
+                    disabled={loadingSimulation !== null}
+                    variant="default"
+                    size="icon"
+                    className="flex-shrink-0 hover:scale-105 cursor-pointer transition-all duration-300"
+                    data-testid={`start-infinite-${id}`}
+                    style={{
+                      backgroundColor: iconColor,
+                      borderColor: iconColor,
+                    }}
+                  >
+                    <Infinity className="h-4 w-4 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Infinite Mode</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           ) : (
             <button
               onClick={() => {

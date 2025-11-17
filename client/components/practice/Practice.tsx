@@ -216,6 +216,58 @@ export default function Practice({
     ]
   );
 
+  const handleStartInfiniteMode = useCallback(
+    async (simulationId: string) => {
+      try {
+        // Only enforce profile for non-guests
+        if (effectiveProfile?.role !== "guest" && !effectiveProfile?.id) {
+          toast.error("Profile not loaded. Please refresh the page.");
+          return;
+        }
+
+        if (!isConnected) {
+          toast.error(
+            "WebSocket not connected. Please wait for connection or refresh the page."
+          );
+          return;
+        }
+
+        const toastId = toast.loading("Starting infinite mode...", {
+          dismissible: true,
+        });
+        setLoadingToastId(toastId);
+
+        const profileIdForEmit =
+          effectiveProfile?.role === "guest" ? "" : String(activeProfile!.id); // "" → guest
+
+        emitStartSimulation({
+          simulation_id: simulationId,
+          profile_id: profileIdForEmit,
+          infinite: true,
+        });
+
+        // timeout...
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          toast.dismiss(toastId);
+          toast.error("Simulation start timed out. Please try again.");
+          setLoadingToastId(null);
+        }, 30000);
+      } catch {
+        if (loadingToastId) toast.dismiss(loadingToastId);
+        toast.error("Failed to start infinite mode. Please try again.");
+        setLoadingToastId(null);
+      }
+    },
+    [
+      effectiveProfile,
+      isConnected,
+      emitStartSimulation,
+      loadingToastId,
+      activeProfile,
+    ]
+  );
+
   if (!effectiveProfile) {
     return null;
   }
@@ -253,6 +305,7 @@ export default function Practice({
               | "guest",
           }}
           onStartSimulation={handleStartSimulation}
+          onStartInfiniteMode={handleStartInfiniteMode}
           loadingSimulation={loadingSimulation}
         />
         {/* History Section for non-guests */}
@@ -320,60 +373,35 @@ export default function Practice({
                 ? ""
                 : String(effectiveProfile?.id || "");
 
-            if (params.isInfiniteMode) {
-              // Infinite mode - use start_simulation WebSocket event
-              // Store toast ID so it can be dismissed when simulation starts
-              const practiceToastId = toast.loading("Starting simulation...", {
+            // Standard mode - use create_practice_scenario WebSocket event
+            // Store toast ID so it can be dismissed when simulation starts
+            const practiceToastId = toast.loading(
+              "Creating practice scenario...",
+              {
                 dismissible: true,
-              });
-              setLoadingToastId(practiceToastId);
+              }
+            );
+            setLoadingToastId(practiceToastId);
 
-              // Set timeout for simulation start
-              if (timeoutRef.current) clearTimeout(timeoutRef.current);
-              timeoutRef.current = setTimeout(() => {
-                toast.dismiss(practiceToastId);
-                toast.error("Simulation start timed out. Please try again.");
-                setLoadingToastId(null);
-                setIsStartingAttempt(false);
-              }, 30000);
-
-              emitStartSimulation({
-                simulation_id: params.simulationId,
-                profile_id: profileIdForEmit,
-                infinite: true,
-              });
-              setCustomizeOpen(false);
-            } else {
-              // Standard mode - use create_practice_scenario WebSocket event
-              // Store toast ID so it can be dismissed when simulation starts
-              const practiceToastId = toast.loading(
-                "Creating practice scenario...",
-                {
-                  dismissible: true,
-                }
+            // Set timeout for practice scenario creation
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            timeoutRef.current = setTimeout(() => {
+              toast.dismiss(practiceToastId);
+              toast.error(
+                "Practice scenario creation timed out. Please try again."
               );
-              setLoadingToastId(practiceToastId);
+              setLoadingToastId(null);
+              setIsStartingAttempt(false);
+            }, 30000);
 
-              // Set timeout for practice scenario creation
-              if (timeoutRef.current) clearTimeout(timeoutRef.current);
-              timeoutRef.current = setTimeout(() => {
-                toast.dismiss(practiceToastId);
-                toast.error(
-                  "Practice scenario creation timed out. Please try again."
-                );
-                setLoadingToastId(null);
-                setIsStartingAttempt(false);
-              }, 30000);
-
-              emitCreatePracticeScenario({
-                persona_id: params.personaId || null,
-                parameter_item_ids: params.parameterItemIds || [],
-                department_id: params.departmentId || null,
-                profile_id: profileIdForEmit,
-                infinite_mode: false,
-              });
-              setCustomizeOpen(false);
-            }
+            emitCreatePracticeScenario({
+              persona_id: params.personaId || null,
+              parameter_item_ids: params.parameterItemIds || [],
+              department_id: params.departmentId || null,
+              profile_id: profileIdForEmit,
+              infinite_mode: false,
+            });
+            setCustomizeOpen(false);
           }}
           isStartingAttempt={isStartingAttempt}
           effectiveProfile={{

@@ -971,7 +971,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                     for existing_chat in existing_chats:
                         if (
                             not existing_chat["completed"]
-                            and existing_chat["id"] != chat_id
+                            and str(existing_chat["id"]) != str(chat_id)
                         ):
                             sql = load_sql(
                                 "sql/v3/simulations/update_chat_completed.sql"
@@ -1251,7 +1251,7 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 for existing_chat in existing_chats:
                     if (
                         not existing_chat["completed"]
-                        and existing_chat["id"] != chat_id
+                        and str(existing_chat["id"]) != str(chat_id)
                     ):
                         other_message_count = message_count_map.get(
                             str(existing_chat["id"]), 0

@@ -72,6 +72,7 @@ interface PracticeZoneProps {
   standardsMapping: StandardsMapping;
   profile: ProfileItem | null;
   onStartSimulation: (simulationId: string) => void;
+  onStartInfiniteMode?: (simulationId: string) => void;
   loadingSimulation: string | null;
 }
 
@@ -81,6 +82,7 @@ export default function PracticeZone({
   standardsMapping,
   profile,
   onStartSimulation,
+  onStartInfiniteMode,
   loadingSimulation,
 }: PracticeZoneProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -173,6 +175,7 @@ export default function PracticeZone({
                 // Removed passRate for practice cards to prevent fallback to rubric threshold
                 type="default"
                 onStartSimulation={onStartSimulation}
+                onStartInfiniteMode={onStartInfiniteMode}
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />

@@ -2,7 +2,6 @@
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
-import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Infinity, Target } from "lucide-react";
 
 type ProfileItem = {
   id: string;
@@ -96,7 +93,6 @@ interface PracticeCustomizeDialogProps {
     simulationId: string;
     personaId?: string;
     parameterItemIds?: string[];
-    isInfiniteMode?: boolean;
     departmentId?: string;
   }) => void;
   isStartingAttempt: boolean;
@@ -128,8 +124,6 @@ export function PracticeCustomizeDialog({
   validDepartmentIds,
 }: PracticeCustomizeDialogProps) {
   // State for the dialog
-  const [isInfiniteMode, setIsInfiniteMode] = useState(false);
-  const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
@@ -203,50 +197,38 @@ export function PracticeCustomizeDialog({
     const departmentId =
       selectedDepartmentIds.length > 0 ? selectedDepartmentIds[0] : undefined;
 
-    if (isInfiniteMode) {
-      if (!selectedSimulationId) {
-        toast.error("Please select a simulation");
-        return;
-      }
-
-      onStartAttempt({
-        simulationId: selectedSimulationId,
-        isInfiniteMode: true,
-      });
-    } else {
-      const selectedPersonaId = selectedPersonaIds[0];
-      if (!selectedPersonaId) {
-        toast.error("Please select a persona");
-        return;
-      }
-
-      const selectedPersona = personas.find((p) => p.id === selectedPersonaId);
-      if (!selectedPersona) {
-        toast.error("Selected persona not found");
-        return;
-      }
-
-      // Find base default practice scenario for this persona
-      const baseScenario = scenarios.find((s) =>
-        s.name.toLowerCase().includes(selectedPersona.name.toLowerCase())
-      );
-
-      // Use first available practice simulation (server filtered to practice only)
-      const firstSimulationId = validSimulationIds[0];
-      if (!firstSimulationId || !baseScenario) {
-        toast.error(
-          `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
-        );
-        return;
-      }
-
-      onStartAttempt({
-        simulationId: firstSimulationId,
-        personaId: selectedPersona.id,
-        parameterItemIds: selectedParameterItemIds,
-        ...(departmentId && { departmentId }),
-      });
+    const selectedPersonaId = selectedPersonaIds[0];
+    if (!selectedPersonaId) {
+      toast.error("Please select a persona");
+      return;
     }
+
+    const selectedPersona = personas.find((p) => p.id === selectedPersonaId);
+    if (!selectedPersona) {
+      toast.error("Selected persona not found");
+      return;
+    }
+
+    // Find base default practice scenario for this persona
+    const baseScenario = scenarios.find((s) =>
+      s.name.toLowerCase().includes(selectedPersona.name.toLowerCase())
+    );
+
+    // Use first available practice simulation (server filtered to practice only)
+    const firstSimulationId = validSimulationIds[0];
+    if (!firstSimulationId || !baseScenario) {
+      toast.error(
+        `No practice simulation found for persona "${selectedPersona.name}". Please contact an administrator.`
+      );
+      return;
+    }
+
+    onStartAttempt({
+      simulationId: firstSimulationId,
+      personaId: selectedPersona.id,
+      parameterItemIds: selectedParameterItemIds,
+      ...(departmentId && { departmentId }),
+    });
   };
 
   const isDisabled = effectiveProfile?.id !== activeProfile?.id;
@@ -260,121 +242,58 @@ export function PracticeCustomizeDialog({
         <DialogHeader>
           <DialogTitle>Customize Practice Session</DialogTitle>
           <DialogDescription className="hidden">
-            {isInfiniteMode
-              ? "Start an infinite practice session with a specific simulation. Toggle to Standard Mode to practice with a single target persona."
-              : "Practice with a single target persona and specific parameter set in Standard Mode. Toggle to Infinite Mode for extended practice sessions."}
+            Practice with a single target persona and specific parameter set.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Mode Switch */}
-          <div className="space-y-2 pt-2">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="infinite-mode"
-                  className="text-sm flex items-center gap-1.5"
-                >
-                  {isInfiniteMode ? (
-                    <>
-                      <Infinity className="h-3.5 w-3.5 text-muted-foreground" />
-                      Infinite Mode
-                    </>
-                  ) : (
-                    <>
-                      <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                      Standard Mode
-                    </>
-                  )}
-                </Label>
-                <Switch
-                  id="infinite-mode"
-                  checked={isInfiniteMode}
-                  onCheckedChange={setIsInfiniteMode}
-                  data-testid="practice-mode-switch"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground pl-5">
-                {isInfiniteMode
-                  ? "Start an infinite practice session with a specific simulation. Toggle to view Standard Mode."
-                  : "Practice with a single target persona and specific parameter set. Toggle to view Infinite Mode."}
-              </p>
+          <div className="grid gap-6">
+            <div
+              className="grid gap-2"
+              data-testid="practice-department-picker"
+            >
+              <Label>Department</Label>
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={validDepartmentIds}
+                selectedIds={selectedDepartmentIds}
+                onSelect={setSelectedDepartmentIds}
+                multiSelect={false}
+                placeholder="Select department (optional)"
+              />
+            </div>
+            <div className="grid gap-2" data-testid="practice-persona-picker">
+              <PersonaPicker
+                mapping={filteredPersonaMapping}
+                validIds={validPersonaIds}
+                selectedIds={selectedPersonaIds}
+                onSelect={setSelectedPersonaIds}
+                multiSelect={false}
+                label="Target Persona"
+                description="Choose the target persona you'll practice with in standard mode."
+              />
+            </div>
+            <div
+              className="grid gap-2"
+              data-testid="practice-parameter-selector"
+            >
+              <ParameterSelector
+                parameterMapping={
+                  parameterMapping as Parameters<
+                    typeof ParameterSelector
+                  >[0]["parameterMapping"]
+                }
+                parameterItemMapping={
+                  filteredParameterItemMapping as Parameters<
+                    typeof ParameterSelector
+                  >[0]["parameterItemMapping"]
+                }
+                validParameterItemIds={validParameterItemIds}
+                selectedParameterItemIds={selectedParameterItemIds}
+                onParameterItemIdsChange={setSelectedParameterItemIds}
+              />
             </div>
           </div>
-
-          {isInfiniteMode ? (
-            <div className="grid gap-4">
-              <div
-                className="grid gap-2"
-                data-testid="practice-simulation-picker"
-              >
-                <SimulationPicker
-                  simulationMapping={simulationMapping}
-                  validSimulationIds={validSimulationIds}
-                  selectedSimulationIds={
-                    selectedSimulationId ? [selectedSimulationId] : []
-                  }
-                  onSelect={(ids) => {
-                    setSelectedSimulationId(ids[0] || "");
-                  }}
-                  multiSelect={false}
-                  label="Start Simulation"
-                  placeholder="Choose a practice simulation"
-                  description="Select a practice simulation to start in infinite mode."
-                  hideSelectedChips={true}
-                  showLabel={true}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="grid gap-6">
-              <div
-                className="grid gap-2"
-                data-testid="practice-department-picker"
-              >
-                <Label>Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={validDepartmentIds}
-                  selectedIds={selectedDepartmentIds}
-                  onSelect={setSelectedDepartmentIds}
-                  multiSelect={false}
-                  placeholder="Select department (optional)"
-                />
-              </div>
-              <div className="grid gap-2" data-testid="practice-persona-picker">
-                <PersonaPicker
-                  mapping={filteredPersonaMapping}
-                  validIds={validPersonaIds}
-                  selectedIds={selectedPersonaIds}
-                  onSelect={setSelectedPersonaIds}
-                  multiSelect={false}
-                  label="Target Persona"
-                  description="Choose the target persona you'll practice with in standard mode."
-                />
-              </div>
-              <div
-                className="grid gap-2"
-                data-testid="practice-parameter-selector"
-              >
-                <ParameterSelector
-                  parameterMapping={
-                    parameterMapping as Parameters<
-                      typeof ParameterSelector
-                    >[0]["parameterMapping"]
-                  }
-                  parameterItemMapping={
-                    filteredParameterItemMapping as Parameters<
-                      typeof ParameterSelector
-                    >[0]["parameterItemMapping"]
-                  }
-                  validParameterItemIds={validParameterItemIds}
-                  selectedParameterItemIds={selectedParameterItemIds}
-                  onParameterItemIdsChange={setSelectedParameterItemIds}
-                />
-              </div>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
