@@ -234,19 +234,24 @@ export default function SimulationCard({
                         {passRate && passRate > 0 && ` (${passRate}% to pass)`}
                       </DialogTitle>
                     </DialogHeader>
-                    {standard_groups &&
-                    Object.keys(standard_groups).length > 0 ? (
-                      <TableRubric
-                        standardGroups={standard_groups}
-                        standardGroupsMapping={standardGroupsMapping}
-                        standardsMapping={standardsMapping}
-                        showFullStandardsOnMobile={true}
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        No rubric is associated with this simulation.
-                      </p>
-                    )}
+                    <div
+                      className="overflow-x-auto -mx-6 px-6"
+                      style={{ WebkitOverflowScrolling: "touch" }}
+                    >
+                      {standard_groups &&
+                      Object.keys(standard_groups).length > 0 ? (
+                        <TableRubric
+                          standardGroups={standard_groups}
+                          standardGroupsMapping={standardGroupsMapping}
+                          standardsMapping={standardsMapping}
+                          showFullStandardsOnMobile={true}
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No rubric is associated with this simulation.
+                        </p>
+                      )}
+                    </div>
                   </DialogContent>
                 </Dialog>
               )}

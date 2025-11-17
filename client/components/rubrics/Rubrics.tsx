@@ -314,9 +314,10 @@ export default function Rubrics({
                   variant="outline"
                   onClick={() => handleEdit(rubric.rubric_id)}
                   data-testid="btn-edit-rubric"
+                  aria-label="Edit rubric"
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  <Edit className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                  <span className="md:hidden">Edit</span>
                 </Button>
               ) : (
                 <Button
@@ -325,8 +326,8 @@ export default function Rubrics({
                   aria-label={`View ${rubric.name}`}
                   data-testid="btn-view-rubric"
                 >
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
+                  <Eye className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                  <span className="md:hidden">View</span>
                 </Button>
               )}
               {rubric.can_duplicate && (
@@ -335,13 +336,19 @@ export default function Rubrics({
                   onClick={() => handleDuplicate(rubric)}
                   disabled={isDuplicating === rubric.rubric_id}
                   data-testid="btn-duplicate-rubric"
+                  aria-label="Duplicate rubric"
                 >
                   {isDuplicating === rubric.rubric_id ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent md:mr-0 md:ml-0 mr-2" />
+                      <span className="md:hidden">Duplicating...</span>
+                    </>
                   ) : (
-                    <Copy className="h-4 w-4 mr-2" />
+                    <>
+                      <Copy className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                      <span className="md:hidden">Duplicate</span>
+                    </>
                   )}
-                  Duplicate
                 </Button>
               )}
               {rubric.can_delete && (
@@ -351,9 +358,10 @@ export default function Rubrics({
                     handleDeleteClick(rubric.rubric_id, rubric.name)
                   }
                   data-testid="btn-delete-rubric"
+                  aria-label="Delete rubric"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  <Trash2 className="h-4 w-4 md:mr-0 md:ml-0 mr-2" />
+                  <span className="md:hidden">Delete</span>
                 </Button>
               )}
             </div>

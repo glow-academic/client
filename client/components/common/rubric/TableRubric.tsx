@@ -194,8 +194,8 @@ export default function TableRubric({
       <div
         className={
           showFullStandardsOnMobile
-            ? "block overflow-auto max-h-[70vh]"
-            : "hidden md:block overflow-auto max-h-[70vh]"
+            ? "block overflow-x-auto overflow-y-auto max-h-[70vh] w-full"
+            : "hidden md:block overflow-x-auto overflow-y-auto max-h-[70vh] w-full"
         }
       >
         <Table className="min-w-[600px] text-sm table-fixed">
