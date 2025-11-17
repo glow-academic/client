@@ -26,6 +26,8 @@ export interface DataTableRowActionsProps {
   showArchive?: boolean;
   canView?: boolean; // from SQL showView
   canContinue?: boolean; // from SQL showContinue
+  practiceScenarioId?: string; // first scenario_id from attempt (for practice retry)
+  practiceSimulation?: boolean; // whether this is a practice simulation
 }
 
 export function DataTableRowActions({
@@ -42,6 +44,8 @@ export function DataTableRowActions({
   showArchive: _showArchive = false,
   canView: _canView,
   canContinue,
+  practiceScenarioId,
+  practiceSimulation = false,
 }: DataTableRowActionsProps) {
   const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
     useProfile();
@@ -78,7 +82,7 @@ export function DataTableRowActions({
   const isNotEmulating = effectiveProfile?.id === activeProfile?.id;
   const isOwnAttempt = activeProfile?.id === profileId;
   const shouldShowRetry =
-    isNotEmulating && isOwnAttempt && (simulationId ?? "") !== "";
+    isNotEmulating && isOwnAttempt && (simulationId ?? "") !== "" && !canContinue;
   const shouldShowTry =
     isNotEmulating && !isOwnAttempt && (simulationId ?? "") !== "";
 
@@ -95,7 +99,8 @@ export function DataTableRowActions({
       emitStartSimulation({
         simulation_id: String(simulationId),
         profile_id: profileIdForEmit,
-        scenario_id: null, // optional: pick first scenario id if you want
+        scenario_id: practiceSimulation && practiceScenarioId ? practiceScenarioId : null,
+        ...(infiniteMode ? { infinite: true } : {}),
       });
     } finally {
       setTimeout(() => setIsRetrying(false), 2000);

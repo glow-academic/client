@@ -47,6 +47,8 @@ export interface HistoryDataItem {
   practiceSimulation?: boolean; // Needed for routing to /practice/ vs /home/
   passPct: number; // Pass percentage threshold for this simulation
   cohortNames: string[];
+  practiceScenarioId?: string; // first scenario_id from attempt (for practice retry)
+  infiniteMode?: boolean; // whether this attempt is in infinite mode
 }
 
 export interface SimulationHistoryProps {
@@ -337,8 +339,15 @@ export default function SimulationHistory({
               cell: ({ row }: { row: Row<HistoryDataItem> }) => {
                 const profileName = row.original.profileName;
                 return (
-                  <div className="flex items-center">
-                    <span>{profileName}</span>
+                  <div className="flex items-center min-w-0 max-w-[125px]">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="truncate">{profileName}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{profileName}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 );
               },
@@ -365,12 +374,17 @@ export default function SimulationHistory({
           const isInfinite = row.original.infiniteMode;
 
           return (
-            <div className="flex items-center space-x-1">
-              <span className="max-w-[500px] truncate font-medium">
-                {simulationName}
-              </span>
+            <div className="flex items-center space-x-1 min-w-0 max-w-[160px]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="truncate font-medium">{simulationName}</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{simulationName}</p>
+                </TooltipContent>
+              </Tooltip>
               {isInfinite && (
-                <InfinityIcon className="h-3 w-3 text-muted-foreground" />
+                <InfinityIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               )}
             </div>
           );
@@ -447,7 +461,7 @@ export default function SimulationHistory({
           }
 
           return (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-nowrap gap-1 overflow-x-auto max-w-[175px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {personaNames.map((personaName, index) => {
                 const baseHex = personaColors?.[index] || "#9CA3AF"; // gray-400 fallback
 
@@ -501,10 +515,14 @@ export default function SimulationHistory({
         cell: ({ row }) => {
           const score = row.original.score; // <-- read original for display
           if (score === null) {
-            return <div className="text-muted-foreground">Not graded</div>;
+            return (
+              <div className="text-muted-foreground text-center min-w-0 max-w-[100px]">
+                Not graded
+              </div>
+            );
           }
           return (
-            <div className="text-center">
+            <div className="text-center min-w-0 max-w-[100px]">
               <Badge
                 variant="outline"
                 className={`text-xs font-semibold ${
@@ -561,6 +579,8 @@ export default function SimulationHistory({
               canContinue={item.showContinue}
               archived={item.isArchived}
               showArchive={showArchive}
+              practiceScenarioId={item.practiceScenarioId}
+              practiceSimulation={item.practiceSimulation}
             />
           );
         },

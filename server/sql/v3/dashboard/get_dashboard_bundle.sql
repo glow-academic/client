@@ -1505,6 +1505,16 @@
                 WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempt_rollup)
                 GROUP BY ac.attempt_id
             ),
+            -- Get first scenario_id from each attempt's first chat (for practice scenario retry)
+            history_first_scenario AS (
+                SELECT DISTINCT ON (ac.attempt_id)
+                    ac.attempt_id,
+                    sc.scenario_id::text AS practice_scenario_id
+                FROM attempt_chats ac
+                JOIN simulation_chats sc ON sc.id = ac.chat_id
+                WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempt_rollup)
+                ORDER BY ac.attempt_id, sc.created_at ASC
+            ),
             history_attempt_joined AS (
                 SELECT
                     ar.*,
@@ -1524,7 +1534,8 @@
                     (p.first_name || ' ' || p.last_name) AS profile_name,
                     stl.time_limit_seconds,
                     COALESCE(hci.incomplete_chats, 0) AS incomplete_chats,
-                    COALESCE(het.elapsed_seconds, 0) AS elapsed_seconds
+                    COALESCE(het.elapsed_seconds, 0) AS elapsed_seconds,
+                    hfs.practice_scenario_id
                 FROM history_attempt_rollup ar
                 JOIN simulation_attempts sa ON sa.id = ar.attempt_id
                 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -1533,6 +1544,7 @@
                 LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 LEFT JOIN history_chat_incomplete hci ON hci.attempt_id = ar.attempt_id
                 LEFT JOIN history_elapsed_time het ON het.attempt_id = ar.attempt_id
+                LEFT JOIN history_first_scenario hfs ON hfs.attempt_id = ar.attempt_id
                 JOIN profiles p ON p.id = ap.profile_id
             ),
             history_final_rows AS (
@@ -1579,7 +1591,8 @@
                             AND aj.sim_scenario_count IS NOT NULL
                             AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
                     ) AS show_continue,
-                    aj.persona_ids_distinct
+                    aj.persona_ids_distinct,
+                    aj.practice_scenario_id
                 FROM history_attempt_joined aj
                 ORDER BY aj.attempt_date DESC, aj.attempt_id
             ),
@@ -1628,7 +1641,8 @@
                        fr.show_continue,
                        fr.practice_simulation,
                        fr.pass_pct,
-                       ARRAY[]::text[] AS cohort_names
+                       ARRAY[]::text[] AS cohort_names,
+                       fr.practice_scenario_id
                 FROM history_final_rows fr
                 LEFT JOIN history_persona_labels pl ON pl.attempt_id = fr.attempt_id
                 LEFT JOIN history_scenario_names sn ON sn.attempt_id = fr.attempt_id
@@ -2132,7 +2146,8 @@
                     'showContinue', show_continue,
                     'practiceSimulation', practice_simulation,
                     'passPct', pass_pct,
-                    'cohortNames', cohort_names
+                    'cohortNames', cohort_names,
+                    'practiceScenarioId', practice_scenario_id
                 ) ORDER BY date DESC) FROM history_data), '[]'::json),
                 'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping LIMIT 1), '{}'::jsonb),
                 'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping LIMIT 1), '{}'::jsonb),

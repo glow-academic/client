@@ -56,6 +56,7 @@ class AttemptHistoryRow(BaseModel):
         None, alias="department_id"
     )  # Simulation's department associations
     cohortNames: list[str]
+    practiceScenarioId: str | None = None
 
     @field_validator("department_ids", mode="before")
     @classmethod

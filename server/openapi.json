@@ -23162,6 +23162,17 @@
             },
             "type": "array",
             "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
           }
         },
         "type": "object",
@@ -23778,6 +23789,17 @@
             },
             "type": "array",
             "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
           }
         },
         "type": "object",
@@ -24655,6 +24677,17 @@
             },
             "type": "array",
             "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
           }
         },
         "type": "object",

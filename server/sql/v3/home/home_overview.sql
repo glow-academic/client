@@ -627,6 +627,16 @@ history_scenario_ids AS (
     WHERE s.id IN (SELECT simulation_id FROM history_attempts_filtered)
     GROUP BY s.id
 ),
+-- Get first scenario_id from each attempt's first chat (for practice scenario retry)
+history_first_scenario AS (
+    SELECT DISTINCT ON (ac.attempt_id)
+        ac.attempt_id,
+        sc.scenario_id::text AS practice_scenario_id
+    FROM attempt_chats ac
+    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+    ORDER BY ac.attempt_id, sc.created_at ASC
+),
 -- Join all history data
 attempt_rollup AS (
     SELECT
@@ -647,13 +657,15 @@ attempt_rollup AS (
         COALESCE(hp.persona_ids, ARRAY[]::uuid[]) AS persona_ids_distinct,
         COALESCE(hcr.scenario_ids_seen, ARRAY[]::uuid[]) AS leaf_scenarios_seen,
         COALESCE(hcr.incomplete_chats, 0) AS incomplete_chats,
-        COALESCE(het.elapsed_seconds, 0) AS elapsed_seconds
+        COALESCE(het.elapsed_seconds, 0) AS elapsed_seconds,
+        hfs.practice_scenario_id
     FROM history_attempts_filtered haf
     LEFT JOIN history_chat_rollup hcr ON hcr.attempt_id = haf.attempt_id
     LEFT JOIN history_grade_rollup hgr ON hgr.attempt_id = haf.attempt_id
     LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
     LEFT JOIN history_sim_scenario_count hssc ON hssc.simulation_id = haf.simulation_id
     LEFT JOIN history_elapsed_time het ON het.attempt_id = haf.attempt_id
+    LEFT JOIN history_first_scenario hfs ON hfs.attempt_id = haf.attempt_id
 ),
 attempt_cohort_ids AS (
     SELECT
@@ -701,6 +713,7 @@ final_rows AS (
         aj.infinite_mode,
         aj.attempt_date,
         aj.department_ids,
+        aj.practice_scenario_id,
         CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
         COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
         CASE
@@ -784,7 +797,8 @@ attempt_history_data AS (
                 'practiceSimulation', COALESCE(fr.practice_simulation, false),
                 'passPct', fr.pass_pct,
                 'department_ids', fr.department_ids,
-                'cohortNames', COALESCE(acn.cohort_names, ARRAY[]::text[])
+                'cohortNames', COALESCE(acn.cohort_names, ARRAY[]::text[]),
+                'practiceScenarioId', fr.practice_scenario_id
             )
             ORDER BY fr.attempt_date DESC, fr.attempt_id
         ),

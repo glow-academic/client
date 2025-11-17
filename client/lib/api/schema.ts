@@ -9612,6 +9612,8 @@ export interface components {
             department_id?: string[] | null;
             /** Cohortnames */
             cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * DepartmentDetailResponse
@@ -9864,6 +9866,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Cohortnames */
             cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /** ParameterItemDetail */
         app__api__v3__parameters__detail__ParameterItemDetail: {
@@ -10160,6 +10164,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Cohortnames */
             cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * DebugInfoItem

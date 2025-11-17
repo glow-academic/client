@@ -72,6 +72,7 @@ class AttemptHistoryRow(BaseModel):
     passPct: int | None = None
     department_ids: list[str] | None = None  # Simulation's department associations
     cohortNames: list[str]
+    practiceScenarioId: str | None = None
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]

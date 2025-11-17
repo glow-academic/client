@@ -382,6 +382,16 @@ practice_history_scenario_ids AS (
     WHERE s.id IN (SELECT simulation_id FROM practice_history_attempts)
     GROUP BY s.id
 ),
+-- Get first scenario_id from each attempt's first chat (for practice scenario retry)
+practice_history_first_scenario AS (
+    SELECT DISTINCT ON (ac.attempt_id)
+        ac.attempt_id,
+        sc.scenario_id::text AS practice_scenario_id
+    FROM attempt_chats ac
+    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    WHERE ac.attempt_id IN (SELECT attempt_id FROM practice_history_attempts)
+    ORDER BY ac.attempt_id, sc.created_at ASC
+),
 -- Join all history data
 practice_attempt_rollup AS (
     SELECT
@@ -400,13 +410,15 @@ practice_attempt_rollup AS (
         COALESCE(php.persona_ids, ARRAY[]::uuid[]) AS persona_ids_distinct,
         COALESCE(phcr.scenario_ids_seen, ARRAY[]::uuid[]) AS leaf_scenarios_seen,
         COALESCE(phcr.incomplete_chats, 0) AS incomplete_chats,
-        COALESCE(phet.elapsed_seconds, 0) AS elapsed_seconds
+        COALESCE(phet.elapsed_seconds, 0) AS elapsed_seconds,
+        phfs.practice_scenario_id
     FROM practice_history_attempts pha
     LEFT JOIN practice_history_chat_rollup phcr ON phcr.attempt_id = pha.attempt_id
     LEFT JOIN practice_history_grade_rollup phgr ON phgr.attempt_id = pha.attempt_id
     LEFT JOIN practice_history_personas php ON php.attempt_id = pha.attempt_id
     LEFT JOIN practice_history_sim_scenario_count phssc ON phssc.simulation_id = pha.simulation_id
     LEFT JOIN practice_history_elapsed_time phet ON phet.attempt_id = pha.attempt_id
+    LEFT JOIN practice_history_first_scenario phfs ON phfs.attempt_id = pha.attempt_id
 ),
 practice_attempt_joined AS (
     SELECT
@@ -440,6 +452,7 @@ practice_final_rows AS (
         aj.infinite_mode,
         aj.attempt_date,
         aj.department_ids,
+        aj.practice_scenario_id,
         CASE WHEN aj.infinite_mode THEN NULL ELSE COALESCE(aj.sim_scenario_count, 0) END AS num_scenarios,
         COALESCE(aj.completed_with_grade, 0) AS num_scenarios_completed,
         CASE
@@ -523,7 +536,8 @@ attempt_history_data AS (
                 'practiceSimulation', COALESCE(fr.practice_simulation, false),
                 'passPct', fr.pass_pct,
                 'department_ids', fr.department_ids,
-                'cohortNames', ARRAY[]::text[]
+                'cohortNames', ARRAY[]::text[],
+                'practiceScenarioId', fr.practice_scenario_id
             )
             ORDER BY fr.attempt_date DESC, fr.attempt_id
         ),
