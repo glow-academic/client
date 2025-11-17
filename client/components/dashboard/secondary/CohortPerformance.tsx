@@ -16,7 +16,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TruncatedInsight } from "../TruncatedInsight";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -28,6 +27,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type CohortRow = {
   id: string;
@@ -138,7 +138,7 @@ export default function CohortPerformance({
         w: 0,
         totalAttempts: 0,
         passedAttempts: c.passedAttempts, // not recomputed (per-student), keep original
-      }),
+      })
     );
 
     cohortFacts.forEach((f) => {
@@ -270,7 +270,7 @@ export default function CohortPerformance({
                           <p className="text-xs text-muted-foreground">
                             {isSingleProfileMode
                               ? `${passRatePct.toFixed(2)}% pass rate for `
-                              : `${passRatePct.toFixed(2)}% of students pass `}
+                              : `${passRatePct.toFixed(2)}% pass `}
                             {cohort.simulationCount > 0
                               ? cohort.simulationCount
                               : 0}{" "}
@@ -304,7 +304,7 @@ export default function CohortPerformance({
                     {(() => {
                       // Filter daily data for this specific cohort
                       const cohortDailyData = dailyData.filter(
-                        (d: DailyRow) => d.cohortId === cohort.id,
+                        (d: DailyRow) => d.cohortId === cohort.id
                       );
                       if (cohortDailyData.length === 0) return null;
 
@@ -343,9 +343,9 @@ export default function CohortPerformance({
 
                     {/* Actionable insight inside the modal */}
                     {actionableInsights && actionableInsights[cohort.id] && (
-                      <TruncatedInsight 
-                        text={actionableInsights[cohort.id]} 
-                        isMobile={isMobile} 
+                      <TruncatedInsight
+                        text={actionableInsights[cohort.id]}
+                        isMobile={isMobile}
                       />
                     )}
                   </DialogContent>

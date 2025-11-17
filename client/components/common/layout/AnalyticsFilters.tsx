@@ -17,7 +17,8 @@ import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { toast } from "sonner";
@@ -41,6 +42,9 @@ export function AnalyticsFilters({
   refreshAnalytics,
 }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     startDate,
     endDate,
@@ -228,12 +232,34 @@ export function AnalyticsFilters({
     setSelectedRoles(roles);
   };
 
+  // Check if search params exist (non-empty means non-default filters)
+  const hasNonDefaultFilters = searchParams.toString().length > 0;
+
+  // Handle reset button click - navigate to page without search params
+  const handleReset = () => {
+    router.replace(pathname);
+    router.refresh();
+  };
+
   return (
     <div className="pr-4">
       <div className="flex items-center gap-2">
         {/* On mobile, only show refresh button and date picker */}
         {isMobile ? (
           <>
+            {/* Reset Button - only show when search params exist */}
+            {hasNonDefaultFilters && (
+              <Button
+                variant="ghost"
+                onClick={handleReset}
+                className="h-8 px-2 lg:px-3 hidden md:flex"
+                title="Reset filters to defaults"
+              >
+                Reset
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+
             {/* Date Range Picker - only show if it was allowed on desktop */}
             <DatePickerWithRange
               dateRange={dateRange}
@@ -272,91 +298,104 @@ export function AnalyticsFilters({
           </>
         ) : (
           <>
-        {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
-        {!homePage && (
-          <AttemptSelector
-            selected={attemptSelected}
-            onChange={(vals) => {
-              // Update UI state first
-              setAttemptSelected(vals);
-              // Empty selection means all attempts (all three modes on)
-              if (vals.length === 0) {
-                setSimulationFilters(["general", "practice", "archived"]);
-                return;
-              }
-              setSimulationFilters(vals);
-            }}
-            placeholder="Attempts"
-          />
-        )}
+            {/* Reset Button - only show when search params exist */}
+            {hasNonDefaultFilters && (
+              <Button
+                variant="ghost"
+                onClick={handleReset}
+                className="h-8 px-2 lg:px-3 hidden md:flex"
+                title="Reset filters to defaults"
+              >
+                Reset
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
 
-        {/* Role Picker */}
-        {!homePage && !reportPage && (
-          <ProfileRolePicker
-            roles={
-              selectedCohortIds.length > 0
-                ? ["instructional", "ta"] // Only show ta and instructional when cohorts are selected
-                : ["superadmin", "admin", "instructional", "ta", "guest"] // Show all roles when no cohorts selected
-            }
-            selectedRoles={selectedRoles}
-            onChange={handleRoleSelect}
-            placeholder="Roles"
-          />
-        )}
+            {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
+            {!homePage && (
+              <AttemptSelector
+                selected={attemptSelected}
+                onChange={(vals) => {
+                  // Update UI state first
+                  setAttemptSelected(vals);
+                  // Empty selection means all attempts (all three modes on)
+                  if (vals.length === 0) {
+                    setSimulationFilters(["general", "practice", "archived"]);
+                    return;
+                  }
+                  setSimulationFilters(vals);
+                }}
+                placeholder="Attempts"
+              />
+            )}
 
-        {/* Cohort Picker */}
-        <CohortSelector
-          cohorts={cohortOptions}
-          selectedCohorts={selectedCohorts}
-          onSelect={handleCohortSelect}
-          placeholder="Cohorts"
-          hideSelectedChips={true}
-        />
-
-        {/* Department Picker */}
-        <DepartmentSelector
-          departments={departmentOptions}
-          selectedDepartments={selectedDepartments}
-          onSelect={handleDepartmentSelect}
-          placeholder="Departments"
-          hideSelectedChips={true}
-        />
-
-        {/* Date Range Picker */}
-        <DatePickerWithRange
-          dateRange={dateRange}
-          setDateRange={handleDateRangeChange}
-          className="w-auto"
-        />
-
-        {/* Refresh Button */}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          title="Refresh analytics data"
-        >
-          <RefreshCw
-            ref={iconRef}
-            aria-hidden
-            onAnimationIteration={() => {
-              if (requestStop) {
-                // clear fallback
-                if (iconRef.current?.__fallbackStop) {
-                  clearTimeout(iconRef.current.__fallbackStop);
-                  iconRef.current.__fallbackStop = undefined;
+            {/* Role Picker */}
+            {!homePage && !reportPage && (
+              <ProfileRolePicker
+                roles={
+                  selectedCohortIds.length > 0
+                    ? ["instructional", "ta"] // Only show ta and instructional when cohorts are selected
+                    : ["superadmin", "admin", "instructional", "ta", "guest"] // Show all roles when no cohorts selected
                 }
-                setSpinning(false); // remove animate-spin at a lap boundary
-                setRequestStop(false);
-                spinStartRef.current = null;
-              }
-            }}
-            className={`h-4 w-4 will-change-transform ${
-              spinning ? "animate-spin" : ""
-            }`}
-          />
-        </Button>
+                selectedRoles={selectedRoles}
+                onChange={handleRoleSelect}
+                placeholder="Roles"
+              />
+            )}
+
+            {/* Cohort Picker */}
+            <CohortSelector
+              cohorts={cohortOptions}
+              selectedCohorts={selectedCohorts}
+              onSelect={handleCohortSelect}
+              placeholder="Cohorts"
+              hideSelectedChips={true}
+            />
+
+            {/* Department Picker */}
+            <DepartmentSelector
+              departments={departmentOptions}
+              selectedDepartments={selectedDepartments}
+              onSelect={handleDepartmentSelect}
+              placeholder="Departments"
+              hideSelectedChips={true}
+            />
+
+            {/* Date Range Picker */}
+            <DatePickerWithRange
+              dateRange={dateRange}
+              setDateRange={handleDateRangeChange}
+              className="w-auto"
+            />
+
+            {/* Refresh Button */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh analytics data"
+            >
+              <RefreshCw
+                ref={iconRef}
+                aria-hidden
+                onAnimationIteration={() => {
+                  if (requestStop) {
+                    // clear fallback
+                    if (iconRef.current?.__fallbackStop) {
+                      clearTimeout(iconRef.current.__fallbackStop);
+                      iconRef.current.__fallbackStop = undefined;
+                    }
+                    setSpinning(false); // remove animate-spin at a lap boundary
+                    setRequestStop(false);
+                    spinStartRef.current = null;
+                  }
+                }}
+                className={`h-4 w-4 will-change-transform ${
+                  spinning ? "animate-spin" : ""
+                }`}
+              />
+            </Button>
           </>
         )}
       </div>

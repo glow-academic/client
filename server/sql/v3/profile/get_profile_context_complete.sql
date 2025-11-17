@@ -170,12 +170,19 @@ sim_data AS (
     WHERE s.active = true
 ),
 earliest_attempt AS (
-    -- Earliest attempt for the effective profile
+    -- Earliest attempt across all departments the effective profile belongs to
     SELECT MIN(sa.created_at) as earliest
     FROM resolve_profile_ids rpi
-    JOIN simulation_attempts sa ON true
-    JOIN attempt_profiles ap ON ap.attempt_id = sa.id
-    WHERE ap.profile_id = rpi.resolved_effective_profile_id
+    -- Get all departments for the effective profile
+    JOIN profile_departments pd_effective ON pd_effective.profile_id = rpi.resolved_effective_profile_id
+        AND pd_effective.active = true
+    -- Get all profiles in those departments
+    JOIN profile_departments pd_all ON pd_all.department_id = pd_effective.department_id
+        AND pd_all.active = true
+    -- Get attempts for those profiles
+    JOIN attempt_profiles ap ON ap.profile_id = pd_all.profile_id
+        AND ap.active = true
+    JOIN simulation_attempts sa ON sa.id = ap.attempt_id
 )
 SELECT 
     -- Emulation authorization flag
