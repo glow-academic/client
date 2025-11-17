@@ -37,6 +37,7 @@ export default function Practice({
     activeProfile,
     isConnected,
     emitStartSimulation,
+    emitCreatePracticeScenario,
     startingSimulationId,
   } = useProfile();
 
@@ -84,6 +85,14 @@ export default function Practice({
     () => bundle?.simulation_mapping || {},
     [bundle?.simulation_mapping]
   );
+  const departmentMapping = useMemo(
+    () => bundle?.department_mapping || {},
+    [bundle?.department_mapping]
+  );
+  const validDepartmentIds = useMemo(
+    () => bundle?.valid_department_ids || [],
+    [bundle?.valid_department_ids]
+  );
 
   // Normalize simulation items to ensure required fields are present
   const simulationItems = useMemo(() => {
@@ -117,6 +126,7 @@ export default function Practice({
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
+      setIsStartingAttempt(false); // Reset practice scenario loading state
       const { attemptId } = event.detail;
       // Invalidate cache and refresh current page before navigation to ensure fresh data
       await revalidateAttemptAction(attemptId);
@@ -133,6 +143,7 @@ export default function Practice({
         toast.dismiss(loadingToastId);
         setLoadingToastId(null);
       }
+      setIsStartingAttempt(false); // Reset practice scenario loading state
       toast.error("Failed to start simulation. Please try again.");
     };
 
@@ -295,86 +306,60 @@ export default function Practice({
           parameterMapping={parameterMapping}
           parameterItemMapping={parameterItemMapping}
           simulationMapping={simulationMapping}
+          departmentMapping={departmentMapping}
+          validDepartmentIds={validDepartmentIds}
           onStartAttempt={async (params) => {
-            if (params.timeLimit) {
-              // Infinite mode - use WebSocket
-              if (!isConnected) {
-                toast.error(
-                  "WebSocket not connected. Please refresh the page."
-                );
-                return;
-              }
-              const profileIdForEmit =
-                effectiveProfile?.role === "guest"
-                  ? ""
-                  : String(effectiveProfile?.id || "");
-              toast.loading("Starting simulation...", {
+            if (!isConnected) {
+              toast.error("WebSocket not connected. Please refresh the page.");
+              return;
+            }
+
+            setIsStartingAttempt(true);
+            const profileIdForEmit =
+              effectiveProfile?.role === "guest"
+                ? ""
+                : String(effectiveProfile?.id || "");
+
+            // Store toast ID so it can be dismissed when simulation starts
+            const practiceToastId = toast.loading(
+              "Creating practice scenario...",
+              {
                 dismissible: true,
-              });
-              emitStartSimulation({
+              }
+            );
+            setLoadingToastId(practiceToastId);
+
+            // Set timeout for practice scenario creation
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            timeoutRef.current = setTimeout(() => {
+              toast.dismiss(practiceToastId);
+              toast.error(
+                "Practice scenario creation timed out. Please try again."
+              );
+              setLoadingToastId(null);
+              setIsStartingAttempt(false);
+            }, 30000);
+
+            if (params.timeLimit) {
+              // Infinite mode - use create_practice_scenario WebSocket event
+              emitCreatePracticeScenario({
                 simulation_id: params.simulationId,
                 profile_id: profileIdForEmit,
-                infinite: true,
+                infinite_mode: true,
                 infinite_time_limit: params.timeLimit,
+                department_id: params.departmentId || null,
               });
               setCustomizeOpen(false);
             } else {
-              // Custom one-off scenario
-              setIsStartingAttempt(true);
-              const startToastId = toast.loading(
-                "Creating practice scenario...",
-                {
-                  dismissible: true,
-                }
-              ) as unknown as string;
-
-              try {
-                // TODO: Re-implement practice scenario creation
-                // The old endpoint is deprecated (returns 410)
-                // For now, show an error message
-                // TODO: Re-implement practice scenario creation
-                // The old endpoint is deprecated (returns 410)
-                // For now, show an error message
-                toast.error(
-                  "Practice scenario creation is currently unavailable",
-                  {
-                    id: startToastId,
-                    description:
-                      "This feature is being updated. Please use existing scenarios.",
-                    dismissible: true,
-                  }
-                );
-
-                // Commenting out old code until re-implemented:
-                // const result = await createPracticeScenario({
-                //   personaId: params.personaId!,
-                //   parameterItemIds: params.parameterItemIds || [],
-                //   profileId: effectiveProfile?.id || "",
-                // });
-                //
-                // if (result.success && result.scenario) {
-                //   toast.success("Practice scenario created!", {
-                //     id: startToastId,
-                //     dismissible: true,
-                //   });
-                //   router.push("/practice");
-                // } else {
-                //   throw new Error(result.message || "Failed to create practice scenario");
-                // }
-              } catch (error) {
-                toast.error(
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to start practice session",
-                  {
-                    id: "start-attempt",
-                    dismissible: true,
-                  }
-                );
-              } finally {
-                setIsStartingAttempt(false);
-                setCustomizeOpen(false);
-              }
+              // Standard mode - use create_practice_scenario WebSocket event
+              emitCreatePracticeScenario({
+                persona_id: params.personaId || null,
+                parameter_item_ids: params.parameterItemIds || [],
+                department_id: params.departmentId || null,
+                profile_id: profileIdForEmit,
+                infinite_mode: false,
+              });
+              setCustomizeOpen(false);
             }
           }}
           isStartingAttempt={isStartingAttempt}

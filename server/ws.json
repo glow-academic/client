@@ -34,6 +34,17 @@
         "infinite_time_limit": "number"
       }
     },
+    "create_practice_scenario": {
+      "payload": {
+        "persona_id": "string",
+        "parameter_item_ids": "string[]",
+        "department_id": "string",
+        "infinite_mode": "boolean",
+        "infinite_time_limit": "number",
+        "simulation_id": "string",
+        "profile_id": "string"
+      }
+    },
     "stop_simulation": {
       "payload": {
         "chat_id": "string"
@@ -169,6 +180,12 @@
       }
     },
     "continue_simulation_error": {
+      "payload": {
+        "success": "boolean",
+        "message": "string"
+      }
+    },
+    "create_practice_scenario_error": {
       "payload": {
         "success": "boolean",
         "message": "string"

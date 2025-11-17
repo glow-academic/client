@@ -4,29 +4,21 @@ import json
 from typing import Annotated, Any, Literal
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    ParameterItemMapping,
-    ParameterItemMappingItem,
-    ParameterMapping,
-    ParameterMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationMapping,
-    SimulationMappingItem,
-    StandardGroupsMapping,
-    StandardsMapping,
-)
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              PersonaMapping, PersonaMappingItem,
+                              ScenarioMapping, ScenarioMappingItem,
+                              SimulationMapping, SimulationMappingItem,
+                              StandardGroupsMapping, StandardsMapping)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/practice", tags=["practice"])
 
@@ -106,6 +98,8 @@ class PracticeOverviewResponse(BaseModel):
     persona_mapping: PersonaMapping
     parameter_mapping: ParameterMapping
     parameter_item_mapping: ParameterItemMapping
+    department_mapping: DepartmentMapping
+    valid_department_ids: list[str]
 
 
 class PracticeFilters(BaseModel):
@@ -284,6 +278,23 @@ async def get_practice_overview(
                         value=item_data.get("value", ""),
                     )
 
+        # Parse embedded department mapping
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        if isinstance(parsed_result.get("department_mapping"), dict):
+            for dept_id, dept_data in parsed_result["department_mapping"].items():
+                if isinstance(dept_data, dict):
+                    department_mapping[str(dept_id)] = DepartmentMappingItem(
+                        name=dept_data.get("name", ""),
+                        description=dept_data.get("description", ""),
+                    )
+
+        # Parse valid_department_ids
+        valid_department_ids: list[str] = []
+        if isinstance(parsed_result.get("valid_department_ids"), list):
+            valid_department_ids = [
+                str(dept_id) for dept_id in parsed_result["valid_department_ids"]
+            ]
+
         response_data = PracticeOverviewResponse(
             mode=parsed_result.get("mode", "practice"),
             hasData=parsed_result.get("hasData", False),
@@ -296,6 +307,8 @@ async def get_practice_overview(
             scenario_mapping=scenario_mapping,  # type: ignore[arg-type]
             parameter_mapping=parameter_mapping,  # type: ignore[arg-type]
             parameter_item_mapping=parameter_item_mapping,  # type: ignore[arg-type]
+            department_mapping=department_mapping,  # type: ignore[arg-type]
+            valid_department_ids=valid_department_ids,
         )
 
         # Cache response

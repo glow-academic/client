@@ -568,17 +568,27 @@ practice_scenario_ids AS (
     WHERE sim.active = true
       AND sim.practice_simulation = true
 ),
+scenario_persona_ids AS (
+    SELECT 
+        sp.scenario_id,
+        ARRAY_AGG(sp.persona_id::text ORDER BY sp.persona_id) as persona_ids
+    FROM scenario_personas sp
+    WHERE sp.active = true
+    GROUP BY sp.scenario_id
+),
 scenario_data AS (
     SELECT
         s.id,
         s.name,
-        COALESCE(sps.problem_statement, '') as description
+        COALESCE(sps.problem_statement, '') as description,
+        COALESCE(spi.persona_ids, ARRAY[]::text[]) as persona_ids
     FROM scenarios s
     JOIN practice_scenario_ids psi ON psi.scenario_id = s.id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
+    LEFT JOIN scenario_persona_ids spi ON spi.scenario_id = s.id
     WHERE s.active = true
-    GROUP BY s.id, s.name, sps.problem_statement
+    GROUP BY s.id, s.name, sps.problem_statement, spi.persona_ids
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
@@ -587,7 +597,11 @@ scenario_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             s.id::text,
-            jsonb_build_object('name', s.name, 'description', s.description)
+            jsonb_build_object(
+                'name', s.name, 
+                'description', s.description,
+                'persona_ids', s.persona_ids
+            )
         ),
         '{}'::jsonb
     ) as mapping
@@ -656,6 +670,31 @@ parameter_item_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM parameter_item_data pi
+),
+department_data AS (
+    SELECT
+        d.id,
+        d.title as name,
+        COALESCE(d.description, '') as description
+    FROM departments d
+    WHERE d.active = true
+),
+department_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            d.id::text,
+            jsonb_build_object(
+                'name', d.name,
+                'description', d.description
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM department_data d
+),
+valid_department_ids_data AS (
+    SELECT array_agg(d.id::text ORDER BY d.name) as valid_department_ids
+    FROM department_data d
 )
 SELECT json_build_object(
     'mode', 'practice',
@@ -676,5 +715,7 @@ SELECT json_build_object(
     'persona_mapping', COALESCE((SELECT mapping FROM persona_mapping_data LIMIT 1), '{}'::jsonb),
     'scenario_mapping', COALESCE((SELECT mapping FROM scenario_mapping_data LIMIT 1), '{}'::jsonb),
     'parameter_mapping', COALESCE((SELECT mapping FROM parameter_mapping_data LIMIT 1), '{}'::jsonb),
-    'parameter_item_mapping', COALESCE((SELECT mapping FROM parameter_item_mapping_data LIMIT 1), '{}'::jsonb)
+    'parameter_item_mapping', COALESCE((SELECT mapping FROM parameter_item_mapping_data LIMIT 1), '{}'::jsonb),
+    'department_mapping', COALESCE((SELECT mapping FROM department_mapping_data LIMIT 1), '{}'::jsonb),
+    'valid_department_ids', COALESCE((SELECT valid_department_ids FROM valid_department_ids_data LIMIT 1), ARRAY[]::text[])
 ) AS result

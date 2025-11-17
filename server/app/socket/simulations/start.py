@@ -634,12 +634,14 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                             else None
                         )
 
-                        # Update row data for result
-                        row["scenario_id"] = new_scenario_id
-                        row["scenario_name"] = child_scenario.get("name", name)
-                        row["problem_statement"] = (
+                        # Update row data for result (convert Record to dict first)
+                        row_dict = dict(row)
+                        row_dict["scenario_id"] = new_scenario_id
+                        row_dict["scenario_name"] = child_scenario.get("name", name)
+                        row_dict["problem_statement"] = (
                             child_problem_statement or description
                         )
+                        row = row_dict
                         scenario_metadata["generated"] = True
 
                 except Exception as gen_error:

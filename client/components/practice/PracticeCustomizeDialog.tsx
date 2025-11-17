@@ -1,5 +1,6 @@
 "use client";
 
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
@@ -79,6 +80,13 @@ type SimulationMappingItem = {
 
 type SimulationMapping = Record<string, SimulationMappingItem>;
 
+type DepartmentMappingItem = {
+  name: string;
+  description: string;
+};
+
+type DepartmentMapping = Record<string, DepartmentMappingItem>;
+
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -90,6 +98,7 @@ interface PracticeCustomizeDialogProps {
     personaId?: string;
     parameterItemIds?: string[];
     timeLimit?: number;
+    departmentId?: string;
   }) => void;
   isStartingAttempt: boolean;
   effectiveProfile: ProfileItem | null;
@@ -100,6 +109,8 @@ interface PracticeCustomizeDialogProps {
   parameterMapping: ParameterMapping;
   parameterItemMapping: ParameterItemMapping;
   simulationMapping: SimulationMapping;
+  departmentMapping: DepartmentMapping;
+  validDepartmentIds: string[];
 }
 
 export function PracticeCustomizeDialog({
@@ -114,6 +125,8 @@ export function PracticeCustomizeDialog({
   parameterMapping,
   parameterItemMapping,
   simulationMapping,
+  departmentMapping,
+  validDepartmentIds,
 }: PracticeCustomizeDialogProps) {
   // State for the dialog
   const [isInfiniteMode, setIsInfiniteMode] = useState(false);
@@ -123,6 +136,9 @@ export function PracticeCustomizeDialog({
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
     string[]
   >([]);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
+    []
+  );
 
   // Build valid IDs from mappings (server already filtered to relevant items)
   const validSimulationIds = useMemo(
@@ -130,9 +146,35 @@ export function PracticeCustomizeDialog({
     [simulationMapping]
   );
 
+  // Filter personas and parameter items based on selected departments
+  const filteredPersonaMapping = useMemo(() => {
+    if (selectedDepartmentIds.length === 0) {
+      return personaMapping; // Show all if no department selected
+    }
+    // Filter personas that are available to selected departments
+    // This is a simplified filter - in reality, we'd need to check persona_departments junction
+    // For now, we'll show all personas and let the backend handle filtering
+    return personaMapping;
+  }, [personaMapping, selectedDepartmentIds]);
+
+  const filteredParameterItemMapping = useMemo(() => {
+    if (selectedDepartmentIds.length === 0) {
+      return parameterItemMapping; // Show all if no department selected
+    }
+    // Filter parameter items that are available to selected departments
+    // This is a simplified filter - in reality, we'd need to check parameter_item_departments junction
+    // For now, we'll show all parameter items and let the backend handle filtering
+    return parameterItemMapping;
+  }, [parameterItemMapping, selectedDepartmentIds]);
+
   const validPersonaIds = useMemo(
-    () => Object.keys(personaMapping),
-    [personaMapping]
+    () => Object.keys(filteredPersonaMapping),
+    [filteredPersonaMapping]
+  );
+
+  const validParameterItemIds = useMemo(
+    () => Object.keys(filteredParameterItemMapping),
+    [filteredParameterItemMapping]
   );
 
   // Build arrays from mappings for components that need them
@@ -160,6 +202,9 @@ export function PracticeCustomizeDialog({
   );
 
   const handleStartAttempt = async () => {
+    const departmentId =
+      selectedDepartmentIds.length > 0 ? selectedDepartmentIds[0] : undefined;
+
     if (isInfiniteMode) {
       if (!selectedSimulationId) {
         toast.error("Please select a simulation");
@@ -173,6 +218,7 @@ export function PracticeCustomizeDialog({
       onStartAttempt({
         simulationId: selectedSimulationId,
         timeLimit: parseInt(infiniteTimeLimit),
+        ...(departmentId && { departmentId }),
       });
     } else {
       const selectedPersonaId = selectedPersonaIds[0];
@@ -205,6 +251,7 @@ export function PracticeCustomizeDialog({
         simulationId: firstSimulationId,
         personaId: selectedPersona.id,
         parameterItemIds: selectedParameterItemIds,
+        ...(departmentId && { departmentId }),
       });
     }
   };
@@ -266,6 +313,20 @@ export function PracticeCustomizeDialog({
             <div className="grid gap-4">
               <div
                 className="grid gap-2"
+                data-testid="practice-department-picker"
+              >
+                <Label>Department</Label>
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={validDepartmentIds}
+                  selectedIds={selectedDepartmentIds}
+                  onSelect={setSelectedDepartmentIds}
+                  multiSelect={false}
+                  placeholder="Select department (optional)"
+                />
+              </div>
+              <div
+                className="grid gap-2"
                 data-testid="practice-simulation-picker"
               >
                 <SimulationPicker
@@ -303,9 +364,23 @@ export function PracticeCustomizeDialog({
             </div>
           ) : (
             <div className="grid gap-6">
+              <div
+                className="grid gap-2"
+                data-testid="practice-department-picker"
+              >
+                <Label>Department</Label>
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={validDepartmentIds}
+                  selectedIds={selectedDepartmentIds}
+                  onSelect={setSelectedDepartmentIds}
+                  multiSelect={false}
+                  placeholder="Select department (optional)"
+                />
+              </div>
               <div className="grid gap-2" data-testid="practice-persona-picker">
                 <PersonaPicker
-                  mapping={personaMapping}
+                  mapping={filteredPersonaMapping}
                   validIds={validPersonaIds}
                   selectedIds={selectedPersonaIds}
                   onSelect={setSelectedPersonaIds}
@@ -325,11 +400,11 @@ export function PracticeCustomizeDialog({
                     >[0]["parameterMapping"]
                   }
                   parameterItemMapping={
-                    parameterItemMapping as Parameters<
+                    filteredParameterItemMapping as Parameters<
                       typeof ParameterSelector
                     >[0]["parameterItemMapping"]
                   }
-                  validParameterItemIds={Object.keys(parameterItemMapping)}
+                  validParameterItemIds={validParameterItemIds}
                   selectedParameterItemIds={selectedParameterItemIds}
                   onParameterItemIdsChange={setSelectedParameterItemIds}
                 />

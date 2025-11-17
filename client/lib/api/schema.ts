@@ -6978,6 +6978,12 @@ export interface components {
             parameter_item_mapping: {
                 [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["DepartmentMappingItem"];
+            };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
         };
         /**
          * PracticeSimulationItem

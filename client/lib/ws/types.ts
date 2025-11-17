@@ -80,6 +80,10 @@ export type ServerToClientEvents = {
     success: boolean;
     message: string;
   }) => void;
+  create_practice_scenario_error: (payload: {
+    success: boolean;
+    message: string;
+  }) => void;
   simulation_started: (payload: {
     success: boolean;
     message: string;
@@ -221,6 +225,15 @@ export type ClientToServerEvents = {
     scenario_id: string;
     infinite: boolean;
     infinite_time_limit: number;
+  }) => void;
+  create_practice_scenario: (payload: {
+    persona_id: string;
+    parameter_item_ids: string[];
+    department_id: string;
+    infinite_mode: boolean;
+    infinite_time_limit: number;
+    simulation_id: string;
+    profile_id: string;
   }) => void;
   stop_simulation: (payload: {
     chat_id: string;

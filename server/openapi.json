@@ -16334,6 +16334,20 @@
             },
             "type": "object",
             "title": "Parameter Item Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
           }
         },
         "type": "object",
@@ -16348,7 +16362,9 @@
           "scenario_mapping",
           "persona_mapping",
           "parameter_mapping",
-          "parameter_item_mapping"
+          "parameter_item_mapping",
+          "department_mapping",
+          "valid_department_ids"
         ],
         "title": "PracticeOverviewResponse",
         "description": "Practice overview response with mappings and history."

@@ -337,6 +337,8 @@ from app.socket.simulations import send_simulation_message  # type: ignore
 from app.socket.simulations import start_simulation  # type: ignore
 from app.socket.simulations.continue_chat import \
     continue_simulation  # noqa: E402; type: ignore
+from app.socket.simulations.create_practice_scenario import \
+    create_practice_scenario  # noqa: E402; type: ignore
 from app.socket.simulations.stop import \
     stop_simulation  # noqa: E402; type: ignore
 
@@ -416,6 +418,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_assistant,
             send_simulation_message,
             start_simulation,
+            create_practice_scenario,  # type: ignore[name-defined]
             stop_simulation,
             continue_simulation,  # type: ignore[name-defined]
             join_chat,
@@ -438,7 +441,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         from app.socket.connections.stop_chat import chat_stopped
         from app.socket.simulations.continue_chat import (
             continue_simulation_error, end_all_completed, end_all_started,
-            end_chat_started, simulation_continued, simulation_grading_progress)
+            end_chat_started, simulation_continued,
+            simulation_grading_progress)
+        from app.socket.simulations.create_practice_scenario import \
+            create_practice_scenario_error
         from app.socket.simulations.send_message import (
             hint_generation_progress, message_sent,
             send_simulation_message_error, simulation_message_complete,
@@ -470,6 +476,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_simulation_error,
             send_simulation_message_error,
             continue_simulation_error,
+            create_practice_scenario_error,
             simulation_started,
             simulation_message_cancelled,
             simulation_stopped,

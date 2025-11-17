@@ -109,6 +109,15 @@ interface ProfileContextType {
     infinite?: boolean;
     infinite_time_limit?: number | null;
   }) => void;
+  emitCreatePracticeScenario: (data: {
+    persona_id?: string | null;
+    parameter_item_ids?: string[];
+    department_id?: string | null;
+    infinite_mode?: boolean;
+    infinite_time_limit?: number | null;
+    simulation_id?: string | null;
+    profile_id?: string | null;
+  }) => void;
 }
 
 export const ProfileContext = createContext<ProfileContextType | null>(null);
@@ -248,6 +257,15 @@ export function ProfileProviderClient({
           }
         }
       );
+
+      socket.on(
+        "create_practice_scenario_error",
+        (data: { success: boolean; message: string }) => {
+          setStartingSimulationId(null);
+          toast.error(data.message);
+          window.dispatchEvent(new CustomEvent("simulationError"));
+        }
+      );
     };
 
     connectWebSocket();
@@ -369,6 +387,53 @@ export function ProfileProviderClient({
     [isConnected]
   );
 
+  const emitCreatePracticeScenario = useCallback(
+    (data: {
+      persona_id?: string | null;
+      parameter_item_ids?: string[];
+      department_id?: string | null;
+      infinite_mode?: boolean;
+      infinite_time_limit?: number | null;
+      simulation_id?: string | null;
+      profile_id?: string | null;
+    }) => {
+      if (!socketRef.current || !isConnected) {
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+      const payload: Record<string, unknown> = {
+        profile_id: data.profile_id ?? "",
+      };
+      if (data.persona_id !== undefined && data.persona_id !== null) {
+        payload["persona_id"] = data.persona_id;
+      }
+      if (data.parameter_item_ids !== undefined) {
+        payload["parameter_item_ids"] = data.parameter_item_ids;
+      }
+      if (data.department_id !== undefined && data.department_id !== null) {
+        payload["department_id"] = data.department_id;
+      }
+      if (data.infinite_mode !== undefined) {
+        payload["infinite_mode"] = data.infinite_mode;
+      }
+      if (
+        data.infinite_time_limit !== undefined &&
+        data.infinite_time_limit !== null
+      ) {
+        payload["infinite_time_limit"] = data.infinite_time_limit;
+      }
+      if (data.simulation_id !== undefined && data.simulation_id !== null) {
+        payload["simulation_id"] = data.simulation_id;
+      }
+
+      if (data.simulation_id) {
+        setStartingSimulationId(data.simulation_id);
+      }
+      socketRef.current.emit("create_practice_scenario", payload);
+    },
+    [isConnected]
+  );
+
   const value: ProfileContextType = {
     // Profile data
     activeProfile: resolvedActiveProfile,
@@ -410,6 +475,7 @@ export function ProfileProviderClient({
     isConnected,
     startingSimulationId,
     emitStartSimulation,
+    emitCreatePracticeScenario,
   };
 
   return (

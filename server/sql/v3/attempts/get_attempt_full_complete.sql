@@ -238,7 +238,7 @@
                 jsonb_build_object(
                     'id', s.id::text,
                     'name', s.name,
-                    'problemStatement', sps.problem_statement,
+                    'problemStatement', COALESCE(sps.problem_statement, ''),
                     'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), NULL),
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
