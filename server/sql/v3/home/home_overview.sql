@@ -528,6 +528,7 @@ history_chat_rollup AS (
     SELECT
         ac.attempt_id,
         COUNT(*) FILTER (WHERE sc.completed) AS completed_chats,
+        COUNT(*) FILTER (WHERE sc.completed = FALSE) AS incomplete_chats,
         MIN(sc.created_at) AS first_chat_at,
         MAX(sc.created_at) AS last_activity_at,
         array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
@@ -562,6 +563,35 @@ history_grade_rollup AS (
     JOIN simulation_chats sc ON sc.id = ac.chat_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     LEFT JOIN rubrics r ON r.id = hcg.rubric_id
+    WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
+    GROUP BY ac.attempt_id
+),
+-- Calculate elapsed time per attempt (for infinite mode time limit checks)
+history_elapsed_time AS (
+    SELECT
+        ac.attempt_id,
+        COALESCE(
+            SUM(
+                CASE 
+                    WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
+                        (SELECT scg.time_taken FROM simulation_chat_grades scg 
+                         WHERE scg.simulation_chat_id = sc.id 
+                         ORDER BY scg.created_at DESC LIMIT 1)
+                    WHEN sc.completed THEN
+                        EXTRACT(EPOCH FROM (
+                            (SELECT scg.created_at FROM simulation_chat_grades scg 
+                             WHERE scg.simulation_chat_id = sc.id 
+                             ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
+                        ))::integer
+                    ELSE
+                        EXTRACT(EPOCH FROM (NOW() - sc.created_at))::integer
+                END
+            ),
+            0
+        ) AS elapsed_seconds
+    FROM attempt_chats ac
+    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_filtered)
     GROUP BY ac.attempt_id
 ),
@@ -615,12 +645,15 @@ attempt_rollup AS (
         COALESCE(hssc.scenario_count, 0) AS sim_scenario_count,
         COALESCE(hgr.sum_grade_percent, 0) AS sum_grade_percent_zero_fill,
         COALESCE(hp.persona_ids, ARRAY[]::uuid[]) AS persona_ids_distinct,
-        COALESCE(hcr.scenario_ids_seen, ARRAY[]::uuid[]) AS leaf_scenarios_seen
+        COALESCE(hcr.scenario_ids_seen, ARRAY[]::uuid[]) AS leaf_scenarios_seen,
+        COALESCE(hcr.incomplete_chats, 0) AS incomplete_chats,
+        COALESCE(het.elapsed_seconds, 0) AS elapsed_seconds
     FROM history_attempts_filtered haf
     LEFT JOIN history_chat_rollup hcr ON hcr.attempt_id = haf.attempt_id
     LEFT JOIN history_grade_rollup hgr ON hgr.attempt_id = haf.attempt_id
     LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
     LEFT JOIN history_sim_scenario_count hssc ON hssc.simulation_id = haf.simulation_id
+    LEFT JOIN history_elapsed_time het ON het.attempt_id = haf.attempt_id
 ),
 attempt_cohort_ids AS (
     SELECT
@@ -639,11 +672,13 @@ attempt_joined AS (
             WHEN r.points IS NULL OR r.points = 0 THEN NULL
             ELSE ROUND((r.pass_points::numeric / r.points::numeric) * 100.0)::int
         END AS pass_pct,
-        (p.first_name || ' ' || p.last_name) AS profile_name
+        (p.first_name || ' ' || p.last_name) AS profile_name,
+        stl.time_limit_seconds
     FROM attempt_rollup ar
     JOIN simulations s ON s.id = ar.simulation_id
     LEFT JOIN history_scenario_ids hsi ON hsi.simulation_id = ar.simulation_id
     LEFT JOIN rubrics r ON r.id = s.rubric_id
+    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     JOIN profiles p ON p.id = ar.profile_id
 ),
 attempt_cohort_names AS (
@@ -685,8 +720,16 @@ final_rows AS (
         END AS score_percent,
         (NOT aj.is_archived) AS show_view,
         (NOT aj.is_archived) AND (
-            aj.infinite_mode
-            OR (aj.sim_scenario_count IS NOT NULL
+            (aj.infinite_mode
+                AND (
+                    -- No time limit OR time limit not exceeded
+                    (aj.time_limit_seconds IS NULL OR aj.elapsed_seconds < aj.time_limit_seconds)
+                    -- AND there are incomplete chats (pending work)
+                    AND aj.incomplete_chats > 0
+                ))
+            OR
+            (NOT aj.infinite_mode
+                AND aj.sim_scenario_count IS NOT NULL
                 AND COALESCE(aj.completed_with_grade, 0) < aj.sim_scenario_count)
         ) AS show_continue,
         (($12::text IS NOT NULL AND $12::text != '' AND $12::text != 'guest-profile-id') AND aj.profile_id = $12::uuid) AS show_retry,
