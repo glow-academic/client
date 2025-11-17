@@ -239,7 +239,7 @@ async def _run_grade_agent_inline(
             "attempt_id": context_row["attempt_id"],
             "title": context_row["title"],
             "trace_id": context_row["trace_id"],
-            "created_at": context_row["created_at"],
+            "created_at": context_row["chat_created_at"],
             "completed": context_row["completed"],
             "problem_statement": context_row["problem_statement"],
             "simulation_id": context_row["simulation_id"],

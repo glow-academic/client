@@ -77,10 +77,10 @@ SELECT
     -- Chat data
     ci.id::text as chat_id,
     ci.scenario_id::text,
-    ci.attempt_id::text,
+    ci.attempt_id::text as chat_attempt_id,
     ci.title,
     ci.trace_id,
-    ci.created_at,
+    ci.created_at as chat_created_at,
     ci.completed,
     
     -- Scenario data
