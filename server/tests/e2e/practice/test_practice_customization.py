@@ -83,11 +83,6 @@ def test_practice_customization_dialog(page: Page, base_url: str) -> None:
         else:
             page.keyboard.press("Escape")
 
-    # Optionally set time limit
-    time_limit_input = page.get_by_test_id("practice-time-limit-input")
-    if time_limit_input.count() > 0:
-        time_limit_input.fill("30")  # 30 minutes
-
     # Click start button
     start_button = page.get_by_test_id("practice-start-button")
     start_button.wait_for(state="visible", timeout=10000)

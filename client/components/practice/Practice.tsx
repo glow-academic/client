@@ -320,7 +320,7 @@ export default function Practice({
                 ? ""
                 : String(effectiveProfile?.id || "");
 
-            if (params.timeLimit) {
+            if (params.isInfiniteMode) {
               // Infinite mode - use start_simulation WebSocket event
               // Store toast ID so it can be dismissed when simulation starts
               const practiceToastId = toast.loading("Starting simulation...", {
@@ -341,7 +341,6 @@ export default function Practice({
                 simulation_id: params.simulationId,
                 profile_id: profileIdForEmit,
                 infinite: true,
-                infinite_time_limit: params.timeLimit,
               });
               setCustomizeOpen(false);
             } else {

@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Infinity, Target } from "lucide-react";
@@ -97,7 +96,7 @@ interface PracticeCustomizeDialogProps {
     simulationId: string;
     personaId?: string;
     parameterItemIds?: string[];
-    timeLimit?: number;
+    isInfiniteMode?: boolean;
     departmentId?: string;
   }) => void;
   isStartingAttempt: boolean;
@@ -130,7 +129,6 @@ export function PracticeCustomizeDialog({
 }: PracticeCustomizeDialogProps) {
   // State for the dialog
   const [isInfiniteMode, setIsInfiniteMode] = useState(false);
-  const [infiniteTimeLimit, setInfiniteTimeLimit] = useState<string>("");
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [selectedParameterItemIds, setSelectedParameterItemIds] = useState<
@@ -210,14 +208,10 @@ export function PracticeCustomizeDialog({
         toast.error("Please select a simulation");
         return;
       }
-      if (!infiniteTimeLimit || parseInt(infiniteTimeLimit) < 1) {
-        toast.error("Please enter a valid time limit");
-        return;
-      }
 
       onStartAttempt({
         simulationId: selectedSimulationId,
-        timeLimit: parseInt(infiniteTimeLimit),
+        isInfiniteMode: true,
       });
     } else {
       const selectedPersonaId = selectedPersonaIds[0];
@@ -329,21 +323,6 @@ export function PracticeCustomizeDialog({
                   description="Select a practice simulation to start in infinite mode."
                   hideSelectedChips={true}
                   showLabel={true}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="infinite-time-limit">
-                  Time Limit (minutes)
-                </Label>
-                <Input
-                  id="infinite-time-limit"
-                  type="number"
-                  min={1}
-                  required
-                  placeholder="e.g. 15"
-                  value={infiniteTimeLimit}
-                  onChange={(e) => setInfiniteTimeLimit(e.target.value)}
-                  data-testid="practice-time-limit-input"
                 />
               </div>
             </div>

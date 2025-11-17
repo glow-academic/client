@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 
 def test_practice_infinite_mode(page: Page, base_url: str) -> None:
-    """Test starting infinite mode practice simulation with time limit."""
+    """Test starting infinite mode practice simulation."""
     page.goto(f"{base_url}/practice")
     page.wait_for_load_state("networkidle")
 
@@ -37,12 +37,6 @@ def test_practice_infinite_mode(page: Page, base_url: str) -> None:
         # The switch might be a checkbox or toggle button
         if not mode_switch.is_checked():
             mode_switch.click()
-        page.wait_for_timeout(500)
-
-    # Set time limit for infinite mode
-    time_limit_input = page.get_by_test_id("practice-time-limit-input")
-    if time_limit_input.count() > 0:
-        time_limit_input.fill("15")  # 15 minutes
         page.wait_for_timeout(500)
 
     # Select simulation
