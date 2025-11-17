@@ -346,6 +346,7 @@ export default function Practice({
               showExport={false}
               showArchive={false}
               singleProfile={true}
+              revalidateAttemptAction={revalidateAttemptAction}
             />
           </div>
         )}

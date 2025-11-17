@@ -9,7 +9,9 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 export interface DataTableRowActionsProps {
   id: string;
@@ -28,6 +30,7 @@ export interface DataTableRowActionsProps {
   canContinue?: boolean; // from SQL showContinue
   practiceScenarioId?: string; // first scenario_id from attempt (for practice retry)
   practiceSimulation?: boolean; // whether this is a practice simulation
+  revalidateAttemptAction?: (attemptId: string) => Promise<void>; // Optional: for redirect after retry/continue
 }
 
 export function DataTableRowActions({
@@ -46,10 +49,14 @@ export function DataTableRowActions({
   canContinue,
   practiceScenarioId,
   practiceSimulation = false,
+  revalidateAttemptAction,
 }: DataTableRowActionsProps) {
   const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
     useProfile();
+  const router = useRouter();
   const [isRetrying, setIsRetrying] = React.useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadingToastIdRef = useRef<string | number | null>(null);
 
   const isCurrentUser = effectiveProfile?.id === profileId;
 
@@ -82,15 +89,86 @@ export function DataTableRowActions({
   const isNotEmulating = effectiveProfile?.id === activeProfile?.id;
   const isOwnAttempt = activeProfile?.id === profileId;
   const shouldShowRetry =
-    isNotEmulating && isOwnAttempt && (simulationId ?? "") !== "" && !canContinue;
+    isNotEmulating &&
+    isOwnAttempt &&
+    (simulationId ?? "") !== "" &&
+    !canContinue;
   const shouldShowTry =
     isNotEmulating && !isOwnAttempt && (simulationId ?? "") !== "";
+
+  // Set up redirect listener for simulation started events (only if revalidateAttemptAction is provided)
+  useEffect(() => {
+    if (!revalidateAttemptAction) return;
+
+    const handleSimulationStarted = async (event: CustomEvent) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastIdRef.current) {
+        toast.dismiss(loadingToastIdRef.current);
+        loadingToastIdRef.current = null;
+      }
+      setIsRetrying(false);
+      const { attemptId } = event.detail;
+      // Invalidate cache and refresh current page before navigation to ensure fresh data
+      await revalidateAttemptAction(attemptId);
+      router.refresh(); // Refresh current page data so it's updated when user returns
+      router.push(`/${isPractice ? "practice" : "home"}/a/${attemptId}`);
+    };
+
+    const handleSimulationError = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastIdRef.current) {
+        toast.dismiss(loadingToastIdRef.current);
+        loadingToastIdRef.current = null;
+      }
+      setIsRetrying(false);
+      toast.error("Failed to start simulation. Please try again.");
+    };
+
+    window.addEventListener(
+      "simulationStarted",
+      handleSimulationStarted as unknown as EventListener
+    );
+    window.addEventListener("simulationError", handleSimulationError);
+
+    return () => {
+      window.removeEventListener(
+        "simulationStarted",
+        handleSimulationStarted as unknown as EventListener
+      );
+      window.removeEventListener("simulationError", handleSimulationError);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [router, revalidateAttemptAction, isPractice]);
 
   const handleStartSimulation = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (disabledForEmulation || !isConnected) return;
     setIsRetrying(true);
+
+    // Show loading toast if revalidateAttemptAction is provided (for redirect flow)
+    if (revalidateAttemptAction) {
+      const toastId = toast.loading("Starting simulation...", {
+        dismissible: true,
+      });
+      loadingToastIdRef.current = toastId;
+
+      // Set timeout for simulation start
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        toast.dismiss(toastId);
+        toast.error("Simulation start timed out. Please try again.");
+        loadingToastIdRef.current = null;
+        setIsRetrying(false);
+      }, 30000);
+    }
+
     try {
       const profileIdForEmit =
         effectiveProfile?.role === "guest"
@@ -99,11 +177,17 @@ export function DataTableRowActions({
       emitStartSimulation({
         simulation_id: String(simulationId),
         profile_id: profileIdForEmit,
-        scenario_id: practiceSimulation && practiceScenarioId ? practiceScenarioId : null,
+        scenario_id:
+          practiceSimulation && practiceScenarioId ? practiceScenarioId : null,
         ...(infiniteMode ? { infinite: true } : {}),
       });
-    } finally {
-      setTimeout(() => setIsRetrying(false), 2000);
+    } catch {
+      if (loadingToastIdRef.current) {
+        toast.dismiss(loadingToastIdRef.current);
+        loadingToastIdRef.current = null;
+      }
+      setIsRetrying(false);
+      toast.error("Failed to start simulation. Please try again.");
     }
   };
 

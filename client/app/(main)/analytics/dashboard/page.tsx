@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/api/v3/dashboard", "post">;
@@ -146,6 +147,7 @@ export default async function DashboardPage({
       <Dashboard
         dashboardData={dashboardData}
         bulkArchiveAttemptsAction={bulkArchiveAttempts}
+        revalidateAttemptAction={revalidateAttempt}
       />
     </div>
   );
@@ -158,9 +160,20 @@ export async function bulkArchiveAttempts(
   "use server";
   const result = await api.post("/attempts/bulk-archive", input);
   // Revalidate the dashboard page to refetch data with updated archive status
-  const { revalidatePath } = await import("next/cache");
   revalidatePath("/analytics/dashboard");
   return result;
+}
+
+/** ---- Server action to revalidate attempt cache when simulation starts ---- */
+export async function revalidateAttempt(attemptId: string): Promise<void> {
+  "use server";
+  // Invalidate attempt-level cache
+  revalidateTag("attempts");
+  revalidateTag(`attempt:${attemptId}`);
+  // Invalidate dashboard page cache so data refreshes when user returns
+  revalidatePath("/analytics/dashboard");
+  // Note: Chat-specific tags can be added here if chat IDs are known
+  // For now, invalidating attempt-level cache ensures all chats refresh
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

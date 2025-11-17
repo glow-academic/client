@@ -487,14 +487,16 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
                   practiceSimulation: item.practiceSimulation,
                   passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
                   cohortNames: item.cohortNames,
-                  practiceScenarioId: item.practiceScenarioId,
-                  infiniteMode: item.infiniteMode,
+                  ...(item.practiceScenarioId && {
+                    practiceScenarioId: item.practiceScenarioId,
+                  }),
                 }))
               : []
           }
           showExport={true}
           showArchive={false}
           singleProfile={true}
+          revalidateAttemptAction={revalidateAttemptAction}
         />
       </div>
     </div>

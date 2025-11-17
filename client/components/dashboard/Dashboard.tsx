@@ -50,12 +50,14 @@ interface DashboardProps {
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
+  revalidateAttemptAction?: (attemptId: string) => Promise<void>; // Optional: for redirect after retry/continue
 }
 
 export default function Dashboard({
   profileId,
   dashboardData,
   bulkArchiveAttemptsAction,
+  revalidateAttemptAction,
 }: DashboardProps) {
   const { effectiveProfile } = useProfile();
 
@@ -977,6 +979,7 @@ export default function Dashboard({
         {...(canArchive && bulkArchiveAttemptsAction
           ? { bulkArchiveAttemptsAction }
           : {})}
+        {...(revalidateAttemptAction && { revalidateAttemptAction })}
       />
     </div>
   );

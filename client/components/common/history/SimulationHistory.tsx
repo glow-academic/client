@@ -48,7 +48,6 @@ export interface HistoryDataItem {
   passPct: number; // Pass percentage threshold for this simulation
   cohortNames: string[];
   practiceScenarioId?: string; // first scenario_id from attempt (for practice retry)
-  infiniteMode?: boolean; // whether this attempt is in infinite mode
 }
 
 export interface SimulationHistoryProps {
@@ -71,6 +70,9 @@ export interface SimulationHistoryProps {
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
+
+  // Optional: Server action for revalidating attempts (for redirect after retry/continue)
+  revalidateAttemptAction?: (attemptId: string) => Promise<void>;
 }
 
 export default function SimulationHistory({
@@ -80,6 +82,7 @@ export default function SimulationHistory({
   singleProfile = false,
   isLoading = false,
   bulkArchiveAttemptsAction,
+  revalidateAttemptAction,
 }: SimulationHistoryProps) {
   // Check if all attempts have the same profileId (only when singleProfile is true)
   const allSameProfile = React.useMemo(() => {
@@ -579,8 +582,11 @@ export default function SimulationHistory({
               canContinue={item.showContinue}
               archived={item.isArchived}
               showArchive={showArchive}
-              practiceScenarioId={item.practiceScenarioId}
-              practiceSimulation={item.practiceSimulation}
+              {...(item.practiceScenarioId && {
+                practiceScenarioId: item.practiceScenarioId,
+              })}
+              practiceSimulation={item.practiceSimulation ?? false}
+              {...(revalidateAttemptAction && { revalidateAttemptAction })}
             />
           );
         },
@@ -588,7 +594,7 @@ export default function SimulationHistory({
     ];
 
     return attemptColumns;
-  }, [allSameProfile, showArchive]);
+  }, [allSameProfile, showArchive, revalidateAttemptAction]);
 
   // Create a key based on the data to force re-render when data changes
   const tableKey = React.useMemo(() => {
