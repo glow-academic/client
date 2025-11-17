@@ -409,7 +409,7 @@ export default function ChatMessages({
         <div className="flex flex-col justify-center items-center gap-8 max-w-5xl w-full h-full">
           <GlowHeader />
           <div
-            className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            className={`transition-all duration-300 ease-in-out overflow-y-auto ${
               showPrompts ? "opacity-100 max-h-96" : "opacity-0 max-h-0"
             }`}
           >
