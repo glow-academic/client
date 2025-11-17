@@ -578,39 +578,18 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                      <Avatar
-                        className="h-8 w-8 outline outline-muted-foreground"
-                        style={{ outlineWidth: "1px", outlineStyle: "solid" }}
+                  {/* Profile - Hidden from guests */}
+                  {activeProfile && activeProfile.role !== "guest" && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => handleSectionChangeWithClose("profile")}
                       >
-                        <AvatarFallback>
-                          {!activeProfile
-                            ? "GU"
-                            : getInitials(
-                                activeProfile?.firstName +
-                                  " " +
-                                  activeProfile?.lastName
-                              )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">
-                          {!activeProfile
-                            ? "Guest User"
-                            : activeProfile?.firstName +
-                              " " +
-                              activeProfile?.lastName}
-                        </span>
-                        <span className="truncate text-xs">
-                          {!activeProfile
-                            ? "Not logged in"
-                            : `${activeProfile?.alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`}
-                        </span>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {/* Emulate or Exit Emulation */}
                   {isEmulating ? (
                     <>
@@ -624,26 +603,13 @@ export function UnifiedSidebar({
                     <>
                       <DropdownMenuItem
                         onClick={() => setIsEmulateModalOpen(true)}
-                        className="group text-white hover:text-white focus:text-white data-[highlighted]:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                       >
-                        <Sparkles className="h-4 w-4 mr-2 text-white group-hover:text-white/90" />
+                        <Sparkles className="h-4 w-4 mr-2" />
                         Emulate
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                   ) : null}
-                  {/* Profile - Hidden from guests */}
-                  {activeProfile && activeProfile.role !== "guest" && (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => handleSectionChangeWithClose("profile")}
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
                   <DropdownMenuItem
                     onClick={handleLoginOrLogout}
                     disabled={isLoggingOut}
