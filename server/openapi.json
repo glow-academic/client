@@ -17030,6 +17030,13 @@
           "redirectPath": {
             "type": "string",
             "title": "Redirectpath"
+          },
+          "scopedRoles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopedroles"
           }
         },
         "type": "object",
@@ -17044,7 +17051,8 @@
           "simulationIds",
           "earliestAttemptDate",
           "availableSections",
-          "redirectPath"
+          "redirectPath",
+          "scopedRoles"
         ],
         "title": "ProfileContextResponse",
         "description": "Response with consolidated profile context data."

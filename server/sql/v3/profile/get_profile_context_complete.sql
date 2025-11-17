@@ -50,6 +50,18 @@ effective_profile_role AS (
     -- Use effective profile's role for UI permissions filtering
     SELECT role FROM profiles p, resolve_profile_ids rpi WHERE p.id = rpi.resolved_effective_profile_id
 ),
+scoped_roles_computed AS (
+    -- Compute scoped roles based on effective profile's role
+    SELECT 
+        CASE 
+            WHEN epr.role = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'ta', 'guest']::profile_role[]
+            WHEN epr.role = 'admin' THEN ARRAY['admin', 'instructional', 'ta', 'guest']::profile_role[]
+            WHEN epr.role = 'instructional' THEN ARRAY['instructional', 'ta', 'guest']::profile_role[]
+            WHEN epr.role = 'ta' THEN ARRAY['ta']::profile_role[]
+            ELSE ARRAY['guest']::profile_role[]
+        END as scoped_roles
+    FROM effective_profile_role epr
+),
 actual_profile_data AS (
     -- Fetch the logged-in user's profile
     SELECT 
@@ -255,9 +267,11 @@ SELECT
         FROM sim_data s),
         '[]'::jsonb
     ) as simulations,
-    (SELECT earliest FROM earliest_attempt) as earliest_attempt_date
+    (SELECT earliest FROM earliest_attempt) as earliest_attempt_date,
+    (SELECT scoped_roles FROM scoped_roles_computed) as scoped_roles
 FROM emulation_validation ev
 CROSS JOIN actual_profile_data apd
 CROSS JOIN effective_profile_data epd
+CROSS JOIN scoped_roles_computed src
 WHERE ev.is_authorized = true  -- Only return data if emulation is authorized
 

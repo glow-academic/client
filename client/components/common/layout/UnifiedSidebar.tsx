@@ -145,6 +145,7 @@ export function UnifiedSidebar({
     isLoading,
     cohorts,
     availableSections,
+    isFullEmulation,
   } = useProfile();
 
   const getCohortSubItems = React.useMemo(() => {
@@ -590,26 +591,30 @@ export function UnifiedSidebar({
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  {/* Emulate or Exit Emulation */}
-                  {isEmulating ? (
+                  {/* Emulate or Exit Emulation - Hidden in full emulation mode */}
+                  {!isFullEmulation && (
                     <>
-                      <DropdownMenuItem onClick={handleExitEmulation}>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Exit Emulation
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      {isEmulating ? (
+                        <>
+                          <DropdownMenuItem onClick={handleExitEmulation}>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Exit Emulation
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      ) : canEmulate ? (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => setIsEmulateModalOpen(true)}
+                          >
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Emulate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      ) : null}
                     </>
-                  ) : canEmulate ? (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => setIsEmulateModalOpen(true)}
-                      >
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Emulate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  ) : null}
+                  )}
                   <DropdownMenuItem
                     onClick={handleLoginOrLogout}
                     disabled={isLoggingOut}

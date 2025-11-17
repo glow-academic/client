@@ -94,6 +94,7 @@ interface ProfileContextType {
   // Permissions data (from server)
   availableSections: string[];
   redirectPath: string;
+  scopedRoles: string[]; // Roles that the effective profile has scope to see
 
   // WebSocket connection (tied to profile)
   socket: Socket | null;
@@ -467,6 +468,7 @@ export function ProfileProviderClient({
     // Permissions data (from server)
     availableSections: initial.availableSections ?? [],
     redirectPath: initial.redirectPath ?? "/home",
+    scopedRoles: initial.scopedRoles ?? [],
 
     // WebSocket connection (tied to profile)
     socket: socketRef.current,

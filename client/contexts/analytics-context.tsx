@@ -77,8 +77,13 @@ interface AnalyticsProviderProps {
 
 export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
   // Get profile context to check user role and ID
-  const { effectiveProfile, earliestAttemptDate, cohortIds, departmentIds } =
-    useProfile();
+  const {
+    effectiveProfile,
+    earliestAttemptDate,
+    cohortIds,
+    departmentIds,
+    scopedRoles,
+  } = useProfile();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -110,11 +115,11 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       startDate: defaultStartDate.toISOString(),
       endDate: defaultEndDate.toISOString(),
       cohortIds: [],
-      roles: [],
+      roles: scopedRoles || [],
       simulationFilters: ["general"],
       departmentIds: [],
     };
-  }, [earliestDate]);
+  }, [earliestDate, scopedRoles]);
 
   // Initialize state from search params or defaults
   const getInitialFilters = useCallback(() => {

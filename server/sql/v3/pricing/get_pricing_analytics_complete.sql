@@ -58,7 +58,6 @@ model_runs_base AS (
         AND (
             (SELECT effective_profile_id FROM profile_role_check) IS NOT NULL
             OR $5::text[] IS NULL
-            OR COALESCE(array_length($5::text[], 1), 0) = 0
             OR mrp.profile_id IN (
                 SELECT id FROM profiles WHERE role::text = ANY($5::text[])
             )

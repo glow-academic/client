@@ -91,6 +91,7 @@ class ProfileContextResponse(BaseModel):
     earliestAttemptDate: str | None  # ISO datetime of earliest simulation attempt
     availableSections: list[str]  # Sections available to the effective profile's role
     redirectPath: str  # Default redirect path for the effective profile's role
+    scopedRoles: list[str]  # Roles that the effective profile has scope to see
 
 
 @router.post("/context", response_model=ProfileContextResponse)
@@ -255,6 +256,17 @@ async def get_profile_context(
         available_sections = get_available_subsections_for_role(role)
         redirect_path = get_redirect_path_for_role(role)
 
+        # Parse scoped roles from SQL result (PostgreSQL array)
+        scoped_roles_list: list[str] = []
+        if result.get("scoped_roles"):
+            scoped_roles_raw = result["scoped_roles"]
+            # PostgreSQL arrays come as list from asyncpg
+            if isinstance(scoped_roles_raw, list):
+                scoped_roles_list = [str(role) for role in scoped_roles_raw]
+            elif isinstance(scoped_roles_raw, str):
+                # Handle string representation if needed
+                scoped_roles_list = [role.strip() for role in scoped_roles_raw.strip("{}").split(",")]
+
         return ProfileContextResponse(
             actualProfile=actual_profile,
             effectiveProfile=effective_profile,
@@ -267,6 +279,7 @@ async def get_profile_context(
             earliestAttemptDate=earliest_attempt_date,
             availableSections=available_sections,
             redirectPath=redirect_path,
+            scopedRoles=scoped_roles_list,
         )
     except HTTPException:
         raise

@@ -7200,6 +7200,8 @@ export interface components {
             availableSections: string[];
             /** Redirectpath */
             redirectPath: string;
+            /** Scopedroles */
+            scopedRoles: string[];
         };
         /**
          * ProfileDataEnhanced

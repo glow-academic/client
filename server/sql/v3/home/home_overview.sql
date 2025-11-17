@@ -178,7 +178,7 @@ cohort_membership AS (
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE cp.active = true  -- Only active cohort memberships for non-history queries
       AND (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
-      AND (cardinality($6::profile_role[]) = 0 OR p.role = ANY($6::profile_role[]))
+      AND p.role = ANY($6::profile_role[])
     GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, p.role, c.id
     HAVING 
         (cardinality($5::uuid[]) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY($5::uuid[])) > 0)

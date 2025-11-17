@@ -80,11 +80,16 @@ async function getDashboardFilters(searchParams?: URLSearchParams) {
     filters.departmentIds && filters.departmentIds.length > 0
       ? filters.departmentIds
       : profileContext.departmentIds || [];
+  const roles =
+    filters.roles && filters.roles.length > 0
+      ? filters.roles
+      : profileContext.scopedRoles || [];
 
   return {
     ...filters,
     cohortIds,
     departmentIds,
+    roles,
   };
 }
 

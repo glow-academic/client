@@ -105,7 +105,7 @@
                         'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                     )
                     AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) 
-                    AND ($6::uuid IS NOT NULL OR cardinality($4::text[]) = 0 OR a.profile_role = ANY($4::profile_role[])) 
+                    AND ($6::uuid IS NOT NULL OR a.profile_role = ANY($4::profile_role[])) 
                     -- Filter by simulation_ids from cohorts (new filtering order)
                     AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                     -- Department filtering removed - now handled via profile_departments join at profile level
@@ -180,7 +180,6 @@
                 -- Department filtering removed - now handled via profile_departments join at profile level
                 AND (
                     $6::uuid IS NOT NULL
-                    OR cardinality($4::text[]) = 0
                     OR a.profile_role = ANY($4::profile_role[])
                 )
                 AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
@@ -995,7 +994,7 @@
                         JOIN profiles p ON p.id = cp.profile_id
                         WHERE cp.cohort_id = c.id
                             AND cp.active = true  -- Only active cohort memberships for non-history queries
-                            AND (cardinality($4::text[]) = 0 OR p.role = ANY($4::profile_role[]))
+                            AND p.role = ANY($4::profile_role[])
                     ) AS profile_ids,
                     ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id) AS simulation_ids
                 FROM cohorts c
@@ -1074,7 +1073,7 @@
                     -- Department filtering removed - now handled via profile_departments join at profile level
                     -- Filter by simulation_ids from cohorts (new filtering order)
                     AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                    AND ($3::uuid[] IS NOT NULL AND cardinality($3::uuid[]) > 0 OR $4::profile_role[] IS NULL OR cardinality($4::profile_role[]) = 0 OR a.profile_role = ANY($4::profile_role[])
+                    AND (($3::uuid[] IS NOT NULL AND cardinality($3::uuid[]) > 0 OR a.profile_role = ANY($4::profile_role[]))
                          OR ($6::uuid IS NOT NULL AND a.profile_id = $6::uuid))
                     AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
                     AND (
@@ -1441,7 +1440,7 @@
                         'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                     )
                     AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) 
-                    AND ($6::uuid IS NOT NULL OR cardinality($4::text[]) = 0 OR a.profile_role = ANY($4::profile_role[])) 
+                    AND ($6::uuid IS NOT NULL OR a.profile_role = ANY($4::profile_role[])) 
                     -- Filter by simulation_ids from expanded cohort list (includes historyProfileId cohorts)
                     AND ((SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids_for_history))
             ),

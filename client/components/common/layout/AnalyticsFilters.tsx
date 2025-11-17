@@ -59,7 +59,8 @@ export function AnalyticsFilters({
     setSimulationFilters,
   } = useAnalytics();
 
-  const { cohorts, cohortMemberCounts, departments } = useProfile();
+  const { cohorts, cohortMemberCounts, departments, scopedRoles } =
+    useProfile();
   const getCohortMemberCount = (cohortId: string) =>
     cohortMemberCounts[cohortId] ?? 0;
 
@@ -334,8 +335,10 @@ export function AnalyticsFilters({
               <ProfileRolePicker
                 roles={
                   selectedCohortIds.length > 0
-                    ? ["instructional", "ta"] // Only show ta and instructional when cohorts are selected
-                    : ["superadmin", "admin", "instructional", "ta", "guest"] // Show all roles when no cohorts selected
+                    ? (scopedRoles.filter(
+                        (role) => role === "instructional" || role === "ta"
+                      ) as ProfileRole[]) // Intersection of scoped roles and cohort-allowed roles
+                    : (scopedRoles as ProfileRole[]) // Show scoped roles when no cohorts selected
                 }
                 selectedRoles={selectedRoles}
                 onChange={handleRoleSelect}
