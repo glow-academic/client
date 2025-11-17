@@ -1,6 +1,7 @@
 """Agent detail endpoint."""
 
 import json
+from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -118,11 +119,18 @@ async def get_agent_detail(
             for item in debug_info_data:
                 if isinstance(item, dict):
                     created_at_value = item.get("created_at")
+                    if created_at_value:
+                        if isinstance(created_at_value, str):
+                            created_at_str = created_at_value
+                        elif isinstance(created_at_value, datetime):
+                            created_at_str = created_at_value.isoformat()
+                        else:
+                            created_at_str = str(created_at_value)
+                    else:
+                        created_at_str = ""
                     debug_info.append(
                         DebugInfoItem(
-                            created_at=created_at_value.isoformat()
-                            if created_at_value
-                            else "",
+                            created_at=created_at_str,
                             model_id=item.get("model_id", ""),
                             content=item.get("content", ""),
                         )

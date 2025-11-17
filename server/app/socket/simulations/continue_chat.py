@@ -1114,18 +1114,15 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                                     break
                     
                     # Start cycling from the next scenario after the last used one
-                    # Only exclude current_chat_scenario_id to avoid immediate duplication
+                    # In infinite mode, allow cycling back to the same scenario (especially important for single-scenario simulations)
                     start_index = (last_used_index + 1) % num_scenarios
                     
                     # Cycle through scenarios starting from start_index
+                    # In infinite mode, we allow repeating scenarios, so no exclusion check needed
                     for offset in range(num_scenarios):
                         cycling_index = (start_index + offset) % num_scenarios
-                        scenario_id_str = str(scenario_links[cycling_index]["scenario_id"])
-                        
-                        # Only exclude the current chat's scenario (will be graded but doesn't have grade yet)
-                        if scenario_id_str != current_chat_scenario_id:
-                            next_scenario_id = scenario_links[cycling_index]["scenario_id"]
-                            break
+                        next_scenario_id = scenario_links[cycling_index]["scenario_id"]
+                        break
                 elif next_index is not None and next_index < len(scenario_links):
                     # Use the next scenario that doesn't have a graded chat
                     # (next_index already excludes current_chat_scenario_id)
@@ -1134,11 +1131,13 @@ async def _continue_simulation_impl(sid: str, data: ContinueSimulationPayload) -
                 if next_scenario_id is not None:
                     # Double-check that this scenario is valid
                     scenario_id_str = str(next_scenario_id)
-                    # For infinite mode, only check that it's not the current chat's scenario
+                    # For infinite mode, allow creating chats for any scenario (including the current one)
+                    # This enables cycling through scenarios indefinitely, especially important for single-scenario simulations
                     # For normal mode, check grades and existing chats as well
                     should_create = False
                     if is_infinite_mode:
-                        should_create = scenario_id_str != current_chat_scenario_id
+                        # In infinite mode, always allow creating the next chat (cycling logic already selected the appropriate scenario)
+                        should_create = True
                     else:
                         # Double-check that this scenario doesn't already have a graded chat,
                         # is not the current chat's scenario, and doesn't already have a chat
