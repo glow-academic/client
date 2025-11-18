@@ -48,15 +48,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Edit, Eye, Grid3X3, Trash2, UploadCloud, X } from "lucide-react";
+import {
+  Building2,
+  Edit,
+  Eye,
+  FileText,
+  Grid3X3,
+  Power,
+  Tag,
+  Trash2,
+  UploadCloud,
+  X,
+} from "lucide-react";
 
 type DocumentType =
   | "homework"
@@ -74,10 +78,6 @@ import type {
   BulkUpdateDocumentsOut,
   DeleteDocumentIn,
   DeleteDocumentOut,
-  DocumentDetailBulkIn,
-  DocumentDetailBulkOut,
-  DocumentDetailIn,
-  DocumentDetailOut,
   DocumentsListOut,
   FinalizeDocumentUploadIn,
   FinalizeDocumentUploadOut,
@@ -93,6 +93,7 @@ import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
 import {
   Table,
   TableBody,
@@ -118,14 +119,6 @@ const truncateText = (text: string, maxLength: number = 30): string => {
   return text.substring(0, maxLength) + "...";
 };
 
-// Explicitly define server action types (matching the page exports)
-export type GetDocumentDetailAction = (
-  input: DocumentDetailIn
-) => Promise<DocumentDetailOut>;
-export type GetDocumentDetailBulkAction = (
-  input: DocumentDetailBulkIn
-) => Promise<DocumentDetailBulkOut>;
-
 export interface DocumentsProps {
   // Server-provided data (for server-side rendering)
   listData: DocumentsListOut;
@@ -142,9 +135,6 @@ export interface DocumentsProps {
   bulkUpdateDocumentsAction?: (
     input: BulkUpdateDocumentsIn
   ) => Promise<BulkUpdateDocumentsOut>;
-  // Server actions for fetching detail data
-  getDocumentDetailAction?: GetDocumentDetailAction;
-  getDocumentDetailBulkAction?: GetDocumentDetailBulkAction;
   // Server actions for upload and parameter item creation
   finalizeDocumentUploadAction?: (
     input: FinalizeDocumentUploadIn
@@ -160,13 +150,11 @@ export default function Documents({
   bulkDeleteDocumentsAction,
   updateDocumentAction,
   bulkUpdateDocumentsAction,
-  getDocumentDetailAction,
-  getDocumentDetailBulkAction,
   finalizeDocumentUploadAction,
   createParameterItemAction,
 }: DocumentsProps) {
   const router = useRouter();
-  const { effectiveProfile, effectiveDepartmentIds } = useProfile();
+  const { effectiveDepartmentIds } = useProfile();
   const isMobile = useIsMobile();
 
   // State management
@@ -192,12 +180,6 @@ export default function Documents({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
-  const [documentDetail, setDocumentDetail] =
-    useState<DocumentDetailOut | null>(null);
-  const [bulkDocumentDetail, setBulkDocumentDetail] =
-    useState<DocumentDetailBulkOut | null>(null);
-  const [isLoadingDocumentDetail, setIsLoadingDocumentDetail] = useState(false);
-  const [isLoadingBulkDetail, setIsLoadingBulkDetail] = useState(false);
   const [bulkType, setBulkType] = useState<DocumentType | "__keep__">(
     "__keep__"
   );
@@ -205,6 +187,11 @@ export default function Documents({
     []
   );
   const [bulkDepartmentId, setBulkDepartmentId] = useState<string | null>(null);
+  const [keepExisting, setKeepExisting] = useState({
+    type: true,
+    department: true,
+    parameterItems: true,
+  });
 
   // Staged selections per department (preserved when departments are deselected)
   // Separate for single edit and bulk edit modes
@@ -297,9 +284,9 @@ export default function Documents({
 
   // Filter valid parameter item IDs for edit dialog based on selected departments
   const validParameterItemIdsForEdit = useMemo(() => {
-    if (!documentDetail) return [];
-    const baseIds = documentDetail.valid_parameter_item_ids || [];
-    const selectedDeptIds = documentDetail.department_ids || [];
+    if (!editingDocument) return [];
+    const baseIds = editingDocument.valid_parameter_item_ids || [];
+    const selectedDeptIds = editingDocument.department_ids || [];
 
     // If no departments selected, return all valid IDs
     if (selectedDeptIds.length === 0) {
@@ -309,53 +296,107 @@ export default function Documents({
     // Get union of parameter_ids from selected departments
     const deptParameterIds = new Set<string>();
     selectedDeptIds.forEach((deptId) => {
-      const deptData = documentDetail.department_mapping[deptId];
+      const deptData = departmentMapping[deptId];
       if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
         deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
       }
     });
 
     // Filter parameter items: include if their parameter_id is in department parameter IDs
-    const parameterItemMapping = documentDetail.parameter_item_mapping;
     return baseIds.filter((itemId) => {
       const item = parameterItemMapping[itemId];
       return item && deptParameterIds.has(item.parameter_id);
     });
-  }, [documentDetail]);
+  }, [editingDocument, departmentMapping, parameterItemMapping]);
+
+  // Compute bulk data from selected documents (for bulk edit dialog)
+  const bulkData = useMemo(() => {
+    if (selectedDocuments.length === 0) return null;
+
+    const selectedDocs = documents.filter((doc) =>
+      selectedDocuments.includes(doc.document_id)
+    );
+
+    if (selectedDocs.length === 0) return null;
+
+    // Compute common type (if all documents have same type)
+    const commonType = selectedDocs.every(
+      (doc) => doc.type === selectedDocs[0]?.type
+    )
+      ? selectedDocs[0]?.type
+      : null;
+
+    // Compute intersection of department_ids (common to all selected documents)
+    const commonDepartmentIds =
+      selectedDocs.length > 0 && selectedDocs[0]?.department_ids
+        ? selectedDocs[0].department_ids.filter((id) =>
+            selectedDocs.every((doc) => doc.department_ids?.includes(id))
+          )
+        : [];
+
+    // Compute intersection of parameter_item_ids (common to all selected documents)
+    const commonParameterItemIds =
+      selectedDocs.length > 0 && selectedDocs[0]?.parameter_item_ids
+        ? selectedDocs[0].parameter_item_ids.filter((id) =>
+            selectedDocs.every((doc) => doc.parameter_item_ids?.includes(id))
+          )
+        : [];
+
+    return {
+      type: commonType,
+      department_ids: commonDepartmentIds,
+      parameter_item_ids: commonParameterItemIds,
+    };
+  }, [selectedDocuments, documents]);
 
   // Filter valid parameter item IDs for bulk edit dialog based on selected departments
+  // Compute intersection of valid_parameter_item_ids from all selected documents
   const validParameterItemIdsForBulk = useMemo(() => {
-    if (!bulkDocumentDetail) return [];
-    const baseIds = bulkDocumentDetail.valid_parameter_item_ids || [];
-    const selectedDeptIds = bulkDepartmentId
-      ? [bulkDepartmentId]
-      : bulkDocumentDetail.department_ids || [];
+    if (selectedDocuments.length === 0) return [];
 
-    // If no departments selected, return all valid IDs
-    if (selectedDeptIds.length === 0) {
-      return baseIds;
+    // Get all selected documents
+    const selectedDocs = documents.filter((doc) =>
+      selectedDocuments.includes(doc.document_id)
+    );
+
+    if (selectedDocs.length === 0) return [];
+
+    // Start with first document's valid_parameter_item_ids
+    const firstDocValidIds = new Set(
+      selectedDocs[0]?.valid_parameter_item_ids || []
+    );
+
+    // Compute intersection across all selected documents
+    const intersection = Array.from(firstDocValidIds).filter((itemId) =>
+      selectedDocs.every((doc) =>
+        doc.valid_parameter_item_ids?.includes(itemId)
+      )
+    );
+
+    // If department is selected, filter by department's parameter_ids
+    if (bulkDepartmentId) {
+      const deptData = departmentMapping[bulkDepartmentId];
+      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+        const deptParameterIds = new Set(deptData.parameter_ids);
+        return intersection.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          return item && deptParameterIds.has(item.parameter_id);
+        });
+      }
     }
 
-    // Get union of parameter_ids from selected departments
-    const deptParameterIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = bulkDocumentDetail.department_mapping[deptId];
-      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
-        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
-      }
-    });
-
-    // Filter parameter items: include if their parameter_id is in department parameter IDs
-    const parameterItemMapping = bulkDocumentDetail.parameter_item_mapping;
-    return baseIds.filter((itemId) => {
-      const item = parameterItemMapping[itemId];
-      return item && deptParameterIds.has(item.parameter_id);
-    });
-  }, [bulkDocumentDetail, bulkDepartmentId]);
+    return intersection;
+  }, [
+    selectedDocuments,
+    documents,
+    bulkDepartmentId,
+    departmentMapping,
+    parameterItemMapping,
+  ]);
 
   // Track department changes and manage staged selections for single edit mode
   useEffect(() => {
-    if (!editingDocument || !documentDetail) return;
+    if (!editingDocument) return;
 
     const currentDeptIds = editingDocument.department_ids || [];
     const prevDeptIds = previousDepartmentIdsEdit || [];
@@ -436,7 +477,6 @@ export default function Documents({
     editingDocument,
     previousDepartmentIdsEdit,
     validParameterItemIdsForEdit,
-    documentDetail,
   ]);
 
   // Track department changes and manage staged selections for bulk edit mode
@@ -498,8 +538,7 @@ export default function Documents({
 
   // Clean up staged selections for departments that are no longer valid (edit mode)
   useEffect(() => {
-    if (!documentDetail) return;
-    const validDeptIds = new Set(documentDetail.valid_department_ids || []);
+    const validDeptIds = new Set(documentsData?.valid_department_ids || []);
     setStagedSelectionsEdit((prev) => {
       const cleaned: Record<string, StagedSelections> = {};
       Object.keys(prev).forEach((deptId) => {
@@ -510,12 +549,11 @@ export default function Documents({
       });
       return cleaned;
     });
-  }, [documentDetail]);
+  }, [documentsData?.valid_department_ids]);
 
   // Clean up staged selections for departments that are no longer valid (bulk mode)
   useEffect(() => {
-    if (!bulkDocumentDetail) return;
-    const validDeptIds = new Set(bulkDocumentDetail.valid_department_ids || []);
+    const validDeptIds = new Set(documentsData?.valid_department_ids || []);
     setStagedSelectionsBulk((prev: Record<string, StagedSelections>) => {
       const cleaned: Record<string, StagedSelections> = {};
       Object.keys(prev).forEach((deptId) => {
@@ -526,22 +564,22 @@ export default function Documents({
       });
       return cleaned;
     });
-  }, [bulkDocumentDetail]);
+  }, [documentsData?.valid_department_ids]);
 
   // Clear invalid parameter item selections when departments change in edit dialog
   useEffect(() => {
-    if (documentDetail && documentDetail.parameter_item_ids) {
+    if (editingDocument && editingDocument.parameter_item_ids) {
       const validSet = new Set(validParameterItemIdsForEdit);
-      const filtered = documentDetail.parameter_item_ids.filter((id) =>
+      const filtered = editingDocument.parameter_item_ids.filter((id) =>
         validSet.has(id)
       );
-      if (filtered.length !== documentDetail.parameter_item_ids.length) {
+      if (filtered.length !== editingDocument.parameter_item_ids.length) {
         setEditingDocument((prev: (typeof documents)[number] | null) =>
           prev ? { ...prev, parameter_item_ids: filtered } : null
         );
       }
     }
-  }, [documentDetail, validParameterItemIdsForEdit]);
+  }, [editingDocument, validParameterItemIdsForEdit]);
 
   // Clear invalid parameter item selections when departments change in bulk edit dialog
   useEffect(() => {
@@ -797,42 +835,15 @@ export default function Documents({
     [documents]
   );
 
-  // Handle document edit - fetch detail data on demand
-  const handleEdit = useCallback(
-    async (document: (typeof documents)[number]) => {
-      setEditingDocument({ ...document });
-      // Initialize previousDepartmentIdsEdit when opening edit dialog
-      setPreviousDepartmentIdsEdit((prev) =>
-        prev.length === 0 ? document.department_ids || [] : prev
-      );
-
-      // Fetch document detail on demand
-      if (getDocumentDetailAction && effectiveProfile?.id) {
-        setIsLoadingDocumentDetail(true);
-        try {
-          const detail = await getDocumentDetailAction({
-            body: {
-              documentId: document.document_id,
-              profileId: effectiveProfile.id,
-            },
-          });
-          setDocumentDetail(detail);
-        } catch (error) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to load document details"
-          );
-          setDocumentDetail(null);
-        } finally {
-          setIsLoadingDocumentDetail(false);
-        }
-      }
-
-      setShowEditDialog(true);
-    },
-    [getDocumentDetailAction, effectiveProfile?.id]
-  );
+  // Handle document edit - use list data directly
+  const handleEdit = useCallback((document: (typeof documents)[number]) => {
+    setEditingDocument({ ...document });
+    // Initialize previousDepartmentIdsEdit when opening edit dialog
+    setPreviousDepartmentIdsEdit((prev) =>
+      prev.length === 0 ? document.department_ids || [] : prev
+    );
+    setShowEditDialog(true);
+  }, []);
 
   // Handle single document delete
   const handleSingleDelete = useCallback(
@@ -972,36 +983,18 @@ export default function Documents({
     }
   };
 
-  // Handle bulk edit - fetch detail data on demand
-  const handleBulkEdit = async () => {
+  // Handle bulk edit - use list data directly
+  const handleBulkEdit = () => {
     if (selectedDocuments.length === 0) return;
 
     setBulkType("__keep__");
     setBulkParameterItemIds([]);
     setBulkDepartmentId(null);
-
-    // Fetch bulk document detail on demand
-    if (getDocumentDetailBulkAction && effectiveProfile?.id) {
-      setIsLoadingBulkDetail(true);
-      try {
-        const detail = await getDocumentDetailBulkAction({
-          body: {
-            documentIds: selectedDocuments,
-            profileId: effectiveProfile.id,
-          },
-        });
-        setBulkDocumentDetail(detail);
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load bulk document details"
-        );
-        setBulkDocumentDetail(null);
-      } finally {
-        setIsLoadingBulkDetail(false);
-      }
-    }
+    setKeepExisting({
+      type: true,
+      department: true,
+      parameterItems: true,
+    });
 
     setShowBulkEditDialog(true);
   };
@@ -1087,7 +1080,7 @@ export default function Documents({
 
   // Handle document update
   const handleUpdate = async () => {
-    if (!editingDocument || !documentDetail) return;
+    if (!editingDocument) return;
 
     setIsUpdating(true);
     try {
@@ -1115,33 +1108,71 @@ export default function Documents({
 
   // Execute bulk update
   const handleBulkUpdate = async () => {
-    if (selectedDocuments.length === 0 || !bulkDocumentDetail) return;
+    if (selectedDocuments.length === 0) return;
     setIsBulkUpdating(true);
     try {
-      const type =
-        bulkType !== "__keep__"
+      // Get selected documents
+      const selectedDocs = documents.filter((doc) =>
+        selectedDocuments.includes(doc.document_id)
+      );
+
+      // Compute common type (if all documents have same type)
+      const commonType =
+        selectedDocs.length > 0 &&
+        selectedDocs.every((doc) => doc.type === selectedDocs[0]?.type)
+          ? selectedDocs[0]?.type
+          : "homework";
+
+      // Compute intersection of parameter_item_ids (common to all selected documents)
+      const commonParameterItemIds =
+        selectedDocs.length > 0
+          ? selectedDocs[0]?.parameter_item_ids?.filter((id) =>
+              selectedDocs.every((doc) => doc.parameter_item_ids?.includes(id))
+            ) || []
+          : [];
+
+      // Only include fields that don't have "keep existing" checked
+      const type = keepExisting.type
+        ? undefined
+        : bulkType !== "__keep__"
           ? bulkType
-          : bulkDocumentDetail.type || "homework";
-      const parameter_item_ids =
-        bulkParameterItemIds.length > 0
+          : undefined;
+      const parameter_item_ids = keepExisting.parameterItems
+        ? undefined
+        : bulkParameterItemIds.length > 0
           ? bulkParameterItemIds
-          : bulkDocumentDetail.parameter_item_ids;
-      const department_id: string | null = bulkDepartmentId
-        ? bulkDepartmentId
-        : bulkDocumentDetail.department_ids &&
-            bulkDocumentDetail.department_ids.length > 0 &&
-            bulkDocumentDetail.department_ids[0]
-          ? bulkDocumentDetail.department_ids[0]
+          : undefined;
+      const department_id: string | null | undefined = keepExisting.department
+        ? undefined
+        : bulkDepartmentId
+          ? bulkDepartmentId
           : null;
 
       if (!bulkUpdateDocumentsAction) return;
+
+      // Build request body - type is required, parameter_item_ids is required (can be empty array)
+      const requestBody: {
+        documentIds: string[];
+        type: string;
+        department_id?: string | null;
+        parameter_item_ids: string[];
+      } = {
+        documentIds: selectedDocuments,
+        type: type ?? commonType ?? "homework",
+        parameter_item_ids:
+          parameter_item_ids !== undefined
+            ? parameter_item_ids
+            : keepExisting.parameterItems
+              ? commonParameterItemIds
+              : [],
+      };
+
+      if (department_id !== undefined) {
+        requestBody.department_id = department_id;
+      }
+
       await bulkUpdateDocumentsAction({
-        body: {
-          documentIds: selectedDocuments,
-          type,
-          department_id,
-          parameter_item_ids,
-        },
+        body: requestBody,
       });
       router.refresh();
 
@@ -1363,112 +1394,108 @@ export default function Documents({
               Update document properties. Changes will be saved immediately.
             </DialogDescription>
           </DialogHeader>
-          {editingDocument &&
-            (isLoadingDocumentDetail ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-muted-foreground">
-                  Loading document details...
+          {editingDocument && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={editingDocument.name}
+                  onChange={(e) =>
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev ? { ...prev, name: e.target.value } : null
+                    )
+                  }
+                />
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="active"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                      Active
+                    </Label>
+                    {editingDocument?.active !== undefined ? (
+                      <Switch
+                        id="active"
+                        checked={editingDocument.active ?? true}
+                        onCheckedChange={(checked) =>
+                          setEditingDocument((prev) =>
+                            prev ? { ...prev, active: checked } : null
+                          )
+                        }
+                      />
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Inactive documents will not be available for scenarios
+                  </p>
                 </div>
               </div>
-            ) : documentDetail ? (
-              <div className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={editingDocument.name}
-                    onChange={(e) =>
-                      setEditingDocument(
-                        (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, name: e.target.value } : null
-                      )
-                    }
-                  />
-                </div>
 
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="active">Document Active</Label>
-                  <Switch
-                    id="active"
-                    checked={editingDocument.active}
-                    onCheckedChange={(checked) =>
-                      setEditingDocument((prev) =>
-                        prev ? { ...prev, active: checked } : null
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    value={editingDocument.type}
-                    onValueChange={(value) => {
-                      // Update in temporary state for submission
-                      setEditingDocument(
-                        (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, type: value as DocumentType } : null
-                      );
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {documentDetail.document_type_options.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {typeOptions.find((o) => o.value === option)?.label ||
-                            option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Department Selection */}
-                <div className="flex flex-col gap-2">
-                  <Label>Department</Label>
-                  <DepartmentPicker
-                    mapping={documentDetail.department_mapping}
-                    validIds={documentDetail.valid_department_ids}
-                    selectedIds={editingDocument.department_ids || []}
-                    onSelect={(ids) =>
-                      setEditingDocument(
-                        (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, department_ids: ids } : null
-                      )
-                    }
-                    multiSelect={true}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label>Parameter Items</Label>
-                  <ParameterItemPicker
-                    mapping={documentDetail["parameter_item_mapping"]}
-                    selectedIds={editingDocument?.parameter_item_ids || []}
-                    onSelect={(ids) =>
-                      setEditingDocument(
-                        (prev: (typeof documents)[number] | null) =>
-                          prev
-                            ? { ...prev, parameter_item_ids: ids as string[] }
-                            : null
-                      )
-                    }
-                    {...(createParameterItemAction && {
-                      createParameterItemAction,
-                    })}
-                    validIds={validParameterItemIdsForEdit}
-                    parameterId=""
-                    parameterName="Parameter Items"
-                    allowCreate={false}
-                    multiSelect={true}
-                    badgesPosition="below"
-                    showClearAll={true}
-                  />
-                </div>
+              <div className="flex flex-col gap-2">
+                <DocumentTypePicker
+                  selectedType={editingDocument.type as DocumentType}
+                  onSelect={(value) => {
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev ? { ...prev, type: value } : null
+                    );
+                  }}
+                  label="Type"
+                  description="Choose the type of document"
+                />
               </div>
-            ) : null)}
+
+              {/* Department Selection */}
+              <div className="flex flex-col gap-2">
+                <Label>Department</Label>
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={documentsData?.valid_department_ids || []}
+                  selectedIds={editingDocument.department_ids || []}
+                  onSelect={(ids) =>
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev ? { ...prev, department_ids: ids } : null
+                    )
+                  }
+                  multiSelect={true}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Parameter Items</Label>
+                <ParameterItemPicker
+                  mapping={parameterItemMapping}
+                  selectedIds={editingDocument?.parameter_item_ids || []}
+                  onSelect={(ids) =>
+                    setEditingDocument(
+                      (prev: (typeof documents)[number] | null) =>
+                        prev
+                          ? { ...prev, parameter_item_ids: ids as string[] }
+                          : null
+                    )
+                  }
+                  {...(createParameterItemAction && {
+                    createParameterItemAction,
+                  })}
+                  validIds={validParameterItemIdsForEdit}
+                  parameterId=""
+                  parameterName="Parameter Items"
+                  allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
+                />
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancel
@@ -1497,70 +1524,193 @@ export default function Documents({
               want to change it for all selected documents.
             </DialogDescription>
           </DialogHeader>
-          {isLoadingBulkDetail ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-muted-foreground">
-                Loading document details...
-              </div>
-            </div>
-          ) : bulkDocumentDetail ? (
+          {bulkData ? (
             <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <Label>Type</Label>
-                <Select
-                  defaultValue={bulkDocumentDetail.type || "__keep__"}
-                  onValueChange={(value) =>
-                    setBulkType(value as DocumentType | "__keep__")
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Keep existing" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__keep__">Keep existing</SelectItem>
-                    {bulkDocumentDetail.document_type_options.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {typeOptions.find((o) => o.value === option)?.label ||
-                          option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="text-sm text-muted-foreground">
+                Editing {selectedDocuments.length} document
+                {selectedDocuments.length !== 1 ? "s" : ""}
               </div>
 
-              {/* Department Selection */}
-              <div className="flex flex-col gap-2">
-                <Label>Department</Label>
-                <DepartmentPicker
-                  mapping={bulkDocumentDetail.department_mapping}
-                  validIds={bulkDocumentDetail.valid_department_ids}
-                  selectedIds={
-                    bulkDepartmentId
-                      ? [bulkDepartmentId]
-                      : bulkDocumentDetail.department_ids || []
-                  }
-                  onSelect={(ids) => setBulkDepartmentId(ids[0] || null)}
-                  multiSelect={false}
-                />
-              </div>
+              {/* Table layout for editable fields */}
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[200px]">Field</TableHead>
+                      <TableHead className="w-[120px] text-center">
+                        Keep Existing
+                      </TableHead>
+                      <TableHead>Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Type Row */}
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label htmlFor="bulkType">Type</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Set the document type for selected documents
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={keepExisting.type}
+                          onCheckedChange={(checked) => {
+                            const isChecked = checked === true;
+                            setKeepExisting((prev) => ({
+                              ...prev,
+                              type: isChecked,
+                            }));
+                            if (isChecked) {
+                              setBulkType("__keep__");
+                            }
+                          }}
+                          disabled={isBulkUpdating}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div data-testid="input-bulk-document-type">
+                          <DocumentTypePicker
+                            selectedType={
+                              bulkType === "__keep__"
+                                ? (bulkData.type as DocumentType) || "homework"
+                                : bulkType
+                            }
+                            onSelect={(value) => {
+                              setBulkType(value);
+                              setKeepExisting((prev) => ({
+                                ...prev,
+                                type: false,
+                              }));
+                            }}
+                            placeholder={
+                              keepExisting.type
+                                ? "Keep existing"
+                                : "Select type..."
+                            }
+                            disabled={isBulkUpdating || keepExisting.type}
+                            compact={false}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
 
-              <div className="flex flex-col gap-2">
-                <Label>Parameter Items</Label>
-                <ParameterItemPicker
-                  mapping={bulkDocumentDetail.parameter_item_mapping}
-                  selectedIds={bulkParameterItemIds}
-                  validIds={validParameterItemIdsForBulk}
-                  onSelect={setBulkParameterItemIds}
-                  parameterId=""
-                  parameterName="Parameter Items"
-                  allowCreate={false}
-                  multiSelect={true}
-                  badgesPosition="below"
-                  showClearAll={true}
-                  {...(createParameterItemAction && {
-                    createParameterItemAction,
-                  })}
-                />
+                    {/* Department Row */}
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label htmlFor="bulkDepartment">Department</Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Set the department for selected documents
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={keepExisting.department}
+                          onCheckedChange={(checked) => {
+                            const isChecked = checked === true;
+                            setKeepExisting((prev) => ({
+                              ...prev,
+                              department: isChecked,
+                            }));
+                            if (isChecked) {
+                              setBulkDepartmentId(null);
+                            }
+                          }}
+                          disabled={isBulkUpdating}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <DepartmentPicker
+                          mapping={departmentMapping}
+                          validIds={documentsData?.valid_department_ids || []}
+                          selectedIds={
+                            keepExisting.department
+                              ? bulkData.department_ids || []
+                              : bulkDepartmentId
+                                ? [bulkDepartmentId]
+                                : []
+                          }
+                          onSelect={(ids) => {
+                            setBulkDepartmentId(ids[0] || null);
+                            setKeepExisting((prev) => ({
+                              ...prev,
+                              department: false,
+                            }));
+                          }}
+                          multiSelect={false}
+                          disabled={isBulkUpdating || keepExisting.department}
+                        />
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Parameter Items Row */}
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label htmlFor="bulkParameterItems">
+                            Parameter Items
+                          </Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Set parameter items for selected documents
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={keepExisting.parameterItems}
+                          onCheckedChange={(checked) => {
+                            const isChecked = checked === true;
+                            setKeepExisting((prev) => ({
+                              ...prev,
+                              parameterItems: isChecked,
+                            }));
+                            if (isChecked) {
+                              setBulkParameterItemIds([]);
+                            }
+                          }}
+                          disabled={isBulkUpdating}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <ParameterItemPicker
+                          mapping={parameterItemMapping}
+                          selectedIds={
+                            keepExisting.parameterItems
+                              ? bulkData.parameter_item_ids || []
+                              : bulkParameterItemIds
+                          }
+                          validIds={validParameterItemIdsForBulk}
+                          onSelect={(ids) => {
+                            setBulkParameterItemIds(ids);
+                            setKeepExisting((prev) => ({
+                              ...prev,
+                              parameterItems: false,
+                            }));
+                          }}
+                          parameterId=""
+                          parameterName="Parameter Items"
+                          allowCreate={false}
+                          multiSelect={true}
+                          badgesPosition="below"
+                          showClearAll={true}
+                          disabled={
+                            isBulkUpdating || keepExisting.parameterItems
+                          }
+                          {...(createParameterItemAction && {
+                            createParameterItemAction,
+                          })}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           ) : null}

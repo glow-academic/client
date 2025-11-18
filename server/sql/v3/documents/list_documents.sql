@@ -230,6 +230,39 @@ parameter_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM parameter_data p
+),
+document_valid_parameter_items AS (
+    SELECT 
+        dd.document_id,
+        COALESCE(
+            ARRAY_AGG(DISTINCT pi.id::text ORDER BY pi.id::text) FILTER (WHERE pi.id IS NOT NULL),
+            ARRAY[]::text[]
+        ) as valid_parameter_item_ids
+    FROM document_data dd
+    LEFT JOIN parameter_items pi ON pi.parameter_id IN (SELECT id FROM parameters WHERE active = true)
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    WHERE (
+        -- If document has no departments, include only cross-department items
+        (dd.department_ids IS NULL OR array_length(dd.department_ids, 1) = 0)
+        AND NOT EXISTS (
+            SELECT 1 FROM parameter_item_departments pid2 
+            WHERE pid2.parameter_item_id = pi.id 
+            AND pid2.active = true
+        )
+    ) OR (
+        -- If document has departments, include items from those departments OR cross-department items
+        dd.department_ids IS NOT NULL 
+        AND array_length(dd.department_ids, 1) > 0
+        AND (
+            pid.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
+            OR NOT EXISTS (
+                SELECT 1 FROM parameter_item_departments pid2 
+                WHERE pid2.parameter_item_id = pi.id 
+                AND pid2.active = true
+            )
+        )
+    )
+    GROUP BY dd.document_id
 )
 SELECT 
     dd.*,
@@ -244,6 +277,7 @@ SELECT
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
     END as can_delete,
+    COALESCE(dvpi.valid_parameter_item_ids, ARRAY[]::text[]) as valid_parameter_item_ids,
     sm.mapping as scenario_mapping,
     pim.mapping as parameter_item_mapping,
     dm.mapping as department_mapping,
@@ -254,5 +288,6 @@ CROSS JOIN scenario_mapping_data sm
 CROSS JOIN parameter_item_mapping_data pim
 CROSS JOIN department_mapping_data dm
 CROSS JOIN parameter_mapping_data pm
+LEFT JOIN document_valid_parameter_items dvpi ON dvpi.document_id = dd.document_id
 ORDER BY dd.updated_at DESC
 

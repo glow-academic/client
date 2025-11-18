@@ -5480,6 +5480,8 @@ export interface components {
             scenario_ids: string[];
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids: string[];
             /** Active Scenario Count */
             active_scenario_count: number;
             /** Total Scenario Links */
@@ -5546,6 +5548,10 @@ export interface components {
             department_options: {
                 [key: string]: string;
             }[];
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Document Type Options */
+            document_type_options: string[];
         };
         /** DuplicateAgentRequest */
         DuplicateAgentRequest: {

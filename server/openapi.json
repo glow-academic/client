@@ -12599,6 +12599,13 @@
             "type": "array",
             "title": "Parameter Item Ids"
           },
+          "valid_parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Parameter Item Ids"
+          },
           "active_scenario_count": {
             "type": "integer",
             "title": "Active Scenario Count"
@@ -12625,6 +12632,7 @@
           "active",
           "scenario_ids",
           "parameter_item_ids",
+          "valid_parameter_item_ids",
           "active_scenario_count",
           "total_scenario_links",
           "can_edit",
@@ -12754,6 +12762,20 @@
             },
             "type": "array",
             "title": "Department Options"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "document_type_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Type Options"
           }
         },
         "type": "object",
@@ -12765,7 +12787,9 @@
           "parameter_mapping",
           "type_options",
           "scenario_options",
-          "department_options"
+          "department_options",
+          "valid_department_ids",
+          "document_type_options"
         ],
         "title": "DocumentsListResponse",
         "description": "Response for documents list."

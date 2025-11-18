@@ -42,6 +42,7 @@ class DocumentItem(BaseModel):
     department_ids: list[str] | None = None
     scenario_ids: list[str]
     parameter_item_ids: list[str]
+    valid_parameter_item_ids: list[str]
     active_scenario_count: int
     total_scenario_links: int
     can_edit: bool
@@ -60,6 +61,9 @@ class DocumentsListResponse(BaseModel):
     type_options: list[dict[str, str]]  # Array of {value, label}
     scenario_options: list[dict[str, str]]  # Array of {value, label}
     department_options: list[dict[str, str]]  # Array of {value, label}
+    # Edit dialog data (consolidated from detail endpoint)
+    valid_department_ids: list[str]
+    document_type_options: list[str]
 
 
 router = APIRouter()
@@ -196,6 +200,9 @@ async def get_documents_list(
         for row in rows:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
             parameter_item_ids = [str(pid) for pid in (row["parameter_item_ids"] or [])]
+            valid_parameter_item_ids = [
+                str(pid) for pid in (row.get("valid_parameter_item_ids") or [])
+            ]
             dept_ids = None
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
@@ -218,6 +225,7 @@ async def get_documents_list(
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,
                     parameter_item_ids=parameter_item_ids,
+                    valid_parameter_item_ids=valid_parameter_item_ids,
                     active_scenario_count=row["active_scenario_count"],
                     total_scenario_links=row["total_scenario_links"],
                     can_edit=row["can_edit"],
@@ -241,6 +249,20 @@ async def get_documents_list(
             for (did, d) in department_mapping.items()
         ]
 
+        # Extract valid_department_ids from department_mapping keys
+        valid_department_ids = list(department_mapping.keys())
+
+        # Document type options for edit dialog (hardcoded list)
+        document_type_options = [
+            "homework",
+            "project",
+            "quiz",
+            "midterm",
+            "lab",
+            "lecture",
+            "syllabus",
+        ]
+
         response_data = DocumentsListResponse(
             documents=documents,
             scenario_mapping=scenario_mapping,
@@ -250,6 +272,8 @@ async def get_documents_list(
             type_options=type_options,
             scenario_options=scenario_options,
             department_options=department_options,
+            valid_department_ids=valid_department_ids,
+            document_type_options=document_type_options,
         )
 
         # Cache response
