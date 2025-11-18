@@ -1,12 +1,10 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import type { BulkCreateOrUpdateStaffAction } from "@/components/staff/Staff";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,14 +18,6 @@ import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
 
 type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
-
-interface StaffEntry {
-  firstName: string;
-  lastName: string;
-  alias: string;
-  role: RoleValue;
-  id: string; // Unique ID for the entry
-}
 
 export interface ManualAddStaffModalProps {
   open: boolean;
@@ -69,12 +59,11 @@ export default function ManualAddStaffModal({
   const { effectiveProfile } = useProfile();
   const router = useRouter();
 
-  const [nameInput, setNameInput] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [aliasInput, setAliasInput] = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleValue>("ta");
-  const [entries, setEntries] = useState<StaffEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [entryIdCounter, setEntryIdCounter] = useState(0);
 
   const isScoped = !!(departmentIds?.length || cohortIds?.length);
   const isCohortScoped = !!cohortIds?.length;
@@ -111,68 +100,30 @@ export default function ManualAddStaffModal({
   // Reset when modal opens/closes
   useEffect(() => {
     if (!open) {
-      setNameInput("");
+      setFirstName("");
+      setLastName("");
       setAliasInput("");
       setSelectedRole("ta");
-      setEntries([]);
     }
   }, [open]);
 
-  // Add entry to list
-  const handleAddEntry = useCallback(() => {
-    // Parse name input (First Last)
-    const nameParts = nameInput
-      .trim()
-      .split(/\s+/)
-      .filter((p) => p);
-    if (nameParts.length < 2) {
-      toast.error("Please enter both first and last name");
+  // Submit handler
+  const handleSubmit = useCallback(async () => {
+    // Validation
+    if (!firstName.trim()) {
+      toast.error("Please enter a first name");
       return;
     }
-
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
+    if (!lastName.trim()) {
+      toast.error("Please enter a last name");
+      return;
+    }
     const alias = aliasInput
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9._-]/g, "");
-
     if (!alias || alias.length < 2) {
       toast.error("Please enter a valid alias (at least 2 characters)");
-      return;
-    }
-
-    // Validate role is in valid roles
-    const role: RoleValue = validRoles.includes(selectedRole)
-      ? selectedRole
-      : ((validRoles[0] ?? "ta") as RoleValue);
-
-    const newEntry: StaffEntry = {
-      firstName,
-      lastName,
-      alias,
-      role,
-      id: `entry-${entryIdCounter}`,
-    };
-
-    setEntries((prev) => [...prev, newEntry]);
-    setEntryIdCounter((prev) => prev + 1);
-
-    // Clear inputs
-    setNameInput("");
-    setAliasInput("");
-    setSelectedRole("ta");
-  }, [nameInput, aliasInput, selectedRole, validRoles, entryIdCounter]);
-
-  // Remove entry from list
-  const handleRemoveEntry = useCallback((id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  }, []);
-
-  // Submit handler
-  const handleSubmit = useCallback(async () => {
-    if (entries.length === 0) {
-      toast.error("Please add at least one staff member.");
       return;
     }
 
@@ -202,14 +153,21 @@ export default function ManualAddStaffModal({
         finalCohortIds = cohortIds || [];
       }
 
-      const profiles = entries.map((entry) => ({
-        firstName: entry.firstName,
-        lastName: entry.lastName,
-        alias: entry.alias,
-        role: entry.role,
-        department_ids: finalDepartmentIds,
-        cohort_ids: finalCohortIds,
-      }));
+      // Validate role is in valid roles
+      const role: RoleValue = validRoles.includes(selectedRole)
+        ? selectedRole
+        : ((validRoles[0] ?? "ta") as RoleValue);
+
+      const profiles = [
+        {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          alias,
+          role,
+          department_ids: finalDepartmentIds,
+          cohort_ids: finalCohortIds,
+        },
+      ];
 
       if (!bulkCreateOrUpdateStaffAction) {
         toast.error("Bulk create or update action not available");
@@ -227,17 +185,24 @@ export default function ManualAddStaffModal({
       router.refresh();
 
       // When scoped, stage the profiles
-      if (isScoped && onStagedProfiles && response.profileIds) {
-        const stagedProfiles = response.profileIds.map((profileId, index) => ({
-          profileId,
-          firstName: entries[index]?.firstName ?? "",
-          lastName: entries[index]?.lastName ?? "",
-          alias: entries[index]?.alias ?? "",
-          role: entries[index]?.role ?? "ta",
-        }));
+      if (
+        isScoped &&
+        onStagedProfiles &&
+        response.profileIds &&
+        response.profileIds.length > 0
+      ) {
+        const stagedProfiles = [
+          {
+            profileId: response.profileIds[0],
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            alias,
+            role,
+          },
+        ];
         onStagedProfiles(stagedProfiles);
         toast.success(
-          `${entries.length} profile(s) staged. They will be added to the cohort when you click Update.`
+          "Profile staged. It will be added to the cohort when you click Update."
         );
       } else {
         toast.success(
@@ -253,13 +218,17 @@ export default function ManualAddStaffModal({
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to create or update staff members.";
+          : "Failed to create or update staff member.";
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   }, [
-    entries,
+    firstName,
+    lastName,
+    aliasInput,
+    selectedRole,
+    validRoles,
     departmentIds,
     cohortIds,
     isScoped,
@@ -280,116 +249,85 @@ export default function ManualAddStaffModal({
           <DialogTitle>Manually Add Staff</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Single-line form */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="name-input" className="text-xs">
-                Name (First Last)
-              </Label>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          className="space-y-4 py-4"
+        >
+          {/* Form fields */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName-input">First Name</Label>
               <Input
-                id="name-input"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="John Doe"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddEntry();
-                  }
-                }}
+                id="firstName-input"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="John"
+                required
+                disabled={isSubmitting}
                 autoFocus
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="alias-input" className="text-xs">
-                Alias
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="lastName-input">Last Name</Label>
+              <Input
+                id="lastName-input"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Doe"
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="alias-input">Alias</Label>
               <Input
                 id="alias-input"
                 value={aliasInput}
                 onChange={(e) => setAliasInput(e.target.value)}
                 placeholder="jdoe"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddEntry();
-                  }
-                }}
+                required
+                disabled={isSubmitting}
               />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="role-input" className="text-xs">
-                Role (optional)
-              </Label>
-              <StaffRolePicker
-                selectedRole={selectedRole}
-                onSelect={(value) => setSelectedRole(value as RoleValue)}
-                placeholder="Select role"
-                roleOptions={validRoles}
-                buttonClassName="h-10"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={handleAddEntry}
-                disabled={!nameInput.trim() || !aliasInput.trim()}
-                className="w-full"
-              >
-                Add
-              </Button>
             </div>
           </div>
-
-          {/* Added entries list */}
-          {entries.length > 0 && (
-            <div className="space-y-2 pt-2 border-t">
-              <p className="text-sm font-medium">Added Staff:</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                {entries.map((entry) => {
-                  const isInstructional = entry.role === "instructional";
-                  const isValidRole = validRoles.includes(entry.role);
-                  return (
-                    <Badge
-                      key={entry.id}
-                      variant={isInstructional ? "default" : "secondary"}
-                      className={`flex items-center gap-1 pr-1 ${
-                        !isValidRole ? "opacity-50 line-through" : ""
-                      }`}
-                    >
-                      <span>
-                        {entry.firstName} {entry.lastName} ({entry.alias})
-                      </span>
-                      <button
-                        onClick={() => handleRemoveEntry(entry.id)}
-                        className="ml-1 rounded-full hover:bg-secondary-foreground/20 p-0.5 transition-colors"
-                        aria-label={`Remove ${entry.firstName} ${entry.lastName}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="role-input">Role</Label>
+            <StaffRolePicker
+              selectedRole={selectedRole}
+              onSelect={(value) => setSelectedRole(value as RoleValue)}
+              placeholder="Select role"
+              roleOptions={validRoles}
+              buttonClassName="h-10"
+              disabled={isSubmitting}
+            />
+          </div>
 
           {/* Footer Actions */}
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            {entries.length > 0 && (
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting || entries.length === 0}
-                className="flex items-center gap-2"
-              >
-                {isSubmitting ? "Processing..." : `Add ${entries.length} Staff`}
-              </Button>
-            )}
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                !firstName.trim() ||
+                !lastName.trim() ||
+                !aliasInput.trim()
+              }
+            >
+              {isSubmitting ? "Processing..." : "Add Staff"}
+            </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

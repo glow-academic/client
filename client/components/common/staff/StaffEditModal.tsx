@@ -20,7 +20,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
+import { Clock, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -83,7 +83,7 @@ export default function StaffEditModal({
     reqPerDay: "" as number | "",
     defaultProfile: false,
   });
-  const [unlimited, setUnlimited] = useState(false);
+  const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -100,7 +100,7 @@ export default function StaffEditModal({
         reqPerDay: targetUser.reqPerDay ?? "",
         defaultProfile: targetUser.defaultProfile ?? false,
       });
-      setUnlimited(targetUser.reqPerDay == null);
+      setRequestsPerDayEnabled(targetUser.reqPerDay != null);
     }
   }, [targetUser, open]);
 
@@ -126,10 +126,10 @@ export default function StaffEditModal({
     setIsSubmitting(true);
     try {
       const parsedReqPerDay =
-        unlimited ||
+        !requestsPerDayEnabled ||
         formData.reqPerDay === "" ||
         formData.reqPerDay === undefined
-          ? null
+          ? null // Unlimited
           : Number(formData.reqPerDay);
 
       // V3 update endpoint requires department_id and active
@@ -145,14 +145,19 @@ export default function StaffEditModal({
         toast.error("Update action not available");
         return;
       }
+
+      // Build update payload
+      // Note: default_profile is not supported by single update API, only bulk update
+      const updateBody = {
+        profileId: profileId,
+        role: formData.role,
+        requests_per_day: parsedReqPerDay,
+        department_id: departmentId,
+        active: targetUser?.active ?? true,
+      };
+
       await updateStaffAction({
-        body: {
-          profileId: profileId,
-          role: formData.role,
-          requests_per_day: parsedReqPerDay,
-          department_id: departmentId,
-          active: targetUser?.active ?? true,
-        },
+        body: updateBody,
       });
       router.refresh();
 
@@ -170,7 +175,7 @@ export default function StaffEditModal({
   }, [
     profileId,
     formData,
-    unlimited,
+    requestsPerDayEnabled,
     targetUser?.active,
     targetUser?.departmentId,
     validDepartmentIds,
@@ -190,20 +195,17 @@ export default function StaffEditModal({
             <DialogTitle>Edit Staff</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Fields in a row: firstName, lastName, alias, role */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Read-only fields: Name and Alias */}
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
                 {!isLoading ? (
                   <Input
                     id="firstName"
                     value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
                     placeholder="Jane"
-                    required
-                    disabled={isSubmitting}
+                    disabled={true}
+                    className="bg-muted"
                     data-testid="input-staff-first-name"
                   />
                 ) : (
@@ -216,12 +218,9 @@ export default function StaffEditModal({
                   <Input
                     id="lastName"
                     value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
                     placeholder="Smith"
-                    required
-                    disabled={isSubmitting}
+                    disabled={true}
+                    className="bg-muted"
                     data-testid="input-staff-last-name"
                   />
                 ) : (
@@ -237,16 +236,26 @@ export default function StaffEditModal({
                     placeholder="jsmith"
                     disabled={true}
                     className="bg-muted"
-                    title="Alias cannot be edited via this form"
                     data-testid="input-staff-alias"
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                {!isLoading ? (
+            </div>
+
+            {/* Editable fields - simple vertical layout */}
+            {!isLoading ? (
+              <div className="space-y-6">
+                {/* Role Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Label htmlFor="role">Role</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Set the role for this staff member
+                  </p>
                   <div data-testid="input-staff-role">
                     <StaffRolePicker
                       selectedRole={formData.role}
@@ -256,83 +265,97 @@ export default function StaffEditModal({
                       buttonClassName="h-10"
                     />
                   </div>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
-              </div>
-            </div>
+                </div>
 
-            {/* Additional fields below: default_profile switch, requests_per_day with unlimited */}
-            <div className="space-y-4">
-              {/* Requests per day with unlimited switch */}
-              <div className="space-y-2">
-                <Label htmlFor="reqPerDay">Requests per day</Label>
-                {!isLoading ? (
-                  <div className="space-y-2">
-                    <Input
-                      id="reqPerDay"
-                      type="number"
-                      value={
-                        formData.reqPerDay === ""
-                          ? ""
-                          : String(formData.reqPerDay)
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "") {
-                          handleInputChange("reqPerDay", "");
-                        } else {
-                          const num = parseInt(val, 10);
-                          handleInputChange(
-                            "reqPerDay",
-                            Number.isNaN(num) ? "" : num
-                          );
-                        }
-                      }}
-                      placeholder="e.g. 100"
-                      min={1}
-                      step={1}
-                      disabled={isSubmitting || unlimited}
-                      data-testid="input-staff-requests-per-day"
-                    />
+                {/* Requests Per Day Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Label htmlFor="reqPerDay">Requests per day</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Set a daily request limit for this staff member
+                  </p>
+                  <div className="space-y-2 pl-5">
                     <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="unlimited"
-                        checked={unlimited}
+                      <Switch
+                        id="requestsPerDayEnabled"
+                        checked={requestsPerDayEnabled}
                         onCheckedChange={(checked) => {
-                          const isChecked = Boolean(checked);
-                          setUnlimited(isChecked);
-                          if (isChecked) {
+                          setRequestsPerDayEnabled(checked);
+                          if (!checked) {
                             handleInputChange("reqPerDay", "");
                           }
                         }}
                         disabled={isSubmitting}
                       />
-                      <Label htmlFor="unlimited" className="mb-0">
-                        Unlimited
+                      <Label htmlFor="requestsPerDayEnabled" className="mb-0">
+                        Enable limit
                       </Label>
                     </div>
+                    {requestsPerDayEnabled && (
+                      <Input
+                        id="reqPerDay"
+                        type="number"
+                        value={
+                          formData.reqPerDay === ""
+                            ? ""
+                            : String(formData.reqPerDay)
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "") {
+                            handleInputChange("reqPerDay", "");
+                          } else {
+                            const num = parseInt(val, 10);
+                            handleInputChange(
+                              "reqPerDay",
+                              Number.isNaN(num) ? "" : num
+                            );
+                          }
+                        }}
+                        placeholder="e.g. 100"
+                        min={1}
+                        step={1}
+                        disabled={isSubmitting}
+                        data-testid="input-staff-requests-per-day"
+                      />
+                    )}
                   </div>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
+                </div>
+
+                {/* Default Profile Section (superadmin only) - Read-only display */}
+                {isSuperadmin && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Label htmlFor="defaultProfile">Default Profile</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Mark this profile as the default profile for the user (use
+                      bulk edit to change)
+                    </p>
+                    <div className="flex items-center gap-2 pl-5">
+                      <Switch
+                        id="defaultProfile"
+                        checked={formData.defaultProfile}
+                        disabled={true}
+                        className="opacity-50"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {formData.defaultProfile ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {/* Default profile switch (superadmin only) */}
-              {isSuperadmin && (
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="defaultProfile"
-                    checked={formData.defaultProfile}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("defaultProfile", checked)
-                    }
-                    disabled={isSubmitting}
-                  />
-                  <Label htmlFor="defaultProfile">Default Profile</Label>
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="flex justify-end gap-2">

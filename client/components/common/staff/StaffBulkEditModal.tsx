@@ -20,7 +20,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +29,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
+import { Clock, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -57,7 +65,12 @@ export default function StaffBulkEditModal({
 
   const [bulkRole, setBulkRole] = useState<string>("__keep__");
   const [bulkReqPerDay, setBulkReqPerDay] = useState<string>("");
-  const [bulkUnlimited, setBulkUnlimited] = useState<boolean>(false);
+  const [keepCurrent, setKeepCurrent] = useState({
+    role: true,
+    reqPerDay: true,
+    defaultProfile: true,
+  });
+  const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
   const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
     null
   );
@@ -85,21 +98,26 @@ export default function StaffBulkEditModal({
         const uniqueReqPerDays = new Set(reqPerDays);
         if (uniqueReqPerDays.size === 1) {
           const value = Array.from(uniqueReqPerDays)[0];
-          setBulkUnlimited(false);
+          setRequestsPerDayEnabled(true);
           setBulkReqPerDay(String(value));
         } else {
           // Mixed values
-          setBulkUnlimited(false);
+          setRequestsPerDayEnabled(false);
           setBulkReqPerDay("");
         }
       } else {
         // Some are null/unlimited - mixed values
-        setBulkUnlimited(false);
+        setRequestsPerDayEnabled(false);
         setBulkReqPerDay("");
       }
 
       // Default profile - keep as null (don't change) unless explicitly set
       setBulkDefaultProfile(null);
+      setKeepCurrent({
+        role: true,
+        reqPerDay: true,
+        defaultProfile: true,
+      });
     }
   }, [selectedStaffItems, open]);
 
@@ -108,8 +126,13 @@ export default function StaffBulkEditModal({
     if (!open) {
       setBulkRole("__keep__");
       setBulkReqPerDay("");
-      setBulkUnlimited(false);
+      setRequestsPerDayEnabled(false);
       setBulkDefaultProfile(null);
+      setKeepCurrent({
+        role: true,
+        reqPerDay: true,
+        defaultProfile: true,
+      });
       setShowConfirmDialog(false);
     }
   }, [open]);
@@ -139,20 +162,26 @@ export default function StaffBulkEditModal({
         currentProfileId: effectiveProfile?.id || "",
       };
 
-      if (bulkRole !== "__keep__") {
+      if (!keepCurrent.role && bulkRole !== "__keep__") {
         updates.role = bulkRole;
       }
 
-      if (bulkUnlimited) {
-        updates.requests_per_day = null; // Unlimited
-      } else if (bulkReqPerDay !== "") {
-        const num = Number(bulkReqPerDay);
-        updates.requests_per_day = Number.isNaN(num) ? "__keep__" : num;
+      if (!keepCurrent.reqPerDay) {
+        if (!requestsPerDayEnabled || bulkReqPerDay === "") {
+          updates.requests_per_day = null; // Unlimited
+        } else {
+          const num = Number(bulkReqPerDay);
+          updates.requests_per_day = Number.isNaN(num) ? "__keep__" : num;
+        }
       } else {
         updates.requests_per_day = "__keep__"; // Don't update
       }
 
-      if (isSuperadmin && bulkDefaultProfile !== null) {
+      if (
+        isSuperadmin &&
+        !keepCurrent.defaultProfile &&
+        bulkDefaultProfile !== null
+      ) {
         updates.default_profile = bulkDefaultProfile;
       }
 
@@ -178,7 +207,8 @@ export default function StaffBulkEditModal({
     profileIds,
     bulkRole,
     bulkReqPerDay,
-    bulkUnlimited,
+    requestsPerDayEnabled,
+    keepCurrent,
     bulkDefaultProfile,
     isSuperadmin,
     effectiveProfile?.id,
@@ -192,7 +222,7 @@ export default function StaffBulkEditModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-lg"
+          className="max-w-2xl"
           data-testid="dialog-bulk-edit-staff"
         >
           <DialogHeader>
@@ -204,79 +234,181 @@ export default function StaffBulkEditModal({
               {profileIds.length !== 1 ? "s" : ""}
             </div>
 
-            {/* Role picker with __keep__ option */}
-            <div className="space-y-2">
-              <Label htmlFor="bulkRole">Role</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={bulkRole === "__keep__" ? "default" : "outline"}
-                  onClick={() => setBulkRole("__keep__")}
-                  disabled={isSubmitting}
-                  className="flex-1"
-                >
-                  Keep Current
-                </Button>
-                <div className="flex-1" data-testid="input-bulk-staff-role">
-                  <StaffRolePicker
-                    selectedRole={bulkRole === "__keep__" ? "" : bulkRole}
-                    onSelect={(value) => {
-                      // When a role is selected, switch from __keep__ to that role
-                      setBulkRole(value);
-                    }}
-                    placeholder="Select role"
-                    disabled={isSubmitting}
-                    buttonClassName="h-10"
-                  />
-                </div>
-              </div>
-            </div>
+            {/* Table layout for editable fields */}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Field</TableHead>
+                    <TableHead className="w-[120px] text-center">
+                      Keep Current
+                    </TableHead>
+                    <TableHead>Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {/* Role Row */}
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label htmlFor="bulkRole">Role</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Set the role for selected staff members
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={keepCurrent.role}
+                        onCheckedChange={(checked) => {
+                          setKeepCurrent((prev) => ({
+                            ...prev,
+                            role: checked,
+                          }));
+                          if (checked) {
+                            setBulkRole("__keep__");
+                          }
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div data-testid="input-bulk-staff-role">
+                        <StaffRolePicker
+                          selectedRole={bulkRole === "__keep__" ? "" : bulkRole}
+                          onSelect={(value) => {
+                            setBulkRole(value);
+                            setKeepCurrent((prev) => ({
+                              ...prev,
+                              role: false,
+                            }));
+                          }}
+                          placeholder="Select role"
+                          disabled={isSubmitting || keepCurrent.role}
+                          buttonClassName="h-10"
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
 
-            {/* Requests per day with unlimited switch */}
-            <div className="space-y-2">
-              <Label htmlFor="bulkReqPerDay">Requests per day</Label>
-              <Input
-                id="bulkReqPerDay"
-                type="number"
-                value={bulkReqPerDay}
-                onChange={(e) => setBulkReqPerDay(e.target.value)}
-                placeholder="e.g. 100"
-                min={1}
-                step={1}
-                disabled={isSubmitting || bulkUnlimited}
-                data-testid="input-bulk-staff-requests-per-day"
-              />
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="bulkUnlimited"
-                  checked={bulkUnlimited}
-                  onCheckedChange={(checked) => {
-                    const isChecked = Boolean(checked);
-                    setBulkUnlimited(isChecked);
-                    if (isChecked) {
-                      setBulkReqPerDay("");
-                    }
-                  }}
-                  disabled={isSubmitting}
-                />
-                <Label htmlFor="bulkUnlimited" className="mb-0">
-                  Unlimited
-                </Label>
-              </div>
-            </div>
+                  {/* Requests Per Day Row */}
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label htmlFor="bulkReqPerDay">Requests per day</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Set a daily request limit for selected staff members
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={keepCurrent.reqPerDay}
+                        onCheckedChange={(checked) =>
+                          setKeepCurrent((prev) => ({
+                            ...prev,
+                            reqPerDay: checked,
+                          }))
+                        }
+                        disabled={isSubmitting}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="bulkRequestsPerDayEnabled"
+                            checked={requestsPerDayEnabled}
+                            onCheckedChange={(checked) => {
+                              setRequestsPerDayEnabled(checked);
+                              setKeepCurrent((prev) => ({
+                                ...prev,
+                                reqPerDay: false,
+                              }));
+                              if (!checked) {
+                                setBulkReqPerDay("");
+                              }
+                            }}
+                            disabled={isSubmitting || keepCurrent.reqPerDay}
+                          />
+                          <Label
+                            htmlFor="bulkRequestsPerDayEnabled"
+                            className="mb-0"
+                          >
+                            Enable limit
+                          </Label>
+                        </div>
+                        {requestsPerDayEnabled && (
+                          <Input
+                            id="bulkReqPerDay"
+                            type="number"
+                            value={bulkReqPerDay}
+                            onChange={(e) => {
+                              setBulkReqPerDay(e.target.value);
+                              setKeepCurrent((prev) => ({
+                                ...prev,
+                                reqPerDay: false,
+                              }));
+                            }}
+                            placeholder="e.g. 100"
+                            min={1}
+                            step={1}
+                            disabled={isSubmitting || keepCurrent.reqPerDay}
+                            data-testid="input-bulk-staff-requests-per-day"
+                          />
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
 
-            {/* Default profile switch (superadmin only) */}
-            {isSuperadmin && (
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="bulkDefaultProfile"
-                  checked={bulkDefaultProfile ?? false}
-                  onCheckedChange={(checked) => setBulkDefaultProfile(checked)}
-                  disabled={isSubmitting}
-                />
-                <Label htmlFor="bulkDefaultProfile">Default Profile</Label>
-              </div>
-            )}
+                  {/* Default Profile Row (superadmin only) */}
+                  {isSuperadmin && (
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label htmlFor="bulkDefaultProfile">
+                            Default Profile
+                          </Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Mark selected profiles as default profiles for their
+                          users
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={keepCurrent.defaultProfile}
+                          onCheckedChange={(checked) =>
+                            setKeepCurrent((prev) => ({
+                              ...prev,
+                              defaultProfile: checked,
+                            }))
+                          }
+                          disabled={isSubmitting}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          id="bulkDefaultProfile"
+                          checked={bulkDefaultProfile ?? false}
+                          onCheckedChange={(checked) => {
+                            setBulkDefaultProfile(checked);
+                            setKeepCurrent((prev) => ({
+                              ...prev,
+                              defaultProfile: false,
+                            }));
+                          }}
+                          disabled={isSubmitting || keepCurrent.defaultProfile}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
             {/* Action buttons */}
             <div className="flex justify-end gap-2">
