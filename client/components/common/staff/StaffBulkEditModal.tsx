@@ -7,18 +7,9 @@
 "use client";
 
 import type { ProfileListItem } from "@/app/(main)/system/staff/page";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import type { BulkUpdateStaffAction } from "@/components/staff/Staff";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -51,6 +42,8 @@ export interface StaffBulkEditModalProps {
   onDone?: () => void;
   bulkUpdateStaffAction?: BulkUpdateStaffAction;
   selectedStaffItems?: ProfileListItem[];
+  validDepartmentIds?: string[];
+  departmentMapping?: Record<string, { name: string; description: string }>;
 }
 
 export default function StaffBulkEditModal({
@@ -60,6 +53,8 @@ export default function StaffBulkEditModal({
   onDone,
   bulkUpdateStaffAction,
   selectedStaffItems = [],
+  validDepartmentIds = [],
+  departmentMapping = {},
 }: StaffBulkEditModalProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -70,7 +65,11 @@ export default function StaffBulkEditModal({
     role: true,
     reqPerDay: true,
     defaultProfile: true,
+    primaryDepartment: true,
   });
+  const [bulkPrimaryDepartmentId, setBulkPrimaryDepartmentId] = useState<
+    string | null
+  >(null);
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
   const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
     null
@@ -79,7 +78,6 @@ export default function StaffBulkEditModal({
     null
   );
   const [keepTourCompleted, setKeepTourCompleted] = useState(true);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -119,10 +117,12 @@ export default function StaffBulkEditModal({
       // Default profile - keep as null (don't change) unless explicitly set
       setBulkDefaultProfile(null);
       setBulkTourCompleted(null);
+      setBulkPrimaryDepartmentId(null);
       setKeepCurrent({
         role: true,
         reqPerDay: true,
         defaultProfile: true,
+        primaryDepartment: true,
       });
       setKeepTourCompleted(true);
     }
@@ -136,24 +136,16 @@ export default function StaffBulkEditModal({
       setRequestsPerDayEnabled(false);
       setBulkDefaultProfile(null);
       setBulkTourCompleted(null);
+      setBulkPrimaryDepartmentId(null);
       setKeepCurrent({
         role: true,
         reqPerDay: true,
         defaultProfile: true,
+        primaryDepartment: true,
       });
       setKeepTourCompleted(true);
-      setShowConfirmDialog(false);
     }
   }, [open]);
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (profileIds.length === 0) return;
-      setShowConfirmDialog(true);
-    },
-    [profileIds]
-  );
 
   const handleConfirm = useCallback(async () => {
     if (profileIds.length === 0) return;
@@ -165,6 +157,7 @@ export default function StaffBulkEditModal({
         role?: string;
         requests_per_day?: number | null | string;
         default_profile?: boolean;
+        primary_department_id?: string;
         intro_completed?: boolean;
         chat_completed?: boolean;
         currentProfileId: string;
@@ -202,6 +195,16 @@ export default function StaffBulkEditModal({
         updates.chat_completed = bulkTourCompleted;
       }
 
+      // Primary department - only update if not keeping current and value is set
+      if (
+        isSuperadmin &&
+        !keepCurrent.primaryDepartment &&
+        bulkPrimaryDepartmentId !== null &&
+        bulkPrimaryDepartmentId !== ""
+      ) {
+        updates.primary_department_id = bulkPrimaryDepartmentId;
+      }
+
       if (!bulkUpdateStaffAction) {
         toast.error("Update action not available");
         return;
@@ -209,7 +212,6 @@ export default function StaffBulkEditModal({
       await bulkUpdateStaffAction({ body: updates });
       router.refresh();
       toast.success("Staff updated successfully");
-      setShowConfirmDialog(false);
       onOpenChange(false);
 
       if (onDone) {
@@ -227,6 +229,7 @@ export default function StaffBulkEditModal({
     requestsPerDayEnabled,
     keepCurrent,
     bulkDefaultProfile,
+    bulkPrimaryDepartmentId,
     bulkTourCompleted,
     keepTourCompleted,
     isSuperadmin,
@@ -236,6 +239,15 @@ export default function StaffBulkEditModal({
     onOpenChange,
     onDone,
   ]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (profileIds.length === 0) return;
+      await handleConfirm();
+    },
+    [profileIds, handleConfirm]
+  );
 
   return (
     <>
@@ -384,6 +396,99 @@ export default function StaffBulkEditModal({
                     </TableCell>
                   </TableRow>
 
+                  {/* Tour Completion Row */}
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label htmlFor="bulkTourCompleted">
+                          Tour Completed
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Mark both intro and chat tours as completed for selected
+                        staff members
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Checkbox
+                        checked={keepTourCompleted}
+                        onCheckedChange={(checked) => {
+                          const isChecked = checked === true;
+                          setKeepTourCompleted(isChecked);
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        id="bulkTourCompleted"
+                        checked={bulkTourCompleted ?? false}
+                        onCheckedChange={(checked) => {
+                          setBulkTourCompleted(checked);
+                          setKeepTourCompleted(false);
+                        }}
+                        disabled={isSubmitting || keepTourCompleted}
+                      />
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Primary Department Row (superadmin only) */}
+                  {isSuperadmin && (
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Label htmlFor="bulkPrimaryDepartment">
+                            Primary Department
+                          </Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Set the primary department for selected staff members
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={keepCurrent.primaryDepartment}
+                          onCheckedChange={(checked) => {
+                            const isChecked = checked === true;
+                            setKeepCurrent((prev) => ({
+                              ...prev,
+                              primaryDepartment: isChecked,
+                            }));
+                          }}
+                          disabled={isSubmitting}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <DepartmentPicker
+                          mapping={departmentMapping}
+                          validIds={validDepartmentIds}
+                          selectedIds={
+                            bulkPrimaryDepartmentId
+                              ? [bulkPrimaryDepartmentId]
+                              : []
+                          }
+                          onSelect={(ids) => {
+                            const deptId =
+                              ids.length > 0 && ids[0] ? ids[0] : null;
+                            setBulkPrimaryDepartmentId(deptId);
+                            setKeepCurrent((prev) => ({
+                              ...prev,
+                              primaryDepartment: false,
+                            }));
+                          }}
+                          multiSelect={false}
+                          placeholder="Select primary department"
+                          disabled={
+                            isSubmitting || keepCurrent.primaryDepartment
+                          }
+                          buttonClassName="h-10"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+
                   {/* Default Profile Row (superadmin only) */}
                   {isSuperadmin && (
                     <TableRow>
@@ -428,41 +533,6 @@ export default function StaffBulkEditModal({
                       </TableCell>
                     </TableRow>
                   )}
-
-                  {/* Tour Completion Row */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        <Label htmlFor="bulkTourCompleted">Tour Completed</Label>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Mark both intro and chat tours as completed for selected
-                        staff members
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={keepTourCompleted}
-                        onCheckedChange={(checked) => {
-                          const isChecked = checked === true;
-                          setKeepTourCompleted(isChecked);
-                        }}
-                        disabled={isSubmitting}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        id="bulkTourCompleted"
-                        checked={bulkTourCompleted ?? false}
-                        onCheckedChange={(checked) => {
-                          setBulkTourCompleted(checked);
-                          setKeepTourCompleted(false);
-                        }}
-                        disabled={isSubmitting || keepTourCompleted}
-                      />
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
             </div>
@@ -489,28 +559,6 @@ export default function StaffBulkEditModal({
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* Confirmation Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent data-testid="dialog-confirm-bulk-staff-edit">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to update {profileIds.length} staff member
-              {profileIds.length !== 1 ? "s" : ""}. This action will modify
-              their profile information.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Confirm Update"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

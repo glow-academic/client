@@ -357,6 +357,7 @@ export default function Staff({
           updateStaffAction={updateStaffAction}
           staffItem={staff.find((s) => s.profile_id === editProfileId) || null}
           validDepartmentIds={validDepartmentIds}
+          departmentMapping={departmentMapping}
         />
       )}
 
@@ -376,6 +377,8 @@ export default function Staff({
           selectedStaffItems={staff.filter((s) =>
             selectedStaffIds.includes(s.profile_id)
           )}
+          validDepartmentIds={validDepartmentIds}
+          departmentMapping={departmentMapping}
         />
       )}
 

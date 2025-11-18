@@ -1369,6 +1369,7 @@ export default function Cohort({
                 updateStaffAction={updateStaffAction}
                 staffItem={staffItem}
                 validDepartmentIds={cohortData.valid_department_ids || []}
+                departmentMapping={departmentMapping}
               />
             );
           })()}

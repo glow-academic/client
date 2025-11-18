@@ -538,6 +538,25 @@ export function Scenarios({
           {scenario.problem_statement ||
             "Scenario will be dynamically generated."}
         </p>
+        {/* Parameter badges */}
+        {scenario.parameter_items && scenario.parameter_items.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {scenario.parameter_items.map((item) => (
+              <TooltipProvider key={item.parameter_id + "_" + item.name}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs">
+                      {item.name}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{item.parameter_name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+        )}
         {!isChild && (
           <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />

@@ -24,6 +24,7 @@ class BulkUpdateStaffRequest(BaseModel):
         None  # int for limit, None for unlimited, "__keep__" to not update
     )
     default_profile: bool | None = None
+    primary_department_id: str | None = None
     intro_completed: bool | None = None
     chat_completed: bool | None = None
     currentProfileId: str  # Current user's profile ID for permission validation
@@ -72,6 +73,14 @@ async def bulk_update_profile(
         elif request.requests_per_day is None:
             requests_per_day_value = -1  # None -> unlimited (NULL in DB)
 
+        # Handle primary_department_id: convert to UUID if provided, None if not
+        primary_department_uuid = None
+        if request.primary_department_id:
+            try:
+                primary_department_uuid = uuid.UUID(request.primary_department_id)
+            except (ValueError, TypeError):
+                primary_department_uuid = None  # Invalid UUID -> skip update
+
         # Single consolidated query for validation + update
         sql_query = load_sql("sql/v3/profile/staff/bulk_update_profile_complete.sql")
         sql_params = (
@@ -83,6 +92,7 @@ async def bulk_update_profile(
             requests_per_day_value,
             request.intro_completed,
             request.chat_completed,
+            primary_department_uuid,
         )
 
         async with transaction(conn):

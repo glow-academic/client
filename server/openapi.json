@@ -8610,6 +8610,17 @@
             ],
             "title": "Default Profile"
           },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
           "intro_completed": {
             "anyOf": [
               {
@@ -25688,6 +25699,13 @@
             "type": "array",
             "title": "Parameter Item Ids"
           },
+          "parameter_items": {
+            "items": {
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
+            },
+            "type": "array",
+            "title": "Parameter Items"
+          },
           "simulation_ids": {
             "items": {
               "type": "string"
@@ -25731,6 +25749,7 @@
           "objective_ids",
           "persona_ids",
           "parameter_item_ids",
+          "parameter_items",
           "simulation_ids",
           "num_simulations",
           "can_edit",

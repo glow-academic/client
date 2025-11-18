@@ -49,6 +49,7 @@ class ScenarioItem(BaseModel):
     objective_ids: list[str]  # "scenarioId_idx" composite keys
     persona_ids: list[str]
     parameter_item_ids: list[str]
+    parameter_items: list[ParameterItemMappingItem]  # Computed: actual parameter item objects
     simulation_ids: list[str]
     num_simulations: int
     can_edit: bool
@@ -231,6 +232,13 @@ async def get_scenarios_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
+            # Compute parameter_items: map IDs to actual objects from mapping
+            parameter_items = [
+                parameter_item_mapping[pid]
+                for pid in parameter_item_ids
+                if pid in parameter_item_mapping
+            ]
+
             scenarios.append(
                 ScenarioItem(
                     scenario_id=str(row["scenario_id"]),
@@ -243,6 +251,7 @@ async def get_scenarios_list(
                     objective_ids=objective_ids,
                     persona_ids=row.get("persona_ids") or [],
                     parameter_item_ids=parameter_item_ids,
+                    parameter_items=parameter_items,
                     simulation_ids=simulation_ids,
                     num_simulations=row["num_simulations"],
                     can_edit=row["can_edit"],

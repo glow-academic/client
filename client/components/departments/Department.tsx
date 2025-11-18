@@ -560,6 +560,7 @@ export default function Department({
                 .find((s) => s.profile_id === editProfileId) || null
             }
             validDepartmentIds={departmentData.valid_department_ids || []}
+            departmentMapping={departmentData.department_mapping || {}}
           />
         )}
 

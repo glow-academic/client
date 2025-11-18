@@ -7,18 +7,9 @@
 "use client";
 
 import type { ProfileListItem } from "@/app/(main)/system/staff/page";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import type { UpdateStaffAction } from "@/components/staff/Staff";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +35,7 @@ export interface StaffEditModalProps {
   updateStaffAction?: UpdateStaffAction;
   staffItem?: ProfileListItem | null;
   validDepartmentIds?: string[];
+  departmentMapping?: Record<string, { name: string; description: string }>;
   isLoading?: boolean;
 }
 
@@ -55,6 +47,7 @@ export default function StaffEditModal({
   updateStaffAction,
   staffItem,
   validDepartmentIds = [],
+  departmentMapping = {},
   isLoading = false,
 }: StaffEditModalProps) {
   const router = useRouter();
@@ -86,9 +79,9 @@ export default function StaffEditModal({
     defaultProfile: false,
     introCompleted: false,
     chatCompleted: false,
+    primaryDepartmentId: "",
   });
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tourCompletedTouched, setTourCompletedTouched] = useState(false);
 
@@ -106,6 +99,7 @@ export default function StaffEditModal({
         defaultProfile: targetUser.defaultProfile ?? false,
         introCompleted: targetUser.introCompleted ?? false,
         chatCompleted: targetUser.chatCompleted ?? false,
+        primaryDepartmentId: targetUser.departmentId || "",
       });
       setRequestsPerDayEnabled(targetUser.reqPerDay != null);
       setTourCompletedTouched(false);
@@ -124,15 +118,6 @@ export default function StaffEditModal({
     []
   );
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!profileId) return;
-      setShowConfirmDialog(true);
-    },
-    [profileId]
-  );
-
   const handleConfirm = useCallback(async () => {
     if (!profileId) return;
 
@@ -146,9 +131,9 @@ export default function StaffEditModal({
           : Number(formData.reqPerDay);
 
       // V3 update endpoint requires primary_department_id and active
-      // Get primary_department_id from staffItem or use first valid department
+      // Get primary_department_id from form data or use first valid department as fallback
       const departmentId =
-        targetUser?.departmentId ||
+        formData.primaryDepartmentId ||
         (validDepartmentIds && validDepartmentIds.length > 0
           ? validDepartmentIds[0]
           : "") ||
@@ -197,7 +182,6 @@ export default function StaffEditModal({
       router.refresh();
 
       toast.success("Staff updated successfully");
-      setShowConfirmDialog(false);
       onOpenChange(false);
       if (onDone) {
         onDone();
@@ -213,13 +197,21 @@ export default function StaffEditModal({
     requestsPerDayEnabled,
     tourCompletedTouched,
     targetUser?.active,
-    targetUser?.departmentId,
     validDepartmentIds,
     updateStaffAction,
     router,
     onOpenChange,
     onDone,
   ]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!profileId) return;
+      await handleConfirm();
+    },
+    [profileId, handleConfirm]
+  );
 
   if (!profileId) return null;
 
@@ -360,34 +352,6 @@ export default function StaffEditModal({
                   </div>
                 </div>
 
-                {/* Default Profile Section (superadmin only) */}
-                {isSuperadmin && (
-                  <div className="space-y-2 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor="defaultProfile"
-                          className="text-sm flex items-center gap-1.5"
-                        >
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          Default Profile
-                        </Label>
-                        <Switch
-                          id="defaultProfile"
-                          checked={formData.defaultProfile}
-                          onCheckedChange={(checked) =>
-                            handleInputChange("defaultProfile", checked)
-                          }
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground pl-5">
-                        Mark this profile as the default profile for the user
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Tour Completion Section */}
                 <div className="space-y-2 pt-2">
                   <div className="space-y-1">
@@ -416,6 +380,65 @@ export default function StaffEditModal({
                     </p>
                   </div>
                 </div>
+
+                {/* Primary Department Section (superadmin only) */}
+                {isSuperadmin && (
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="primaryDepartment">
+                      Primary Department
+                    </Label>
+                    <DepartmentPicker
+                      mapping={departmentMapping}
+                      validIds={validDepartmentIds}
+                      selectedIds={
+                        formData.primaryDepartmentId
+                          ? [formData.primaryDepartmentId]
+                          : []
+                      }
+                      onSelect={(ids) => {
+                        const deptId = ids.length > 0 ? ids[0] : "";
+                        if (deptId !== undefined) {
+                          handleInputChange("primaryDepartmentId", deptId);
+                        }
+                      }}
+                      multiSelect={false}
+                      placeholder="Select primary department"
+                      disabled={isSubmitting}
+                      buttonClassName="h-10"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Set the primary department for this staff member
+                    </p>
+                  </div>
+                )}
+
+                {/* Default Profile Section (superadmin only) */}
+                {isSuperadmin && (
+                  <div className="space-y-2 pt-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor="defaultProfile"
+                          className="text-sm flex items-center gap-1.5"
+                        >
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          Default Profile
+                        </Label>
+                        <Switch
+                          id="defaultProfile"
+                          checked={formData.defaultProfile}
+                          onCheckedChange={(checked) =>
+                            handleInputChange("defaultProfile", checked)
+                          }
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-5">
+                        Mark this profile as the default profile for the user
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -447,28 +470,6 @@ export default function StaffEditModal({
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* Confirmation Dialog */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent data-testid="dialog-confirm-staff-edit">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to update {formData.firstName} {formData.lastName} (
-              {formData.alias}). This action will modify their profile
-              information.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Confirm Update"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

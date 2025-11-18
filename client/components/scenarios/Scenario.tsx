@@ -266,6 +266,7 @@ export default function Scenario({
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isEditMode = mode === "edit" && !!scenarioId;
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const scenarioDetail = serverScenarioDetail;
@@ -1697,80 +1698,82 @@ export default function Scenario({
               disabled={isReadonly}
             />
 
-            {/* Guardrail Switches */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="copyPasteAllowed"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                    Copy Paste
-                  </Label>
-                  <Switch
-                    id="copyPasteAllowed"
-                    data-testid="switch-scenario-copy-paste"
-                    checked={formData.copyPasteAllowed ?? false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("copyPasteAllowed", checked)
-                    }
-                    disabled={isReadonly}
-                  />
+            {/* Guardrail Switches - Only visible to superadmin */}
+            {isSuperadmin && (
+              <div className="space-y-2 pt-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="copyPasteAllowed"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                      Copy Paste
+                    </Label>
+                    <Switch
+                      id="copyPasteAllowed"
+                      data-testid="switch-scenario-copy-paste"
+                      checked={formData.copyPasteAllowed ?? false}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("copyPasteAllowed", checked)
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Allow students to copy and paste text during the scenario
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Allow students to copy and paste text during the scenario
-                </p>
-              </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="inputGuardrailEnabled"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                    Input Guardrail
-                  </Label>
-                  <Switch
-                    id="inputGuardrailEnabled"
-                    data-testid="switch-scenario-input-guardrail"
-                    checked={formData.inputGuardrailEnabled ?? false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("inputGuardrailEnabled", checked)
-                    }
-                    disabled={isReadonly}
-                  />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="inputGuardrailEnabled"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                      Input Guardrail
+                    </Label>
+                    <Switch
+                      id="inputGuardrailEnabled"
+                      data-testid="switch-scenario-input-guardrail"
+                      checked={formData.inputGuardrailEnabled ?? false}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("inputGuardrailEnabled", checked)
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Monitor and filter inappropriate input from students
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Monitor and filter inappropriate input from students
-                </p>
-              </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="outputGuardrailEnabled"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                    Output Guardrail
-                  </Label>
-                  <Switch
-                    id="outputGuardrailEnabled"
-                    data-testid="switch-scenario-output-guardrail"
-                    checked={formData.outputGuardrailEnabled ?? false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("outputGuardrailEnabled", checked)
-                    }
-                    disabled={isReadonly}
-                  />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="outputGuardrailEnabled"
+                      className="text-sm flex items-center gap-1.5"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                      Output Guardrail
+                    </Label>
+                    <Switch
+                      id="outputGuardrailEnabled"
+                      data-testid="switch-scenario-output-guardrail"
+                      checked={formData.outputGuardrailEnabled ?? false}
+                      onCheckedChange={(checked) =>
+                        handleInputChange("outputGuardrailEnabled", checked)
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">
+                    Monitor and filter inappropriate output from the persona
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Monitor and filter inappropriate output from the persona
-                </p>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -1878,8 +1881,8 @@ export default function Scenario({
               }}
             />
 
-            {/* Image Input Enabled Switch */}
-            {useDocuments && (
+            {/* Image Input Enabled Switch - Only visible to superadmin */}
+            {useDocuments && isSuperadmin && (
               <div className="space-y-2 pt-2">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">

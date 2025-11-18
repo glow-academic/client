@@ -53,7 +53,7 @@ import {
 import {
   Clock,
   Edit,
-  FileText,
+  Eye,
   RefreshCw,
   Shield,
   Trash2,
@@ -605,7 +605,7 @@ export function StaffDataTable({
                   onClick={() => onPreview(staff)}
                   data-testid="btn-preview-staff"
                 >
-                  <FileText className="h-3 w-3" />
+                  <Eye className="h-3 w-3" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

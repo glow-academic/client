@@ -3917,6 +3917,8 @@ export interface components {
             requests_per_day?: number | string | null;
             /** Default Profile */
             default_profile?: boolean | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
             /** Intro Completed */
             intro_completed?: boolean | null;
             /** Chat Completed */
@@ -10544,6 +10546,8 @@ export interface components {
             persona_ids: string[];
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Parameter Items */
+            parameter_items: components["schemas"]["ParameterItemMappingItem"][];
             /** Simulation Ids */
             simulation_ids: string[];
             /** Num Simulations */

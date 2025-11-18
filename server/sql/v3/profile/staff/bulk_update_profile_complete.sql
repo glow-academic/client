@@ -8,6 +8,7 @@
 --   $6 = requests_per_day (integer) - new requests_per_day (NULL to skip update, use -1 for unlimited)
 --   $7 = intro_completed (boolean) - new viewed_intro (NULL to skip)
 --   $8 = chat_completed (boolean) - new viewed_chat (NULL to skip)
+--   $9 = primary_department_id (uuid) - new primary department (NULL to skip)
 -- Returns: updated_count (integer), validation_errors (text[])
 
 WITH current_user_role AS (
@@ -83,6 +84,16 @@ request_limit_update AS (
     DO UPDATE SET 
         requests_per_day = EXCLUDED.requests_per_day,
         updated_at = NOW()
+),
+department_update AS (
+    -- Update primary department if provided (skip if NULL)
+    UPDATE profile_departments
+    SET 
+        department_id = $9,
+        updated_at = NOW()
+    WHERE profile_id IN (SELECT id FROM profile_update)
+        AND $9 IS NOT NULL  -- Only update if value provided (not skipping)
+    RETURNING profile_id
 )
 SELECT COUNT(*)::integer as updated_count
 FROM profile_update
