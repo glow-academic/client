@@ -165,6 +165,7 @@ export interface StaffDataTableProps {
   deletableCount: number;
   canEdit: (profileId: string) => boolean;
   editableCount: number;
+  canRemove?: (profileId: string) => boolean; // Optional: for cohort/department scoped views
   searchStaffAction?: SearchStaffAction;
   processCSVAction?: ProcessCSVAction;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
@@ -200,6 +201,7 @@ export function StaffDataTable({
   deletableCount,
   canEdit,
   editableCount,
+  canRemove,
   searchStaffAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
@@ -631,8 +633,8 @@ export function StaffDataTable({
                 </TooltipContent>
               </Tooltip>
             )}
-            {/* Remove from Cohort - show when cohortId provided */}
-            {cohortId && onRemoveFromCohort && (
+            {/* Remove from Cohort - show when cohortId provided and canRemove allows it */}
+            {cohortId && onRemoveFromCohort && (!canRemove || canRemove(staff.profile_id)) && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -650,8 +652,8 @@ export function StaffDataTable({
                 </TooltipContent>
               </Tooltip>
             )}
-            {/* Remove from Department - show when departmentId provided */}
-            {departmentId && onRemoveFromDepartment && (
+            {/* Remove from Department - show when departmentId provided and canRemove allows it */}
+            {departmentId && onRemoveFromDepartment && (!canRemove || canRemove(staff.profile_id)) && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -889,6 +891,7 @@ export function StaffDataTable({
                   onClick={onBulkEdit}
                   className="h-8"
                   data-testid="btn-bulk-edit-staff"
+                  disabled={editableCount === 0}
                 >
                   Bulk Edit {editableCount} of {selectedCount}
                 </Button>
@@ -899,6 +902,7 @@ export function StaffDataTable({
                   onClick={onBulkDelete}
                   className="h-8"
                   data-testid="btn-bulk-delete-staff"
+                  disabled={deletableCount === 0}
                 >
                   {cohortId
                     ? `Remove ${deletableCount} of ${selectedCount}`

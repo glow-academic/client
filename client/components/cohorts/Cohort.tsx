@@ -1248,6 +1248,17 @@ export default function Cohort({
                     if (isStaged) return true; // Staged profiles can always be removed
                     return staff.can_remove ?? false;
                   }}
+                  canRemove={(profileId) => {
+                    const staff = mergedStaff.find(
+                      (s) => s.profile_id === profileId
+                    );
+                    if (!staff) return false;
+                    const isStaged = (
+                      staff as ProfileListItemWithRemove & { isStaged?: boolean }
+                    ).isStaged;
+                    if (isStaged) return true; // Staged profiles can always be removed
+                    return staff.can_remove ?? false;
+                  }}
                   deletableCount={
                     selectedStaffIds.filter((id) => {
                       const staff = mergedStaff.find(
@@ -1450,6 +1461,8 @@ export default function Cohort({
                 }}
                 bulkUpdateStaffAction={bulkUpdateStaffAction}
                 selectedStaffItems={selectedStaffItems}
+                validDepartmentIds={cohortData.valid_department_ids || []}
+                departmentMapping={cohortData.department_mapping_for_staff || {}}
               />
             );
           })()}

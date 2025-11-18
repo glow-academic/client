@@ -189,7 +189,16 @@ department_staff AS (
             WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
             WHEN up.role = 'ta' AND p.role = 'guest' THEN true
             ELSE false
-        END as can_delete
+        END as can_delete,
+        CASE 
+            WHEN p.id = $2 THEN false
+            WHEN up.role = 'superadmin' THEN true
+            WHEN up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest') THEN true
+            WHEN up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest') THEN true
+            WHEN up.role = 'ta' AND p.role IN ('ta', 'guest') THEN true
+            WHEN up.role = 'guest' AND p.role = 'guest' THEN true
+            ELSE false
+        END as can_remove
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.department_id = $1 AND pd.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
@@ -243,7 +252,8 @@ SELECT
             'chat_completed', ds.chat_completed,
             'requests_in_last_day', ds.requests_in_last_day,
             'can_edit', ds.can_edit,
-            'can_delete', ds.can_delete
+            'can_delete', ds.can_delete,
+            'can_remove', ds.can_remove
         ) ORDER BY ds.last_name, ds.first_name
      ), '[]'::jsonb)
      FROM department_staff ds

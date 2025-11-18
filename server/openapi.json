@@ -9583,6 +9583,23 @@
             "type": "object",
             "title": "Simulation Mapping"
           },
+          "scenario_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ScenarioMappingItem"
+            },
+            "type": "object",
+            "title": "Scenario Mapping"
+          },
+          "simulation_scenario_mapping": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Simulation Scenario Mapping"
+          },
           "department_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/DepartmentMappingItem"
@@ -9626,6 +9643,8 @@
           "cohorts",
           "profile_mapping",
           "simulation_mapping",
+          "scenario_mapping",
+          "simulation_scenario_mapping",
           "department_mapping",
           "profile_options",
           "simulation_options",
@@ -23227,6 +23246,10 @@
           "can_delete": {
             "type": "boolean",
             "title": "Can Delete"
+          },
+          "can_remove": {
+            "type": "boolean",
+            "title": "Can Remove"
           }
         },
         "type": "object",
@@ -23243,7 +23266,8 @@
           "primary_department_id",
           "default_profile",
           "can_edit",
-          "can_delete"
+          "can_delete",
+          "can_remove"
         ],
         "title": "StaffItem",
         "description": "Staff item from department detail."
@@ -23437,6 +23461,10 @@
           "can_delete": {
             "type": "boolean",
             "title": "Can Delete"
+          },
+          "can_remove": {
+            "type": "boolean",
+            "title": "Can Remove"
           }
         },
         "type": "object",
@@ -23453,7 +23481,8 @@
           "primary_department_id",
           "default_profile",
           "can_edit",
-          "can_delete"
+          "can_delete",
+          "can_remove"
         ],
         "title": "StaffItem",
         "description": "Staff item from department detail."

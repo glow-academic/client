@@ -47,6 +47,7 @@ class StaffItem(BaseModel):
     requests_in_last_day: int = 0
     can_edit: bool
     can_delete: bool
+    can_remove: bool
 
 
 class DepartmentDetailResponse(BaseModel):
@@ -161,6 +162,7 @@ async def get_department_detail(
                             ),
                             can_edit=staff_row["can_edit"],
                             can_delete=staff_row["can_delete"],
+                            can_remove=staff_row.get("can_remove", False),
                         )
                     )
 

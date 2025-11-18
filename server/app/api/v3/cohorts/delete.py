@@ -51,7 +51,7 @@ async def delete_cohort(
         if result and result["usage_count"] > 0:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot delete cohort: in use by {result['usage_count']} attempt(s)",
+                detail=f"Cannot delete cohort: has {result['usage_count']} profile link(s) (preserved for historical data)",
             )
 
         # Note: DELETE is idempotent - deleting non-existent entity is considered success

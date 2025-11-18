@@ -52,6 +52,74 @@ all_simulation_ids AS (
     SELECT DISTINCT unnest(simulation_ids) as simulation_id
     FROM cohort_simulations_agg
 ),
+simulation_scenarios_agg AS (
+    SELECT 
+        ss.simulation_id,
+        ARRAY_AGG(ss.scenario_id ORDER BY sc.name) as scenario_ids
+    FROM simulation_scenarios ss
+    JOIN scenarios sc ON sc.id = ss.scenario_id
+    WHERE ss.simulation_id IN (SELECT simulation_id FROM all_simulation_ids)
+      AND ss.active = true
+    GROUP BY ss.simulation_id
+),
+all_scenario_ids AS (
+    SELECT DISTINCT unnest(scenario_ids) as scenario_id
+    FROM simulation_scenarios_agg
+),
+scenario_personas_agg AS (
+    SELECT 
+        sp.scenario_id,
+        ARRAY_AGG(sp.persona_id::text ORDER BY sp.persona_id) as persona_ids
+    FROM scenario_personas sp
+    WHERE sp.scenario_id IN (SELECT scenario_id FROM all_scenario_ids)
+      AND sp.active = true
+    GROUP BY sp.scenario_id
+),
+all_persona_ids AS (
+    SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
+    FROM scenario_personas_agg
+    WHERE persona_ids IS NOT NULL
+),
+persona_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name,
+                'description', COALESCE(p.description, ''),
+                'color', p.color,
+                'icon', p.icon,
+                'image_model', COALESCE(m.image_model, false)
+            )
+        ) FILTER (WHERE p.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_persona_ids api
+    LEFT JOIN personas p ON p.id = api.persona_id
+    LEFT JOIN models m ON m.id = p.model_id
+),
+scenario_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            s.id::text,
+            jsonb_build_object(
+                'name', s.name,
+                'description', COALESCE(sps.problem_statement, ''),
+                'active', s.active,
+                'persona_ids', COALESCE(spa.persona_ids, ARRAY[]::text[]),
+                'persona_mapping', pm.mapping
+            )
+        ) FILTER (WHERE s.id IS NOT NULL AND st.parent_id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_scenario_ids asi
+    LEFT JOIN scenarios s ON s.id = asi.scenario_id
+    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
+    -- Only include root scenarios (parent_id = child_id in scenario_tree)
+    LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
+    CROSS JOIN persona_mapping_data pm
+),
 all_department_ids AS (
     SELECT DISTINCT unnest(department_ids)::uuid as department_id
     FROM cohort_departments_data
@@ -116,7 +184,8 @@ SELECT
                 'department_ids', CASE 
                     WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
                     ELSE NULL::jsonb
-                END
+                END,
+                'scenario_ids', COALESCE(ssa.scenario_ids, ARRAY[]::uuid[])
             )
         ), '{}'::jsonb)
         FROM simulations s
@@ -129,8 +198,10 @@ SELECT
             WHERE sd.active = true
             GROUP BY sd.simulation_id
         ) sdd ON sdd.simulation_id = s.id
+        LEFT JOIN simulation_scenarios_agg ssa ON ssa.simulation_id = s.id
         WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
     ) as simulation_mapping,
+    sm.mapping as scenario_mapping,
     dmd.mapping as department_mapping
 FROM cohorts c
 LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
@@ -141,13 +212,14 @@ LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
 LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
 CROSS JOIN user_profile up
 CROSS JOIN department_mapping_data dmd
+CROSS JOIN scenario_mapping_data sm
 WHERE (
         (up.role = 'instructional' AND uic.cohort_id IS NOT NULL)
         OR
         up.role != 'instructional'
     )
 GROUP BY c.id, c.title, c.description, c.active, 
-         cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping
+         cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping, sm.mapping
 HAVING 
     COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
     OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)

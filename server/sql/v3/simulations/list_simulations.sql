@@ -95,6 +95,38 @@ all_scenario_ids AS (
     SELECT DISTINCT unnest(scenario_ids) as scenario_id
     FROM simulation_data
 ),
+scenario_personas_agg AS (
+    SELECT 
+        sp.scenario_id,
+        ARRAY_AGG(sp.persona_id::text ORDER BY sp.persona_id) as persona_ids
+    FROM scenario_personas sp
+    WHERE sp.scenario_id IN (SELECT scenario_id FROM all_scenario_ids)
+      AND sp.active = true
+    GROUP BY sp.scenario_id
+),
+all_persona_ids AS (
+    SELECT DISTINCT unnest(persona_ids)::uuid as persona_id
+    FROM scenario_personas_agg
+    WHERE persona_ids IS NOT NULL
+),
+persona_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name,
+                'description', COALESCE(p.description, ''),
+                'color', p.color,
+                'icon', p.icon,
+                'image_model', COALESCE(m.image_model, false)
+            )
+        ) FILTER (WHERE p.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_persona_ids api
+    LEFT JOIN personas p ON p.id = api.persona_id
+    LEFT JOIN models m ON m.id = p.model_id
+),
 scenario_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -103,13 +135,8 @@ scenario_mapping_data AS (
                 'name', s.name,
                 'description', COALESCE(sps.problem_statement, ''),
                 'active', s.active,
-                'persona_id', (
-                    SELECT persona_id 
-                    FROM scenario_personas sp 
-                    WHERE sp.scenario_id = s.id AND sp.active = true 
-                    LIMIT 1
-                ),
-                'persona_mapping', '{}'::jsonb,
+                'persona_ids', COALESCE(spa.persona_ids, ARRAY[]::text[]),
+                'persona_mapping', pm.mapping,
                 'document_mapping', '{}'::jsonb,
                 'parameter_item_mapping', '{}'::jsonb,
                 'parameter_item_ids', ARRAY[]::text[],
@@ -121,8 +148,10 @@ scenario_mapping_data AS (
     FROM all_scenario_ids asi
     LEFT JOIN scenarios s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     -- Only include root scenarios (parent_id = child_id in scenario_tree)
     LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
+    CROSS JOIN persona_mapping_data pm
 ),
 all_rubric_ids AS (
     SELECT DISTINCT rubric_id

@@ -4298,6 +4298,14 @@ export interface components {
             simulation_mapping: {
                 [key: string]: components["schemas"]["SimulationMappingItem"];
             };
+            /** Scenario Mapping */
+            scenario_mapping: {
+                [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Simulation Scenario Mapping */
+            simulation_scenario_mapping: {
+                [key: string]: string[];
+            };
             /** Department Mapping */
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
@@ -9642,6 +9650,8 @@ export interface components {
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
+            /** Can Remove */
+            can_remove: boolean;
         };
         /**
          * DepartmentDetailResponse
@@ -9742,6 +9752,8 @@ export interface components {
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
+            /** Can Remove */
+            can_remove: boolean;
         };
         /**
          * DepartmentItem

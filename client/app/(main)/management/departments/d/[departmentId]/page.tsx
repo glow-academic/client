@@ -22,6 +22,10 @@ import {
   searchStaff,
   updateStaff,
 } from "@/app/(main)/system/staff/page";
+import {
+  deleteDepartment,
+  duplicateDepartment,
+} from "@/app/(main)/management/departments/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
@@ -144,6 +148,8 @@ export default async function DepartmentEditPage({
         departmentDetail={departmentDetail}
         updateDepartmentAction={updateDepartment}
         removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
+        duplicateDepartmentAction={duplicateDepartment}
+        deleteDepartmentAction={deleteDepartment}
         processCSVAction={processCSV}
         bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
         searchStaffAction={searchStaff}

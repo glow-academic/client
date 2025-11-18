@@ -10,6 +10,7 @@ import {
   Edit,
   Eye,
   LogOut,
+  Play,
   Plus,
   Sparkles,
   Trash2,
@@ -67,7 +68,7 @@ export interface CohortsProps {
   listData: CohortsListOut;
   // Server actions (replaces useMutation)
   duplicateCohortAction?: (
-    input: DuplicateCohortIn,
+    input: DuplicateCohortIn
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
   leaveCohortAction?: (input: LeaveCohortIn) => Promise<LeaveCohortOut>;
@@ -110,7 +111,7 @@ export default function Cohorts({
   // Extract data from response
   const cohorts = useMemo(
     () => cohortsData?.cohorts || [],
-    [cohortsData?.cohorts],
+    [cohortsData?.cohorts]
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -176,7 +177,7 @@ export default function Cohorts({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -421,9 +422,25 @@ export default function Cohorts({
         <p className="text-sm text-muted-foreground line-clamp-2">
           {cohort.description || "No description available"}
         </p>
-        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-          <Users className="h-3 w-3" />
-          {cohort.num_members} members
+        {/* Compact info row: Members • Simulations */}
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
+          <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {cohort.num_members} members
+          </span>
+          {/* Simulation count */}
+          {cohort.simulation_ids && cohort.simulation_ids.length > 0 && (
+            <>
+              <span className="text-muted-foreground">•</span>
+              <span className="flex items-center gap-1">
+                <Play className="h-3 w-3" />
+                {cohort.simulation_ids.length}{" "}
+                {cohort.simulation_ids.length === 1
+                  ? "simulation"
+                  : "simulations"}
+              </span>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

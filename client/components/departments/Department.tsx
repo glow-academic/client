@@ -11,6 +11,16 @@ import { toast } from "sonner";
 
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { Power } from "lucide-react";
+import { Copy, Power, Trash2 } from "lucide-react";
 // Type-only import from server page
 import type {
   CreateStaffDataOut,
@@ -39,6 +49,13 @@ import type {
   UpdateDepartmentIn,
   UpdateDepartmentOut,
 } from "@/app/(main)/management/departments/d/[departmentId]/page";
+// Import types from list page (delete/duplicate actions)
+import type {
+  DeleteDepartmentIn,
+  DeleteDepartmentOut,
+  DuplicateDepartmentIn,
+  DuplicateDepartmentOut,
+} from "@/app/(main)/management/departments/page";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,
@@ -50,10 +67,13 @@ import type { DepartmentStaffItem } from "@/app/(main)/management/departments/d/
 import type { DepartmentDefaultStaffItem } from "@/app/(main)/management/departments/new/page";
 
 // Helper to normalize department staff item to ProfileListItem format
+// Note: ProfileListItem doesn't have can_remove, so we extend it
+type ProfileListItemWithRemove = ProfileListItem & { can_remove?: boolean };
+
 const normalizeDepartmentStaffItem = (
   item: DepartmentStaffItem | DepartmentDefaultStaffItem,
   departmentId?: string
-): ProfileListItem => ({
+): ProfileListItemWithRemove => ({
   profile_id: item.profile_id,
   first_name: item.first_name,
   last_name: item.last_name,
@@ -66,13 +86,32 @@ const normalizeDepartmentStaffItem = (
   last_active: item.last_active ?? null,
   cohort_ids: item.cohort_ids ?? [],
   department_ids: item.department_ids ?? [],
-  primary_department_id: departmentId || ("primary_department_id" in item && item.primary_department_id) || ("department_id" in item && item.department_id) || item.department_ids?.[0] || "", // Use current departmentId, primary_department_id, department_id, or first in array
+  primary_department_id: (() => {
+    if (departmentId) return departmentId;
+    if (
+      "primary_department_id" in item &&
+      typeof item.primary_department_id === "string"
+    )
+      return item.primary_department_id;
+    if ("department_id" in item && typeof item.department_id === "string")
+      return item.department_id;
+    if (
+      Array.isArray(item.department_ids) &&
+      item.department_ids.length > 0 &&
+      typeof item.department_ids[0] === "string"
+    )
+      return item.department_ids[0];
+    return "";
+  })(), // Use current departmentId, primary_department_id, department_id, or first in array
   requests_per_day: item.requests_per_day ?? null,
   total_requests: item.total_requests ?? 0,
   default_profile: item.default_profile,
   requests_in_last_day: item.requests_in_last_day ?? 0,
+  intro_completed: item.intro_completed ?? false,
+  chat_completed: item.chat_completed ?? false,
   can_edit: item.can_edit,
   can_delete: item.can_delete,
+  can_remove: "can_remove" in item ? item.can_remove : false,
 });
 
 export interface DepartmentProps {
@@ -90,6 +129,12 @@ export interface DepartmentProps {
   removeProfilesFromDepartmentAction?: (
     input: RemoveProfilesFromDepartmentIn
   ) => Promise<RemoveProfilesFromDepartmentOut>;
+  duplicateDepartmentAction?: (
+    input: DuplicateDepartmentIn
+  ) => Promise<DuplicateDepartmentOut>;
+  deleteDepartmentAction?: (
+    input: DeleteDepartmentIn
+  ) => Promise<DeleteDepartmentOut>;
   // Staff actions for StaffDataTable
   processCSVAction?: ProcessCSVAction;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
@@ -118,6 +163,8 @@ export default function Department({
   createDepartmentAction,
   updateDepartmentAction,
   removeProfilesFromDepartmentAction,
+  duplicateDepartmentAction,
+  deleteDepartmentAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
   searchStaffAction,
@@ -148,6 +195,10 @@ export default function Department({
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Edit modal state
   const [editProfileId, setEditProfileId] = useState<string | null>(null);
+  // Delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  // Duplicate loading state
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -296,6 +347,45 @@ export default function Department({
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (!departmentId || !duplicateDepartmentAction) return;
+
+    setIsDuplicating(true);
+    try {
+      await duplicateDepartmentAction({
+        body: { departmentId },
+      });
+      toast.success("Department duplicated successfully");
+      router.push("/management/departments");
+    } catch (error) {
+      toast.error(
+        `Failed to duplicate department: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!departmentId || !deleteDepartmentAction) return;
+
+    setIsSubmitting(true);
+    try {
+      await deleteDepartmentAction({
+        body: { departmentId },
+      });
+      toast.success("Department deleted successfully");
+      router.push("/management/departments");
+    } catch (error) {
+      toast.error(
+        `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsSubmitting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -506,13 +596,33 @@ export default function Department({
               }}
               onBulkDelete={async () => {
                 if (selectedStaffIds.length === 0) return;
+                // Filter selected staff that can be removed (use server-side can_remove)
+                const removableIds = selectedStaffIds.filter((id) => {
+                  const staff = (departmentData.staff || [])
+                    .map((item) =>
+                      normalizeDepartmentStaffItem(item, departmentId)
+                    )
+                    .find((s) => s.profile_id === id);
+                  if (!staff) return false;
+                  return (
+                    (staff as ProfileListItemWithRemove).can_remove ?? false
+                  );
+                });
+
+                if (removableIds.length === 0) {
+                  toast.error(
+                    "None of the selected staff members can be removed from the department."
+                  );
+                  return;
+                }
+
                 try {
                   await handleRemoveProfilesFromDepartment({
                     departmentId: departmentId,
-                    profileIds: selectedStaffIds,
+                    profileIds: removableIds,
                   });
                   toast.success(
-                    `Removed ${selectedStaffIds.length} profile(s) from department`
+                    `Removed ${removableIds.length} profile(s) from department`
                   );
                   setSelectedStaffIds([]);
                   setIsRefreshing(true);
@@ -524,8 +634,29 @@ export default function Department({
                   );
                 }
               }}
-              canDelete={() => true} // All profiles can be removed from department
-              deletableCount={selectedStaffIds.length}
+              canRemove={(profileId) => {
+                const staff = (departmentData.staff || [])
+                  .map((item) =>
+                    normalizeDepartmentStaffItem(item, departmentId)
+                  )
+                  .find((s) => s.profile_id === profileId);
+                if (!staff) return false;
+                return (staff as ProfileListItemWithRemove).can_remove ?? false;
+              }}
+              canDelete={() => false} // Delete not available in scoped view (use remove instead)
+              deletableCount={
+                selectedStaffIds.filter((id) => {
+                  const staff = (departmentData.staff || [])
+                    .map((item) =>
+                      normalizeDepartmentStaffItem(item, departmentId)
+                    )
+                    .find((s) => s.profile_id === id);
+                  if (!staff) return false;
+                  return (
+                    (staff as ProfileListItemWithRemove).can_remove ?? false
+                  );
+                }).length
+              }
               canEdit={() => false} // Edit not available in scoped view
               editableCount={0}
               {...(searchStaffAction && { searchStaffAction })}
@@ -559,7 +690,12 @@ export default function Department({
                 .map((item) => normalizeDepartmentStaffItem(item, departmentId))
                 .find((s) => s.profile_id === editProfileId) || null
             }
-            validDepartmentIds={departmentData.valid_department_ids || []}
+            validDepartmentIds={
+              "valid_department_ids" in departmentData &&
+              Array.isArray(departmentData.valid_department_ids)
+                ? departmentData.valid_department_ids
+                : []
+            }
             departmentMapping={departmentData.department_mapping || {}}
           />
         )}
@@ -570,13 +706,50 @@ export default function Department({
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDuplicating}
           >
             Back
           </Button>
+          {isEditMode &&
+            departmentData?.can_duplicate &&
+            duplicateDepartmentAction && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDuplicate}
+                disabled={isSubmitting || isDuplicating}
+                data-testid="btn-duplicate-department"
+              >
+                {isDuplicating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current border-t-transparent mr-2" />
+                    Duplicating...
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Duplicate
+                  </>
+                )}
+              </Button>
+            )}
+          {isEditMode &&
+            departmentData?.can_delete &&
+            deleteDepartmentAction && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isSubmitting || isDuplicating}
+                data-testid="btn-delete-department"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
           <Button
             type="submit"
-            disabled={isSubmitting || isReadonly}
+            disabled={isSubmitting || isReadonly || isDuplicating}
             className="min-w-[120px]"
             data-testid="btn-submit-department"
           >
@@ -593,6 +766,48 @@ export default function Department({
           </Button>
         </div>
       </form>
+
+      {/* Delete Confirmation Dialog */}
+      {isEditMode && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent
+            aria-labelledby="delete-department-title"
+            data-testid="dialog-delete-department"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle id="delete-department-title">
+                Delete Department
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{departmentData?.title}"? This
+                action cannot be undone.
+                {departmentData?.in_use && (
+                  <div className="mt-2 text-sm font-medium text-destructive">
+                    Warning: This department is currently in use and cannot be
+                    deleted.
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={isSubmitting}
+                data-testid="btn-cancel-delete"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={isSubmitting || departmentData?.in_use}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="btn-confirm-delete"
+              >
+                {isSubmitting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

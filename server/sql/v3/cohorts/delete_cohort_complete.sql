@@ -1,12 +1,12 @@
 -- Delete cohort with usage check - returns usage_count and deleted (boolean)
 -- Parameters: $1 = cohort_id (uuid)
 -- Returns: usage_count (int), deleted (boolean)
+-- Note: Prevents deletion if ANY cohort_profile links exist (active or inactive) for historical data preservation
 
 WITH usage_check AS (
-    SELECT COUNT(DISTINCT ap.attempt_id) as usage_count
+    SELECT COUNT(*) as usage_count
     FROM cohort_profiles cp
-    JOIN attempt_profiles ap ON ap.profile_id = cp.profile_id
-    WHERE cp.cohort_id = $1 AND cp.active = true
+    WHERE cp.cohort_id = $1
 ),
 delete_result AS (
     DELETE FROM cohorts 

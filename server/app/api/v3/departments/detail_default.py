@@ -44,6 +44,7 @@ class StaffItem(BaseModel):
     requests_in_last_day: int = 0
     can_edit: bool
     can_delete: bool
+    can_remove: bool
 
 
 class DepartmentDetailResponse(BaseModel):

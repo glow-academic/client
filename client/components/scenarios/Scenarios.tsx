@@ -458,7 +458,9 @@ export function Scenarios({
                       <Copy className="h-4 w-4 md:mr-0 mr-2" />
                     )}
                     <span className="md:hidden">
-                      {isDuplicating === scenario.scenario_id ? "Duplicating..." : "Duplicate"}
+                      {isDuplicating === scenario.scenario_id
+                        ? "Duplicating..."
+                        : "Duplicate"}
                     </span>
                   </Button>
                 )}
@@ -506,7 +508,9 @@ export function Scenarios({
                       <Copy className="h-4 w-4 md:mr-0 mr-2" />
                     )}
                     <span className="md:hidden">
-                      {isDuplicating === scenario.scenario_id ? "Duplicating..." : "Duplicate"}
+                      {isDuplicating === scenario.scenario_id
+                        ? "Duplicating..."
+                        : "Duplicate"}
                     </span>
                   </Button>
                 )}
@@ -538,29 +542,78 @@ export function Scenarios({
           {scenario.problem_statement ||
             "Scenario will be dynamically generated."}
         </p>
-        {/* Parameter badges */}
-        {scenario.parameter_items && scenario.parameter_items.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {scenario.parameter_items.map((item) => (
-              <TooltipProvider key={item.parameter_id + "_" + item.name}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-xs">
-                      {item.name}
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{item.parameter_name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-        )}
+        {/* Compact info row: Simulations • Persona • Parameter Items */}
         {!isChild && (
-          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-            <Users className="h-3 w-3" />
-            {scenario.num_simulations} simulations
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
+            {/* Simulations count - shown first */}
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {scenario.num_simulations} simulation
+              {scenario.num_simulations !== 1 ? "s" : ""}
+            </span>
+            {/* Persona badge */}
+            {scenario.persona_ids && scenario.persona_ids.length > 0 && (
+              <>
+                <span className="text-muted-foreground">•</span>
+                {(() => {
+                  const firstPersonaId = scenario.persona_ids[0];
+                  if (!firstPersonaId) return null;
+                  const persona = personaMapping[firstPersonaId];
+                  if (!persona) return null;
+                  return (
+                    <TooltipProvider key={firstPersonaId}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className="text-xs"
+                            style={{
+                              backgroundColor: persona.color
+                                ? `${persona.color}20`
+                                : undefined,
+                              borderColor: persona.color || undefined,
+                              color: persona.color || undefined,
+                            }}
+                          >
+                            {persona.name}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{persona.description || persona.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })()}
+              </>
+            )}
+            {/* Parameter item badges (max 3) - grouped together without dots */}
+            {scenario.parameter_items &&
+              scenario.parameter_items.length > 0 && (
+                <>
+                  {scenario.persona_ids?.length > 0 && (
+                    <span className="text-muted-foreground">•</span>
+                  )}
+                  <div className="flex items-center gap-1">
+                    {scenario.parameter_items.slice(0, 3).map((item) => (
+                      <TooltipProvider
+                        key={item.parameter_id + "_" + item.name}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs">
+                              {item.name}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{item.parameter_name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  </div>
+                </>
+              )}
           </div>
         )}
       </CardContent>

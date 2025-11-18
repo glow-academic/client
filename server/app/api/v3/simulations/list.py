@@ -4,25 +4,19 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    CohortMapping,
-    CohortMappingItem,
-    DepartmentMapping,
-    DepartmentMappingItem,
-    RubricMapping,
-    RubricMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-)
+from app.utils.schema import (CohortMapping, CohortMappingItem,
+                              DepartmentMapping, DepartmentMappingItem,
+                              PersonaMapping, PersonaMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              ScenarioMapping, ScenarioMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -118,11 +112,27 @@ async def get_simulations_list(
             if scenario_mapping_data and isinstance(scenario_mapping_data, dict):
                 for sid, sdata in scenario_mapping_data.items():
                     if isinstance(sdata, dict):
+                        # Parse nested persona_mapping
+                        persona_mapping_parsed: PersonaMapping = {}
+                        persona_mapping_raw = sdata.get("persona_mapping", {})
+                        if isinstance(persona_mapping_raw, str):
+                            persona_mapping_raw = json.loads(persona_mapping_raw)
+                        if persona_mapping_raw and isinstance(persona_mapping_raw, dict):
+                            for pid, pdata in persona_mapping_raw.items():
+                                if isinstance(pdata, dict):
+                                    persona_mapping_parsed[pid] = PersonaMappingItem(
+                                        name=pdata.get("name", ""),
+                                        description=pdata.get("description", ""),
+                                        color=pdata.get("color", ""),
+                                        icon=pdata.get("icon", ""),
+                                        image_model=pdata.get("image_model", False),
+                                    )
+
                         scenario_mapping[sid] = ScenarioMappingItem(
                             name=sdata.get("name", ""),
                             description=sdata.get("description", ""),
                             persona_ids=sdata.get("persona_ids", []),
-                            persona_mapping=sdata.get("persona_mapping", {}),
+                            persona_mapping=persona_mapping_parsed,
                             document_mapping=sdata.get("document_mapping", {}),
                             parameter_item_mapping=sdata.get(
                                 "parameter_item_mapping", {}

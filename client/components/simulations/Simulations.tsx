@@ -9,6 +9,12 @@ import { Copy, Edit, Eye, Search, Timer, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import type {
   DeleteSimulationIn,
@@ -88,6 +94,10 @@ export function Simulations({
   const simulations = useMemo(
     () => simulationsData?.simulations || [],
     [simulationsData?.simulations]
+  );
+  const scenarioMapping = useMemo(
+    () => simulationsData?.scenario_mapping || {},
+    [simulationsData?.scenario_mapping]
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -359,10 +369,49 @@ export function Simulations({
         <p className="text-sm text-muted-foreground line-clamp-2">
           {simulation.description || "No description available"}
         </p>
-        <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-          <Users className="h-3 w-3" />
-          {simulation.num_cohorts}{" "}
-          {simulation.num_cohorts === 1 ? "cohort" : "cohorts"}
+        {/* Compact info row: Cohorts and Scenario dots */}
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {simulation.num_cohorts}{" "}
+            {simulation.num_cohorts === 1 ? "cohort" : "cohorts"}
+          </span>
+          <div className="flex-grow" />
+          {/* Scenario dots - colored by persona */}
+          {simulation.scenario_ids && simulation.scenario_ids.length > 0 && (
+            <div className="flex items-center gap-1">
+                {simulation.scenario_ids.map((scenarioId) => {
+                  const scenario = scenarioMapping[scenarioId];
+                  if (!scenario) return null;
+                  
+                  // Get first persona color
+                  const firstPersonaId = scenario.persona_ids?.[0];
+                  const persona = firstPersonaId
+                    ? scenario.persona_mapping?.[firstPersonaId]
+                    : null;
+                  const personaColor = persona?.color || "#9CA3AF"; // gray-400 fallback
+
+                  return (
+                    <TooltipProvider key={scenarioId}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="w-2 h-2 rounded-full cursor-pointer"
+                            style={{
+                              backgroundColor: personaColor,
+                            }}
+                            aria-label={scenario.name}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{scenario.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+          )}
         </div>
       </CardContent>
     </Card>

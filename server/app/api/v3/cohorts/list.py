@@ -16,7 +16,11 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     DepartmentMappingItem,
+    PersonaMapping,
+    PersonaMappingItem,
     ProfileMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
     SimulationMappingItem,
 )
 from app.utils.sql_helper import load_sql
@@ -52,6 +56,8 @@ class CohortsListResponse(BaseModel):
     cohorts: list[CohortItem]
     profile_mapping: dict[str, ProfileMappingItem]
     simulation_mapping: dict[str, SimulationMappingItem]
+    scenario_mapping: ScenarioMapping
+    simulation_scenario_mapping: dict[str, list[str]]  # Maps simulation_id to scenario_ids
     department_mapping: dict[str, DepartmentMappingItem]
     # UI-ready facet options (precomputed on server)
     profile_options: list[dict[str, str]]  # Array of {value, label}
@@ -123,7 +129,9 @@ async def get_cohorts_list(
         cohorts = []
         profile_mapping: dict[str, ProfileMappingItem] = {}
         simulation_mapping: dict[str, SimulationMappingItem] = {}
+        scenario_mapping: ScenarioMapping = {}
         department_mapping: dict[str, DepartmentMappingItem] = {}
+        simulation_scenario_mapping: dict[str, dict[str, list[str]]] = {}
 
         for row in rows:
             # Convert UUID arrays to string arrays
@@ -174,6 +182,11 @@ async def get_cohorts_list(
                             dept_ids_val = sdata.get("department_ids")
                             if isinstance(dept_ids_val, str):
                                 dept_ids_val = json.loads(dept_ids_val)
+                            # Store scenario_ids separately (not in SimulationMappingItem schema)
+                            scenario_ids = sdata.get("scenario_ids", [])
+                            simulation_scenario_mapping[sid] = {
+                                "scenario_ids": [str(sid_val) for sid_val in scenario_ids]
+                            }
                             simulation_mapping[sid] = SimulationMappingItem(
                                 name=sdata.get("name", ""),
                                 description=sdata.get("description", ""),
@@ -195,6 +208,42 @@ async def get_cohorts_list(
                                 description=ddata.get("description", ""),
                             )
 
+
+            # Parse scenario_mapping from JSONB
+            if not scenario_mapping and row.get("scenario_mapping"):
+                scenario_mapping_data = row["scenario_mapping"]
+                if isinstance(scenario_mapping_data, str):
+                    scenario_mapping_data = json.loads(scenario_mapping_data)
+                if isinstance(scenario_mapping_data, dict):
+                    for sid, sdata in scenario_mapping_data.items():
+                        if isinstance(sdata, dict):
+                            # Parse nested persona_mapping
+                            persona_mapping_parsed: PersonaMapping = {}
+                            persona_mapping_raw = sdata.get("persona_mapping", {})
+                            if isinstance(persona_mapping_raw, str):
+                                persona_mapping_raw = json.loads(persona_mapping_raw)
+                            if persona_mapping_raw and isinstance(persona_mapping_raw, dict):
+                                for pid, pdata in persona_mapping_raw.items():
+                                    if isinstance(pdata, dict):
+                                        persona_mapping_parsed[pid] = PersonaMappingItem(
+                                            name=pdata.get("name", ""),
+                                            description=pdata.get("description", ""),
+                                            color=pdata.get("color", ""),
+                                            icon=pdata.get("icon", ""),
+                                            image_model=pdata.get("image_model", False),
+                                        )
+
+                            scenario_mapping[sid] = ScenarioMappingItem(
+                                name=sdata.get("name", ""),
+                                description=sdata.get("description", ""),
+                                persona_ids=sdata.get("persona_ids", []),
+                                persona_mapping=persona_mapping_parsed,
+                                document_mapping={},
+                                parameter_item_mapping={},
+                                parameter_item_ids=[],
+                                document_ids=[],
+                            )
+
         # Build facet options
         profile_options = disambiguate_profiles(profile_mapping)
         simulation_options = disambiguate_simulations(simulation_mapping)
@@ -203,10 +252,17 @@ async def get_cohorts_list(
             for (did, d) in department_mapping.items()
         ]
 
+        # Flatten simulation_scenario_mapping for response
+        simulation_scenario_mapping_flat: dict[str, list[str]] = {}
+        for sim_id, data in simulation_scenario_mapping.items():
+            simulation_scenario_mapping_flat[sim_id] = data.get("scenario_ids", [])
+
         response_data = CohortsListResponse(
             cohorts=cohorts,
             profile_mapping=profile_mapping,
             simulation_mapping=simulation_mapping,
+            scenario_mapping=scenario_mapping,
+            simulation_scenario_mapping=simulation_scenario_mapping_flat,
             department_mapping=department_mapping,
             profile_options=profile_options,
             simulation_options=simulation_options,
