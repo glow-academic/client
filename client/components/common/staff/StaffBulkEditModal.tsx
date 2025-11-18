@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -259,14 +260,15 @@ export default function StaffBulkEditModal({
                       </p>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Switch
+                      <Checkbox
                         checked={keepCurrent.role}
                         onCheckedChange={(checked) => {
+                          const isChecked = checked === true;
                           setKeepCurrent((prev) => ({
                             ...prev,
-                            role: checked,
+                            role: isChecked,
                           }));
-                          if (checked) {
+                          if (isChecked) {
                             setBulkRole("__keep__");
                           }
                         }}
@@ -304,14 +306,15 @@ export default function StaffBulkEditModal({
                       </p>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Switch
+                      <Checkbox
                         checked={keepCurrent.reqPerDay}
-                        onCheckedChange={(checked) =>
+                        onCheckedChange={(checked) => {
+                          const isChecked = checked === true;
                           setKeepCurrent((prev) => ({
                             ...prev,
-                            reqPerDay: checked,
-                          }))
-                        }
+                            reqPerDay: isChecked,
+                          }));
+                        }}
                         disabled={isSubmitting}
                       />
                     </TableCell>
@@ -379,14 +382,15 @@ export default function StaffBulkEditModal({
                         </p>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Switch
+                        <Checkbox
                           checked={keepCurrent.defaultProfile}
-                          onCheckedChange={(checked) =>
+                          onCheckedChange={(checked) => {
+                            const isChecked = checked === true;
                             setKeepCurrent((prev) => ({
                               ...prev,
-                              defaultProfile: checked,
-                            }))
-                          }
+                              defaultProfile: isChecked,
+                            }));
+                          }}
                           disabled={isSubmitting}
                         />
                       </TableCell>

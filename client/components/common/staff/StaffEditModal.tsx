@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { Clock, Shield, User } from "lucide-react";
+import { Clock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -249,13 +249,7 @@ export default function StaffEditModal({
               <div className="space-y-6">
                 {/* Role Section */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Label htmlFor="role">Role</Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Set the role for this staff member
-                  </p>
+                  <Label htmlFor="role">Role</Label>
                   <div data-testid="input-staff-role">
                     <StaffRolePicker
                       selectedRole={formData.role}
@@ -268,16 +262,16 @@ export default function StaffEditModal({
                 </div>
 
                 {/* Requests Per Day Section */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <Label htmlFor="reqPerDay">Requests per day</Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Set a daily request limit for this staff member
-                  </p>
-                  <div className="space-y-2 pl-5">
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="requestsPerDayEnabled"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        Requests per day
+                      </Label>
                       <Switch
                         id="requestsPerDayEnabled"
                         checked={requestsPerDayEnabled}
@@ -289,62 +283,63 @@ export default function StaffEditModal({
                         }}
                         disabled={isSubmitting}
                       />
-                      <Label htmlFor="requestsPerDayEnabled" className="mb-0">
-                        Enable limit
-                      </Label>
                     </div>
                     {requestsPerDayEnabled && (
-                      <Input
-                        id="reqPerDay"
-                        type="number"
-                        value={
-                          formData.reqPerDay === ""
-                            ? ""
-                            : String(formData.reqPerDay)
-                        }
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "") {
-                            handleInputChange("reqPerDay", "");
-                          } else {
-                            const num = parseInt(val, 10);
-                            handleInputChange(
-                              "reqPerDay",
-                              Number.isNaN(num) ? "" : num
-                            );
+                      <div className="pt-2">
+                        <Input
+                          id="reqPerDay"
+                          type="number"
+                          value={
+                            formData.reqPerDay === ""
+                              ? ""
+                              : String(formData.reqPerDay)
                           }
-                        }}
-                        placeholder="e.g. 100"
-                        min={1}
-                        step={1}
-                        disabled={isSubmitting}
-                        data-testid="input-staff-requests-per-day"
-                      />
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "") {
+                              handleInputChange("reqPerDay", "");
+                            } else {
+                              const num = parseInt(val, 10);
+                              handleInputChange(
+                                "reqPerDay",
+                                Number.isNaN(num) ? "" : num
+                              );
+                            }
+                          }}
+                          placeholder="e.g. 100"
+                          min={1}
+                          step={1}
+                          disabled={isSubmitting}
+                          data-testid="input-staff-requests-per-day"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Default Profile Section (superadmin only) - Read-only display */}
                 {isSuperadmin && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Label htmlFor="defaultProfile">Default Profile</Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Mark this profile as the default profile for the user (use
-                      bulk edit to change)
-                    </p>
-                    <div className="flex items-center gap-2 pl-5">
-                      <Switch
-                        id="defaultProfile"
-                        checked={formData.defaultProfile}
-                        disabled={true}
-                        className="opacity-50"
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {formData.defaultProfile ? "Yes" : "No"}
-                      </span>
+                  <div className="space-y-2 pt-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor="defaultProfile"
+                          className="text-sm flex items-center gap-1.5"
+                        >
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          Default Profile
+                        </Label>
+                        <Switch
+                          id="defaultProfile"
+                          checked={formData.defaultProfile}
+                          disabled={true}
+                          className="opacity-50"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-5">
+                        Mark this profile as the default profile for the user
+                        (use bulk edit to change)
+                      </p>
                     </div>
                   </div>
                 )}
