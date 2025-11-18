@@ -350,7 +350,7 @@ export default function Documents({
   }, [selectedDocuments, documents]);
 
   // Filter valid parameter item IDs for bulk edit dialog based on selected departments
-  // Compute intersection of valid_parameter_item_ids from all selected documents
+  // Compute union of valid_parameter_item_ids from all selected documents
   const validParameterItemIdsForBulk = useMemo(() => {
     if (selectedDocuments.length === 0) return [];
 
@@ -361,31 +361,28 @@ export default function Documents({
 
     if (selectedDocs.length === 0) return [];
 
-    // Start with first document's valid_parameter_item_ids
-    const firstDocValidIds = new Set(
-      selectedDocs[0]?.valid_parameter_item_ids || []
-    );
+    // Compute union of all valid_parameter_item_ids from selected documents
+    const union = new Set<string>();
+    selectedDocs.forEach((doc) => {
+      const validIds = doc.valid_parameter_item_ids || [];
+      validIds.forEach((id) => union.add(id));
+    });
 
-    // Compute intersection across all selected documents
-    const intersection = Array.from(firstDocValidIds).filter((itemId) =>
-      selectedDocs.every((doc) =>
-        doc.valid_parameter_item_ids?.includes(itemId)
-      )
-    );
+    const unionArray = Array.from(union);
 
     // If department is selected, filter by department's parameter_ids
     if (bulkDepartmentId) {
       const deptData = departmentMapping[bulkDepartmentId];
       if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
         const deptParameterIds = new Set(deptData.parameter_ids);
-        return intersection.filter((itemId) => {
+        return unionArray.filter((itemId) => {
           const item = parameterItemMapping[itemId];
           return item && deptParameterIds.has(item.parameter_id);
         });
       }
     }
 
-    return intersection;
+    return unionArray;
   }, [
     selectedDocuments,
     documents,
@@ -1510,7 +1507,7 @@ export default function Documents({
       {/* Bulk Edit Dialog */}
       <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
         <DialogContent
-          className="sm:max-w-md"
+          className="max-w-4xl"
           data-testid="dialog-bulk-edit-document"
           aria-labelledby="bulk-edit-document-title"
         >
