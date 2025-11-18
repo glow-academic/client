@@ -22,8 +22,8 @@ import { Power } from "lucide-react";
 // Type-only import from server page
 import type {
   CreateStaffDataOut,
+  ProfileListItem,
   SearchStaffOut,
-  StaffDetailOut,
 } from "@/app/(main)/management/staff/page";
 // Import types from new page (create action)
 import type {
@@ -41,19 +41,18 @@ import type {
 } from "@/app/(main)/system/departments/d/[departmentId]/page";
 import type {
   BulkCreateOrUpdateStaffAction,
-  GetStaffDetailAction,
   ProcessCSVAction,
   SearchStaffAction,
   UpdateStaffAction,
 } from "@/components/staff/Staff";
 // Import staff item types from API responses
-import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 import type { DepartmentStaffItem } from "@/app/(main)/system/departments/d/[departmentId]/page";
 import type { DepartmentDefaultStaffItem } from "@/app/(main)/system/departments/new/page";
 
 // Helper to normalize department staff item to ProfileListItem format
 const normalizeDepartmentStaffItem = (
-  item: DepartmentStaffItem | DepartmentDefaultStaffItem
+  item: DepartmentStaffItem | DepartmentDefaultStaffItem,
+  departmentId?: string
 ): ProfileListItem => ({
   profile_id: item.profile_id,
   first_name: item.first_name,
@@ -67,6 +66,7 @@ const normalizeDepartmentStaffItem = (
   last_active: item.last_active ?? null,
   cohort_ids: item.cohort_ids ?? [],
   department_ids: item.department_ids ?? [],
+  department_id: departmentId || item.department_ids?.[0] || "", // Use current departmentId or first in array
   requests_per_day: item.requests_per_day ?? null,
   total_requests: item.total_requests ?? 0,
   default_profile: item.default_profile,
@@ -98,7 +98,6 @@ export interface DepartmentProps {
   initialCreateStaffData?: CreateStaffDataOut;
   // Staff edit actions
   updateStaffAction?: UpdateStaffAction;
-  getStaffDetailAction?: GetStaffDetailAction;
 }
 
 interface FormErrors {
@@ -125,7 +124,6 @@ export default function Department({
   initialSearchData,
   initialCreateStaffData,
   updateStaffAction,
-  getStaffDetailAction,
 }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -150,10 +148,6 @@ export default function Department({
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Edit modal state
   const [editProfileId, setEditProfileId] = useState<string | null>(null);
-  const [editStaffDetail, setEditStaffDetail] = useState<StaffDetailOut | null>(
-    null
-  );
-  const [isLoadingEditDetail, setIsLoadingEditDetail] = useState(false);
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -417,8 +411,8 @@ export default function Department({
         {departmentId && departmentData && (
           <div className="space-y-4">
             <StaffDataTable
-              data={(departmentData.staff || []).map(
-                normalizeDepartmentStaffItem
+              data={(departmentData.staff || []).map((item) =>
+                normalizeDepartmentStaffItem(item, departmentId)
               )}
               cohortMapping={departmentData.cohort_mapping || {}}
               departmentMapping={departmentData.department_mapping || {}}
@@ -484,26 +478,28 @@ export default function Department({
                   "noopener,noreferrer"
                 );
               }}
-              onEdit={async (staff) => {
-                if (!getStaffDetailAction || !effectiveProfile?.id) return;
-                setIsLoadingEditDetail(true);
-                try {
-                  const detail = await getStaffDetailAction({
-                    body: {
-                      profileId: staff.profile_id,
-                      currentProfileId: effectiveProfile.id,
-                    },
-                  });
-                  setEditStaffDetail(detail);
-                  setEditProfileId(staff.profile_id);
-                } catch {
-                  toast.error("Failed to load staff details");
-                } finally {
-                  setIsLoadingEditDetail(false);
-                }
+              onEdit={(staff) => {
+                setEditProfileId(staff.profile_id);
               }}
               onDelete={() => {
                 // Delete not available in scoped view
+              }}
+              onRemoveFromDepartment={async (staff) => {
+                if (!departmentId) return;
+                try {
+                  await handleRemoveProfilesFromDepartment({
+                    departmentId: departmentId,
+                    profileIds: [staff.profile_id],
+                  });
+                  toast.success("Profile removed from department");
+                  setIsRefreshing(true);
+                  router.refresh();
+                  setIsRefreshing(false);
+                } catch (error) {
+                  toast.error(
+                    `Failed to remove profile: ${error instanceof Error ? error.message : "Unknown error"}`
+                  );
+                }
               }}
               onBulkEdit={() => {
                 // Bulk edit can be implemented if needed
@@ -544,24 +540,26 @@ export default function Department({
         )}
 
         {/* Edit Staff Modal */}
-        {departmentId && updateStaffAction && (
+        {departmentId && updateStaffAction && departmentData && (
           <StaffEditModal
             profileId={editProfileId}
             open={!!editProfileId}
             onOpenChange={(open: boolean) => {
               if (!open) {
                 setEditProfileId(null);
-                setEditStaffDetail(null);
               }
             }}
             onDone={() => {
               setEditProfileId(null);
-              setEditStaffDetail(null);
               router.refresh();
             }}
             updateStaffAction={updateStaffAction}
-            staffDetail={editStaffDetail}
-            isLoading={isLoadingEditDetail}
+            staffItem={
+              (departmentData.staff || [])
+                .map((item) => normalizeDepartmentStaffItem(item, departmentId))
+                .find((s) => s.profile_id === editProfileId) || null
+            }
+            validDepartmentIds={departmentData.valid_department_ids || []}
           />
         )}
 

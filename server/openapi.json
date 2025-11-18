@@ -576,104 +576,6 @@
         ]
       }
     },
-    "/api/v3/profile/staff/detail": {
-      "post": {
-        "tags": [
-          "v3",
-          "profile",
-          "staff"
-        ],
-        "summary": "Get Profile Detail Staff",
-        "description": "Get detailed profile information (staff version with permissions).",
-        "operationId": "get_profile_detail_staff_api_v3_profile_staff_detail_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StaffDetailRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile",
-          "staff"
-        ]
-      }
-    },
-    "/api/v3/profile/staff/detail-bulk": {
-      "post": {
-        "tags": [
-          "v3",
-          "profile",
-          "staff"
-        ],
-        "summary": "Get Profile Detail Bulk",
-        "description": "Get bulk profile detail information.",
-        "operationId": "get_profile_detail_bulk_api_v3_profile_staff_detail_bulk_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StaffDetailBulkRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffDetailBulkResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile",
-          "staff"
-        ]
-      }
-    },
     "/api/v3/profile/staff/create": {
       "post": {
         "tags": [
@@ -20179,198 +20081,6 @@
         "title": "SkillStandardFact",
         "description": "Skill standard fact."
       },
-      "StaffDetailBulkRequest": {
-        "properties": {
-          "profileIds": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profileids"
-          },
-          "currentProfileId": {
-            "type": "string",
-            "title": "Currentprofileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileIds",
-          "currentProfileId"
-        ],
-        "title": "StaffDetailBulkRequest",
-        "description": "Request for staff detail bulk."
-      },
-      "StaffDetailBulkResponse": {
-        "properties": {
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "role",
-          "requests_per_day",
-          "department_ids",
-          "valid_department_ids",
-          "role_options",
-          "department_mapping"
-        ],
-        "title": "StaffDetailBulkResponse",
-        "description": "Response for staff detail bulk endpoint."
-      },
-      "StaffDetailRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "currentProfileId": {
-            "type": "string",
-            "title": "Currentprofileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId",
-          "currentProfileId"
-        ],
-        "title": "StaffDetailRequest",
-        "description": "Request for staff detail."
-      },
-      "StaffDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "requests_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Requests Per Day"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_id": {
-            "type": "string",
-            "title": "Department Id"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options"
-          },
-          "cohort_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/CohortMappingItem"
-            },
-            "type": "object",
-            "title": "Cohort Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "email",
-          "role",
-          "requests_per_day",
-          "active",
-          "department_id",
-          "valid_department_ids",
-          "cohort_ids",
-          "role_options",
-          "cohort_mapping",
-          "department_mapping"
-        ],
-        "title": "StaffDetailResponse",
-        "description": "Response for staff detail endpoint."
-      },
       "StaffFilters": {
         "properties": {
           "profileId": {
@@ -20407,6 +20117,13 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
           },
           "trend_data": {
             "additionalProperties": {
@@ -20454,6 +20171,7 @@
           "staff",
           "cohort_mapping",
           "department_mapping",
+          "valid_department_ids",
           "trend_data",
           "role_options",
           "cohort_options",
@@ -22872,6 +22590,10 @@
             "type": "array",
             "title": "Department Ids"
           },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
           "requests_per_day": {
             "anyOf": [
               {
@@ -22921,6 +22643,7 @@
           "active",
           "cohort_ids",
           "department_ids",
+          "department_id",
           "total_requests",
           "default_profile",
           "requests_in_last_day",
@@ -23256,6 +22979,13 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
           }
         },
         "type": "object",
@@ -23271,7 +23001,8 @@
           "total_price_spent",
           "staff",
           "cohort_mapping",
-          "department_mapping"
+          "department_mapping",
+          "valid_department_ids"
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
@@ -23341,6 +23072,10 @@
             "title": "Department Ids",
             "default": []
           },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
           "requests_per_day": {
             "anyOf": [
               {
@@ -23386,6 +23121,7 @@
           "email",
           "initials",
           "active",
+          "department_id",
           "default_profile",
           "can_edit",
           "can_delete"
@@ -23536,6 +23272,10 @@
             "title": "Department Ids",
             "default": []
           },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
           "requests_per_day": {
             "anyOf": [
               {
@@ -23581,6 +23321,7 @@
           "email",
           "initials",
           "active",
+          "department_id",
           "default_profile",
           "can_edit",
           "can_delete"
@@ -24904,6 +24645,10 @@
             "type": "array",
             "title": "Department Ids"
           },
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
           "requests_per_day": {
             "anyOf": [
               {
@@ -24950,6 +24695,7 @@
           "last_active",
           "cohort_ids",
           "department_ids",
+          "department_id",
           "requests_per_day",
           "total_requests",
           "default_profile",

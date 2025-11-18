@@ -5,16 +5,16 @@ import os
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import CohortMappingItem, DepartmentMappingItem, TrendData
+from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
+                              TrendData)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -40,6 +40,7 @@ class StaffItem(BaseModel):
     last_active: str | None
     cohort_ids: list[str]
     department_ids: list[str]
+    department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None
     total_requests: int
     default_profile: bool
@@ -54,6 +55,7 @@ class StaffListResponse(BaseModel):
     staff: list[StaffItem]
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
+    valid_department_ids: list[str]  # All valid department IDs (for editing)
     trend_data: dict[
         str, list[TrendData]
     ]  # Keys: active, admin, instructional, ta, total_requests
@@ -115,11 +117,22 @@ async def get_profile_list(
             "total_requests": [],
         }
 
+        # Get valid_department_ids from first row (same for all rows)
+        valid_department_ids = []
+        if result and len(result) > 0:
+            valid_dept_ids_raw = result[0].get("valid_department_ids") or []
+            valid_department_ids = [str(did) for did in valid_dept_ids_raw]
+
         for row in result:
             # Convert UUID arrays to string arrays
             cohort_ids = [str(cid) for cid in (row["cohort_ids"] or [])]
             # Convert UUID arrays to string arrays (department_ids comes as text[] from query)
             department_ids = row["department_ids"] or []
+            # Get primary department_id - ensure it always exists (default to empty string or first department)
+            department_id = row.get("department_id") or ""
+            if not department_id and department_ids:
+                # Fallback to first department if no primary department set
+                department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
 
             staff.append(
                 StaffItem(
@@ -137,6 +150,7 @@ async def get_profile_list(
                     else None,
                     cohort_ids=cohort_ids,
                     department_ids=department_ids,
+                    department_id=department_id,
                     requests_per_day=row["requests_per_day"],
                     total_requests=row["total_requests"] or 0,
                     default_profile=row["default_profile"],
@@ -232,6 +246,7 @@ async def get_profile_list(
             staff=staff,
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
+            valid_department_ids=valid_department_ids,
             trend_data=trend_data,
             role_options=role_options,
             cohort_options=cohort_options,

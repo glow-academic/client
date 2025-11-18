@@ -39,6 +39,7 @@ class StaffItem(BaseModel):
     last_active: str | None = None
     cohort_ids: list[str] = []
     department_ids: list[str] = []
+    department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None = None
     total_requests: int = 0
     default_profile: bool
@@ -62,6 +63,7 @@ class DepartmentDetailResponse(BaseModel):
     staff: list[StaffItem]
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
+    valid_department_ids: list[str]
 
 
 router = APIRouter()
@@ -117,6 +119,11 @@ async def get_department_detail(
                         str(cid) for cid in (staff_row.get("cohort_ids") or [])
                     ]
                     department_ids = staff_row.get("department_ids") or []
+                    # Get primary department_id - ensure it always exists (default to empty string or first department)
+                    department_id = staff_row.get("department_id") or ""
+                    if not department_id and department_ids:
+                        # Fallback to first department if no primary department set
+                        department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
 
                     last_active = None
                     if staff_row.get("lastActive"):
@@ -142,6 +149,7 @@ async def get_department_detail(
                             last_active=last_active,
                             cohort_ids=cohort_ids,
                             department_ids=department_ids,
+                            department_id=department_id,
                             requests_per_day=staff_row.get("requests_per_day"),
                             total_requests=staff_row.get("total_requests", 0),
                             default_profile=staff_row["default_profile"],
@@ -179,6 +187,9 @@ async def get_department_detail(
                         description=ddata.get("description", ""),
                     )
 
+        # Get valid_department_ids from department_mapping keys
+        valid_department_ids = list(department_mapping.keys())
+
         response_data = DepartmentDetailResponse(
             title=dept_row["title"],
             description=dept_row["description"],
@@ -192,6 +203,7 @@ async def get_department_detail(
             staff=staff_list,
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
+            valid_department_ids=valid_department_ids,
         )
 
         # Cache response

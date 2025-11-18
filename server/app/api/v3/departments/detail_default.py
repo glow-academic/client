@@ -36,6 +36,7 @@ class StaffItem(BaseModel):
     last_active: str | None = None
     cohort_ids: list[str] = []
     department_ids: list[str] = []
+    department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None = None
     total_requests: int = 0
     default_profile: bool

@@ -94,6 +94,13 @@ profile_departments_agg AS (
     WHERE pd.active = true
     GROUP BY pd.profile_id
 ),
+profile_primary_department AS (
+    SELECT 
+        pd.profile_id,
+        pd.department_id
+    FROM profile_departments pd
+    WHERE pd.active = true AND pd.is_primary = true
+),
 recent_runs AS (
     SELECT 
         mrp.profile_id,
@@ -158,6 +165,7 @@ department_staff AS (
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
+        COALESCE(ppd.department_id::text, '') as department_id,
         COALESCE(ptr.total_requests, 0) as total_requests,
         COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
         COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
@@ -184,6 +192,7 @@ department_staff AS (
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.department_id = $1 AND pd.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+    LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
     LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
     LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
     LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
@@ -224,6 +233,7 @@ SELECT
             'lastActive', ds.lastActive,
             'cohort_ids', ds.cohort_ids,
             'department_ids', ds.department_ids,
+            'department_id', ds.department_id,
             'requests_per_day', ds.requests_per_day,
             'total_requests', ds.total_requests,
             'default_profile', ds.default_profile,

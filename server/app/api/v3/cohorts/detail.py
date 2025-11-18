@@ -59,6 +59,7 @@ class StaffItem(BaseModel):
     lastActive: str | None = None
     cohort_ids: list[str]
     department_ids: list[str]
+    department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None = None
     total_requests: int
     default_profile: bool
@@ -171,6 +172,13 @@ async def get_cohort_detail(
                             if isinstance(last_active_val, datetime)
                             else None
                         )
+                        # Get primary department_id - ensure it always exists (default to empty string or first department)
+                        department_ids = s.get("department_ids", [])
+                        department_id = s.get("department_id") or ""
+                        if not department_id and department_ids:
+                            # Fallback to first department if no primary department set
+                            department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
+                        
                         staff.append(
                             StaffItem(
                                 profile_id=s.get("profile_id", ""),
@@ -184,7 +192,8 @@ async def get_cohort_detail(
                                 active=s.get("active", False),
                                 lastActive=last_active,
                                 cohort_ids=s.get("cohort_ids", []),
-                                department_ids=s.get("department_ids", []),
+                                department_ids=department_ids,
+                                department_id=department_id,
                                 requests_per_day=s.get("requests_per_day"),
                                 total_requests=s.get("total_requests", 0),
                                 default_profile=s.get("default_profile", False),

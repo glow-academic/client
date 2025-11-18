@@ -10,8 +10,6 @@ from .create import router as create_router
 from .create_or_update_staff import router as create_or_update_staff_router
 from .create_staff_data import router as create_staff_data_router
 from .delete import router as delete_router
-from .detail import router as detail_router
-from .detail_bulk import router as detail_bulk_router
 from .list import router as list_router
 from .process_csv import router as process_csv_router
 from .search_staff import router as search_staff_router
@@ -21,8 +19,6 @@ router = APIRouter(prefix="/staff", tags=["staff"])
 
 # Include all staff endpoint routers
 router.include_router(list_router)
-router.include_router(detail_router)
-router.include_router(detail_bulk_router)
 router.include_router(create_router)
 router.include_router(bulk_create_router)
 router.include_router(update_router)

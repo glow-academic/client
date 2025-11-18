@@ -16,8 +16,8 @@ import { revalidateTag, unstable_cache } from "next/cache";
 // Import staff actions from staff page
 import {
   bulkCreateOrUpdateStaff,
+  bulkUpdateStaff,
   getCreateStaffData,
-  getStaffDetail,
   processCSV,
   searchStaff,
   updateStaff,
@@ -128,7 +128,7 @@ export default async function CohortEditPage({
         initialSearchData={initialSearchData}
         initialCreateStaffData={initialCreateStaffData}
         updateStaffAction={updateStaff}
-        getStaffDetailAction={getStaffDetail}
+        bulkUpdateStaffAction={bulkUpdateStaff}
       />
     </div>
   );

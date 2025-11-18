@@ -31,7 +31,9 @@ import type {
   SearchStaffOut,
 } from "@/app/(main)/management/staff/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,
@@ -40,6 +42,13 @@ import type {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
@@ -50,12 +59,20 @@ import {
   Clock,
   Edit,
   FileText,
+  Plus,
+  RefreshCw,
+  Search,
   Shield,
   Trash2,
+  Upload,
   User as UserIcon,
   UserMinus,
+  UserPlus,
+  X,
 } from "lucide-react";
-import { StaffDataTableToolbar } from "./StaffDataTableToolbar";
+import CSVImportStaffModal from "./CSVImportStaffModal";
+import ManualAddStaffModal from "./ManualAddStaffModal";
+import SearchExistingStaffModal from "./SearchExistingStaffModal";
 
 // Helper functions
 const getInitials = (firstName: string, lastName: string): string => {
@@ -152,6 +169,7 @@ export interface StaffDataTableProps {
   onEdit: (staff: ProfileListItem) => void;
   onDelete: (staff: ProfileListItem) => void;
   onRemoveFromCohort?: (staff: ProfileListItem) => void;
+  onRemoveFromDepartment?: (staff: ProfileListItem) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
   canDelete: (profileId: string) => boolean;
@@ -186,6 +204,7 @@ export function StaffDataTable({
   onEdit,
   onDelete,
   onRemoveFromCohort,
+  onRemoveFromDepartment,
   onBulkEdit,
   onBulkDelete,
   canDelete,
@@ -200,40 +219,33 @@ export function StaffDataTable({
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
 
-  // Set column visibility based on page context
-  const initialColumnVisibility = React.useMemo<VisibilityState>(() => {
-    const base: VisibilityState = {
-      name: false,
-      active: false,
-      lastActive: false,
-    };
+  // Set column visibility based on page context - simplified, no useMemo needed
+  const baseVisibility: VisibilityState = {
+    name: false,
+    active: false,
+    lastActive: false,
+  };
 
-    if (cohortId) {
-      // Cohorts page: hide department_ids and cohort_ids, show total_requests
-      return {
-        ...base,
+  const initialColumnVisibility: VisibilityState = cohortId
+    ? {
+        ...baseVisibility,
         department_ids: false,
         cohort_ids: false,
         total_requests: true,
-      };
-    } else if (departmentId) {
-      // Departments page: hide department_ids, show cohort_ids and total_requests
-      return {
-        ...base,
-        department_ids: false,
-        cohort_ids: true,
-        total_requests: true,
-      };
-    } else {
-      // Staff page: hide cohort_ids, show department_ids and total_requests
-      return {
-        ...base,
-        department_ids: true,
-        cohort_ids: false,
-        total_requests: true,
-      };
-    }
-  }, [cohortId, departmentId]);
+      }
+    : departmentId
+      ? {
+          ...baseVisibility,
+          department_ids: false,
+          cohort_ids: true,
+          total_requests: true,
+        }
+      : {
+          ...baseVisibility,
+          department_ids: true,
+          cohort_ids: false,
+          total_requests: true,
+        };
 
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>(initialColumnVisibility);
@@ -243,6 +255,55 @@ export function StaffDataTable({
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "last_active", desc: true }, // Default sort by last active descending
   ]);
+
+  // Modal state for create staff button
+  const [showManualModal, setShowManualModal] = React.useState(false);
+  const [showCSVModal, setShowCSVModal] = React.useState(false);
+  const [showSearchModal, setShowSearchModal] = React.useState(false);
+
+  // Transform mappings for modals - simplified, computed directly
+  const createStaffData = initialCreateStaffData;
+  const departmentMappingForModals: Record<
+    string,
+    { name: string; description: string }
+  > = {};
+  if (createStaffData?.department_mapping) {
+    Object.entries(createStaffData.department_mapping).forEach(([id, dept]) => {
+      if (dept && typeof dept === "object" && "name" in dept) {
+        departmentMappingForModals[id] = {
+          name: String(dept.name),
+          description: String(dept.description || ""),
+        };
+      }
+    });
+  }
+
+  const cohortMappingForModals: Record<
+    string,
+    { name: string; description: string }
+  > = {};
+  if (createStaffData?.cohort_mapping) {
+    Object.entries(createStaffData.cohort_mapping).forEach(([id, cohort]) => {
+      if (cohort && typeof cohort === "object" && "name" in cohort) {
+        cohortMappingForModals[id] = {
+          name: String(cohort.name),
+          description: String(cohort.description || ""),
+        };
+      }
+    });
+  }
+
+  const validDepartmentIds = Object.keys(departmentMappingForModals);
+  const validCohortIds = Object.keys(cohortMappingForModals);
+  const roleOptionsForModals = createStaffData?.role_options || [];
+  const isLoading = !createStaffData;
+
+  const handleModalDone = () => {
+    setShowManualModal(false);
+    setShowCSVModal(false);
+    setShowSearchModal(false);
+    onCreate();
+  };
 
   // Define columns with rich visual styling
   const columns = React.useMemo<ColumnDef<ProfileListItem>[]>(
@@ -498,7 +559,7 @@ export function StaffDataTable({
     [cohortMapping, departmentMapping]
   );
 
-  // Build columns with checkbox + actions, filtering out any pre-supplied actions/select
+  // Build columns with checkbox + actions
   const columnsWithActions = React.useMemo(() => {
     const checkboxColumn: ColumnDef<ProfileListItem> = {
       id: "select",
@@ -602,6 +663,25 @@ export function StaffDataTable({
                 </TooltipContent>
               </Tooltip>
             )}
+            {/* Remove from Department - show when departmentId provided */}
+            {departmentId && onRemoveFromDepartment && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    onClick={() => onRemoveFromDepartment(staff)}
+                  >
+                    <UserMinus className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Remove from Department</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {/* Only show delete when NOT scoped (cohortId/departmentId) - scoped views use "remove" via bulk actions */}
             {!cohortId && !departmentId && canDelete(staff.profile_id) && (
               <Tooltip>
@@ -642,6 +722,7 @@ export function StaffDataTable({
     onPreview,
     onEdit,
     onDelete,
+    onRemoveFromDepartment,
     canDelete,
     canEdit,
     cohortId,
@@ -675,34 +756,221 @@ export function StaffDataTable({
     },
   });
 
+  // Toolbar state
+  const isFiltered = table.getState().columnFilters.length > 0;
+  const nameColumn = table.getColumn("name");
+  const roleColumn = table.getColumn("role");
+  const lastActiveColumn = table.getColumn("lastActive");
+  const cohortIdsColumn = table.getColumn("cohort_ids");
+  const selectedCount = selectedStaffIds.length;
+  const isScoped = !!(departmentIds?.length || cohortIds?.length);
+
   return (
     <TooltipProvider>
       <div className="space-y-2">
-        <StaffDataTableToolbar
-          table={table}
-          roleOptions={roleOptions}
-          cohortOptions={cohortOptions}
-          lastActiveOptions={lastActiveOptions}
-          isRefreshing={isRefreshing}
-          onRefresh={onRefresh}
-          selectedCount={selectedStaffIds.length}
-          onBulkDelete={onBulkDelete}
-          onBulkEdit={onBulkEdit}
-          onCreate={onCreate}
-          deletableCount={deletableCount}
-          editableCount={editableCount}
-          cohortId={cohortId}
-          {...(searchStaffAction && { searchStaffAction })}
-          {...(processCSVAction && { processCSVAction })}
-          {...(bulkCreateOrUpdateStaffAction && {
-            bulkCreateOrUpdateStaffAction,
-          })}
-          {...(initialCreateStaffData && { initialCreateStaffData })}
-          {...(initialSearchData && { initialSearchData })}
-          departmentId={departmentId}
-          {...(cohortIds && cohortIds.length > 0 && { cohortIds })}
-          {...(departmentIds && departmentIds.length > 0 && { departmentIds })}
-        />
+        {/* Inlined Toolbar */}
+        <div
+          className="flex items-center justify-between"
+          data-testid="staff-toolbar"
+        >
+          <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="mb-2 w-full md:w-auto">
+              <Input
+                placeholder="Search staff by name or alias..."
+                value={(nameColumn?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  nameColumn?.setFilterValue(event.target.value)
+                }
+                className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                data-testid="staff-search"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2 flex-wrap mb-2">
+              {/* Role Filter */}
+              {roleColumn && roleOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={roleColumn}
+                  title="Role"
+                  options={roleOptions}
+                />
+              )}
+
+              {/* Last Active Filter */}
+              {lastActiveColumn && lastActiveOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={lastActiveColumn}
+                  title="Last Active"
+                  options={lastActiveOptions}
+                />
+              )}
+
+              {/* Cohort Filter - hide when cohortId provided (cohorts page) */}
+              {!cohortId && cohortIdsColumn && cohortOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={cohortIdsColumn}
+                  title="Cohort"
+                  options={cohortOptions}
+                />
+              )}
+
+              {isFiltered && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 mb-2">
+            {/* Create Staff Button - only show when no rows are selected */}
+            {onCreate && selectedCount === 0 && (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button type="button" size="sm" disabled={isLoading}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Staff
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowManualModal(true)}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Manual Add
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowSearchModal(true)}>
+                      <Search className="h-4 w-4 mr-2" />
+                      Search Existing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowCSVModal(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      CSV Import
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {showManualModal && (
+                  <ManualAddStaffModal
+                    open={showManualModal}
+                    onOpenChange={setShowManualModal}
+                    {...(departmentIds &&
+                      departmentIds.length > 0 && {
+                        departmentIds: departmentIds,
+                      })}
+                    {...(cohortIds &&
+                      cohortIds.length > 0 && { cohortIds: cohortIds })}
+                    departmentMapping={departmentMappingForModals}
+                    validDepartmentIds={validDepartmentIds}
+                    cohortMapping={cohortMappingForModals}
+                    validCohortIds={validCohortIds}
+                    roleOptions={roleOptionsForModals}
+                    onDone={handleModalDone}
+                    {...(bulkCreateOrUpdateStaffAction && {
+                      bulkCreateOrUpdateStaffAction,
+                    })}
+                    {...(isScoped ? { onStagedProfiles: onCreate } : {})}
+                  />
+                )}
+
+                {showSearchModal && (
+                  <SearchExistingStaffModal
+                    open={showSearchModal}
+                    onOpenChange={setShowSearchModal}
+                    {...(departmentIds &&
+                      departmentIds.length > 0 && {
+                        departmentIds: departmentIds,
+                      })}
+                    {...(cohortIds &&
+                      cohortIds.length > 0 && { cohortIds: cohortIds })}
+                    departmentMapping={departmentMappingForModals}
+                    validDepartmentIds={validDepartmentIds}
+                    cohortMapping={cohortMappingForModals}
+                    validCohortIds={validCohortIds}
+                    onDone={handleModalDone}
+                    {...(initialSearchData && { initialSearchData })}
+                    {...(searchStaffAction && { searchStaffAction })}
+                    {...(isScoped ? { onStagedProfiles: onCreate } : {})}
+                  />
+                )}
+
+                {showCSVModal && (
+                  <CSVImportStaffModal
+                    open={showCSVModal}
+                    onOpenChange={setShowCSVModal}
+                    {...(departmentIds &&
+                      departmentIds.length > 0 && {
+                        departmentIds: departmentIds,
+                      })}
+                    {...(cohortIds &&
+                      cohortIds.length > 0 && { cohortIds: cohortIds })}
+                    departmentMapping={departmentMappingForModals}
+                    validDepartmentIds={validDepartmentIds}
+                    cohortMapping={cohortMappingForModals}
+                    validCohortIds={validCohortIds}
+                    roleOptions={roleOptionsForModals}
+                    onDone={handleModalDone}
+                    {...(processCSVAction && { processCSVAction })}
+                    {...(bulkCreateOrUpdateStaffAction && {
+                      bulkCreateOrUpdateStaffAction,
+                    })}
+                    {...(isScoped ? { onStagedProfiles: onCreate } : {})}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Bulk edit/delete if any selected */}
+            {selectedCount > 0 && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onBulkEdit}
+                  className="h-8"
+                  data-testid="btn-bulk-edit-staff"
+                >
+                  Bulk Edit {editableCount} of {selectedCount}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={onBulkDelete}
+                  className="h-8"
+                  data-testid="btn-bulk-delete-staff"
+                >
+                  {cohortId
+                    ? `Remove ${deletableCount} of ${selectedCount}`
+                    : departmentId
+                      ? `Remove ${deletableCount} of ${selectedCount}`
+                      : `Delete ${deletableCount} of ${selectedCount}`}
+                </Button>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+
+            <DataTableViewOptions table={table} />
+          </div>
+        </div>
+
         <div
           className="rounded-md border overflow-x-auto"
           data-testid="staff-table"

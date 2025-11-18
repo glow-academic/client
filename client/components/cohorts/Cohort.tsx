@@ -40,8 +40,8 @@ import type {
 } from "@/app/(main)/cohorts/e/[cohortId]/page";
 import type {
   CreateStaffDataOut,
+  ProfileListItem,
   SearchStaffOut,
-  StaffDetailOut,
 } from "@/app/(main)/management/staff/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
@@ -50,7 +50,7 @@ import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import type {
   BulkCreateOrUpdateStaffAction,
-  GetStaffDetailAction,
+  BulkUpdateStaffAction,
   ProcessCSVAction,
   SearchStaffAction,
   UpdateStaffAction,
@@ -61,7 +61,6 @@ import { useProfile } from "@/contexts/profile-context";
 // Import staff item types from API responses
 import type { CohortStaffItem } from "@/app/(main)/cohorts/e/[cohortId]/page";
 import type { CohortDefaultStaffItem } from "@/app/(main)/cohorts/new/page";
-import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 import { BarChart3, CheckCircle2, Clock, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -71,27 +70,37 @@ type ProfileListItemWithRemove = ProfileListItem & { can_remove?: boolean };
 
 const normalizeCohortStaffItem = (
   item: CohortStaffItem | CohortDefaultStaffItem
-): ProfileListItemWithRemove => ({
-  profile_id: item.profile_id,
-  first_name: item.first_name,
-  last_name: item.last_name,
-  alias: item.alias,
-  name: item.name,
-  role: item.role,
-  email: item.email,
-  initials: item.initials,
-  active: item.active,
-  last_active: item.lastActive ?? null,
-  cohort_ids: item.cohort_ids ?? [],
-  department_ids: item.department_ids ?? [],
-  requests_per_day: item.requests_per_day ?? null,
-  total_requests: item.total_requests ?? 0,
-  default_profile: item.default_profile,
-  requests_in_last_day: item.requests_in_last_day ?? 0,
-  can_edit: item.can_edit,
-  can_delete: item.can_delete,
-  can_remove: "can_remove" in item ? item.can_remove : false,
-});
+): ProfileListItemWithRemove => {
+  const department_ids = item.department_ids ?? [];
+  // Prefer department_id from API if available, otherwise fall back to first department
+  const department_id = 
+    ("department_id" in item && item.department_id) 
+      ? item.department_id 
+      : department_ids[0] || "";
+  
+  return {
+    profile_id: item.profile_id,
+    first_name: item.first_name,
+    last_name: item.last_name,
+    alias: item.alias,
+    name: item.name,
+    role: item.role,
+    email: item.email,
+    initials: item.initials,
+    active: item.active,
+    last_active: item.lastActive ?? null,
+    cohort_ids: item.cohort_ids ?? [],
+    department_ids: department_ids,
+    department_id: department_id,
+    requests_per_day: item.requests_per_day ?? null,
+    total_requests: item.total_requests ?? 0,
+    default_profile: item.default_profile,
+    requests_in_last_day: item.requests_in_last_day ?? 0,
+    can_edit: item.can_edit,
+    can_delete: item.can_delete,
+    can_remove: "can_remove" in item ? item.can_remove : false,
+  };
+};
 
 export interface CohortProps {
   cohortId?: string;
@@ -109,7 +118,7 @@ export interface CohortProps {
   initialCreateStaffData?: CreateStaffDataOut;
   // Staff edit actions
   updateStaffAction?: UpdateStaffAction;
-  getStaffDetailAction?: GetStaffDetailAction;
+  bulkUpdateStaffAction?: BulkUpdateStaffAction;
 }
 
 interface FormErrors {
@@ -133,7 +142,7 @@ export default function Cohort({
   initialSearchData,
   initialCreateStaffData,
   updateStaffAction,
-  getStaffDetailAction,
+  bulkUpdateStaffAction,
 }: CohortProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -167,10 +176,6 @@ export default function Cohort({
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Modal state management
   const [editProfileId, setEditProfileId] = useState<string | null>(null);
-  const [editStaffDetail, setEditStaffDetail] = useState<StaffDetailOut | null>(
-    null
-  );
-  const [isLoadingEditDetail, setIsLoadingEditDetail] = useState(false);
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [showBulkRemoveDialog, setShowBulkRemoveDialog] = useState(false);
   // Staged profiles to be added when cohort is updated
@@ -1039,6 +1044,10 @@ export default function Cohort({
                     formData.departmentIds && formData.departmentIds.length > 0
                       ? formData.departmentIds
                       : [],
+                  department_id:
+                    (formData.departmentIds && formData.departmentIds.length > 0
+                      ? formData.departmentIds[0]
+                      : "") as string,
                   requests_per_day: staged.requestsPerDay ?? null,
                   total_requests: staged.totalRequests ?? 0,
                   default_profile: false,
@@ -1167,23 +1176,8 @@ export default function Cohort({
                       "noopener,noreferrer"
                     );
                   }}
-                  onEdit={async (staff) => {
-                    if (!getStaffDetailAction || !effectiveProfile?.id) return;
-                    setIsLoadingEditDetail(true);
-                    try {
-                      const detail = await getStaffDetailAction({
-                        body: {
-                          profileId: staff.profile_id,
-                          currentProfileId: effectiveProfile.id,
-                        },
-                      });
-                      setEditStaffDetail(detail);
-                      setEditProfileId(staff.profile_id);
-                    } catch {
-                      toast.error("Failed to load staff details");
-                    } finally {
-                      setIsLoadingEditDetail(false);
-                    }
+                  onEdit={(staff) => {
+                    setEditProfileId(staff.profile_id);
                   }}
                   onDelete={() => {
                     // Delete not available in scoped view
@@ -1301,40 +1295,115 @@ export default function Cohort({
           })()}
 
         {/* Edit Staff Modal */}
-        {cohortId && updateStaffAction && (
-          <StaffEditModal
-            profileId={editProfileId}
-            open={!!editProfileId}
-            onOpenChange={(open: boolean) => {
-              if (!open) {
+        {cohortId && updateStaffAction && cohortData && (() => {
+          // Find the staff item from merged staff (existing + staged)
+          const existingStaff = cohortData.staff || [];
+          const existingStaffIds = new Set(existingStaff.map((s) => s.profile_id));
+          const stagedWithDetails: (ProfileListItem & { isStaged?: boolean })[] = stagedProfilesToAdd.map((staged) => {
+            const firstName = staged.firstName || "";
+            const lastName = staged.lastName || "";
+            const alias = staged.alias || "";
+            return {
+              profile_id: staged.profileId,
+              first_name: firstName,
+              last_name: lastName,
+              alias: alias,
+              name: `${firstName} ${lastName}`.trim() || alias,
+              role: staged.role || "ta",
+              email: alias ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}` : "",
+              initials: `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "??",
+              active: true,
+              last_active: null,
+              cohort_ids: cohortId ? [cohortId] : [],
+              department_ids: formData.departmentIds && formData.departmentIds.length > 0 ? formData.departmentIds : [],
+              department_id: formData.departmentIds && formData.departmentIds.length > 0 ? formData.departmentIds[0] : "",
+              requests_per_day: staged.requestsPerDay ?? null,
+              total_requests: staged.totalRequests ?? 0,
+              default_profile: false,
+              requests_in_last_day: 0,
+              can_edit: false,
+              can_delete: false,
+              isStaged: true,
+            };
+          }).filter((p) => !existingStaffIds.has(p.profile_id));
+          const stagedRemovalsSet = new Set(stagedProfilesToRemove);
+          const filteredExistingStaff = existingStaff.filter((s) => !stagedRemovalsSet.has(s.profile_id));
+          const normalizedExistingStaff = filteredExistingStaff.map(normalizeCohortStaffItem);
+          const mergedStaff: (ProfileListItemWithRemove & { isStaged?: boolean })[] = [...stagedWithDetails, ...normalizedExistingStaff];
+          const staffItem = mergedStaff.find((s) => s.profile_id === editProfileId) || null;
+          
+          return (
+            <StaffEditModal
+              profileId={editProfileId}
+              open={!!editProfileId}
+              onOpenChange={(open: boolean) => {
+                if (!open) {
+                  setEditProfileId(null);
+                }
+              }}
+              onDone={() => {
                 setEditProfileId(null);
-                setEditStaffDetail(null);
-              }
-            }}
-            onDone={() => {
-              setEditProfileId(null);
-              setEditStaffDetail(null);
-              router.refresh();
-            }}
-            updateStaffAction={updateStaffAction}
-            staffDetail={editStaffDetail}
-            isLoading={isLoadingEditDetail}
-          />
-        )}
+                router.refresh();
+              }}
+              updateStaffAction={updateStaffAction}
+              staffItem={staffItem}
+              validDepartmentIds={cohortData.valid_department_ids || []}
+            />
+          );
+        })()}
 
         {/* Bulk Edit Modal */}
-        {cohortId && (
-          <StaffBulkEditModal
-            profileIds={selectedStaffIds}
-            open={showBulkEditModal}
-            onOpenChange={setShowBulkEditModal}
-            onDone={() => {
-              setSelectedStaffIds([]);
-              setShowBulkEditModal(false);
-              // No need to refetch here, as we are using server data
-            }}
-          />
-        )}
+        {cohortId && cohortData && bulkUpdateStaffAction && (() => {
+          // Find selected staff items from merged staff (existing + staged)
+          const existingStaff = cohortData.staff || [];
+          const existingStaffIds = new Set(existingStaff.map((s) => s.profile_id));
+          const stagedWithDetails: (ProfileListItem & { isStaged?: boolean })[] = stagedProfilesToAdd.map((staged) => {
+            const firstName = staged.firstName || "";
+            const lastName = staged.lastName || "";
+            const alias = staged.alias || "";
+            return {
+              profile_id: staged.profileId,
+              first_name: firstName,
+              last_name: lastName,
+              alias: alias,
+              name: `${firstName} ${lastName}`.trim() || alias,
+              role: staged.role || "ta",
+              email: alias ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}` : "",
+              initials: `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "??",
+              active: true,
+              last_active: null,
+              cohort_ids: cohortId ? [cohortId] : [],
+              department_ids: formData.departmentIds && formData.departmentIds.length > 0 ? formData.departmentIds : [],
+              department_id: formData.departmentIds && formData.departmentIds.length > 0 ? formData.departmentIds[0] : "",
+              requests_per_day: staged.requestsPerDay ?? null,
+              total_requests: staged.totalRequests ?? 0,
+              default_profile: false,
+              requests_in_last_day: 0,
+              can_edit: false,
+              can_delete: false,
+              isStaged: true,
+            };
+          }).filter((p) => !existingStaffIds.has(p.profile_id));
+          const stagedRemovalsSet = new Set(stagedProfilesToRemove);
+          const filteredExistingStaff = existingStaff.filter((s) => !stagedRemovalsSet.has(s.profile_id));
+          const normalizedExistingStaff = filteredExistingStaff.map(normalizeCohortStaffItem);
+          const mergedStaff: (ProfileListItemWithRemove & { isStaged?: boolean })[] = [...stagedWithDetails, ...normalizedExistingStaff];
+          const selectedStaffItems = mergedStaff.filter((s) => selectedStaffIds.includes(s.profile_id));
+          
+          return (
+            <StaffBulkEditModal
+              profileIds={selectedStaffIds}
+              open={showBulkEditModal}
+              onOpenChange={setShowBulkEditModal}
+              onDone={() => {
+                setSelectedStaffIds([]);
+                setShowBulkEditModal(false);
+              }}
+              bulkUpdateStaffAction={bulkUpdateStaffAction}
+              selectedStaffItems={selectedStaffItems}
+            />
+          );
+        })()}
 
         {/* Bulk Remove from Cohort Confirmation */}
         {cohortId && (

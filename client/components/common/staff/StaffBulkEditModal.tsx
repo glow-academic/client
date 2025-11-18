@@ -6,7 +6,7 @@
 
 "use client";
 
-import type { StaffDetailBulkOut } from "@/app/(main)/management/staff/page";
+import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import type { BulkUpdateStaffAction } from "@/components/staff/Staff";
 import {
@@ -41,7 +41,7 @@ export interface StaffBulkEditModalProps {
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
   bulkUpdateStaffAction?: BulkUpdateStaffAction;
-  bulkDetail?: StaffDetailBulkOut | null;
+  selectedStaffItems?: ProfileListItem[];
 }
 
 export default function StaffBulkEditModal({
@@ -50,7 +50,7 @@ export default function StaffBulkEditModal({
   onOpenChange,
   onDone,
   bulkUpdateStaffAction,
-  bulkDetail,
+  selectedStaffItems = [],
 }: StaffBulkEditModalProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -59,43 +59,49 @@ export default function StaffBulkEditModal({
   const [bulkReqPerDay, setBulkReqPerDay] = useState<string>("");
   const [bulkUnlimited, setBulkUnlimited] = useState<boolean>(false);
   const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
-    null,
+    null
   );
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Initialize form values from bulkDetail when it loads (similar to documents)
+  // Compute bulk values from selected staff items
   useEffect(() => {
-    if (bulkDetail && open) {
-      // Initialize role: use bulkDetail.role if all profiles have the same role, otherwise "__keep__"
-      if (bulkDetail.role !== null) {
-        setBulkRole(bulkDetail.role);
+    if (selectedStaffItems.length > 0 && open) {
+      // Check if all profiles have the same role
+      const roles = new Set(selectedStaffItems.map((s) => s.role));
+      if (roles.size === 1) {
+        setBulkRole(Array.from(roles)[0] || "__keep__");
       } else {
         setBulkRole("__keep__");
       }
 
-      // Initialize requests_per_day: use bulkDetail.requests_per_day if all have same value
-      // null means mixed values, a number means all have the same limit
-      if (
-        bulkDetail.requests_per_day !== null &&
-        bulkDetail.requests_per_day !== undefined
-      ) {
-        // All profiles have the same numeric limit
-        setBulkUnlimited(false);
-        setBulkReqPerDay(String(bulkDetail.requests_per_day));
+      // Check if all profiles have the same requests_per_day
+      const reqPerDays = selectedStaffItems
+        .map((s) => s.requests_per_day)
+        .filter((r) => r !== null && r !== undefined);
+      if (reqPerDays.length === selectedStaffItems.length) {
+        const uniqueReqPerDays = new Set(reqPerDays);
+        if (uniqueReqPerDays.size === 1) {
+          const value = Array.from(uniqueReqPerDays)[0];
+          setBulkUnlimited(false);
+          setBulkReqPerDay(String(value));
+        } else {
+          // Mixed values
+          setBulkUnlimited(false);
+          setBulkReqPerDay("");
+        }
       } else {
-        // Mixed values or all unlimited - keep default empty/unlimited=false (which means "keep existing")
+        // Some are null/unlimited - mixed values
         setBulkUnlimited(false);
         setBulkReqPerDay("");
       }
 
-      // Default profile would need to be checked if all have same value
-      // For now, keep it as null (don't change) unless explicitly set
+      // Default profile - keep as null (don't change) unless explicitly set
       setBulkDefaultProfile(null);
     }
-  }, [bulkDetail, open]);
+  }, [selectedStaffItems, open]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -114,7 +120,7 @@ export default function StaffBulkEditModal({
       if (profileIds.length === 0) return;
       setShowConfirmDialog(true);
     },
-    [profileIds],
+    [profileIds]
   );
 
   const handleConfirm = useCallback(async () => {
@@ -185,7 +191,10 @@ export default function StaffBulkEditModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg" data-testid="dialog-bulk-edit-staff">
+        <DialogContent
+          className="max-w-lg"
+          data-testid="dialog-bulk-edit-staff"
+        >
           <DialogHeader>
             <DialogTitle>Bulk Edit Staff</DialogTitle>
           </DialogHeader>

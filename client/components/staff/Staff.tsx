@@ -47,10 +47,6 @@ import type {
   ProfileListItem,
   SearchStaffIn,
   SearchStaffOut,
-  StaffDetailBulkIn,
-  StaffDetailBulkOut,
-  StaffDetailIn,
-  StaffDetailOut,
   StaffListOut,
   UpdateStaffIn,
   UpdateStaffOut,
@@ -69,12 +65,6 @@ export type UpdateStaffAction = (
 export type BulkUpdateStaffAction = (
   input: BulkUpdateStaffIn
 ) => Promise<BulkUpdateStaffOut>;
-export type GetStaffDetailAction = (
-  input: StaffDetailIn
-) => Promise<StaffDetailOut>;
-export type GetStaffDetailBulkAction = (
-  input: StaffDetailBulkIn
-) => Promise<StaffDetailBulkOut>;
 export type SearchStaffAction = (
   input: SearchStaffIn
 ) => Promise<SearchStaffOut>;
@@ -93,8 +83,6 @@ export interface StaffProps {
   bulkDeleteStaffAction?: BulkDeleteStaffAction;
   updateStaffAction?: UpdateStaffAction;
   bulkUpdateStaffAction?: BulkUpdateStaffAction;
-  getStaffDetailAction?: GetStaffDetailAction;
-  getStaffDetailBulkAction?: GetStaffDetailBulkAction;
   searchStaffAction?: SearchStaffAction;
   processCSVAction?: ProcessCSVAction;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
@@ -108,8 +96,6 @@ export default function Staff({
   bulkDeleteStaffAction,
   updateStaffAction,
   bulkUpdateStaffAction,
-  getStaffDetailAction,
-  getStaffDetailBulkAction,
   searchStaffAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
@@ -124,16 +110,11 @@ export default function Staff({
   // Selection state
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
 
-  // Edit modal - fetch data when opening via server action
+  // Edit modal - use list data directly
   const [editProfileId, setEditProfileId] = React.useState<string | null>(null);
-  const [editStaffDetail, setEditStaffDetail] =
-    React.useState<StaffDetailOut | null>(null);
-  const [isLoadingEditDetail, setIsLoadingEditDetail] = React.useState(false);
 
-  // Bulk edit modal - fetch data when opening
+  // Bulk edit modal
   const [showBulkEditModal, setShowBulkEditModal] = React.useState(false);
-  const [bulkEditDetail, setBulkEditDetail] =
-    React.useState<StaffDetailBulkOut | null>(null);
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
@@ -153,6 +134,10 @@ export default function Staff({
   const departmentMapping = React.useMemo(
     () => staffData?.department_mapping || {},
     [staffData?.department_mapping]
+  );
+  const validDepartmentIds = React.useMemo(
+    () => staffData?.valid_department_ids || [],
+    [staffData?.valid_department_ids]
   );
   const trendData = React.useMemo(
     () =>
@@ -310,51 +295,17 @@ export default function Staff({
             "noopener,noreferrer"
           );
         }, [])}
-        onEdit={React.useCallback(
-          async (staffMember: ProfileListItem) => {
-            if (!getStaffDetailAction || !effectiveProfile?.id) return;
-            setIsLoadingEditDetail(true);
-            try {
-              const detail = await getStaffDetailAction({
-                body: {
-                  profileId: staffMember.profile_id,
-                  currentProfileId: effectiveProfile.id,
-                },
-              });
-              setEditStaffDetail(detail);
-              setEditProfileId(staffMember.profile_id);
-            } catch {
-              toast.error("Failed to load staff details");
-            } finally {
-              setIsLoadingEditDetail(false);
-            }
-          },
-          [getStaffDetailAction, effectiveProfile?.id]
-        )}
+        onEdit={React.useCallback((staffMember: ProfileListItem) => {
+          setEditProfileId(staffMember.profile_id);
+        }, [])}
         onDelete={React.useCallback((staffMember: ProfileListItem) => {
           setDeleteStaffMember(staffMember);
           setShowSingleDeleteDialog(true);
         }, [])}
-        onBulkEdit={React.useCallback(async () => {
-          if (
-            !getStaffDetailBulkAction ||
-            !effectiveProfile?.id ||
-            selectedStaffIds.length === 0
-          )
-            return;
-          try {
-            const detail = await getStaffDetailBulkAction({
-              body: {
-                profileIds: selectedStaffIds,
-                currentProfileId: effectiveProfile.id,
-              },
-            });
-            setBulkEditDetail(detail);
-            setShowBulkEditModal(true);
-          } catch {
-            toast.error("Failed to load staff details");
-          }
-        }, [getStaffDetailBulkAction, effectiveProfile?.id, selectedStaffIds])}
+        onBulkEdit={React.useCallback(() => {
+          if (selectedStaffIds.length === 0) return;
+          setShowBulkEditModal(true);
+        }, [selectedStaffIds])}
         onBulkDelete={React.useCallback(() => {
           setShowBulkDeleteDialog(true);
         }, [])}
@@ -401,17 +352,15 @@ export default function Staff({
           onOpenChange={(open: boolean) => {
             if (!open) {
               setEditProfileId(null);
-              setEditStaffDetail(null);
             }
           }}
           onDone={() => {
             setEditProfileId(null);
-            setEditStaffDetail(null);
             router.refresh();
           }}
           updateStaffAction={updateStaffAction}
-          staffDetail={editStaffDetail}
-          isLoading={isLoadingEditDetail}
+          staffItem={staff.find((s) => s.profile_id === editProfileId) || null}
+          validDepartmentIds={validDepartmentIds}
         />
       )}
 
@@ -422,17 +371,15 @@ export default function Staff({
           open={showBulkEditModal}
           onOpenChange={(open: boolean) => {
             setShowBulkEditModal(open);
-            if (!open) {
-              setBulkEditDetail(null);
-            }
           }}
           onDone={() => {
             setSelectedStaffIds([]);
-            setBulkEditDetail(null);
             router.refresh();
           }}
           bulkUpdateStaffAction={bulkUpdateStaffAction}
-          bulkDetail={bulkEditDetail}
+          selectedStaffItems={staff.filter((s) =>
+            selectedStaffIds.includes(s.profile_id)
+          )}
         />
       )}
 

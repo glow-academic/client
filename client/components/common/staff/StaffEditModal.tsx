@@ -6,7 +6,7 @@
 
 "use client";
 
-import type { StaffDetailOut } from "@/app/(main)/management/staff/page";
+import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import type { UpdateStaffAction } from "@/components/staff/Staff";
 import {
@@ -42,7 +42,8 @@ export interface StaffEditModalProps {
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
   updateStaffAction?: UpdateStaffAction;
-  staffDetail?: StaffDetailOut | null;
+  staffItem?: ProfileListItem | null;
+  validDepartmentIds?: string[];
   isLoading?: boolean;
 }
 
@@ -52,25 +53,27 @@ export default function StaffEditModal({
   onOpenChange,
   onDone,
   updateStaffAction,
-  staffDetail: profileData,
+  staffItem,
+  validDepartmentIds = [],
   isLoading = false,
 }: StaffEditModalProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
 
-  // V3 response structure: fields are directly on the response object
-  // Extract name into firstName/lastName (assuming format "FirstName LastName")
+  // Extract data from ProfileListItem
   const targetUser = useMemo(() => {
-    if (!profileData) return null;
+    if (!staffItem) return null;
     return {
-      firstName: profileData.name?.split(" ")[0] || "",
-      lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
-      alias: profileData.email?.split("@")[0] || "",
-      role: profileData.role || "",
-      reqPerDay: profileData.requests_per_day ?? null,
-      defaultProfile: false, // Not in v3 response, default to false
+      firstName: staffItem.first_name || "",
+      lastName: staffItem.last_name || "",
+      alias: staffItem.alias || "",
+      role: staffItem.role || "",
+      reqPerDay: staffItem.requests_per_day ?? null,
+      defaultProfile: staffItem.default_profile ?? false,
+      departmentId: staffItem.department_id || "",
+      active: staffItem.active ?? true,
     };
-  }, [profileData]);
+  }, [staffItem]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -105,7 +108,7 @@ export default function StaffEditModal({
     (field: string, value: string | number | boolean) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    [],
+    []
   );
 
   const handleSubmit = useCallback(
@@ -114,7 +117,7 @@ export default function StaffEditModal({
       if (!profileId) return;
       setShowConfirmDialog(true);
     },
-    [profileId],
+    [profileId]
   );
 
   const handleConfirm = useCallback(async () => {
@@ -130,11 +133,12 @@ export default function StaffEditModal({
           : Number(formData.reqPerDay);
 
       // V3 update endpoint requires department_id and active
-      // Get department_id from profileData or use first valid department
+      // Get department_id from staffItem or use first valid department
       const departmentId =
-        profileData?.department_id ||
-        (profileData?.valid_department_ids &&
-          profileData.valid_department_ids[0]) ||
+        targetUser?.departmentId ||
+        (validDepartmentIds && validDepartmentIds.length > 0
+          ? validDepartmentIds[0]
+          : "") ||
         "";
 
       if (!updateStaffAction) {
@@ -147,7 +151,7 @@ export default function StaffEditModal({
           role: formData.role,
           requests_per_day: parsedReqPerDay,
           department_id: departmentId,
-          active: profileData?.active ?? true,
+          active: targetUser?.active ?? true,
         },
       });
       router.refresh();
@@ -167,9 +171,9 @@ export default function StaffEditModal({
     profileId,
     formData,
     unlimited,
-    profileData?.active,
-    profileData?.department_id,
-    profileData?.valid_department_ids,
+    targetUser?.active,
+    targetUser?.departmentId,
+    validDepartmentIds,
     updateStaffAction,
     router,
     onOpenChange,
@@ -281,7 +285,7 @@ export default function StaffEditModal({
                           const num = parseInt(val, 10);
                           handleInputChange(
                             "reqPerDay",
-                            Number.isNaN(num) ? "" : num,
+                            Number.isNaN(num) ? "" : num
                           );
                         }
                       }}

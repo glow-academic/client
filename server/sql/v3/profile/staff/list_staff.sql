@@ -36,6 +36,18 @@ profile_departments_agg AS (
     WHERE pd.active = true
     GROUP BY pd.profile_id
 ),
+profile_primary_department AS (
+    SELECT 
+        pd.profile_id,
+        pd.department_id
+    FROM profile_departments pd
+    WHERE pd.active = true AND pd.is_primary = true
+),
+valid_department_ids_data AS (
+    SELECT array_agg(d.id::text ORDER BY d.title) as valid_department_ids
+    FROM departments d
+    WHERE d.active = true
+),
 recent_runs AS (
     SELECT 
         mrp.profile_id,
@@ -253,6 +265,7 @@ SELECT DISTINCT ON (p.id)
         ARRAY(SELECT unnest(pda.department_ids)::text),
         ARRAY[]::text[]
     ) as department_ids,
+    COALESCE(ppd.department_id::text, '') as department_id,
     COALESCE(ptr.total_requests, 0) as total_requests,
     COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
     COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
@@ -287,11 +300,13 @@ SELECT DISTINCT ON (p.id)
     cmd.cohort_mapping,
     dmd.department_mapping,
     tdc.trend_data,
-    up.role as current_user_role
+    up.role as current_user_role,
+    COALESCE(vdid.valid_department_ids, ARRAY[]::text[]) as valid_department_ids
 FROM profiles p
 JOIN profile_departments pd ON pd.profile_id = p.id
 LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
 LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
 LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
 LEFT JOIN profile_active_cohort_links pacl ON pacl.profile_id = p.id
 LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
@@ -308,6 +323,7 @@ CROSS JOIN user_profile up
 CROSS JOIN cohort_mapping_data cmd
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN trend_data_combined tdc
+CROSS JOIN valid_department_ids_data vdid
 WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ORDER BY p.id, p.last_name, p.first_name
 

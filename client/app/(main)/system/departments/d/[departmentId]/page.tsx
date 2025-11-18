@@ -18,7 +18,6 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import {
   bulkCreateOrUpdateStaff,
   getCreateStaffData,
-  getStaffDetail,
   processCSV,
   searchStaff,
   updateStaff,
@@ -151,7 +150,6 @@ export default async function DepartmentEditPage({
         initialSearchData={initialSearchData}
         initialCreateStaffData={initialCreateStaffData}
         updateStaffAction={updateStaff}
-        getStaffDetailAction={getStaffDetail}
       />
     </div>
   );

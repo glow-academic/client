@@ -299,46 +299,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/staff/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Detail Staff
-         * @description Get detailed profile information (staff version with permissions).
-         */
-        post: operations["get_profile_detail_staff_api_v3_profile_staff_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/staff/detail-bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Detail Bulk
-         * @description Get bulk profile detail information.
-         */
-        post: operations["get_profile_detail_bulk_api_v3_profile_staff_detail_bulk_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/profile/staff/create": {
         parameters: {
             query?: never;
@@ -8496,78 +8456,6 @@ export interface components {
             avgPct: number;
         };
         /**
-         * StaffDetailBulkRequest
-         * @description Request for staff detail bulk.
-         */
-        StaffDetailBulkRequest: {
-            /** Profileids */
-            profileIds: string[];
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * StaffDetailBulkResponse
-         * @description Response for staff detail bulk endpoint.
-         */
-        StaffDetailBulkResponse: {
-            /** Role */
-            role: string | null;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Department Ids */
-            department_ids: string[];
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Role Options */
-            role_options: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
-         * StaffDetailRequest
-         * @description Request for staff detail.
-         */
-        StaffDetailRequest: {
-            /** Profileid */
-            profileId: string;
-            /** Currentprofileid */
-            currentProfileId: string;
-        };
-        /**
-         * StaffDetailResponse
-         * @description Response for staff detail endpoint.
-         */
-        StaffDetailResponse: {
-            /** Name */
-            name: string;
-            /** Email */
-            email: string;
-            /** Role */
-            role: string;
-            /** Requests Per Day */
-            requests_per_day: number | null;
-            /** Active */
-            active: boolean;
-            /** Department Id */
-            department_id: string;
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Role Options */
-            role_options: string[];
-            /** Cohort Mapping */
-            cohort_mapping: {
-                [key: string]: components["schemas"]["CohortMappingItem"];
-            };
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
-            };
-        };
-        /**
          * StaffFilters
          * @description Filters for staff list.
          */
@@ -8590,6 +8478,8 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
             /** Trend Data */
             trend_data: {
                 [key: string]: components["schemas"]["TrendData"][];
@@ -9516,6 +9406,8 @@ export interface components {
             cohort_ids: string[];
             /** Department Ids */
             department_ids: string[];
+            /** Department Id */
+            department_id: string;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /** Total Requests */
@@ -9648,6 +9540,8 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
         };
         /**
          * StaffItem
@@ -9684,6 +9578,8 @@ export interface components {
              * @default []
              */
             department_ids: string[];
+            /** Department Id */
+            department_id: string;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /**
@@ -9772,6 +9668,8 @@ export interface components {
              * @default []
              */
             department_ids: string[];
+            /** Department Id */
+            department_id: string;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /**
@@ -10246,6 +10144,8 @@ export interface components {
             cohort_ids: string[];
             /** Department Ids */
             department_ids: string[];
+            /** Department Id */
+            department_id: string;
             /** Requests Per Day */
             requests_per_day: number | null;
             /** Total Requests */
@@ -11219,72 +11119,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StaffListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_detail_staff_api_v3_profile_staff_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_detail_bulk_api_v3_profile_staff_detail_bulk_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffDetailBulkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StaffDetailBulkResponse"];
                 };
             };
             /** @description Validation Error */

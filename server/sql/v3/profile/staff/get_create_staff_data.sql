@@ -24,6 +24,13 @@ profile_departments_agg AS (
     WHERE pd.active = true
     GROUP BY pd.profile_id
 ),
+profile_primary_department AS (
+    SELECT 
+        pd.profile_id,
+        pd.department_id
+    FROM profile_departments pd
+    WHERE pd.active = true AND pd.is_primary = true
+),
 recent_runs AS (
     SELECT 
         mrp.profile_id,
@@ -86,6 +93,7 @@ staff_data AS (
                 ARRAY(SELECT unnest(pda.department_ids)::text),
                 ARRAY[]::text[]
             ),
+            'department_id', COALESCE(ppd.department_id::text, ''),
             'requests_per_day', prl.requests_per_day,
             'total_requests', COALESCE(ptr.total_requests, 0),
             'default_profile', p.default_profile,
@@ -95,6 +103,7 @@ staff_data AS (
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
+    LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
     LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
     LEFT JOIN recent_runs rr ON rr.profile_id = p.id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true

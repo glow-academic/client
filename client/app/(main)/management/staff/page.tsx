@@ -25,10 +25,6 @@ type UpdateStaffIn = InputOf<"/api/v3/profile/staff/update", "post">;
 type UpdateStaffOut = OutputOf<"/api/v3/profile/staff/update", "post">;
 type BulkUpdateStaffIn = InputOf<"/api/v3/profile/staff/bulk-update", "post">;
 type BulkUpdateStaffOut = OutputOf<"/api/v3/profile/staff/bulk-update", "post">;
-type StaffDetailIn = InputOf<"/api/v3/profile/staff/detail", "post">;
-type StaffDetailOut = OutputOf<"/api/v3/profile/staff/detail", "post">;
-type StaffDetailBulkIn = InputOf<"/api/v3/profile/staff/detail-bulk", "post">;
-type StaffDetailBulkOut = OutputOf<"/api/v3/profile/staff/detail-bulk", "post">;
 type SearchStaffIn = InputOf<"/api/v3/profile/staff/search-staff", "post">;
 type SearchStaffOut = OutputOf<"/api/v3/profile/staff/search-staff", "post">;
 type CreateStaffDataIn = InputOf<
@@ -111,19 +107,6 @@ export async function bulkUpdateStaff(
   return out;
 }
 
-export async function getStaffDetail(
-  input: StaffDetailIn,
-): Promise<StaffDetailOut> {
-  "use server";
-  return api.post("/profile/staff/detail", input);
-}
-
-export async function getStaffDetailBulk(
-  input: StaffDetailBulkIn,
-): Promise<StaffDetailBulkOut> {
-  "use server";
-  return api.post("/profile/staff/detail-bulk", input);
-}
 
 export async function searchStaff(
   input: SearchStaffIn,
@@ -199,8 +182,6 @@ export default async function StaffPage() {
         bulkDeleteStaffAction={bulkDeleteStaff}
         updateStaffAction={updateStaff}
         bulkUpdateStaffAction={bulkUpdateStaff}
-        getStaffDetailAction={getStaffDetail}
-        getStaffDetailBulkAction={getStaffDetailBulk}
         searchStaffAction={searchStaff}
         processCSVAction={processCSV}
         bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
@@ -216,25 +197,15 @@ export type {
   BulkDeleteStaffIn,
   BulkDeleteStaffOut,
   BulkUpdateStaffIn,
-  BulkUpdateStaffOut,
-  CSVColumnMapping,
-  CreateStaffDataIn,
-  CreateStaffDataOut,
-  DeleteStaffIn,
+  BulkUpdateStaffOut, CreateStaffDataIn,
+  CreateStaffDataOut, CSVColumnMapping, DeleteStaffIn,
   DeleteStaffOut,
   ProcessCSVIn,
   ProcessCSVOut,
-  ProcessedCSVRow,
-  SearchStaffIn,
-  SearchStaffOut,
-  StaffDetailBulkIn,
-  StaffDetailBulkOut,
-  StaffDetailIn,
-  StaffDetailOut,
+  ProcessedCSVRow, ProfileListItem, SearchStaffIn, SearchStaffItem, SearchStaffOut,
   StaffListIn,
   StaffListOut,
   UpdateStaffIn,
-  UpdateStaffOut,
-  ProfileListItem,
-  SearchStaffItem,
+  UpdateStaffOut
 };
+
