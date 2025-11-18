@@ -13,7 +13,7 @@ import React from "react";
 import type {
   CreateStaffDataOut,
   SearchStaffOut,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,

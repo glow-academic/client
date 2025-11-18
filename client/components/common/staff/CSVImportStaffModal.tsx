@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import type {
   CSVColumnMapping,
   ProcessedCSVRow,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 import { CohortPicker } from "@/components/common/forms/CohortPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";

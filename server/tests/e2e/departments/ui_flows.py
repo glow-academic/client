@@ -20,7 +20,7 @@ def create_department_via_ui(
     """Create a department via the UI and return (department_name, department_id)."""
     department_title = title or generate_unique_department_name("UI Department")
 
-    page.goto(f"{base_url}/system/departments/new")
+    page.goto(f"{base_url}/management/departments/new")
     page.wait_for_load_state("networkidle")
 
     title_input = page.get_by_test_id("input-department-title")
@@ -41,7 +41,7 @@ def create_department_via_ui(
     submit_button = page.get_by_test_id("btn-submit-department")
     submit_button.click()
 
-    page.wait_for_url(f"{base_url}/system/departments", timeout=20000)
+    page.wait_for_url(f"{base_url}/management/departments", timeout=20000)
     page.wait_for_load_state("networkidle")
     print(f"[E2E] Landed on URL after department create: {page.url}", file=sys.stdout)
     page.wait_for_selector("[data-testid='departments-grid']", timeout=10000)

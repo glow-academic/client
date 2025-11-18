@@ -24,13 +24,13 @@ import type {
   CreateStaffDataOut,
   ProfileListItem,
   SearchStaffOut,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 // Import types from new page (create action)
 import type {
   CreateDepartmentIn,
   CreateDepartmentOut,
   DepartmentDetailDefaultOut,
-} from "@/app/(main)/system/departments/new/page";
+} from "@/app/(main)/management/departments/new/page";
 // Import types from edit page (update action)
 import type {
   DepartmentDetailOut,
@@ -38,7 +38,7 @@ import type {
   RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
-} from "@/app/(main)/system/departments/d/[departmentId]/page";
+} from "@/app/(main)/management/departments/d/[departmentId]/page";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,
@@ -46,8 +46,8 @@ import type {
   UpdateStaffAction,
 } from "@/components/staff/Staff";
 // Import staff item types from API responses
-import type { DepartmentStaffItem } from "@/app/(main)/system/departments/d/[departmentId]/page";
-import type { DepartmentDefaultStaffItem } from "@/app/(main)/system/departments/new/page";
+import type { DepartmentStaffItem } from "@/app/(main)/management/departments/d/[departmentId]/page";
+import type { DepartmentDefaultStaffItem } from "@/app/(main)/management/departments/new/page";
 
 // Helper to normalize department staff item to ProfileListItem format
 const normalizeDepartmentStaffItem = (
@@ -277,7 +277,7 @@ export default function Department({
         });
         resetFormAndState();
         toast.success("Department updated successfully!");
-        router.push("/system/departments");
+        router.push("/management/departments");
       } else {
         // CREATE mode
         await handleCreateDepartment({
@@ -288,7 +288,7 @@ export default function Department({
         });
         resetFormAndState();
         toast.success("Department created successfully!");
-        router.push("/system/departments");
+        router.push("/management/departments");
       }
     } catch (error) {
       toast.error(

@@ -205,7 +205,7 @@ export default function Parameters({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     initialState: {
       pagination: {
-        pageSize: 3,
+        pageSize: 12,
       },
     },
   });

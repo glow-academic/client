@@ -63,7 +63,7 @@ def test_departments_cache_revalidation_and_no_double_fetch(
     detail_counter, stop_counter = _set_request_counter(
         page, "/api/v3/departments/detail-default"
     )
-    page.goto(f"{base_url}/system/departments/new")
+    page.goto(f"{base_url}/management/departments/new")
     page.wait_for_load_state("networkidle")
     stop_counter()
     assert detail_counter["total"] <= 1, (
@@ -86,7 +86,7 @@ def test_departments_cache_revalidation_and_no_double_fetch(
         submit_button.click()
 
         _expect_toast(page, "Department created successfully")
-        page.wait_for_url(f"{base_url}/system/departments")
+        page.wait_for_url(f"{base_url}/management/departments")
 
         # Verify list page shows new department without manual refresh
         search_input = page.get_by_test_id("departments-search")
@@ -133,7 +133,7 @@ def test_departments_cache_revalidation_and_no_double_fetch(
         if edit_button.is_visible():
             edit_button.click()
 
-            page.wait_for_url(f"{base_url}/system/departments/d/{department_id}")
+            page.wait_for_url(f"{base_url}/management/departments/d/{department_id}")
             page.wait_for_load_state("networkidle")
 
             updated_title = generate_unique_department_name("Updated Cache Department")
@@ -144,7 +144,7 @@ def test_departments_cache_revalidation_and_no_double_fetch(
             submit_button = page.get_by_test_id("btn-submit-department")
             submit_button.click()
 
-            page.wait_for_url(f"{base_url}/system/departments")
+            page.wait_for_url(f"{base_url}/management/departments")
 
             search_input = page.get_by_test_id("departments-search")
             search_input.fill(updated_title)

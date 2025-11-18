@@ -71,7 +71,7 @@ def _create_test_csv(
 def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
     """Test complete CSV upload workflow: upload → map columns → review → submit."""
     # Navigate to staff page
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     # Wait for staff table to load
@@ -240,7 +240,7 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
 def test_staff_csv_upload_with_validation_errors(page: Page, base_url: str) -> None:
     """Test CSV upload with validation errors that need to be fixed."""
     # Navigate to staff page
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     # Wait for staff table to load

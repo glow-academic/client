@@ -6,7 +6,7 @@
 
 "use client";
 
-import type { ProfileListItem } from "@/app/(main)/management/staff/page";
+import type { ProfileListItem } from "@/app/(main)/system/staff/page";
 import { StaffRolePicker } from "@/components/common/forms/StaffRolePicker";
 import type { BulkUpdateStaffAction } from "@/components/staff/Staff";
 import {

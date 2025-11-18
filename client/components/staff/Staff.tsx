@@ -50,7 +50,7 @@ import type {
   StaffListOut,
   UpdateStaffIn,
   UpdateStaffOut,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 
 // Explicitly define server action types (matching the page exports)
 export type DeleteStaffAction = (

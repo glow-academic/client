@@ -57,7 +57,7 @@ def _resolve_profile_ids(
     *,
     profile_id: str,
     effective_profile_id: str | None,
-    pathname: str = "/management/staff",
+    pathname: str = "/system/staff",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
     effective = effective_profile_id or profile_id

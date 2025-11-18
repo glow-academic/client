@@ -21,7 +21,7 @@ def _get_department_ids(page: Page) -> set[str]:
 
 def test_department_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     """Duplicate a department and verify new card appears with refreshed data."""
-    page.goto(f"{base_url}/system/departments")
+    page.goto(f"{base_url}/management/departments")
     page.wait_for_load_state("networkidle")
 
     cards = page.get_by_test_id("department-card")

@@ -90,11 +90,11 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "create";
 
     case "management":
-      if (second === "staff") {
-        if (third === "p" && fourth) {
-          return `profile-${fourth}`;
+      if (second === "departments") {
+        if (third === "d" && fourth) {
+          return `department-${fourth}`;
         }
-        return "staff";
+        return "departments";
       }
       if (second === "parameters") {
         if (third === "p" && fourth) {
@@ -115,16 +115,16 @@ const getSectionFromSegments = (segments: string[]): string => {
         return "agents";
       }
       if (second) {
-        return second; // staff, context, logs, models, rubrics
+        return second; // departments, context, logs, models, rubrics
       }
       return "management";
 
     case "system":
-      if (second === "departments") {
-        if (third === "d" && fourth) {
-          return `department-${fourth}`;
+      if (second === "staff") {
+        if (third === "p" && fourth) {
+          return `profile-${fourth}`;
         }
-        return "departments";
+        return "staff";
       }
       if (second === "providers") {
         if (third === "p" && fourth && fifth === "m" && sixth) {

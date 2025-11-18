@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/departments/new/page.tsx
+ * app/(main)/management/departments/new/page.tsx
  * New department page for the departments section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -20,7 +20,7 @@ import {
   getCreateStaffData,
   processCSV,
   searchStaff,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailDefaultIn = InputOf<

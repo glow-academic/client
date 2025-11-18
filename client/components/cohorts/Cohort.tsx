@@ -42,7 +42,7 @@ import type {
   CreateStaffDataOut,
   ProfileListItem,
   SearchStaffOut,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";

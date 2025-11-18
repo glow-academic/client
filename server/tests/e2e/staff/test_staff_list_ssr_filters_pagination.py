@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_staff_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     """Ensure staff list SSR renders and search/filter flows work."""
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     table = page.get_by_test_id("staff-table")
@@ -157,7 +157,7 @@ def test_staff_pagination_persists_filters(page: Page, base_url: str) -> None:
                 )
                 created_staff_ids.append(profile_id)
 
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/system/staff")
         page.wait_for_load_state("networkidle")
 
         next_button = page.get_by_role("button", name="Go to next page")

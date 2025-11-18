@@ -283,7 +283,7 @@ export function UnifiedSidebar({
 
     // Management - Available from admin level only
     if (
-      availableSections.includes("staff") ||
+      availableSections.includes("departments") ||
       availableSections.includes("parameters") ||
       availableSections.includes("rubrics") ||
       availableSections.includes("agents")
@@ -297,11 +297,11 @@ export function UnifiedSidebar({
         items: managementItems,
       });
 
-      if (availableSections.includes("staff")) {
+      if (availableSections.includes("departments")) {
         managementItems.push({
-          title: "Staff",
+          title: "Departments",
           url: "#",
-          section: "staff",
+          section: "departments",
         });
       }
 
@@ -333,7 +333,7 @@ export function UnifiedSidebar({
     // System  - Available from admin level and up
     if (
       availableSections.includes("providers") ||
-      availableSections.includes("departments") ||
+      availableSections.includes("staff") ||
       availableSections.includes("feedback") ||
       availableSections.includes("logs")
     ) {
@@ -346,11 +346,11 @@ export function UnifiedSidebar({
         items: systemItems,
       });
 
-      if (availableSections.includes("departments")) {
+      if (availableSections.includes("staff")) {
         systemItems.push({
-          title: "Departments",
+          title: "Staff",
           url: "#",
-          section: "departments",
+          section: "staff",
         });
       }
 

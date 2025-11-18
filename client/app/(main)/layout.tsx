@@ -38,7 +38,7 @@ export default async function MainLayout({
   // Read pathname from headers to check if we're on staff page
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
-  const isStaffPage = pathname === "/management/staff";
+  const isStaffPage = pathname === "/system/staff";
 
   let initialCreateStaffData = null;
 

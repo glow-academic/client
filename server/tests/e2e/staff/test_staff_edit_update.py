@@ -52,7 +52,7 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/system/staff")
         page.wait_for_load_state("networkidle")
 
         staff_row = page.locator(
@@ -147,7 +147,7 @@ def test_staff_edit_cancel_dialog(page: Page, base_url: str) -> None:
     editable_staff = find_editable_staff(staff)
     profile_id = editable_staff["profile_id"]
 
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(
@@ -195,7 +195,7 @@ def test_staff_edit_cancel_confirmation(page: Page, base_url: str) -> None:
     editable_staff = find_editable_staff(staff)
     profile_id = editable_staff["profile_id"]
 
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(
@@ -267,7 +267,7 @@ def test_staff_edit_unlimited_requests(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/system/staff")
         page.wait_for_load_state("networkidle")
 
         staff_row = page.locator(

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type {
   ProfileListItem,
   SearchStaffOut,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
 import type { SearchStaffAction } from "@/components/staff/Staff";
 import { Badge } from "@/components/ui/badge";

@@ -42,7 +42,7 @@ def test_department_edit_update_fields(page: Page, base_url: str) -> None:
         )
 
         # Navigate to edit page
-        page.goto(f"{base_url}/system/departments/d/{department_id}")
+        page.goto(f"{base_url}/management/departments/d/{department_id}")
         page.wait_for_load_state("networkidle")
 
         # Verify form is pre-filled
@@ -72,7 +72,7 @@ def test_department_edit_update_fields(page: Page, base_url: str) -> None:
         submit_button.click()
 
         # Verify redirect and toast
-        page.wait_for_url(f"{base_url}/system/departments", timeout=20000)
+        page.wait_for_url(f"{base_url}/management/departments", timeout=20000)
         _expect_toast(page, "Department updated successfully")
 
         # Verify updated values appear in list

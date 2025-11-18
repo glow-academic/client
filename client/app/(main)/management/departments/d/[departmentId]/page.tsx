@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/departments/d/[departmentId]/page.tsx
+ * app/(main)/management/departments/d/[departmentId]/page.tsx
  * Department edit page
  * @AshokSaravanan222 & @siladiea
  * 07/20/2025
@@ -21,7 +21,7 @@ import {
   processCSV,
   searchStaff,
   updateStaff,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;

@@ -50,7 +50,7 @@ def test_staff_bulk_edit_role(page: Page, base_url: str) -> None:
             )
             created_profile_ids.append(profile_id)
 
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/system/staff")
         page.wait_for_load_state("networkidle")
 
         # Select multiple staff rows
@@ -159,7 +159,7 @@ def test_staff_bulk_edit_requests_per_day(page: Page, base_url: str) -> None:
             )
             created_profile_ids.append(profile_id)
 
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/system/staff")
         page.wait_for_load_state("networkidle")
 
         # Select staff
@@ -243,7 +243,7 @@ def test_staff_bulk_edit_keep_current(page: Page, base_url: str) -> None:
             )
             created_profile_ids.append(profile_id)
 
-        page.goto(f"{base_url}/management/staff")
+        page.goto(f"{base_url}/system/staff")
         page.wait_for_load_state("networkidle")
 
         # Select staff
@@ -328,7 +328,7 @@ def test_staff_bulk_edit_partial_selection(page: Page, base_url: str) -> None:
     if len(editable_staff) < 1:
         pytest.skip("No editable staff available for test")
 
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     selected_ids = []

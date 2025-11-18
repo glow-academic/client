@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/staff/page.tsx
+ * app/(main)/system/staff/page.tsx
  * Staff page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

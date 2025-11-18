@@ -21,7 +21,7 @@ import {
   processCSV,
   searchStaff,
   updateStaff,
-} from "@/app/(main)/management/staff/page";
+} from "@/app/(main)/system/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortDetailIn = InputOf<"/api/v3/cohorts/detail", "post">;

@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/staff/p/page.tsx
+ * app/(main)/system/staff/p/page.tsx
  * Staff edit page for the staff section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function StaffEditPage() {
-  return redirect("/management/staff");
+  return redirect("/system/staff");
 }

@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/departments/d/[departmentId]/loading.tsx
+ * app/(main)/management/departments/d/[departmentId]/loading.tsx
  * Loading skeleton for department edit page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025

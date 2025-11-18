@@ -62,7 +62,7 @@ def test_guest_practice_page_access(page: Page, base_url: str) -> None:
 def test_guest_restricted_pages(page: Page, base_url: str) -> None:
     """Test that guest cannot access admin-only pages."""
     # Attempt to access admin staff page
-    page.goto(f"{base_url}/management/staff")
+    page.goto(f"{base_url}/system/staff")
     page.wait_for_load_state("networkidle")
 
     # Guest should be redirected away from admin pages
@@ -71,7 +71,7 @@ def test_guest_restricted_pages(page: Page, base_url: str) -> None:
 
     # Guest might be redirected to practice or see an error
     # Verify we're not on the staff management page
-    if "/management/staff" in current_url:
+    if "/system/staff" in current_url:
         # If still on staff page, check for access denied message
         access_denied = page.get_by_text("access denied", exact=False).or_(
             page.get_by_text("permission", exact=False)

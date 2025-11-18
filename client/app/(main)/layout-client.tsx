@@ -118,7 +118,7 @@ function MainLayoutContent({
   const { getEntityName } = useBreadcrumbContext();
 
   // Check if we're on the staff page
-  const isStaffPage = pathname === "/management/staff";
+  const isStaffPage = pathname === "/system/staff";
 
   // Extract mappings from initialCreateStaffData for CreateStaffButton
   const departmentMapping = React.useMemo(() => {
@@ -294,7 +294,7 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/management/staff") {
+    if (pathname === "/system/staff") {
       // CreateStaffButton is now handled directly in Staff.tsx component
       return null;
     }
@@ -329,10 +329,10 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/system/departments") {
+    if (pathname === "/management/departments") {
       return (
         <Button
-          onClick={() => router.push("/system/departments/new")}
+          onClick={() => router.push("/management/departments/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

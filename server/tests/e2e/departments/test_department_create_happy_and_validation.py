@@ -30,7 +30,7 @@ def test_department_create_validation_and_success(page: Page, base_url: str) -> 
     department_title = None
     department_id = None
     try:
-        page.goto(f"{base_url}/system/departments/new")
+        page.goto(f"{base_url}/management/departments/new")
         page.wait_for_load_state("networkidle")
 
         title_input = page.get_by_test_id("input-department-title")
@@ -57,7 +57,7 @@ def test_department_create_validation_and_success(page: Page, base_url: str) -> 
 
         submit_button.click()
 
-        page.wait_for_url(f"{base_url}/system/departments", timeout=20000)
+        page.wait_for_url(f"{base_url}/management/departments", timeout=20000)
         page.wait_for_load_state("networkidle")
 
         _expect_toast(page, "Department created successfully")

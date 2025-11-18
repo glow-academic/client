@@ -29,7 +29,7 @@ def test_department_readonly_permissions(page: Page, base_url: str) -> None:
     department_id = readonly_department["department_id"]
     department_title = readonly_department["title"]
 
-    page.goto(f"{base_url}/system/departments")
+    page.goto(f"{base_url}/management/departments")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("departments-search")
@@ -52,7 +52,7 @@ def test_department_readonly_permissions(page: Page, base_url: str) -> None:
 
     view_button.click()
 
-    page.wait_for_url(f"{base_url}/system/departments/d/{department_id}")
+    page.wait_for_url(f"{base_url}/management/departments/d/{department_id}")
     page.wait_for_load_state("networkidle")
 
     banner = page.get_by_text("Department is read-only")

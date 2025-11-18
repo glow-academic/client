@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_departments_list_filters_and_empty_state(page: Page, base_url: str) -> None:
     """Ensure department list SSR renders and search/filter flows work."""
-    page.goto(f"{base_url}/system/departments")
+    page.goto(f"{base_url}/management/departments")
     page.wait_for_load_state("networkidle")
 
     grid = page.get_by_test_id("departments-grid")
@@ -128,10 +128,10 @@ def test_departments_pagination_persists_filters(page: Page, base_url: str) -> N
                     effective_profile_id=ADMIN_PROFILE_ID,
                 )
                 created_department_ids.append(department_id)
-            page.goto(f"{base_url}/system/departments")
+            page.goto(f"{base_url}/management/departments")
             page.wait_for_load_state("networkidle")
 
-        page.goto(f"{base_url}/system/departments")
+        page.goto(f"{base_url}/management/departments")
         page.wait_for_load_state("networkidle")
 
         next_button = page.get_by_role("button", name="Go to next page")

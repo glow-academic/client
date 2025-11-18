@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/departments/new/loading.tsx
+ * app/(main)/management/departments/new/loading.tsx
  * Loading skeleton for department create page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
