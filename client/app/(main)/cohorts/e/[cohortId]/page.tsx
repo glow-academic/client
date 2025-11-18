@@ -17,8 +17,10 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import {
   bulkCreateOrUpdateStaff,
   getCreateStaffData,
+  getStaffDetail,
   processCSV,
   searchStaff,
+  updateStaff,
 } from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -44,7 +46,7 @@ const getCohort = (cohortId: string) =>
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ cohortId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { cohortId } = await params;
   const session = await getSession();
@@ -66,7 +68,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server action ---- */
 export async function updateCohort(
-  input: UpdateCohortIn,
+  input: UpdateCohortIn
 ): Promise<UpdateCohortOut> {
   "use server";
   const out = await api.post("/cohorts/update", input);
@@ -125,6 +127,8 @@ export default async function CohortEditPage({
         searchStaffAction={searchStaff}
         initialSearchData={initialSearchData}
         initialCreateStaffData={initialCreateStaffData}
+        updateStaffAction={updateStaff}
+        getStaffDetailAction={getStaffDetail}
       />
     </div>
   );

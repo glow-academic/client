@@ -58,29 +58,29 @@ import type {
 
 // Explicitly define server action types (matching the page exports)
 export type DeleteStaffAction = (
-  input: DeleteStaffIn,
+  input: DeleteStaffIn
 ) => Promise<DeleteStaffOut>;
 export type BulkDeleteStaffAction = (
-  input: BulkDeleteStaffIn,
+  input: BulkDeleteStaffIn
 ) => Promise<BulkDeleteStaffOut>;
 export type UpdateStaffAction = (
-  input: UpdateStaffIn,
+  input: UpdateStaffIn
 ) => Promise<UpdateStaffOut>;
 export type BulkUpdateStaffAction = (
-  input: BulkUpdateStaffIn,
+  input: BulkUpdateStaffIn
 ) => Promise<BulkUpdateStaffOut>;
 export type GetStaffDetailAction = (
-  input: StaffDetailIn,
+  input: StaffDetailIn
 ) => Promise<StaffDetailOut>;
 export type GetStaffDetailBulkAction = (
-  input: StaffDetailBulkIn,
+  input: StaffDetailBulkIn
 ) => Promise<StaffDetailBulkOut>;
 export type SearchStaffAction = (
-  input: SearchStaffIn,
+  input: SearchStaffIn
 ) => Promise<SearchStaffOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
 export type BulkCreateOrUpdateStaffAction = (
-  input: BulkCreateOrUpdateStaffIn,
+  input: BulkCreateOrUpdateStaffIn
 ) => Promise<BulkCreateOrUpdateStaffOut>;
 
 export interface StaffProps {
@@ -148,11 +148,11 @@ export default function Staff({
   const staff = React.useMemo(() => staffData?.staff || [], [staffData?.staff]);
   const cohortMapping = React.useMemo(
     () => staffData?.cohort_mapping || {},
-    [staffData?.cohort_mapping],
+    [staffData?.cohort_mapping]
   );
   const departmentMapping = React.useMemo(
     () => staffData?.department_mapping || {},
-    [staffData?.department_mapping],
+    [staffData?.department_mapping]
   );
   const trendData = React.useMemo(
     () =>
@@ -163,7 +163,7 @@ export default function Staff({
         ta: [],
         total_requests: [],
       },
-    [staffData?.trend_data],
+    [staffData?.trend_data]
   );
 
   // Calculate counts for KPI cards
@@ -272,64 +272,70 @@ export default function Staff({
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
         selectedStaffIds={selectedStaffIds}
-        onStaffSelect={(id, checked) =>
+        onStaffSelect={React.useCallback((id: string, checked: boolean) => {
           setSelectedStaffIds((prev) =>
-            checked ? [...prev, id] : prev.filter((x) => x !== id),
-          )
-        }
-        onSelectAll={(checked, visibleRowIds) => {
-          if (checked && visibleRowIds) {
-            // Select all visible rows
-            setSelectedStaffIds((prev) => {
-              const newSelection = [...prev];
-              visibleRowIds.forEach((id) => {
-                if (!newSelection.includes(id)) {
-                  newSelection.push(id);
-                }
+            checked ? [...prev, id] : prev.filter((x) => x !== id)
+          );
+        }, [])}
+        onSelectAll={React.useCallback(
+          (checked: boolean, visibleRowIds?: string[]) => {
+            if (checked && visibleRowIds) {
+              // Select all visible rows
+              setSelectedStaffIds((prev) => {
+                const newSelection = [...prev];
+                visibleRowIds.forEach((id) => {
+                  if (!newSelection.includes(id)) {
+                    newSelection.push(id);
+                  }
+                });
+                return newSelection;
               });
-              return newSelection;
-            });
-          } else {
-            // Deselect all visible rows
-            setSelectedStaffIds((prev) =>
-              prev.filter((id) => !visibleRowIds?.includes(id)),
-            );
-          }
-        }}
-        onCreate={() => {
+            } else {
+              // Deselect all visible rows
+              setSelectedStaffIds((prev) =>
+                prev.filter((id) => !visibleRowIds?.includes(id))
+              );
+            }
+          },
+          []
+        )}
+        onCreate={React.useCallback(() => {
           // Refresh staff list after create
           router.refresh();
-        }}
-        onPreview={(staffMember) => {
+        }, [router])}
+        onPreview={React.useCallback((staffMember: ProfileListItem) => {
           window.open(
             `/analytics/reports/p/${staffMember.profile_id}`,
             "_blank",
-            "noopener,noreferrer",
+            "noopener,noreferrer"
           );
-        }}
-        onEdit={async (staffMember) => {
-          if (!getStaffDetailAction || !effectiveProfile?.id) return;
-          setIsLoadingEditDetail(true);
-          try {
-            const detail = await getStaffDetailAction({
-              body: {
-                profileId: staffMember.profile_id,
-                currentProfileId: effectiveProfile.id,
-              },
-            });
-            setEditStaffDetail(detail);
-            setEditProfileId(staffMember.profile_id);
-          } catch {
-            toast.error("Failed to load staff details");
-          } finally {
-            setIsLoadingEditDetail(false);
-          }
-        }}
-        onDelete={(staffMember) => {
+        }, [])}
+        onEdit={React.useCallback(
+          async (staffMember: ProfileListItem) => {
+            if (!getStaffDetailAction || !effectiveProfile?.id) return;
+            setIsLoadingEditDetail(true);
+            try {
+              const detail = await getStaffDetailAction({
+                body: {
+                  profileId: staffMember.profile_id,
+                  currentProfileId: effectiveProfile.id,
+                },
+              });
+              setEditStaffDetail(detail);
+              setEditProfileId(staffMember.profile_id);
+            } catch {
+              toast.error("Failed to load staff details");
+            } finally {
+              setIsLoadingEditDetail(false);
+            }
+          },
+          [getStaffDetailAction, effectiveProfile?.id]
+        )}
+        onDelete={React.useCallback((staffMember: ProfileListItem) => {
           setDeleteStaffMember(staffMember);
           setShowSingleDeleteDialog(true);
-        }}
-        onBulkEdit={async () => {
+        }, [])}
+        onBulkEdit={React.useCallback(async () => {
           if (
             !getStaffDetailBulkAction ||
             !effectiveProfile?.id ||
@@ -348,28 +354,36 @@ export default function Staff({
           } catch {
             toast.error("Failed to load staff details");
           }
-        }}
-        onBulkDelete={() => setShowBulkDeleteDialog(true)}
-        canDelete={(profileId) => {
-          const row = staff.find((s) => s.profile_id === profileId);
-          return row?.can_delete ?? false;
-        }}
-        deletableCount={
-          selectedStaffIds.filter((id) => {
+        }, [getStaffDetailBulkAction, effectiveProfile?.id, selectedStaffIds])}
+        onBulkDelete={React.useCallback(() => {
+          setShowBulkDeleteDialog(true);
+        }, [])}
+        canDelete={React.useCallback(
+          (profileId: string) => {
+            const row = staff.find((s) => s.profile_id === profileId);
+            return row?.can_delete ?? false;
+          },
+          [staff]
+        )}
+        deletableCount={React.useMemo(() => {
+          return selectedStaffIds.filter((id) => {
             const row = staff.find((s) => s.profile_id === id);
             return row?.can_delete ?? false;
-          }).length
-        }
-        editableCount={
-          selectedStaffIds.filter((id) => {
+          }).length;
+        }, [selectedStaffIds, staff])}
+        editableCount={React.useMemo(() => {
+          return selectedStaffIds.filter((id) => {
             const row = staff.find((s) => s.profile_id === id);
             return row?.can_edit ?? false;
-          }).length
-        }
-        canEdit={(profileId) => {
-          const row = staff.find((s) => s.profile_id === profileId);
-          return row?.can_edit ?? false;
-        }}
+          }).length;
+        }, [selectedStaffIds, staff])}
+        canEdit={React.useCallback(
+          (profileId: string) => {
+            const row = staff.find((s) => s.profile_id === profileId);
+            return row?.can_edit ?? false;
+          },
+          [staff]
+        )}
         {...(searchStaffAction && { searchStaffAction })}
         {...(processCSVAction && { processCSVAction })}
         {...(bulkCreateOrUpdateStaffAction && {
@@ -440,7 +454,7 @@ export default function Staff({
           </AlertDialogHeader>
           {(() => {
             const selected = staff.filter((s) =>
-              selectedStaffIds.includes(s.profile_id),
+              selectedStaffIds.includes(s.profile_id)
             );
             const nonDeletable = selected.filter((s) => !s.can_delete);
             const deletable = selected.filter((s) => s.can_delete);
@@ -521,7 +535,7 @@ export default function Staff({
                   const deletableIds = staff
                     .filter(
                       (s) =>
-                        selectedStaffIds.includes(s.profile_id) && s.can_delete,
+                        selectedStaffIds.includes(s.profile_id) && s.can_delete
                     )
                     .map((s) => s.profile_id);
                   if (deletableIds.length === 0) {

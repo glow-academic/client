@@ -18,8 +18,10 @@ import { revalidateTag, unstable_cache } from "next/cache";
 import {
   bulkCreateOrUpdateStaff,
   getCreateStaffData,
+  getStaffDetail,
   processCSV,
   searchStaff,
+  updateStaff,
 } from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -148,6 +150,8 @@ export default async function DepartmentEditPage({
         searchStaffAction={searchStaff}
         initialSearchData={initialSearchData}
         initialCreateStaffData={initialCreateStaffData}
+        updateStaffAction={updateStaff}
+        getStaffDetailAction={getStaffDetail}
       />
     </div>
   );
