@@ -423,7 +423,7 @@ export default function LeaderboardTable({
         </div>
 
         <div className="flex items-center space-x-2 mb-2">
-          <DataTableViewOptions table={table} />
+          <DataTableViewOptions table={table} hiddenColumns={["simulationIds", "scenarioIds"]} />
         </div>
       </div>
 

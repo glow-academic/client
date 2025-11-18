@@ -5,7 +5,6 @@ import { Table } from "@tanstack/react-table";
 import { Settings2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,6 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const columnMap = {
   createdAt: "Date",
@@ -74,15 +74,26 @@ const columnMap = {
   simulationName: "Simulation",
   numScenariosCompleted: "Scenarios",
   personaNames: "Personas",
+  first_name: "Staff Member",
+  last_active: "Last Active",
+  requests: "Requests / Day",
+  total_requests: "Total Requests",
+  department_ids: "Departments",
+  cohort_ids: "Cohorts",
+  parameter_item_ids: "Parameter Items",
+  scenario_ids: "Scenarios",
+  updated_at: "Updated",
 };
 
 export interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
   isAdmin?: boolean;
+  hiddenColumns?: string[];
 }
 
 export function DataTableViewOptions<TData>({
   table,
+  hiddenColumns = [],
 }: DataTableViewOptionsProps<TData>) {
   const isMobile = useIsMobile();
 
@@ -90,6 +101,24 @@ export function DataTableViewOptions<TData>({
   if (isMobile) {
     return null;
   }
+
+  // Default columns to always hide
+  const defaultHiddenColumns = [
+    "search", // Always hide search column
+    "profileId", // Hide faceting columns
+    "simulationId",
+    "scenarios",
+    "name", // Hide search/faceting column
+    "active", // Hide faceting column
+    "lastActive",
+    "infiniteMode",
+    "modelIdFilter",
+    "profileIdFilter",
+    "actorIdFilter",
+  ];
+
+  // Merge default hidden columns with provided hiddenColumns
+  const allHiddenColumns = new Set([...defaultHiddenColumns, ...hiddenColumns]);
 
   return (
     <DropdownMenu>
@@ -113,10 +142,7 @@ export function DataTableViewOptions<TData>({
             (column) =>
               typeof column.accessorFn !== "undefined" &&
               column.getCanHide() &&
-              column.id !== "search" && // Always hide search column
-              column.id !== "profileId" && // Hide faceting columns
-              column.id !== "simulationId" &&
-              column.id !== "scenarios",
+              !allHiddenColumns.has(column.id)
           )
           .map((column) => {
             return (
@@ -134,4 +160,3 @@ export function DataTableViewOptions<TData>({
     </DropdownMenu>
   );
 }
-

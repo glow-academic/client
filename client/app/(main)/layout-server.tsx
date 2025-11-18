@@ -51,6 +51,26 @@ type SearchSimulatableProfilesOut = OutputOf<
   "/api/v3/profile/search-simulatable-profiles",
   "post"
 >;
+type SearchStaffIn = InputOf<"/api/v3/profile/staff/search-staff", "post">;
+type SearchStaffOut = OutputOf<"/api/v3/profile/staff/search-staff", "post">;
+type CreateStaffDataIn = InputOf<
+  "/api/v3/profile/staff/create-staff-data",
+  "post"
+>;
+type CreateStaffDataOut = OutputOf<
+  "/api/v3/profile/staff/create-staff-data",
+  "post"
+>;
+type ProcessCSVIn = InputOf<"/api/v3/profile/staff/process-csv", "post">;
+type ProcessCSVOut = OutputOf<"/api/v3/profile/staff/process-csv", "post">;
+type BulkCreateOrUpdateStaffIn = InputOf<
+  "/api/v3/profile/staff/bulk-create-or-update-staff",
+  "post"
+>;
+type BulkCreateOrUpdateStaffOut = OutputOf<
+  "/api/v3/profile/staff/bulk-create-or-update-staff",
+  "post"
+>;
 
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
@@ -253,6 +273,38 @@ export async function searchSimulatableProfiles(
   return api.post("/profile/search-simulatable-profiles", input);
 }
 
+/** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
+export async function searchStaff(
+  input: SearchStaffIn
+): Promise<SearchStaffOut> {
+  "use server";
+  return api.post("/profile/staff/search-staff", input);
+}
+
+export async function getCreateStaffData(
+  input: CreateStaffDataIn
+): Promise<CreateStaffDataOut> {
+  "use server";
+  return api.post("/profile/staff/create-staff-data", input);
+}
+
+export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
+  "use server";
+  return api.post("/profile/staff/process-csv", input);
+}
+
+export async function bulkCreateOrUpdateStaff(
+  input: BulkCreateOrUpdateStaffIn
+): Promise<BulkCreateOrUpdateStaffOut> {
+  "use server";
+  const out = await api.post(
+    "/profile/staff/bulk-create-or-update-staff",
+    input
+  );
+  revalidateTag("staff");
+  return out;
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   AssistantChatFullIn,
@@ -261,16 +313,24 @@ export type {
   AssistantChatListOut,
   AttemptFullIn,
   AttemptFullOut,
+  BulkCreateOrUpdateStaffIn,
+  BulkCreateOrUpdateStaffOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
+  CreateStaffDataIn,
+  CreateStaffDataOut,
   MarkChatCompleteIn,
   MarkChatCompleteOut,
   MarkIntroCompleteIn,
   MarkIntroCompleteOut,
+  ProcessCSVIn,
+  ProcessCSVOut,
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
+  SearchStaffIn,
+  SearchStaffOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };

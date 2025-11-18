@@ -20,6 +20,7 @@ import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import TATour from "@/components/common/layout/TATour";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
+import { CreateStaffButton } from "@/components/common/staff/CreateStaffButton";
 import { DocumentUploadButton } from "@/components/documents/DocumentUploadButton";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
@@ -43,13 +44,18 @@ import type {
   AssistantChatListIn,
   AssistantChatListOut,
   AttemptFullOut,
+  BulkCreateOrUpdateStaffIn,
+  BulkCreateOrUpdateStaffOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
+  CreateStaffDataOut,
   LayoutContextResponse,
   MarkChatCompleteIn,
   MarkChatCompleteOut,
   MarkIntroCompleteIn,
   MarkIntroCompleteOut,
+  ProcessCSVIn,
+  ProcessCSVOut,
   RefreshAnalyticsIn,
   RefreshAnalyticsOut,
   SafeSessionSnapshot,
@@ -71,6 +77,9 @@ function MainLayoutContent({
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
+  initialCreateStaffData,
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
@@ -96,12 +105,69 @@ function MainLayoutContent({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
+  processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
+  bulkCreateOrUpdateStaffAction?: (
+    input: BulkCreateOrUpdateStaffIn
+  ) => Promise<BulkCreateOrUpdateStaffOut>;
+  initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
   const pathname = usePathname() || "/";
 
   const router = useRouter();
   const { effectiveProfile, activeProfile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
+
+  // Check if we're on the staff page
+  const isStaffPage = pathname === "/management/staff";
+
+  // Extract mappings from initialCreateStaffData for CreateStaffButton
+  const departmentMapping = React.useMemo(() => {
+    if (!initialCreateStaffData?.department_mapping) return {};
+    const mapping: Record<
+      string,
+      { name: string; description?: string | null }
+    > = {};
+    Object.entries(initialCreateStaffData.department_mapping).forEach(
+      ([id, dept]) => {
+        if (dept && typeof dept === "object" && "name" in dept) {
+          mapping[id] = {
+            name: String(dept.name),
+            description: dept.description ? String(dept.description) : null,
+          };
+        }
+      }
+    );
+    return mapping;
+  }, [initialCreateStaffData?.department_mapping]);
+
+  const cohortMapping = React.useMemo(() => {
+    if (!initialCreateStaffData?.cohort_mapping) return {};
+    const mapping: Record<
+      string,
+      { name: string; description?: string | null }
+    > = {};
+    Object.entries(initialCreateStaffData.cohort_mapping).forEach(
+      ([id, cohort]) => {
+        if (cohort && typeof cohort === "object" && "name" in cohort) {
+          mapping[id] = {
+            name: String(cohort.name),
+            description: cohort.description ? String(cohort.description) : null,
+          };
+        }
+      }
+    );
+    return mapping;
+  }, [initialCreateStaffData?.cohort_mapping]);
+
+  const validDepartmentIds = React.useMemo(
+    () => Object.keys(departmentMapping),
+    [departmentMapping]
+  );
+
+  const validCohortIds = React.useMemo(
+    () => Object.keys(cohortMapping),
+    [cohortMapping]
+  );
 
   // Generate breadcrumbs client-side and enrich with entity names from context
   const breadcrumbs = useMemo(() => {
@@ -303,11 +369,12 @@ function MainLayoutContent({
 
   return (
     <>
-      {shouldShowChatComponents && canShowChatComponents && <AssistantChat
+      {shouldShowChatComponents && canShowChatComponents && (
+        <AssistantChat
           getAssistantChatList={getAssistantChatListAction}
           getAssistantChatFull={getAssistantChatFullAction}
         />
-      }
+      )}
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}
@@ -345,6 +412,26 @@ function MainLayoutContent({
                 />
               </div>
             )}
+
+            {/* Create Staff Button - Show in top right for staff page */}
+            {isStaffPage &&
+              initialCreateStaffData &&
+              bulkCreateOrUpdateStaffAction && (
+                <div className="pr-4">
+                  <CreateStaffButton
+                    onCreate={() => router.refresh()}
+                    {...(processCSVAction !== undefined && {
+                      processCSVAction,
+                    })}
+                    {...(bulkCreateOrUpdateStaffAction !== undefined && {
+                      bulkCreateOrUpdateStaffAction,
+                    })}
+                    initialCreateStaffData={initialCreateStaffData}
+                    validDepartmentIds={validDepartmentIds}
+                    validCohortIds={validCohortIds}
+                  />
+                </div>
+              )}
 
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
@@ -384,6 +471,9 @@ export function MainLayoutClient({
   createFeedbackAction,
   refreshAnalyticsAction,
   searchSimulatableProfilesAction,
+  processCSVAction,
+  bulkCreateOrUpdateStaffAction,
+  initialCreateStaffData,
 }: {
   children: React.ReactNode;
   initial: LayoutContextResponse;
@@ -411,6 +501,11 @@ export function MainLayoutClient({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
+  processCSVAction?: (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
+  bulkCreateOrUpdateStaffAction?: (
+    input: BulkCreateOrUpdateStaffIn
+  ) => Promise<BulkCreateOrUpdateStaffOut>;
+  initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
@@ -427,6 +522,16 @@ export function MainLayoutClient({
               createFeedbackAction={createFeedbackAction}
               refreshAnalyticsAction={refreshAnalyticsAction}
               searchSimulatableProfilesAction={searchSimulatableProfilesAction}
+              {...(processCSVAction !== undefined && {
+                processCSVAction,
+              })}
+              {...(bulkCreateOrUpdateStaffAction !== undefined && {
+                bulkCreateOrUpdateStaffAction,
+              })}
+              {...(initialCreateStaffData !== undefined &&
+                initialCreateStaffData !== null && {
+                  initialCreateStaffData,
+                })}
             >
               {children}
             </MainLayoutContent>

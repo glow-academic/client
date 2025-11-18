@@ -42,12 +42,7 @@ import type {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -59,20 +54,14 @@ import {
   Clock,
   Edit,
   FileText,
-  Plus,
   RefreshCw,
-  Search,
   Shield,
   Trash2,
-  Upload,
   User as UserIcon,
   UserMinus,
-  UserPlus,
   X,
 } from "lucide-react";
-import CSVImportStaffModal from "./CSVImportStaffModal";
-import ManualAddStaffModal from "./ManualAddStaffModal";
-import SearchExistingStaffModal from "./SearchExistingStaffModal";
+import { CreateStaffButton } from "./CreateStaffButton";
 
 // Helper functions
 const getInitials = (firstName: string, lastName: string): string => {
@@ -256,11 +245,6 @@ export function StaffDataTable({
     { id: "last_active", desc: true }, // Default sort by last active descending
   ]);
 
-  // Modal state for create staff button
-  const [showManualModal, setShowManualModal] = React.useState(false);
-  const [showCSVModal, setShowCSVModal] = React.useState(false);
-  const [showSearchModal, setShowSearchModal] = React.useState(false);
-
   // Transform mappings for modals - simplified, computed directly
   const createStaffData = initialCreateStaffData;
   const departmentMappingForModals: Record<
@@ -295,15 +279,6 @@ export function StaffDataTable({
 
   const validDepartmentIds = Object.keys(departmentMappingForModals);
   const validCohortIds = Object.keys(cohortMappingForModals);
-  const roleOptionsForModals = createStaffData?.role_options || [];
-  const isLoading = !createStaffData;
-
-  const handleModalDone = () => {
-    setShowManualModal(false);
-    setShowCSVModal(false);
-    setShowSearchModal(false);
-    onCreate();
-  };
 
   // Define columns with rich visual styling
   const columns = React.useMemo<ColumnDef<ProfileListItem>[]>(
@@ -553,7 +528,19 @@ export function StaffDataTable({
           );
         },
         enableSorting: true,
-        enableColumnFilter: false,
+        enableColumnFilter: true,
+        filterFn: (row, _, value: string[]) => {
+          const total = row.getValue("total_requests") as number;
+          if (value.length === 0) return true;
+          return value.some((category) => {
+            if (category === "0") return total === 0;
+            if (category === "1-10") return total >= 1 && total <= 10;
+            if (category === "11-50") return total >= 11 && total <= 50;
+            if (category === "51-100") return total >= 51 && total <= 100;
+            if (category === "100+") return total > 100;
+            return false;
+          });
+        },
       },
     ],
     [cohortMapping, departmentMapping]
@@ -762,6 +749,8 @@ export function StaffDataTable({
   const roleColumn = table.getColumn("role");
   const lastActiveColumn = table.getColumn("lastActive");
   const cohortIdsColumn = table.getColumn("cohort_ids");
+  const departmentIdsColumn = table.getColumn("department_ids");
+  const totalRequestsColumn = table.getColumn("total_requests");
   const selectedCount = selectedStaffIds.length;
   const isScoped = !!(departmentIds?.length || cohortIds?.length);
 
@@ -805,12 +794,44 @@ export function StaffDataTable({
                 />
               )}
 
-              {/* Cohort Filter - hide when cohortId provided (cohorts page) */}
-              {!cohortId && cohortIdsColumn && cohortOptions.length > 0 && (
+              {/* Requests Filter - show when cohortId provided (cohorts page) */}
+              {cohortId && totalRequestsColumn && (
                 <DataTableFacetedFilter
-                  column={cohortIdsColumn}
-                  title="Cohort"
-                  options={cohortOptions}
+                  column={totalRequestsColumn}
+                  title="Requests"
+                  options={[
+                    { value: "0", label: "0" },
+                    { value: "1-10", label: "1-10" },
+                    { value: "11-50", label: "11-50" },
+                    { value: "51-100", label: "51-100" },
+                    { value: "100+", label: "100+" },
+                  ]}
+                />
+              )}
+
+              {/* Cohort Filter - show when departmentId provided (departments page), hide when cohortId provided (cohorts page) */}
+              {departmentId &&
+                !cohortId &&
+                cohortIdsColumn &&
+                cohortOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={cohortIdsColumn}
+                    title="Cohort"
+                    options={cohortOptions}
+                  />
+                )}
+
+              {/* Departments Filter - show when no scope (staff page), hide when cohortId or departmentId provided */}
+              {!cohortId && !departmentId && departmentIdsColumn && (
+                <DataTableFacetedFilter
+                  column={departmentIdsColumn}
+                  title="Department"
+                  options={Object.entries(departmentMapping).map(
+                    ([id, item]) => ({
+                      value: id,
+                      label: item.name,
+                    })
+                  )}
                 />
               )}
 
@@ -831,98 +852,31 @@ export function StaffDataTable({
           <div className="flex items-center space-x-2 mb-2">
             {/* Create Staff Button - only show when no rows are selected */}
             {onCreate && selectedCount === 0 && (
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button type="button" size="sm" disabled={isLoading}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Staff
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setShowManualModal(true)}>
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Manual Add
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowSearchModal(true)}>
-                      <Search className="h-4 w-4 mr-2" />
-                      Search Existing
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowCSVModal(true)}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      CSV Import
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {showManualModal && (
-                  <ManualAddStaffModal
-                    open={showManualModal}
-                    onOpenChange={setShowManualModal}
-                    {...(departmentIds &&
-                      departmentIds.length > 0 && {
-                        departmentIds: departmentIds,
-                      })}
-                    {...(cohortIds &&
-                      cohortIds.length > 0 && { cohortIds: cohortIds })}
-                    departmentMapping={departmentMappingForModals}
-                    validDepartmentIds={validDepartmentIds}
-                    cohortMapping={cohortMappingForModals}
-                    validCohortIds={validCohortIds}
-                    roleOptions={roleOptionsForModals}
-                    onDone={handleModalDone}
-                    {...(bulkCreateOrUpdateStaffAction && {
-                      bulkCreateOrUpdateStaffAction,
-                    })}
-                    {...(isScoped ? { onStagedProfiles: onCreate } : {})}
-                  />
-                )}
-
-                {showSearchModal && (
-                  <SearchExistingStaffModal
-                    open={showSearchModal}
-                    onOpenChange={setShowSearchModal}
-                    {...(departmentIds &&
-                      departmentIds.length > 0 && {
-                        departmentIds: departmentIds,
-                      })}
-                    {...(cohortIds &&
-                      cohortIds.length > 0 && { cohortIds: cohortIds })}
-                    departmentMapping={departmentMappingForModals}
-                    validDepartmentIds={validDepartmentIds}
-                    cohortMapping={cohortMappingForModals}
-                    validCohortIds={validCohortIds}
-                    onDone={handleModalDone}
-                    {...(initialSearchData && { initialSearchData })}
-                    {...(searchStaffAction && { searchStaffAction })}
-                    {...(isScoped ? { onStagedProfiles: onCreate } : {})}
-                  />
-                )}
-
-                {showCSVModal && (
-                  <CSVImportStaffModal
-                    open={showCSVModal}
-                    onOpenChange={setShowCSVModal}
-                    {...(departmentIds &&
-                      departmentIds.length > 0 && {
-                        departmentIds: departmentIds,
-                      })}
-                    {...(cohortIds &&
-                      cohortIds.length > 0 && { cohortIds: cohortIds })}
-                    departmentMapping={departmentMappingForModals}
-                    validDepartmentIds={validDepartmentIds}
-                    cohortMapping={cohortMappingForModals}
-                    validCohortIds={validCohortIds}
-                    roleOptions={roleOptionsForModals}
-                    onDone={handleModalDone}
-                    {...(processCSVAction && { processCSVAction })}
-                    {...(bulkCreateOrUpdateStaffAction && {
-                      bulkCreateOrUpdateStaffAction,
-                    })}
-                    {...(isScoped ? { onStagedProfiles: onCreate } : {})}
-                  />
-                )}
-              </>
+              <CreateStaffButton
+                onCreate={onCreate}
+                {...(searchStaffAction !== undefined && {
+                  searchStaffAction,
+                })}
+                {...(processCSVAction !== undefined && {
+                  processCSVAction,
+                })}
+                {...(bulkCreateOrUpdateStaffAction !== undefined && {
+                  bulkCreateOrUpdateStaffAction,
+                })}
+                {...(initialCreateStaffData !== undefined &&
+                  initialCreateStaffData !== null && {
+                    initialCreateStaffData,
+                  })}
+                {...(initialSearchData !== undefined &&
+                  initialSearchData !== null && {
+                    initialSearchData,
+                  })}
+                {...(cohortIds !== undefined && { cohortIds })}
+                {...(departmentIds !== undefined && { departmentIds })}
+                validDepartmentIds={validDepartmentIds}
+                validCohortIds={validCohortIds}
+                {...(isScoped !== undefined && { isScoped })}
+              />
             )}
 
             {/* Bulk edit/delete if any selected */}
@@ -967,7 +921,14 @@ export function StaffDataTable({
               />
             </Button>
 
-            <DataTableViewOptions table={table} />
+            <DataTableViewOptions
+              table={table}
+              hiddenColumns={
+                cohortId || departmentId
+                  ? ["cohort_ids", "department_ids"]
+                  : ["cohort_ids"]
+              }
+            />
           </div>
         </div>
 

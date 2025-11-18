@@ -284,10 +284,6 @@ export default function Staff({
           },
           []
         )}
-        onCreate={React.useCallback(() => {
-          // Refresh staff list after create
-          router.refresh();
-        }, [router])}
         onPreview={React.useCallback((staffMember: ProfileListItem) => {
           window.open(
             `/analytics/reports/p/${staffMember.profile_id}`,

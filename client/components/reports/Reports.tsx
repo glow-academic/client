@@ -1167,7 +1167,7 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
                   Export {selectedRows > 0 ? `(${selectedRows})` : ""}
                 </Button>
               </PopoverTrigger>
-              <DataTableViewOptions table={table} />
+              <DataTableViewOptions table={table} hiddenColumns={["simulations"]} />
             </div>
           </div>
           {/* Shared Popover Content */}

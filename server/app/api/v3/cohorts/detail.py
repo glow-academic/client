@@ -163,12 +163,15 @@ async def get_cohort_detail(
             if isinstance(staff_data, list):
                 for s in staff_data:
                     if isinstance(s, dict):
-                        last_active_val = s.get("lastActive")
-                        last_active = (
-                            last_active_val.isoformat()
-                            if isinstance(last_active_val, datetime)
-                            else None
-                        )
+                        last_active = None
+                        if s.get("lastActive"):
+                            last_active_val = s["lastActive"]
+                            if isinstance(last_active_val, str):
+                                last_active = last_active_val
+                            elif hasattr(last_active_val, "isoformat"):
+                                last_active = last_active_val.isoformat()
+                            else:
+                                last_active = str(last_active_val)
                         # Get primary department_id - ensure it always exists (default to empty string or first department)
                         department_ids = s.get("department_ids", [])
                         primary_department_id = s.get("primary_department_id") or ""

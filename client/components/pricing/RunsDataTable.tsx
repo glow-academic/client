@@ -113,7 +113,6 @@ export function RunsDataTable({
   const [runIdSearch, setRunIdSearch] = React.useState("");
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
-      actorId: false, // Hide the filter column
       modelIdFilter: false,
       profileIdFilter: false,
     });
@@ -169,7 +168,7 @@ export function RunsDataTable({
       {
         accessorKey: "profileName",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Person" />
+          <DataTableColumnHeader column={column} title="Name" />
         ),
         cell: ({ row }) => (
           <div className="text-sm">{row.getValue("profileName")}</div>
@@ -586,7 +585,7 @@ export function RunsDataTable({
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <DataTableViewOptions table={table} />
+          <DataTableViewOptions table={table} hiddenColumns={["actorIdFilter"]} />
         </div>
       </div>
 
