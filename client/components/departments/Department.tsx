@@ -66,7 +66,7 @@ const normalizeDepartmentStaffItem = (
   last_active: item.last_active ?? null,
   cohort_ids: item.cohort_ids ?? [],
   department_ids: item.department_ids ?? [],
-  department_id: departmentId || item.department_ids?.[0] || "", // Use current departmentId or first in array
+  primary_department_id: departmentId || ("primary_department_id" in item && item.primary_department_id) || ("department_id" in item && item.department_id) || item.department_ids?.[0] || "", // Use current departmentId, primary_department_id, department_id, or first in array
   requests_per_day: item.requests_per_day ?? null,
   total_requests: item.total_requests ?? 0,
   default_profile: item.default_profile,

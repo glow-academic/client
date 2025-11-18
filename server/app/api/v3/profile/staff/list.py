@@ -40,7 +40,7 @@ class StaffItem(BaseModel):
     last_active: str | None
     cohort_ids: list[str]
     department_ids: list[str]
-    department_id: str  # Primary department ID (for editing)
+    primary_department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None
     total_requests: int
     default_profile: bool
@@ -129,10 +129,10 @@ async def get_profile_list(
             # Convert UUID arrays to string arrays (department_ids comes as text[] from query)
             department_ids = row["department_ids"] or []
             # Get primary department_id - ensure it always exists (default to empty string or first department)
-            department_id = row.get("department_id") or ""
-            if not department_id and department_ids:
+            primary_department_id = row.get("primary_department_id") or ""
+            if not primary_department_id and department_ids:
                 # Fallback to first department if no primary department set
-                department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
+                primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
 
             staff.append(
                 StaffItem(
@@ -150,7 +150,7 @@ async def get_profile_list(
                     else None,
                     cohort_ids=cohort_ids,
                     department_ids=department_ids,
-                    department_id=department_id,
+                    primary_department_id=primary_department_id,
                     requests_per_day=row["requests_per_day"],
                     total_requests=row["total_requests"] or 0,
                     default_profile=row["default_profile"],

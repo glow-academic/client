@@ -10981,7 +10981,7 @@
             "type": "string",
             "title": "Role"
           },
-          "department_id": {
+          "primary_department_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -10990,7 +10990,7 @@
                 "type": "null"
               }
             ],
-            "title": "Department Id"
+            "title": "Primary Department Id"
           }
         },
         "type": "object",
@@ -21611,9 +21611,9 @@
             ],
             "title": "Requests Per Day"
           },
-          "department_id": {
+          "primary_department_id": {
             "type": "string",
-            "title": "Department Id"
+            "title": "Primary Department Id"
           },
           "active": {
             "type": "boolean",
@@ -21625,7 +21625,7 @@
           "profileId",
           "role",
           "requests_per_day",
-          "department_id",
+          "primary_department_id",
           "active"
         ],
         "title": "UpdateStaffRequest",
@@ -22590,9 +22590,9 @@
             "type": "array",
             "title": "Department Ids"
           },
-          "department_id": {
+          "primary_department_id": {
             "type": "string",
-            "title": "Department Id"
+            "title": "Primary Department Id"
           },
           "requests_per_day": {
             "anyOf": [
@@ -22643,7 +22643,7 @@
           "active",
           "cohort_ids",
           "department_ids",
-          "department_id",
+          "primary_department_id",
           "total_requests",
           "default_profile",
           "requests_in_last_day",
@@ -23072,9 +23072,9 @@
             "title": "Department Ids",
             "default": []
           },
-          "department_id": {
+          "primary_department_id": {
             "type": "string",
-            "title": "Department Id"
+            "title": "Primary Department Id"
           },
           "requests_per_day": {
             "anyOf": [
@@ -23121,7 +23121,7 @@
           "email",
           "initials",
           "active",
-          "department_id",
+          "primary_department_id",
           "default_profile",
           "can_edit",
           "can_delete"
@@ -23272,9 +23272,9 @@
             "title": "Department Ids",
             "default": []
           },
-          "department_id": {
+          "primary_department_id": {
             "type": "string",
-            "title": "Department Id"
+            "title": "Primary Department Id"
           },
           "requests_per_day": {
             "anyOf": [
@@ -23321,7 +23321,7 @@
           "email",
           "initials",
           "active",
-          "department_id",
+          "primary_department_id",
           "default_profile",
           "can_edit",
           "can_delete"
@@ -24645,9 +24645,9 @@
             "type": "array",
             "title": "Department Ids"
           },
-          "department_id": {
+          "primary_department_id": {
             "type": "string",
-            "title": "Department Id"
+            "title": "Primary Department Id"
           },
           "requests_per_day": {
             "anyOf": [
@@ -24695,7 +24695,7 @@
           "last_active",
           "cohort_ids",
           "department_ids",
-          "department_id",
+          "primary_department_id",
           "requests_per_day",
           "total_requests",
           "default_profile",

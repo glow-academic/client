@@ -185,15 +185,11 @@ export default function ManualAddStaffModal({
       router.refresh();
 
       // When scoped, stage the profiles
-      if (
-        isScoped &&
-        onStagedProfiles &&
-        response.profileIds &&
-        response.profileIds.length > 0
-      ) {
+      const firstProfileId = response.profileIds?.[0];
+      if (isScoped && onStagedProfiles && firstProfileId) {
         const stagedProfiles = [
           {
-            profileId: response.profileIds[0],
+            profileId: firstProfileId,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             alias,

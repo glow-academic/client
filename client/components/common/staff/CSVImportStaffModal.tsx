@@ -952,13 +952,29 @@ export default function CSVImportStaffModal({
               <div
                 {...getRootProps()}
                 className={cn(
-                  "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer",
+                  "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative",
                   isDragActive
                     ? "border-primary bg-primary/5"
                     : "border-muted-foreground/25 hover:border-primary/50",
                 )}
               >
                 <input {...getInputProps()} data-testid="csv-file-input" />
+                {/* Download Template Button - top right corner */}
+                <div className="absolute top-4 right-4">
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadTemplate();
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Template
+                  </Button>
+                </div>
                 <div className="space-y-3">
                   <p className="text-muted-foreground">
                     Upload your .csv file or{" "}
@@ -984,20 +1000,6 @@ export default function CSVImportStaffModal({
                         {csvRequirements.optional.join(", ")}
                       </p>
                     )}
-                  </div>
-                  {/* Download Template Button - grouped with instructions */}
-                  <div className="pt-2 flex justify-center">
-                    <Button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        downloadTemplate();
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download CSV Template
-                    </Button>
                   </div>
                 </div>
               </div>

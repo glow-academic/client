@@ -119,10 +119,10 @@ async def get_cohort_detail_default(
                         )
                         # Get primary department_id - ensure it always exists (default to empty string or first department)
                         department_ids = s.get("department_ids", [])
-                        department_id = s.get("department_id") or ""
-                        if not department_id and department_ids:
+                        primary_department_id = s.get("primary_department_id") or ""
+                        if not primary_department_id and department_ids:
                             # Fallback to first department if no primary department set
-                            department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
+                            primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
                         
                         staff.append(
                             StaffItem(
@@ -138,7 +138,7 @@ async def get_cohort_detail_default(
                                 lastActive=last_active,
                                 cohort_ids=s.get("cohort_ids", []),
                                 department_ids=department_ids,
-                                department_id=department_id,
+                                primary_department_id=primary_department_id,
                                 requests_per_day=s.get("requests_per_day"),
                                 total_requests=s.get("total_requests", 0),
                                 default_profile=s.get("default_profile", False),

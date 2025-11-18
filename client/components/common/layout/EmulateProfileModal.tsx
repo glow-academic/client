@@ -10,6 +10,7 @@ import type {
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
+import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -268,7 +269,42 @@ export function EmulateProfileModal({
                         </TableCell>
                         <TableCell>{profile.alias}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{profile.role}</Badge>
+                          {(() => {
+                            const roleData = STAFF_ROLES.find(
+                              (r) => r.id === profile.role,
+                            );
+                            if (!roleData) {
+                              return (
+                                <Badge variant="outline">{profile.role}</Badge>
+                              );
+                            }
+                            const IconComponent = roleData.icon;
+                            const hexColor = roleData.color || "#64748b";
+                            // Generate gradient from hex color
+                            const cleanHex = hexColor.replace("#", "");
+                            const r = parseInt(cleanHex.substr(0, 2), 16);
+                            const g = parseInt(cleanHex.substr(2, 2), 16);
+                            const b = parseInt(cleanHex.substr(4, 2), 16);
+                            const lighterR = Math.min(255, r + 60);
+                            const lighterG = Math.min(255, g + 60);
+                            const lighterB = Math.min(255, b + 60);
+                            const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                            const gradientStyle = `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+
+                            return (
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="p-1.5 rounded-md shadow-sm flex-shrink-0"
+                                  style={{
+                                    background: gradientStyle,
+                                  }}
+                                >
+                                  <IconComponent className="h-3.5 w-3.5 text-white" />
+                                </div>
+                                <span className="text-sm">{roleData.name}</span>
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     );

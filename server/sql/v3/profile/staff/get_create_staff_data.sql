@@ -93,7 +93,7 @@ staff_data AS (
                 ARRAY(SELECT unnest(pda.department_ids)::text),
                 ARRAY[]::text[]
             ),
-            'department_id', COALESCE(ppd.department_id::text, ''),
+            'primary_department_id', COALESCE(ppd.department_id::text, ''),
             'requests_per_day', prl.requests_per_day,
             'total_requests', COALESCE(ptr.total_requests, 0),
             'default_profile', p.default_profile,

@@ -4860,8 +4860,8 @@ export interface components {
             alias: string;
             /** Role */
             role: string;
-            /** Department Id */
-            department_id?: string | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
         };
         /**
          * CreateStaffResponse
@@ -9070,8 +9070,8 @@ export interface components {
             role: string;
             /** Requests Per Day */
             requests_per_day: number | null;
-            /** Department Id */
-            department_id: string;
+            /** Primary Department Id */
+            primary_department_id: string;
             /** Active */
             active: boolean;
         };
@@ -9406,8 +9406,8 @@ export interface components {
             cohort_ids: string[];
             /** Department Ids */
             department_ids: string[];
-            /** Department Id */
-            department_id: string;
+            /** Primary Department Id */
+            primary_department_id: string;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /** Total Requests */
@@ -9578,8 +9578,8 @@ export interface components {
              * @default []
              */
             department_ids: string[];
-            /** Department Id */
-            department_id: string;
+            /** Primary Department Id */
+            primary_department_id: string;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /**
@@ -9668,8 +9668,8 @@ export interface components {
              * @default []
              */
             department_ids: string[];
-            /** Department Id */
-            department_id: string;
+            /** Primary Department Id */
+            primary_department_id: string;
             /** Requests Per Day */
             requests_per_day?: number | null;
             /**
@@ -10144,8 +10144,8 @@ export interface components {
             cohort_ids: string[];
             /** Department Ids */
             department_ids: string[];
-            /** Department Id */
-            department_id: string;
+            /** Primary Department Id */
+            primary_department_id: string;
             /** Requests Per Day */
             requests_per_day: number | null;
             /** Total Requests */

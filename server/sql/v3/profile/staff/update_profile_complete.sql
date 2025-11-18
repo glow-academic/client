@@ -1,5 +1,5 @@
 -- Update staff profile with lookup, update, department, and request limit in single query (DHH style)
--- Parameters: $1=profile_id (uuid), $2=role, $3=active, $4=department_id (uuid), 
+-- Parameters: $1=profile_id (uuid), $2=role, $3=active, $4=primary_department_id (uuid), 
 --             $5=requests_per_day (int, nullable)
 -- Returns: id, first_name, last_name, name (concatenated)
 

@@ -265,7 +265,7 @@ SELECT DISTINCT ON (p.id)
         ARRAY(SELECT unnest(pda.department_ids)::text),
         ARRAY[]::text[]
     ) as department_ids,
-    COALESCE(ppd.department_id::text, '') as department_id,
+    COALESCE(ppd.department_id::text, '') as primary_department_id,
     COALESCE(ptr.total_requests, 0) as total_requests,
     COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
     COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,

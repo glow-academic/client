@@ -70,7 +70,7 @@ export default function StaffEditModal({
       role: staffItem.role || "",
       reqPerDay: staffItem.requests_per_day ?? null,
       defaultProfile: staffItem.default_profile ?? false,
-      departmentId: staffItem.department_id || "",
+      departmentId: staffItem.primary_department_id || "",
       active: staffItem.active ?? true,
     };
   }, [staffItem]);
@@ -132,8 +132,8 @@ export default function StaffEditModal({
           ? null // Unlimited
           : Number(formData.reqPerDay);
 
-      // V3 update endpoint requires department_id and active
-      // Get department_id from staffItem or use first valid department
+      // V3 update endpoint requires primary_department_id and active
+      // Get primary_department_id from staffItem or use first valid department
       const departmentId =
         targetUser?.departmentId ||
         (validDepartmentIds && validDepartmentIds.length > 0
@@ -152,7 +152,7 @@ export default function StaffEditModal({
         profileId: profileId,
         role: formData.role,
         requests_per_day: parsedReqPerDay,
-        department_id: departmentId,
+        primary_department_id: departmentId,
         active: targetUser?.active ?? true,
       };
 
@@ -285,7 +285,7 @@ export default function StaffEditModal({
                       />
                     </div>
                     {requestsPerDayEnabled && (
-                      <div className="pt-2">
+                      <div className="space-y-2 pt-2">
                         <Input
                           id="reqPerDay"
                           type="number"
@@ -312,6 +312,9 @@ export default function StaffEditModal({
                           disabled={isSubmitting}
                           data-testid="input-staff-requests-per-day"
                         />
+                        <p className="text-xs text-muted-foreground pl-5">
+                          Set a daily request limit for this staff member
+                        </p>
                       </div>
                     )}
                   </div>

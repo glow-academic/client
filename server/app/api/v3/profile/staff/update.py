@@ -20,7 +20,7 @@ class UpdateStaffRequest(BaseModel):
     profileId: str
     role: str
     requests_per_day: int | None
-    department_id: str
+    primary_department_id: str
     active: bool
 
 
@@ -49,7 +49,7 @@ async def update_profile(
             request.profileId,
             request.role,
             request.active,
-            request.department_id,
+            request.primary_department_id,
             request.requests_per_day,
         )
 

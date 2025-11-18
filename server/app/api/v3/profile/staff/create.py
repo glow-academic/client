@@ -22,7 +22,7 @@ class CreateStaffRequest(BaseModel):
     lastName: str
     alias: str
     role: str
-    department_id: str | None = None
+    primary_department_id: str | None = None
 
 
 class CreateStaffResponse(BaseModel):
@@ -59,7 +59,7 @@ async def create_profile(
             False,  # default_profile
             False,  # viewed_intro
             False,  # viewed_chat
-            request.department_id,
+            request.primary_department_id,
         )
 
         async with transaction(conn):

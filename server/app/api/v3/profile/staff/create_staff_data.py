@@ -87,10 +87,10 @@ async def get_create_staff_data(
                     cohort_ids = [str(cid) for cid in (item.get("cohort_ids") or [])]
                     department_ids = item.get("department_ids") or []
                     # Get primary department_id - ensure it always exists (default to empty string or first department)
-                    department_id = item.get("department_id") or ""
-                    if not department_id and department_ids:
+                    primary_department_id = item.get("primary_department_id") or ""
+                    if not primary_department_id and department_ids:
                         # Fallback to first department if no primary department set
-                        department_id = department_ids[0] if len(department_ids) > 0 else ""
+                        primary_department_id = department_ids[0] if len(department_ids) > 0 else ""
 
                     staff.append(
                         StaffItem(
@@ -106,7 +106,7 @@ async def get_create_staff_data(
                             last_active=item.get("last_active"),
                             cohort_ids=cohort_ids,
                             department_ids=department_ids,
-                            department_id=department_id,
+                            primary_department_id=primary_department_id,
                             requests_per_day=item.get("requests_per_day"),
                             total_requests=item.get("total_requests", 0),
                             default_profile=item.get("default_profile", False),

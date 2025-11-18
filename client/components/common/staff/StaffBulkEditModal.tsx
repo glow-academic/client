@@ -223,7 +223,7 @@ export default function StaffBulkEditModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-2xl"
+          className="max-w-4xl"
           data-testid="dialog-bulk-edit-staff"
         >
           <DialogHeader>

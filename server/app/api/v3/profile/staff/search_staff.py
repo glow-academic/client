@@ -5,9 +5,6 @@ import os
 from typing import Annotated, Any
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.api.v3.profile.staff.list import StaffItem
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
@@ -15,6 +12,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -77,6 +76,7 @@ async def search_staff(
         # Search query filter (if provided)
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
+            # Use the same parameter for all three ILIKE conditions (PostgreSQL allows this)
             search_conditions.append(
                 f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx})"
             )
@@ -204,6 +204,7 @@ async def search_staff(
                         ARRAY(SELECT unnest(pda.department_ids)::text),
                         ARRAY[]::text[]
                     ),
+                    'primary_department_id', COALESCE((SELECT pd2.department_id::text FROM profile_departments pd2 WHERE pd2.profile_id = p.id AND pd2.active = true AND pd2.is_primary = true LIMIT 1), ''),
                     'requests_per_day', prl.requests_per_day,
                     'total_requests', COALESCE(ptr.total_requests, 0),
                     'default_profile', p.default_profile,
@@ -291,10 +292,10 @@ async def search_staff(
                         str(did) for did in (item.get("department_ids") or [])
                     ]
                     # Get primary department_id - ensure it always exists (default to empty string or first department)
-                    department_id = item.get("department_id") or ""
-                    if not department_id and department_ids:
+                    primary_department_id = item.get("primary_department_id") or ""
+                    if not primary_department_id and department_ids:
                         # Fallback to first department if no primary department set
-                        department_id = department_ids[0] if len(department_ids) > 0 else ""
+                        primary_department_id = department_ids[0] if len(department_ids) > 0 else ""
 
                     staff.append(
                         StaffItem(
@@ -310,7 +311,7 @@ async def search_staff(
                             last_active=item.get("last_active"),
                             cohort_ids=cohort_ids,
                             department_ids=department_ids,
-                            department_id=department_id,
+                            primary_department_id=primary_department_id,
                             requests_per_day=item.get("requests_per_day"),
                             total_requests=item.get("total_requests", 0),
                             default_profile=item.get("default_profile", False),

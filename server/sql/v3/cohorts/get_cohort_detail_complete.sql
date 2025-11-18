@@ -355,7 +355,7 @@ SELECT
             'lastActive', cs.lastActive,
             'cohort_ids', cs.cohort_ids,
             'department_ids', cs.department_ids,
-            'department_id', cs.department_id,
+            'primary_department_id', cs.department_id,
             'requests_per_day', cs.requests_per_day,
             'total_requests', cs.total_requests,
             'default_profile', cs.default_profile,

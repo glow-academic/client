@@ -121,6 +121,7 @@ async def get_cohort_detail_with_profiles(
                                 lastActive=last_active,
                                 cohort_ids=p.get("cohort_ids") or [],
                                 department_ids=[],  # Not included in this query
+                                primary_department_id="",  # Not included in this query
                                 requests_per_day=p.get("requests_per_day"),
                                 total_requests=0,  # Not included in this query
                                 default_profile=p.get("default_profile", False),

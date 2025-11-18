@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -8,6 +8,7 @@ import type {
   ProfileListItem,
   SearchStaffOut,
 } from "@/app/(main)/management/staff/page";
+import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
 import type { SearchStaffAction } from "@/components/staff/Staff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export interface SearchExistingStaffModalProps {
       role?: string;
       requestsPerDay?: number | null;
       totalRequests?: number;
-    }>,
+    }>
   ) => void;
   initialSearchData?: SearchStaffOut;
   searchStaffAction?: SearchStaffAction;
@@ -71,13 +72,13 @@ export default function SearchExistingStaffModal({
   const { effectiveProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [selectedProfiles, setSelectedProfiles] = useState<
     Map<string, ProfileListItem>
   >(new Map());
   const [searchData, setSearchData] = useState<SearchStaffOut | null>(
-    initialSearchData || null,
+    initialSearchData || null
   );
   const [isLoading, setIsLoading] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -85,21 +86,29 @@ export default function SearchExistingStaffModal({
   // Search when user types (debounced)
   const handleSearch = useCallback(
     async (query: string) => {
-      if (!effectiveProfile?.id || !searchStaffAction) return;
+      if (!effectiveProfile?.id || !searchStaffAction) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
+        // Normalize query: empty string becomes null, otherwise use trimmed value
+        const normalizedQuery = query && query.trim() ? query.trim() : null;
         const data = await searchStaffAction({
           body: {
-            query: query || null,
+            query: normalizedQuery,
             cohortIds: scopedCohortIds || null,
             departmentIds: _scopedDepartmentIds || null,
             limit: 200,
             profileId: effectiveProfile.id,
           },
         });
+        // Ensure we update searchData even if staff array is empty
         setSearchData(data);
       } catch {
         toast.error("Failed to search staff");
+        // Reset to initial data on error
+        setSearchData(initialSearchData || null);
       } finally {
         setIsLoading(false);
       }
@@ -109,7 +118,8 @@ export default function SearchExistingStaffModal({
       searchStaffAction,
       scopedCohortIds,
       _scopedDepartmentIds,
-    ],
+      initialSearchData,
+    ]
   );
 
   // Handle search input change with debounce
@@ -119,33 +129,62 @@ export default function SearchExistingStaffModal({
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      // If query becomes empty, restore initial data immediately
+      if (value === "") {
+        setSearchData(initialSearchData || null);
+        setIsLoading(false);
+        return;
+      }
+      // Otherwise, debounce the search
+      setIsLoading(true);
       searchTimeoutRef.current = setTimeout(() => {
         handleSearch(value);
-      }, 300);
+      }, 500);
     },
-    [handleSearch],
+    [handleSearch, initialSearchData]
   );
 
+  // Initial search when modal opens (if no initial data)
+  useEffect(() => {
+    if (
+      open &&
+      !initialSearchData &&
+      searchStaffAction &&
+      effectiveProfile?.id
+    ) {
+      // Trigger initial search with empty query to get all profiles
+      handleSearch("");
+    }
+  }, [
+    open,
+    initialSearchData,
+    searchStaffAction,
+    effectiveProfile?.id,
+    handleSearch,
+  ]);
+
   // Get search results from API response
+  // Don't filter out selected profiles - show them so users can uncheck directly
   const searchResults = useMemo(() => {
-    if (!searchData?.staff) {
+    if (!searchData || !searchData.staff) {
       return [];
     }
+    // Ensure staff is an array
+    return Array.isArray(searchData.staff) ? searchData.staff : [];
+  }, [searchData]);
 
-    // Filter out staged profiles (client-side since amount is small)
-    const stagedProfileIds = new Set(Array.from(selectedProfiles.keys()));
-    return searchData.staff.filter(
-      (profile) => !stagedProfileIds.has(profile.profile_id),
-    );
-  }, [searchData?.staff, selectedProfiles]);
-
-  // Reset state when modal closes
+  // Reset state when modal closes or opens
   useEffect(() => {
     if (!open) {
       setSearchQuery("");
       setSelectedProfileIds(new Set());
       setSelectedProfiles(new Map());
       setSearchData(initialSearchData || null);
+      setIsLoading(false);
+    } else {
+      // When modal opens, initialize with initial data
+      setSearchData(initialSearchData || null);
+      setSearchQuery("");
     }
   }, [open, initialSearchData]);
 
@@ -203,12 +242,12 @@ export default function SearchExistingStaffModal({
       if (onStagedProfiles) {
         onStagedProfiles(profileData);
         toast.success(
-          `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`,
+          `${selectedProfilesArray.length} profile(s) staged. They will be added when you click Update.`
         );
       } else {
         // If no onStagedProfiles callback, just notify user
         toast.info(
-          `${selectedProfilesArray.length} profile(s) selected. No action handler provided.`,
+          `${selectedProfilesArray.length} profile(s) selected. No action handler provided.`
         );
       }
 
@@ -248,17 +287,21 @@ export default function SearchExistingStaffModal({
               className="pl-10"
               autoFocus
             />
+            {isLoading && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
           </div>
 
           {/* Search Results */}
           <div className="border rounded-md max-h-96 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
+              <div className="p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Loading profiles...
               </div>
             ) : searchResults.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                {searchQuery
+                {searchQuery && searchQuery.trim()
                   ? "No profiles found matching your search"
                   : scopedCohortIds && scopedCohortIds.length > 0
                     ? "All available profiles are already in this cohort"
@@ -277,7 +320,7 @@ export default function SearchExistingStaffModal({
                 <TableBody>
                   {searchResults.map((profile) => {
                     const isSelected = selectedProfileIds.has(
-                      profile.profile_id,
+                      profile.profile_id
                     );
                     return (
                       <TableRow
@@ -299,7 +342,42 @@ export default function SearchExistingStaffModal({
                         </TableCell>
                         <TableCell>{profile.alias}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{profile.role}</Badge>
+                          {(() => {
+                            const roleData = STAFF_ROLES.find(
+                              (r) => r.id === profile.role
+                            );
+                            if (!roleData) {
+                              return (
+                                <Badge variant="outline">{profile.role}</Badge>
+                              );
+                            }
+                            const IconComponent = roleData.icon;
+                            const hexColor = roleData.color || "#64748b";
+                            // Generate gradient from hex color
+                            const cleanHex = hexColor.replace("#", "");
+                            const r = parseInt(cleanHex.substr(0, 2), 16);
+                            const g = parseInt(cleanHex.substr(2, 2), 16);
+                            const b = parseInt(cleanHex.substr(4, 2), 16);
+                            const lighterR = Math.min(255, r + 60);
+                            const lighterG = Math.min(255, g + 60);
+                            const lighterB = Math.min(255, b + 60);
+                            const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
+                            const gradientStyle = `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+
+                            return (
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="p-1.5 rounded-md shadow-sm flex-shrink-0"
+                                  style={{
+                                    background: gradientStyle,
+                                  }}
+                                >
+                                  <IconComponent className="h-3.5 w-3.5 text-white" />
+                                </div>
+                                <span className="text-sm">{roleData.name}</span>
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     );

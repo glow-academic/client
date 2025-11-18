@@ -39,7 +39,7 @@ class StaffItem(BaseModel):
     last_active: str | None = None
     cohort_ids: list[str] = []
     department_ids: list[str] = []
-    department_id: str  # Primary department ID (for editing)
+    primary_department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None = None
     total_requests: int = 0
     default_profile: bool
@@ -120,10 +120,10 @@ async def get_department_detail(
                     ]
                     department_ids = staff_row.get("department_ids") or []
                     # Get primary department_id - ensure it always exists (default to empty string or first department)
-                    department_id = staff_row.get("department_id") or ""
-                    if not department_id and department_ids:
+                    primary_department_id = staff_row.get("primary_department_id") or ""
+                    if not primary_department_id and department_ids:
                         # Fallback to first department if no primary department set
-                        department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
+                        primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
 
                     last_active = None
                     if staff_row.get("lastActive"):
@@ -149,7 +149,7 @@ async def get_department_detail(
                             last_active=last_active,
                             cohort_ids=cohort_ids,
                             department_ids=department_ids,
-                            department_id=department_id,
+                            primary_department_id=primary_department_id,
                             requests_per_day=staff_row.get("requests_per_day"),
                             total_requests=staff_row.get("total_requests", 0),
                             default_profile=staff_row["default_profile"],

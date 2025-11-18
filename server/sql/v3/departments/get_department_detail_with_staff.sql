@@ -233,7 +233,7 @@ SELECT
             'lastActive', ds.lastActive,
             'cohort_ids', ds.cohort_ids,
             'department_ids', ds.department_ids,
-            'department_id', ds.department_id,
+            'primary_department_id', ds.department_id,
             'requests_per_day', ds.requests_per_day,
             'total_requests', ds.total_requests,
             'default_profile', ds.default_profile,
