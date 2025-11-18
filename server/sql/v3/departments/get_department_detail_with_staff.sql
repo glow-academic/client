@@ -162,6 +162,8 @@ department_staff AS (
         pa.last_active as lastActive,
         prl.requests_per_day as requests_per_day,
         p.default_profile,
+        p.viewed_intro as intro_completed,
+        p.viewed_chat as chat_completed,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
@@ -237,6 +239,8 @@ SELECT
             'requests_per_day', ds.requests_per_day,
             'total_requests', ds.total_requests,
             'default_profile', ds.default_profile,
+            'intro_completed', ds.intro_completed,
+            'chat_completed', ds.chat_completed,
             'requests_in_last_day', ds.requests_in_last_day,
             'can_edit', ds.can_edit,
             'can_delete', ds.can_delete

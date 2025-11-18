@@ -259,6 +259,8 @@ SELECT DISTINCT ON (p.id)
     pa.last_active as lastActive,
     prl.requests_per_day as requests_per_day,
     p.default_profile,
+    p.viewed_intro as intro_completed,
+    p.viewed_chat as chat_completed,
     COALESCE(rr.run_count::int, 0) as requests_in_last_day,
     COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
     COALESCE(

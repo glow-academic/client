@@ -24,6 +24,8 @@ class BulkUpdateStaffRequest(BaseModel):
         None  # int for limit, None for unlimited, "__keep__" to not update
     )
     default_profile: bool | None = None
+    intro_completed: bool | None = None
+    chat_completed: bool | None = None
     currentProfileId: str  # Current user's profile ID for permission validation
     active: bool | None = None
 
@@ -79,6 +81,8 @@ async def bulk_update_profile(
             request.default_profile,
             request.active,
             requests_per_day_value,
+            request.intro_completed,
+            request.chat_completed,
         )
 
         async with transaction(conn):

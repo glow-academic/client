@@ -208,6 +208,8 @@ async def search_staff(
                     'requests_per_day', prl.requests_per_day,
                     'total_requests', COALESCE(ptr.total_requests, 0),
                     'default_profile', p.default_profile,
+                    'intro_completed', p.viewed_intro,
+                    'chat_completed', p.viewed_chat,
                     'requests_in_last_day', COALESCE(rr.run_count::int, 0),
                     'can_edit', false,
                     'can_delete', false
@@ -315,6 +317,8 @@ async def search_staff(
                             requests_per_day=item.get("requests_per_day"),
                             total_requests=item.get("total_requests", 0),
                             default_profile=item.get("default_profile", False),
+                            intro_completed=item.get("intro_completed", False),
+                            chat_completed=item.get("chat_completed", False),
                             requests_in_last_day=item.get("requests_in_last_day", 0),
                             can_edit=False,  # Not needed for search modal
                             can_delete=False,  # Not needed for search modal

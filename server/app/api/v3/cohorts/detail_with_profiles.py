@@ -125,6 +125,8 @@ async def get_cohort_detail_with_profiles(
                                 requests_per_day=p.get("requests_per_day"),
                                 total_requests=0,  # Not included in this query
                                 default_profile=p.get("default_profile", False),
+                                intro_completed=p.get("intro_completed", False),
+                                chat_completed=p.get("chat_completed", False),
                                 requests_in_last_day=p.get("requests_in_last_day", 0),
                                 can_edit=p.get("can_edit", False),
                                 can_delete=p.get("can_delete", False),

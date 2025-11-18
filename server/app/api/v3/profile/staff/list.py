@@ -44,6 +44,8 @@ class StaffItem(BaseModel):
     requests_per_day: int | None
     total_requests: int
     default_profile: bool
+    intro_completed: bool = False
+    chat_completed: bool = False
     requests_in_last_day: int
     can_edit: bool
     can_delete: bool
@@ -154,6 +156,8 @@ async def get_profile_list(
                     requests_per_day=row["requests_per_day"],
                     total_requests=row["total_requests"] or 0,
                     default_profile=row["default_profile"],
+                    intro_completed=row["intro_completed"],
+                    chat_completed=row["chat_completed"],
                     requests_in_last_day=row["requests_in_last_day"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],

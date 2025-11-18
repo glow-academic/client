@@ -293,7 +293,7 @@ export default function SearchExistingStaffModal({
           </div>
 
           {/* Search Results */}
-          <div className="border rounded-md max-h-96 overflow-y-auto">
+          <div className="border rounded-md max-h-60 overflow-y-auto">
             {isLoading ? (
               <div className="p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />

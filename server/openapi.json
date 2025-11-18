@@ -8610,6 +8610,28 @@
             ],
             "title": "Default Profile"
           },
+          "intro_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro Completed"
+          },
+          "chat_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Completed"
+          },
           "currentProfileId": {
             "type": "string",
             "title": "Currentprofileid"
@@ -21596,6 +21618,18 @@
             "type": "string",
             "title": "Profileid"
           },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
           "role": {
             "type": "string",
             "title": "Role"
@@ -21618,15 +21652,45 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "default_profile": {
+            "type": "boolean",
+            "title": "Default Profile"
+          },
+          "intro_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intro Completed"
+          },
+          "chat_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Completed"
           }
         },
         "type": "object",
         "required": [
           "profileId",
+          "first_name",
+          "last_name",
+          "alias",
           "role",
           "requests_per_day",
           "primary_department_id",
-          "active"
+          "active",
+          "default_profile"
         ],
         "title": "UpdateStaffRequest",
         "description": "Request to update staff."
@@ -22613,6 +22677,16 @@
             "type": "boolean",
             "title": "Default Profile"
           },
+          "intro_completed": {
+            "type": "boolean",
+            "title": "Intro Completed",
+            "default": false
+          },
+          "chat_completed": {
+            "type": "boolean",
+            "title": "Chat Completed",
+            "default": false
+          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day"
@@ -23096,6 +23170,16 @@
             "type": "boolean",
             "title": "Default Profile"
           },
+          "intro_completed": {
+            "type": "boolean",
+            "title": "Intro Completed",
+            "default": false
+          },
+          "chat_completed": {
+            "type": "boolean",
+            "title": "Chat Completed",
+            "default": false
+          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day",
@@ -23295,6 +23379,16 @@
           "default_profile": {
             "type": "boolean",
             "title": "Default Profile"
+          },
+          "intro_completed": {
+            "type": "boolean",
+            "title": "Intro Completed",
+            "default": false
+          },
+          "chat_completed": {
+            "type": "boolean",
+            "title": "Chat Completed",
+            "default": false
           },
           "requests_in_last_day": {
             "type": "integer",
@@ -24667,6 +24761,16 @@
           "default_profile": {
             "type": "boolean",
             "title": "Default Profile"
+          },
+          "intro_completed": {
+            "type": "boolean",
+            "title": "Intro Completed",
+            "default": false
+          },
+          "chat_completed": {
+            "type": "boolean",
+            "title": "Chat Completed",
+            "default": false
           },
           "requests_in_last_day": {
             "type": "integer",

@@ -39,7 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { Clock, Shield, User } from "lucide-react";
+import { CheckCircle2, Clock, Shield, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -75,6 +75,10 @@ export default function StaffBulkEditModal({
   const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
     null
   );
+  const [bulkTourCompleted, setBulkTourCompleted] = useState<boolean | null>(
+    null
+  );
+  const [keepTourCompleted, setKeepTourCompleted] = useState(true);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -114,11 +118,13 @@ export default function StaffBulkEditModal({
 
       // Default profile - keep as null (don't change) unless explicitly set
       setBulkDefaultProfile(null);
+      setBulkTourCompleted(null);
       setKeepCurrent({
         role: true,
         reqPerDay: true,
         defaultProfile: true,
       });
+      setKeepTourCompleted(true);
     }
   }, [selectedStaffItems, open]);
 
@@ -129,11 +135,13 @@ export default function StaffBulkEditModal({
       setBulkReqPerDay("");
       setRequestsPerDayEnabled(false);
       setBulkDefaultProfile(null);
+      setBulkTourCompleted(null);
       setKeepCurrent({
         role: true,
         reqPerDay: true,
         defaultProfile: true,
       });
+      setKeepTourCompleted(true);
       setShowConfirmDialog(false);
     }
   }, [open]);
@@ -157,6 +165,8 @@ export default function StaffBulkEditModal({
         role?: string;
         requests_per_day?: number | null | string;
         default_profile?: boolean;
+        intro_completed?: boolean;
+        chat_completed?: boolean;
         currentProfileId: string;
       } = {
         profileIds: profileIds,
@@ -186,6 +196,12 @@ export default function StaffBulkEditModal({
         updates.default_profile = bulkDefaultProfile;
       }
 
+      // Tour completion - when changed, update both intro_completed and chat_completed
+      if (!keepTourCompleted && bulkTourCompleted !== null) {
+        updates.intro_completed = bulkTourCompleted;
+        updates.chat_completed = bulkTourCompleted;
+      }
+
       if (!bulkUpdateStaffAction) {
         toast.error("Update action not available");
         return;
@@ -211,6 +227,8 @@ export default function StaffBulkEditModal({
     requestsPerDayEnabled,
     keepCurrent,
     bulkDefaultProfile,
+    bulkTourCompleted,
+    keepTourCompleted,
     isSuperadmin,
     effectiveProfile?.id,
     bulkUpdateStaffAction,
@@ -410,6 +428,41 @@ export default function StaffBulkEditModal({
                       </TableCell>
                     </TableRow>
                   )}
+
+                  {/* Tour Completion Row */}
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label htmlFor="bulkTourCompleted">Tour Completed</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Mark both intro and chat tours as completed for selected
+                        staff members
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Checkbox
+                        checked={keepTourCompleted}
+                        onCheckedChange={(checked) => {
+                          const isChecked = checked === true;
+                          setKeepTourCompleted(isChecked);
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        id="bulkTourCompleted"
+                        checked={bulkTourCompleted ?? false}
+                        onCheckedChange={(checked) => {
+                          setBulkTourCompleted(checked);
+                          setKeepTourCompleted(false);
+                        }}
+                        disabled={isSubmitting || keepTourCompleted}
+                      />
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>

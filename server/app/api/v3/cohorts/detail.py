@@ -6,21 +6,16 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    CohortMappingItem,
-    DepartmentMappingItem,
-    ProfileMappingItem,
-    SimulationMappingItem,
-)
+from app.utils.schema import (CohortMappingItem, DepartmentMappingItem,
+                              ProfileMappingItem, SimulationMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class CohortDetailRequest(BaseModel):
@@ -63,6 +58,8 @@ class StaffItem(BaseModel):
     requests_per_day: int | None = None
     total_requests: int
     default_profile: bool
+    intro_completed: bool = False
+    chat_completed: bool = False
     requests_in_last_day: int
     can_edit: bool
     can_delete: bool
@@ -197,6 +194,8 @@ async def get_cohort_detail(
                                 requests_per_day=s.get("requests_per_day"),
                                 total_requests=s.get("total_requests", 0),
                                 default_profile=s.get("default_profile", False),
+                                intro_completed=s.get("intro_completed", False),
+                                chat_completed=s.get("chat_completed", False),
                                 requests_in_last_day=s.get("requests_in_last_day", 0),
                                 can_edit=s.get("can_edit", False),
                                 can_delete=s.get("can_delete", False),

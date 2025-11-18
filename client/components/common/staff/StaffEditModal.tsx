@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { Clock, User } from "lucide-react";
+import { CheckCircle2, Clock, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -70,6 +70,8 @@ export default function StaffEditModal({
       role: staffItem.role || "",
       reqPerDay: staffItem.requests_per_day ?? null,
       defaultProfile: staffItem.default_profile ?? false,
+      introCompleted: staffItem.intro_completed ?? false,
+      chatCompleted: staffItem.chat_completed ?? false,
       departmentId: staffItem.primary_department_id || "",
       active: staffItem.active ?? true,
     };
@@ -82,10 +84,13 @@ export default function StaffEditModal({
     role: "",
     reqPerDay: "" as number | "",
     defaultProfile: false,
+    introCompleted: false,
+    chatCompleted: false,
   });
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tourCompletedTouched, setTourCompletedTouched] = useState(false);
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
@@ -99,10 +104,18 @@ export default function StaffEditModal({
         role: targetUser.role || "",
         reqPerDay: targetUser.reqPerDay ?? "",
         defaultProfile: targetUser.defaultProfile ?? false,
+        introCompleted: targetUser.introCompleted ?? false,
+        chatCompleted: targetUser.chatCompleted ?? false,
       });
       setRequestsPerDayEnabled(targetUser.reqPerDay != null);
+      setTourCompletedTouched(false);
     }
   }, [targetUser, open]);
+
+  // Compute tour_completed from intro_completed && chat_completed
+  const tourCompleted = useMemo(() => {
+    return formData.introCompleted && formData.chatCompleted;
+  }, [formData.introCompleted, formData.chatCompleted]);
 
   const handleInputChange = useCallback(
     (field: string, value: string | number | boolean) => {
@@ -147,14 +160,36 @@ export default function StaffEditModal({
       }
 
       // Build update payload
-      // Note: default_profile is not supported by single update API, only bulk update
-      const updateBody = {
+      // Only send intro_completed and chat_completed if tour_completed was explicitly changed
+      const updateBody: {
+        profileId: string;
+        first_name: string;
+        last_name: string;
+        alias: string;
+        role: string;
+        requests_per_day: number | null;
+        primary_department_id: string;
+        active: boolean;
+        default_profile: boolean;
+        intro_completed?: boolean;
+        chat_completed?: boolean;
+      } = {
         profileId: profileId,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        alias: formData.alias,
         role: formData.role,
         requests_per_day: parsedReqPerDay,
         primary_department_id: departmentId,
         active: targetUser?.active ?? true,
+        default_profile: formData.defaultProfile,
       };
+
+      // Only include intro_completed and chat_completed if tour_completed was touched
+      if (tourCompletedTouched) {
+        updateBody.intro_completed = formData.introCompleted;
+        updateBody.chat_completed = formData.chatCompleted;
+      }
 
       await updateStaffAction({
         body: updateBody,
@@ -176,6 +211,7 @@ export default function StaffEditModal({
     profileId,
     formData,
     requestsPerDayEnabled,
+    tourCompletedTouched,
     targetUser?.active,
     targetUser?.departmentId,
     validDepartmentIds,
@@ -195,7 +231,7 @@ export default function StaffEditModal({
             <DialogTitle>Edit Staff</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Read-only fields: Name and Alias */}
+            {/* Editable fields: Name and Alias */}
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
@@ -203,9 +239,11 @@ export default function StaffEditModal({
                   <Input
                     id="firstName"
                     value={formData.firstName}
+                    onChange={(e) =>
+                      handleInputChange("firstName", e.target.value)
+                    }
                     placeholder="Jane"
-                    disabled={true}
-                    className="bg-muted"
+                    disabled={isSubmitting}
                     data-testid="input-staff-first-name"
                   />
                 ) : (
@@ -218,9 +256,11 @@ export default function StaffEditModal({
                   <Input
                     id="lastName"
                     value={formData.lastName}
+                    onChange={(e) =>
+                      handleInputChange("lastName", e.target.value)
+                    }
                     placeholder="Smith"
-                    disabled={true}
-                    className="bg-muted"
+                    disabled={isSubmitting}
                     data-testid="input-staff-last-name"
                   />
                 ) : (
@@ -233,9 +273,9 @@ export default function StaffEditModal({
                   <Input
                     id="alias"
                     value={formData.alias}
+                    onChange={(e) => handleInputChange("alias", e.target.value)}
                     placeholder="jsmith"
-                    disabled={true}
-                    className="bg-muted"
+                    disabled={isSubmitting}
                     data-testid="input-staff-alias"
                   />
                 ) : (
@@ -284,6 +324,9 @@ export default function StaffEditModal({
                         disabled={isSubmitting}
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Set a daily request limit for this staff member
+                    </p>
                     {requestsPerDayEnabled && (
                       <div className="space-y-2 pt-2">
                         <Input
@@ -312,15 +355,12 @@ export default function StaffEditModal({
                           disabled={isSubmitting}
                           data-testid="input-staff-requests-per-day"
                         />
-                        <p className="text-xs text-muted-foreground pl-5">
-                          Set a daily request limit for this staff member
-                        </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Default Profile Section (superadmin only) - Read-only display */}
+                {/* Default Profile Section (superadmin only) */}
                 {isSuperadmin && (
                   <div className="space-y-2 pt-2">
                     <div className="space-y-1">
@@ -335,17 +375,47 @@ export default function StaffEditModal({
                         <Switch
                           id="defaultProfile"
                           checked={formData.defaultProfile}
-                          disabled={true}
-                          className="opacity-50"
+                          onCheckedChange={(checked) =>
+                            handleInputChange("defaultProfile", checked)
+                          }
+                          disabled={isSubmitting}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground pl-5">
                         Mark this profile as the default profile for the user
-                        (use bulk edit to change)
                       </p>
                     </div>
                   </div>
                 )}
+
+                {/* Tour Completion Section */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="tourCompleted"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        Tour Completed
+                      </Label>
+                      <Switch
+                        id="tourCompleted"
+                        checked={tourCompleted}
+                        onCheckedChange={(checked) => {
+                          setTourCompletedTouched(true);
+                          // When toggled, update both intro_completed and chat_completed
+                          handleInputChange("introCompleted", checked);
+                          handleInputChange("chatCompleted", checked);
+                        }}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Mark both intro and chat tours as completed
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">

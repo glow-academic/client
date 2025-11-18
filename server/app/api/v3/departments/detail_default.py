@@ -3,9 +3,6 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -13,6 +10,8 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import CohortMappingItem, DepartmentMappingItem
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class DepartmentDetailDefaultRequest(BaseModel):
@@ -40,6 +39,8 @@ class StaffItem(BaseModel):
     requests_per_day: int | None = None
     total_requests: int = 0
     default_profile: bool
+    intro_completed: bool = False
+    chat_completed: bool = False
     requests_in_last_day: int = 0
     can_edit: bool
     can_delete: bool

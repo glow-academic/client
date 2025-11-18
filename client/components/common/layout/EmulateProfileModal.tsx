@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -64,11 +64,10 @@ export function EmulateProfileModal({
   const { activeProfile } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
-    null,
+    null
   );
-  const [searchData, setSearchData] = useState<
-    SearchSimulatableProfilesOut | null
-  >(null);
+  const [searchData, setSearchData] =
+    useState<SearchSimulatableProfilesOut | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEmulating, setIsEmulating] = useState(false);
   const [fullEmulation, setFullEmulation] = useState(false);
@@ -97,7 +96,7 @@ export function EmulateProfileModal({
         setIsLoading(false);
       }
     },
-    [activeProfile?.id, searchSimulatableProfiles],
+    [activeProfile?.id, searchSimulatableProfiles]
   );
 
   // Handle search input change with debounce
@@ -109,9 +108,9 @@ export function EmulateProfileModal({
       }
       searchTimeoutRef.current = setTimeout(() => {
         handleSearch(value);
-      }, 300);
+      }, 500);
     },
-    [handleSearch],
+    [handleSearch]
   );
 
   // Get search results from API response
@@ -166,7 +165,7 @@ export function EmulateProfileModal({
       toast.success(
         fullEmulation && isSuperadmin
           ? "Full emulation enabled. You must log out to exit."
-          : "Emulation enabled successfully",
+          : "Emulation enabled successfully"
       );
 
       // Close modal and refresh page
@@ -205,12 +204,16 @@ export function EmulateProfileModal({
               className="pl-10"
               autoFocus
             />
+            {isLoading && (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
           </div>
 
           {/* Search Results */}
-          <div className="border rounded-md max-h-96 overflow-y-auto">
+          <div className="border rounded-md max-h-60 overflow-y-auto">
             {isLoading ? (
-              <div className="p-4 text-center text-sm text-muted-foreground">
+              <div className="p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Loading profiles...
               </div>
             ) : searchResults.length === 0 ? (
@@ -271,7 +274,7 @@ export function EmulateProfileModal({
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(
-                              (r) => r.id === profile.role,
+                              (r) => r.id === profile.role
                             );
                             if (!roleData) {
                               return (
@@ -352,4 +355,3 @@ export function EmulateProfileModal({
     </Dialog>
   );
 }
-

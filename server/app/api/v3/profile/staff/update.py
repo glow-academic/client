@@ -18,10 +18,16 @@ class UpdateStaffRequest(BaseModel):
     """Request to update staff."""
 
     profileId: str
+    first_name: str
+    last_name: str
+    alias: str
     role: str
     requests_per_day: int | None
     primary_department_id: str
     active: bool
+    default_profile: bool
+    intro_completed: bool | None = None
+    chat_completed: bool | None = None
 
 
 class UpdateStaffResponse(BaseModel):
@@ -47,10 +53,16 @@ async def update_profile(
         sql_query = load_sql("sql/v3/profile/staff/update_profile_complete.sql")
         sql_params = (
             request.profileId,
+            request.first_name,
+            request.last_name,
+            request.alias,
             request.role,
             request.active,
             request.primary_department_id,
             request.requests_per_day,
+            request.default_profile,
+            request.intro_completed,
+            request.chat_completed,
         )
 
         async with transaction(conn):

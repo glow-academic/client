@@ -1,6 +1,7 @@
 -- Update staff profile with lookup, update, department, and request limit in single query (DHH style)
--- Parameters: $1=profile_id (uuid), $2=role, $3=active, $4=primary_department_id (uuid), 
---             $5=requests_per_day (int, nullable)
+-- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=alias, $5=role, $6=active, 
+--             $7=primary_department_id (uuid), $8=requests_per_day (int, nullable), $9=default_profile (bool),
+--             $10=intro_completed (bool, nullable), $11=chat_completed (bool, nullable)
 -- Returns: id, first_name, last_name, name (concatenated)
 
 WITH profile_check AS (
@@ -16,8 +17,14 @@ WITH profile_check AS (
 profile_update AS (
     -- Update profile (only if exists)
     UPDATE profiles SET
-        role = $2,
-        active = $3,
+        first_name = $2,
+        last_name = $3,
+        alias = $4,
+        role = $5,
+        active = $6,
+        default_profile = $9,
+        viewed_intro = COALESCE($10, viewed_intro),
+        viewed_chat = COALESCE($11, viewed_chat),
         updated_at = NOW()
     WHERE id = $1::uuid
         AND EXISTS (SELECT 1 FROM profile_check)
@@ -26,7 +33,7 @@ profile_update AS (
 department_update AS (
     -- Update department relationship
     UPDATE profile_departments SET
-        department_id = $4::uuid,
+        department_id = $7::uuid,
         updated_at = NOW()
     WHERE profile_id = $1::uuid
         AND EXISTS (SELECT 1 FROM profile_update)
@@ -36,9 +43,9 @@ request_limit_upsert AS (
     -- Upsert request limit if provided
     INSERT INTO profile_request_limits (profile_id, requests_per_day, active)
     SELECT 
-        pu.id, $5::int, true
+        pu.id, $8::int, true
     FROM profile_update pu
-    WHERE $5::int IS NOT NULL
+    WHERE $8::int IS NOT NULL
         AND EXISTS (SELECT 1 FROM profile_update)
     ON CONFLICT (profile_id)
     DO UPDATE SET 

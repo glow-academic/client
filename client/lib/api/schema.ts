@@ -3917,6 +3917,10 @@ export interface components {
             requests_per_day?: number | string | null;
             /** Default Profile */
             default_profile?: boolean | null;
+            /** Intro Completed */
+            intro_completed?: boolean | null;
+            /** Chat Completed */
+            chat_completed?: boolean | null;
             /** Currentprofileid */
             currentProfileId: string;
             /** Active */
@@ -9066,6 +9070,12 @@ export interface components {
         UpdateStaffRequest: {
             /** Profileid */
             profileId: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Alias */
+            alias: string;
             /** Role */
             role: string;
             /** Requests Per Day */
@@ -9074,6 +9084,12 @@ export interface components {
             primary_department_id: string;
             /** Active */
             active: boolean;
+            /** Default Profile */
+            default_profile: boolean;
+            /** Intro Completed */
+            intro_completed?: boolean | null;
+            /** Chat Completed */
+            chat_completed?: boolean | null;
         };
         /**
          * UpdateStaffResponse
@@ -9414,6 +9430,16 @@ export interface components {
             total_requests: number;
             /** Default Profile */
             default_profile: boolean;
+            /**
+             * Intro Completed
+             * @default false
+             */
+            intro_completed: boolean;
+            /**
+             * Chat Completed
+             * @default false
+             */
+            chat_completed: boolean;
             /** Requests In Last Day */
             requests_in_last_day: number;
             /** Can Edit */
@@ -9590,6 +9616,16 @@ export interface components {
             /** Default Profile */
             default_profile: boolean;
             /**
+             * Intro Completed
+             * @default false
+             */
+            intro_completed: boolean;
+            /**
+             * Chat Completed
+             * @default false
+             */
+            chat_completed: boolean;
+            /**
              * Requests In Last Day
              * @default 0
              */
@@ -9679,6 +9715,16 @@ export interface components {
             total_requests: number;
             /** Default Profile */
             default_profile: boolean;
+            /**
+             * Intro Completed
+             * @default false
+             */
+            intro_completed: boolean;
+            /**
+             * Chat Completed
+             * @default false
+             */
+            chat_completed: boolean;
             /**
              * Requests In Last Day
              * @default 0
@@ -10152,6 +10198,16 @@ export interface components {
             total_requests: number;
             /** Default Profile */
             default_profile: boolean;
+            /**
+             * Intro Completed
+             * @default false
+             */
+            intro_completed: boolean;
+            /**
+             * Chat Completed
+             * @default false
+             */
+            chat_completed: boolean;
             /** Requests In Last Day */
             requests_in_last_day: number;
             /** Can Edit */
