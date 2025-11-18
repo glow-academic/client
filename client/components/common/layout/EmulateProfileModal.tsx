@@ -11,7 +11,6 @@ import type {
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
 import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,17 +42,6 @@ export interface EmulateProfileModalProps {
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
 }
-
-// Helper function to get initials from name
-const getInitials = (name?: string): string => {
-  if (!name) return "??";
-  return name
-    .split(" ")
-    .map((word) => word.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
 
 export function EmulateProfileModal({
   open,
@@ -106,6 +94,13 @@ export function EmulateProfileModal({
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      // If query becomes empty, search immediately (no debounce)
+      if (value === "") {
+        handleSearch("");
+        return;
+      }
+      // Otherwise, debounce the search but show loading immediately
+      setIsLoading(true);
       searchTimeoutRef.current = setTimeout(() => {
         handleSearch(value);
       }, 500);
@@ -256,19 +251,8 @@ export function EmulateProfileModal({
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6 text-xs">
-                              <AvatarFallback>
-                                {getInitials(
-                                  `${profile.firstName} ${profile.lastName}`
-                                )}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">
-                              {profile.firstName} {profile.lastName}
-                            </span>
-                          </div>
+                        <TableCell className="font-medium">
+                          {profile.firstName} {profile.lastName}
                         </TableCell>
                         <TableCell>{profile.alias}</TableCell>
                         <TableCell>

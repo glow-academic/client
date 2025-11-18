@@ -21,7 +21,7 @@ class SearchSimulatableProfilesRequest(BaseModel):
     """Request for simulatable profiles search."""
 
     query: str | None = (
-        None  # Search term (first_name, last_name, alias). Empty/None returns all profiles (up to limit)
+        None  # Search term (first_name, last_name, alias, role). Empty/None returns all profiles (up to limit)
     )
     limit: int = 200  # Maximum number of results
     profileId: str  # Current user's profile ID for permissions
@@ -65,8 +65,9 @@ async def search_simulatable_profiles(
         # Search query filter (if provided)
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
+            # Cast role enum to text for ILIKE comparison
             search_where_clause = (
-                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.alias ILIKE $3)"
+                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.alias ILIKE $3 OR p.role::text ILIKE $3)"
             )
             params.append(search_term)
 

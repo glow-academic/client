@@ -22,7 +22,7 @@ class SearchStaffRequest(BaseModel):
     """Request for staff search."""
 
     query: str | None = (
-        None  # Search term (first_name, last_name, alias). Empty/None returns all profiles (up to limit)
+        None  # Search term (first_name, last_name, alias, role). Empty/None returns all profiles (up to limit)
     )
     cohortIds: list[str] | None = None  # Cohort IDs to EXCLUDE profiles from (optional)
     departmentIds: list[str] | None = (
@@ -76,9 +76,10 @@ async def search_staff(
         # Search query filter (if provided)
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
-            # Use the same parameter for all three ILIKE conditions (PostgreSQL allows this)
+            # Use the same parameter for all four ILIKE conditions (PostgreSQL allows this)
+            # Cast role enum to text for ILIKE comparison
             search_conditions.append(
-                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx})"
+                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx} OR p.role::text ILIKE ${param_idx})"
             )
             params.append(search_term)
             param_idx += 1
