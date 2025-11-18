@@ -146,20 +146,37 @@ department_parameter_ids AS (
                                                  WHERE pi2.parameter_id = p.id AND pid2.active = true))
     GROUP BY d.id
 ),
+cross_department_items AS (
+    -- Parameter items with no department restrictions (available to all)
+    SELECT DISTINCT pi.id
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
+    WHERE NOT EXISTS (
+        SELECT 1 FROM parameter_item_departments pid 
+        WHERE pid.parameter_item_id = pi.id 
+        AND pid.active = true
+    )
+),
 department_parameter_item_ids AS (
     SELECT 
         d.id as department_id,
         COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
     FROM departments d
-    LEFT JOIN parameter_items pi ON true
-    LEFT JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN (
+        -- Parameter items assigned to this specific department
+        SELECT DISTINCT pid.department_id, pi.id
+        FROM parameter_item_departments pid
+        JOIN parameter_items pi ON pi.id = pid.parameter_item_id
+        JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
+        WHERE pid.active = true
+        UNION
+        -- Cross-department items (available to all user departments)
+        SELECT DISTINCT ud.department_id, cdi.id
+        FROM user_departments ud
+        CROSS JOIN cross_department_items cdi
+    ) pi_dept ON pi_dept.department_id = d.id
+    LEFT JOIN parameter_items pi ON pi.id = pi_dept.id
     WHERE d.id IN (SELECT department_id FROM user_departments)
-    AND p.id IS NOT NULL
-    AND (
-        pid.department_id = d.id 
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
-    )
     GROUP BY d.id
 ),
 department_mapping_data AS (

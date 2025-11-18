@@ -171,6 +171,16 @@ export function ParameterItemPicker<
       return `Select ${parameterName.toLowerCase()}${requiredIndicator}`;
     }
     if (multiSelect) {
+      // In compact mode, show explicit comma-separated names with no max width truncation
+      if (compact) {
+        const names = selectedIds
+          .map((id) => mapping[id]?.name)
+          .filter(Boolean) as string[];
+        if (names.length === 0) {
+          return `${selectedIds.length} ${parameterName.toLowerCase()} selected${requiredIndicator}`;
+        }
+        return names.join(", ") + requiredIndicator;
+      }
       return `${selectedIds.length} ${parameterName.toLowerCase()} selected${requiredIndicator}`;
     }
     return (
@@ -372,9 +382,10 @@ export function ParameterItemPicker<
         </PopoverContent>
       </Popover>
 
-      {/* Show badges below button if configured */}
+      {/* Show badges below button if configured - hide in compact mode */}
       {multiSelect &&
         !hideSelectedChips &&
+        !compact &&
         selectedIds.length > 0 &&
         badgesPosition === "below" && (
           <div className="mt-2 flex items-center gap-2">

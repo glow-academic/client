@@ -1,11 +1,12 @@
 "use client";
 import * as React from "react";
 
-import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
+import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import { Building2, FileText, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 
 type DocumentType =
@@ -53,7 +68,7 @@ export interface UploadClassificationDialogProps {
   onClose: () => void;
   onConfirm: (
     perFile: Record<string, FileClassification>,
-    defaultsForZip: FileClassification,
+    defaultsForZip: FileClassification
   ) => void;
   onAddFiles?: (files: File[]) => void;
   onRemoveFile?: (fileName: string) => void;
@@ -104,8 +119,13 @@ export function UploadClassificationDialog({
   >(
     effectiveProfile?.primaryDepartmentId
       ? [effectiveProfile.primaryDepartmentId]
-      : [],
+      : []
   );
+
+  // Per-file "keep default" state - when true, that file uses all defaults
+  const [keepDefaultPerFile, setKeepDefaultPerFile] = React.useState<
+    Record<string, boolean>
+  >({});
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
@@ -123,7 +143,7 @@ export function UploadClassificationDialog({
   // Identify document_parameter=true parameters (required for each document)
   const documentParameterIds = React.useMemo(() => {
     return Object.keys(parameterMapping).filter(
-      (paramId) => parameterMapping[paramId]?.document_parameter === true,
+      (paramId) => parameterMapping[paramId]?.document_parameter === true
     );
   }, [parameterMapping]);
 
@@ -147,7 +167,7 @@ export function UploadClassificationDialog({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          selectedDeptParameterItemIds.add(id),
+          selectedDeptParameterItemIds.add(id)
         );
       }
     });
@@ -160,7 +180,7 @@ export function UploadClassificationDialog({
         Array.isArray(deptData.parameter_item_ids)
       ) {
         deptData.parameter_item_ids.forEach((id: string) =>
-          allDeptParameterItemIds.add(id),
+          allDeptParameterItemIds.add(id)
         );
       }
     });
@@ -195,12 +215,12 @@ export function UploadClassificationDialog({
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
-      (id) => !currentDeptIds.includes(id),
+      (id) => !currentDeptIds.includes(id)
     );
 
     // Find departments that were newly selected
     const newlySelectedDepts = currentDeptIds.filter(
-      (id) => !prevDeptIds.includes(id),
+      (id) => !prevDeptIds.includes(id)
     );
 
     // Save selections for deselected departments
@@ -239,7 +259,7 @@ export function UploadClassificationDialog({
             ) {
               const validParamSet = new Set(filteredValidParameterItemIds);
               const validParams = staged.apply_all_parameter_item_ids.filter(
-                (id) => validParamSet.has(id),
+                (id) => validParamSet.has(id)
               );
               if (validParams.length > 0) {
                 setGlobalDefaultParameterItemIds((prevParams) => {
@@ -264,7 +284,7 @@ export function UploadClassificationDialog({
                     const stagedParams =
                       staged.per_file_parameter_item_ids![fileName] || [];
                     const validParams = stagedParams.filter((id) =>
-                      validParamSet.has(id),
+                      validParamSet.has(id)
                     );
                     if (validParams.length > 0 && updated[fileName]) {
                       const combined = new Set([
@@ -276,7 +296,7 @@ export function UploadClassificationDialog({
                         parameterItemIds: Array.from(combined),
                       };
                     }
-                  },
+                  }
                 );
                 return updated;
               });
@@ -318,7 +338,7 @@ export function UploadClassificationDialog({
     if (globalDefaultParameterItemIds.length > 0) {
       const validSet = new Set(filteredValidParameterItemIds);
       const filtered = globalDefaultParameterItemIds.filter((id) =>
-        validSet.has(id),
+        validSet.has(id)
       );
       if (filtered.length !== globalDefaultParameterItemIds.length) {
         setGlobalDefaultParameterItemIds(filtered);
@@ -332,7 +352,7 @@ export function UploadClassificationDialog({
       Object.entries(prev).forEach(([fileName, fc]) => {
         const validSet = new Set(filteredValidParameterItemIds);
         const filtered = (fc.parameterItemIds || []).filter((id) =>
-          validSet.has(id),
+          validSet.has(id)
         );
         if (filtered.length !== (fc.parameterItemIds || []).length) {
           hasChanges = true;
@@ -379,8 +399,8 @@ export function UploadClassificationDialog({
     setGlobalDefaultType(type);
     setPerFile((prev) =>
       Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, type }]),
-      ),
+        Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
+      )
     );
     setZipDefaults((p) => ({ ...p, type }));
   };
@@ -395,16 +415,16 @@ export function UploadClassificationDialog({
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const merged = Array.from(
-            new Set([...(v.parameterItemIds ?? []), ...incomingIds]),
+            new Set([...(v.parameterItemIds ?? []), ...incomingIds])
           );
           return [k, { ...v, parameterItemIds: merged }];
-        }),
-      ),
+        })
+      )
     );
     setZipDefaults((p) => ({
       ...p,
       parameterItemIds: Array.from(
-        new Set([...(p.parameterItemIds ?? []), ...incomingIds]),
+        new Set([...(p.parameterItemIds ?? []), ...incomingIds])
       ),
     }));
   };
@@ -412,43 +432,24 @@ export function UploadClassificationDialog({
   const removeParameterItemsFromAll = (idsToRemove: string[]) => {
     if (idsToRemove.length === 0) return;
     setGlobalDefaultParameterItemIds((prev) =>
-      prev.filter((id) => !idsToRemove.includes(id)),
+      prev.filter((id) => !idsToRemove.includes(id))
     );
     setPerFile((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([k, v]) => {
           const nextIds = (v.parameterItemIds ?? []).filter(
-            (id) => !idsToRemove.includes(id),
+            (id) => !idsToRemove.includes(id)
           );
           return [k, { ...v, parameterItemIds: nextIds }];
-        }),
-      ),
+        })
+      )
     );
     setZipDefaults((p) => ({
       ...p,
       parameterItemIds: (p.parameterItemIds ?? []).filter(
-        (id) => !idsToRemove.includes(id),
+        (id) => !idsToRemove.includes(id)
       ),
     }));
-  };
-
-  // Apply defaults now - force apply current defaults to all files
-  const applyDefaultsNow = () => {
-    setPerFile((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([k]) => [
-          k,
-          {
-            type: globalDefaultType,
-            parameterItemIds: [...globalDefaultParameterItemIds],
-          },
-        ]),
-      ),
-    );
-    setZipDefaults({
-      type: globalDefaultType,
-      parameterItemIds: [...globalDefaultParameterItemIds],
-    });
   };
 
   // Validation: Check that each document has at least one parameter item for each document_parameter=true parameter
@@ -477,7 +478,7 @@ export function UploadClassificationDialog({
 
         // Check if at least one item from this parameter is selected
         const hasItemForParam = itemsForParam.some((itemId) =>
-          selectedItemIds.includes(itemId),
+          selectedItemIds.includes(itemId)
         );
 
         if (!hasItemForParam && itemsForParam.length > 0) {
@@ -486,7 +487,7 @@ export function UploadClassificationDialog({
           }
           const paramName = parameterMapping[paramId]?.name || paramId;
           errors[file.name]!.push(
-            `Required: Select at least one ${paramName} option`,
+            `Required: Select at least one ${paramName} option`
           );
         }
       });
@@ -513,7 +514,10 @@ export function UploadClassificationDialog({
 
   return (
     <Dialog open={open} onOpenChange={(val) => (!val ? onClose() : undefined)}>
-      <DialogContent className="sm:max-w-3xl" data-testid="document-classification-dialog">
+      <DialogContent
+        className="sm:max-w-5xl max-h-[90vh]"
+        data-testid="document-classification-dialog"
+      >
         <DialogHeader>
           <DialogTitle>Classify Documents Before Upload</DialogTitle>
           <DialogDescription>
@@ -522,249 +526,334 @@ export function UploadClassificationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Compact Horizontal Defaults Toolbar - only show when multiple files */}
-        {files.length > 1 && (
-          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-md border flex-wrap">
-            <span className="text-xs text-muted-foreground">Defaults →</span>
-            <div data-testid="document-department-selector">
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={validDepartmentIds}
-                selectedIds={selectedDepartmentIds}
-                onSelect={setSelectedDepartmentIds}
-                placeholder="Dept"
-                multiSelect={true}
-                compact={true}
-                buttonClassName="h-7 px-2 text-xs"
-              />
-            </div>
-            <div data-testid="document-type-selector">
-              <DocumentTypePicker
-                selectedType={globalDefaultType}
-                onSelect={applyTypeToAll}
-                placeholder="Type"
-                compact={true}
-              />
-            </div>
-            <div className="flex-1 min-w-[120px]" data-testid="document-parameter-selector">
-              <ParameterItemPicker
-                mapping={parameterItemMapping}
-                validIds={filteredValidParameterItemIds}
-                selectedIds={globalDefaultParameterItemIds}
-                onSelect={(next) => {
-                  const added = next.filter(
-                    (id) => !globalDefaultParameterItemIds.includes(id),
-                  );
-                  const removed = globalDefaultParameterItemIds.filter(
-                    (id) => !next.includes(id),
-                  );
-                  if (added.length) applyParameterItemsToAll(added);
-                  if (removed.length) removeParameterItemsFromAll(removed);
-                  setGlobalDefaultParameterItemIds(next);
-                }}
-                parameterId=""
-                parameterName="Params"
-                allowCreate={false}
-                multiSelect={true}
-                badgesPosition="below"
-                showClearAll={true}
-                hideSelectedChips={false}
-                compact={true}
-                required={
-                  documentParameterIds.length > 0 &&
-                  documentParameterIds.some((paramId) =>
-                    filteredValidParameterItemIds.some(
-                      (itemId) =>
-                        parameterItemMapping[itemId]?.parameter_id === paramId,
-                    ),
-                  )
-                }
-              />
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={applyDefaultsNow}
-              size="sm"
-              className="h-7 px-2 text-xs border bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-indigo-200"
-            >
-              Apply to all
-            </Button>
-          </div>
-        )}
-
-        {/* Department Selection - show when single file */}
-        {files.length === 1 && (
-          <div className="space-y-2 mb-4">
-            <Label htmlFor="department">Department</Label>
-            <DepartmentPicker
-              mapping={departmentMapping}
-              validIds={validDepartmentIds}
-              selectedIds={selectedDepartmentIds}
-              onSelect={setSelectedDepartmentIds}
-              placeholder="All Departments"
-              multiSelect={true}
-            />
-          </div>
-        )}
-
-        {/* Section 2: Files List */}
-        <div className="space-y-2 max-h-[50vh] overflow-auto pr-1">
-          {files.map((file) => {
-            const fc = perFile[file.name] ?? {
-              type: globalDefaultType,
-              parameterItemIds: [...globalDefaultParameterItemIds],
-            };
-
-            return (
-              <div key={file.name} className="rounded-md border p-2 bg-white">
-                {/* Row 1: Filename + Size + Remove */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium truncate mr-2 text-gray-900">
-                    📄 {file.name}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {Math.round(file.size / 1024)} KB
-                    </Badge>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5"
-                      onClick={() => {
-                        setPerFile((prev) => {
-                          const next = { ...prev };
-                          delete next[file.name];
-                          return next;
-                        });
-                        if (onRemoveFile) {
-                          onRemoveFile(file.name);
-                        } else {
-                          const evt = new CustomEvent("upload:remove-file", {
-                            detail: { fileName: file.name },
-                          });
-                          window.dispatchEvent(evt);
-                        }
-                      }}
-                      aria-label="Remove file from upload"
-                      title="Remove file"
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Horizontal Layout: Dept, Type, Params */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={validDepartmentIds}
-                    selectedIds={fc.departmentIds || selectedDepartmentIds}
-                    onSelect={(ids) =>
-                      setPerFile((prev) => {
-                        const prevForFile: FileClassification = prev[
-                          file.name
-                        ] ?? {
-                          type: globalDefaultType,
-                          parameterItemIds: [...globalDefaultParameterItemIds],
-                          departmentIds: selectedDepartmentIds,
-                        };
-                        return {
-                          ...prev,
-                          [file.name]: {
-                            ...prevForFile,
-                            departmentIds: ids,
-                          },
-                        } as Record<string, FileClassification>;
-                      })
-                    }
-                    placeholder="Dept"
-                    multiSelect={true}
-                    compact={true}
-                    buttonClassName="h-7 px-2 text-xs"
-                  />
-                  <DocumentTypePicker
-                    selectedType={fc.type}
-                    onSelect={(type) =>
-                      setPerFile((prev) => {
-                        const prevForFile: FileClassification = prev[
-                          file.name
-                        ] ?? {
-                          type: globalDefaultType,
-                          parameterItemIds: [...globalDefaultParameterItemIds],
-                          departmentIds: selectedDepartmentIds,
-                        };
-                        return {
-                          ...prev,
-                          [file.name]: {
-                            ...prevForFile,
-                            type,
-                          },
-                        } as Record<string, FileClassification>;
-                      })
-                    }
-                    placeholder="Type"
-                    compact={true}
-                  />
-                  <div className="flex-1 min-w-[120px]">
-                    <ParameterItemPicker
-                      mapping={parameterItemMapping}
-                      validIds={filteredValidParameterItemIds}
-                      selectedIds={fc.parameterItemIds}
-                      onSelect={(parameterItemIds) =>
-                        setPerFile((prev) => {
-                          const prevForFile: FileClassification = prev[
-                            file.name
-                          ] ?? {
-                            type: fc.type,
-                            parameterItemIds: [
-                              ...globalDefaultParameterItemIds,
-                            ],
-                            departmentIds: selectedDepartmentIds,
-                          };
-                          return {
-                            ...prev,
-                            [file.name]: {
-                              ...prevForFile,
-                              parameterItemIds,
-                            },
-                          } as Record<string, FileClassification>;
-                        })
-                      }
-                      parameterId=""
-                      parameterName="Params"
-                      allowCreate={false}
-                      multiSelect={true}
-                      badgesPosition="below"
-                      showClearAll={false}
-                      hideSelectedChips={false}
-                      compact={true}
-                      required={
-                        documentParameterIds.length > 0 &&
-                        documentParameterIds.some((paramId) =>
-                          filteredValidParameterItemIds.some(
-                            (itemId) =>
-                              parameterItemMapping[itemId]?.parameter_id ===
-                              paramId,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  {/* Validation errors */}
-                  {validationErrors[file.name] &&
-                    validationErrors[file.name]!.length > 0 && (
-                      <div className="mt-1 text-xs text-red-600">
-                        {validationErrors[file.name]!.map((error, idx) => (
-                          <div key={idx}>{error}</div>
-                        ))}
-                      </div>
-                    )}
-                </div>
+        {/* Top Section - Default Options */}
+        <div className="space-y-4">
+          {/* Defaults Toolbar - only show when multiple files */}
+          {files.length > 1 && (
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-md border flex-wrap">
+              <span className="text-xs text-muted-foreground font-medium">
+                Defaults →
+              </span>
+              <div data-testid="document-department-selector">
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={validDepartmentIds}
+                  selectedIds={selectedDepartmentIds}
+                  onSelect={setSelectedDepartmentIds}
+                  placeholder="Dept"
+                  multiSelect={true}
+                  compact={true}
+                  buttonClassName="h-7 px-2 text-xs"
+                />
               </div>
-            );
-          })}
+              <div data-testid="document-type-selector">
+                <DocumentTypePicker
+                  selectedType={globalDefaultType}
+                  onSelect={applyTypeToAll}
+                  placeholder="Type"
+                  compact={true}
+                />
+              </div>
+              <div
+                className="flex-1 min-w-[120px]"
+                data-testid="document-parameter-selector"
+              >
+                <ParameterItemPicker
+                  mapping={parameterItemMapping}
+                  validIds={filteredValidParameterItemIds}
+                  selectedIds={globalDefaultParameterItemIds}
+                  onSelect={(next) => {
+                    const added = next.filter(
+                      (id) => !globalDefaultParameterItemIds.includes(id)
+                    );
+                    const removed = globalDefaultParameterItemIds.filter(
+                      (id) => !next.includes(id)
+                    );
+                    if (added.length) applyParameterItemsToAll(added);
+                    if (removed.length) removeParameterItemsFromAll(removed);
+                    setGlobalDefaultParameterItemIds(next);
+                  }}
+                  parameterId=""
+                  parameterName="Params"
+                  allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
+                  hideSelectedChips={false}
+                  compact={true}
+                  required={
+                    documentParameterIds.length > 0 &&
+                    documentParameterIds.some((paramId) =>
+                      filteredValidParameterItemIds.some(
+                        (itemId) =>
+                          parameterItemMapping[itemId]?.parameter_id === paramId
+                      )
+                    )
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Table Layout - Documents as rows */}
+          <div className="border rounded-md max-h-[50vh] overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">File Name</TableHead>
+                  <TableHead className="w-[180px]">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>Department</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="w-[150px]">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>Type</span>
+                    </div>
+                  </TableHead>
+                  <TableHead className="min-w-[200px]">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>Parameter Items</span>
+                    </div>
+                  </TableHead>
+                  {files.length > 1 && (
+                    <TableHead className="w-[120px]">Keep Default</TableHead>
+                  )}
+                  {files.length > 1 && (
+                    <TableHead className="w-[80px]">Actions</TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {files.map((file) => {
+                  const fc = perFile[file.name] ?? {
+                    type: globalDefaultType,
+                    parameterItemIds: [...globalDefaultParameterItemIds],
+                    departmentIds: selectedDepartmentIds,
+                  };
+
+                  // Get per-file keep-default state, defaulting to true
+                  const keepDefault = keepDefaultPerFile[file.name] ?? true;
+
+                  const useDefaultDepartment = keepDefault;
+                  const useDefaultType = keepDefault;
+                  const useDefaultParameterItems = keepDefault;
+
+                  return (
+                    <TableRow key={file.name}>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div
+                            className="text-sm font-medium truncate max-w-[180px]"
+                            title={file.name}
+                          >
+                            📄 {file.name}
+                          </div>
+                          <Badge variant="secondary" className="text-xs w-fit">
+                            {Math.round(file.size / 1024)} KB
+                          </Badge>
+                          {/* Validation errors */}
+                          {validationErrors[file.name] &&
+                            validationErrors[file.name]!.length > 0 && (
+                              <div className="text-xs text-red-600 mt-1">
+                                {validationErrors[file.name]!.map(
+                                  (error, idx) => (
+                                    <div key={idx}>{error}</div>
+                                  )
+                                )}
+                              </div>
+                            )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DepartmentPicker
+                          mapping={departmentMapping}
+                          validIds={validDepartmentIds}
+                          selectedIds={
+                            useDefaultDepartment
+                              ? selectedDepartmentIds
+                              : fc.departmentIds || selectedDepartmentIds
+                          }
+                          onSelect={(ids) => {
+                            if (!useDefaultDepartment) {
+                              setPerFile((prev) => {
+                                const prevForFile: FileClassification = prev[
+                                  file.name
+                                ] ?? {
+                                  type: globalDefaultType,
+                                  parameterItemIds: [
+                                    ...globalDefaultParameterItemIds,
+                                  ],
+                                  departmentIds: selectedDepartmentIds,
+                                };
+                                return {
+                                  ...prev,
+                                  [file.name]: {
+                                    ...prevForFile,
+                                    departmentIds: ids,
+                                  },
+                                } as Record<string, FileClassification>;
+                              });
+                            }
+                          }}
+                          placeholder="Dept"
+                          multiSelect={true}
+                          compact={true}
+                          buttonClassName="h-7 px-2 text-xs"
+                          disabled={useDefaultDepartment}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <DocumentTypePicker
+                          selectedType={
+                            useDefaultType ? globalDefaultType : fc.type
+                          }
+                          onSelect={(type) => {
+                            if (!useDefaultType) {
+                              setPerFile((prev) => {
+                                const prevForFile: FileClassification = prev[
+                                  file.name
+                                ] ?? {
+                                  type: globalDefaultType,
+                                  parameterItemIds: [
+                                    ...globalDefaultParameterItemIds,
+                                  ],
+                                  departmentIds: selectedDepartmentIds,
+                                };
+                                return {
+                                  ...prev,
+                                  [file.name]: {
+                                    ...prevForFile,
+                                    type,
+                                  },
+                                } as Record<string, FileClassification>;
+                              });
+                            }
+                          }}
+                          placeholder="Type"
+                          compact={true}
+                          disabled={useDefaultType}
+                        />
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <ParameterItemPicker
+                          mapping={parameterItemMapping}
+                          validIds={filteredValidParameterItemIds}
+                          selectedIds={
+                            useDefaultParameterItems
+                              ? globalDefaultParameterItemIds
+                              : fc.parameterItemIds
+                          }
+                          onSelect={(parameterItemIds) => {
+                            if (!useDefaultParameterItems) {
+                              setPerFile((prev) => {
+                                const prevForFile: FileClassification = prev[
+                                  file.name
+                                ] ?? {
+                                  type: fc.type,
+                                  parameterItemIds: [
+                                    ...globalDefaultParameterItemIds,
+                                  ],
+                                  departmentIds: selectedDepartmentIds,
+                                };
+                                return {
+                                  ...prev,
+                                  [file.name]: {
+                                    ...prevForFile,
+                                    parameterItemIds,
+                                  },
+                                } as Record<string, FileClassification>;
+                              });
+                            }
+                          }}
+                          parameterId=""
+                          parameterName="Params"
+                          allowCreate={false}
+                          multiSelect={true}
+                          badgesPosition="below"
+                          showClearAll={false}
+                          hideSelectedChips={false}
+                          compact={true}
+                          disabled={useDefaultParameterItems}
+                          required={
+                            documentParameterIds.length > 0 &&
+                            documentParameterIds.some((paramId) =>
+                              filteredValidParameterItemIds.some(
+                                (itemId) =>
+                                  parameterItemMapping[itemId]?.parameter_id ===
+                                  paramId
+                              )
+                            )
+                          }
+                        />
+                      </TableCell>
+                      {files.length > 1 && (
+                        <TableCell>
+                          <Checkbox
+                            checked={keepDefault}
+                            onCheckedChange={(checked) => {
+                              setKeepDefaultPerFile((prev) => ({
+                                ...prev,
+                                [file.name]: checked === true,
+                              }));
+                            }}
+                          />
+                        </TableCell>
+                      )}
+                      {files.length > 1 && (
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => {
+                                    setPerFile((prev) => {
+                                      const next = { ...prev };
+                                      delete next[file.name];
+                                      return next;
+                                    });
+                                    setKeepDefaultPerFile((prev) => {
+                                      const next = { ...prev };
+                                      delete next[file.name];
+                                      return next;
+                                    });
+                                    if (onRemoveFile) {
+                                      onRemoveFile(file.name);
+                                    } else {
+                                      const evt = new CustomEvent(
+                                        "upload:remove-file",
+                                        {
+                                          detail: { fileName: file.name },
+                                        }
+                                      );
+                                      window.dispatchEvent(evt);
+                                    }
+                                  }}
+                                  aria-label="Remove file from upload"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         <DialogFooter className="mt-4">
@@ -801,7 +890,7 @@ export function UploadClassificationDialog({
                 size="sm"
                 onClick={() => {
                   const el = document.getElementById(
-                    "upload-dialog-file-input",
+                    "upload-dialog-file-input"
                   ) as HTMLInputElement | null;
                   el?.click();
                 }}
@@ -834,8 +923,8 @@ export function UploadClassificationDialog({
                           ...classification,
                           departmentIds: selectedDepartmentIds,
                         },
-                      ],
-                    ),
+                      ]
+                    )
                   );
                   const zipDefaultsWithDepartment = {
                     ...zipDefaults,
