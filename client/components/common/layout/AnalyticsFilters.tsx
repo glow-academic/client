@@ -346,23 +346,27 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Cohort Picker */}
-            <CohortSelector
-              cohorts={cohortOptions}
-              selectedCohorts={selectedCohorts}
-              onSelect={handleCohortSelect}
-              placeholder="Cohorts"
-              hideSelectedChips={true}
-            />
+            {/* Cohort Picker - only show if more than 1 cohort */}
+            {activeCohorts.length > 1 && (
+              <CohortSelector
+                cohorts={cohortOptions}
+                selectedCohorts={selectedCohorts}
+                onSelect={handleCohortSelect}
+                placeholder="Cohorts"
+                hideSelectedChips={true}
+              />
+            )}
 
-            {/* Department Picker */}
-            <DepartmentSelector
-              departments={departmentOptions}
-              selectedDepartments={selectedDepartments}
-              onSelect={handleDepartmentSelect}
-              placeholder="Departments"
-              hideSelectedChips={true}
-            />
+            {/* Department Picker - only show if more than 1 department */}
+            {departments.length > 1 && (
+              <DepartmentSelector
+                departments={departmentOptions}
+                selectedDepartments={selectedDepartments}
+                onSelect={handleDepartmentSelect}
+                placeholder="Departments"
+                hideSelectedChips={true}
+              />
+            )}
 
             {/* Date Range Picker */}
             <DatePickerWithRange

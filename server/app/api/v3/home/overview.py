@@ -150,6 +150,20 @@ async def get_home_overview(
     try:
         # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
         profile_id = filters.profileId
+        
+        # For roles above TA (instructional, admin, superadmin), ignore profileId to see all data
+        # Only TAs should have profileId filtering applied
+        if profile_id and profile_id != "guest-profile-id":
+            try:
+                # Check the role of the profile
+                role_query = "SELECT role FROM profiles WHERE id = $1"
+                role_row = await conn.fetchrow(role_query, profile_id)
+                if role_row and role_row["role"] != "ta":
+                    # Role is above TA, set profileId to None to ignore filtering
+                    profile_id = None
+            except Exception:
+                # If we can't determine role, keep profileId as-is (fallback to safe behavior)
+                pass
 
         # Build WHERE clause for home overview
         # Note: Home always shows general simulations only (hardcoded)

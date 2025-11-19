@@ -109,7 +109,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProfile } from "@/contexts/profile-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";

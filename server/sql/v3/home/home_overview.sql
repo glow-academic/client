@@ -64,6 +64,15 @@ resolve_history_profile_id AS (
             ELSE $12::uuid
         END as resolved_history_profile_id
 ),
+-- Get the role of the historyProfileId viewer (for role-based filtering)
+history_viewer_role AS (
+    SELECT 
+        CASE 
+            WHEN rhpi.resolved_history_profile_id IS NULL THEN 'guest'
+            ELSE COALESCE((SELECT role FROM profiles WHERE id = rhpi.resolved_history_profile_id), 'guest')
+        END as role
+    FROM resolve_history_profile_id rhpi
+),
 -- Get all cohorts (active + inactive) linked to historyProfileId for history preservation
 history_profile_cohorts AS (
     SELECT DISTINCT cp.cohort_id
@@ -468,7 +477,7 @@ standards_mapping AS (
     )
 ),
 -- FRESH HISTORY DATA: Query base tables directly, not analytics MV
--- Filter attempts by date, profile, cohorts, departments
+-- Filter attempts by date, profile, cohorts, departments, and role hierarchy
 history_attempts AS (
     SELECT DISTINCT
         sa.id AS attempt_id,
@@ -483,6 +492,8 @@ history_attempts AS (
     FROM simulation_attempts sa
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
     JOIN simulations sim ON sim.id = sa.simulation_id
+    JOIN profiles p_attempt ON p_attempt.id = ap.profile_id
+    CROSS JOIN history_viewer_role hvr
     LEFT JOIN (
         SELECT 
             sd.simulation_id,
@@ -494,8 +505,17 @@ history_attempts AS (
     WHERE sa.created_at >= $7
       AND sa.created_at <= $8
       AND sim.practice_simulation = FALSE
+      -- Only filter by profileId if provided (TA mode) - roles above TA pass NULL to see all data
       AND (($9::text IS NULL OR $9::text = '' OR $9::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $9::text = 'guest-profile-id' THEN (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1) ELSE $9::uuid END)
       AND (cardinality($11::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $11::uuid[]::text[])
+      -- Role hierarchy filtering: viewer can only see attempts from roles at or below their level
+      AND (
+        hvr.role = 'superadmin' OR
+        (hvr.role = 'admin' AND p_attempt.role IN ('admin', 'instructional', 'ta', 'guest')) OR
+        (hvr.role = 'instructional' AND p_attempt.role IN ('instructional', 'ta', 'guest')) OR
+        (hvr.role = 'ta' AND p_attempt.role IN ('ta', 'guest')) OR
+        (hvr.role = 'guest' AND p_attempt.role = 'guest')
+      )
 ),
 -- Get cohorts for each attempt's profile (includes inactive links for history)
 history_attempt_cohorts AS (

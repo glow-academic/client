@@ -24,8 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api/client";
 import { useProfile } from "@/contexts/profile-context";
+import { api } from "@/lib/api/client";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
@@ -142,7 +142,7 @@ export default function RubricDetails({
 
       // Check if this group is in the updates
       const update = params.standardGroupUpdates.find(
-        (g) => g.id === groupId && !g.deleted,
+        (g) => g.id === groupId && !g.deleted
       );
 
       if (!update) {
@@ -174,7 +174,7 @@ export default function RubricDetails({
           })
           .filter(
             (s): s is { name: string; description?: string; points: number } =>
-              s !== null,
+              s !== null
           );
 
         const groupName = groupMapping["name"];
@@ -247,7 +247,10 @@ export default function RubricDetails({
 
   const initialDepartmentIds = useMemo(() => {
     // For create mode, use default; for edit mode, use rubric's department_ids
-    if (isCreateMode && (!rubric.department_ids || rubric.department_ids.length === 0)) {
+    if (
+      isCreateMode &&
+      (!rubric.department_ids || rubric.department_ids.length === 0)
+    ) {
       return defaultDepartmentIds;
     }
     return rubric.department_ids || [];
@@ -262,7 +265,7 @@ export default function RubricDetails({
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | boolean,
+    value: string | boolean
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -290,7 +293,7 @@ export default function RubricDetails({
           body: {
             name: formData.name,
             description: formData.description,
-            department_ids: finalDepartmentIds,
+            department_ids: finalDepartmentIds ?? [],
             active: formData.active,
             points: 0, // Will be calculated when standard groups are added
             passPoints: 0,
@@ -326,7 +329,7 @@ export default function RubricDetails({
         });
 
         toast.success(
-          `Rubric updated successfully. Total points: ${result.points}`,
+          `Rubric updated successfully. Total points: ${result.points}`
         );
         setIsEditing(false);
         router.refresh();
@@ -336,7 +339,7 @@ export default function RubricDetails({
         isCreateMode ? "Failed to create rubric" : "Failed to update rubric",
         {
           description: error instanceof Error ? error.message : "Unknown error",
-        },
+        }
       );
     } finally {
       setIsCreating(false);

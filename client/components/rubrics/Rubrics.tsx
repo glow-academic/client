@@ -51,7 +51,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useProfile } from "@/contexts/profile-context";
 
 export interface RubricsProps {
   // Server-provided data (for server-side rendering)
@@ -70,7 +69,6 @@ export default function Rubrics({
   duplicateRubricAction,
   deleteRubricAction,
 }: RubricsProps) {
-  const { departmentIds } = useProfile();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -103,14 +101,6 @@ export default function Rubrics({
   const departmentMapping = useMemo(
     () =>
       (rubricsData?.department_mapping as Record<
-        string,
-        { name: string; description: string }
-      >) || {},
-    [rubricsData]
-  );
-  const simulationMapping = useMemo(
-    () =>
-      (rubricsData?.simulation_mapping as Record<
         string,
         { name: string; description: string }
       >) || {},
@@ -277,20 +267,9 @@ export default function Rubrics({
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    JSON.stringify(sorting),
-    JSON.stringify(columnFilters),
-    rubrics.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [table]);
 
   const handleDelete = async () => {
     if (!deleteItem || !deleteRubricAction) return;
