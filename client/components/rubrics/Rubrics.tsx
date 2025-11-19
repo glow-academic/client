@@ -231,6 +231,22 @@ export default function Rubrics({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    rubrics.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   const handleDelete = async () => {
     if (!deleteItem || !deleteRubricAction) return;
 
@@ -450,10 +466,8 @@ export default function Rubrics({
 
         {/* Rubrics cards */}
         <div className="space-y-4" data-testid="rubrics-grid">
-          {table.getRowModel().rows.length ? (
-            table
-              .getRowModel()
-              .rows.map((row) => renderRubricCard(row.original))
+          {tableRows.length ? (
+            tableRows.map((row) => renderRubricCard(row.original))
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               No rubrics match the current filters.

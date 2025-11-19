@@ -33,8 +33,8 @@ function jsonTypeToTsType(jsonType: string): string {
     const fields = fieldsStr.split(",");
     const tsFields = fields.map((field) => {
       const [name, type] = field.split(":");
-      const tsType = jsonTypeToTsType(type.trim());
-      return `${name.trim()}: ${tsType}`;
+      const tsType = jsonTypeToTsType(type?.trim() ?? "");
+      return `${name?.trim() ?? ""}: ${tsType}`;
     });
     return `{ ${tsFields.join("; ")} }`;
   }

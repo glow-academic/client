@@ -344,7 +344,7 @@ export default function CohortPerformance({
                     {/* Actionable insight inside the modal */}
                     {actionableInsights && actionableInsights[cohort.id] && (
                       <TruncatedInsight
-                        text={actionableInsights[cohort.id]}
+                        text={actionableInsights[cohort.id] ?? ""}
                         isMobile={isMobile}
                       />
                     )}

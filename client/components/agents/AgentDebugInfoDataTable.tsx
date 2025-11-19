@@ -113,6 +113,22 @@ export function AgentDebugInfoDataTable({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = React.useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    data.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -148,8 +164,8 @@ export function AgentDebugInfoDataTable({
         </div>
         <ScrollArea className="h-[360px]">
           <div className="divide-y">
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
+            {tableRows.length ? (
+              tableRows.map((row) => (
                 <div
                   key={row.id}
                   className="grid grid-cols-12 gap-3 p-3 text-sm"

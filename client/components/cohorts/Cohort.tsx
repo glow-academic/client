@@ -144,7 +144,7 @@ export default function Cohort({
   bulkUpdateStaffAction,
 }: CohortProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, scopedRoles } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -445,6 +445,21 @@ export default function Cohort({
   }, [currentSimulationIds, validSimulationIds]);
 
   // Profile validation is handled via StaffDataTable and API calls
+
+  // Role options from scopedRoles
+  const roleOptions = useMemo(() => {
+    const roleLabels: Record<string, string> = {
+      superadmin: "Super Administrator",
+      admin: "Administrator",
+      instructional: "Instructional Staff",
+      ta: "Teaching Assistant",
+      guest: "Guest",
+    };
+    return (scopedRoles || []).map((role) => ({
+      value: role,
+      label: roleLabels[role] || role,
+    }));
+  }, [scopedRoles]);
 
   // Handle simulation selection from picker (V2 uses IDs directly)
   const handleSimulationSelection = useCallback((simulationIds: string[]) => {
@@ -1050,6 +1065,8 @@ export default function Cohort({
                   requests_per_day: staged.requestsPerDay ?? null,
                   total_requests: staged.totalRequests ?? 0,
                   default_profile: false,
+                  intro_completed: false,
+                  chat_completed: false,
                   requests_in_last_day: 0,
                   can_edit: false,
                   can_delete: false,
@@ -1083,13 +1100,7 @@ export default function Cohort({
                   departmentMapping={
                     cohortData.department_mapping_for_staff || {}
                   }
-                  roleOptions={[
-                    { value: "superadmin", label: "Super Administrator" },
-                    { value: "admin", label: "Administrator" },
-                    { value: "instructional", label: "Instructional Staff" },
-                    { value: "ta", label: "Teaching Assistant" },
-                    { value: "guest", label: "Guest" },
-                  ]}
+                  roleOptions={roleOptions}
                   cohortOptions={Object.entries(
                     cohortData.cohort_mapping || {}
                   ).map(([id, item]) => ({
@@ -1254,7 +1265,9 @@ export default function Cohort({
                     );
                     if (!staff) return false;
                     const isStaged = (
-                      staff as ProfileListItemWithRemove & { isStaged?: boolean }
+                      staff as ProfileListItemWithRemove & {
+                        isStaged?: boolean;
+                      }
                     ).isStaged;
                     if (isStaged) return true; // Staged profiles can always be removed
                     return staff.can_remove ?? false;
@@ -1344,6 +1357,8 @@ export default function Cohort({
                   requests_per_day: staged.requestsPerDay ?? null,
                   total_requests: staged.totalRequests ?? 0,
                   default_profile: false,
+                  intro_completed: false,
+                  chat_completed: false,
                   requests_in_last_day: 0,
                   can_edit: false,
                   can_delete: false,
@@ -1429,6 +1444,8 @@ export default function Cohort({
                   requests_per_day: staged.requestsPerDay ?? null,
                   total_requests: staged.totalRequests ?? 0,
                   default_profile: false,
+                  intro_completed: false,
+                  chat_completed: false,
                   requests_in_last_day: 0,
                   can_edit: false,
                   can_delete: false,
@@ -1462,7 +1479,9 @@ export default function Cohort({
                 bulkUpdateStaffAction={bulkUpdateStaffAction}
                 selectedStaffItems={selectedStaffItems}
                 validDepartmentIds={cohortData.valid_department_ids || []}
-                departmentMapping={cohortData.department_mapping_for_staff || {}}
+                departmentMapping={
+                  cohortData.department_mapping_for_staff || {}
+                }
               />
             );
           })()}
@@ -1538,6 +1557,8 @@ export default function Cohort({
                         requests_per_day: staged.requestsPerDay ?? null,
                         total_requests: staged.totalRequests ?? 0,
                         default_profile: false,
+                        intro_completed: false,
+                        chat_completed: false,
                         requests_in_last_day: 0,
                         can_edit: false,
                         can_delete: false,

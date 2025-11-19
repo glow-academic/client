@@ -973,6 +973,26 @@ export default function Documents({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    documents.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Handle bulk document delete (from list view selection)
   const handleBulkDelete = () => {
     if (selectedDocuments.length > 0) {
@@ -1186,94 +1206,97 @@ export default function Documents({
   };
 
   return (
-    <div className="space-y-6">
-      {documents.length === 0 ? (
-        <div className="col-span-full">
-          <div className="border-dashed border-2 rounded-lg">
-            <div className="flex flex-col items-center justify-center py-12">
-              <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No documents yet</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Documents will appear here once uploaded
-              </p>
+    <TooltipProvider>
+      <div className="space-y-6">
+        {documents.length === 0 ? (
+          <div className="col-span-full">
+            <div className="border-dashed border-2 rounded-lg">
+              <div className="flex flex-col items-center justify-center py-12">
+                <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No documents yet</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  Documents will appear here once uploaded
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Toolbar */}
-          <div
-            className="flex items-center justify-between"
-            data-testid="documents-toolbar"
-          >
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="w-full md:w-auto mb-2 md:mb-0">
-                <Input
-                  data-testid="documents-search"
-                  placeholder="Filter documents..."
-                  value={
-                    (table.getColumn("name")?.getFilterValue() as string) ?? ""
-                  }
-                  onChange={(event) =>
-                    table.getColumn("name")?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-full md:w-[150px] lg:w-[250px]"
-                  aria-label="Search documents by name"
-                  aria-controls="documents-list"
-                />
-              </div>
-              {table.getColumn("type") && (
-                <DataTableFacetedFilter
-                  column={table.getColumn("type")!}
-                  title="Type"
-                  options={typeOptions}
-                />
-              )}
-              {table.getColumn("scenario_ids") && (
-                <DataTableFacetedFilter
-                  column={table.getColumn("scenario_ids")!}
-                  title="Scenarios"
-                  options={scenarioOptions}
-                />
-              )}
-              {table.getColumn("departments") &&
-                departmentOptions.length > 0 && (
+        ) : (
+          <div className="space-y-4">
+            {/* Toolbar */}
+            <div
+              className="flex items-center justify-between"
+              data-testid="documents-toolbar"
+            >
+              <div className="flex flex-1 items-center space-x-2 flex-wrap">
+                <div className="w-full md:w-auto mb-2 md:mb-0">
+                  <Input
+                    data-testid="documents-search"
+                    placeholder="Filter documents..."
+                    value={
+                      (table.getColumn("name")?.getFilterValue() as string) ??
+                      ""
+                    }
+                    onChange={(event) =>
+                      table
+                        .getColumn("name")
+                        ?.setFilterValue(event.target.value)
+                    }
+                    className="h-8 w-full md:w-[150px] lg:w-[250px]"
+                    aria-label="Search documents by name"
+                    aria-controls="documents-list"
+                  />
+                </div>
+                {table.getColumn("type") && (
                   <DataTableFacetedFilter
-                    column={table.getColumn("departments")!}
-                    title="Department"
-                    options={departmentOptions}
+                    column={table.getColumn("type")!}
+                    title="Type"
+                    options={typeOptions}
                   />
                 )}
-              {table.getState().columnFilters.length > 0 && (
-                <Button
-                  variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3 hidden md:flex"
-                >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              {/* Bulk edit & delete - only show when selection is available */}
-              {selectedDocuments.length > 0 && (
-                <>
+                {table.getColumn("scenario_ids") && (
+                  <DataTableFacetedFilter
+                    column={table.getColumn("scenario_ids")!}
+                    title="Scenarios"
+                    options={scenarioOptions}
+                  />
+                )}
+                {table.getColumn("departments") &&
+                  departmentOptions.length > 0 && (
+                    <DataTableFacetedFilter
+                      column={table.getColumn("departments")!}
+                      title="Department"
+                      options={departmentOptions}
+                    />
+                  )}
+                {table.getState().columnFilters.length > 0 && (
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleBulkEdit}
-                    className="h-8"
-                    data-testid="btn-bulk-edit"
-                    aria-label={`Edit ${selectedDocuments.length} documents`}
+                    variant="ghost"
+                    onClick={() => table.resetColumnFilters()}
+                    className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
-                    <Grid3X3 className="mr-2 h-4 w-4" />
-                    Edit {selectedDocuments.length}
+                    Reset
+                    <X className="ml-2 h-4 w-4" />
                   </Button>
-                  {selectedDocuments.filter((documentId) =>
-                    canDeleteDocument(documentId)
-                  ).length === 0 ? (
-                    <TooltipProvider>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                {/* Bulk edit & delete - only show when selection is available */}
+                {selectedDocuments.length > 0 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkEdit}
+                      className="h-8"
+                      data-testid="btn-bulk-edit"
+                      aria-label={`Edit ${selectedDocuments.length} documents`}
+                    >
+                      <Grid3X3 className="mr-2 h-4 w-4" />
+                      Edit {selectedDocuments.length}
+                    </Button>
+                    {selectedDocuments.filter((documentId) =>
+                      canDeleteDocument(documentId)
+                    ).length === 0 ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -1290,643 +1313,647 @@ export default function Documents({
                           <p>All documents are currently in use</p>
                         </TooltipContent>
                       </Tooltip>
-                    </TooltipProvider>
-                  ) : (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleBulkDelete}
-                      className="h-8"
-                      data-testid="btn-bulk-delete"
-                      aria-label={`Delete ${
-                        selectedDocuments.filter((documentId) =>
-                          canDeleteDocument(documentId)
-                        ).length
-                      } of ${selectedDocuments.length} documents`}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete{" "}
-                      {
-                        selectedDocuments.filter((documentId) =>
-                          canDeleteDocument(documentId)
-                        ).length
-                      }{" "}
-                      of {selectedDocuments.length}
-                    </Button>
-                  )}
-                </>
-              )}
-
-              {!isMobile && <DataTableViewOptions table={table} />}
-            </div>
-          </div>
-
-          {/* Content - list view only */}
-          <div className="space-y-4">
-            <div className="rounded-md border" data-testid="documents-list">
-              <Table>
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <TableHead key={header.id}>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                          </TableHead>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
+                    ) : (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBulkDelete}
+                        className="h-8"
+                        data-testid="btn-bulk-delete"
+                        aria-label={`Delete ${
+                          selectedDocuments.filter((documentId) =>
+                            canDeleteDocument(documentId)
+                          ).length
+                        } of ${selectedDocuments.length} documents`}
                       >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columnsWithActions.length}
-                        className="h-24 text-center"
-                      >
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            <DataTablePagination table={table} />
-          </div>
-        </div>
-      )}
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete{" "}
+                        {
+                          selectedDocuments.filter((documentId) =>
+                            canDeleteDocument(documentId)
+                          ).length
+                        }{" "}
+                        of {selectedDocuments.length}
+                      </Button>
+                    )}
+                  </>
+                )}
 
-      {/* Edit Document Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent
-          className="sm:max-w-md"
-          data-testid="dialog-edit-document"
-          aria-labelledby="edit-document-title"
-        >
-          <DialogHeader>
-            <DialogTitle id="edit-document-title">Edit Document</DialogTitle>
-            <DialogDescription>
-              Update document properties. Changes will be saved immediately.
-            </DialogDescription>
-          </DialogHeader>
-          {editingDocument && (
-            <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={editingDocument.name}
-                  onChange={(e) =>
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev ? { ...prev, name: e.target.value } : null
-                    )
-                  }
-                />
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="active"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                      Active
-                    </Label>
-                    {editingDocument?.active !== undefined ? (
-                      <Switch
-                        id="active"
-                        checked={editingDocument.active ?? true}
-                        onCheckedChange={(checked) =>
-                          setEditingDocument((prev) =>
-                            prev ? { ...prev, active: checked } : null
-                          )
-                        }
-                      />
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Inactive documents will not be available for scenarios
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <DocumentTypePicker
-                  selectedType={editingDocument.type as DocumentType}
-                  onSelect={(value) => {
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev ? { ...prev, type: value } : null
-                    );
-                  }}
-                  label="Type"
-                  description="Choose the type of document"
-                />
-              </div>
-
-              {/* Department Selection */}
-              <div className="flex flex-col gap-2">
-                <Label>Department</Label>
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={documentsData?.valid_department_ids || []}
-                  selectedIds={editingDocument.department_ids || []}
-                  onSelect={(ids) =>
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev ? { ...prev, department_ids: ids } : null
-                    )
-                  }
-                  multiSelect={true}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Parameter Items</Label>
-                <ParameterItemPicker
-                  mapping={parameterItemMapping}
-                  selectedIds={editingDocument?.parameter_item_ids || []}
-                  onSelect={(ids) =>
-                    setEditingDocument(
-                      (prev: (typeof documents)[number] | null) =>
-                        prev
-                          ? { ...prev, parameter_item_ids: ids as string[] }
-                          : null
-                    )
-                  }
-                  {...(createParameterItemAction && {
-                    createParameterItemAction,
-                  })}
-                  validIds={validParameterItemIdsForEdit}
-                  parameterId=""
-                  parameterName="Parameter Items"
-                  allowCreate={false}
-                  multiSelect={true}
-                  badgesPosition="below"
-                  showClearAll={true}
-                />
+                {!isMobile && <DataTableViewOptions table={table} />}
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdate} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Update"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Bulk Edit Dialog */}
-      <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
-        <DialogContent
-          className="max-w-4xl"
-          data-testid="dialog-bulk-edit-document"
-          aria-labelledby="bulk-edit-document-title"
-        >
-          <DialogHeader>
-            <DialogTitle id="bulk-edit-document-title">
-              Edit {selectedDocuments.length} document
-              {selectedDocuments.length > 1 ? "s" : ""}
-            </DialogTitle>
-            <DialogDescription>
-              Choose the fields to update. Leave a field as-is if you do not
-              want to change it for all selected documents.
-            </DialogDescription>
-          </DialogHeader>
-          {bulkData ? (
+            {/* Content - list view only */}
             <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                Editing {selectedDocuments.length} document
-                {selectedDocuments.length !== 1 ? "s" : ""}
-              </div>
-
-              {/* Table layout for editable fields */}
-              <div className="border rounded-md">
+              <div className="rounded-md border" data-testid="documents-list">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Field</TableHead>
-                      <TableHead className="w-[120px] text-center">
-                        Keep Existing
-                      </TableHead>
-                      <TableHead>Value</TableHead>
-                    </TableRow>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => {
+                          return (
+                            <TableHead key={header.id}>
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                            </TableHead>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
                   </TableHeader>
                   <TableBody>
-                    {/* Type Row */}
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                          <Label htmlFor="bulkType">Type</Label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Set the document type for selected documents
-                        </p>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Checkbox
-                          checked={keepExisting.type}
-                          onCheckedChange={(checked) => {
-                            const isChecked = checked === true;
-                            setKeepExisting((prev) => ({
-                              ...prev,
-                              type: isChecked,
-                            }));
-                            if (isChecked) {
-                              setBulkType("__keep__");
-                            }
-                          }}
-                          disabled={isBulkUpdating}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div data-testid="input-bulk-document-type">
-                          <DocumentTypePicker
-                            selectedType={
-                              bulkType === "__keep__"
-                                ? (bulkData.type as DocumentType) || "homework"
-                                : bulkType
-                            }
-                            onSelect={(value) => {
-                              setBulkType(value);
-                              setKeepExisting((prev) => ({
-                                ...prev,
-                                type: false,
-                              }));
-                            }}
-                            placeholder={
-                              keepExisting.type
-                                ? "Keep existing"
-                                : "Select type..."
-                            }
-                            disabled={isBulkUpdating || keepExisting.type}
-                            compact={false}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Department Row */}
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          <Label htmlFor="bulkDepartment">Department</Label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Set the department for selected documents
-                        </p>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Checkbox
-                          checked={keepExisting.department}
-                          onCheckedChange={(checked) => {
-                            const isChecked = checked === true;
-                            setKeepExisting((prev) => ({
-                              ...prev,
-                              department: isChecked,
-                            }));
-                            if (isChecked) {
-                              setBulkDepartmentId(null);
-                            }
-                          }}
-                          disabled={isBulkUpdating}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <DepartmentPicker
-                          mapping={departmentMapping}
-                          validIds={documentsData?.valid_department_ids || []}
-                          selectedIds={
-                            keepExisting.department
-                              ? bulkData.department_ids || []
-                              : bulkDepartmentId
-                                ? [bulkDepartmentId]
-                                : []
-                          }
-                          onSelect={(ids) => {
-                            setBulkDepartmentId(ids[0] || null);
-                            setKeepExisting((prev) => ({
-                              ...prev,
-                              department: false,
-                            }));
-                          }}
-                          multiSelect={false}
-                          disabled={isBulkUpdating || keepExisting.department}
-                        />
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Parameter Items Row */}
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                          <Label htmlFor="bulkParameterItems">
-                            Parameter Items
-                          </Label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Set parameter items for selected documents
-                        </p>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Checkbox
-                          checked={keepExisting.parameterItems}
-                          onCheckedChange={(checked) => {
-                            const isChecked = checked === true;
-                            setKeepExisting((prev) => ({
-                              ...prev,
-                              parameterItems: isChecked,
-                            }));
-                            if (isChecked) {
-                              setBulkParameterItemIds([]);
-                            }
-                          }}
-                          disabled={isBulkUpdating}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <ParameterItemPicker
-                          mapping={parameterItemMapping}
-                          selectedIds={
-                            keepExisting.parameterItems
-                              ? bulkData.parameter_item_ids || []
-                              : bulkParameterItemIds
-                          }
-                          validIds={validParameterItemIdsForBulk}
-                          onSelect={(ids) => {
-                            setBulkParameterItemIds(ids);
-                            setKeepExisting((prev) => ({
-                              ...prev,
-                              parameterItems: false,
-                            }));
-                          }}
-                          parameterId=""
-                          parameterName="Parameter Items"
-                          allowCreate={false}
-                          multiSelect={true}
-                          badgesPosition="below"
-                          showClearAll={true}
-                          disabled={
-                            isBulkUpdating || keepExisting.parameterItems
-                          }
-                          {...(createParameterItemAction && {
-                            createParameterItemAction,
-                          })}
-                        />
-                      </TableCell>
-                    </TableRow>
+                    {tableRows?.length ? (
+                      tableRows.map((row) => (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && "selected"}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columnsWithActions.length}
+                          className="h-24 text-center"
+                        >
+                          No results.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
+              <DataTablePagination table={table} />
             </div>
-          ) : null}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowBulkEditDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleBulkUpdate} disabled={isBulkUpdating}>
-              {isBulkUpdating ? "Updating..." : "Apply Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent
-          data-testid="dialog-delete-document"
-          aria-labelledby="delete-document-title"
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle id="delete-document-title">
-              {editingDocument && !selectedDocuments.length
-                ? "Delete Document"
-                : `Delete Document${selectedDocuments.length > 1 ? "s" : ""}`}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {editingDocument && !selectedDocuments.length ? (
-                // Single document delete
-                <>
-                  Are you sure you want to delete "{editingDocument.name}"?
-                  <br />
-                  <br />
-                  <span className="text-sm text-muted-foreground">
-                    This action cannot be undone.
-                  </span>
-                </>
-              ) : (
-                // Bulk delete
-                <div className="space-y-4">
-                  <p>
-                    You have selected {selectedDocuments.length} document
-                    {selectedDocuments.length > 1 ? "s" : ""}.
-                  </p>
-
-                  {(() => {
-                    const deletableDocuments = selectedDocuments.filter(
-                      (documentId) => canDeleteDocument(documentId)
-                    );
-                    const nonDeletableDocuments = selectedDocuments.filter(
-                      (documentId) => !canDeleteDocument(documentId)
-                    );
-
-                    return (
-                      <div className="space-y-3">
-                        {deletableDocuments.length > 0 && (
-                          <div>
-                            <p className="font-medium text-green-700 dark:text-green-400">
-                              Documents that can be deleted (
-                              {deletableDocuments.length}):
-                            </p>
-                            <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
-                              <ul className="text-sm space-y-1">
-                                {deletableDocuments.map((documentId) => {
-                                  const doc = documents.find(
-                                    (d) => d.document_id === documentId
-                                  );
-                                  return (
-                                    <li
-                                      key={documentId}
-                                      className="text-green-600 dark:text-green-300"
-                                    >
-                                      • {doc?.name}
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          </div>
-                        )}
-
-                        {nonDeletableDocuments.length > 0 && (
-                          <div>
-                            <p className="font-medium text-red-700 dark:text-red-400">
-                              Documents that cannot be deleted (
-                              {nonDeletableDocuments.length}):
-                            </p>
-                            <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
-                              <ul className="text-sm space-y-1">
-                                {nonDeletableDocuments.map((documentId) => {
-                                  const doc = documents.find(
-                                    (d) => d.document_id === documentId
-                                  );
-                                  return (
-                                    <li
-                                      key={documentId}
-                                      className="text-red-600 dark:text-red-300"
-                                    >
-                                      • {doc?.name} (cannot delete)
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          </div>
-                        )}
-
-                        {deletableDocuments.length > 0 && (
-                          <p className="text-sm text-muted-foreground">
-                            Would you like to delete the{" "}
-                            {deletableDocuments.length} document
-                            {deletableDocuments.length > 1 ? "s" : ""} that can
-                            be deleted?
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  <p className="text-sm text-muted-foreground">
-                    This action cannot be undone.
-                  </p>
+        {/* Edit Document Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent
+            className="sm:max-w-md"
+            data-testid="dialog-edit-document"
+            aria-labelledby="edit-document-title"
+          >
+            <DialogHeader>
+              <DialogTitle id="edit-document-title">Edit Document</DialogTitle>
+              <DialogDescription>
+                Update document properties. Changes will be saved immediately.
+              </DialogDescription>
+            </DialogHeader>
+            {editingDocument && (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={editingDocument.name}
+                    onChange={(e) =>
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev ? { ...prev, name: e.target.value } : null
+                      )
+                    }
+                  />
                 </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting}
-              data-testid="btn-cancel-delete"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={
-                isDeleting ||
-                (editingDocument && !selectedDocuments.length
-                  ? !canDeleteDocument(editingDocument.document_id)
-                  : selectedDocuments.filter((documentId) =>
-                      canDeleteDocument(documentId)
-                    ).length === 0)
-              }
-              className="bg-red-600 hover:bg-red-700 text-white"
-              data-testid="btn-confirm-delete"
-            >
-              {isDeleting
-                ? "Deleting..."
-                : editingDocument && !selectedDocuments.length
+
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="active"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                        Active
+                      </Label>
+                      {editingDocument?.active !== undefined ? (
+                        <Switch
+                          id="active"
+                          checked={editingDocument.active ?? true}
+                          onCheckedChange={(checked) =>
+                            setEditingDocument((prev) =>
+                              prev ? { ...prev, active: checked } : null
+                            )
+                          }
+                        />
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Inactive documents will not be available for scenarios
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <DocumentTypePicker
+                    selectedType={editingDocument.type as DocumentType}
+                    onSelect={(value) => {
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev ? { ...prev, type: value } : null
+                      );
+                    }}
+                    label="Type"
+                    description="Choose the type of document"
+                  />
+                </div>
+
+                {/* Department Selection */}
+                <div className="flex flex-col gap-2">
+                  <Label>Department</Label>
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={documentsData?.valid_department_ids || []}
+                    selectedIds={editingDocument.department_ids || []}
+                    onSelect={(ids) =>
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev ? { ...prev, department_ids: ids } : null
+                      )
+                    }
+                    multiSelect={true}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label>Parameter Items</Label>
+                  <ParameterItemPicker
+                    mapping={parameterItemMapping}
+                    selectedIds={editingDocument?.parameter_item_ids || []}
+                    onSelect={(ids) =>
+                      setEditingDocument(
+                        (prev: (typeof documents)[number] | null) =>
+                          prev
+                            ? { ...prev, parameter_item_ids: ids as string[] }
+                            : null
+                      )
+                    }
+                    {...(createParameterItemAction && {
+                      createParameterItemAction,
+                    })}
+                    validIds={validParameterItemIdsForEdit}
+                    parameterId=""
+                    parameterName="Parameter Items"
+                    allowCreate={false}
+                    multiSelect={true}
+                    badgesPosition="below"
+                    showClearAll={true}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowEditDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdate} disabled={isUpdating}>
+                {isUpdating ? "Updating..." : "Update"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Edit Dialog */}
+        <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+          <DialogContent
+            className="max-w-4xl"
+            data-testid="dialog-bulk-edit-document"
+            aria-labelledby="bulk-edit-document-title"
+          >
+            <DialogHeader>
+              <DialogTitle id="bulk-edit-document-title">
+                Edit {selectedDocuments.length} document
+                {selectedDocuments.length > 1 ? "s" : ""}
+              </DialogTitle>
+              <DialogDescription>
+                Choose the fields to update. Leave a field as-is if you do not
+                want to change it for all selected documents.
+              </DialogDescription>
+            </DialogHeader>
+            {bulkData ? (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Editing {selectedDocuments.length} document
+                  {selectedDocuments.length !== 1 ? "s" : ""}
+                </div>
+
+                {/* Table layout for editable fields */}
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">Field</TableHead>
+                        <TableHead className="w-[120px] text-center">
+                          Keep Existing
+                        </TableHead>
+                        <TableHead>Value</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {/* Type Row */}
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Label htmlFor="bulkType">Type</Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Set the document type for selected documents
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={keepExisting.type}
+                            onCheckedChange={(checked) => {
+                              const isChecked = checked === true;
+                              setKeepExisting((prev) => ({
+                                ...prev,
+                                type: isChecked,
+                              }));
+                              if (isChecked) {
+                                setBulkType("__keep__");
+                              }
+                            }}
+                            disabled={isBulkUpdating}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div data-testid="input-bulk-document-type">
+                            <DocumentTypePicker
+                              selectedType={
+                                bulkType === "__keep__"
+                                  ? (bulkData.type as DocumentType) ||
+                                    "homework"
+                                  : bulkType
+                              }
+                              onSelect={(value) => {
+                                setBulkType(value);
+                                setKeepExisting((prev) => ({
+                                  ...prev,
+                                  type: false,
+                                }));
+                              }}
+                              placeholder={
+                                keepExisting.type
+                                  ? "Keep existing"
+                                  : "Select type..."
+                              }
+                              disabled={isBulkUpdating || keepExisting.type}
+                              compact={false}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Department Row */}
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Label htmlFor="bulkDepartment">Department</Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Set the department for selected documents
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={keepExisting.department}
+                            onCheckedChange={(checked) => {
+                              const isChecked = checked === true;
+                              setKeepExisting((prev) => ({
+                                ...prev,
+                                department: isChecked,
+                              }));
+                              if (isChecked) {
+                                setBulkDepartmentId(null);
+                              }
+                            }}
+                            disabled={isBulkUpdating}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <DepartmentPicker
+                            mapping={departmentMapping}
+                            validIds={documentsData?.valid_department_ids || []}
+                            selectedIds={
+                              keepExisting.department
+                                ? bulkData.department_ids || []
+                                : bulkDepartmentId
+                                  ? [bulkDepartmentId]
+                                  : []
+                            }
+                            onSelect={(ids) => {
+                              setBulkDepartmentId(ids[0] || null);
+                              setKeepExisting((prev) => ({
+                                ...prev,
+                                department: false,
+                              }));
+                            }}
+                            multiSelect={false}
+                            disabled={isBulkUpdating || keepExisting.department}
+                          />
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Parameter Items Row */}
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Label htmlFor="bulkParameterItems">
+                              Parameter Items
+                            </Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Set parameter items for selected documents
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={keepExisting.parameterItems}
+                            onCheckedChange={(checked) => {
+                              const isChecked = checked === true;
+                              setKeepExisting((prev) => ({
+                                ...prev,
+                                parameterItems: isChecked,
+                              }));
+                              if (isChecked) {
+                                setBulkParameterItemIds([]);
+                              }
+                            }}
+                            disabled={isBulkUpdating}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <ParameterItemPicker
+                            mapping={parameterItemMapping}
+                            selectedIds={
+                              keepExisting.parameterItems
+                                ? bulkData.parameter_item_ids || []
+                                : bulkParameterItemIds
+                            }
+                            validIds={validParameterItemIdsForBulk}
+                            onSelect={(ids) => {
+                              setBulkParameterItemIds(ids);
+                              setKeepExisting((prev) => ({
+                                ...prev,
+                                parameterItems: false,
+                              }));
+                            }}
+                            parameterId=""
+                            parameterName="Parameter Items"
+                            allowCreate={false}
+                            multiSelect={true}
+                            badgesPosition="below"
+                            showClearAll={true}
+                            disabled={
+                              isBulkUpdating || keepExisting.parameterItems
+                            }
+                            {...(createParameterItemAction && {
+                              createParameterItemAction,
+                            })}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ) : null}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkEditDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleBulkUpdate} disabled={isBulkUpdating}>
+                {isBulkUpdating ? "Updating..." : "Apply Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent
+            data-testid="dialog-delete-document"
+            aria-labelledby="delete-document-title"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle id="delete-document-title">
+                {editingDocument && !selectedDocuments.length
                   ? "Delete Document"
-                  : `Delete ${selectedDocuments.filter((documentId) => canDeleteDocument(documentId)).length} of ${selectedDocuments.length}`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                  : `Delete Document${selectedDocuments.length > 1 ? "s" : ""}`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {editingDocument && !selectedDocuments.length ? (
+                  // Single document delete
+                  <>
+                    Are you sure you want to delete "{editingDocument.name}"?
+                    <br />
+                    <br />
+                    <span className="text-sm text-muted-foreground">
+                      This action cannot be undone.
+                    </span>
+                  </>
+                ) : (
+                  // Bulk delete
+                  <div className="space-y-4">
+                    <p>
+                      You have selected {selectedDocuments.length} document
+                      {selectedDocuments.length > 1 ? "s" : ""}.
+                    </p>
 
-      {/* Preview Document Dialog */}
-      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="sm:max-w-4xl h-full max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>
-              {previewDocument?.name || "Document Preview"}
-            </DialogTitle>
-            <DialogDescription>
-              Preview the document content below.
-            </DialogDescription>
-          </DialogHeader>
-          {previewDocument && (
-            <div className="flex-1 min-h-0">
-              <DocumentViewer
-                document={{
-                  document_id: previewDocument.document_id,
-                  name: previewDocument.name,
-                  type: previewDocument.type,
-                  updatedAt: previewDocument.updated_at,
-                  extension: previewDocument.extension || "",
-                  scenario_ids: previewDocument.scenario_ids,
-                  can_edit: previewDocument.can_edit,
-                  can_delete: previewDocument.can_delete,
-                  active: previewDocument.active,
-                  department_ids: previewDocument.department_ids || [],
-                  file_path: previewDocument.file_path || "",
-                  mime_type: previewDocument.mime_type || "",
-                  parameter_item_ids: previewDocument.parameter_item_ids,
-                }}
-                bare={true}
-                isFormDocument={false}
-              />
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPreviewDialog(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                    {(() => {
+                      const deletableDocuments = selectedDocuments.filter(
+                        (documentId) => canDeleteDocument(documentId)
+                      );
+                      const nonDeletableDocuments = selectedDocuments.filter(
+                        (documentId) => !canDeleteDocument(documentId)
+                      );
 
-      {/* Upload Document Dialog */}
-      {uploadDialogOpen && (
-        <DocumentUploadDialog
-          open={uploadDialogOpen}
-          onClose={() => setUploadDialogOpen(false)}
-          departmentMapping={departmentMapping}
-          validDepartmentIds={validDepartmentIds}
-          parameterItemMapping={parameterItemMapping}
-          parameterMapping={parameterMapping}
-          validParameterItemIds={Object.keys(parameterItemMapping)}
-          {...(finalizeDocumentUploadAction && {
-            finalizeDocumentUploadAction,
-          })}
-        />
-      )}
-    </div>
+                      return (
+                        <div className="space-y-3">
+                          {deletableDocuments.length > 0 && (
+                            <div>
+                              <p className="font-medium text-green-700 dark:text-green-400">
+                                Documents that can be deleted (
+                                {deletableDocuments.length}):
+                              </p>
+                              <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
+                                <ul className="text-sm space-y-1">
+                                  {deletableDocuments.map((documentId) => {
+                                    const doc = documents.find(
+                                      (d) => d.document_id === documentId
+                                    );
+                                    return (
+                                      <li
+                                        key={documentId}
+                                        className="text-green-600 dark:text-green-300"
+                                      >
+                                        • {doc?.name}
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
+
+                          {nonDeletableDocuments.length > 0 && (
+                            <div>
+                              <p className="font-medium text-red-700 dark:text-red-400">
+                                Documents that cannot be deleted (
+                                {nonDeletableDocuments.length}):
+                              </p>
+                              <div className="mt-1 ml-4 max-h-32 overflow-y-auto border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
+                                <ul className="text-sm space-y-1">
+                                  {nonDeletableDocuments.map((documentId) => {
+                                    const doc = documents.find(
+                                      (d) => d.document_id === documentId
+                                    );
+                                    return (
+                                      <li
+                                        key={documentId}
+                                        className="text-red-600 dark:text-red-300"
+                                      >
+                                        • {doc?.name} (cannot delete)
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
+
+                          {deletableDocuments.length > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              Would you like to delete the{" "}
+                              {deletableDocuments.length} document
+                              {deletableDocuments.length > 1 ? "s" : ""} that
+                              can be deleted?
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <p className="text-sm text-muted-foreground">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={isDeleting}
+                data-testid="btn-cancel-delete"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={
+                  isDeleting ||
+                  (editingDocument && !selectedDocuments.length
+                    ? !canDeleteDocument(editingDocument.document_id)
+                    : selectedDocuments.filter((documentId) =>
+                        canDeleteDocument(documentId)
+                      ).length === 0)
+                }
+                className="bg-red-600 hover:bg-red-700 text-white"
+                data-testid="btn-confirm-delete"
+              >
+                {isDeleting
+                  ? "Deleting..."
+                  : editingDocument && !selectedDocuments.length
+                    ? "Delete Document"
+                    : `Delete ${selectedDocuments.filter((documentId) => canDeleteDocument(documentId)).length} of ${selectedDocuments.length}`}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Preview Document Dialog */}
+        <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+          <DialogContent className="sm:max-w-4xl h-full max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>
+                {previewDocument?.name || "Document Preview"}
+              </DialogTitle>
+              <DialogDescription>
+                Preview the document content below.
+              </DialogDescription>
+            </DialogHeader>
+            {previewDocument && (
+              <div className="flex-1 min-h-0">
+                <DocumentViewer
+                  document={{
+                    document_id: previewDocument.document_id,
+                    name: previewDocument.name,
+                    type: previewDocument.type,
+                    updatedAt: previewDocument.updated_at,
+                    extension: previewDocument.extension || "",
+                    scenario_ids: previewDocument.scenario_ids,
+                    can_edit: previewDocument.can_edit,
+                    can_delete: previewDocument.can_delete,
+                    active: previewDocument.active,
+                    department_ids: previewDocument.department_ids || [],
+                    file_path: previewDocument.file_path || "",
+                    mime_type: previewDocument.mime_type || "",
+                    parameter_item_ids: previewDocument.parameter_item_ids,
+                  }}
+                  bare={true}
+                  isFormDocument={false}
+                />
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowPreviewDialog(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Upload Document Dialog */}
+        {uploadDialogOpen && (
+          <DocumentUploadDialog
+            open={uploadDialogOpen}
+            onClose={() => setUploadDialogOpen(false)}
+            departmentMapping={departmentMapping}
+            validDepartmentIds={validDepartmentIds}
+            parameterItemMapping={parameterItemMapping}
+            parameterMapping={parameterMapping}
+            validParameterItemIds={Object.keys(parameterItemMapping)}
+            {...(finalizeDocumentUploadAction && {
+              finalizeDocumentUploadAction,
+            })}
+          />
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

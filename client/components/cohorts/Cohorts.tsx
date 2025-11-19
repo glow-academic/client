@@ -208,6 +208,26 @@ export default function Cohorts({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    cohorts.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -546,10 +566,8 @@ export default function Cohorts({
             aria-label="cohorts grid"
             data-testid="cohorts-grid"
           >
-            {table.getRowModel().rows.length ? (
-              table
-                .getRowModel()
-                .rows.map((row) => renderCohortCard(row.original))
+            {tableRows.length ? (
+              tableRows.map((row) => renderCohortCard(row.original))
             ) : (
               <div className="col-span-full text-center py-8 text-muted-foreground">
                 No cohorts match the current filters.

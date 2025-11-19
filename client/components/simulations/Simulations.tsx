@@ -211,6 +211,22 @@ export function Simulations({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    simulations.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
 
@@ -392,22 +408,20 @@ export function Simulations({
                   const personaColor = persona?.color || "#9CA3AF"; // gray-400 fallback
 
                   return (
-                    <TooltipProvider key={scenarioId}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="w-2 h-2 rounded-full cursor-pointer"
-                            style={{
-                              backgroundColor: personaColor,
-                            }}
-                            aria-label={scenario.name}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{scenario.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip key={scenarioId}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="w-2 h-2 rounded-full cursor-pointer"
+                          style={{
+                            backgroundColor: personaColor,
+                          }}
+                          aria-label={scenario.name}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{scenario.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 })}
               </div>
@@ -425,7 +439,8 @@ export function Simulations({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="space-y-6" data-page="simulations-index">
+    <TooltipProvider>
+      <div className="space-y-6" data-page="simulations-index">
       <div className="space-y-4">
         {/* Toolbar */}
         <div
@@ -499,12 +514,10 @@ export function Simulations({
           aria-label="simulations grid"
           data-testid="simulations-grid"
         >
-          {table.getRowModel().rows.length ? (
-            table
-              .getRowModel()
-              .rows.map((row) => (
-                <div key={row.id}>{renderSimulationCard(row.original)}</div>
-              ))
+          {tableRows.length ? (
+            tableRows.map((row) => (
+              <div key={row.id}>{renderSimulationCard(row.original)}</div>
+            ))
           ) : (
             <div className="col-span-full text-center py-8 text-muted-foreground">
               No simulations match the current filters.
@@ -549,6 +562,7 @@ export function Simulations({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

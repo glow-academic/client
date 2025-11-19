@@ -294,11 +294,27 @@ export function Scenarios({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    parentScenarios.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Get the current page's parent scenario IDs
-  const currentPageRows = table.getRowModel().rows;
+  // Extract IDs directly in useMemo with stable dependencies to avoid infinite re-renders
   const orderedParentIds = useMemo(() => {
-    return currentPageRows.map((row) => row.original.scenario_id);
-  }, [currentPageRows]);
+    return tableRows.map((row) => row.original.scenario_id);
+  }, [tableRows]);
 
   // Group the current page scenarios in the exact order of the table's sorting
   const currentPageGroupedScenarios = useMemo(() => {
@@ -561,28 +577,26 @@ export function Scenarios({
                   const persona = personaMapping[firstPersonaId];
                   if (!persona) return null;
                   return (
-                    <TooltipProvider key={firstPersonaId}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className="text-xs"
-                            style={{
-                              backgroundColor: persona.color
-                                ? `${persona.color}20`
-                                : undefined,
-                              borderColor: persona.color || undefined,
-                              color: persona.color || undefined,
-                            }}
-                          >
-                            {persona.name}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{persona.description || persona.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip key={firstPersonaId}>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            backgroundColor: persona.color
+                              ? `${persona.color}20`
+                              : undefined,
+                            borderColor: persona.color || undefined,
+                            color: persona.color || undefined,
+                          }}
+                        >
+                          {persona.name}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{persona.description || persona.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 })()}
               </>
@@ -596,20 +610,18 @@ export function Scenarios({
                   )}
                   <div className="flex items-center gap-1">
                     {scenario.parameter_items.slice(0, 3).map((item) => (
-                      <TooltipProvider
+                      <Tooltip
                         key={item.parameter_id + "_" + item.name}
                       >
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge variant="outline" className="text-xs">
-                              {item.name}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{item.parameter_name}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs">
+                            {item.name}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{item.parameter_name}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     ))}
                   </div>
                 </>
@@ -729,7 +741,7 @@ export function Scenarios({
             aria-label="scenarios grid"
             data-testid="scenarios-grid"
           >
-            {table.getRowModel().rows.length ? (
+            {tableRows.length ? (
               renderGroupedScenarios(currentPageGroupedScenarios)
             ) : (
               <div className="text-center py-8 text-muted-foreground">

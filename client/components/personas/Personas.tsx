@@ -288,6 +288,22 @@ export default function Personas({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    personas.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Permissions now come from server-side in V2 API
   // No need for client-side permission logic
 
@@ -587,10 +603,8 @@ export default function Personas({
             aria-label="personas grid"
             data-testid="personas-grid"
           >
-            {table.getRowModel().rows.length ? (
-              table
-                .getRowModel()
-                .rows.map((row) => renderPersonaCard(row.original))
+            {tableRows.length ? (
+              tableRows.map((row) => renderPersonaCard(row.original))
             ) : (
               <div className="col-span-full text-center py-8 text-muted-foreground">
                 No personas match the current filters.

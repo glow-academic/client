@@ -327,6 +327,26 @@ export default function LeaderboardTable({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    data.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -423,7 +443,10 @@ export default function LeaderboardTable({
         </div>
 
         <div className="flex items-center space-x-2 mb-2">
-          <DataTableViewOptions table={table} hiddenColumns={["simulationIds", "scenarioIds"]} />
+          <DataTableViewOptions
+            table={table}
+            hiddenColumns={["simulationIds", "scenarioIds"]}
+          />
         </div>
       </div>
 
@@ -447,55 +470,46 @@ export default function LeaderboardTable({
             ))}
           </TableHeader>
           <TableBody>
-            {(() => {
-              // Show all rows (no percentile filtering)
-              const allRows = table.getRowModel().rows;
-              return allRows;
-            })().length ? (
-              (() => {
-                const allRows = table.getRowModel().rows;
-                return allRows.map((row, index) => (
-                  <TableRow
-                    key={row.id}
-                    className={`${
-                      row.original.id === currentUserId ? "bg-muted/50" : ""
-                    } ${onViewReport ? "hover:bg-muted/30 transition-colors cursor-pointer" : ""}`}
-                    onClick={() => onViewReport?.(row.original.id)}
-                    data-testid={`leaderboard-row-${row.original.id}`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {cell.column.id === "rank" ? (
-                          <div className="flex items-center gap-2 w-[120px]">
-                            <span className="font-bold text-lg">
-                              {index + 1}
+            {tableRows.length ? (
+              tableRows.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  className={`${
+                    row.original.id === currentUserId ? "bg-muted/50" : ""
+                  } ${onViewReport ? "hover:bg-muted/30 transition-colors cursor-pointer" : ""}`}
+                  onClick={() => onViewReport?.(row.original.id)}
+                  data-testid={`leaderboard-row-${row.original.id}`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {cell.column.id === "rank" ? (
+                        <div className="flex items-center gap-2 w-[120px]">
+                          <span className="font-bold text-lg">{index + 1}</span>
+                          {index < 3 ? (
+                            <span
+                              aria-label="medal"
+                              title={
+                                index === 0
+                                  ? "Gold"
+                                  : index === 1
+                                    ? "Silver"
+                                    : "Bronze"
+                              }
+                            >
+                              {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
                             </span>
-                            {index < 3 ? (
-                              <span
-                                aria-label="medal"
-                                title={
-                                  index === 0
-                                    ? "Gold"
-                                    : index === 1
-                                      ? "Silver"
-                                      : "Bronze"
-                                }
-                              >
-                                {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : (
-                          flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ));
-              })()
+                          ) : null}
+                        </div>
+                      ) : (
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : (
               <TableRow>
                 <TableCell

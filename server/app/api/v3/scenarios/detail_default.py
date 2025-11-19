@@ -306,7 +306,7 @@ async def get_scenario_detail_default(
                             name=doc.get("name", ""),
                             type=doc.get("type", ""),
                             updatedAt=doc.get("updatedAt", ""),
-                            extension=doc.get("extension", ""),
+                            extension=doc.get("extension") or "",
                             scenario_ids=doc.get("scenario_ids", []),
                             can_edit=doc.get("can_edit", True),
                             can_delete=doc.get("can_delete", True),

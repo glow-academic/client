@@ -559,6 +559,22 @@ export default function Logs({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    logs.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Get column references for toolbar
   const eventColumn = table.getColumn("event");
   const levelColumn = table.getColumn("level");
@@ -745,8 +761,8 @@ export default function Logs({
               ))}
             </thead>
             <tbody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
+              {tableRows.length ? (
+                tableRows.map((row) => (
                   <tr
                     key={row.id}
                     className="border-b hover:bg-muted/50 transition-colors"

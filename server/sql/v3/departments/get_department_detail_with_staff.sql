@@ -227,7 +227,7 @@ SELECT
     COALESCE(dps.total_price_spent, 0) as total_price_spent,
     COALESCE(dsc.staff_count, 0) as staff_count,
     CASE WHEN du.total_usage > 0 THEN true ELSE false END as in_use,
-    CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
+    CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END as can_edit,
     CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_duplicate,
     CASE WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true ELSE false END as can_delete,
     (SELECT COALESCE(jsonb_agg(

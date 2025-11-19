@@ -186,6 +186,22 @@ export default function Departments({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    departments.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   const handleEdit = (id: string) => {
     router.push(`/management/departments/d/${id}`);
   };
@@ -420,10 +436,8 @@ export default function Departments({
           aria-label="departments grid"
           data-testid="departments-grid"
         >
-          {table.getRowModel().rows.length ? (
-            table
-              .getRowModel()
-              .rows.map((row) => renderDepartmentCard(row.original))
+          {tableRows.length ? (
+            tableRows.map((row) => renderDepartmentCard(row.original))
           ) : (
             <div className="col-span-full text-center py-8 text-muted-foreground">
               No departments match the current filters.

@@ -210,6 +210,22 @@ export default function Parameters({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const tableRows = useMemo(() => {
+    return table.getRowModel().rows;
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    JSON.stringify(sorting),
+    JSON.stringify(columnFilters),
+    parameters.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   const handleDuplicate = async (parameter: (typeof parameters)[number]) => {
     if (!parameter.can_duplicate || !duplicateParameterAction) {
       toast.error("This parameter cannot be duplicated");
@@ -557,10 +573,8 @@ export default function Parameters({
             aria-label="parameters grid"
             data-testid="parameters-grid"
           >
-            {table.getRowModel().rows.length ? (
-              table
-                .getRowModel()
-                .rows.map((row) => renderParameterCard(row.original))
+            {tableRows.length ? (
+              tableRows.map((row) => renderParameterCard(row.original))
             ) : (
               <div className="col-span-full text-center py-8 text-muted-foreground">
                 No parameters match the current filters.

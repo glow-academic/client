@@ -109,16 +109,21 @@ async def get_profile_context(
 
         logger = logging.getLogger(__name__)
         logger.info(f"Request: {request}")
+        
+        # Normalize empty strings to "guest-profile-id" for SQL compatibility
+        actual_profile_id = request.actualProfileId if request.actualProfileId else "guest-profile-id"
+        effective_profile_id = request.effectiveProfileId if request.effectiveProfileId else "guest-profile-id"
+        
         # Get all context data with guest-profile-id resolution and emulation validation in single query
         sql_query = load_sql("sql/v3/profile/get_profile_context_complete.sql")
-        sql_params = (request.actualProfileId, request.effectiveProfileId)
+        sql_params = (actual_profile_id, effective_profile_id)
         result = await conn.fetchrow(
-            sql_query, request.actualProfileId, request.effectiveProfileId
+            sql_query, actual_profile_id, effective_profile_id
         )
 
         if not result:
             # Check if it's an authorization failure (profiles differ) or not found
-            if request.actualProfileId != request.effectiveProfileId:
+            if actual_profile_id != effective_profile_id:
                 raise HTTPException(
                     status_code=403,
                     detail="You do not have permission to view this profile's context",
@@ -126,7 +131,7 @@ async def get_profile_context(
             else:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Profile context not found: {request.effectiveProfileId}",
+                    detail=f"Profile context not found: {effective_profile_id}",
                 )
 
         # Parse actual profile from result (with actual_ prefix)

@@ -39,12 +39,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -99,13 +94,13 @@ export interface ProvidersProps {
   listData: ProvidersListOut;
   // Server actions (replaces useMutation)
   duplicateProviderAction?: (
-    input: DuplicateProviderIn,
+    input: DuplicateProviderIn
   ) => Promise<DuplicateProviderOut>;
   deleteProviderAction?: (
-    input: DeleteProviderIn,
+    input: DeleteProviderIn
   ) => Promise<DeleteProviderOut>;
   duplicateModelAction?: (
-    input: DuplicateModelIn,
+    input: DuplicateModelIn
   ) => Promise<DuplicateModelOut>;
   deleteModelAction?: (input: DeleteModelIn) => Promise<DeleteModelOut>;
 }
@@ -137,7 +132,7 @@ export default function Providers({
   // Use server-provided data directly
   const providers = useMemo(
     () => providersData?.providers || [],
-    [providersData],
+    [providersData]
   );
 
   // Use server-provided facet options directly (no client-side computation)
@@ -288,7 +283,7 @@ export default function Providers({
         },
       },
     ],
-    [],
+    []
   );
 
   // Create table instance
@@ -339,7 +334,7 @@ export default function Providers({
     providers.forEach((provider) => {
       // Filter models for this provider based on filtered rows
       const filteredModels = provider.models.filter((model) =>
-        filteredModelIds.has(model.model_id),
+        filteredModelIds.has(model.model_id)
       );
 
       // Include provider if:
@@ -458,7 +453,7 @@ export default function Providers({
 
   const handleEdit = (model: ModelItem, provider: ProviderWithModels) => {
     router.push(
-      `/system/providers/p/${provider.provider_id}/m/${model.model_id}`,
+      `/system/providers/p/${provider.provider_id}/m/${model.model_id}`
     );
   };
 
@@ -485,7 +480,10 @@ export default function Providers({
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 min-w-0">
-          <Badge variant="secondary" className="text-sm px-3 py-1 flex-shrink-0">
+          <Badge
+            variant="secondary"
+            className="text-sm px-3 py-1 flex-shrink-0"
+          >
             {provider.name}
           </Badge>
           <span className="text-sm text-muted-foreground truncate">
@@ -719,7 +717,7 @@ export default function Providers({
                 data-testid="providers-grid"
               >
                 {filteredProviders.map((provider) =>
-                  renderProviderGroup(provider),
+                  renderProviderGroup(provider)
                 )}
               </div>
             )}

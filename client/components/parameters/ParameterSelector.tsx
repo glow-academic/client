@@ -65,7 +65,7 @@ function SliderLabelContainer({
     const updateHandlePositions = () => {
       if (containerRef.current && sliderRef.current) {
         const handles = sliderRef.current.querySelectorAll(
-          '[data-slot="slider-thumb"]',
+          '[data-slot="slider-thumb"]'
         ) as NodeListOf<HTMLElement>;
         const containerRect = containerRef.current.getBoundingClientRect();
         const positions: Record<number, number> = {};
@@ -276,10 +276,10 @@ export function ParameterSelector({
 
   const handleNonNumericalParameterChange = (
     parameterId: string,
-    newIds: string[],
+    newIds: string[]
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) => parameterItemMapping[id]?.parameter_id !== parameterId,
+      (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
     // Accept all selected IDs (unlimited multi-select)
@@ -292,10 +292,10 @@ export function ParameterSelector({
 
   const handleNumericalParameterChange = (
     parameterId: string,
-    newIds: string[],
+    newIds: string[]
   ) => {
     const currentItems = selectedParameterItemIds.filter(
-      (id) => parameterItemMapping[id]?.parameter_id !== parameterId,
+      (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
     // Accept all IDs (for range selection, multiple items within range)
@@ -334,7 +334,7 @@ export function ParameterSelector({
   };
 
   const getNumericalParameterRange = (
-    parameterId: string,
+    parameterId: string
   ): { min: number; max: number; step: number } => {
     const itemIds = parameterItemsByParameter[parameterId] || [];
     const values = itemIds
@@ -355,7 +355,7 @@ export function ParameterSelector({
 
   const handleNumericalSliderChange = (
     parameterId: string,
-    value: number[],
+    value: number[]
   ) => {
     const itemIds = parameterItemsByParameter[parameterId] || [];
 
@@ -539,15 +539,32 @@ export function ParameterSelector({
                               const item = parameterItemMapping[id];
                               if (!item) return null;
                               const value = parseFloat(item.value);
-                              return { id, item, value: isNaN(value) ? 0 : value };
+                              return {
+                                id,
+                                item,
+                                value: isNaN(value) ? 0 : value,
+                              };
                             })
-                            .filter((item): item is { id: string; item: typeof parameterItemMapping[string]; value: number } => item !== null)
+                            .filter(
+                              (
+                                item
+                              ): item is {
+                                id: string;
+                                item: (typeof parameterItemMapping)[string];
+                                value: number;
+                              } => item !== null
+                            )
                             .sort((a, b) => a.value - b.value);
 
                           if (sortedItems.length === 0) return null;
 
                           const startItem = sortedItems[0];
-                          const endItem = sortedItems.length > 1 ? sortedItems[sortedItems.length - 1] : null;
+                          if (!startItem) return null;
+
+                          const endItem =
+                            sortedItems.length > 1
+                              ? sortedItems[sortedItems.length - 1]
+                              : null;
 
                           return (
                             <>
@@ -556,7 +573,8 @@ export function ParameterSelector({
                                 key={startItem.id}
                                 className="text-xs text-muted-foreground"
                               >
-                                {startItem.item.name}: {startItem.item.description}
+                                {startItem.item.name}:{" "}
+                                {startItem.item.description}
                               </p>
                               {/* Show end value only if different from start */}
                               {endItem && endItem.id !== startItem.id && (
@@ -564,7 +582,8 @@ export function ParameterSelector({
                                   key={endItem.id}
                                   className="text-xs text-muted-foreground"
                                 >
-                                  {endItem.item.name}: {endItem.item.description}
+                                  {endItem.item.name}:{" "}
+                                  {endItem.item.description}
                                 </p>
                               )}
                             </>

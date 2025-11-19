@@ -22,7 +22,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TruncatedInsight } from "../TruncatedInsight";
 import { cn } from "@/lib/utils";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -38,6 +37,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type PersonaTrendData = {
   date: string;
@@ -112,7 +112,7 @@ export default function PersonaPerformance({
 
     const selectedIds = new Set(selectedSimulations);
     return persona.trendData.filter(
-      (d) => !d.simulationId || selectedIds.has(d.simulationId),
+      (d) => !d.simulationId || selectedIds.has(d.simulationId)
     );
   };
 
@@ -245,7 +245,7 @@ export default function PersonaPerformance({
                   <div
                     className={cn(
                       "flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      getBackgroundColor(persona.score),
+                      getBackgroundColor(persona.score)
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -348,9 +348,9 @@ export default function PersonaPerformance({
 
                     {/* Actionable Insights */}
                     {actionableInsights && actionableInsights[persona.name] && (
-                      <TruncatedInsight 
-                        text={actionableInsights[persona.name]} 
-                        isMobile={isMobile} 
+                      <TruncatedInsight
+                        text={actionableInsights[persona.name] ?? ""}
+                        isMobile={isMobile}
                       />
                     )}
                   </div>

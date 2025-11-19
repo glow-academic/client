@@ -173,7 +173,7 @@ export default function Department({
   updateStaffAction,
 }: DepartmentProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, scopedRoles } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!departmentId;
@@ -203,6 +203,21 @@ export default function Department({
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
   const departmentDetailDefault = serverDepartmentDetailDefault;
+
+  // Role options from scopedRoles
+  const roleOptions = useMemo(() => {
+    const roleLabels: Record<string, string> = {
+      superadmin: "Super Administrator",
+      admin: "Administrator",
+      instructional: "Instructional Staff",
+      ta: "Teaching Assistant",
+      guest: "Guest",
+    };
+    return (scopedRoles || []).map((role) => ({
+      value: role,
+      label: roleLabels[role] || role,
+    }));
+  }, [scopedRoles]);
 
   // Use edit detail when editing, default detail when creating
   const departmentData = isEditMode
@@ -262,10 +277,18 @@ export default function Department({
   };
 
   // Readonly logic using v2 permission flags
+  // Admins and superadmins can always edit regardless of in_use flag
   const isReadonly = useMemo(() => {
     if (!isEditMode || !departmentData) return false;
+    // Check if user is admin or superadmin - they can always edit
+    if (
+      effectiveProfile?.role === "admin" ||
+      effectiveProfile?.role === "superadmin"
+    ) {
+      return false;
+    }
     return !departmentData.can_edit;
-  }, [isEditMode, departmentData]);
+  }, [isEditMode, departmentData, effectiveProfile?.role]);
 
   // Initialize form when department data loads or in create mode
   useEffect(() => {
@@ -416,9 +439,12 @@ export default function Department({
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
-                  {departmentData?.in_use
-                    ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
-                    : "You do not have permission to edit this department. You can view the details but cannot make changes."}
+                  {effectiveProfile?.role === "admin" ||
+                  effectiveProfile?.role === "superadmin"
+                    ? "You do not have permission to edit this department. You can view the details but cannot make changes."
+                    : departmentData?.in_use
+                      ? "This department is currently in use and cannot be edited. You can view the details but cannot make changes."
+                      : "You do not have permission to edit this department. You can view the details but cannot make changes."}
                 </p>
               </div>
             </div>
@@ -506,13 +532,7 @@ export default function Department({
               )}
               cohortMapping={departmentData.cohort_mapping || {}}
               departmentMapping={departmentData.department_mapping || {}}
-              roleOptions={[
-                { value: "superadmin", label: "Super Administrator" },
-                { value: "admin", label: "Administrator" },
-                { value: "instructional", label: "Instructional Staff" },
-                { value: "ta", label: "Teaching Assistant" },
-                { value: "guest", label: "Guest" },
-              ]}
+              roleOptions={roleOptions}
               cohortOptions={Object.entries(
                 departmentData.cohort_mapping || {}
               ).map(([id, item]) => ({
@@ -657,8 +677,21 @@ export default function Department({
                   );
                 }).length
               }
-              canEdit={() => false} // Edit not available in scoped view
-              editableCount={0}
+              canEdit={(profileId) => {
+                const staff = (departmentData.staff || [])
+                  .map((item) =>
+                    normalizeDepartmentStaffItem(item, departmentId)
+                  )
+                  .find((s) => s.profile_id === profileId);
+                return staff?.can_edit ?? false;
+              }}
+              editableCount={
+                (departmentData.staff || [])
+                  .map((item) =>
+                    normalizeDepartmentStaffItem(item, departmentId)
+                  )
+                  .filter((s) => s.can_edit ?? false).length
+              }
               {...(searchStaffAction && { searchStaffAction })}
               {...(processCSVAction && { processCSVAction })}
               {...(bulkCreateOrUpdateStaffAction && {

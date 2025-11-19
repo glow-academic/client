@@ -1,9 +1,9 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback, useState } from "react";
 import SimulationCard, {
   SimulationCardSkeleton,
 } from "@/components/common/layout/SimulationCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useState } from "react";
 
 type ProfileItem = {
   id: string;
@@ -148,7 +148,10 @@ export default function PracticeZone({
       )}
 
       {/* Carousel container */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="practice-simulation-grid">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        data-testid="practice-simulation-grid"
+      >
         {visibleSimulations.map(
           (simulation) =>
             profile && (
@@ -175,11 +178,11 @@ export default function PracticeZone({
                 // Removed passRate for practice cards to prevent fallback to rubric threshold
                 type="default"
                 onStartSimulation={onStartSimulation}
-                onStartInfiniteMode={onStartInfiniteMode}
+                onStartInfiniteMode={onStartInfiniteMode ?? (() => {})}
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />
-            ),
+            )
         )}
       </div>
 

@@ -634,43 +634,47 @@ export function StaffDataTable({
               </Tooltip>
             )}
             {/* Remove from Cohort - show when cohortId provided and canRemove allows it */}
-            {cohortId && onRemoveFromCohort && (!canRemove || canRemove(staff.profile_id)) && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    onClick={() => onRemoveFromCohort(staff)}
-                  >
-                    <UserMinus className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Remove from Cohort</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {cohortId &&
+              onRemoveFromCohort &&
+              (!canRemove || canRemove(staff.profile_id)) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      onClick={() => onRemoveFromCohort(staff)}
+                    >
+                      <UserMinus className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Remove from Cohort</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             {/* Remove from Department - show when departmentId provided and canRemove allows it */}
-            {departmentId && onRemoveFromDepartment && (!canRemove || canRemove(staff.profile_id)) && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    onClick={() => onRemoveFromDepartment(staff)}
-                  >
-                    <UserMinus className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Remove from Department</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {departmentId &&
+              onRemoveFromDepartment &&
+              (!canRemove || canRemove(staff.profile_id)) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      onClick={() => onRemoveFromDepartment(staff)}
+                    >
+                      <UserMinus className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Remove from Department</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             {/* Only show delete when NOT scoped (cohortId/departmentId) - scoped views use "remove" via bulk actions */}
             {!cohortId && !departmentId && canDelete(staff.profile_id) && (
               <Tooltip>
@@ -714,6 +718,7 @@ export function StaffDataTable({
     onRemoveFromDepartment,
     canDelete,
     canEdit,
+    canRemove,
     cohortId,
     departmentId,
   ]);
@@ -744,6 +749,26 @@ export function StaffDataTable({
       },
     },
   });
+
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = React.useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    data.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
 
   // Toolbar state
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -973,8 +998,8 @@ export function StaffDataTable({
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+              {tableRows?.length ? (
+                tableRows.map((row: (typeof tableRows)[number]) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
@@ -982,17 +1007,23 @@ export function StaffDataTable({
                     data-testid="staff-row"
                     data-profile-id={row.original.profile_id}
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="border-r px-3 py-2 text-center"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
+                    {row
+                      .getVisibleCells()
+                      .map(
+                        (
+                          cell: ReturnType<typeof row.getVisibleCells>[number]
+                        ) => (
+                          <TableCell
+                            key={cell.id}
+                            className="border-r px-3 py-2 text-center"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        )
+                      )}
                   </TableRow>
                 ))
               ) : (

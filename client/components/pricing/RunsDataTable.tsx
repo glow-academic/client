@@ -21,28 +21,17 @@ import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacet
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { X } from "lucide-react";
+
 import { useProfile } from "@/contexts/profile-context";
 import { format } from "date-fns";
+import { X } from "lucide-react";
 
 type DebugInfoItem = {
   id: string;
@@ -117,7 +106,7 @@ export function RunsDataTable({
       profileIdFilter: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },
@@ -328,12 +317,12 @@ export function RunsDataTable({
       const matchesPersona = r.personaName?.toLowerCase().includes(searchLower);
       const matchesAgent = r.agentName?.toLowerCase().includes(searchLower);
       const matchesProfile = r.profileName?.toLowerCase().includes(searchLower);
-      
+
       // Search debug info content if present
       const matchesDebugInfo = r.debugInfo?.some((debugItem) =>
         debugItem.content?.toLowerCase().includes(searchLower)
       );
-      
+
       return (
         matchesModel ||
         matchesPersona ||
@@ -373,6 +362,26 @@ export function RunsDataTable({
     },
   });
 
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = React.useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    filteredRows.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
+
   // Build filter options from mappings
   const modelOptions = React.useMemo(() => {
     return Object.entries(modelMapping).map(([id, data]) => ({
@@ -406,7 +415,9 @@ export function RunsDataTable({
   React.useEffect(() => {
     const actorIdFilterColumn = table.getColumn("actorIdFilter");
     if (actorIdFilterColumn) {
-      const currentFilter = actorIdFilterColumn.getFilterValue() as string[] | undefined;
+      const currentFilter = actorIdFilterColumn.getFilterValue() as
+        | string[]
+        | undefined;
       const currentIds = currentFilter || [];
       const selectedIds = selectedActorIds || [];
       // Only update if they're different (avoid unnecessary updates)
@@ -426,7 +437,9 @@ export function RunsDataTable({
   React.useEffect(() => {
     const actorIdFilterColumn = table.getColumn("actorIdFilter");
     if (actorIdFilterColumn) {
-      const filterValue = actorIdFilterColumn.getFilterValue() as string[] | undefined;
+      const filterValue = actorIdFilterColumn.getFilterValue() as
+        | string[]
+        | undefined;
       const newActorIds = filterValue || [];
       const currentIds = selectedActorIds || [];
       // Only update if they're different (avoid circular updates)
@@ -445,7 +458,9 @@ export function RunsDataTable({
   React.useEffect(() => {
     const modelIdFilterColumn = table.getColumn("modelIdFilter");
     if (modelIdFilterColumn) {
-      const currentFilter = modelIdFilterColumn.getFilterValue() as string[] | undefined;
+      const currentFilter = modelIdFilterColumn.getFilterValue() as
+        | string[]
+        | undefined;
       const currentIds = currentFilter || [];
       const selectedIds = selectedModelIds || [];
       if (
@@ -464,7 +479,9 @@ export function RunsDataTable({
   React.useEffect(() => {
     const modelIdFilterColumn = table.getColumn("modelIdFilter");
     if (modelIdFilterColumn) {
-      const filterValue = modelIdFilterColumn.getFilterValue() as string[] | undefined;
+      const filterValue = modelIdFilterColumn.getFilterValue() as
+        | string[]
+        | undefined;
       const newModelIds = filterValue || [];
       const currentIds = selectedModelIds || [];
       if (
@@ -482,7 +499,9 @@ export function RunsDataTable({
   React.useEffect(() => {
     const profileIdFilterColumn = table.getColumn("profileIdFilter");
     if (profileIdFilterColumn) {
-      const currentFilter = profileIdFilterColumn.getFilterValue() as string[] | undefined;
+      const currentFilter = profileIdFilterColumn.getFilterValue() as
+        | string[]
+        | undefined;
       const currentIds = currentFilter || [];
       const selectedIds = selectedProfileIds || [];
       if (
@@ -501,7 +520,9 @@ export function RunsDataTable({
   React.useEffect(() => {
     const profileIdFilterColumn = table.getColumn("profileIdFilter");
     if (profileIdFilterColumn) {
-      const filterValue = profileIdFilterColumn.getFilterValue() as string[] | undefined;
+      const filterValue = profileIdFilterColumn.getFilterValue() as
+        | string[]
+        | undefined;
       const newProfileIds = filterValue || [];
       const currentIds = selectedProfileIds || [];
       if (
@@ -585,7 +606,10 @@ export function RunsDataTable({
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <DataTableViewOptions table={table} hiddenColumns={["actorIdFilter"]} />
+          <DataTableViewOptions
+            table={table}
+            hiddenColumns={["actorIdFilter"]}
+          />
         </div>
       </div>
 
@@ -610,8 +634,8 @@ export function RunsDataTable({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
+            {tableRows.length ? (
+              tableRows.map((row) => (
                 <tr
                   key={row.id}
                   className="border-b hover:bg-muted/50 transition-colors"

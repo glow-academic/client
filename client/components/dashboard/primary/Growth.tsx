@@ -57,7 +57,6 @@ type GrowthDataResponse = {
 
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
 import {
   CartesianGrid,
   Legend,
