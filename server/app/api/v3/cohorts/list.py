@@ -6,24 +6,18 @@ from collections import Counter
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMappingItem,
-    PersonaMapping,
-    PersonaMappingItem,
-    ProfileMappingItem,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationMappingItem,
-)
+from app.utils.schema import (DepartmentMappingItem, PersonaMapping,
+                              PersonaMappingItem, ProfileMappingItem,
+                              ScenarioMapping, ScenarioMappingItem,
+                              SimulationMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class CohortsListRequest(BaseModel):
@@ -244,12 +238,95 @@ async def get_cohorts_list(
                                 document_ids=[],
                             )
 
+        # Get user departments for scoping all facet options
+        user_department_rows = await conn.fetch(
+            "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
+            filters.profileId,
+        )
+        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+
+        # Get current user's role for role-based filtering
+        user_role_row = await conn.fetchrow(
+            "SELECT role FROM profiles WHERE id = $1",
+            filters.profileId,
+        )
+        current_user_role = user_role_row["role"] if user_role_row else "guest"
+
+        # Get roles for all profiles in profile_mapping for role-based filtering
+        profile_ids_for_role_check = list(profile_mapping.keys())
+        profile_roles_map = {}
+        if profile_ids_for_role_check:
+            profile_role_rows = await conn.fetch(
+                """
+                SELECT id, role
+                FROM profiles
+                WHERE id = ANY($1::uuid[])
+                """,
+                profile_ids_for_role_check,
+            )
+            profile_roles_map = {
+                str(row["id"]): row["role"] for row in profile_role_rows
+            }
+
+        # Define role hierarchy (who can see which roles)
+        def can_see_role(user_role: str, target_role: str) -> bool:
+            """Check if user_role can see target_role based on role hierarchy."""
+            if user_role == "superadmin":
+                return True
+            elif user_role == "admin":
+                return target_role in ("admin", "instructional", "ta", "guest")
+            elif user_role == "instructional":
+                return target_role in ("instructional", "ta", "guest")
+            elif user_role == "ta":
+                return target_role in ("ta", "guest")
+            elif user_role == "guest":
+                return target_role == "guest"
+            return False
+
+        # Get user's profile departments for filtering profile options
+        user_profile_department_rows = await conn.fetch(
+            """
+            SELECT DISTINCT pd2.profile_id
+            FROM profile_departments pd1
+            JOIN profile_departments pd2 ON pd2.department_id = pd1.department_id AND pd2.active = true
+            WHERE pd1.profile_id = $1 AND pd1.active = true
+            """,
+            filters.profileId,
+        )
+        user_accessible_profile_ids = {str(row["profile_id"]) for row in user_profile_department_rows}
+
         # Build facet options
-        profile_options = disambiguate_profiles(profile_mapping)
-        simulation_options = disambiguate_simulations(simulation_mapping)
+        # Filter profile_options to only include profiles from user's departments AND role hierarchy
+        profile_options = [
+            opt
+            for opt in disambiguate_profiles(profile_mapping)
+            if opt["value"] in user_accessible_profile_ids
+            and can_see_role(
+                current_user_role, profile_roles_map.get(opt["value"], "guest")
+            )
+        ]
+        
+        # Filter simulation_options to only include simulations from user's departments
+        simulation_options = [
+            opt
+            for opt in disambiguate_simulations(simulation_mapping)
+            if any(
+                dept_id in user_department_ids
+                for dept_id in (
+                    simulation_mapping[opt["value"]].department_ids or []
+                )
+            )
+            or (
+                # Include simulations with no departments (cross-department)
+                not simulation_mapping[opt["value"]].department_ids
+            )
+        ]
+        
+        # Filter department_options to only include user departments (like documents list)
         department_options = [
             {"value": did, "label": d.name or did}
             for (did, d) in department_mapping.items()
+            if did in user_department_ids
         ]
 
         # Flatten simulation_scenario_mapping for response

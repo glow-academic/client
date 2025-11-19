@@ -237,6 +237,18 @@ export default function Cohorts({
           <Skeleton className="h-10 w-32" />
         </div>
 
+        {/* Toolbar skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+            <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-[100px]" />
+              <Skeleton className="h-8 w-[120px]" />
+              <Skeleton className="h-8 w-[110px]" />
+            </div>
+          </div>
+        </div>
+
         {/* Cohorts grid skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -499,11 +511,11 @@ export default function Cohorts({
         <div className="space-y-4">
           {/* Toolbar */}
           <div
-            className="flex items-center justify-between"
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
             data-testid="cohorts-toolbar"
           >
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="w-full md:w-auto mb-2 md:mb-0">
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
                 <Input
                   data-testid="cohorts-search"
                   placeholder="Search cohorts..."
@@ -517,7 +529,7 @@ export default function Cohorts({
                 />
               </div>
 
-              <div className="flex items-center space-x-2 flex-wrap mb-2">
+              <div className="flex items-center space-x-2 flex-wrap">
                 {/* Profile Filter */}
                 {profileColumn && profileOptions.length > 0 && (
                   <DataTableFacetedFilter
