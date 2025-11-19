@@ -18,11 +18,27 @@ rubric_all_simulation_links AS (
     FROM simulations
     GROUP BY rubric_id
 ),
+simulation_department_access_for_rubrics AS (
+    -- Pre-compute which simulations the user has access to (for filtering rubric_simulations_data)
+    SELECT 
+        s.id as simulation_id,
+        CASE 
+            -- Include if has matching department link OR has no department links at all (cross-dept)
+            WHEN COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0 THEN true
+            WHEN NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true) THEN true
+            ELSE false
+        END as has_access
+    FROM simulations s
+    LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+    WHERE s.active = true
+    GROUP BY s.id
+),
 rubric_simulations_data AS (
     SELECT 
         s.rubric_id,
         ARRAY_AGG(s.id::text ORDER BY s.title) as simulation_ids
     FROM simulations s
+    INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     WHERE s.active = true
     GROUP BY s.rubric_id
 ),
@@ -163,6 +179,7 @@ simulation_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM simulations s
+    INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
 )
 SELECT 
