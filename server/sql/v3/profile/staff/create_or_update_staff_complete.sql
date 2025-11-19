@@ -48,7 +48,7 @@ profile_upsert AS (
         $2,  -- first_name
         $3,  -- last_name
         $4,  -- alias
-        $5,  -- role
+        $5::profile_role,  -- role
         $6,  -- active
         false,  -- default_profile
         false,  -- viewed_intro
@@ -60,7 +60,7 @@ profile_upsert AS (
         last_name = EXCLUDED.last_name,
         role = CASE 
             WHEN EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true) 
-            THEN EXCLUDED.role 
+            THEN EXCLUDED.role::profile_role
             ELSE profiles.role 
         END,
         active = EXCLUDED.active,

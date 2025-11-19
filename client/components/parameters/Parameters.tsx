@@ -237,9 +237,24 @@ export default function Parameters({
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
-  }, [table]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    parameters.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
 
   const handleDuplicate = async (parameter: (typeof parameters)[number]) => {
     if (!parameter.can_duplicate || !duplicateParameterAction) {

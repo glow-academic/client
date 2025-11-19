@@ -193,9 +193,24 @@ export function DataTable<TData, TValue>({
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [table]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    data.length,
+    // Use pagination primitives directly (not object references)
+    pageIndex,
+    pageSize,
+  ]);
 
   // Extract row selection state for dependency tracking
   const rowSelectionState = table.getState().rowSelection;

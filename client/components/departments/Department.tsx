@@ -552,6 +552,7 @@ export default function Department({
                 setIsRefreshing(false);
               }}
               departmentId={departmentId}
+              {...(departmentId && { departmentIds: [departmentId] })}
               selectedStaffIds={selectedStaffIds}
               onStaffSelect={(id: string, checked: boolean) =>
                 setSelectedStaffIds((prev: string[]) =>

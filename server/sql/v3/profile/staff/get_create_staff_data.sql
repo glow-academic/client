@@ -1,4 +1,8 @@
-WITH user_profile AS (
+WITH department_ids_param AS (
+    -- Cast $1 to uuid[] so PostgreSQL knows the parameter type (even if not used)
+    SELECT COALESCE($1::uuid[], ARRAY[]::uuid[]) as dept_ids
+),
+user_profile AS (
     SELECT COALESCE((SELECT role FROM profiles WHERE id = $2), 'guest') as role
 ),
 user_departments AS (
@@ -72,7 +76,9 @@ department_mapping_data AS (
         )
     ), '{}'::jsonb) as department_mapping
     FROM departments d
-    WHERE d.id = ANY($1) AND d.active = true
+    WHERE d.active = true
+    -- Return ALL active departments user can access, not filtered by $1 parameter
+    -- $1 (departmentIds) is used for scoping staff results, not for limiting available departments
 ),
 staff_data AS (
     SELECT DISTINCT ON (p.id)
