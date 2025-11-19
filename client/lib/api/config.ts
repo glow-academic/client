@@ -30,8 +30,19 @@ function httpToWs(base: string) {
 /** Socket.IO path matches your FastAPI `socketio_path` = `${APP_PREFIX}/socket.io` */
 export const SOCKET_PATH = join(APP_PREFIX, "/socket.io");
 
-// Direct WS to backend (mirrors INTERNAL_HTTP_BASE behavior)
-export const INTERNAL_WS_BASE = httpToWs(INTERNAL_HTTP_BASE);
+/**
+ * WebSocket base URL for browser connections.
+ * In dev: connects directly to backend (ws://localhost:8000)
+ * In prod: uses same-origin (empty string) to connect through nginx proxy
+ *
+ * Note: Since nginx only listens on port 80 (HTTP), WS is fine.
+ * If you add HTTPS/SSL later, you'll need WSS (browsers require secure WebSocket
+ * when page is served over HTTPS).
+ */
+export const INTERNAL_WS_BASE =
+  process.env.NODE_ENV === "development"
+    ? httpToWs(INTERNAL_HTTP_BASE) // Direct to backend in dev
+    : ""; // Same-origin in prod (goes through nginx proxy)
 
 // tiny local helper
 function join(a: string, b: string) {
