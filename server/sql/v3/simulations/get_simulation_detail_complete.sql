@@ -1,10 +1,35 @@
-WITH         simulation_departments_data AS (
+WITH         user_context AS (
+            SELECT role FROM profiles WHERE id = $2
+        ),
+        simulation_departments_data AS (
             SELECT 
                 sd.simulation_id,
                 ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
             FROM simulation_departments sd
             WHERE sd.simulation_id = $1 AND sd.active = true
             GROUP BY sd.simulation_id
+        ),
+        simulation_department_access_check AS (
+            SELECT 
+                s.id as simulation_id,
+                CASE 
+                    WHEN uc.role = 'superadmin' THEN true
+                    WHEN EXISTS (
+                        SELECT 1 FROM simulation_departments sd 
+                        WHERE sd.simulation_id = s.id 
+                        AND sd.active = true 
+                        AND sd.department_id IN (SELECT department_id FROM profile_departments pd WHERE pd.profile_id = $2 AND pd.active = true)
+                    ) THEN true
+                    WHEN NOT EXISTS (
+                        SELECT 1 FROM simulation_departments sd2 
+                        WHERE sd2.simulation_id = s.id 
+                        AND sd2.active = true
+                    ) THEN true  -- Cross-department resource
+                    ELSE false
+                END as has_access
+            FROM simulations s
+            CROSS JOIN user_context uc
+            WHERE s.id = $1
         ),
         simulation_base AS (
             SELECT 
@@ -19,10 +44,8 @@ WITH         simulation_departments_data AS (
             FROM simulations s
             LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
+            INNER JOIN simulation_department_access_check sdac ON sdac.simulation_id = s.id AND sdac.has_access = true
             WHERE s.id = $1
-        ),
-        user_context AS (
-            SELECT role FROM profiles WHERE id = $2
         ),
         cohort_usage AS (
             SELECT 

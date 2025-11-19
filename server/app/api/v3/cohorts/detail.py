@@ -124,6 +124,16 @@ async def get_cohort_detail(
         )
 
         if not row:
+            # Check if cohort exists but user doesn't have department access
+            cohort_exists_check = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM cohorts WHERE id = $1)",
+                request_body.cohortId,
+            )
+            if cohort_exists_check:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this cohort. It may be restricted to other departments.",
+                )
             raise HTTPException(status_code=404, detail="Cohort not found")
 
         # Parse simulations list from JSONB

@@ -52,6 +52,28 @@ problem_statement_mapping_data AS (
         ) as problem_statement_mapping
     FROM scenario_all_problem_statements sps
 ),
+scenario_department_access_check AS (
+    SELECT 
+        s.id as scenario_id,
+        CASE 
+            WHEN up.role = 'superadmin' THEN true
+            WHEN EXISTS (
+                SELECT 1 FROM scenario_departments sd 
+                WHERE sd.scenario_id = s.id 
+                AND sd.active = true 
+                AND sd.department_id IN (SELECT department_id FROM profile_departments pd WHERE pd.profile_id = $2 AND pd.active = true)
+            ) THEN true
+            WHEN NOT EXISTS (
+                SELECT 1 FROM scenario_departments sd2 
+                WHERE sd2.scenario_id = s.id 
+                AND sd2.active = true
+            ) THEN true  -- Cross-department resource
+            ELSE false
+        END as has_access
+    FROM scenarios s
+    CROSS JOIN user_profile up
+    WHERE s.id = $1
+),
 scenario_core AS (
     SELECT 
         s.id,
@@ -72,6 +94,7 @@ scenario_core AS (
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
+    INNER JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id AND sdac.has_access = true
     WHERE s.id = $1
 ),
 scenario_personas_agg AS (

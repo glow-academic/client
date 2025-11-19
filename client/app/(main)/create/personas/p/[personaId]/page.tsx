@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -115,24 +116,43 @@ export default async function PersonaEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch persona detail (cached, won't duplicate with metadata)
-  const personaDetail = await getPersona(personaId)(profileId);
+  try {
+    const personaDetail = await getPersona(personaId)(profileId);
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="persona-edit"
-      data-persona-id={personaId}
-    >
-      <Persona
-        personaId={personaId}
-        mode="edit"
-        personaDetail={personaDetail}
-        createPersonaAction={createPersona}
-        updatePersonaAction={updatePersona}
-        deletePersonaPromptAction={deletePersonaPrompt}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="persona-edit"
+        data-persona-id={personaId}
+      >
+        <Persona
+          personaId={personaId}
+          mode="edit"
+          personaDetail={personaDetail}
+          createPersonaAction={createPersona}
+          updatePersonaAction={updatePersona}
+          deletePersonaPromptAction={deletePersonaPrompt}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="persona"
+          redirectPath="/create/personas"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

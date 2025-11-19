@@ -8,6 +8,7 @@
 import { getSession } from "@/auth";
 
 import Scenario from "@/components/scenarios/Scenario";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -120,25 +121,44 @@ export default async function EditScenarioPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch scenario detail (cached, won't duplicate with metadata)
-  const scenarioDetail = await getScenario(scenarioId)(profileId);
+  try {
+    const scenarioDetail = await getScenario(scenarioId)(profileId);
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="scenario-edit"
-      data-scenario-id={scenarioId}
-    >
-      <Scenario
-        scenarioId={scenarioId}
-        mode="edit"
-        scenarioDetail={scenarioDetail}
-        createScenarioAction={createScenario}
-        updateScenarioAction={updateScenario}
-        generateAIScenarioAction={generateAIScenario}
-        randomizeScenarioAction={randomizeScenario}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="scenario-edit"
+        data-scenario-id={scenarioId}
+      >
+        <Scenario
+          scenarioId={scenarioId}
+          mode="edit"
+          scenarioDetail={scenarioDetail}
+          createScenarioAction={createScenario}
+          updateScenarioAction={updateScenario}
+          generateAIScenarioAction={generateAIScenario}
+          randomizeScenarioAction={randomizeScenario}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="scenario"
+          redirectPath="/create/scenarios"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

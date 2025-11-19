@@ -1,10 +1,35 @@
-WITH         persona_departments_data AS (
+WITH         user_profile AS (
+            SELECT role FROM profiles WHERE id = $2
+        ),
+        persona_departments_data AS (
             SELECT 
                 pd.persona_id,
                 ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
             FROM persona_departments pd
             WHERE pd.persona_id = $1 AND pd.active = true
             GROUP BY pd.persona_id
+        ),
+        persona_department_access_check AS (
+            SELECT 
+                p.id as persona_id,
+                CASE 
+                    WHEN up.role = 'superadmin' THEN true
+                    WHEN EXISTS (
+                        SELECT 1 FROM persona_departments pd 
+                        WHERE pd.persona_id = p.id 
+                        AND pd.active = true 
+                        AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = $2 AND pd2.active = true)
+                    ) THEN true
+                    WHEN NOT EXISTS (
+                        SELECT 1 FROM persona_departments pd3 
+                        WHERE pd3.persona_id = p.id 
+                        AND pd3.active = true
+                    ) THEN true  -- Cross-department resource
+                    ELSE false
+                END as has_access
+            FROM personas p
+            CROSS JOIN user_profile up
+            WHERE p.id = $1
         ),
         persona_department_prompt_links AS (
             SELECT 
@@ -96,20 +121,21 @@ WITH         persona_departments_data AS (
         ),
         persona_data AS (
             SELECT 
-                name,
-                description,
-                active,
-                color,
-                icon,
-                model_id,
-                reasoning,
-                temperature,
+                p.name,
+                p.description,
+                p.active,
+                p.color,
+                p.icon,
+                p.model_id,
+                p.reasoning,
+                p.temperature,
                 COALESCE(pap.system_prompt, '') as system_prompt,
                 COALESCE(pap.prompt_id, NULL)::text as prompt_id,
                 COALESCE(pdd.department_ids, NULL) as department_ids
             FROM personas p
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
             LEFT JOIN persona_active_prompt pap ON pap.persona_id = p.id
+            INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
             WHERE p.id = $1
         ),
         valid_depts AS (

@@ -1,10 +1,35 @@
-WITH cohort_departments_data AS (
+WITH user_profile AS (
+    SELECT role FROM profiles WHERE id = $2
+),
+cohort_departments_data AS (
     SELECT 
         cd.cohort_id,
         ARRAY_AGG(cd.department_id::text ORDER BY cd.created_at) as department_ids
     FROM cohort_departments cd
     WHERE cd.cohort_id = $1 AND cd.active = true
     GROUP BY cd.cohort_id
+),
+cohort_department_access_check AS (
+    SELECT 
+        c.id as cohort_id,
+        CASE 
+            WHEN up.role = 'superadmin' THEN true
+            WHEN EXISTS (
+                SELECT 1 FROM cohort_departments cd 
+                WHERE cd.cohort_id = c.id 
+                AND cd.active = true 
+                AND cd.department_id IN (SELECT department_id FROM profile_departments pd WHERE pd.profile_id = $2 AND pd.active = true)
+            ) THEN true
+            WHEN NOT EXISTS (
+                SELECT 1 FROM cohort_departments cd2 
+                WHERE cd2.cohort_id = c.id 
+                AND cd2.active = true
+            ) THEN true  -- Cross-department resource
+            ELSE false
+        END as has_access
+    FROM cohorts c
+    CROSS JOIN user_profile up
+    WHERE c.id = $1
 ),
 cohort_data AS (
     SELECT 
@@ -15,6 +40,7 @@ cohort_data AS (
         COALESCE(cdd.department_ids, NULL) as department_ids
     FROM cohorts c
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
+    INNER JOIN cohort_department_access_check cdac ON cdac.cohort_id = c.id AND cdac.has_access = true
     WHERE c.id = $1
 ),
 cohort_profile_ids AS (

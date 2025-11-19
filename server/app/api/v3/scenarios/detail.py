@@ -164,6 +164,16 @@ async def get_scenario_detail(
             sql_query, request_data.scenarioId, request_data.profileId
         )
         if not scenario:
+            # Check if scenario exists but user doesn't have department access
+            scenario_exists_check = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM scenarios WHERE id = $1)",
+                request_data.scenarioId,
+            )
+            if scenario_exists_check:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this scenario. It may be restricted to other departments.",
+                )
             raise HTTPException(
                 status_code=404, detail=f"Scenario not found: {request_data.scenarioId}"
             )

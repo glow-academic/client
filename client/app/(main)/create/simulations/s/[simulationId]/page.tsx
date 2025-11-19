@@ -8,6 +8,7 @@
 import { getSession } from "@/auth";
 
 import Simulation from "@/components/simulations/Simulation";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -101,22 +102,41 @@ export default async function EditSimulationPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch simulation detail (cached, won't duplicate with metadata)
-  const simulationDetail = await getSimulation(simulationId)(profileId);
+  try {
+    const simulationDetail = await getSimulation(simulationId)(profileId);
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="simulation-edit"
-      data-simulation-id={simulationId}
-    >
-      <Simulation
-        simulationId={simulationId}
-        simulationDetail={simulationDetail}
-        createSimulationAction={createSimulation}
-        updateSimulationAction={updateSimulation}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="simulation-edit"
+        data-simulation-id={simulationId}
+      >
+        <Simulation
+          simulationId={simulationId}
+          simulationDetail={simulationDetail}
+          createSimulationAction={createSimulation}
+          updateSimulationAction={updateSimulation}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="simulation"
+          redirectPath="/create/simulations"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

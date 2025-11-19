@@ -8,6 +8,7 @@
 import { getSession } from "@/auth";
 
 import Leaderboard from "@/components/leaderboard/Leaderboard";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -125,6 +126,33 @@ export default async function CohortDashboardPage({
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
   const filters = { ...defaultFilters, cohortIds: [cohortId] };
+
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Check cohort access by fetching detail (will return 403 if no access)
+  try {
+    await api.post("/cohorts/detail", {
+      body: { cohortId, profileId },
+    });
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="cohort"
+          redirectPath="/cohorts"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 
   // Fetch leaderboard data server-side
   const leaderboardData = await getLeaderboard({
