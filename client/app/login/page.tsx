@@ -4,11 +4,11 @@
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
  */
-import type { Metadata } from "next";
 import Login from "@/components/auth/Login";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Login | GLOW",
+  title: "Login",
   description: `Login to GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}`,
 };
 
