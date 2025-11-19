@@ -254,17 +254,11 @@ export default function Cohort({
     []
   );
 
-  // Readonly logic using v2 permission flags
+  // Readonly logic using server-provided can_edit flag
   const isReadonly = useMemo(() => {
     if (!isEditMode || !cohortData) return false;
-    // V2 API doesn't return explicit can_edit flag in detail response
-    // Infer from default_cohort and user role
-    const isDefaultCohort = cohortData?.department_ids?.length === 0;
-    if (isDefaultCohort && effectiveProfile?.role !== "superadmin") {
-      return true; // Only superadmins can edit default cohorts
-    }
-    return false; // Otherwise editable (permissions handled server-side)
-  }, [isEditMode, cohortData, effectiveProfile?.role]);
+    return !cohortData.can_edit;
+  }, [isEditMode, cohortData]);
 
   // Filter valid IDs based on selected departments
   const departmentMapping = useMemo(
@@ -734,7 +728,7 @@ export default function Cohort({
   return (
     <div className="space-y-6">
       {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
@@ -751,25 +745,13 @@ export default function Cohort({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-800">
-                {cohortData?.department_ids?.length === 0 &&
-                effectiveProfile?.role !== "superadmin"
-                  ? "Default cohort cannot be edited"
-                  : "You don't have permission to edit this cohort"}
+                Cohort is read-only
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 <p>
-                  {cohortData?.department_ids?.length === 0 &&
-                  effectiveProfile?.role !== "superadmin" ? (
-                    <>
-                      This is a default cohort template restricted to
-                      superadmins. You can view details but cannot make changes.
-                    </>
-                  ) : (
-                    <>
-                      You can view the details but cannot make changes due to
-                      your current permissions.
-                    </>
-                  )}
+                  {cohortData?.department_ids?.length === 0
+                    ? "This is a default cohort that cannot be edited. You can view the details but cannot make changes."
+                    : "This cohort cannot be edited. You can view the details but cannot make changes."}
                 </p>
               </div>
             </div>
@@ -863,19 +845,18 @@ export default function Cohort({
             <div>
               <Label htmlFor="simulations">Simulations</Label>
             </div>
-            {!isReadonly && (
-              <div className="flex gap-2">
-                <SimulationPicker
-                  simulationMapping={cohortData?.simulation_mapping || {}}
-                  validSimulationIds={validSimulationIds}
-                  selectedSimulationIds={currentSimulationIds}
-                  onSelect={handleSimulationSelection}
-                  placeholder="Add simulation"
-                  showLabel={false}
-                  buttonClassName="w-48"
-                />
-              </div>
-            )}
+            <div className="flex gap-2">
+              <SimulationPicker
+                simulationMapping={cohortData?.simulation_mapping || {}}
+                validSimulationIds={validSimulationIds}
+                selectedSimulationIds={currentSimulationIds}
+                onSelect={handleSimulationSelection}
+                placeholder="Add simulation"
+                showLabel={false}
+                buttonClassName="w-48"
+                disabled={isReadonly}
+              />
+            </div>
           </div>
 
           {currentSimulationIds.length === 0 ? (
@@ -1125,6 +1106,7 @@ export default function Cohort({
                   cohortId={cohortId}
                   {...(cohortId && { cohortIds: [cohortId] })}
                   selectedStaffIds={selectedStaffIds}
+                  readonly={isReadonly}
                   onStaffSelect={(id, checked) =>
                     setSelectedStaffIds((prev) =>
                       checked ? [...prev, id] : prev.filter((x) => x !== id)

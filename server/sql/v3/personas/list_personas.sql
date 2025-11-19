@@ -138,8 +138,9 @@ SELECT
     END as can_edit,
     true as can_duplicate,
     CASE 
-        WHEN pd.total_scenario_links > 0 THEN false
+        -- Can't delete if can't edit (stricter than can_edit)
         WHEN NOT pd.has_dept_links AND up.role != 'superadmin' THEN false
+        WHEN pd.total_scenario_links > 0 THEN false
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
     END as can_delete,

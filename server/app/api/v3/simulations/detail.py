@@ -174,13 +174,13 @@ async def get_simulation_detail(
         total_cohort_links = result.get("total_cohort_links", 0)
         practice_simulation = result.get("practice_simulation", False)
 
-        # Compute permissions (matching list_simulations.sql logic)
+        # Use can_edit from SQL (handles default objects and role checks)
+        can_edit = result.get("can_edit", False)
         is_admin = user_role in ("admin", "instructional", "superadmin")
-        # Can't edit if has active cohorts
-        can_edit = is_admin and active_cohort_count == 0
         can_duplicate = is_admin
-        # Can't delete if practice OR has any cohort links OR not admin
-        can_delete = is_admin and not practice_simulation and total_cohort_links == 0
+        # Can't delete if can't edit (stricter than can_edit)
+        # Also can't delete if practice OR has any cohort links OR not admin
+        can_delete = can_edit and is_admin and not practice_simulation and total_cohort_links == 0
 
         # Parse scenarios list from JSONB
         scenarios_list: list[ScenarioInSimulation] = []

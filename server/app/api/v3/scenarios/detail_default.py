@@ -325,6 +325,11 @@ async def get_scenario_detail_default(
         # Return empty scenario with all valid options
         # Default to first department or None (cross-department if superadmin)
         default_department_ids = [default_dept_id] if default_dept_id else None
+        is_default = default_department_ids is None or len(default_department_ids) == 0
+        is_superadmin = user_role == "superadmin"
+        
+        # For default scenarios, only superadmin can edit
+        can_edit_default = not (is_default and not is_superadmin)
 
         response_data = ScenarioDetailResponse(
             # Basic fields (empty defaults)
@@ -358,8 +363,8 @@ async def get_scenario_detail_default(
             active_simulation_ids=[],
             # Document details (empty for create mode)
             document_details=document_details,
-            # Permissions (allow all for new scenarios)
-            can_edit=True,
+            # Permissions (check if default scenario and user role)
+            can_edit=can_edit_default,
             can_duplicate=False,  # Can't duplicate non-existent scenario
             can_delete=False,  # Can't delete non-existent scenario
             # Mappings

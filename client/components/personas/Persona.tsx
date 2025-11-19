@@ -1262,6 +1262,7 @@ export default function Persona({
                   {formData?.systemPrompt !== undefined && (
                     <>
                       {isEditMode &&
+                        !isReadonly &&
                         (formData?.promptId || isUsingDefaultPrompt) && (
                           <Tooltip>
                             <TooltipTrigger asChild>

@@ -9106,6 +9106,10 @@
             "type": "boolean",
             "title": "Active"
           },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
           "simulation_ids": {
             "items": {
               "type": "string"
@@ -9205,6 +9209,7 @@
           "department_ids",
           "valid_department_ids",
           "active",
+          "can_edit",
           "simulation_ids",
           "valid_simulation_ids",
           "profile_ids",

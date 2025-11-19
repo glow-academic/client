@@ -208,11 +208,13 @@ cohort_mapping_data AS (
 SELECT 
     sd.*,
     CASE 
-        WHEN sd.active_cohort_count > 0 THEN false
+        WHEN COALESCE(sd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
     END as can_edit,
     CASE 
+        -- Can't delete if can't edit (stricter than can_edit)
+        WHEN COALESCE(sd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN sd.practice_simulation = true THEN false
         WHEN sd.total_cohort_links > 0 THEN false
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true

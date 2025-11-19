@@ -3,12 +3,32 @@ WITH user_departments AS (
     FROM profile_departments
     WHERE profile_id = $1 AND active = true
 ),
+user_profile AS (
+    SELECT role FROM profiles WHERE id = $1
+),
 cohort_profiles_agg AS (
     SELECT 
         cp.cohort_id,
         ARRAY_AGG(cp.profile_id ORDER BY p.last_name, p.first_name) as profile_ids
     FROM cohort_profiles cp
     JOIN profiles p ON p.id = cp.profile_id
+    WHERE cp.active = true
+    GROUP BY cp.cohort_id
+),
+cohort_profiles_role_filtered AS (
+    SELECT 
+        cp.cohort_id,
+        ARRAY_AGG(cp.profile_id) FILTER (
+            WHERE 
+                (up.role = 'superadmin') OR
+                (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
+                (up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
+                (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+                (up.role = 'guest' AND p.role = 'guest')
+        ) as profile_ids
+    FROM cohort_profiles cp
+    JOIN profiles p ON p.id = cp.profile_id
+    CROSS JOIN user_profile up
     WHERE cp.active = true
     GROUP BY cp.cohort_id
 ),
@@ -35,9 +55,6 @@ cohort_departments_data AS (
     FROM cohort_departments cd
     WHERE cd.active = true
     GROUP BY cd.cohort_id
-),
-user_profile AS (
-    SELECT role FROM profiles WHERE id = $1
 ),
 user_in_cohort AS (
     SELECT cohort_id
@@ -149,12 +166,15 @@ SELECT
     COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
     COALESCE(cs.simulation_ids, ARRAY[]::uuid[]) as simulation_ids,
     COALESCE(cu.usage_count, 0) as usage_count,
-    COALESCE(array_length(cp.profile_ids, 1), 0) as num_members,
+    COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
     CASE 
+        WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN up.role IN ('admin', 'superadmin') THEN true
         ELSE false
     END as can_edit,
     CASE 
+        -- Can't delete if can't edit (stricter than can_edit)
+        WHEN COALESCE(cdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
         WHEN up.role IN ('admin', 'superadmin') AND COALESCE(cu.usage_count, 0) = 0 THEN true
         ELSE false
     END as can_delete,
@@ -207,6 +227,7 @@ FROM cohorts c
 LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
 LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
 LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
+LEFT JOIN cohort_profiles_role_filtered cprf ON cprf.cohort_id = c.id
 LEFT JOIN cohort_simulations_agg cs ON cs.cohort_id = c.id
 LEFT JOIN cohort_usage cu ON cu.cohort_id = c.id
 LEFT JOIN user_in_cohort uic ON uic.cohort_id = c.id
@@ -219,7 +240,7 @@ WHERE (
         up.role != 'instructional'
     )
 GROUP BY c.id, c.title, c.description, c.active, 
-         cdd.department_ids, cp.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping, sm.mapping
+         cdd.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id, dmd.mapping, sm.mapping
 HAVING 
     COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
     OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)

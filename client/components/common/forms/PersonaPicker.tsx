@@ -79,6 +79,7 @@ export interface PersonaPickerProps<
   description?: string;
   hideSelectedChips?: boolean;
   disabled?: boolean;
+  readonly?: boolean;
 }
 
 export function PersonaPicker<
@@ -94,6 +95,7 @@ export function PersonaPicker<
   description = "Choose the persona that will interact with students in this scenario.",
   hideSelectedChips = false,
   disabled = false,
+  readonly = false,
   ...props
 }: PersonaPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -200,13 +202,15 @@ export function PersonaPicker<
                 className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
               >
                 <span>{persona.name}</span>
-                <button
-                  type="button"
-                  onClick={(e) => handleRemoveItem(id, e)}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                {!readonly && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveItem(id, e)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             );
           })}
@@ -214,8 +218,8 @@ export function PersonaPicker<
       )}
 
       <Popover
-        open={disabled ? false : open}
-        onOpenChange={disabled ? () => {} : setOpen}
+        open={disabled || readonly ? false : open}
+        onOpenChange={disabled || readonly ? () => {} : setOpen}
         {...props}
       >
         <PopoverTrigger asChild>
@@ -225,7 +229,7 @@ export function PersonaPicker<
             aria-expanded={open}
             aria-label="Select a persona"
             className="w-full justify-between"
-            disabled={disabled}
+            disabled={disabled || readonly}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedPersona && (

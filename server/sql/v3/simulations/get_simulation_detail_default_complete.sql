@@ -424,6 +424,12 @@ WITH user_departments AS (
             uc.role as user_role,
             COALESCE(cu.active_cohort_count, 0) as active_cohort_count,
             COALESCE(cu.total_cohort_links, 0) as total_cohort_links,
+            -- Permissions
+            CASE 
+                WHEN COALESCE(dmd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND uc.role != 'superadmin' THEN false
+                WHEN uc.role IN ('admin', 'instructional', 'superadmin') THEN true
+                ELSE false
+            END as can_edit,
             sld.scenarios_list,
             sld.scenario_ids,
             COALESCE(vs.ids, ARRAY[]::text[]) as valid_scenario_ids,

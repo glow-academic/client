@@ -235,6 +235,7 @@ async def get_cohort_detail_default(
             department_ids=dept_ids,
             valid_department_ids=valid_department_ids,
             active=row.get("active", False),
+            can_edit=row.get("can_edit", False),
             simulation_ids=simulation_ids,
             valid_simulation_ids=valid_simulation_ids,
             profile_ids=profile_ids,

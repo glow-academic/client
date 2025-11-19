@@ -170,18 +170,21 @@ async def get_persona_detail(
         total_scenario_links = int(result.get("total_scenario_links", scenario_count))
         user_role = str(result.get("user_role", "")).lower()
         has_department_links = bool(department_ids)
+        is_default = not has_department_links
+        is_superadmin = user_role == "superadmin"
 
-        # Permissions mirror list endpoint logic
+        # Permissions: default objects read-only for non-superadmin
         can_edit = False
-        if scenario_count == 0:
-            if has_department_links or user_role == "superadmin":
-                if user_role in {"admin", "instructional", "superadmin"}:
-                    can_edit = True
+        if is_default and not is_superadmin:
+            can_edit = False
+        elif user_role in {"admin", "instructional", "superadmin"}:
+            can_edit = True
 
         can_duplicate = True
 
+        # Can't delete if can't edit (stricter than can_edit)
         can_delete = False
-        if total_scenario_links == 0:
+        if can_edit and total_scenario_links == 0:
             if has_department_links or user_role == "superadmin":
                 if user_role in {"admin", "instructional", "superadmin"}:
                     can_delete = True

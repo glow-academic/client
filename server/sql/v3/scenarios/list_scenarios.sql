@@ -86,12 +86,15 @@ scenario_data AS (
         s.output_guardrail_enabled,
         CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
         CASE 
+            WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role IN ('admin', 'instructional', 'superadmin') 
                  AND COALESCE(ss.num_simulations, 0) = 0 
             THEN true
             ELSE false
         END as can_edit,
         CASE 
+            -- Can't delete if can't edit (stricter than can_edit)
+            WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
             WHEN up.role IN ('admin', 'instructional', 'superadmin') 
                  AND COALESCE(sal.total_links, 0) = 0 
             THEN true

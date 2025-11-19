@@ -375,10 +375,20 @@ async def get_scenario_detail(
         in_use_by_active = scenario["active_usage_count"] > 0
         is_generated = scenario["generated"]
         is_superadmin = scenario["user_role"] == "superadmin"
+        department_ids = scenario.get("department_ids")
+        has_department_links = department_ids and len(department_ids) > 0
+        is_default = not has_department_links
 
-        can_edit = not in_use_by_active and not is_generated
+        # Scenarios are immutable once in use (exception to general rule)
+        # Also check if default object and user is not superadmin
+        can_edit = (
+            not in_use_by_active 
+            and not is_generated 
+            and not (is_default and not is_superadmin)
+        )
         can_duplicate = True
-        can_delete = not in_use_by_active and is_superadmin
+        # Can't delete if can't edit (stricter than can_edit)
+        can_delete = can_edit and not in_use_by_active and is_superadmin
 
         # Parse department_ids
         department_ids = scenario.get("department_ids")

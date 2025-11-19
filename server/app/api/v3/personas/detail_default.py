@@ -122,6 +122,20 @@ async def get_persona_detail_default(
 
         valid_department_ids = result.get("valid_department_ids", [])
         valid_model_ids = result.get("valid_model_ids", [])
+        
+        # Get department_ids from default persona (may be NULL/empty for default personas)
+        raw_default_department_ids = result.get("department_ids")
+        default_department_ids: list[str] | None = None
+        if raw_default_department_ids:
+            default_department_ids = [str(d) for d in raw_default_department_ids]
+        
+        # Get user role for permissions
+        user_role = str(result.get("user_role", "")).lower()
+        is_default = default_department_ids is None or len(default_department_ids) == 0
+        is_superadmin = user_role == "superadmin"
+        
+        # For default personas, only superadmin can edit
+        can_edit_default = not (is_default and not is_superadmin)
 
         if not valid_department_ids:
             raise HTTPException(
@@ -227,7 +241,7 @@ async def get_persona_detail_default(
             # Basic fields (empty defaults for creation)
             name="",
             description="",
-            department_ids=None,  # None = cross-department (user can select)
+            department_ids=default_department_ids,  # Use department_ids from default persona
             active=True,
             color=preset_colors[0] if preset_colors else "#3B82F6",
             icon=suggested_icons[0] if suggested_icons else "Sparkles",
@@ -239,7 +253,7 @@ async def get_persona_detail_default(
             # Usage and permissions
             in_use=False,
             scenario_count=0,
-            can_edit=True,
+            can_edit=can_edit_default,
             can_duplicate=False,
             can_delete=False,
             # Metadata

@@ -74,6 +74,7 @@ class CohortDetailResponse(BaseModel):
     department_ids: list[str] | None
     valid_department_ids: list[str]
     active: bool
+    can_edit: bool
     simulation_ids: list[str]
     valid_simulation_ids: list[str]
     profile_ids: list[str]
@@ -303,6 +304,7 @@ async def get_cohort_detail(
             department_ids=dept_ids,
             valid_department_ids=valid_department_ids,
             active=row.get("active", False),
+            can_edit=row.get("can_edit", False),
             simulation_ids=simulation_ids,
             valid_simulation_ids=valid_simulation_ids,
             profile_ids=profile_ids,

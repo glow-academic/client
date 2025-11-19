@@ -55,6 +55,7 @@ export interface SimulationPickerProps extends PopoverProps {
   hideSelectedChips?: boolean;
   showLabel?: boolean;
   buttonClassName?: string;
+  disabled?: boolean;
 }
 
 export function SimulationPicker({
@@ -69,6 +70,7 @@ export function SimulationPicker({
   hideSelectedChips = true,
   showLabel = true,
   buttonClassName,
+  disabled = false,
   ...props
 }: SimulationPickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -190,7 +192,7 @@ export function SimulationPicker({
         </div>
       )}
 
-      <Popover open={open} onOpenChange={setOpen} {...props}>
+      <Popover open={disabled ? false : open} onOpenChange={disabled ? () => {} : setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -198,6 +200,7 @@ export function SimulationPicker({
             aria-expanded={open}
             aria-label="Select simulations"
             className={cn("w-full justify-between", buttonClassName)}
+            disabled={disabled}
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />

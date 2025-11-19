@@ -87,6 +87,7 @@ export interface DocumentPickerProps<
   description?: string;
   hideSelectedChips?: boolean;
   disabled?: boolean;
+  readonly?: boolean;
 }
 
 export function DocumentPicker<
@@ -103,6 +104,7 @@ export function DocumentPicker<
   description = "Choose documents that will be available during this scenario.",
   hideSelectedChips = false,
   disabled = false,
+  readonly = false,
   ...props
 }: DocumentPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -226,13 +228,15 @@ export function DocumentPicker<
                   >
                     <Eye className="h-3 w-3" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleRemoveItem(id, e)}
-                    className="h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  {!readonly && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveItem(id, e)}
+                      className="h-5 w-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Document preview - show actual DocumentViewer if details available */}
@@ -303,8 +307,8 @@ export function DocumentPicker<
       )}
 
       <Popover
-        open={disabled ? false : open}
-        onOpenChange={disabled ? () => {} : setOpen}
+        open={disabled || readonly ? false : open}
+        onOpenChange={disabled || readonly ? () => {} : setOpen}
         {...props}
       >
         <PopoverTrigger asChild>
@@ -314,7 +318,7 @@ export function DocumentPicker<
             aria-expanded={open}
             aria-label="Select a document"
             className="w-full justify-between"
-            disabled={disabled}
+            disabled={disabled || readonly}
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />

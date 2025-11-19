@@ -171,6 +171,7 @@ export interface StaffDataTableProps {
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
   initialCreateStaffData?: CreateStaffDataOut;
   initialSearchData?: SearchStaffOut;
+  readonly?: boolean;
 }
 
 export function StaffDataTable({
@@ -207,6 +208,7 @@ export function StaffDataTable({
   bulkCreateOrUpdateStaffAction,
   initialCreateStaffData,
   initialSearchData,
+  readonly = false,
 }: StaffDataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -570,6 +572,7 @@ export function StaffDataTable({
             aria-label="Select all"
             className="translate-y-[2px]"
             data-testid="checkbox-select-all"
+            disabled={readonly}
           />
         </div>
       ),
@@ -583,6 +586,7 @@ export function StaffDataTable({
             aria-label="Select row"
             className="translate-y-[2px]"
             data-testid="checkbox-select-staff"
+            disabled={readonly}
           />
         </div>
       ),
@@ -614,7 +618,7 @@ export function StaffDataTable({
                 <p>View Report</p>
               </TooltipContent>
             </Tooltip>
-            {canEdit(staff.profile_id) && (
+            {canEdit(staff.profile_id) && !readonly && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -636,7 +640,8 @@ export function StaffDataTable({
             {/* Remove from Cohort - show when cohortId provided and canRemove allows it */}
             {cohortId &&
               onRemoveFromCohort &&
-              (!canRemove || canRemove(staff.profile_id)) && (
+              (!canRemove || canRemove(staff.profile_id)) &&
+              !readonly && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -657,7 +662,8 @@ export function StaffDataTable({
             {/* Remove from Department - show when departmentId provided and canRemove allows it */}
             {departmentId &&
               onRemoveFromDepartment &&
-              (!canRemove || canRemove(staff.profile_id)) && (
+              (!canRemove || canRemove(staff.profile_id)) &&
+              !readonly && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -676,7 +682,7 @@ export function StaffDataTable({
                 </Tooltip>
               )}
             {/* Only show delete when NOT scoped (cohortId/departmentId) - scoped views use "remove" via bulk actions */}
-            {!cohortId && !departmentId && canDelete(staff.profile_id) && (
+            {!cohortId && !departmentId && canDelete(staff.profile_id) && !readonly && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -721,6 +727,7 @@ export function StaffDataTable({
     canRemove,
     cohortId,
     departmentId,
+    readonly,
   ]);
 
   const table = useReactTable({
@@ -877,8 +884,8 @@ export function StaffDataTable({
           </div>
 
           <div className="flex items-center space-x-2 mb-2">
-            {/* Create Staff Button - only show when no rows are selected */}
-            {onCreate && selectedCount === 0 && (
+            {/* Create Staff Button - only show when no rows are selected and not readonly */}
+            {onCreate && selectedCount === 0 && !readonly && (
               <CreateStaffButton
                 onCreate={onCreate}
                 {...(searchStaffAction !== undefined && {
@@ -906,8 +913,8 @@ export function StaffDataTable({
               />
             )}
 
-            {/* Bulk edit/delete if any selected */}
-            {selectedCount > 0 && (
+            {/* Bulk edit/delete if any selected and not readonly */}
+            {selectedCount > 0 && !readonly && (
               <div className="flex items-center space-x-2">
                 <Button
                   type="button"

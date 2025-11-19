@@ -112,6 +112,9 @@ department_mapping_for_staff AS (
 user_profile_for_staff AS (
     SELECT role FROM profiles WHERE id = $2
 ),
+user_profile_for_cohort AS (
+    SELECT role FROM profiles WHERE id = $2
+),
 cohort_staff AS (
     SELECT DISTINCT ON (p.id)
         p.id as profile_id,
@@ -231,22 +234,40 @@ valid_departments AS (
 valid_dept_ids AS (
     SELECT id FROM valid_departments
 ),
+cohort_is_default AS (
+    SELECT COALESCE(cd.department_ids, NULL) IS NULL as is_default
+    FROM cohort_data cd
+),
 valid_simulations AS (
     SELECT DISTINCT s.id
     FROM simulations s
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
+    CROSS JOIN cohort_is_default cid
     WHERE s.active = true
-    GROUP BY s.id
+    GROUP BY s.id, cid.is_default
     HAVING 
-        COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT id FROM valid_dept_ids)) > 0
-        OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+        -- For default cohorts (no department links), include all simulations in the cohort
+        (cid.is_default = true AND s.id IN (SELECT simulation_id FROM cohort_simulation_ids))
+        OR
+        -- For non-default cohorts, use department filtering
+        (cid.is_default = false AND (
+            COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT id FROM valid_dept_ids)) > 0
+            OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
+        ))
 ),
 valid_profiles AS (
     SELECT DISTINCT p.id
     FROM profiles p
-    JOIN profile_departments pd ON pd.profile_id = p.id
-    WHERE pd.department_id IN (SELECT id FROM valid_dept_ids)
-        AND p.active = true
+    LEFT JOIN profile_departments pd ON pd.profile_id = p.id
+    CROSS JOIN cohort_is_default cid
+    WHERE p.active = true
+        AND (
+        -- For default cohorts (no department links), include all profiles in the cohort
+        (cid.is_default = true AND p.id IN (SELECT profile_id FROM cohort_profile_ids))
+        OR
+        -- For non-default cohorts, use department filtering
+        (cid.is_default = false AND pd.department_id IN (SELECT id FROM valid_dept_ids))
+        )
 ),
 cross_dept_simulations AS (
     SELECT DISTINCT s.id::text as simulation_id
@@ -300,6 +321,11 @@ SELECT
     cd.description,
     cd.department_ids,
     cd.active,
+    CASE 
+        WHEN COALESCE(cd.department_ids, NULL) IS NULL AND upc.role != 'superadmin' THEN false
+        WHEN upc.role IN ('admin', 'superadmin') THEN true
+        ELSE false
+    END as can_edit,
     (SELECT COALESCE(array_agg(profile_id::text), ARRAY[]::text[])
      FROM cohort_profile_ids) as profile_ids,
     (SELECT COALESCE(array_agg(simulation_id::text), ARRAY[]::text[])
@@ -348,7 +374,13 @@ SELECT
          WHERE sd.active = true
          GROUP BY sd.simulation_id
      ) sdd ON sdd.simulation_id = s.id
-     WHERE s.id IN (SELECT id FROM valid_simulations)
+     CROSS JOIN cohort_is_default cid
+     WHERE 
+         -- For default cohorts, include all simulations in the cohort
+         (cid.is_default = true AND s.id IN (SELECT simulation_id FROM cohort_simulation_ids))
+         OR
+         -- For non-default cohorts, use valid_simulations filtering
+         (cid.is_default = false AND s.id IN (SELECT id FROM valid_simulations))
     ) as simulation_mapping,
     (SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
@@ -397,4 +429,5 @@ SELECT
      FROM department_mapping_data dmd
     ) as department_mapping
 FROM cohort_data cd
+CROSS JOIN user_profile_for_cohort upc
 

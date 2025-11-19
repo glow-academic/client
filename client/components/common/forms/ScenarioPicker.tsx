@@ -104,6 +104,7 @@ export interface ScenarioPickerProps<
   showLabel?: boolean;
   buttonClassName?: string;
   isPracticeSimulation?: boolean;
+  disabled?: boolean;
 }
 
 export function ScenarioPicker<
@@ -119,6 +120,7 @@ export function ScenarioPicker<
   hideSelectedChips = true,
   showLabel = true,
   buttonClassName,
+  disabled = false,
   ...props
 }: ScenarioPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
@@ -469,7 +471,7 @@ export function ScenarioPicker<
         </div>
       )}
 
-      <Popover open={open} onOpenChange={setOpen} {...props}>
+      <Popover open={disabled ? false : open} onOpenChange={disabled ? () => {} : setOpen} {...props}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -477,6 +479,7 @@ export function ScenarioPicker<
             aria-expanded={open}
             aria-label="Select scenarios"
             className={cn("w-full justify-between", buttonClassName)}
+            disabled={disabled}
           >
             {getButtonText()}
             <ChevronsUpDown className="opacity-50" />

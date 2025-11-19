@@ -4090,6 +4090,8 @@ export interface components {
             valid_department_ids: string[];
             /** Active */
             active: boolean;
+            /** Can Edit */
+            can_edit: boolean;
             /** Simulation Ids */
             simulation_ids: string[];
             /** Valid Simulation Ids */

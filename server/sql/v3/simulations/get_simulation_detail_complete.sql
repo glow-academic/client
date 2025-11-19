@@ -468,6 +468,12 @@ WITH         simulation_departments_data AS (
             uc.role as user_role,
             COALESCE(cu.active_cohort_count, 0) as active_cohort_count,
             COALESCE(cu.total_cohort_links, 0) as total_cohort_links,
+            -- Permissions
+            CASE 
+                WHEN COALESCE(sb.department_ids, NULL) IS NULL AND uc.role != 'superadmin' THEN false
+                WHEN uc.role IN ('admin', 'instructional', 'superadmin') THEN true
+                ELSE false
+            END as can_edit,
             -- Scenarios
             sld.scenarios_list,
             sld.scenario_ids,

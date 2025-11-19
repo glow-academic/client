@@ -1509,6 +1509,8 @@ export default function Scenario({
               <h3 className="text-sm font-medium text-yellow-800">
                 {scenarioData?.generated
                   ? "Generated scenario cannot be edited"
+                  : scenarioData?.department_ids?.length === 0
+                  ? "Default scenario cannot be edited"
                   : "Scenario is in use by active simulations"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
@@ -1517,6 +1519,10 @@ export default function Scenario({
                     This is a generated scenario that cannot be directly edited.
                     You can duplicate this scenario to create a new editable
                     version with your desired changes.
+                  </p>
+                ) : scenarioData?.department_ids?.length === 0 ? (
+                  <p>
+                    This is a default scenario that cannot be edited. You can view the details but cannot make changes.
                   </p>
                 ) : (
                   <p>
@@ -1695,7 +1701,7 @@ export default function Scenario({
               label=""
               placeholder="Select a persona..."
               description="Choose the persona that will interact with students in this scenario."
-              disabled={isReadonly}
+              readonly={isReadonly}
             />
 
             {/* Guardrail Switches - Only visible to superadmin */}
@@ -1872,7 +1878,8 @@ export default function Scenario({
               label=""
               placeholder="Select documents..."
               description="Choose documents that will be available during this scenario."
-              disabled={isReadonly || !useDocuments}
+              disabled={!useDocuments}
+              readonly={isReadonly}
               onSelect={(ids) => {
                 // Enforce max 2 documents and deduplicate
                 const uniqueIds = Array.from(new Set(ids));
