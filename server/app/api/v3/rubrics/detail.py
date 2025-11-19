@@ -90,6 +90,16 @@ async def get_rubric_detail(
         )
 
         if not row:
+            # Check if rubric exists but user doesn't have department access
+            rubric_exists_check = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM rubrics WHERE id = $1)",
+                uuid.UUID(request_body.rubricId),
+            )
+            if rubric_exists_check:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this rubric. It may be restricted to other departments.",
+                )
             raise HTTPException(status_code=404, detail="Rubric not found")
 
         # Parse standard groups from JSONB
@@ -142,9 +152,8 @@ async def get_rubric_detail(
                             description=ddata.get("description", ""),
                         )
 
-        # Compute can_edit permission
-        user_role = row.get("user_role", "trainee")
-        can_edit = user_role in ("admin", "superadmin")
+        # Get can_edit from SQL (handles default objects and role checks)
+        can_edit = row.get("can_edit", False)
 
         # Convert arrays
         valid_department_ids = [

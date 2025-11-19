@@ -61,6 +61,15 @@ department_usage AS (
 user_profile AS (
     SELECT role FROM profiles WHERE id = $2
 ),
+user_department_access AS (
+    -- Check if user has access to this department
+    SELECT EXISTS(
+        SELECT 1 FROM profile_departments pd
+        WHERE pd.profile_id = $2 AND pd.department_id = $1 AND pd.active = true
+    ) OR EXISTS(
+        SELECT 1 FROM profiles p WHERE p.id = $2 AND p.role = 'superadmin'
+    ) as has_access
+),
 profile_active_cohort_links AS (
     SELECT 
         profile_id,
@@ -234,9 +243,16 @@ SELECT
     COALESCE(dps.total_price_spent, 0) as total_price_spent,
     COALESCE(dsc.staff_count, 0) as staff_count,
     CASE WHEN du.total_usage > 0 THEN true ELSE false END as in_use,
-    CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END as can_edit,
+    CASE 
+        WHEN up.role = 'superadmin' THEN true
+        WHEN up.role = 'admin' AND uda.has_access THEN true
+        ELSE false
+    END as can_edit,
     CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_duplicate,
-    CASE WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true ELSE false END as can_delete,
+    CASE 
+        WHEN up.role = 'superadmin' AND du.total_usage = 0 THEN true
+        ELSE false
+    END as can_delete,
     (SELECT COALESCE(jsonb_agg(
         jsonb_build_object(
             'profile_id', ds.profile_id::text,
@@ -272,7 +288,9 @@ LEFT JOIN department_price_spent dps ON dps.department_id = d.id
 LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
 CROSS JOIN department_usage du
 CROSS JOIN user_profile up
+CROSS JOIN user_department_access uda
 CROSS JOIN cohort_mapping_data cmd
 CROSS JOIN department_mapping_data dmd
 WHERE d.id = $1
+AND uda.has_access = true
 

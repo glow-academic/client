@@ -7909,6 +7909,17 @@
           "attemptId": {
             "type": "string",
             "title": "Attemptid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -22221,6 +22232,10 @@
             },
             "type": "object",
             "title": "Reasoning Mapping"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
           }
         },
         "type": "object",
@@ -22245,7 +22260,8 @@
           "prompt_mapping",
           "debug_info",
           "model_mapping",
-          "reasoning_mapping"
+          "reasoning_mapping",
+          "can_edit"
         ],
         "title": "AgentDetailResponse"
       },
@@ -22448,6 +22464,10 @@
             },
             "type": "object",
             "title": "Reasoning Mapping"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
           }
         },
         "type": "object",
@@ -22472,7 +22492,8 @@
           "prompt_mapping",
           "debug_info",
           "model_mapping",
-          "reasoning_mapping"
+          "reasoning_mapping",
+          "can_edit"
         ],
         "title": "AgentDetailResponse"
       },

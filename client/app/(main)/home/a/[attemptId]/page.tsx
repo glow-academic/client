@@ -6,6 +6,8 @@
  */
 
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -43,9 +45,12 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { attemptId } = await params;
 
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
   try {
     const attemptData = await getAttemptFull(attemptId)({
-      body: { attemptId },
+      body: { attemptId, profileId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
@@ -92,21 +97,43 @@ export default async function AttemptPage({
 }) {
   const { attemptId } = await params;
 
-  // Fetch attempt data server-side
-  const attemptData = await getAttemptFull(attemptId)({
-    body: { attemptId },
-  });
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
 
-  return (
-    <div className="space-y-6">
-      <AttemptChat
-        attemptId={attemptId}
-        attemptData={attemptData}
-        updateChatCreatedAtAction={updateChatCreatedAt}
-        revalidateAttemptAction={revalidateAttempt}
-      />
-    </div>
-  );
+  // Fetch attempt data server-side
+  try {
+    const attemptData = await getAttemptFull(attemptId)({
+      body: { attemptId, profileId },
+    });
+
+    return (
+      <div className="space-y-6">
+        <AttemptChat
+          attemptId={attemptId}
+          attemptData={attemptData}
+          updateChatCreatedAtAction={updateChatCreatedAt}
+          revalidateAttemptAction={revalidateAttempt}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (role-based access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="scenario"
+          redirectPath="/home"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client (type-only imports) ---- */

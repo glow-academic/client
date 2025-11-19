@@ -104,6 +104,16 @@ async def get_department_detail(
         )
 
         if not dept_row:
+            # Check if department exists but user doesn't have department access
+            department_exists_check = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM departments WHERE id = $1)",
+                request_body.departmentId,
+            )
+            if department_exists_check:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this department. It may be restricted to other departments.",
+                )
             raise HTTPException(
                 status_code=404,
                 detail=f"Department {request_body.departmentId} not found",
@@ -195,13 +205,17 @@ async def get_department_detail(
         # Get valid_department_ids from department_mapping keys
         valid_department_ids = list(department_mapping.keys())
 
+        # Ensure can_delete is stricter than can_edit
+        can_edit = dept_row["can_edit"]
+        can_delete = dept_row["can_delete"] and can_edit
+
         response_data = DepartmentDetailResponse(
             title=dept_row["title"],
             description=dept_row["description"],
             active=dept_row["active"],
-            can_edit=dept_row["can_edit"],
+            can_edit=can_edit,
             can_duplicate=dept_row["can_duplicate"],
-            can_delete=dept_row["can_delete"],
+            can_delete=can_delete,
             in_use=dept_row["in_use"],
             staff_count=int(dept_row["staff_count"]),
             total_price_spent=float(dept_row["total_price_spent"]),

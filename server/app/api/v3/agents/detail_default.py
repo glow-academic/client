@@ -50,6 +50,7 @@ class AgentDetailResponse(BaseModel):
     debug_info: list[dict[str, Any]]
     model_mapping: ModelMapping
     reasoning_mapping: ReasoningMapping
+    can_edit: bool
 
 
 router = APIRouter()
@@ -151,6 +152,12 @@ async def get_agent_detail_default(
             ),
         }
 
+        # Get user role for permissions
+        user_role = result.get("user_role", "trainee") if result else "trainee"
+        is_superadmin = user_role == "superadmin"
+        # Default agents (no department_ids) are read-only for non-superadmin
+        can_edit = is_superadmin
+
         response_data = AgentDetailResponse(
             name="",
             description="",
@@ -173,6 +180,7 @@ async def get_agent_detail_default(
             debug_info=[],
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
+            can_edit=can_edit,
         )
 
         # Cache response

@@ -36,6 +36,21 @@ profile_data AS (
     FROM profiles 
     WHERE id = $2
 ),
+user_has_rubric_access AS (
+    -- Check if user has access to rubric via department links
+    SELECT EXISTS(
+        SELECT 1 FROM rubric_departments rd
+        JOIN profile_departments pd ON pd.department_id = rd.department_id
+        WHERE rd.rubric_id = $1 AND rd.active = true
+        AND pd.profile_id = $2 AND pd.active = true
+    ) OR EXISTS(
+        SELECT 1 FROM profiles p WHERE p.id = $2 AND p.role = 'superadmin'
+    ) OR (
+        -- Default rubrics (no department links) are accessible to all
+        SELECT COUNT(*) FROM rubric_departments rd
+        WHERE rd.rubric_id = $1 AND rd.active = true
+    ) = 0 as has_access
+),
 standard_groups_with_standards AS (
     SELECT 
         COALESCE(
@@ -76,10 +91,19 @@ SELECT
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
     pr.user_role,
-    sg.groups_json as standard_groups_complete
+    sg.groups_json as standard_groups_complete,
+    CASE 
+        -- Default rubrics (no department_ids) are read-only for non-superadmin
+        WHEN (COALESCE(rdd.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND pr.user_role != 'superadmin') THEN false
+        WHEN pr.user_role = 'superadmin' THEN true
+        WHEN pr.user_role IN ('admin', 'instructional') AND uhra.has_access THEN true
+        ELSE false
+    END as can_edit
 FROM rubric_data r
 LEFT JOIN rubric_departments_data rdd ON true
 CROSS JOIN valid_depts vd
 CROSS JOIN profile_data pr
 CROSS JOIN standard_groups_with_standards sg
+CROSS JOIN user_has_rubric_access uhra
+WHERE uhra.has_access = true
 

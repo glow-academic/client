@@ -8,6 +8,7 @@
 import { getSession } from "@/auth";
 
 import Department from "@/components/departments/Department";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -116,7 +117,8 @@ export default async function DepartmentEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch department detail (cached, won't duplicate with metadata)
-  const departmentDetail = await getDepartment(departmentId)(profileId);
+  try {
+    const departmentDetail = await getDepartment(departmentId)(profileId);
 
   // Fetch initial search data (empty query) for SearchExistingStaffModal
   const initialSearchData = await searchStaff({
@@ -129,36 +131,54 @@ export default async function DepartmentEditPage({
     },
   });
 
-  // Fetch initial create staff data for CreateStaffButton
-  const initialCreateStaffData = await getCreateStaffData({
-    body: {
-      departmentIds: [departmentId],
-      profileId,
-    },
-  });
+    // Fetch initial create staff data for CreateStaffButton
+    const initialCreateStaffData = await getCreateStaffData({
+      body: {
+        departmentIds: [departmentId],
+        profileId,
+      },
+    });
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="department-edit"
-      data-department-id={departmentId}
-    >
-      <Department
-        departmentId={departmentId}
-        departmentDetail={departmentDetail}
-        updateDepartmentAction={updateDepartment}
-        removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
-        duplicateDepartmentAction={duplicateDepartment}
-        deleteDepartmentAction={deleteDepartment}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-        searchStaffAction={searchStaff}
-        initialSearchData={initialSearchData}
-        initialCreateStaffData={initialCreateStaffData}
-        updateStaffAction={updateStaff}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="department-edit"
+        data-department-id={departmentId}
+      >
+        <Department
+          departmentId={departmentId}
+          departmentDetail={departmentDetail}
+          updateDepartmentAction={updateDepartment}
+          removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
+          duplicateDepartmentAction={duplicateDepartment}
+          deleteDepartmentAction={deleteDepartment}
+          processCSVAction={processCSV}
+          bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
+          searchStaffAction={searchStaff}
+          initialSearchData={initialSearchData}
+          initialCreateStaffData={initialCreateStaffData}
+          updateStaffAction={updateStaff}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="department"
+          redirectPath="/management/departments"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Derived types from server responses ---- */

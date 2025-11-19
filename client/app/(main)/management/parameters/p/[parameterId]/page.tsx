@@ -8,6 +8,7 @@
 import { getSession } from "@/auth";
 
 import Parameter from "@/components/parameters/Parameter";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -105,23 +106,42 @@ export default async function ParameterEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch parameter detail (cached, won't duplicate with metadata)
-  const parameterDetail = await getParameter(parameterId)(profileId);
+  try {
+    const parameterDetail = await getParameter(parameterId)(profileId);
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="parameter-edit"
-      data-parameter-id={parameterId}
-    >
-      <Parameter
-        parameterId={parameterId}
-        mode="edit"
-        parameterDetail={parameterDetail}
-        createParameterAction={createParameter}
-        updateParameterAction={updateParameter}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="parameter-edit"
+        data-parameter-id={parameterId}
+      >
+        <Parameter
+          parameterId={parameterId}
+          mode="edit"
+          parameterDetail={parameterDetail}
+          createParameterAction={createParameter}
+          updateParameterAction={updateParameter}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="parameter"
+          redirectPath="/management/parameters"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

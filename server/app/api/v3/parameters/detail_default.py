@@ -111,6 +111,13 @@ async def get_parameter_detail_default(
         if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
             department_ids = [str(did) for did in dept_ids_raw if did]
 
+        # Get user role for permissions
+        user_role = result.get("user_role", "trainee")
+        is_superadmin = user_role == "superadmin"
+        is_default = department_ids is None or len(department_ids) == 0
+        # Default parameters (no department_ids) are read-only for non-superadmin
+        can_edit = not (is_default and not is_superadmin) and user_role in ("admin", "superadmin")
+
         response_data = ParameterDetailResponse(
             name=result["name"],
             description=result["description"],
@@ -122,7 +129,7 @@ async def get_parameter_detail_default(
             parameter_items=parameter_items,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
-            can_edit=result.get("can_edit", True),  # Default to True for new parameters
+            can_edit=can_edit,
         )
 
         # Cache response

@@ -17,7 +17,15 @@ import { ShieldX } from "lucide-react";
 import Link from "next/link";
 
 interface DepartmentAccessDeniedProps {
-  resourceType: "scenario" | "simulation" | "cohort" | "persona";
+  resourceType:
+    | "scenario"
+    | "simulation"
+    | "cohort"
+    | "persona"
+    | "department"
+    | "agent"
+    | "rubric"
+    | "parameter";
   redirectPath: string;
 }
 
@@ -35,6 +43,14 @@ export function DepartmentAccessDenied({
         return "cohort";
       case "persona":
         return "persona";
+      case "department":
+        return "department";
+      case "agent":
+        return "agent";
+      case "rubric":
+        return "rubric";
+      case "parameter":
+        return "parameter";
       default:
         return "resource";
     }
@@ -50,6 +66,14 @@ export function DepartmentAccessDenied({
         return "/cohorts";
       case "persona":
         return "/create/personas";
+      case "department":
+        return "/management/departments";
+      case "agent":
+        return "/management/agents";
+      case "rubric":
+        return "/management/rubrics";
+      case "parameter":
+        return "/management/parameters";
       default:
         return "/";
     }

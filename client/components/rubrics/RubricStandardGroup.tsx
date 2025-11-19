@@ -273,6 +273,7 @@ export interface RubricStandardGroupProps {
   rubricDepartmentId: string;
   rubricActive: boolean;
   profileId: string;
+  isReadonly?: boolean;
   updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
 }
 
@@ -305,6 +306,7 @@ export default function RubricStandardGroup({
   rubricDepartmentId,
   rubricActive,
   profileId,
+  isReadonly = false,
   updateRubricAction,
 }: RubricStandardGroupProps) {
   const [isEditing, setIsEditing] = useState(mode === "create");
@@ -897,6 +899,7 @@ export default function RubricStandardGroup({
                             handleGroupInputChange("name", e.target.value)
                           }
                           className="text-lg font-semibold w-full"
+                          disabled={isReadonly}
                         />
                       </div>
                       <div>
@@ -911,6 +914,7 @@ export default function RubricStandardGroup({
                           }
                           className="text-sm w-full min-h-[100px]"
                           rows={4}
+                          disabled={isReadonly}
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -923,6 +927,7 @@ export default function RubricStandardGroup({
                               handleGroupInputChange("points", e.target.value)
                             }
                             className="text-sm"
+                            disabled={isReadonly}
                           />
                         </div>
                         <div>
@@ -937,6 +942,7 @@ export default function RubricStandardGroup({
                               )
                             }
                             className="text-sm"
+                            disabled={isReadonly}
                           />
                         </div>
                       </div>
@@ -966,7 +972,7 @@ export default function RubricStandardGroup({
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {!isEditing && mode === "edit" && (
+                {!isEditing && mode === "edit" && !isReadonly && (
                   <div className="flex flex-wrap gap-1">
                     <Button
                       variant="ghost"
@@ -1026,6 +1032,7 @@ export default function RubricStandardGroup({
                           }
                           className="text-sm font-medium w-full"
                           placeholder="Standard name"
+                          disabled={isReadonly}
                         />
                       ) : (
                         <span className="font-medium text-sm block">
@@ -1048,6 +1055,7 @@ export default function RubricStandardGroup({
                           className="text-sm w-20"
                           min="0"
                           max={groupFormData.points}
+                          disabled={isReadonly}
                         />
                       ) : (
                         <Badge
@@ -1056,7 +1064,7 @@ export default function RubricStandardGroup({
                           {standard.points}
                         </Badge>
                       )}
-                      {isEditing && (
+                      {isEditing && !isReadonly && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1082,6 +1090,7 @@ export default function RubricStandardGroup({
                         className="text-sm min-h-[80px] w-full"
                         rows={3}
                         placeholder="Standard description"
+                        disabled={isReadonly}
                       />
                     ) : (
                       <p className="text-sm text-muted-foreground leading-relaxed">
@@ -1125,6 +1134,7 @@ export default function RubricStandardGroup({
                             className="text-sm w-16"
                             min="0"
                             max={groupFormData.points}
+                            disabled={isReadonly}
                           />
                         ) : (
                           <Badge
@@ -1147,6 +1157,7 @@ export default function RubricStandardGroup({
                             }
                             className="text-sm w-full"
                             placeholder="Standard name"
+                            disabled={isReadonly}
                           />
                         ) : (
                           <span className="font-medium truncate block">
@@ -1168,6 +1179,7 @@ export default function RubricStandardGroup({
                             className="text-sm min-h-[60px] max-w-full"
                             rows={2}
                             placeholder="Standard description"
+                            disabled={isReadonly}
                           />
                         ) : (
                           <div className="w-full overflow-hidden py-2">
@@ -1177,7 +1189,7 @@ export default function RubricStandardGroup({
                           </div>
                         )}
                       </TableCell>
-                      {isEditing && (
+                      {isEditing && !isReadonly && (
                         <TableCell className="w-20 py-4">
                           <Button
                             variant="ghost"
@@ -1194,8 +1206,8 @@ export default function RubricStandardGroup({
               </Table>
             </div>
 
-            {/* Add New Standard Button - Only show when editing */}
-            {isEditing && (
+            {/* Add New Standard Button - Only show when editing and not readonly */}
+            {isEditing && !isReadonly && (
               <div className="mt-4">
                 {canAddStandard ? (
                   <Button
@@ -1215,8 +1227,8 @@ export default function RubricStandardGroup({
               </div>
             )}
 
-            {/* Save/Cancel buttons - Only show when editing */}
-            {isEditing && (
+            {/* Save/Cancel buttons - Only show when editing and not readonly */}
+            {isEditing && !isReadonly && (
               <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4 pt-4 border-t">
                 <Button
                   variant="outline"

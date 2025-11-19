@@ -46,6 +46,28 @@ parameter_departments_aggregated AS (
     JOIN parameter_items pi ON pi.parameter_id = pid.parameter_id
     JOIN parameter_item_departments pid_dept ON pid_dept.parameter_item_id = pi.id AND pid_dept.active = true
 ),
+user_has_parameter_access AS (
+    -- Check if user has access to parameter via parameter item department links
+    SELECT EXISTS(
+        SELECT 1 FROM parameter_item_departments pid_dept
+        JOIN profile_departments pd ON pd.department_id = pid_dept.department_id
+        JOIN parameter_items pi ON pi.id = pid_dept.parameter_item_id
+        WHERE pi.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+        AND pid_dept.active = true
+        AND pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
+        AND pd.active = true
+    ) OR EXISTS(
+        SELECT 1 FROM resolve_profile_id rpi
+        JOIN profiles p ON p.id = rpi.resolved_profile_id
+        WHERE p.role = 'superadmin'
+    ) OR (
+        -- Default parameters (no department links on any items) are accessible to all
+        SELECT COUNT(*) FROM parameter_item_departments pid_dept
+        JOIN parameter_items pi ON pi.id = pid_dept.parameter_item_id
+        WHERE pi.parameter_id = (SELECT parameter_id FROM parameter_id_resolved)
+        AND pid_dept.active = true
+    ) = 0 as has_access
+),
 parameter_data AS (
     SELECT 
         p.name,
@@ -57,7 +79,10 @@ parameter_data AS (
         COALESCE(pda.department_ids, NULL) as department_ids,
         CASE 
             WHEN COALESCE(pasl.active_scenario_count, 0) > 0 THEN false
-            WHEN up.role IN ('admin', 'superadmin') THEN true
+            -- Default parameters (no department_ids) are read-only for non-superadmin
+            WHEN (COALESCE(pda.department_ids, NULL) IS NULL OR array_length(pda.department_ids, 1) = 0) AND up.role != 'superadmin' THEN false
+            WHEN up.role = 'superadmin' THEN true
+            WHEN up.role IN ('admin', 'instructional') THEN true
             ELSE false
         END as can_edit
     FROM parameter_id_resolved pid
@@ -121,4 +146,6 @@ SELECT
 FROM parameter_data p
 CROSS JOIN items_json ij
 CROSS JOIN valid_depts vd
+CROSS JOIN user_has_parameter_access uhpa
+WHERE uhpa.has_access = true
 

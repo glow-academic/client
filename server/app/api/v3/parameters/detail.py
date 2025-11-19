@@ -86,6 +86,16 @@ async def get_parameter_detail(
         )
 
         if not result:
+            # Check if parameter exists but user doesn't have department access
+            parameter_exists_check = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM parameters WHERE id = $1)",
+                uuid.UUID(request.parameterId),
+            )
+            if parameter_exists_check:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this parameter. It may be restricted to other departments.",
+                )
             raise HTTPException(
                 status_code=404, detail=f"Parameter not found: {request.parameterId}"
             )
@@ -132,6 +142,9 @@ async def get_parameter_detail(
         if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
             department_ids = [str(did) for did in dept_ids_raw if did]
 
+        # Get can_edit from SQL (handles default objects and role checks)
+        can_edit = result.get("can_edit", False)
+
         response_data = ParameterDetailResponse(
             name=result["name"],
             description=result["description"],
@@ -143,7 +156,7 @@ async def get_parameter_detail(
             parameter_items=parameter_items,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
-            can_edit=result.get("can_edit", False),
+            can_edit=can_edit,
         )
 
         # Cache response

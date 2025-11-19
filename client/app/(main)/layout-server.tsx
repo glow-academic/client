@@ -138,7 +138,7 @@ export async function getLayoutContextData() {
   if (attemptId) {
     try {
       attemptData = await getAttemptFull(attemptId)({
-        body: { attemptId },
+        body: { attemptId, profileId: effectiveProfileId },
       });
     } catch {
       // If attempt fetch fails, just continue without attempt data

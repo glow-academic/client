@@ -5,20 +5,20 @@ import re
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
 class AttemptFullRequest(BaseModel):
     attemptId: str
+    profileId: str | None = None  # Current user's profile ID for role check
 
 
 # Strongly typed nested models
@@ -275,6 +275,10 @@ async def get_attempt_full(
     sql_params: tuple[Any, ...] | None = None
 
     try:
+        # Get current user's profileId from request body
+        # If not provided, skip role check for backward compatibility
+        current_profile_id = request.profileId
+        
         sql_query = load_sql("sql/v3/attempts/get_attempt_full_complete.sql")
         sql_params = (request.attemptId,)
         result = await conn.fetchrow(sql_query, request.attemptId)
@@ -290,6 +294,51 @@ async def get_attempt_full(
             if isinstance(data, str):
                 return json.loads(data)
             return data
+
+        # Role-based restriction: check if viewing profile's role is "higher" than current user's role
+        if current_profile_id:
+            # Get attempt's profile role from attempt_profiles
+            attempt_profiles_data = parse_jsonb(result.get("attemptProfiles", []))
+            attempt_profile_id = None
+            if attempt_profiles_data and isinstance(attempt_profiles_data, list):
+                for ap in attempt_profiles_data:
+                    if isinstance(ap, dict) and ap.get("active"):
+                        attempt_profile_id = ap.get("profileId")
+                        break
+            
+            if attempt_profile_id:
+                # Get roles for comparison
+                attempt_profile_role_row = await conn.fetchrow(
+                    "SELECT role FROM profiles WHERE id = $1",
+                    attempt_profile_id,
+                )
+                current_user_role_row = await conn.fetchrow(
+                    "SELECT role FROM profiles WHERE id = $1",
+                    current_profile_id,
+                )
+                
+                if attempt_profile_role_row and current_user_role_row:
+                    attempt_role = attempt_profile_role_row["role"]
+                    current_role = current_user_role_row["role"]
+                    
+                    # Role hierarchy: superadmin > admin > instructional > ta > guest
+                    role_hierarchy = {
+                        "superadmin": 5,
+                        "admin": 4,
+                        "instructional": 3,
+                        "ta": 2,
+                        "guest": 1,
+                    }
+                    
+                    attempt_role_level = role_hierarchy.get(attempt_role.lower(), 1)
+                    current_role_level = role_hierarchy.get(current_role.lower(), 1)
+                    
+                    # Return 403 if viewing profile's role is higher than current user's role
+                    if attempt_role_level > current_role_level:
+                        raise HTTPException(
+                            status_code=403,
+                            detail=f"You don't have permission to view attempts from {attempt_role} users. Your role ({current_role}) is lower than the attempt owner's role.",
+                        )
 
         # Parse JSONB fields and construct strongly typed models
         attempt_data = parse_jsonb(result["attempt"])

@@ -282,6 +282,11 @@ objectives_history_data_default AS (
 ),
 problem_statement_mapping_data_default AS (
     SELECT '{}'::jsonb as problem_statement_mapping
+),
+user_profile AS (
+    SELECT role as user_role 
+    FROM profiles 
+    WHERE id = $1
 )
 SELECT 
     COALESCE(
@@ -304,5 +309,6 @@ SELECT
     (SELECT parameters_json FROM parameters_structure) as parameters_json,
     (SELECT document_details FROM document_details_data) as document_details,
     (SELECT problem_statement_mapping FROM problem_statement_mapping_data_default) as problem_statement_mapping,
-    (SELECT objectives_history FROM objectives_history_data_default) as objectives_history
+    (SELECT objectives_history FROM objectives_history_data_default) as objectives_history,
+    (SELECT user_role FROM user_profile) as user_role
 

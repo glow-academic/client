@@ -6,6 +6,7 @@
  */
 
 import Rubric from "@/components/rubrics/Rubric";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { getSession } from "@/auth";
 
 import { api } from "@/lib/api/client";
@@ -81,29 +82,48 @@ export default async function EditRubricPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch data based on mode (edit vs create)
-  const [rubricDetail, rubricDetailDefault] = await Promise.all([
-    rubricId
-      ? getRubric(rubricId)(profileId).catch(() => null)
-      : Promise.resolve(null),
-    !rubricId
-      ? getRubricDefault(profileId).catch(() => null)
-      : Promise.resolve(null),
-  ]);
+  try {
+    const [rubricDetail, rubricDetailDefault] = await Promise.all([
+      rubricId
+        ? getRubric(rubricId)(profileId).catch(() => null)
+        : Promise.resolve(null),
+      !rubricId
+        ? getRubricDefault(profileId).catch(() => null)
+        : Promise.resolve(null),
+    ]);
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="rubric-edit"
-      data-rubric-id={rubricId}
-    >
-      <Rubric
-        rubricId={rubricId}
-        {...(rubricDetail && { rubricDetail })}
-        {...(rubricDetailDefault && { rubricDetailDefault })}
-        updateRubricAction={updateRubric}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="rubric-edit"
+        data-rubric-id={rubricId}
+      >
+        <Rubric
+          rubricId={rubricId}
+          {...(rubricDetail && { rubricDetail })}
+          {...(rubricDetailDefault && { rubricDetailDefault })}
+          updateRubricAction={updateRubric}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="rubric"
+          redirectPath="/management/rubrics"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */

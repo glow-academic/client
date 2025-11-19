@@ -117,7 +117,14 @@ async def get_rubric_detail_default(
 
         # Compute can_edit permission
         user_role = row.get("user_role", "trainee")
-        can_edit = user_role in ("admin", "superadmin")
+        is_superadmin = user_role == "superadmin"
+        # Get department_ids to check if default object
+        dept_ids = None
+        if row.get("department_ids") is not None:
+            dept_ids = [str(d) for d in row["department_ids"]]
+        is_default = dept_ids is None or len(dept_ids) == 0
+        # Default rubrics (no department_ids) are read-only for non-superadmin
+        can_edit = not (is_default and not is_superadmin) and user_role in ("admin", "superadmin")
 
         # Convert arrays
         valid_department_ids = [

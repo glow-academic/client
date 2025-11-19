@@ -8,6 +8,7 @@
 import { getSession } from "@/auth";
 
 import SystemAgent from "@/components/agents/SystemAgent";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -115,25 +116,44 @@ export default async function AgentEditPage({
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch agent detail (cached, won't duplicate with metadata)
-  const agentDetail = agentId
-    ? await getAgent(agentId)(profileId).catch(() => null)
-    : null;
+  try {
+    const agentDetail = agentId
+      ? await getAgent(agentId)(profileId)
+      : null;
 
-  return (
-    <div
-      className="space-y-6"
-      data-page="agent-edit"
-      data-agent-id={agentId}
-    >
-      <SystemAgent
-        agentId={agentId}
-        {...(agentDetail && { agentDetail })}
-        createAgentAction={createAgent}
-        updateAgentAction={updateAgent}
-        deleteAgentPromptAction={deleteAgentPrompt}
-      />
-    </div>
-  );
+    return (
+      <div
+        className="space-y-6"
+        data-page="agent-edit"
+        data-agent-id={agentId}
+      >
+        <SystemAgent
+          agentId={agentId}
+          {...(agentDetail && { agentDetail })}
+          createAgentAction={createAgent}
+          updateAgentAction={updateAgent}
+          deleteAgentPromptAction={deleteAgentPrompt}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <DepartmentAccessDenied
+          resourceType="agent"
+          redirectPath="/management/agents"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

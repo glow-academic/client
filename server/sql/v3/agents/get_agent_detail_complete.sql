@@ -141,6 +141,20 @@ user_departments AS (
     AND pd.profile_id = $2::uuid
     AND pd.active = true
 ),
+user_has_agent_access AS (
+    -- Check if user has access to agent via department links
+    SELECT EXISTS(
+        SELECT 1 FROM agent_departments ad
+        JOIN user_departments ud ON ud.id = ad.department_id::uuid
+        WHERE ad.agent_id = $1::uuid AND ad.active = true
+    ) OR EXISTS(
+        SELECT 1 FROM profiles p WHERE p.id = $2::uuid AND p.role = 'superadmin'
+    ) OR (
+        -- Default agents (no department links) are accessible to all
+        SELECT COUNT(*) FROM agent_departments ad
+        WHERE ad.agent_id = $1::uuid AND ad.active = true
+    ) = 0 as has_access
+),
 valid_departments_data AS (
     SELECT 
         COALESCE(
@@ -172,6 +186,13 @@ SELECT
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
     COALESCE(adpl.department_prompt_links, '{}'::jsonb) as department_prompt_links,
+    CASE 
+        -- Default agents (no department_ids) are read-only for non-superadmin
+        WHEN (COALESCE(add.department_ids, ARRAY[]::text[]) = ARRAY[]::text[] AND up.role != 'superadmin') THEN false
+        WHEN up.role = 'superadmin' THEN true
+        WHEN up.role IN ('admin', 'instructional') AND uhaa.has_access THEN true
+        ELSE false
+    END as can_edit,
     COALESCE(
         (SELECT jsonb_agg(
             jsonb_build_object(
@@ -203,4 +224,7 @@ LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN prompt_mapping_data pmd
 CROSS JOIN agent_department_prompt_links adpl
+CROSS JOIN user_profile up
+CROSS JOIN user_has_agent_access uhaa
+WHERE uhaa.has_access = true
 

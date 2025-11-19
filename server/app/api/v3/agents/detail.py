@@ -71,6 +71,7 @@ class AgentDetailResponse(BaseModel):
     debug_info: list[DebugInfoItem]
     model_mapping: ModelMapping
     reasoning_mapping: ReasoningMapping
+    can_edit: bool
 
 
 router = APIRouter()
@@ -106,6 +107,16 @@ async def get_agent_detail(
         result = await conn.fetchrow(sql_query, request.agentId, request.profileId)
 
         if not result:
+            # Check if agent exists but user doesn't have department access
+            agent_exists_check = await conn.fetchval(
+                "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)",
+                request.agentId,
+            )
+            if agent_exists_check:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this agent. It may be restricted to other departments.",
+                )
             raise HTTPException(
                 status_code=404, detail=f"Agent {request.agentId} not found"
             )
@@ -243,6 +254,9 @@ async def get_agent_detail(
             ),
         }
 
+        # Get can_edit from SQL result
+        can_edit = result.get("can_edit", False)
+
         response_data = AgentDetailResponse(
             name=result["name"],
             description=result["description"],
@@ -267,6 +281,7 @@ async def get_agent_detail(
             debug_info=debug_info,
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,
+            can_edit=can_edit,
         )
 
         # Cache response

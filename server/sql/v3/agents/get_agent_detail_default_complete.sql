@@ -49,7 +49,9 @@ SELECT
         '[]'::jsonb
     ) as valid_model_ids,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
-    COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping
+    COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
+    up.role as user_role
 FROM (SELECT 1) dummy
 CROSS JOIN valid_departments_data vdd
+CROSS JOIN user_profile up
 

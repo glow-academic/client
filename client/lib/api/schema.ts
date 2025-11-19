@@ -3632,6 +3632,8 @@ export interface components {
         AttemptFullRequest: {
             /** Attemptid */
             attemptId: string;
+            /** Profileid */
+            profileId?: string | null;
         };
         /**
          * AttemptFullResponse
@@ -9284,6 +9286,8 @@ export interface components {
             reasoning_mapping: {
                 [key: string]: components["schemas"]["ReasoningMappingItem"];
             };
+            /** Can Edit */
+            can_edit: boolean;
         };
         /**
          * DebugInfoItem
@@ -9371,6 +9375,8 @@ export interface components {
             reasoning_mapping: {
                 [key: string]: components["schemas"]["ReasoningMappingItem"];
             };
+            /** Can Edit */
+            can_edit: boolean;
         };
         /** ScenarioItem */
         app__api__v3__attempts__full__ScenarioItem: {
