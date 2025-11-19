@@ -5,7 +5,7 @@ import logging
 from collections.abc import Iterable
 from typing import Any
 
-from app.main import redis_client
+from app.main import get_redis_client
 from app.utils.cache.tag_set_name import tag_set_name
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,9 @@ async def set_cached(
     tags: Iterable[str],
 ) -> None:
     """Store HTTP response in Redis with tag tracking."""
+    redis_client = get_redis_client()
     if not redis_client:
+        logger.info("Redis client not available, skipping cache write")
         return
 
     try:
@@ -30,5 +32,6 @@ async def set_cached(
             pipe.sadd(tag_set_name(tag), key)
             pipe.expire(tag_set_name(tag), ttl)  # Expire tag set with cache
         await pipe.execute()
+        logger.info(f"Cache written successfully: key={key[:50]}..., ttl={ttl}, tags={list(tags)}")
     except Exception as e:
-        logger.error(f"Error writing cache: {e}")
+        logger.error(f"Error writing cache: {e}", exc_info=True)

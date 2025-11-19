@@ -86,7 +86,9 @@ async def get_pricing(
     tags = ["pricing"]  # From router tags
 
     # Generate cache key from path and parsed body
+    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
+    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache

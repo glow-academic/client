@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections.abc import Iterable
 
-from app.main import redis_client
+from app.main import get_redis_client
 from app.utils.cache.tag_set_name import tag_set_name
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def invalidate_tags(tags: Iterable[str]) -> None:
     """Invalidate all cache entries for given tags."""
+    redis_client = get_redis_client()
     if not redis_client:
         return
 

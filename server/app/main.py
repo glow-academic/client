@@ -121,6 +121,7 @@ guardrail_progress: dict[str, bool] = {}
 
 # ----------  Socket.IO with Redis message queue  ----------
 redis_url = os.getenv("REDIS_URL")  # don't default when unset
+logger.info(f"redis URL {redis_url}")
 
 if redis_url and AsyncRedisManager:
     logger.info(f"Socket.IO: clustering via Redis → {redis_url}")
@@ -363,9 +364,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 handler.setFormatter(compact_formatter)
                 uvicorn_logger.addHandler(handler)
 
-        # Initialize Redis client for socket ownership management
+        # Initialize Redis client for HTTP caching and socket ownership management
         global redis_client
         redis_url = os.getenv("REDIS_URL")
+        logger.info(f"Initializing HTTP cache Redis client: redis={redis is not None}, redis_url={redis_url}")
         if not redis or not redis_url:
             logger.warning(
                 "Redis disabled (no lib or no REDIS_URL); using in-memory fallbacks"
@@ -376,9 +378,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 client = redis.from_url(redis_url)  # type: ignore
                 await client.ping()
                 redis_client = client
-                logger.info(f"Redis client initialized: {redis_url}")
+                logger.info(f"Redis client initialized for HTTP caching: {redis_url}")
             except Exception as e:
-                logger.error(f"Failed to initialize Redis client: {e}")
+                logger.error(f"Failed to initialize Redis client: {e}", exc_info=True)
                 redis_client = None
 
         # Initialize asyncpg database pool
