@@ -18,6 +18,14 @@ rubric_all_simulation_links AS (
     FROM simulations
     GROUP BY rubric_id
 ),
+rubric_simulations_data AS (
+    SELECT 
+        s.rubric_id,
+        ARRAY_AGG(s.id::text ORDER BY s.title) as simulation_ids
+    FROM simulations s
+    WHERE s.active = true
+    GROUP BY s.rubric_id
+),
 rubric_departments_data AS (
     SELECT 
         rd.rubric_id,
@@ -37,6 +45,7 @@ rubric_data AS (
         r.points,
         r.pass_points as passPoints,
         COALESCE(rdd.department_ids, NULL) as department_ids,
+        COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
         COALESCE(rasl_all.total_simulation_links, 0) as total_simulation_links,
         CASE 
@@ -56,10 +65,11 @@ rubric_data AS (
     FROM rubrics r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = r.id
+    LEFT JOIN rubric_simulations_data rsd ON rsd.rubric_id = r.id
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
     LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
     CROSS JOIN user_profile up
-    GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rdd.department_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
+    GROUP BY r.id, r.name, r.description, r.points, r.pass_points, rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
     HAVING 
         COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -135,17 +145,38 @@ department_mapping_data AS (
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
         OR d.id IN (SELECT department_id FROM user_departments)
+),
+all_simulation_ids AS (
+    SELECT DISTINCT unnest(simulation_ids)::uuid as simulation_id
+    FROM rubric_simulations_data
+    WHERE simulation_ids IS NOT NULL
+),
+simulation_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            s.id::text,
+            jsonb_build_object(
+                'name', s.title,
+                'description', COALESCE(s.description, '')
+            )
+        ) FILTER (WHERE s.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM simulations s
+    WHERE s.id IN (SELECT simulation_id FROM all_simulation_ids)
 )
 SELECT 
     rd.*,
     COALESCE(rgs.groups_structure, '{}'::jsonb) as standard_groups,
     sgm.mapping as standard_groups_mapping,
     sm.mapping as standards_mapping,
-    dmd.mapping as department_mapping
+    dmd.mapping as department_mapping,
+    simd.mapping as simulation_mapping
 FROM rubric_data rd
 LEFT JOIN rubric_groups_structure rgs ON rgs.rubric_id = rd.rubric_id
 CROSS JOIN standard_groups_mapping_data sgm
 CROSS JOIN standards_mapping_data sm
 CROSS JOIN department_mapping_data dmd
+CROSS JOIN simulation_mapping_data simd
 ORDER BY rd.name
 

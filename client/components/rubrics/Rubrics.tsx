@@ -106,6 +106,14 @@ export default function Rubrics({
       >) || {},
     [rubricsData]
   );
+  const simulationMapping = useMemo(
+    () =>
+      (rubricsData?.simulation_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
+    [rubricsData]
+  );
 
   // Build filter options
   const departmentOptions = useMemo(() => {
@@ -115,18 +123,23 @@ export default function Rubrics({
     }));
   }, [departmentMapping]);
 
+  // Use server-provided simulation options
+  const simulationOptions = useMemo(
+    () =>
+      (rubricsData?.simulation_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [rubricsData?.simulation_options]
+  );
+
   const passPercentageOptions = [
     { value: "0-25", label: "0-25%" },
     { value: "26-50", label: "26-50%" },
     { value: "51-75", label: "51-75%" },
     { value: "76-100", label: "76-100%" },
-  ];
-
-  const simulationsOptions = [
-    { value: "0", label: "0 simulations" },
-    { value: "1-5", label: "1-5 simulations" },
-    { value: "6-10", label: "6-10 simulations" },
-    { value: "11+", label: "11+ simulations" },
   ];
 
   // Column definitions for TanStack Table
@@ -164,24 +177,19 @@ export default function Rubrics({
           });
         },
       },
-      // Hidden faceting column for Simulations
+      // Hidden faceting column for Simulation (array of IDs)
       {
         id: "simulations",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) =>
-          row.active_simulation_count,
+        accessorFn: (row: (typeof rubrics)[number]) => row.simulation_ids ?? [],
         filterFn: (row, _id, value: string[]) => {
-          const count = Number(row.getValue("simulations"));
-          return value.some((range) => {
-            if (range === "0") return count === 0;
-            if (range === "1-5") return count >= 1 && count <= 5;
-            if (range === "6-10") return count >= 6 && count <= 10;
-            if (range === "11+") return count >= 11;
-            return false;
-          });
+          const rowIds = (row.getValue("simulations") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show rubrics with no simulations when no filter
+          return value.some((v) => rowIds.includes(v));
         },
       },
       // Hidden faceting column for Departments (array of IDs)
@@ -442,11 +450,11 @@ export default function Rubrics({
                 />
               )}
 
-              {simulationsColumn && simulationsOptions.length > 0 && (
+              {simulationsColumn && simulationOptions.length > 0 && (
                 <DataTableFacetedFilter
                   column={simulationsColumn}
-                  title="Simulations"
-                  options={simulationsOptions}
+                  title="Simulation"
+                  options={simulationOptions}
                 />
               )}
 

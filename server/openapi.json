@@ -12307,11 +12307,27 @@
             },
             "type": "array",
             "title": "Departments"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "profile_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProfileMappingItem"
+            },
+            "type": "object",
+            "title": "Profile Mapping"
           }
         },
         "type": "object",
         "required": [
-          "departments"
+          "departments",
+          "cohort_mapping",
+          "profile_mapping"
         ],
         "title": "DepartmentsListResponse",
         "description": "Response for departments list."
@@ -15757,6 +15773,13 @@
             "type": "object",
             "title": "Department Mapping"
           },
+          "document_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DocumentMappingItem"
+            },
+            "type": "object",
+            "title": "Document Mapping"
+          },
           "scenario_options": {
             "items": {
               "additionalProperties": {
@@ -15766,6 +15789,16 @@
             },
             "type": "array",
             "title": "Scenario Options"
+          },
+          "document_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Document Options"
           }
         },
         "type": "object",
@@ -15773,7 +15806,9 @@
           "parameters",
           "scenario_mapping",
           "department_mapping",
-          "scenario_options"
+          "document_mapping",
+          "scenario_options",
+          "document_options"
         ],
         "title": "ParametersListResponse"
       },
@@ -18262,6 +18297,13 @@
             ],
             "title": "Department Ids"
           },
+          "simulation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simulation Ids"
+          },
           "active_simulation_count": {
             "type": "integer",
             "title": "Active Simulation Count"
@@ -18301,6 +18343,7 @@
           "points",
           "passPoints",
           "passPercentage",
+          "simulation_ids",
           "active_simulation_count",
           "total_simulation_links",
           "can_edit",
@@ -18458,6 +18501,23 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "simulation_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SimulationMappingItem"
+            },
+            "type": "object",
+            "title": "Simulation Mapping"
+          },
+          "simulation_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Simulation Options"
           }
         },
         "type": "object",
@@ -18465,7 +18525,9 @@
           "rubrics",
           "standard_groups_mapping",
           "standards_mapping",
-          "department_mapping"
+          "department_mapping",
+          "simulation_mapping",
+          "simulation_options"
         ],
         "title": "RubricsListResponse",
         "description": "Response for rubrics list."
@@ -23635,6 +23697,20 @@
             "type": "integer",
             "title": "Staff Count"
           },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -23657,6 +23733,8 @@
           "updated_at",
           "total_price_spent",
           "staff_count",
+          "cohort_ids",
+          "profile_ids",
           "can_edit",
           "can_delete",
           "can_duplicate"
@@ -23933,6 +24011,13 @@
             "type": "array",
             "title": "Scenario Ids"
           },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
           "num_items": {
             "type": "integer",
             "title": "Num Items"
@@ -23966,6 +24051,7 @@
           "active",
           "department_ids",
           "scenario_ids",
+          "document_ids",
           "num_items",
           "sample_items",
           "can_edit",

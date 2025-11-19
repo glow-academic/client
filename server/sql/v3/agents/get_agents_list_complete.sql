@@ -53,7 +53,7 @@ SELECT
     a.role,
     a.updated_at,
     COALESCE(addd.department_ids, NULL) as department_ids,
-    CASE WHEN up.role = 'superadmin' THEN true ELSE false END as can_edit,
+    CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END as can_edit,
     true as can_duplicate,
     CASE 
         WHEN COALESCE(adl.total_links, 0) > 0 THEN false

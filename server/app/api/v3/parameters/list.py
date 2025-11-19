@@ -13,7 +13,12 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import ScenarioMapping, ScenarioMappingItem
+from app.utils.schema import (
+    DocumentMapping,
+    DocumentMappingItem,
+    ScenarioMapping,
+    ScenarioMappingItem,
+)
 from app.utils.sql_helper import load_sql
 
 
@@ -37,6 +42,7 @@ class ParameterItem(BaseModel):
     active: bool
     department_ids: list[str] | None
     scenario_ids: list[str]  # Array of scenario IDs
+    document_ids: list[str]  # Array of document IDs
     num_items: int
     sample_items: list[ParameterSampleItem]
     can_edit: bool
@@ -48,8 +54,10 @@ class ParametersListResponse(BaseModel):
     parameters: list[ParameterItem]
     scenario_mapping: ScenarioMapping
     department_mapping: dict[str, dict[str, Any]]
+    document_mapping: DocumentMapping
     # UI-ready facet options (precomputed on server)
     scenario_options: list[dict[str, str]]  # Array of {value, label}
+    document_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
@@ -65,6 +73,19 @@ def disambiguate_scenarios(smap: ScenarioMapping) -> list[dict[str, str]]:
             # Use last 8 characters of UUID for disambiguation
             label = f"{v.name} ({sid[-8:]})"
         out.append({"value": sid, "label": label})
+    return out
+
+
+def disambiguate_documents(dmap: DocumentMapping) -> list[dict[str, str]]:
+    """Build document options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in dmap.values()])
+    out = []
+    for did, v in dmap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({did[-8:]})"
+        out.append({"value": did, "label": label})
     return out
 
 
@@ -100,6 +121,7 @@ async def get_parameters_list(
         parameters = []
         scenario_mapping: ScenarioMapping = {}
         department_mapping: dict[str, dict[str, Any]] = {}
+        document_mapping: DocumentMapping = {}
 
         # Parse mappings from first row (same across all rows)
         if result:
@@ -132,6 +154,18 @@ async def get_parameters_list(
             if department_mapping_data and isinstance(department_mapping_data, dict):
                 department_mapping = department_mapping_data
 
+            # Parse document_mapping from JSONB
+            document_mapping_data = first_row.get("document_mapping")
+            if isinstance(document_mapping_data, str):
+                document_mapping_data = json.loads(document_mapping_data)
+            if document_mapping_data and isinstance(document_mapping_data, dict):
+                for did, ddata in document_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        document_mapping[did] = DocumentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
         for row in result:
             # Parse sample items from JSONB
             sample_items = []
@@ -161,6 +195,10 @@ async def get_parameters_list(
             if row.get("scenario_ids"):
                 scenario_ids = [str(sid) for sid in row["scenario_ids"]]
 
+            document_ids = []
+            if row.get("document_ids"):
+                document_ids = [str(did) for did in row["document_ids"]]
+
             parameters.append(
                 ParameterItem(
                     parameter_id=str(row["parameter_id"]),
@@ -170,6 +208,7 @@ async def get_parameters_list(
                     active=row["active"],
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,
+                    document_ids=document_ids,
                     num_items=row["num_items"],
                     sample_items=sample_items,
                     can_edit=row["can_edit"],
@@ -180,12 +219,15 @@ async def get_parameters_list(
 
         # Build facet options
         scenario_options = disambiguate_scenarios(scenario_mapping)
+        document_options = disambiguate_documents(document_mapping)
 
         response_data = ParametersListResponse(
             parameters=parameters,
             scenario_mapping=scenario_mapping,
             department_mapping=department_mapping,
+            document_mapping=document_mapping,
             scenario_options=scenario_options,
+            document_options=document_options,
         )
 
         # Cache response

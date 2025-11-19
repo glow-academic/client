@@ -5,7 +5,7 @@
  * 07/20/2025
  */
 "use client";
-import { Brain, Copy, Edit, Thermometer, Trash2, X } from "lucide-react";
+import { Brain, Copy, Edit, Eye, Thermometer, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type {
@@ -317,7 +317,7 @@ export default function Agents({
                 <span className="md:hidden">Duplicate</span>
               </Button>
             )}
-            {agent.can_edit && (
+            {agent.can_edit ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -329,6 +329,19 @@ export default function Agents({
               >
                 <Edit className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">Edit</span>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(agent.agent_id)}
+                aria-label={`View agent ${agent.name}`}
+                data-testid="btn-view-agent"
+                title={`View agent ${agent.name}`}
+                className="h-9 px-3"
+              >
+                <Eye className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">View</span>
               </Button>
             )}
             {agent.can_delete && (

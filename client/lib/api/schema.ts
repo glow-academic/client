@@ -5378,6 +5378,14 @@ export interface components {
         DepartmentsListResponse: {
             /** Departments */
             departments: components["schemas"]["app__api__v3__departments__list__DepartmentItem"][];
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Profile Mapping */
+            profile_mapping: {
+                [key: string]: components["schemas"]["ProfileMappingItem"];
+            };
         };
         /**
          * DocumentDetailBulkRequest
@@ -6714,8 +6722,16 @@ export interface components {
                     [key: string]: unknown;
                 };
             };
+            /** Document Mapping */
+            document_mapping: {
+                [key: string]: components["schemas"]["DocumentMappingItem"];
+            };
             /** Scenario Options */
             scenario_options: {
+                [key: string]: string;
+            }[];
+            /** Document Options */
+            document_options: {
                 [key: string]: string;
             }[];
         };
@@ -7685,6 +7701,8 @@ export interface components {
             passPercentage: number;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids: string[];
             /** Active Simulation Count */
             active_simulation_count: number;
             /** Total Simulation Links */
@@ -7770,6 +7788,14 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["DepartmentMappingItem"];
             };
+            /** Simulation Mapping */
+            simulation_mapping: {
+                [key: string]: components["schemas"]["SimulationMappingItem"];
+            };
+            /** Simulation Options */
+            simulation_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -9824,6 +9850,10 @@ export interface components {
             total_price_spent: number;
             /** Staff Count */
             staff_count: number;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -9914,6 +9944,8 @@ export interface components {
             department_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
             /** Num Items */
             num_items: number;
             /** Sample Items */

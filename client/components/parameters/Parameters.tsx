@@ -122,6 +122,16 @@ export default function Parameters({
       label: obj["name"] as string,
     }));
   }, [parametersData?.department_mapping]);
+  const documentOptions = useMemo(
+    () =>
+      (parametersData?.document_options || [])
+        .map((opt) => ({
+          value: opt["value"] as string,
+          label: opt["label"] as string,
+        }))
+        .filter((opt) => opt.value && opt.label),
+    [parametersData?.document_options]
+  );
 
   // Column definitions for TanStack Table
   const columns = useMemo<ColumnDef<(typeof parameters)[number]>[]>(
@@ -159,6 +169,22 @@ export default function Parameters({
         // Let filtering check membership - show if parameter is used in ANY selected scenario
         filterFn: (row, _id, value: string[]) => {
           const rowIds = (row.getValue("scenarios") as string[]) ?? [];
+          if (value.length === 0) return true;
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Documents (array of IDs)
+      {
+        id: "documents",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof parameters)[number]) => row.document_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("documents") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show parameters with no documents when no filter
           return value.some((v) => rowIds.includes(v));
         },
       },
@@ -504,6 +530,7 @@ export default function Parameters({
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
   const scenarioColumn = table.getColumn("scenarios");
+  const documentsColumn = table.getColumn("documents");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -540,6 +567,15 @@ export default function Parameters({
                     column={scenarioColumn}
                     title="Scenario"
                     options={scenarioOptions}
+                  />
+                )}
+
+                {/* Document Filter */}
+                {documentsColumn && documentOptions.length > 0 && (
+                  <DataTableFacetedFilter
+                    column={documentsColumn}
+                    title="Document"
+                    options={documentOptions}
                   />
                 )}
 

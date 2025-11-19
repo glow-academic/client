@@ -89,6 +89,36 @@ export default function Departments({
     () => departmentsData?.departments || [],
     [departmentsData?.departments],
   );
+  const cohortMapping = useMemo(
+    () =>
+      (departmentsData?.cohort_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
+    [departmentsData?.cohort_mapping]
+  );
+  const profileMapping = useMemo(
+    () =>
+      (departmentsData?.profile_mapping as Record<
+        string,
+        { name: string; description: string }
+      >) || {},
+    [departmentsData?.profile_mapping]
+  );
+
+  // Build filter options from mappings
+  const cohortOptions = useMemo(() => {
+    return Object.entries(cohortMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [cohortMapping]);
+  const profileOptions = useMemo(() => {
+    return Object.entries(profileMapping).map(([id, obj]) => ({
+      value: id,
+      label: obj?.name || id,
+    }));
+  }, [profileMapping]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof departments)[number]>[] = useMemo(
@@ -113,20 +143,34 @@ export default function Departments({
           return "100+";
         },
       },
-      // Hidden faceting column for Staff Count (categorical)
+      // Hidden faceting column for Cohorts (array of IDs)
       {
-        id: "staff_count",
+        id: "cohorts",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof departments)[number]) => {
-          const count = row.staff_count ?? 0;
-          if (count === 0) return "1-5";
-          if (count <= 5) return "1-5";
-          if (count <= 10) return "6-10";
-          if (count <= 20) return "11-20";
-          return "20+";
+        accessorFn: (row: (typeof departments)[number]) => row.cohort_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("cohorts") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
+        },
+      },
+      // Hidden faceting column for Profiles/Names (array of IDs)
+      {
+        id: "profiles",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: (typeof departments)[number]) => row.profile_ids ?? [],
+        filterFn: (row, _id, value: string[]) => {
+          const rowIds = (row.getValue("profiles") as string[]) ?? [];
+          if (value.length === 0) return true;
+          if (rowIds.length === 0) return true; // Show cross-department items when no filter
+          return value.some((v) => rowIds.includes(v));
         },
       },
       {
@@ -183,9 +227,9 @@ export default function Departments({
 
   // Filter options based on actual data using faceted values
   const priceSpentColumn = table.getColumn("total_price_spent");
-  const staffCountColumn = table.getColumn("staff_count");
+  const cohortsColumn = table.getColumn("cohorts");
+  const profilesColumn = table.getColumn("profiles");
   const priceSpentFacets = priceSpentColumn?.getFacetedUniqueValues();
-  const staffCountFacets = staffCountColumn?.getFacetedUniqueValues();
 
   const priceSpentOptions = useMemo(
     () => {
@@ -200,21 +244,6 @@ export default function Departments({
       return allOptions.filter(opt => priceSpentFacets.has(opt.value));
     },
     [priceSpentFacets],
-  );
-
-  const staffCountOptions = useMemo(
-    () => {
-      const allOptions = [
-        { value: "1-5", label: "1-5 staff" },
-        { value: "6-10", label: "6-10 staff" },
-        { value: "11-20", label: "11-20 staff" },
-        { value: "20+", label: "20+ staff" },
-      ];
-      // Filter to only show options that have matching departments
-      if (!staffCountFacets) return allOptions;
-      return allOptions.filter(opt => staffCountFacets.has(opt.value));
-    },
-    [staffCountFacets],
   );
 
   const handleEdit = (id: string) => {
@@ -419,12 +448,21 @@ export default function Departments({
                 />
               )}
 
-              {/* Staff Count Filter */}
-              {staffCountColumn && staffCountOptions.length > 0 && (
+              {/* Cohorts Filter */}
+              {cohortsColumn && cohortOptions.length > 0 && (
                 <DataTableFacetedFilter
-                  column={staffCountColumn}
-                  title="Staff Count"
-                  options={staffCountOptions}
+                  column={cohortsColumn}
+                  title="Cohort"
+                  options={cohortOptions}
+                />
+              )}
+
+              {/* Profiles/Names Filter */}
+              {profilesColumn && profileOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={profilesColumn}
+                  title="Name"
+                  options={profileOptions}
                 />
               )}
 

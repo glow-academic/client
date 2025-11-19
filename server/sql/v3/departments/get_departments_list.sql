@@ -54,6 +54,23 @@ department_staff_count AS (
     WHERE department_id IN (SELECT department_id FROM user_departments)
     GROUP BY department_id
 ),
+department_cohorts_data AS (
+    SELECT 
+        cd.department_id,
+        ARRAY_AGG(cd.cohort_id::text ORDER BY cd.created_at) as cohort_ids
+    FROM cohort_departments cd
+    WHERE cd.department_id IN (SELECT department_id FROM user_departments) AND cd.active = true
+    GROUP BY cd.department_id
+),
+department_profiles_data AS (
+    SELECT 
+        pd.department_id,
+        ARRAY_AGG(pd.profile_id::text ORDER BY p.last_name, p.first_name) as profile_ids
+    FROM profile_departments pd
+    JOIN profiles p ON p.id = pd.profile_id
+    WHERE pd.department_id IN (SELECT department_id FROM user_departments) AND pd.active = true
+    GROUP BY pd.department_id
+),
 department_all_cohort_links AS (
     SELECT 
         cd.department_id,
@@ -77,6 +94,44 @@ department_profiles_would_orphan AS (
 ),
 user_profile AS (
     SELECT role FROM profiles WHERE id = $1
+),
+all_cohort_ids AS (
+    SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
+    FROM department_cohorts_data
+    WHERE cohort_ids IS NOT NULL
+),
+cohort_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            c.id::text,
+            jsonb_build_object(
+                'name', c.title,
+                'description', COALESCE(c.description, '')
+            )
+        ) FILTER (WHERE c.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM cohorts c
+    WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
+),
+all_profile_ids AS (
+    SELECT DISTINCT unnest(profile_ids)::uuid as profile_id
+    FROM department_profiles_data
+    WHERE profile_ids IS NOT NULL
+),
+profile_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.first_name || ' ' || p.last_name,
+                'description', COALESCE(p.alias, '')
+            )
+        ) FILTER (WHERE p.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM profiles p
+    WHERE p.id IN (SELECT profile_id FROM all_profile_ids)
 )
 SELECT 
     d.id::text as department_id,
@@ -86,6 +141,8 @@ SELECT
     d.updated_at,
     COALESCE(dps.total_price_spent, 0) as total_price_spent,
     COALESCE(dsc.staff_count, 0) as staff_count,
+    COALESCE(dcd.cohort_ids, ARRAY[]::text[]) as cohort_ids,
+    COALESCE(dpd.profile_ids, ARRAY[]::text[]) as profile_ids,
     CASE 
         WHEN up.role IN ('admin', 'superadmin') THEN true
         ELSE false
@@ -99,13 +156,19 @@ SELECT
     CASE 
         WHEN up.role IN ('admin', 'superadmin') THEN true
         ELSE false
-    END as can_duplicate
+    END as can_duplicate,
+    cmd.mapping as cohort_mapping,
+    pmd.mapping as profile_mapping
 FROM departments d
 JOIN user_departments ud ON ud.department_id = d.id
 LEFT JOIN department_price_spent dps ON dps.department_id = d.id
 LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
+LEFT JOIN department_cohorts_data dcd ON dcd.department_id = d.id
+LEFT JOIN department_profiles_data dpd ON dpd.department_id = d.id
 LEFT JOIN department_all_cohort_links dacl_all ON dacl_all.department_id = d.id
 LEFT JOIN department_profiles_would_orphan dpwo ON dpwo.department_id = d.id
 CROSS JOIN user_profile up
+CROSS JOIN cohort_mapping_data cmd
+CROSS JOIN profile_mapping_data pmd
 ORDER BY d.title
 

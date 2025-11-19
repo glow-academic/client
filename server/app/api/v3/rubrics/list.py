@@ -1,6 +1,7 @@
 """Rubric list endpoint - v3 API."""
 
 import json
+from collections import Counter
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -14,6 +15,8 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
     DepartmentMappingItem,
+    SimulationMapping,
+    SimulationMappingItem,
     StandardGroupMappingItem,
     StandardMappingItem,
 )
@@ -36,6 +39,7 @@ class RubricItem(BaseModel):
     passPoints: int
     passPercentage: int
     department_ids: list[str] | None = None
+    simulation_ids: list[str]
     active_simulation_count: int
     total_simulation_links: int
     can_edit: bool
@@ -51,6 +55,23 @@ class RubricsListResponse(BaseModel):
     standard_groups_mapping: dict[str, StandardGroupMappingItem]
     standards_mapping: dict[str, StandardMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
+    simulation_mapping: SimulationMapping
+    simulation_options: list[dict[str, str]]  # Array of {value, label}
+
+
+def disambiguate_simulations(
+    smap: SimulationMapping,
+) -> list[dict[str, str]]:
+    """Build simulation options with disambiguation for duplicate names."""
+    names = Counter([v.name for v in smap.values()])
+    out = []
+    for sid, v in smap.items():
+        label = v.name
+        if names[v.name] > 1:
+            # Use last 8 characters of UUID for disambiguation
+            label = f"{v.name} ({sid[-8:]})"
+        out.append({"value": sid, "label": label})
+    return out
 
 
 router = APIRouter()
@@ -89,6 +110,7 @@ async def get_rubrics_list(
         standard_groups_mapping: dict[str, StandardGroupMappingItem] = {}
         standards_mapping: dict[str, StandardMappingItem] = {}
         department_mapping: dict[str, DepartmentMappingItem] = {}
+        simulation_mapping: SimulationMapping = {}
 
         # Parse mappings from first row (same across all rows, replicate v2 logic)
         if rows:
@@ -133,6 +155,18 @@ async def get_rubrics_list(
                             description=ddata.get("description", ""),
                         )
 
+            # Parse simulation_mapping from JSONB
+            simulation_mapping_data = first_row.get("simulation_mapping")
+            if isinstance(simulation_mapping_data, str):
+                simulation_mapping_data = json.loads(simulation_mapping_data)
+            if simulation_mapping_data and isinstance(simulation_mapping_data, dict):
+                for sim_id, simdata in simulation_mapping_data.items():
+                    if isinstance(simdata, dict):
+                        simulation_mapping[sim_id] = SimulationMappingItem(
+                            name=simdata.get("name", ""),
+                            description=simdata.get("description", ""),
+                        )
+
         # Build rubric items with hierarchical structure (replicate v2 logic)
         for row in rows:
             # Parse standard_groups structure for this rubric (replicate v2 logic)
@@ -152,6 +186,10 @@ async def get_rubrics_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
+            simulation_ids = []
+            if row.get("simulation_ids"):
+                simulation_ids = [str(sid) for sid in row["simulation_ids"]]
+
             # Compute passPercentage server-side
             points = row["points"]
             pass_points = row["passpoints"]
@@ -163,6 +201,7 @@ async def get_rubrics_list(
                     name=row["name"],
                     description=row["description"],
                     department_ids=dept_ids,
+                    simulation_ids=simulation_ids,
                     points=points,
                     passPoints=pass_points,
                     passPercentage=pass_percentage,
@@ -175,11 +214,16 @@ async def get_rubrics_list(
                 )
             )
 
+        # Build facet options
+        simulation_options = disambiguate_simulations(simulation_mapping)
+
         response_data = RubricsListResponse(
             rubrics=rubrics,
             standard_groups_mapping=standard_groups_mapping,
             standards_mapping=standards_mapping,
             department_mapping=department_mapping,
+            simulation_mapping=simulation_mapping,
+            simulation_options=simulation_options,
         )
 
         # Cache response
