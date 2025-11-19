@@ -310,7 +310,7 @@ export default function Departments({
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
-            <CardTitle className="text-base truncate">
+            <CardTitle className="text-base line-clamp-2">
               {department.title || "Unnamed Department"}
             </CardTitle>
             <div className="mt-1 space-y-2">

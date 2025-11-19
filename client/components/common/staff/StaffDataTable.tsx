@@ -682,25 +682,28 @@ export function StaffDataTable({
                 </Tooltip>
               )}
             {/* Only show delete when NOT scoped (cohortId/departmentId) - scoped views use "remove" via bulk actions */}
-            {!cohortId && !departmentId && canDelete(staff.profile_id) && !readonly && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    onClick={() => onDelete(staff)}
-                    data-testid="btn-delete-staff"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Delete Staff</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {!cohortId &&
+              !departmentId &&
+              canDelete(staff.profile_id) &&
+              !readonly && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      onClick={() => onDelete(staff)}
+                      data-testid="btn-delete-staff"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Delete Staff</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
           </div>
         );
       },

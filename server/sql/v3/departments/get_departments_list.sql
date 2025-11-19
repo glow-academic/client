@@ -33,10 +33,21 @@ model_run_departments_via_personas AS (
     JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ),
+model_run_departments_via_profiles AS (
+    SELECT DISTINCT
+        mrc.model_run_id,
+        pd.department_id
+    FROM model_run_costs mrc
+    JOIN model_run_profiles mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
+    JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
+    WHERE pd.department_id IN (SELECT department_id FROM user_departments)
+),
 model_run_departments AS (
     SELECT model_run_id, department_id FROM model_run_departments_via_agents
     UNION
     SELECT model_run_id, department_id FROM model_run_departments_via_personas
+    UNION
+    SELECT model_run_id, department_id FROM model_run_departments_via_profiles
 ),
 department_price_spent AS (
     SELECT 

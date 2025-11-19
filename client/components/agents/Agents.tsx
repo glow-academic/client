@@ -302,21 +302,6 @@ export default function Agents({
             </p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            {agent.can_duplicate && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicate(agent.agent_id)}
-                disabled={false} // No loading state for server action
-                aria-label={`Duplicate agent ${agent.name}`}
-                data-testid="btn-duplicate-agent"
-                title={`Duplicate agent ${agent.name}`}
-                className="h-9 px-3"
-              >
-                <Copy className="h-4 w-4 md:mr-0 mr-2" />
-                <span className="md:hidden">Duplicate</span>
-              </Button>
-            )}
             {agent.can_edit ? (
               <Button
                 variant="outline"
@@ -342,6 +327,21 @@ export default function Agents({
               >
                 <Eye className="h-4 w-4 md:mr-0 mr-2" />
                 <span className="md:hidden">View</span>
+              </Button>
+            )}
+            {agent.can_duplicate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicate(agent.agent_id)}
+                disabled={false} // No loading state for server action
+                aria-label={`Duplicate agent ${agent.name}`}
+                data-testid="btn-duplicate-agent"
+                title={`Duplicate agent ${agent.name}`}
+                className="h-9 px-3"
+              >
+                <Copy className="h-4 w-4 md:mr-0 mr-2" />
+                <span className="md:hidden">Duplicate</span>
               </Button>
             )}
             {agent.can_delete && (

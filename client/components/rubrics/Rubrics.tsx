@@ -300,7 +300,23 @@ export default function Rubrics({
   };
 
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {
-    const passPercentage = rubric.passPercentage;
+    // Calculate pass percentage from standard groups (sum of passPoints / sum of points)
+    // This matches how RubricDetails calculates it
+    const groupIds = Object.keys(rubric.standard_groups || {});
+    let totalPoints = 0;
+    let totalPassPoints = 0;
+    
+    groupIds.forEach((groupId) => {
+      const group = standardGroupsMapping[groupId];
+      if (group) {
+        totalPoints += group.points || 0;
+        totalPassPoints += group.passPoints || 0;
+      }
+    });
+    
+    const passPercentage = totalPoints > 0 
+      ? Math.round((totalPassPoints / totalPoints) * 100)
+      : rubric.passPercentage; // Fallback to server value if no groups
 
     return (
       <Card
