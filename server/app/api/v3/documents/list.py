@@ -234,14 +234,23 @@ async def get_documents_list(
             )
 
         # Build facet options
+        # Collect all document types actually used by returned documents
+        used_types = {doc.type for doc in documents if doc.type}
+        # Map of all possible types with their labels
+        all_type_options = {
+            "homework": "📚 Homework",
+            "project": "🎯 Project",
+            "quiz": "❓ Quiz",
+            "midterm": "📝 Midterm",
+            "lab": "🧪 Lab",
+            "lecture": "📖 Lecture",
+            "syllabus": "📋 Syllabus",
+        }
+        # Filter type_options to only include types used by returned documents
         type_options = [
-            {"value": "homework", "label": "📚 Homework"},
-            {"value": "project", "label": "🎯 Project"},
-            {"value": "quiz", "label": "❓ Quiz"},
-            {"value": "midterm", "label": "📝 Midterm"},
-            {"value": "lab", "label": "🧪 Lab"},
-            {"value": "lecture", "label": "📖 Lecture"},
-            {"value": "syllabus", "label": "📋 Syllabus"},
+            {"value": doc_type, "label": all_type_options[doc_type]}
+            for doc_type in used_types
+            if doc_type in all_type_options
         ]
         scenario_options = disambiguate_scenarios(scenario_mapping)
         department_options = [

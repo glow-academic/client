@@ -90,27 +90,6 @@ export default function Departments({
     [departmentsData?.departments],
   );
 
-  // Filter options (inline)
-  const priceSpentOptions = useMemo(
-    () => [
-      { value: "0-10", label: "$0 - $10" },
-      { value: "10-50", label: "$10 - $50" },
-      { value: "50-100", label: "$50 - $100" },
-      { value: "100+", label: "$100+" },
-    ],
-    [],
-  );
-
-  const staffCountOptions = useMemo(
-    () => [
-      { value: "1-5", label: "1-5 staff" },
-      { value: "6-10", label: "6-10 staff" },
-      { value: "11-20", label: "11-20 staff" },
-      { value: "20+", label: "20+ staff" },
-    ],
-    [],
-  );
-
   // Define table columns inline
   const columns: ColumnDef<(typeof departments)[number]>[] = useMemo(
     () => [
@@ -201,6 +180,42 @@ export default function Departments({
     pageIndex,
     pageSize,
   ]);
+
+  // Filter options based on actual data using faceted values
+  const priceSpentColumn = table.getColumn("total_price_spent");
+  const staffCountColumn = table.getColumn("staff_count");
+  const priceSpentFacets = priceSpentColumn?.getFacetedUniqueValues();
+  const staffCountFacets = staffCountColumn?.getFacetedUniqueValues();
+
+  const priceSpentOptions = useMemo(
+    () => {
+      const allOptions = [
+        { value: "0-10", label: "$0 - $10" },
+        { value: "10-50", label: "$10 - $50" },
+        { value: "50-100", label: "$50 - $100" },
+        { value: "100+", label: "$100+" },
+      ];
+      // Filter to only show options that have matching departments
+      if (!priceSpentFacets) return allOptions;
+      return allOptions.filter(opt => priceSpentFacets.has(opt.value));
+    },
+    [priceSpentFacets],
+  );
+
+  const staffCountOptions = useMemo(
+    () => {
+      const allOptions = [
+        { value: "1-5", label: "1-5 staff" },
+        { value: "6-10", label: "6-10 staff" },
+        { value: "11-20", label: "11-20 staff" },
+        { value: "20+", label: "20+ staff" },
+      ];
+      // Filter to only show options that have matching departments
+      if (!staffCountFacets) return allOptions;
+      return allOptions.filter(opt => staffCountFacets.has(opt.value));
+    },
+    [staffCountFacets],
+  );
 
   const handleEdit = (id: string) => {
     router.push(`/management/departments/d/${id}`);
@@ -369,8 +384,6 @@ export default function Departments({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("title");
-  const priceSpentColumn = table.getColumn("total_price_spent");
-  const staffCountColumn = table.getColumn("staff_count");
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
@@ -378,11 +391,11 @@ export default function Departments({
       <div className="space-y-4">
         {/* Toolbar */}
         <div
-          className="flex items-center justify-between"
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
           data-testid="departments-toolbar"
         >
-          <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="w-full md:w-auto mb-2 md:mb-0">
+          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+            <div className="w-full md:w-auto">
               <Input
                 data-testid="departments-search"
                 placeholder="Search departments..."
@@ -396,7 +409,7 @@ export default function Departments({
               />
             </div>
 
-            <div className="flex items-center space-x-2 flex-wrap mb-2">
+            <div className="flex items-center space-x-2 flex-wrap">
               {/* Price Spent Filter */}
               {priceSpentColumn && priceSpentOptions.length > 0 && (
                 <DataTableFacetedFilter

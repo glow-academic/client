@@ -259,9 +259,16 @@ async def get_scenarios_list(
         simulation_options = [
             {"value": sid, "label": s.name} for (sid, s) in simulation_mapping.items()
         ]
+        # Collect all department IDs actually assigned to scenarios
+        assigned_department_ids = set()
+        for scenario in scenarios:
+            if scenario.department_ids:
+                assigned_department_ids.update(scenario.department_ids)
+        # Filter department_options to only include departments assigned to at least one scenario
         department_options = [
             {"value": did, "label": d.name or did}
             for (did, d) in department_mapping.items()
+            if did in assigned_department_ids
         ]
 
         response_data = ScenariosListResponse(

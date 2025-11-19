@@ -210,9 +210,16 @@ async def get_personas_list(
         model_options = [
             {"value": mid, "label": m.name} for (mid, m) in model_mapping.items()
         ]
+        # Collect all department IDs actually assigned to personas
+        assigned_department_ids = set()
+        for persona in personas:
+            if persona.department_ids:
+                assigned_department_ids.update(persona.department_ids)
+        # Filter department_options to only include departments assigned to at least one persona
         department_options = [
             {"value": did, "label": d.name or did}
             for (did, d) in department_mapping.items()
+            if did in assigned_department_ids
         ]
 
         response_data = PersonasListResponse(

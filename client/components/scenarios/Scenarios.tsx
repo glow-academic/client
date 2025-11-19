@@ -674,11 +674,11 @@ export function Scenarios({
         <div className="space-y-4">
           {/* Toolbar */}
           <div
-            className="flex items-center justify-between"
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
             data-testid="scenarios-toolbar"
           >
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="w-full md:w-auto mb-2 md:mb-0">
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
                 <Input
                   data-testid="scenarios-search"
                   placeholder="Search scenarios..."
@@ -692,7 +692,7 @@ export function Scenarios({
                 />
               </div>
 
-              <div className="flex items-center space-x-2 flex-wrap mb-2">
+              <div className="flex items-center space-x-2 flex-wrap">
                 {/* Simulation Filter */}
                 {simulationColumn && simulationOptions.length > 0 && (
                   <DataTableFacetedFilter

@@ -444,11 +444,11 @@ export function Simulations({
       <div className="space-y-4">
         {/* Toolbar */}
         <div
-          className="flex items-center justify-between"
+          className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
           data-testid="simulations-toolbar"
         >
-          <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="w-full md:w-auto mb-2 md:mb-0">
+          <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+            <div className="w-full md:w-auto">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -465,7 +465,7 @@ export function Simulations({
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 flex-wrap mb-2">
+            <div className="flex items-center space-x-2 flex-wrap">
               {/* Rubric Filter */}
               {rubricColumn && rubricOptions.length > 0 && (
                 <DataTableFacetedFilter

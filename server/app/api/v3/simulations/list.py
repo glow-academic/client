@@ -204,6 +204,13 @@ async def get_simulations_list(
                 )
             )
 
+        # Get user departments for scoping department_options
+        user_department_rows = await conn.fetch(
+            "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
+            filters.profileId,
+        )
+        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+
         # Build facet options
         rubric_options = [
             {"value": rid, "label": r.name} for (rid, r) in rubric_mapping.items()
@@ -211,9 +218,11 @@ async def get_simulations_list(
         cohort_options = [
             {"value": cid, "label": c.name} for (cid, c) in cohort_mapping.items()
         ]
+        # Filter department_options to only include user departments (like cohorts list)
         department_options = [
             {"value": did, "label": d.name or did}
             for (did, d) in department_mapping.items()
+            if did in user_department_ids
         ]
 
         response_data = SimulationsListResponse(

@@ -1102,9 +1102,9 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
         {/* Toolbar */}
         <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
               {/* Mobile: Wrap search and export button in 50/50 flex */}
-              <div className="flex gap-2 w-full md:w-auto md:flex-initial mb-2 md:mb-0">
+              <div className="flex gap-2 w-full md:w-auto md:flex-initial">
                 <Input
                   placeholder="Search profiles by name or alias..."
                   value={(profileNameColumn?.getFilterValue() as string) ?? ""}
@@ -1129,7 +1129,7 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 flex-wrap mb-2">
+              <div className="flex items-center space-x-2 flex-wrap">
                 {/* Name Filter */}
                 {profileIdColumn && profileOptions.length > 0 && (
                   <DataTableFacetedFilter
@@ -1170,7 +1170,7 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 mb-2">
+            <div className="flex items-center space-x-2">
               {/* Export Button - Desktop */}
               <PopoverTrigger asChild>
                 <Button

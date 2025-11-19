@@ -139,10 +139,21 @@ async def list_agents(
                 )
             )
 
+        # Collect all department IDs actually assigned to agents
+        assigned_department_ids = set()
+        for agent in agents:
+            if agent.department_ids:
+                assigned_department_ids.update(agent.department_ids)
+        # Filter department_mapping to only include departments assigned to at least one agent
+        filtered_department_mapping = {
+            did: d for (did, d) in department_mapping.items()
+            if did in assigned_department_ids
+        }
+
         response_data = AgentsListResponse(
             agents=agents,
             model_mapping=model_mapping,
-            department_mapping=department_mapping,
+            department_mapping=filtered_department_mapping,
         )
 
         # Cache response

@@ -550,9 +550,9 @@ export function RunsDataTable({
     <div className="space-y-3">
       {/* Filters + Search */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div className="flex flex-1 items-center space-x-2 flex-wrap">
+        <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
           {/* Search bar */}
-          <div className="w-full md:w-auto mb-2 md:mb-0">
+          <div className="w-full md:w-auto">
             <Input
               placeholder="Search by model, persona, agent, name, debug info..."
               value={runIdSearch}

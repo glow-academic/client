@@ -531,16 +531,15 @@ export default function Personas({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <TooltipProvider>
-      <div className="space-y-8" data-page="personas-index">
+    <div className="space-y-8" data-page="personas-index">
         <div className="space-y-4">
           {/* Toolbar */}
           <div
-            className="flex items-center justify-between"
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
             data-testid="personas-toolbar"
           >
-            <div className="flex flex-1 items-center space-x-2 flex-wrap">
-              <div className="w-full md:w-auto mb-2 md:mb-0">
+            <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+              <div className="w-full md:w-auto">
                 <Input
                   data-testid="personas-search"
                   placeholder="Search personas..."
@@ -554,7 +553,7 @@ export default function Personas({
                 />
               </div>
 
-              <div className="flex items-center space-x-2 flex-wrap mb-2">
+              <div className="flex items-center space-x-2 flex-wrap">
                 {/* Scenario Filter */}
                 {scenarioColumn && scenarioOptions.length > 0 && (
                   <DataTableFacetedFilter
@@ -652,6 +651,5 @@ export default function Personas({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </TooltipProvider>
   );
 }
