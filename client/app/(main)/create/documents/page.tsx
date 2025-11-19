@@ -47,7 +47,7 @@ const getDocumentsList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function deleteDocument(
+async function deleteDocument(
   input: DeleteDocumentIn,
 ): Promise<DeleteDocumentOut> {
   "use server";
@@ -56,7 +56,7 @@ export async function deleteDocument(
   return out;
 }
 
-export async function bulkDeleteDocuments(
+async function bulkDeleteDocuments(
   input: BulkDeleteDocumentsIn,
 ): Promise<BulkDeleteDocumentsOut> {
   "use server";
@@ -65,7 +65,7 @@ export async function bulkDeleteDocuments(
   return out;
 }
 
-export async function updateDocument(
+async function updateDocument(
   input: UpdateDocumentIn,
 ): Promise<UpdateDocumentOut> {
   "use server";
@@ -74,7 +74,7 @@ export async function updateDocument(
   return out;
 }
 
-export async function bulkUpdateDocuments(
+async function bulkUpdateDocuments(
   input: BulkUpdateDocumentsIn,
 ): Promise<BulkUpdateDocumentsOut> {
   "use server";
@@ -83,7 +83,7 @@ export async function bulkUpdateDocuments(
   return out;
 }
 
-export async function finalizeDocumentUpload(
+async function finalizeDocumentUpload(
   input: FinalizeDocumentUploadIn,
 ): Promise<FinalizeDocumentUploadOut> {
   "use server";

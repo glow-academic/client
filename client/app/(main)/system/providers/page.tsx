@@ -36,7 +36,7 @@ const getProvidersList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateProvider(
+async function duplicateProvider(
   input: DuplicateProviderIn,
 ): Promise<DuplicateProviderOut> {
   "use server";
@@ -49,7 +49,7 @@ export async function duplicateProvider(
   return out;
 }
 
-export async function deleteProvider(
+async function deleteProvider(
   input: DeleteProviderIn,
 ): Promise<DeleteProviderOut> {
   "use server";
@@ -62,7 +62,7 @@ export async function deleteProvider(
   return out;
 }
 
-export async function duplicateModel(
+async function duplicateModel(
   input: DuplicateModelIn,
 ): Promise<DuplicateModelOut> {
   "use server";
@@ -75,7 +75,7 @@ export async function duplicateModel(
   return out;
 }
 
-export async function deleteModel(
+async function deleteModel(
   input: DeleteModelIn,
 ): Promise<DeleteModelOut> {
   "use server";

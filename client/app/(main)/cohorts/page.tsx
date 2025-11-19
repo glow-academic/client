@@ -34,7 +34,7 @@ const getCohortsList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateCohort(
+async function duplicateCohort(
   input: DuplicateCohortIn,
 ): Promise<DuplicateCohortOut> {
   "use server";
@@ -43,7 +43,7 @@ export async function duplicateCohort(
   return out;
 }
 
-export async function deleteCohort(
+async function deleteCohort(
   input: DeleteCohortIn,
 ): Promise<DeleteCohortOut> {
   "use server";
@@ -52,7 +52,7 @@ export async function deleteCohort(
   return out;
 }
 
-export async function leaveCohort(
+async function leaveCohort(
   input: LeaveCohortIn,
 ): Promise<LeaveCohortOut> {
   "use server";

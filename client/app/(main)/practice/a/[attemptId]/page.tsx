@@ -59,7 +59,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function updateChatCreatedAt(
+async function updateChatCreatedAt(
   input: UpdateChatCreatedAtIn,
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
@@ -73,7 +73,7 @@ export async function updateChatCreatedAt(
 }
 
 /** ---- Server action to revalidate attempt cache when messages are sent ---- */
-export async function revalidateAttempt(attemptId: string): Promise<void> {
+async function revalidateAttempt(attemptId: string): Promise<void> {
   "use server";
   // Invalidate attempt-level cache
   revalidateTag("attempts");

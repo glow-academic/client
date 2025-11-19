@@ -210,20 +210,9 @@ export default function Departments({
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    JSON.stringify(sorting),
-    JSON.stringify(columnFilters),
-    departments.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [table]);
 
   // Filter options based on actual data using faceted values
   const priceSpentColumn = table.getColumn("total_price_spent");
@@ -263,7 +252,7 @@ export default function Departments({
       });
       toast.success(`Department "${department.title}" duplicated successfully`);
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error("Failed to duplicate department");
     } finally {
       setIsDuplicating(null);

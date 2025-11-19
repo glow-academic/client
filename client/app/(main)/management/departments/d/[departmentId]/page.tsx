@@ -80,7 +80,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions ---- */
-export async function updateDepartment(
+async function updateDepartment(
   input: UpdateDepartmentIn,
 ): Promise<UpdateDepartmentOut> {
   "use server";
@@ -93,7 +93,7 @@ export async function updateDepartment(
   return out;
 }
 
-export async function removeProfilesFromDepartment(
+async function removeProfilesFromDepartment(
   input: RemoveProfilesFromDepartmentIn,
 ): Promise<RemoveProfilesFromDepartmentOut> {
   "use server";

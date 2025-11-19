@@ -28,7 +28,7 @@ const getFeedbackList = cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function bulkDeleteFeedback(
+async function bulkDeleteFeedback(
   input: BulkDeleteFeedbackIn,
 ): Promise<BulkDeleteFeedbackOut> {
   "use server";

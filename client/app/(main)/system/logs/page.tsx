@@ -27,7 +27,7 @@ const getLogsList = cache(async (input: LogsListIn): Promise<LogsListOut> => {
 });
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function bulkDeleteLogs(
+async function bulkDeleteLogs(
   input: BulkDeleteLogsIn,
 ): Promise<BulkDeleteLogsOut> {
   "use server";
@@ -45,7 +45,7 @@ export async function bulkDeleteLogs(
   return out;
 }
 
-export async function getHealthCheck(): Promise<GetHealthCheckOut> {
+async function getHealthCheck(): Promise<GetHealthCheckOut> {
   "use server";
   return api.get("/logs/health", undefined);
 }

@@ -32,7 +32,7 @@ const getScenariosList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateScenario(
+async function duplicateScenario(
   input: DuplicateScenarioIn
 ): Promise<DuplicateScenarioOut> {
   "use server";
@@ -45,7 +45,7 @@ export async function duplicateScenario(
   return out;
 }
 
-export async function deleteScenario(
+async function deleteScenario(
   input: DeleteScenarioIn
 ): Promise<DeleteScenarioOut> {
   "use server";

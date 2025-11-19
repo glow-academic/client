@@ -16,7 +16,7 @@ type CreateProviderIn = InputOf<"/api/v3/providers/create", "post">;
 type CreateProviderOut = OutputOf<"/api/v3/providers/create", "post">;
 
 /** ---- Strongly-typed server action (single source of truth) ---- */
-export async function createProvider(
+async function createProvider(
   input: CreateProviderIn,
 ): Promise<CreateProviderOut> {
   "use server";

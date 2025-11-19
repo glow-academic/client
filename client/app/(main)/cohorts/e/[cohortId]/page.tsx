@@ -67,7 +67,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server action ---- */
-export async function updateCohort(
+async function updateCohort(
   input: UpdateCohortIn
 ): Promise<UpdateCohortOut> {
   "use server";

@@ -33,7 +33,7 @@ const getSimulationDefault = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createSimulation(
+async function createSimulation(
   input: CreateSimulationIn,
 ): Promise<CreateSimulationOut> {
   "use server";

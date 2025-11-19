@@ -69,7 +69,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createSimulation(
+async function createSimulation(
   input: CreateSimulationIn,
 ): Promise<CreateSimulationOut> {
   "use server";
@@ -78,7 +78,7 @@ export async function createSimulation(
   return out;
 }
 
-export async function updateSimulation(
+async function updateSimulation(
   input: UpdateSimulationIn,
 ): Promise<UpdateSimulationOut> {
   "use server";

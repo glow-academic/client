@@ -45,7 +45,7 @@ const getDepartmentDefault = cache(
 );
 
 /** ---- Strongly-typed server action ---- */
-export async function createDepartment(
+async function createDepartment(
   input: CreateDepartmentIn,
 ): Promise<CreateDepartmentOut> {
   "use server";

@@ -127,7 +127,7 @@ export default async function EditRubricPage({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function updateRubric(
+async function updateRubric(
   input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";

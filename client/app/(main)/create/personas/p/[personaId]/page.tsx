@@ -70,7 +70,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createPersona(
+async function createPersona(
   input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
@@ -79,7 +79,7 @@ export async function createPersona(
   return out;
 }
 
-export async function updatePersona(
+async function updatePersona(
   input: UpdatePersonaIn
 ): Promise<UpdatePersonaOut> {
   "use server";
@@ -92,7 +92,7 @@ export async function updatePersona(
   return out;
 }
 
-export async function deletePersonaPrompt(
+async function deletePersonaPrompt(
   input: DeletePersonaPromptIn
 ): Promise<DeletePersonaPromptOut> {
   "use server";

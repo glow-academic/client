@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 /** ---- Server action to revalidate attempt cache when simulation starts ---- */
-export async function revalidateAttempt(attemptId: string): Promise<void> {
+async function revalidateAttempt(attemptId: string): Promise<void> {
   "use server";
   // Invalidate attempt-level cache
   revalidateTag("attempts");

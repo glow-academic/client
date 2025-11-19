@@ -39,7 +39,7 @@ const getParameterDefault = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createParameter(
+async function createParameter(
   input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
@@ -48,7 +48,7 @@ export async function createParameter(
   return out;
 }
 
-export async function updateParameter(
+async function updateParameter(
   input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";

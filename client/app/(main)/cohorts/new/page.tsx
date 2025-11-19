@@ -42,7 +42,7 @@ const getCohortDefault = unstable_cache(
 );
 
 /** ---- Strongly-typed server action ---- */
-export async function createCohort(
+async function createCohort(
   input: CreateCohortIn,
 ): Promise<CreateCohortOut> {
   "use server";

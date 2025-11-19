@@ -37,8 +37,8 @@ const getParametersList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateParameter(
-  input: DuplicateParameterIn,
+async function duplicateParameter(
+  input: DuplicateParameterIn
 ): Promise<DuplicateParameterOut> {
   "use server";
   const out = await api.post("/parameters/duplicate", input);
@@ -50,8 +50,8 @@ export async function duplicateParameter(
   return out;
 }
 
-export async function deleteParameter(
-  input: DeleteParameterIn,
+async function deleteParameter(
+  input: DeleteParameterIn
 ): Promise<DeleteParameterOut> {
   "use server";
   const out = await api.post("/parameters/delete", input);
@@ -64,7 +64,7 @@ export async function deleteParameter(
 }
 
 export async function createParameterItem(
-  input: CreateParameterItemIn,
+  input: CreateParameterItemIn
 ): Promise<CreateParameterItemOut> {
   "use server";
   const out = await api.post("/parameters/items/create", input);

@@ -154,7 +154,7 @@ export default async function DashboardPage({
 }
 
 /** ---- Strongly-typed server actions for Dashboard (single source of truth) ---- */
-export async function bulkArchiveAttempts(
+async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
@@ -165,7 +165,7 @@ export async function bulkArchiveAttempts(
 }
 
 /** ---- Server action to revalidate attempt cache when simulation starts ---- */
-export async function revalidateAttempt(attemptId: string): Promise<void> {
+async function revalidateAttempt(attemptId: string): Promise<void> {
   "use server";
   // Invalidate attempt-level cache
   revalidateTag("attempts");

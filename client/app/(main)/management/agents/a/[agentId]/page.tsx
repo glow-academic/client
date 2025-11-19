@@ -70,7 +70,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createAgent(
+async function createAgent(
   input: CreateAgentIn,
 ): Promise<CreateAgentOut> {
   "use server";
@@ -79,7 +79,7 @@ export async function createAgent(
   return out;
 }
 
-export async function updateAgent(
+async function updateAgent(
   input: UpdateAgentIn,
 ): Promise<UpdateAgentOut> {
   "use server";
@@ -92,7 +92,7 @@ export async function updateAgent(
   return out;
 }
 
-export async function deleteAgentPrompt(
+async function deleteAgentPrompt(
   input: DeleteAgentPromptIn,
 ): Promise<DeleteAgentPromptOut> {
   "use server";

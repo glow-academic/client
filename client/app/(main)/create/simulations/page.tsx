@@ -32,7 +32,7 @@ const getSimulationsList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateSimulation(
+async function duplicateSimulation(
   input: DuplicateSimulationIn
 ): Promise<DuplicateSimulationOut> {
   "use server";
@@ -45,7 +45,7 @@ export async function duplicateSimulation(
   return out;
 }
 
-export async function deleteSimulation(
+async function deleteSimulation(
   input: DeleteSimulationIn
 ): Promise<DeleteSimulationOut> {
   "use server";

@@ -33,7 +33,7 @@ const getDepartmentsList = unstable_cache(
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateDepartment(
-  input: DuplicateDepartmentIn,
+  input: DuplicateDepartmentIn
 ): Promise<DuplicateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/duplicate", input);
@@ -46,7 +46,7 @@ export async function duplicateDepartment(
 }
 
 export async function deleteDepartment(
-  input: DeleteDepartmentIn,
+  input: DeleteDepartmentIn
 ): Promise<DeleteDepartmentOut> {
   "use server";
   const out = await api.post("/departments/delete", input);

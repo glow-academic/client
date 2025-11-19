@@ -32,7 +32,7 @@ const getAgentsList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateAgent(
+async function duplicateAgent(
   input: DuplicateAgentIn,
 ): Promise<DuplicateAgentOut> {
   "use server";
@@ -45,7 +45,7 @@ export async function duplicateAgent(
   return out;
 }
 
-export async function deleteAgent(
+async function deleteAgent(
   input: DeleteAgentIn,
 ): Promise<DeleteAgentOut> {
   "use server";

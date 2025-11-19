@@ -33,7 +33,7 @@ const getPersonaDefault = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createPersona(
+async function createPersona(
   input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";

@@ -75,14 +75,14 @@ export function AgentDebugInfoDataTable({
         },
       },
     ],
-    [],
+    []
   );
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "createdAt", desc: true },
@@ -114,20 +114,9 @@ export function AgentDebugInfoDataTable({
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    JSON.stringify(sorting),
-    JSON.stringify(columnFilters),
-    data.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [table]);
 
   if (isLoading) {
     return (

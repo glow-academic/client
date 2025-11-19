@@ -214,20 +214,9 @@ function PersonaDebugInfoSection({ rows }: PersonaDebugInfoSectionProps) {
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
   const tableRows = React.useMemo(() => {
     return table.getRowModel().rows;
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    JSON.stringify(sorting),
-    JSON.stringify(columnFilters),
-    rows.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [table]);
 
   return (
     <div className="space-y-4">

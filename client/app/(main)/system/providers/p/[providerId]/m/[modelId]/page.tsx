@@ -75,7 +75,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createModel(
+async function createModel(
   input: CreateModelIn,
 ): Promise<CreateModelOut> {
   "use server";
@@ -88,7 +88,7 @@ export async function createModel(
   return out;
 }
 
-export async function updateModel(
+async function updateModel(
   input: UpdateModelIn,
 ): Promise<UpdateModelOut> {
   "use server";

@@ -53,7 +53,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createModel(
+async function createModel(
   input: CreateModelIn,
 ): Promise<CreateModelOut> {
   "use server";

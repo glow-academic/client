@@ -28,7 +28,6 @@ import type {
 } from "@/app/(main)/create/scenarios/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
-import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +48,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -297,20 +297,9 @@ export function Scenarios({
   });
 
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    JSON.stringify(sorting),
-    JSON.stringify(columnFilters),
-    parentScenarios.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [table]);
 
   // Get the current page's parent scenario IDs
   // Extract IDs directly in useMemo with stable dependencies to avoid infinite re-renders
@@ -612,9 +601,7 @@ export function Scenarios({
                   )}
                   <div className="flex items-center gap-1">
                     {scenario.parameter_items.slice(0, 3).map((item) => (
-                      <Tooltip
-                        key={item.parameter_id + "_" + item.name}
-                      >
+                      <Tooltip key={item.parameter_id + "_" + item.name}>
                         <TooltipTrigger asChild>
                           <Badge variant="outline" className="text-xs">
                             {item.name}

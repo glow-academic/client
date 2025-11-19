@@ -32,7 +32,7 @@ const getPersonasList = unstable_cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicatePersona(
+async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
@@ -45,7 +45,7 @@ export async function duplicatePersona(
   return out;
 }
 
-export async function deletePersona(
+async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";

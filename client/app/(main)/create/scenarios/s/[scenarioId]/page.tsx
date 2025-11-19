@@ -70,7 +70,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function createScenario(
+async function createScenario(
   input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
@@ -79,7 +79,7 @@ export async function createScenario(
   return out;
 }
 
-export async function updateScenario(
+async function updateScenario(
   input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
@@ -92,7 +92,7 @@ export async function updateScenario(
   return out;
 }
 
-export async function generateAIScenario(
+async function generateAIScenario(
   input: GenerateAIScenarioIn
 ): Promise<GenerateAIScenarioOut> {
   "use server";
@@ -101,7 +101,7 @@ export async function generateAIScenario(
   return out;
 }
 
-export async function randomizeScenario(
+async function randomizeScenario(
   input: RandomizeScenarioIn
 ): Promise<RandomizeScenarioOut> {
   "use server";

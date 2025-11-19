@@ -41,7 +41,7 @@ const getProvider = (providerId: string) =>
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ providerId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { providerId } = await params;
   const session = await getSession();
@@ -64,8 +64,8 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function updateProvider(
-  input: UpdateProviderIn,
+async function updateProvider(
+  input: UpdateProviderIn
 ): Promise<UpdateProviderOut> {
   "use server";
   const out = await api.post("/providers/update", input);
@@ -77,24 +77,11 @@ export async function updateProvider(
   return out;
 }
 
-export async function decryptProviderKey(
-  input: DecryptProviderKeyIn,
+async function decryptProviderKey(
+  input: DecryptProviderKeyIn
 ): Promise<DecryptProviderKeyOut> {
   "use server";
   const out = await api.post("/providers/decrypt-key", input);
-  return out;
-}
-
-export async function createProvider(
-  input: CreateProviderIn,
-): Promise<CreateProviderOut> {
-  "use server";
-  const out = await api.post("/providers/create", input);
-  revalidateTag("providers");
-  const providerId = out.providerId;
-  if (providerId) {
-    revalidateTag(`provider:${providerId}`);
-  }
   return out;
 }
 
