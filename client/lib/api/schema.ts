@@ -299,6 +299,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/profile/staff/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Staff Detail
+         * @description Get staff profile details with role visibility check.
+         */
+        post: operations["get_staff_detail_api_v3_profile_staff_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/profile/staff/create": {
         parameters: {
             query?: never;
@@ -8476,6 +8496,28 @@ export interface components {
             avgPct: number;
         };
         /**
+         * StaffDetailRequest
+         * @description Request for staff detail.
+         */
+        StaffDetailRequest: {
+            /** Profileid */
+            profileId: string;
+            /** Currentprofileid */
+            currentProfileId: string;
+        };
+        /**
+         * StaffDetailResponse
+         * @description Response for staff detail endpoint.
+         */
+        StaffDetailResponse: {
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+        };
+        /**
          * StaffFilters
          * @description Filters for staff list.
          */
@@ -11197,6 +11239,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StaffListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_detail_api_v3_profile_staff_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffDetailResponse"];
                 };
             };
             /** @description Validation Error */

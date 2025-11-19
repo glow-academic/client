@@ -303,6 +303,13 @@ cohort_staff AS (
         LIMIT 1
     ) pa ON true
     CROSS JOIN user_profile_for_staff ups
+    WHERE (
+        ups.role = 'superadmin' OR
+        (ups.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
+        (ups.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
+        (ups.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+        (ups.role = 'guest' AND p.role = 'guest')
+    )
     ORDER BY p.id, p.last_name, p.first_name
 )
 SELECT 

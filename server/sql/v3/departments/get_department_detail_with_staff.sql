@@ -217,6 +217,13 @@ department_staff AS (
     LEFT JOIN recent_runs rr ON rr.profile_id = p.id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     CROSS JOIN user_profile up
+    WHERE (
+        up.role = 'superadmin' OR
+        (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
+        (up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
+        (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+        (up.role = 'guest' AND p.role = 'guest')
+    )
     ORDER BY p.id, p.last_name, p.first_name
 )
 SELECT 

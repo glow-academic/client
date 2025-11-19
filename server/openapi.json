@@ -576,6 +576,55 @@
         ]
       }
     },
+    "/api/v3/profile/staff/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile",
+          "staff"
+        ],
+        "summary": "Get Staff Detail",
+        "description": "Get staff profile details with role visibility check.",
+        "operationId": "get_staff_detail_api_v3_profile_staff_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
+      }
+    },
     "/api/v3/profile/staff/create": {
       "post": {
         "tags": [
@@ -20156,6 +20205,49 @@
         ],
         "title": "SkillStandardFact",
         "description": "Skill standard fact."
+      },
+      "StaffDetailRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "currentProfileId": {
+            "type": "string",
+            "title": "Currentprofileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId",
+          "currentProfileId"
+        ],
+        "title": "StaffDetailRequest",
+        "description": "Request for staff detail."
+      },
+      "StaffDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "role"
+        ],
+        "title": "StaffDetailResponse",
+        "description": "Response for staff detail endpoint."
       },
       "StaffFilters": {
         "properties": {

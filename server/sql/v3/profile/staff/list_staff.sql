@@ -327,5 +327,12 @@ CROSS JOIN department_mapping_data dmd
 CROSS JOIN trend_data_combined tdc
 CROSS JOIN valid_department_ids_data vdid
 WHERE pd.department_id IN (SELECT department_id FROM user_departments)
+AND (
+    up.role = 'superadmin' OR
+    (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR
+    (up.role = 'instructional' AND p.role IN ('instructional', 'ta', 'guest')) OR
+    (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
+    (up.role = 'guest' AND p.role = 'guest')
+)
 ORDER BY p.id, p.last_name, p.first_name
 
