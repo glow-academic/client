@@ -111,6 +111,51 @@ async def get_departments_list(
                             description=pdata.get("description", ""),
                         )
 
+        # Get current user's role for role-based filtering
+        user_role_row = await conn.fetchrow(
+            "SELECT role FROM profiles WHERE id = $1",
+            filters.profileId,
+        )
+        current_user_role = user_role_row["role"] if user_role_row else "guest"
+
+        # Get roles for all profiles in profile_mapping for role-based filtering
+        profile_ids_for_role_check = list(profile_mapping.keys())
+        profile_roles_map = {}
+        if profile_ids_for_role_check:
+            profile_role_rows = await conn.fetch(
+                """
+                SELECT id, role
+                FROM profiles
+                WHERE id = ANY($1::uuid[])
+                """,
+                profile_ids_for_role_check,
+            )
+            profile_roles_map = {
+                str(row["id"]): row["role"] for row in profile_role_rows
+            }
+
+        # Define role hierarchy (who can see which roles)
+        def can_see_role(user_role: str, target_role: str) -> bool:
+            """Check if user_role can see target_role based on role hierarchy."""
+            if user_role == "superadmin":
+                return True
+            elif user_role == "admin":
+                return target_role in ("admin", "instructional", "ta", "guest")
+            elif user_role == "instructional":
+                return target_role in ("instructional", "ta", "guest")
+            elif user_role == "ta":
+                return target_role in ("ta", "guest")
+            elif user_role == "guest":
+                return target_role == "guest"
+            return False
+
+        # Filter profile_mapping to only include profiles user can see based on role hierarchy
+        filtered_profile_mapping = {
+            pid: p
+            for (pid, p) in profile_mapping.items()
+            if can_see_role(current_user_role, profile_roles_map.get(pid, "guest"))
+        }
+
         for row in rows:
             cohort_ids = []
             if row.get("cohort_ids"):
@@ -118,29 +163,38 @@ async def get_departments_list(
 
             profile_ids = []
             if row.get("profile_ids"):
-                profile_ids = [str(pid) for pid in row["profile_ids"]]
+                # Filter profile_ids to only include profiles user can see
+                all_profile_ids = [str(pid) for pid in row["profile_ids"]]
+                profile_ids = [
+                    pid for pid in all_profile_ids if pid in filtered_profile_mapping
+                ]
 
-            departments.append(
-                DepartmentItem(
-                    department_id=row["department_id"],
-                    title=row["title"],
-                    description=row["description"],
-                    active=row["active"],
-                    updated_at=row["updated_at"].isoformat(),
-                    total_price_spent=float(row["total_price_spent"]),
-                    staff_count=int(row["staff_count"]),
-                    cohort_ids=cohort_ids,
-                    profile_ids=profile_ids,
-                    can_edit=row["can_edit"],
-                    can_delete=row["can_delete"],
-                    can_duplicate=row["can_duplicate"],
+            # Recalculate staff_count based on filtered profiles
+            staff_count = len(profile_ids)
+
+            # Only include departments with staff_count > 0 (after role filtering)
+            if staff_count > 0:
+                departments.append(
+                    DepartmentItem(
+                        department_id=row["department_id"],
+                        title=row["title"],
+                        description=row["description"],
+                        active=row["active"],
+                        updated_at=row["updated_at"].isoformat(),
+                        total_price_spent=float(row["total_price_spent"]),
+                        staff_count=staff_count,
+                        cohort_ids=cohort_ids,
+                        profile_ids=profile_ids,
+                        can_edit=row["can_edit"],
+                        can_delete=row["can_delete"],
+                        can_duplicate=row["can_duplicate"],
+                    )
                 )
-            )
 
         response_data = DepartmentsListResponse(
             departments=departments,
             cohort_mapping=cohort_mapping,
-            profile_mapping=profile_mapping,
+            profile_mapping=filtered_profile_mapping,
         )
 
         # Cache response

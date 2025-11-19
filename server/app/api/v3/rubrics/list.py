@@ -214,14 +214,43 @@ async def get_rubrics_list(
                 )
             )
 
+        # Get user departments for scoping simulation_options
+        user_department_rows = await conn.fetch(
+            "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
+            filters.profileId,
+        )
+        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+
+        # Collect department IDs actually assigned to rubrics
+        assigned_department_ids = set()
+        for rubric in rubrics:
+            if rubric.department_ids:
+                assigned_department_ids.update(rubric.department_ids)
+
+        # Collect simulation IDs actually assigned to rubrics
+        assigned_simulation_ids = set()
+        for rubric in rubrics:
+            assigned_simulation_ids.update(rubric.simulation_ids)
+
         # Build facet options
-        simulation_options = disambiguate_simulations(simulation_mapping)
+        # Filter simulation_options to only include simulations assigned to rubrics (no department filtering needed)
+        simulation_options = [
+            opt
+            for opt in disambiguate_simulations(simulation_mapping)
+            if opt["value"] in assigned_simulation_ids
+        ]
+
+        # Filter department_mapping to only include departments assigned to rubrics
+        filtered_department_mapping = {
+            did: d for (did, d) in department_mapping.items()
+            if did in assigned_department_ids
+        }
 
         response_data = RubricsListResponse(
             rubrics=rubrics,
             standard_groups_mapping=standard_groups_mapping,
             standards_mapping=standards_mapping,
-            department_mapping=department_mapping,
+            department_mapping=filtered_department_mapping,
             simulation_mapping=simulation_mapping,
             simulation_options=simulation_options,
         )

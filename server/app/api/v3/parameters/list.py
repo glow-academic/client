@@ -217,14 +217,95 @@ async def get_parameters_list(
                 )
             )
 
+        # Get user departments for scoping scenario and document options
+        user_department_rows = await conn.fetch(
+            "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
+            filters.profileId,
+        )
+        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+
+        # Collect scenario IDs, document IDs, and department IDs actually assigned to parameters
+        assigned_scenario_ids = set()
+        assigned_document_ids = set()
+        assigned_department_ids = set()
+        for parameter in parameters:
+            assigned_scenario_ids.update(parameter.scenario_ids)
+            assigned_document_ids.update(parameter.document_ids)
+            if parameter.department_ids:
+                assigned_department_ids.update(parameter.department_ids)
+
         # Build facet options
-        scenario_options = disambiguate_scenarios(scenario_mapping)
-        document_options = disambiguate_documents(document_mapping)
+        # Filter scenario_options to only include scenarios assigned to parameters AND in user's departments
+        # Need to check scenario departments via scenario_departments table
+        scenario_ids_in_user_depts = set()
+        if assigned_scenario_ids:
+            scenario_dept_rows = await conn.fetch(
+                """
+                SELECT DISTINCT sd.scenario_id::text
+                FROM scenario_departments sd
+                WHERE sd.scenario_id::text = ANY($1::text[])
+                AND sd.department_id::text = ANY($2::text[])
+                AND sd.active = true
+                UNION
+                SELECT DISTINCT s.id::text
+                FROM scenarios s
+                WHERE s.id::text = ANY($1::text[])
+                AND NOT EXISTS (
+                    SELECT 1 FROM scenario_departments sd2 
+                    WHERE sd2.scenario_id = s.id AND sd2.active = true
+                )
+                """,
+                list(assigned_scenario_ids),
+                list(user_department_ids),
+            )
+            scenario_ids_in_user_depts = {row["scenario_id"] for row in scenario_dept_rows}
+
+        scenario_options = [
+            opt
+            for opt in disambiguate_scenarios(scenario_mapping)
+            if opt["value"] in scenario_ids_in_user_depts
+        ]
+
+        # Filter document_options to only include documents assigned to parameters AND in user's departments
+        document_ids_in_user_depts = set()
+        if assigned_document_ids:
+            document_dept_rows = await conn.fetch(
+                """
+                SELECT DISTINCT dd.document_id::text
+                FROM document_departments dd
+                WHERE dd.document_id::text = ANY($1::text[])
+                AND dd.department_id::text = ANY($2::text[])
+                AND dd.active = true
+                UNION
+                SELECT DISTINCT d.id::text
+                FROM documents d
+                WHERE d.id::text = ANY($1::text[])
+                AND NOT EXISTS (
+                    SELECT 1 FROM document_departments dd2 
+                    WHERE dd2.document_id = d.id AND dd2.active = true
+                )
+                """,
+                list(assigned_document_ids),
+                list(user_department_ids),
+            )
+            document_ids_in_user_depts = {row["document_id"] for row in document_dept_rows}
+
+        document_options = [
+            opt
+            for opt in disambiguate_documents(document_mapping)
+            if opt["value"] in document_ids_in_user_depts
+        ]
+
+        # Filter department_mapping to only include departments assigned to parameters AND in user's departments
+        filtered_department_mapping = {
+            did: d for (did, d) in department_mapping.items()
+            if did in assigned_department_ids and did in user_department_ids
+        }
 
         response_data = ParametersListResponse(
             parameters=parameters,
             scenario_mapping=scenario_mapping,
-            department_mapping=department_mapping,
+            department_mapping=filtered_department_mapping,
             document_mapping=document_mapping,
             scenario_options=scenario_options,
             document_options=document_options,

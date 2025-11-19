@@ -205,8 +205,49 @@ async def get_personas_list(
                 )
             )
 
+        # Get user departments for scoping scenario_options
+        user_department_rows = await conn.fetch(
+            "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true",
+            filters.profileId,
+        )
+        user_department_ids = {str(row["department_id"]) for row in user_department_rows}
+
+        # Collect all scenario IDs from personas
+        all_persona_scenario_ids = set()
+        for persona in personas:
+            all_persona_scenario_ids.update(persona.scenario_ids)
+
+        # Check which scenarios are in user's departments (or cross-department)
+        # Scenarios can be cross-department (no department links) or in specific departments
+        valid_scenario_ids = set()
+        if all_persona_scenario_ids:
+            scenario_dept_rows = await conn.fetch(
+                """
+                SELECT DISTINCT sd.scenario_id::text
+                FROM scenario_departments sd
+                WHERE sd.scenario_id::text = ANY($1::text[])
+                AND sd.department_id::text = ANY($2::text[])
+                AND sd.active = true
+                UNION
+                SELECT DISTINCT s.id::text
+                FROM scenarios s
+                WHERE s.id::text = ANY($1::text[])
+                AND NOT EXISTS (
+                    SELECT 1 FROM scenario_departments sd2 
+                    WHERE sd2.scenario_id = s.id AND sd2.active = true
+                )
+                """,
+                list(all_persona_scenario_ids),
+                list(user_department_ids),
+            )
+            valid_scenario_ids = {row["scenario_id"] for row in scenario_dept_rows}
+
         # Build facet options
-        scenario_options = disambiguate_scenarios(scenario_mapping)
+        scenario_options = [
+            opt
+            for opt in disambiguate_scenarios(scenario_mapping)
+            if opt["value"] in valid_scenario_ids
+        ]
         model_options = [
             {"value": mid, "label": m.name} for (mid, m) in model_mapping.items()
         ]
