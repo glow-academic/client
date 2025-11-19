@@ -57,7 +57,7 @@ export default function StaffBulkEditModal({
   departmentMapping = {},
 }: StaffBulkEditModalProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, scopedRoles } = useProfile();
 
   const [bulkRole, setBulkRole] = useState<string>("__keep__");
   const [bulkReqPerDay, setBulkReqPerDay] = useState<string>("");
@@ -319,6 +319,7 @@ export default function StaffBulkEditModal({
                           placeholder="Select role"
                           disabled={isSubmitting || keepCurrent.role}
                           buttonClassName="h-10"
+                          roleOptions={scopedRoles || []}
                         />
                       </div>
                     </TableCell>

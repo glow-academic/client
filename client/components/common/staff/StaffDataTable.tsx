@@ -791,6 +791,19 @@ export function StaffDataTable({
   const selectedCount = selectedStaffIds.length;
   const isScoped = !!(departmentIds?.length || cohortIds?.length);
 
+  // Filter last active options to only show those with actual values
+  const filteredLastActiveOptions = React.useMemo(() => {
+    if (!lastActiveColumn) return [];
+    const facets = lastActiveColumn.getFacetedUniqueValues();
+    if (!facets) return [];
+
+    // Filter options to only include those with counts > 0
+    return lastActiveOptions.filter((option) => {
+      const count = facets.get(option.value) || 0;
+      return count > 0;
+    });
+  }, [lastActiveColumn, lastActiveOptions]);
+
   return (
     <TooltipProvider>
       <div className="space-y-2">
@@ -823,11 +836,11 @@ export function StaffDataTable({
               )}
 
               {/* Last Active Filter */}
-              {lastActiveColumn && lastActiveOptions.length > 0 && (
+              {lastActiveColumn && filteredLastActiveOptions.length > 0 && (
                 <DataTableFacetedFilter
                   column={lastActiveColumn}
                   title="Last Active"
-                  options={lastActiveOptions}
+                  options={filteredLastActiveOptions}
                 />
               )}
 

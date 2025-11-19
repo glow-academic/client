@@ -115,32 +115,57 @@ export default function Rubrics({
     [rubricsData]
   );
 
-  // Build filter options
+  // Build filter options - filter to only show options that have actual data
   const departmentOptions = useMemo(() => {
-    return Object.entries(departmentMapping).map(([id, obj]) => ({
-      value: id,
-      label: obj?.name || id,
-    }));
-  }, [departmentMapping]);
+    const allDepartmentIds = new Set<string>();
+    rubrics.forEach((rubric) => {
+      if (rubric.department_ids) {
+        rubric.department_ids.forEach((id) => allDepartmentIds.add(id));
+      }
+    });
+    return Object.entries(departmentMapping)
+      .filter(([id]) => allDepartmentIds.has(id))
+      .map(([id, obj]) => ({
+        value: id,
+        label: obj?.name || id,
+      }));
+  }, [departmentMapping, rubrics]);
 
-  // Use server-provided simulation options
-  const simulationOptions = useMemo(
-    () =>
-      (rubricsData?.simulation_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [rubricsData?.simulation_options]
-  );
+  // Use server-provided simulation options - filter to only show options that have actual data
+  const simulationOptions = useMemo(() => {
+    const allSimulationIds = new Set<string>();
+    rubrics.forEach((rubric) => {
+      if (rubric.simulation_ids) {
+        rubric.simulation_ids.forEach((id) => allSimulationIds.add(id));
+      }
+    });
+    return (rubricsData?.simulation_options || [])
+      .map((opt) => ({
+        value: opt["value"] as string,
+        label: opt["label"] as string,
+      }))
+      .filter((opt) => opt.value && opt.label && allSimulationIds.has(opt.value));
+  }, [rubricsData?.simulation_options, rubrics]);
 
-  const passPercentageOptions = [
-    { value: "0-25", label: "0-25%" },
-    { value: "26-50", label: "26-50%" },
-    { value: "51-75", label: "51-75%" },
-    { value: "76-100", label: "76-100%" },
-  ];
+  // Filter pass percentage options to only show ranges that have actual data
+  const passPercentageOptions = useMemo(() => {
+    const allRanges = [
+      { value: "0-25", label: "0-25%", min: 0, max: 25 },
+      { value: "26-50", label: "26-50%", min: 26, max: 50 },
+      { value: "51-75", label: "51-75%", min: 51, max: 75 },
+      { value: "76-100", label: "76-100%", min: 76, max: 100 },
+    ];
+    
+    // Check which ranges have rubrics
+    const rangesWithData = allRanges.filter((range) => {
+      return rubrics.some((rubric) => {
+        const percentage = rubric.passPercentage;
+        return percentage >= range.min && percentage <= range.max;
+      });
+    });
+    
+    return rangesWithData.map(({ value, label }) => ({ value, label }));
+  }, [rubrics]);
 
   // Column definitions for TanStack Table
   const columns = useMemo<ColumnDef<(typeof rubrics)[number]>[]>(
@@ -163,7 +188,15 @@ export default function Rubrics({
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row: (typeof rubrics)[number]) => row.passPercentage,
+        accessorFn: (row: (typeof rubrics)[number]) => {
+          // Return the range string that this percentage falls into for faceting
+          const percentage = row.passPercentage;
+          if (percentage >= 0 && percentage <= 25) return "0-25";
+          if (percentage >= 26 && percentage <= 50) return "26-50";
+          if (percentage >= 51 && percentage <= 75) return "51-75";
+          if (percentage >= 76 && percentage <= 100) return "76-100";
+          return null;
+        },
         filterFn: (row, _id, value: string[]) => {
           const percentage = row.original.passPercentage;
           return value.some((range) => {

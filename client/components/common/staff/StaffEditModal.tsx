@@ -51,7 +51,7 @@ export default function StaffEditModal({
   isLoading = false,
 }: StaffEditModalProps) {
   const router = useRouter();
-  const { effectiveProfile } = useProfile();
+  const { effectiveProfile, scopedRoles } = useProfile();
 
   // Extract data from ProfileListItem
   const targetUser = useMemo(() => {
@@ -289,6 +289,7 @@ export default function StaffEditModal({
                       placeholder="Select role"
                       disabled={isSubmitting}
                       buttonClassName="h-10"
+                      roleOptions={scopedRoles || []}
                     />
                   </div>
                 </div>
