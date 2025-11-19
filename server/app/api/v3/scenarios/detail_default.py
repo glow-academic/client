@@ -322,14 +322,20 @@ async def get_scenario_detail_default(
                         )
                     )
 
-        # Return empty scenario with all valid options
-        # Default to first department or None (cross-department if superadmin)
-        default_department_ids = [default_dept_id] if default_dept_id else None
-        is_default = default_department_ids is None or len(default_department_ids) == 0
-        
-        # Get user role for permissions
+        # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
+        primary_department_id = result.get("primary_department_id")
+        
+        # Set default department_ids based on role
+        # Superadmin: None (empty = all departments = default object)
+        # Non-superadmin: [primaryDepartmentId] if available
+        if is_superadmin:
+            default_department_ids = None
+        else:
+            default_department_ids = [primary_department_id] if primary_department_id else []
+        
+        is_default = default_department_ids is None or len(default_department_ids) == 0
         
         # For default scenarios, only superadmin can edit
         can_edit_default = not (is_default and not is_superadmin)

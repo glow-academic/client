@@ -1,6 +1,12 @@
 WITH user_profile AS (
     SELECT role FROM profiles WHERE id = $1::uuid
 ),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = $1::uuid AND is_primary = TRUE
+    LIMIT 1
+),
 valid_models AS (
     SELECT 
         id::text as model_id,
@@ -50,8 +56,10 @@ SELECT
     ) as valid_model_ids,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
-    up.role as user_role
+    up.role as user_role,
+    pdi.department_id as primary_department_id
 FROM (SELECT 1) dummy
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN user_profile up
+LEFT JOIN primary_department_id pdi ON true
 

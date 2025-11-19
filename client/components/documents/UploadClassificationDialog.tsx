@@ -30,7 +30,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
 import { Building2, FileText, Tag, X } from "lucide-react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 
 type DocumentType =
@@ -99,6 +104,15 @@ export function UploadClassificationDialog({
   validParameterItemIds,
 }: UploadClassificationDialogProps) {
   const { effectiveProfile } = useProfile();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId ?? null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
 
   // Per-file classification state (keyed by file.name)
   const [perFile, setPerFile] = React.useState<
@@ -113,14 +127,9 @@ export function UploadClassificationDialog({
     React.useState<DocumentType>(DEFAULT_TYPE);
   const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
     React.useState<string[]>([]);
-  // Department selection state - default to user's primary department
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = React.useState<
-    string[]
-  >(
-    effectiveProfile?.primaryDepartmentId
-      ? [effectiveProfile.primaryDepartmentId]
-      : []
-  );
+  // Department selection state - default based on role
+  const [selectedDepartmentIds, setSelectedDepartmentIds] =
+    React.useState<string[]>(defaultDepartmentIds);
 
   // Per-file "keep default" state - when true, that file uses all defaults
   const [keepDefaultPerFile, setKeepDefaultPerFile] = React.useState<
@@ -534,18 +543,20 @@ export function UploadClassificationDialog({
               <span className="text-xs text-muted-foreground font-medium">
                 Defaults →
               </span>
-              <div data-testid="document-department-selector">
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={validDepartmentIds}
-                  selectedIds={selectedDepartmentIds}
-                  onSelect={setSelectedDepartmentIds}
-                  placeholder="Dept"
-                  multiSelect={true}
-                  compact={true}
-                  buttonClassName="h-7 px-2 text-xs"
-                />
-              </div>
+              {validDepartmentIds.length > 1 && (
+                <div data-testid="document-department-selector">
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={validDepartmentIds}
+                    selectedIds={selectedDepartmentIds}
+                    onSelect={setSelectedDepartmentIds}
+                    placeholder="Dept"
+                    multiSelect={true}
+                    compact={true}
+                    buttonClassName="h-7 px-2 text-xs"
+                  />
+                </div>
+              )}
               <div data-testid="document-type-selector">
                 <DocumentTypePicker
                   selectedType={globalDefaultType}
@@ -601,12 +612,14 @@ export function UploadClassificationDialog({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[200px]">File Name</TableHead>
-                  <TableHead className="w-[180px]">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>Department</span>
-                    </div>
-                  </TableHead>
+                  {validDepartmentIds.length > 1 && (
+                    <TableHead className="w-[180px]">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Department</span>
+                      </div>
+                    </TableHead>
+                  )}
                   <TableHead className="w-[150px]">
                     <div className="flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-muted-foreground" />
@@ -914,6 +927,13 @@ export function UploadClassificationDialog({
                     }
                     return;
                   }
+                  // Transform department IDs before submitting
+                  const finalDepartmentIds = transformDepartmentIdsForSubmit(
+                    selectedDepartmentIds,
+                    isSuperadmin,
+                    validDepartmentIds
+                  );
+
                   // Include department information in the classification
                   const perFileWithDepartment = Object.fromEntries(
                     Object.entries(perFile).map(
@@ -921,14 +941,22 @@ export function UploadClassificationDialog({
                         fileName,
                         {
                           ...classification,
-                          departmentIds: selectedDepartmentIds,
+                          departmentIds:
+                            classification.departmentIds &&
+                            classification.departmentIds.length > 0
+                              ? transformDepartmentIdsForSubmit(
+                                  classification.departmentIds,
+                                  isSuperadmin,
+                                  validDepartmentIds
+                                ) || []
+                              : finalDepartmentIds || [],
                         },
                       ]
                     )
                   );
                   const zipDefaultsWithDepartment = {
                     ...zipDefaults,
-                    departmentIds: selectedDepartmentIds,
+                    departmentIds: finalDepartmentIds || [],
                   };
                   onConfirm(perFileWithDepartment, zipDefaultsWithDepartment);
                 }}

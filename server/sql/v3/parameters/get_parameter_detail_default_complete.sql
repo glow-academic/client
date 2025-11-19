@@ -102,13 +102,21 @@ valid_depts AS (
     FROM departments d
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = $1 AND d.active = true
+),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = $1 AND is_primary = TRUE
+    LIMIT 1
 )
 SELECT 
     p.*,
     ij.items as parameter_items_json,
     vd.dept_mapping as department_mapping,
-    vd.dept_ids as valid_department_ids
+    vd.dept_ids as valid_department_ids,
+    pdi.department_id as primary_department_id
 FROM parameter_data p
 CROSS JOIN items_json ij
 CROSS JOIN valid_depts vd
+LEFT JOIN primary_department_id pdi ON true
 

@@ -461,32 +461,34 @@ export default function StaffBulkEditModal({
                           disabled={isSubmitting}
                         />
                       </TableCell>
-                      <TableCell>
-                        <DepartmentPicker
-                          mapping={departmentMapping}
-                          validIds={validDepartmentIds}
-                          selectedIds={
-                            bulkPrimaryDepartmentId
-                              ? [bulkPrimaryDepartmentId]
-                              : []
-                          }
-                          onSelect={(ids) => {
-                            const deptId =
-                              ids.length > 0 && ids[0] ? ids[0] : null;
-                            setBulkPrimaryDepartmentId(deptId);
-                            setKeepCurrent((prev) => ({
-                              ...prev,
-                              primaryDepartment: false,
-                            }));
-                          }}
-                          multiSelect={false}
-                          placeholder="Select primary department"
-                          disabled={
-                            isSubmitting || keepCurrent.primaryDepartment
-                          }
-                          buttonClassName="h-10"
-                        />
-                      </TableCell>
+                      {validDepartmentIds.length > 1 && (
+                        <TableCell>
+                          <DepartmentPicker
+                            mapping={departmentMapping}
+                            validIds={validDepartmentIds}
+                            selectedIds={
+                              bulkPrimaryDepartmentId
+                                ? [bulkPrimaryDepartmentId]
+                                : []
+                            }
+                            onSelect={(ids) => {
+                              const deptId =
+                                ids.length > 0 && ids[0] ? ids[0] : null;
+                              setBulkPrimaryDepartmentId(deptId);
+                              setKeepCurrent((prev) => ({
+                                ...prev,
+                                primaryDepartment: false,
+                              }));
+                            }}
+                            multiSelect={false}
+                            placeholder="Select primary department"
+                            disabled={
+                              isSubmitting || keepCurrent.primaryDepartment
+                            }
+                            buttonClassName="h-10"
+                          />
+                        </TableCell>
+                      )}
                     </TableRow>
                   )}
 

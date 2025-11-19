@@ -1152,9 +1152,10 @@ export default function CSVImportStaffModal({
                       <TableHead>Last Name</TableHead>
                       <TableHead>Alias</TableHead>
                       <TableHead>Role</TableHead>
-                      {(!departmentIds || departmentIds.length === 0) && (
-                        <TableHead>Department</TableHead>
-                      )}
+                      {(!departmentIds || departmentIds.length === 0) &&
+                        validDepartmentIds.length > 1 && (
+                          <TableHead>Department</TableHead>
+                        )}
                       {(!cohortIds || cohortIds.length === 0) && (
                         <TableHead>Cohort</TableHead>
                       )}
@@ -1276,33 +1277,34 @@ export default function CSVImportStaffModal({
                                 buttonClassName="h-8"
                               />
                             </TableCell>
-                            {(!departmentIds || departmentIds.length === 0) && (
-                              <TableCell
-                                className={
-                                  hasDepartmentError ? "bg-destructive/10" : ""
-                                }
-                              >
-                                <DepartmentPicker
-                                  mapping={departmentMapping}
-                                  validIds={validDepartmentIds}
-                                  selectedIds={
-                                    (editableRow.department_ids ||
-                                      row.department_ids ||
-                                      []) as string[]
+                            {(!departmentIds || departmentIds.length === 0) &&
+                              validDepartmentIds.length > 1 && (
+                                <TableCell
+                                  className={
+                                    hasDepartmentError ? "bg-destructive/10" : ""
                                   }
-                                  onSelect={(ids) =>
-                                    updateEditableRow(
-                                      index,
-                                      "department_ids",
-                                      ids,
-                                    )
-                                  }
-                                  placeholder="Select departments"
-                                  multiSelect={true}
-                                  compact={true}
-                                />
-                              </TableCell>
-                            )}
+                                >
+                                  <DepartmentPicker
+                                    mapping={departmentMapping}
+                                    validIds={validDepartmentIds}
+                                    selectedIds={
+                                      (editableRow.department_ids ||
+                                        row.department_ids ||
+                                        []) as string[]
+                                    }
+                                    onSelect={(ids) =>
+                                      updateEditableRow(
+                                        index,
+                                        "department_ids",
+                                        ids,
+                                      )
+                                    }
+                                    placeholder="Select departments"
+                                    multiSelect={true}
+                                    compact={true}
+                                  />
+                                </TableCell>
+                              )}
                             {(!cohortIds || cohortIds.length === 0) && (
                               <TableCell
                                 className={

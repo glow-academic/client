@@ -33,6 +33,12 @@ WITH user_departments AS (
         user_context AS (
             SELECT role FROM profiles WHERE id = $1
         ),
+        primary_department_id AS (
+            SELECT department_id::text
+            FROM profile_departments
+            WHERE profile_id = $1 AND is_primary = TRUE
+            LIMIT 1
+        ),
         cohort_usage AS (
             SELECT 
                 COUNT(*) FILTER (WHERE cs.active = true) as active_cohort_count,
@@ -440,9 +446,11 @@ WITH user_departments AS (
             dmd.department_mapping,
             pmd.parameter_mapping,
             pimd.parameter_item_mapping,
-            pild.parameter_items_list
+            pild.parameter_items_list,
+            pdi.department_id as primary_department_id
         FROM simulation_base sb
         CROSS JOIN user_context uc
+        LEFT JOIN primary_department_id pdi ON true
         LEFT JOIN cohort_usage cu ON true
         LEFT JOIN scenarios_list_data sld ON true
         LEFT JOIN valid_scenarios vs ON true

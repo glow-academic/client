@@ -287,6 +287,12 @@ user_profile AS (
     SELECT role as user_role 
     FROM profiles 
     WHERE id = $1
+),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = $1 AND is_primary = TRUE
+    LIMIT 1
 )
 SELECT 
     COALESCE(
@@ -310,5 +316,6 @@ SELECT
     (SELECT document_details FROM document_details_data) as document_details,
     (SELECT problem_statement_mapping FROM problem_statement_mapping_data_default) as problem_statement_mapping,
     (SELECT objectives_history FROM objectives_history_data_default) as objectives_history,
-    (SELECT user_role FROM user_profile) as user_role
+    (SELECT user_role FROM user_profile) as user_role,
+    (SELECT department_id FROM primary_department_id) as primary_department_id
 

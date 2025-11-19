@@ -176,9 +176,13 @@ cohort_membership AS (
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN profiles p ON p.id = cp.profile_id
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
+    CROSS JOIN profile_role_lookup prl
+    CROSS JOIN resolve_profile_id rpi
     WHERE cp.active = true  -- Only active cohort memberships for non-history queries
       AND (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
       AND p.role = ANY($6::profile_role[])
+      -- When TA mode, only include the current TA's profile_id
+      AND (NOT prl.is_ta_mode OR cp.profile_id = rpi.resolved_profile_id)
     GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, p.role, c.id
     HAVING 
         (cardinality($5::uuid[]) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY($5::uuid[])) > 0)

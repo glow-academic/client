@@ -6149,6 +6149,8 @@ export interface components {
             historyProfileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
         };
         /**
          * HomeOverviewResponse

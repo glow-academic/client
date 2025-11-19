@@ -33,6 +33,10 @@ import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
+import {
   BarChart3,
   CheckCircle2,
   Clock,
@@ -93,6 +97,7 @@ export default function Simulation({
 }: SimulationProps) {
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
@@ -151,6 +156,15 @@ export default function Simulation({
     clearEntityMetadata,
   ]);
 
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId ?? null,
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+  );
+
   const initialFormData: FormData = useMemo(
     () => ({
       title: "",
@@ -160,11 +174,9 @@ export default function Simulation({
       cohortIds: [],
       active: true,
       practiceSimulation: false,
-      departmentIds: effectiveProfile?.primaryDepartmentId
-        ? [effectiveProfile.primaryDepartmentId]
-        : [],
+      departmentIds: defaultDepartmentIds,
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [defaultDepartmentIds],
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -578,6 +590,13 @@ export default function Simulation({
     setIsSubmitting(true);
 
     try {
+      const validDepartmentIds = simulationData?.valid_department_ids || [];
+      const finalDepartmentIds = transformDepartmentIdsForSubmit(
+        formData?.departmentIds || [],
+        isSuperadmin,
+        validDepartmentIds,
+      );
+
       const targetSimulationId = simulationId || editingSimulationId;
 
       if (targetSimulationId) {
@@ -586,7 +605,7 @@ export default function Simulation({
           simulationId: targetSimulationId,
           title: formData?.title || "",
           description: formData?.description ?? "",
-          department_ids: formData?.departmentIds || null,
+          department_ids: finalDepartmentIds,
           active: formData?.active ?? true,
           practice_simulation: formData?.practiceSimulation || false,
           time_limit: formData?.timeLimit || null,
@@ -604,7 +623,7 @@ export default function Simulation({
         const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
-          department_ids: formData?.departmentIds || null,
+          department_ids: finalDepartmentIds,
           active: formData?.active || true,
           practice_simulation: formData?.practiceSimulation || false,
           time_limit: formData?.timeLimit || null,
@@ -786,24 +805,27 @@ export default function Simulation({
         </div>
 
         {/* Department Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="department">Department</Label>
-          {formData?.departmentIds !== undefined ? (
-            <DepartmentPicker
-              mapping={simulationData?.department_mapping || {}}
-              validIds={simulationData?.valid_department_ids || []}
-              selectedIds={formData.departmentIds || []}
-              onSelect={(ids) => handleInputChange("departmentIds", ids)}
-              placeholder="All Departments"
-              disabled={isReadonly}
-              multiSelect={true}
-              triggerProps={{ "data-testid": "picker-department" }}
-            />
-          ) : null}
-          {errors.departmentIds && (
-            <p className="text-sm text-destructive">{errors.departmentIds}</p>
+        {simulationData?.valid_department_ids &&
+          simulationData.valid_department_ids.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              {formData?.departmentIds !== undefined ? (
+                <DepartmentPicker
+                  mapping={simulationData?.department_mapping || {}}
+                  validIds={simulationData?.valid_department_ids || []}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                  triggerProps={{ "data-testid": "picker-department" }}
+                />
+              ) : null}
+              {errors.departmentIds && (
+                <p className="text-sm text-destructive">{errors.departmentIds}</p>
+              )}
+            </div>
           )}
-        </div>
 
         {/* Active and Practice Simulation Switches */}
         <div className="space-y-2 pt-2">

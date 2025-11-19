@@ -255,6 +255,12 @@ user_profile_for_staff AS (
 user_profile_for_cohort AS (
     SELECT role FROM profiles WHERE id = $1
 ),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = $1 AND is_primary = TRUE
+    LIMIT 1
+),
 cohort_staff AS (
     SELECT DISTINCT ON (p.id)
         p.id as profile_id,
@@ -432,7 +438,9 @@ SELECT
         dmd.dept_data
      ), '{}'::jsonb)
      FROM department_mapping_data dmd
-    ) as department_mapping
+    ) as department_mapping,
+    pdi.department_id as primary_department_id
 FROM cohort_data cd
 CROSS JOIN user_profile_for_cohort upc
+LEFT JOIN primary_department_id pdi ON true
 

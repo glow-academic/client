@@ -32,6 +32,10 @@ import {
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
+import {
   Calculator,
   FileText,
   GraduationCap,
@@ -104,6 +108,15 @@ export default function Parameter({
   const isEditMode = mode === "edit" && !!parameterId;
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId || null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -275,14 +288,23 @@ export default function Parameter({
 
     try {
       // Prepare parameter items for submission (only non-deleted items)
+      // Transform department_ids for each item (non-superadmin: empty -> all valid departments)
       const parameter_items = parameterItemsFormData
         .filter((item) => !item.isDeleted)
-        .map((item) => ({
-          name: item.name,
-          description: item.description,
-          value: formData.numerical ? item.value : item.name,
-          department_ids: item.departmentIds ?? null,
-        }));
+        .map((item) => {
+          const itemDepartmentIds = item.departmentIds || [];
+          const transformedDepartmentIds = transformDepartmentIdsForSubmit(
+            itemDepartmentIds,
+            isSuperadmin,
+            validDepartmentIds
+          );
+          return {
+            name: item.name,
+            description: item.description,
+            value: formData.numerical ? item.value : item.name,
+            department_ids: transformedDepartmentIds,
+          };
+        });
 
       if (isEditMode) {
         // V2 API: Single atomic update with nested items
@@ -344,9 +366,7 @@ export default function Parameter({
       value: "",
       isNew: true,
       isDeleted: false,
-      departmentIds: effectiveProfile?.primaryDepartmentId
-        ? [effectiveProfile.primaryDepartmentId]
-        : null,
+      departmentIds: defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     };
     setParameterItemsFormData((prev) => [...prev, newItem]);
   };
@@ -709,27 +729,29 @@ export default function Parameter({
                             />
                           </div>
                         )}
-                        <div>
-                          <Label className="text-xs text-muted-foreground mb-1 block">
-                            Departments
-                          </Label>
-                          <DepartmentPicker
-                            mapping={departmentMapping}
-                            validIds={validDepartmentIds}
-                            selectedIds={item.departmentIds || []}
-                            onSelect={(ids) =>
-                              handleParameterItemInputChange(
-                                itemIndex,
-                                "departmentIds",
-                                ids.length > 0 ? ids : null,
-                              )
-                            }
-                            placeholder="All Departments"
-                            multiSelect={true}
-                            disabled={isReadonly}
-                            triggerProps={{ "data-testid": "picker-department" }}
-                          />
-                        </div>
+                        {validDepartmentIds.length > 1 && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">
+                              Departments
+                            </Label>
+                            <DepartmentPicker
+                              mapping={departmentMapping}
+                              validIds={validDepartmentIds}
+                              selectedIds={item.departmentIds || []}
+                              onSelect={(ids) =>
+                                handleParameterItemInputChange(
+                                  itemIndex,
+                                  "departmentIds",
+                                  ids.length > 0 ? ids : null,
+                                )
+                              }
+                              placeholder="All Departments"
+                              multiSelect={true}
+                              disabled={isReadonly}
+                              triggerProps={{ "data-testid": "picker-department" }}
+                            />
+                          </div>
+                        )}
                       </div>
                     ),
                   )}
@@ -803,22 +825,24 @@ export default function Parameter({
                               </TableCell>
                             )}
                             <TableCell className="w-64">
-                              <DepartmentPicker
-                                mapping={departmentMapping}
-                                validIds={validDepartmentIds}
-                                selectedIds={item.departmentIds || []}
-                                onSelect={(ids) =>
-                                  handleParameterItemInputChange(
-                                    itemIndex,
-                                    "departmentIds",
-                                    ids.length > 0 ? ids : null,
-                                  )
-                                }
-                                placeholder="All Departments"
-                                multiSelect={true}
-                                disabled={isReadonly}
-                                triggerProps={{ "data-testid": "picker-department" }}
-                              />
+                              {validDepartmentIds.length > 1 ? (
+                                <DepartmentPicker
+                                  mapping={departmentMapping}
+                                  validIds={validDepartmentIds}
+                                  selectedIds={item.departmentIds || []}
+                                  onSelect={(ids) =>
+                                    handleParameterItemInputChange(
+                                      itemIndex,
+                                      "departmentIds",
+                                      ids.length > 0 ? ids : null,
+                                    )
+                                  }
+                                  placeholder="All Departments"
+                                  multiSelect={true}
+                                  disabled={isReadonly}
+                                  triggerProps={{ "data-testid": "picker-department" }}
+                                />
+                              ) : null}
                             </TableCell>
                             <TableCell className="w-20">
                               <div className="flex items-center gap-1">

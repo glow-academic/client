@@ -34,6 +34,7 @@ import type {
 } from "@/app/(main)/create/personas/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,6 +92,7 @@ export default function Personas({
   duplicatePersonaAction,
   deletePersonaAction,
 }: PersonasProps) {
+  const { departmentIds } = useProfile();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -573,13 +575,15 @@ export default function Personas({
                 )}
 
                 {/* Department Filter */}
-                {departmentsColumn && departmentOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={departmentsColumn}
-                    title="Department"
-                    options={departmentOptions}
-                  />
-                )}
+                {departmentsColumn &&
+                  departmentOptions.length > 0 &&
+                  departmentIds.length > 1 && (
+                    <DataTableFacetedFilter
+                      column={departmentsColumn}
+                      title="Department"
+                      options={departmentOptions}
+                    />
+                  )}
 
                 {isFiltered && (
                   <Button

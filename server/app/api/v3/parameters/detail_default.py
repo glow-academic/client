@@ -105,15 +105,19 @@ async def get_parameter_detail_default(
         if valid_dept_ids_raw and isinstance(valid_dept_ids_raw, (list, tuple)):
             valid_department_ids = [str(did) for did in valid_dept_ids_raw if did]
 
-        # Parse department_ids from array
-        department_ids = None
-        dept_ids_raw = result.get("department_ids")
-        if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
-            department_ids = [str(did) for did in dept_ids_raw if did]
-
-        # Get user role for permissions
+        # Get user role and primary department for default behavior
         user_role = result.get("user_role", "trainee")
         is_superadmin = user_role == "superadmin"
+        primary_department_id = result.get("primary_department_id")
+        
+        # Set default department_ids based on role
+        # Superadmin: None (empty = all departments = default object)
+        # Non-superadmin: [primaryDepartmentId] if available
+        if is_superadmin:
+            department_ids = None
+        else:
+            department_ids = [primary_department_id] if primary_department_id else []
+        
         is_default = department_ids is None or len(department_ids) == 0
         # Default parameters (no department_ids) are read-only for non-superadmin
         can_edit = not (is_default and not is_superadmin) and user_role in ("admin", "superadmin")

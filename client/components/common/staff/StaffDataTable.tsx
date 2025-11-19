@@ -50,6 +50,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
 import {
   Clock,
   Edit,
@@ -210,6 +211,7 @@ export function StaffDataTable({
   initialSearchData,
   readonly = false,
 }: StaffDataTableProps) {
+  const { departmentIds: profileDepartmentIds } = useProfile();
   const [rowSelection, setRowSelection] = React.useState({});
 
   // Set column visibility based on page context - simplified, no useMemo needed
@@ -871,19 +873,22 @@ export function StaffDataTable({
                   />
                 )}
 
-              {/* Departments Filter - show when no scope (staff page), hide when cohortId or departmentId provided */}
-              {!cohortId && !departmentId && departmentIdsColumn && (
-                <DataTableFacetedFilter
-                  column={departmentIdsColumn}
-                  title="Department"
-                  options={Object.entries(departmentMapping).map(
-                    ([id, item]) => ({
-                      value: id,
-                      label: item.name,
-                    })
-                  )}
-                />
-              )}
+              {/* Departments Filter - show when no scope (staff page), hide when cohortId or departmentId provided, hide when only 1 department */}
+              {!cohortId &&
+                !departmentId &&
+                departmentIdsColumn &&
+                profileDepartmentIds.length > 1 && (
+                  <DataTableFacetedFilter
+                    column={departmentIdsColumn}
+                    title="Department"
+                    options={Object.entries(departmentMapping).map(
+                      ([id, item]) => ({
+                        value: id,
+                        label: item.name,
+                      })
+                    )}
+                  />
+                )}
 
               {isFiltered && (
                 <Button

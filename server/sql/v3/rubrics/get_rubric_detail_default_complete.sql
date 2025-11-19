@@ -57,6 +57,12 @@ profile_data AS (
     FROM profiles 
     WHERE id = $1
 ),
+primary_department_id AS (
+    SELECT department_id::text
+    FROM profile_departments
+    WHERE profile_id = $1 AND is_primary = TRUE
+    LIMIT 1
+),
 standard_groups_with_standards AS (
     SELECT 
         COALESCE(
@@ -97,10 +103,12 @@ SELECT
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
     pr.user_role,
-    sg.groups_json as standard_groups_complete
+    sg.groups_json as standard_groups_complete,
+    pdi.department_id as primary_department_id
 FROM rubric_data r
 LEFT JOIN rubric_departments_data rdd ON true
 CROSS JOIN valid_depts vd
 CROSS JOIN profile_data pr
 CROSS JOIN standard_groups_with_standards sg
+LEFT JOIN primary_department_id pdi ON true
 

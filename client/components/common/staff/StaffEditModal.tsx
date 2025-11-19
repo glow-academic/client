@@ -383,35 +383,36 @@ export default function StaffEditModal({
                 </div>
 
                 {/* Primary Department Section (superadmin only) */}
-                {isSuperadmin && (
-                  <div className="space-y-2 pt-2">
-                    <Label htmlFor="primaryDepartment">
-                      Primary Department
-                    </Label>
-                    <DepartmentPicker
-                      mapping={departmentMapping}
-                      validIds={validDepartmentIds}
-                      selectedIds={
-                        formData.primaryDepartmentId
-                          ? [formData.primaryDepartmentId]
-                          : []
-                      }
-                      onSelect={(ids) => {
-                        const deptId = ids.length > 0 ? ids[0] : "";
-                        if (deptId !== undefined) {
-                          handleInputChange("primaryDepartmentId", deptId);
+                {isSuperadmin &&
+                  validDepartmentIds.length > 1 && (
+                    <div className="space-y-2 pt-2">
+                      <Label htmlFor="primaryDepartment">
+                        Primary Department
+                      </Label>
+                      <DepartmentPicker
+                        mapping={departmentMapping}
+                        validIds={validDepartmentIds}
+                        selectedIds={
+                          formData.primaryDepartmentId
+                            ? [formData.primaryDepartmentId]
+                            : []
                         }
-                      }}
-                      multiSelect={false}
-                      placeholder="Select primary department"
-                      disabled={isSubmitting}
-                      buttonClassName="h-10"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Set the primary department for this staff member
-                    </p>
-                  </div>
-                )}
+                        onSelect={(ids) => {
+                          const deptId = ids.length > 0 ? ids[0] : "";
+                          if (deptId !== undefined) {
+                            handleInputChange("primaryDepartmentId", deptId);
+                          }
+                        }}
+                        multiSelect={false}
+                        placeholder="Select primary department"
+                        disabled={isSubmitting}
+                        buttonClassName="h-10"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Set the primary department for this staff member
+                      </p>
+                    </div>
+                  )}
 
                 {/* Default Profile Section (superadmin only) */}
                 {isSuperadmin && (

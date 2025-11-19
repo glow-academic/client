@@ -84,6 +84,10 @@ import {
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
 } from "@/utils/scenario-helpers";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
 
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
@@ -341,13 +345,20 @@ export default function Scenario({
   const updateScenario = handleUpdateScenario;
 
   // Form data state
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId || null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
+
   const initialFormData = useMemo(
     () => ({
       name: "New Scenario",
       problemStatement: "",
-      departmentIds: effectiveProfile?.primaryDepartmentId
-        ? [effectiveProfile.primaryDepartmentId]
-        : [],
+      departmentIds: defaultDepartmentIds,
       active: true,
       hintsEnabled: false,
       objectivesEnabled: false,
@@ -356,7 +367,7 @@ export default function Scenario({
       inputGuardrailEnabled: false,
       outputGuardrailEnabled: false,
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [defaultDepartmentIds]
   );
 
   const [formData, setFormData] = useState(initialFormData);
@@ -1378,6 +1389,13 @@ export default function Scenario({
     setIsSubmitting(true);
 
     try {
+      // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
+      const finalDepartmentIds = transformDepartmentIdsForSubmit(
+        formData.departmentIds || [],
+        isSuperadmin,
+        scenarioData?.valid_department_ids || []
+      );
+
       // Prepare payload for V2 API
       const payload: {
         name: string;
@@ -1398,7 +1416,7 @@ export default function Scenario({
       } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
-        department_ids: formData.departmentIds || null,
+        department_ids: finalDepartmentIds,
         active: formData.active ?? true,
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
@@ -1578,25 +1596,28 @@ export default function Scenario({
           </CardContent>
           <CardContent className="pt-0 space-y-4">
             {/* Department Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              {formData?.departmentIds !== undefined ? (
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={Array.from(
-                    new Set([
-                      ...(scenarioData?.valid_department_ids || []),
-                      ...(formData.departmentIds || []),
-                    ])
-                  )}
-                  selectedIds={formData.departmentIds || []}
-                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                  placeholder="All Departments"
-                  disabled={isReadonly}
-                  multiSelect={true}
-                />
-              ) : null}
-            </div>
+            {scenarioData?.valid_department_ids &&
+            scenarioData.valid_department_ids.length > 1 ? (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentIds !== undefined ? (
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={Array.from(
+                      new Set([
+                        ...(scenarioData?.valid_department_ids || []),
+                        ...(formData.departmentIds || []),
+                      ])
+                    )}
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                    placeholder="All Departments"
+                    disabled={isReadonly}
+                    multiSelect={true}
+                  />
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">

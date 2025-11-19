@@ -152,9 +152,19 @@ async def get_agent_detail_default(
             ),
         }
 
-        # Get user role for permissions
+        # Get user role and primary department for default behavior
         user_role = result.get("user_role", "trainee") if result else "trainee"
         is_superadmin = user_role == "superadmin"
+        primary_department_id = result.get("primary_department_id") if result else None
+        
+        # Set default department_ids based on role
+        # Superadmin: [] (empty = all departments = default object)
+        # Non-superadmin: [primaryDepartmentId] if available
+        if is_superadmin:
+            default_department_ids: list[str] = []
+        else:
+            default_department_ids = [primary_department_id] if primary_department_id else []
+        
         # Default agents (no department_ids) are read-only for non-superadmin
         can_edit = is_superadmin
 
@@ -168,7 +178,7 @@ async def get_agent_detail_default(
             reasoning="none",
             active=True,
             role="assistant",
-            department_ids=[],
+            department_ids=default_department_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
             department_prompt_links={},

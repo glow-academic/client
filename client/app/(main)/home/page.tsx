@@ -135,17 +135,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 
   // Extract subset for Home: startDate, endDate (required)
-  // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
+  // Always include cohortIds, departmentIds, and roles (they are guaranteed to be non-empty from getHomeFilters)
   const homeFiltersBody: HomeIn["body"] = {
     startDate: defaultFilters.startDate,
     endDate: defaultFilters.endDate,
     cohortIds: defaultFilters.cohortIds, // Always non-empty
     departmentIds: defaultFilters.departmentIds, // Always non-empty
+    roles: defaultFilters.roles, // Scoped roles from profile context
   };
 
-  // profileId is left empty/null for main home metrics
-  // historyProfileId is used only for history showRetry calculation
+  // profileId is required for TA mode detection and filtering
+  // Use effectiveProfileId so the SQL can determine if user is TA and filter accordingly
   if (session?.effectiveProfileId) {
+    homeFiltersBody.profileId = session.effectiveProfileId;
     homeFiltersBody.historyProfileId = session.effectiveProfileId;
   }
 

@@ -62,6 +62,7 @@ import type {
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
+import { useProfile } from "@/contexts/profile-context";
 
 export interface ParametersProps {
   // Server-provided data (for server-side rendering)
@@ -80,6 +81,7 @@ export default function Parameters({
   duplicateParameterAction,
   deleteParameterAction,
 }: ParametersProps) {
+  const { departmentIds } = useProfile();
   const router = useRouter();
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

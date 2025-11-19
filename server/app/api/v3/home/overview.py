@@ -99,6 +99,7 @@ class HomeFilters(BaseModel):
     profileId: str | None = None  # Used for main home metrics filtering
     historyProfileId: str | None = None  # Used only for history showRetry calculation
     departmentIds: list[str] | None = None
+    roles: list[str] | None = None  # Scoped roles for filtering (e.g., ["ta"], ["instructional", "ta"])
 
 
 def _parse_json_strings_recursive(obj: Any) -> Any:  # noqa: ANN401
@@ -170,19 +171,21 @@ async def get_home_overview(
         # $3: profile_id
         # $4: cohort_ids
         # $5: department_ids
-        # $6: roles (hardcoded to ["ta"])
+        # $6: roles (scoped roles from filters, default to ["ta"] for backward compatibility)
         # $7, $8: history dates
         # $9: history_profile_id (legacy, kept for compatibility)
         # $10, $11: history cohort_ids, dept_ids
         # $12: historyProfileId (used for showRetry calculation)
         history_profile_id = filters.historyProfileId
+        # Use scoped roles from filters, default to ["ta"] for backward compatibility
+        roles = filters.roles if filters.roles else ["ta"]
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
             profile_id if profile_id else None,  # $3
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
-            ["ta"],  # $6
+            roles,  # $6
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $7
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $8
             profile_id if profile_id else None,  # $9 (legacy)

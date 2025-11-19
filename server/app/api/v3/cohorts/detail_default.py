@@ -225,9 +225,31 @@ async def get_cohort_detail_default(
         valid_department_ids = [
             str(did) for did in (row.get("valid_department_ids") or [])
         ]
-        dept_ids = None
-        if row.get("department_ids"):
-            dept_ids = [str(d) for d in row["department_ids"]]
+        
+        # Get user role and primary department for default behavior
+        user_role = row.get("can_edit", False)  # This is a permission check, need to get role differently
+        # Check if can_edit is False due to default object restriction
+        dept_ids_from_row = row.get("department_ids")
+        is_default_cohort = dept_ids_from_row is None or len(dept_ids_from_row) == 0
+        
+        # Get primary department from SQL result
+        primary_department_id = row.get("primary_department_id")
+        
+        # For default cohorts, check role from can_edit logic
+        # If can_edit is False and it's a default cohort, user is not superadmin
+        # We need to infer role - check if it's a default object that can't be edited
+        # For now, use a simpler approach: check if we have primary_department_id
+        # If superadmin, they would have can_edit=True even for default objects
+        # So if can_edit=False and is_default, user is not superadmin
+        is_superadmin = not (is_default_cohort and not row.get("can_edit", False))
+        
+        # Set default department_ids based on role
+        # Superadmin: None (empty = all departments = default object)
+        # Non-superadmin: [primaryDepartmentId] if available
+        if is_superadmin:
+            dept_ids = None
+        else:
+            dept_ids = [primary_department_id] if primary_department_id else []
 
         response_data = CohortDetailResponse(
             title=row.get("title", ""),

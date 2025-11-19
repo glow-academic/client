@@ -35,9 +35,9 @@ import type {
   UpdateRubricIn,
   UpdateRubricOut,
 } from "@/app/(main)/management/rubrics/page";
+import TableRubric from "@/components/common/rubric/TableRubric";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
-import TableRubric from "@/components/common/rubric/TableRubric";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +51,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useProfile } from "@/contexts/profile-context";
 
 export interface RubricsProps {
   // Server-provided data (for server-side rendering)
@@ -69,6 +70,7 @@ export default function Rubrics({
   duplicateRubricAction,
   deleteRubricAction,
 }: RubricsProps) {
+  const { departmentIds } = useProfile();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -144,7 +146,9 @@ export default function Rubrics({
         value: opt["value"] as string,
         label: opt["label"] as string,
       }))
-      .filter((opt) => opt.value && opt.label && allSimulationIds.has(opt.value));
+      .filter(
+        (opt) => opt.value && opt.label && allSimulationIds.has(opt.value)
+      );
   }, [rubricsData?.simulation_options, rubrics]);
 
   // Filter pass percentage options to only show ranges that have actual data
@@ -155,7 +159,7 @@ export default function Rubrics({
       { value: "51-75", label: "51-75%", min: 51, max: 75 },
       { value: "76-100", label: "76-100%", min: 76, max: 100 },
     ];
-    
+
     // Check which ranges have rubrics
     const rangesWithData = allRanges.filter((range) => {
       return rubrics.some((rubric) => {
@@ -163,7 +167,7 @@ export default function Rubrics({
         return percentage >= range.min && percentage <= range.max;
       });
     });
-    
+
     return rangesWithData.map(({ value, label }) => ({ value, label }));
   }, [rubrics]);
 
@@ -338,7 +342,7 @@ export default function Rubrics({
     const groupIds = Object.keys(rubric.standard_groups || {});
     let totalPoints = 0;
     let totalPassPoints = 0;
-    
+
     groupIds.forEach((groupId) => {
       const group = standardGroupsMapping[groupId];
       if (group) {
@@ -346,10 +350,11 @@ export default function Rubrics({
         totalPassPoints += group.passPoints || 0;
       }
     });
-    
-    const passPercentage = totalPoints > 0 
-      ? Math.round((totalPassPoints / totalPoints) * 100)
-      : rubric.passPercentage; // Fallback to server value if no groups
+
+    const passPercentage =
+      totalPoints > 0
+        ? Math.round((totalPassPoints / totalPoints) * 100)
+        : rubric.passPercentage; // Fallback to server value if no groups
 
     return (
       <Card

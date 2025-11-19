@@ -99,6 +99,12 @@ WITH user_departments AS (
             SELECT role as user_role 
             FROM profiles 
             WHERE id = $1
+        ),
+        primary_department_id AS (
+            SELECT department_id::text
+            FROM profile_departments
+            WHERE profile_id = $1 AND is_primary = TRUE
+            LIMIT 1
         )
         SELECT 
             p.*,
@@ -107,9 +113,11 @@ WITH user_departments AS (
             vm.model_mapping,
             vm.model_ids as valid_model_ids,
             u.usage_count,
-            pr.user_role
+            pr.user_role,
+            pdi.department_id as primary_department_id
         FROM persona_data p
         CROSS JOIN valid_depts vd
         CROSS JOIN valid_models vm
         CROSS JOIN usage_data u
         CROSS JOIN profile_data pr
+        LEFT JOIN primary_department_id pdi ON true

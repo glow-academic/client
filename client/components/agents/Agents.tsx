@@ -17,6 +17,7 @@ import type {
 } from "@/app/(main)/management/agents/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { useProfile } from "@/contexts/profile-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ export default function Agents({
   duplicateAgentAction,
   deleteAgentAction,
 }: AgentsProps) {
+  const { departmentIds } = useProfile();
   const router = useRouter();
 
   // Delete dialog state

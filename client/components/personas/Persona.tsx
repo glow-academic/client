@@ -75,6 +75,10 @@ import {
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
 import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
+import {
   Bug,
   Check,
   ChevronsUpDown,
@@ -309,6 +313,16 @@ export default function Persona({
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId || null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
+
   const initialFormData: FormData = useMemo(
     () => ({
       name: "",
@@ -321,11 +335,9 @@ export default function Persona({
       color: "#000000",
       icon: "Zap",
       active: true,
-      departmentIds: effectiveProfile?.primaryDepartmentId
-        ? [effectiveProfile.primaryDepartmentId]
-        : [],
+      departmentIds: defaultDepartmentIds,
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [defaultDepartmentIds]
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -701,6 +713,13 @@ export default function Persona({
     setIsSubmitting(true);
 
     try {
+      // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
+      const finalDepartmentIds = transformDepartmentIdsForSubmit(
+        formData.departmentIds || [],
+        isSuperadmin,
+        personaData?.valid_department_ids || []
+      );
+
       if (isEditMode) {
         updatePersona(
           {
@@ -716,7 +735,7 @@ export default function Persona({
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
-            department_ids: formData.departmentIds || null,
+            department_ids: finalDepartmentIds,
             department_id: selectedDepartmentId || null,
           },
           {
@@ -744,7 +763,7 @@ export default function Persona({
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
-            department_ids: formData.departmentIds || null,
+            department_ids: finalDepartmentIds,
           },
           {
             onSuccess: () => {
@@ -856,26 +875,29 @@ export default function Persona({
             </div>
 
             {/* Department Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              {formData?.departmentIds !== undefined ? (
-                <DepartmentPicker
-                  mapping={personaData?.department_mapping || {}}
-                  validIds={personaData?.valid_department_ids || []}
-                  selectedIds={formData.departmentIds || []}
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      departmentIds: ids,
-                    }))
-                  }
-                  placeholder="All Departments"
-                  disabled={isReadonly}
-                  multiSelect={true}
-                  triggerProps={{ "data-testid": "picker-department" }}
-                />
-              ) : null}
-            </div>
+            {personaData?.valid_department_ids &&
+            personaData.valid_department_ids.length > 1 ? (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentIds !== undefined ? (
+                  <DepartmentPicker
+                    mapping={personaData?.department_mapping || {}}
+                    validIds={personaData?.valid_department_ids || []}
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        departmentIds: ids,
+                      }))
+                    }
+                    placeholder="All Departments"
+                    disabled={isReadonly}
+                    multiSelect={true}
+                    triggerProps={{ "data-testid": "picker-department" }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">

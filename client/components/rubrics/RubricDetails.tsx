@@ -25,8 +25,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api/client";
+import { useProfile } from "@/contexts/profile-context";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
 import { Edit, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 
 type RubricItem = {
   rubric_id: string;
@@ -64,6 +70,8 @@ export default function RubricDetails({
   createRubricAction,
   updateRubricAction,
 }: RubricDetailsProps) {
+  const { effectiveProfile } = useProfile();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
@@ -227,10 +235,28 @@ export default function RubricDetails({
 
     return { ...response, points: totalPoints, passPoints: totalPassPoints };
   };
+
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId ?? null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
+
+  const initialDepartmentIds = useMemo(() => {
+    // For create mode, use default; for edit mode, use rubric's department_ids
+    if (isCreateMode && (!rubric.department_ids || rubric.department_ids.length === 0)) {
+      return defaultDepartmentIds;
+    }
+    return rubric.department_ids || [];
+  }, [isCreateMode, rubric.department_ids, defaultDepartmentIds]);
+
   const [formData, setFormData] = useState({
     name: rubric.name || "",
     description: rubric.description || "",
-    departmentIds: rubric.department_ids || [],
+    departmentIds: initialDepartmentIds,
     active: true,
   });
 
@@ -247,6 +273,12 @@ export default function RubricDetails({
 
   const handleSave = async () => {
     try {
+      const finalDepartmentIds = transformDepartmentIdsForSubmit(
+        formData.departmentIds || [],
+        isSuperadmin,
+        validDepartmentIds
+      );
+
       if (isCreateMode) {
         if (!createRubricAction) {
           toast.error("Create action is not available");
@@ -258,7 +290,7 @@ export default function RubricDetails({
           body: {
             name: formData.name,
             description: formData.description,
-            department_ids: formData.departmentIds,
+            department_ids: finalDepartmentIds,
             active: formData.active,
             points: 0, // Will be calculated when standard groups are added
             passPoints: 0,
@@ -288,7 +320,7 @@ export default function RubricDetails({
           profileId,
           name: formData.name,
           description: formData.description,
-          department_ids: formData.departmentIds,
+          department_ids: finalDepartmentIds,
           active: formData.active,
           standardGroupUpdates: [], // No changes to standard groups, just metadata
         });
@@ -351,19 +383,21 @@ export default function RubricDetails({
           </div>
 
           {/* Department Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
-            <DepartmentPicker
-              mapping={departmentMapping}
-              validIds={validDepartmentIds}
-              selectedIds={formData.departmentIds || []}
-              onSelect={handleDepartmentChange}
-              placeholder="All Departments"
-              disabled={isCreating || isUpdating || isReadonly}
-              multiSelect={true}
-              triggerProps={{ "data-testid": "picker-department" }}
-            />
-          </div>
+          {validDepartmentIds.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={validDepartmentIds}
+                selectedIds={formData.departmentIds || []}
+                onSelect={handleDepartmentChange}
+                placeholder="All Departments"
+                disabled={isCreating || isUpdating || isReadonly}
+                multiSelect={true}
+                triggerProps={{ "data-testid": "picker-department" }}
+              />
+            </div>
+          )}
 
           {/* Active Switch */}
           <div className="space-y-2 pt-2">

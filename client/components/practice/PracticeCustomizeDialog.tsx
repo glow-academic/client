@@ -248,20 +248,22 @@ export function PracticeCustomizeDialog({
 
         <div className="space-y-6">
           <div className="grid gap-6">
-            <div
-              className="grid gap-2"
-              data-testid="practice-department-picker"
-            >
-              <Label>Department</Label>
-              <DepartmentPicker
-                mapping={departmentMapping}
-                validIds={validDepartmentIds}
-                selectedIds={selectedDepartmentIds}
-                onSelect={setSelectedDepartmentIds}
-                multiSelect={false}
-                placeholder="Select department (optional)"
-              />
-            </div>
+            {validDepartmentIds.length > 1 && (
+              <div
+                className="grid gap-2"
+                data-testid="practice-department-picker"
+              >
+                <Label>Department</Label>
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={validDepartmentIds}
+                  selectedIds={selectedDepartmentIds}
+                  onSelect={setSelectedDepartmentIds}
+                  multiSelect={false}
+                  placeholder="Select department (optional)"
+                />
+              </div>
+            )}
             <div className="grid gap-2" data-testid="practice-persona-picker">
               <PersonaPicker
                 mapping={filteredPersonaMapping}

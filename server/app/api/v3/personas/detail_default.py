@@ -123,16 +123,20 @@ async def get_persona_detail_default(
         valid_department_ids = result.get("valid_department_ids", [])
         valid_model_ids = result.get("valid_model_ids", [])
         
-        # Get department_ids from default persona (may be NULL/empty for default personas)
-        raw_default_department_ids = result.get("department_ids")
-        default_department_ids: list[str] | None = None
-        if raw_default_department_ids:
-            default_department_ids = [str(d) for d in raw_default_department_ids]
-        
-        # Get user role for permissions
+        # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
-        is_default = default_department_ids is None or len(default_department_ids) == 0
         is_superadmin = user_role == "superadmin"
+        primary_department_id = result.get("primary_department_id")
+        
+        # Set default department_ids based on role
+        # Superadmin: None (empty = all departments = default object)
+        # Non-superadmin: [primaryDepartmentId] if available
+        if is_superadmin:
+            default_department_ids = None
+        else:
+            default_department_ids = [primary_department_id] if primary_department_id else []
+        
+        is_default = default_department_ids is None or len(default_department_ids) == 0
         
         # For default personas, only superadmin can edit
         can_edit_default = not (is_default and not is_superadmin)

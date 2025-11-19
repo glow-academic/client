@@ -94,6 +94,7 @@ import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacet
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
+import { useProfile } from "@/contexts/profile-context";
 import {
   Table,
   TableBody,
@@ -154,7 +155,7 @@ export default function Documents({
   createParameterItemAction,
 }: DocumentsProps) {
   const router = useRouter();
-  const { effectiveDepartmentIds } = useProfile();
+  const { effectiveDepartmentIds, departmentIds } = useProfile();
   const isMobile = useIsMobile();
 
   // State management
@@ -1261,7 +1262,8 @@ export default function Documents({
                   />
                 )}
                 {table.getColumn("departments") &&
-                  departmentOptions.length > 0 && (
+                  departmentOptions.length > 0 &&
+                  departmentIds.length > 1 && (
                     <DataTableFacetedFilter
                       column={table.getColumn("departments")!}
                       title="Department"
@@ -1472,21 +1474,24 @@ export default function Documents({
                 </div>
 
                 {/* Department Selection */}
-                <div className="flex flex-col gap-2">
-                  <Label>Department</Label>
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={documentsData?.valid_department_ids || []}
-                    selectedIds={editingDocument.department_ids || []}
-                    onSelect={(ids) =>
-                      setEditingDocument(
-                        (prev: (typeof documents)[number] | null) =>
-                          prev ? { ...prev, department_ids: ids } : null
-                      )
-                    }
-                    multiSelect={true}
-                  />
-                </div>
+                {documentsData?.valid_department_ids &&
+                  documentsData.valid_department_ids.length > 1 && (
+                    <div className="flex flex-col gap-2">
+                      <Label>Department</Label>
+                      <DepartmentPicker
+                        mapping={departmentMapping}
+                        validIds={documentsData?.valid_department_ids || []}
+                        selectedIds={editingDocument.department_ids || []}
+                        onSelect={(ids) =>
+                          setEditingDocument(
+                            (prev: (typeof documents)[number] | null) =>
+                              prev ? { ...prev, department_ids: ids } : null
+                          )
+                        }
+                        multiSelect={true}
+                      />
+                    </div>
+                  )}
 
                 <div className="flex flex-col gap-2">
                   <Label>Parameter Items</Label>
@@ -1648,28 +1653,35 @@ export default function Documents({
                             disabled={isBulkUpdating}
                           />
                         </TableCell>
-                        <TableCell>
-                          <DepartmentPicker
-                            mapping={departmentMapping}
-                            validIds={documentsData?.valid_department_ids || []}
-                            selectedIds={
-                              keepExisting.department
-                                ? bulkData.department_ids || []
-                                : bulkDepartmentId
-                                  ? [bulkDepartmentId]
-                                  : []
-                            }
-                            onSelect={(ids) => {
-                              setBulkDepartmentId(ids[0] || null);
-                              setKeepExisting((prev) => ({
-                                ...prev,
-                                department: false,
-                              }));
-                            }}
-                            multiSelect={false}
-                            disabled={isBulkUpdating || keepExisting.department}
-                          />
-                        </TableCell>
+                        {documentsData?.valid_department_ids &&
+                          documentsData.valid_department_ids.length > 1 && (
+                            <TableCell>
+                              <DepartmentPicker
+                                mapping={departmentMapping}
+                                validIds={
+                                  documentsData?.valid_department_ids || []
+                                }
+                                selectedIds={
+                                  keepExisting.department
+                                    ? bulkData.department_ids || []
+                                    : bulkDepartmentId
+                                      ? [bulkDepartmentId]
+                                      : []
+                                }
+                                onSelect={(ids) => {
+                                  setBulkDepartmentId(ids[0] || null);
+                                  setKeepExisting((prev) => ({
+                                    ...prev,
+                                    department: false,
+                                  }));
+                                }}
+                                multiSelect={false}
+                                disabled={
+                                  isBulkUpdating || keepExisting.department
+                                }
+                              />
+                            </TableCell>
+                          )}
                       </TableRow>
 
                       {/* Parameter Items Row */}

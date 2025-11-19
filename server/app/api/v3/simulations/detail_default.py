@@ -364,10 +364,18 @@ async def get_simulation_detail_default(
                         )
                     )
 
-        # Parse department_ids
-        department_ids = result.get("department_ids")
-        if department_ids:
-            department_ids = [str(d) for d in department_ids]
+        # Get user role and primary department for default behavior
+        user_role_from_result = result.get("user_role", "trainee")
+        is_superadmin = user_role_from_result == "superadmin"
+        primary_department_id = result.get("primary_department_id")
+        
+        # Set default department_ids based on role
+        # Superadmin: None (empty = all departments = default object)
+        # Non-superadmin: [primaryDepartmentId] if available
+        if is_superadmin:
+            department_ids = None
+        else:
+            department_ids = [primary_department_id] if primary_department_id else []
 
         response_data = SimulationDetailResponse(
             name=result.get("title", ""),

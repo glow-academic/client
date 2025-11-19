@@ -57,6 +57,10 @@ import type {
 } from "@/components/staff/Staff";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
 
 // Import staff item types from API responses
 import type { CohortStaffItem } from "@/app/(main)/cohorts/e/[cohortId]/page";
@@ -146,6 +150,7 @@ export default function Cohort({
   const router = useRouter();
   const { effectiveProfile, scopedRoles } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
@@ -156,13 +161,20 @@ export default function Cohort({
 
   const isEditMode = !!cohortId;
 
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId ?? null,
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+  );
+
   const initialFormData: FormData = {
     title: "",
     description: "",
     active: true,
-    departmentIds: effectiveProfile?.primaryDepartmentId
-      ? [effectiveProfile.primaryDepartmentId]
-      : [],
+    departmentIds: defaultDepartmentIds,
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -653,6 +665,13 @@ export default function Cohort({
       const stagedProfileIds = stagedProfilesToAdd.map((p) => p.profileId);
       const profileIds = [...existingProfileIds, ...stagedProfileIds];
 
+      const validDepartmentIds = cohortData?.valid_department_ids || [];
+      const finalDepartmentIds = transformDepartmentIdsForSubmit(
+        formData.departmentIds || [],
+        isSuperadmin,
+        validDepartmentIds,
+      );
+
       const targetCohortId = cohortId || editingCohortId;
       if (targetCohortId) {
         // UPDATE mode
@@ -660,10 +679,7 @@ export default function Cohort({
           cohortId: targetCohortId,
           title: formData.title || "",
           description: formData.description || null,
-          department_ids:
-            formData.departmentIds && formData.departmentIds.length > 0
-              ? formData.departmentIds
-              : [],
+          department_ids: finalDepartmentIds || [],
           active: formData.active ?? true,
           simulation_ids: currentSimulationIds,
           profile_ids: profileIds,
@@ -679,10 +695,7 @@ export default function Cohort({
         const createRequest: CreateCohortBody = {
           title: formData.title || "",
           description: formData.description || null,
-          department_ids:
-            formData.departmentIds && formData.departmentIds.length > 0
-              ? formData.departmentIds
-              : [],
+          department_ids: finalDepartmentIds || [],
           active: formData.active || true,
           simulation_ids: currentSimulationIds,
           profile_ids: profileIds,
@@ -794,21 +807,24 @@ export default function Cohort({
         </div>
 
         {/* Department Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="department">Department</Label>
-          {formData?.departmentIds !== undefined ? (
-            <DepartmentPicker
-              mapping={cohortData?.department_mapping || {}}
-              validIds={cohortData?.valid_department_ids || []}
-              selectedIds={formData.departmentIds || []}
-              onSelect={(ids) => handleInputChange("departmentIds", ids)}
-              placeholder="All Departments"
-              disabled={isReadonly}
-              multiSelect={true}
-              triggerProps={{ "data-testid": "picker-department" }}
-            />
-          ) : null}
-        </div>
+        {cohortData?.valid_department_ids &&
+          cohortData.valid_department_ids.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              {formData?.departmentIds !== undefined ? (
+                <DepartmentPicker
+                  mapping={cohortData?.department_mapping || {}}
+                  validIds={cohortData?.valid_department_ids || []}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                  triggerProps={{ "data-testid": "picker-department" }}
+                />
+              ) : null}
+            </div>
+          )}
 
         {/* Active Switch */}
         <div className="space-y-2 pt-2">

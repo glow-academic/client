@@ -43,6 +43,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
 import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
 import AgentDebugInfo from "./AgentDebugInfo";
 
@@ -101,6 +105,7 @@ export default function SystemAgent({
   const router = useRouter();
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<SystemAgentFormData>();
@@ -206,6 +211,15 @@ export default function SystemAgent({
     return defaultPrompt?.system_prompt || "";
   }, [agentDetail, isEditMode]);
 
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId ?? null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
+
   const initialFormData: SystemAgentFormData = useMemo(
     () => ({
       name: "",
@@ -217,11 +231,9 @@ export default function SystemAgent({
       reasoning: "none",
       active: true,
       role: "assistant", // Default role
-      departmentIds: effectiveProfile?.primaryDepartmentId
-        ? [effectiveProfile.primaryDepartmentId]
-        : [],
+      departmentIds: defaultDepartmentIds,
     }),
-    [effectiveProfile?.primaryDepartmentId]
+    [defaultDepartmentIds]
   );
 
   // Set breadcrumb context when agent data is loaded
@@ -290,10 +302,19 @@ export default function SystemAgent({
           "",
         promptId: null,
         role: agentDetailDefault.role || "assistant",
-        departmentIds: agentDetailDefault.department_ids || [],
+        departmentIds:
+          agentDetailDefault.department_ids?.length > 0
+            ? agentDetailDefault.department_ids
+            : defaultDepartmentIds,
       });
     }
-  }, [isEditMode, agentDetail, agentDetailDefault, initialFormData]);
+  }, [
+    isEditMode,
+    agentDetail,
+    agentDetailDefault,
+    initialFormData,
+    defaultDepartmentIds,
+  ]);
 
   // Update prompt when department selection changes
   useEffect(() => {
@@ -433,6 +454,13 @@ export default function SystemAgent({
     setIsSubmitting(true);
 
     try {
+      const validDepartmentIds = agentData?.valid_department_ids || [];
+      const finalDepartmentIds = transformDepartmentIdsForSubmit(
+        formData.departmentIds || [],
+        isSuperadmin,
+        validDepartmentIds
+      );
+
       if (isEditMode && agentId && agentDetail) {
         // Update existing agent using v3 API
         await handleUpdateAgent({
@@ -449,10 +477,7 @@ export default function SystemAgent({
               : null,
           active: formData.active ?? true,
           role: formData.role || "assistant",
-          department_ids:
-            formData.departmentIds && formData.departmentIds.length > 0
-              ? formData.departmentIds
-              : null,
+          department_ids: finalDepartmentIds,
           department_id: selectedDepartmentId || null,
         });
         toast.success("Agent updated successfully!");
@@ -474,10 +499,7 @@ export default function SystemAgent({
               : null,
           active: formData.active ?? true,
           role: formData.role || "assistant",
-          department_ids:
-            formData.departmentIds && formData.departmentIds.length > 0
-              ? formData.departmentIds
-              : null,
+          department_ids: finalDepartmentIds,
         });
         toast.success("Agent created successfully!");
         resetFormAndState();
@@ -577,27 +599,30 @@ export default function SystemAgent({
             {/* Role and Department Selection */}
             <div className="space-y-4">
               {/* Department Picker */}
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined &&
-                agentData?.department_mapping !== undefined ? (
-                  <DepartmentPicker
-                    mapping={agentData.department_mapping || {}}
-                    validIds={agentData.valid_department_ids || []}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        departmentIds: ids,
-                      }))
-                    }
-                    placeholder="All Departments"
-                    disabled={isSubmitting}
-                    multiSelect={true}
-                    triggerProps={{ "data-testid": "picker-department" }}
-                  />
-                ) : null}
-              </div>
+              {agentData?.valid_department_ids &&
+                agentData.valid_department_ids.length > 1 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    {formData?.departmentIds !== undefined &&
+                    agentData?.department_mapping !== undefined ? (
+                      <DepartmentPicker
+                        mapping={agentData.department_mapping || {}}
+                        validIds={agentData.valid_department_ids || []}
+                        selectedIds={formData.departmentIds || []}
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            departmentIds: ids,
+                          }))
+                        }
+                        placeholder="All Departments"
+                        disabled={isSubmitting}
+                        multiSelect={true}
+                        triggerProps={{ "data-testid": "picker-department" }}
+                      />
+                    ) : null}
+                  </div>
+                )}
 
               {/* Role Picker */}
               <div className="space-y-2">
