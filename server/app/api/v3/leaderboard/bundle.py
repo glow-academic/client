@@ -4,22 +4,17 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.analytics_query_builder import build_base_filter
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    AnalyticsFilters,
-    ScenarioMapping,
-    ScenarioMappingItem,
-    SimulationMapping,
-)
+from app.utils.schema import (AnalyticsFilters, ScenarioMapping,
+                              ScenarioMappingItem, SimulationMapping)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
@@ -80,7 +75,9 @@ async def get_leaderboard(
     tags = ["leaderboard"]  # From router tags
 
     # Generate cache key from path and parsed body
+    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
+    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache
