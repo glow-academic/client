@@ -76,10 +76,11 @@ async def search_staff(
         # Search query filter (if provided)
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
-            # Use the same parameter for all four ILIKE conditions (PostgreSQL allows this)
+            # Use the same parameter for all ILIKE conditions (PostgreSQL allows this)
             # Cast role enum to text for ILIKE comparison
+            # Also check concatenated full name for queries like "default admin"
             search_conditions.append(
-                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx} OR p.role::text ILIKE ${param_idx})"
+                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx} OR p.role::text ILIKE ${param_idx} OR (p.first_name || ' ' || p.last_name) ILIKE ${param_idx})"
             )
             params.append(search_term)
             param_idx += 1

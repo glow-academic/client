@@ -66,8 +66,9 @@ async def search_simulatable_profiles(
         if request.query and request.query.strip():
             search_term = f"%{request.query.strip()}%"
             # Cast role enum to text for ILIKE comparison
+            # Also check concatenated full name for queries like "default admin"
             search_where_clause = (
-                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.alias ILIKE $3 OR p.role::text ILIKE $3)"
+                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.alias ILIKE $3 OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
             )
             params.append(search_term)
 
