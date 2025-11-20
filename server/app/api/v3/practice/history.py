@@ -116,27 +116,7 @@ async def get_practice_history(
         ]
         sql_params = tuple(params)
 
-        # Debug logging
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"Practice history query params: profile_id={profile_id}, departmentIds={filters.departmentIds}")
-
         result = await conn.fetchrow(sql_query, *params)
-
-        if not result:
-            logger.warning("Practice history query returned no result")
-            return PracticeHistoryResponse(
-                data=[],
-                totalCount=0,
-                page=filters.page,
-                pageSize=filters.pageSize,
-                totalPages=0,
-                profileOptions=[],
-                simulationOptions=[],
-                scenarioOptions=[],
-            )
-
-        logger.info(f"Practice history query returned result with totalCount: {json.loads(result['result']) if isinstance(result['result'], str) else result['result'].get('totalCount', 0)}")
 
         # Parse JSON result
         parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]

@@ -129,9 +129,6 @@ async def get_home_overview(
     Home always shows general simulations only (no simulationFilters parameter).
     """
     tags = ["home"]  # From router tags
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Filters: {filters}")
 
     # Generate cache key from path and parsed body
     # Exclude historyProfileId from cache key (used only for history showRetry calculation)

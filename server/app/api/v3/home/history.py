@@ -5,6 +5,9 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -84,6 +87,19 @@ async def get_home_history(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> HomeHistoryResponse:
     """Get paginated home history with search, filters, sorting, and pagination."""
+    tags = ["home", "history"]
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return HomeHistoryResponse.model_validate(cached["data"])
+    
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
@@ -154,36 +170,15 @@ async def get_home_history(
             filters.page * filters.pageSize,  # $16 (OFFSET)
         ]
         sql_params = tuple(params)
-
-        # Debug logging
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"History query params: profile_id={profile_id}, cohortIds={filters.cohortIds}, departmentIds={filters.departmentIds}, roles={roles}, simulationFilters={simulation_filters}")
-        logger.info(f"Date range: {filters.startDate} to {filters.endDate}")
         
         # Check if there are any attempts in the date range at all
         total_attempts = await conn.fetchval(
             "SELECT COUNT(*) FROM simulation_attempts WHERE created_at >= $1 AND created_at <= $2",
             params[0], params[1]
         )
-        logger.info(f"Total attempts in date range: {total_attempts}")
 
         result = await conn.fetchrow(sql_query, *params)
 
-        if not result:
-            logger.warning("History query returned no result")
-            return HomeHistoryResponse(
-                data=[],
-                totalCount=0,
-                page=filters.page,
-                pageSize=filters.pageSize,
-                totalPages=0,
-                profileOptions=[],
-                simulationOptions=[],
-                scenarioOptions=[],
-            )
-        
-        logger.info(f"History query returned result with totalCount: {json.loads(result['result']) if isinstance(result['result'], str) else result['result'].get('totalCount', 0)}")
 
         # Parse JSON result
         parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]
@@ -216,7 +211,7 @@ async def get_home_history(
         total_count = parsed_result.get("totalCount", 0)
         total_pages = (total_count + filters.pageSize - 1) // filters.pageSize if total_count > 0 else 0
 
-        return HomeHistoryResponse(
+        response_data = HomeHistoryResponse(
             data=history,
             totalCount=total_count,
             page=filters.page,
@@ -226,6 +221,18 @@ async def get_home_history(
             simulationOptions=simulation_options,
             scenarioOptions=scenario_options,
         )
+        
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=300,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:
