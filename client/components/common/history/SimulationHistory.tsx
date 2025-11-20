@@ -5,24 +5,71 @@
  * 06/07/2025
  */
 
+"use client";
+
 import type {
   BulkArchiveAttemptsIn,
   BulkArchiveAttemptsOut,
 } from "@/app/(main)/analytics/dashboard/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Column, ColumnDef, Row } from "@tanstack/react-table";
-import { Infinity as InfinityIcon } from "lucide-react";
+import { useProfile } from "@/contexts/profile-context";
+import {
+  Column,
+  ColumnDef,
+  ColumnFiltersState,
+  Row,
+  SortingState,
+  VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  Archive,
+  ArrowRight,
+  Infinity as InfinityIcon,
+  RotateCcw,
+  Unlock,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
-import { DataTable } from "./DataTable";
-import { DataTableRowActions } from "./DataTableRowActions";
+import { toast } from "sonner";
+import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
 // New data structure for history items
 export interface HistoryDataItem {
@@ -51,6 +98,237 @@ export interface HistoryDataItem {
   practiceScenarioId?: string; // first scenario_id from attempt (for practice retry)
 }
 
+// Inlined row actions component (from DataTableRowActions)
+function HistoryRowActions({
+  item,
+  revalidateAttemptAction,
+}: {
+  item: HistoryDataItem;
+  revalidateAttemptAction?: (attemptId: string) => Promise<void>;
+}) {
+  const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
+    useProfile();
+  const router = useRouter();
+  const [isRetrying, setIsRetrying] = React.useState(false);
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const loadingToastIdRef = React.useRef<string | number | null>(null);
+
+  const isCurrentUser = effectiveProfile?.id === item.profileId;
+
+  // Infinite-mode window check (owner-only)
+  const attemptCreatedAt = React.useMemo(() => {
+    try {
+      const date = new Date(item.date);
+      return isNaN(date.getTime())
+        ? new Date().toISOString()
+        : date.toISOString();
+    } catch {
+      return new Date().toISOString();
+    }
+  }, [item.date]);
+
+  const isInfiniteWindowOpen = React.useMemo(() => {
+    if (!item.infiniteMode) return false;
+    if (!item.timeLimit || !attemptCreatedAt) return true; // no limit => open
+    const started = new Date(attemptCreatedAt).getTime();
+    if (Number.isNaN(started)) return false;
+    const elapsedMin = (Date.now() - started) / 60000;
+    const timeLimitMinutes = (item.timeLimit ?? 0) / 60; // Convert from seconds to minutes
+    return elapsedMin <= timeLimitMinutes;
+  }, [item.infiniteMode, item.timeLimit, attemptCreatedAt]);
+
+  // Final decision:
+  // - Continue only if server says it CAN continue,
+  // - and it's the owner,
+  // - and (if infinite mode) the time window is still open.
+  const wantContinue =
+    Boolean(item.showContinue) &&
+    isCurrentUser &&
+    (!item.infiniteMode || isInfiniteWindowOpen);
+
+  const buttonText = wantContinue ? "Continue" : "View";
+  const disabledForEmulation = effectiveProfile?.id !== activeProfile?.id;
+  const linkHref = `/${item.practiceSimulation ? "practice" : "home"}/a/${item.attemptId}`;
+
+  // Determine if we should show Retry or Try button
+  // Only show if not emulating (effectiveProfile.id === activeProfile.id)
+  const isNotEmulating = effectiveProfile?.id === activeProfile?.id;
+  const isOwnAttempt = activeProfile?.id === item.profileId;
+  const shouldShowRetry =
+    isNotEmulating &&
+    isOwnAttempt &&
+    (item.simulation_id ?? "") !== "" &&
+    !item.showContinue;
+  const shouldShowTry =
+    isNotEmulating && !isOwnAttempt && (item.simulation_id ?? "") !== "";
+
+  // Set up redirect listener for simulation started events (only if revalidateAttemptAction is provided)
+  React.useEffect(() => {
+    if (!revalidateAttemptAction) return;
+
+    const handleSimulationStarted = async (event: CustomEvent) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastIdRef.current) {
+        toast.dismiss(loadingToastIdRef.current);
+        loadingToastIdRef.current = null;
+      }
+      setIsRetrying(false);
+      const { attemptId } = event.detail;
+      // Invalidate cache and refresh current page before navigation to ensure fresh data
+      await revalidateAttemptAction(attemptId);
+      router.refresh(); // Refresh current page data so it's updated when user returns
+      router.push(
+        `/${item.practiceSimulation ? "practice" : "home"}/a/${attemptId}`
+      );
+    };
+
+    const handleSimulationError = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastIdRef.current) {
+        toast.dismiss(loadingToastIdRef.current);
+        loadingToastIdRef.current = null;
+      }
+      setIsRetrying(false);
+      toast.error("Failed to start simulation. Please try again.");
+    };
+
+    window.addEventListener(
+      "simulationStarted",
+      handleSimulationStarted as unknown as EventListener
+    );
+    window.addEventListener("simulationError", handleSimulationError);
+
+    return () => {
+      window.removeEventListener(
+        "simulationStarted",
+        handleSimulationStarted as unknown as EventListener
+      );
+      window.removeEventListener("simulationError", handleSimulationError);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [
+    router,
+    revalidateAttemptAction,
+    item.practiceSimulation,
+    item.attemptId,
+  ]);
+
+  const handleStartSimulation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (disabledForEmulation || !isConnected) return;
+    setIsRetrying(true);
+
+    // Show loading toast if revalidateAttemptAction is provided (for redirect flow)
+    if (revalidateAttemptAction) {
+      const toastId = toast.loading("Starting simulation...", {
+        dismissible: true,
+      });
+      loadingToastIdRef.current = toastId;
+
+      // Set timeout for simulation start
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        toast.dismiss(toastId);
+        toast.error("Simulation start timed out. Please try again.");
+        loadingToastIdRef.current = null;
+        setIsRetrying(false);
+      }, 30000);
+    }
+
+    try {
+      const profileIdForEmit =
+        effectiveProfile?.role === "guest"
+          ? ""
+          : String(effectiveProfile?.id || "");
+      emitStartSimulation({
+        simulation_id: String(item.simulation_id),
+        profile_id: profileIdForEmit,
+        scenario_id:
+          item.practiceSimulation && item.practiceScenarioId
+            ? item.practiceScenarioId
+            : null,
+        ...(item.infiniteMode ? { infinite: true } : {}),
+      });
+    } catch {
+      if (loadingToastIdRef.current) {
+        toast.dismiss(loadingToastIdRef.current);
+        loadingToastIdRef.current = null;
+      }
+      setIsRetrying(false);
+      toast.error("Failed to start simulation. Please try again.");
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Link href={linkHref}>
+        <Button
+          variant="outline"
+          size="sm"
+          className={`h-8${wantContinue ? " min-w-[96px]" : ""}`}
+        >
+          {buttonText}
+        </Button>
+      </Link>
+
+      {/* Retry: show when attempt belongs to activeProfile and not emulating */}
+      {shouldShowRetry && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Retry"
+              className="h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              disabled={isRetrying}
+              onClick={handleStartSimulation}
+            >
+              <RotateCcw
+                className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Retry</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {/* Start Simulation: show when attempt belongs to different profile and not emulating */}
+      {shouldShowTry && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Start Simulation"
+              className="h-8 w-8 inline-flex items-center justify-center border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              disabled={isRetrying}
+              onClick={handleStartSimulation}
+            >
+              <ArrowRight
+                className={`h-4 w-4 ${isRetrying ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Try Simulation</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
 export interface SimulationHistoryProps {
   // Required: Array of history data items
   data: HistoryDataItem[];
@@ -72,6 +350,9 @@ export interface SimulationHistoryProps {
 
   // Optional: Whether to hide Name column when all attempts have the same profile
   singleProfile?: boolean;
+
+  // Optional: Whether to hide the Name column (defaults to false, meaning show by default)
+  hideName?: boolean;
 
   // Optional: Whether to show loading state
   isLoading?: boolean;
@@ -97,6 +378,9 @@ export interface SimulationHistoryProps {
   profileOptions: Array<{ value: string; label: string; count?: number }>;
   simulationOptions: Array<{ value: string; label: string; count?: number }>;
   scenarioOptions: Array<{ value: string; label: string; count?: number }>;
+
+  // Optional: whether to show the infinite/standard mode filter
+  showModeFilter?: boolean;
 }
 
 export default function SimulationHistory({
@@ -106,7 +390,8 @@ export default function SimulationHistory({
   pageSize,
   showExport,
   showArchive,
-  singleProfile = false,
+  singleProfile: _singleProfile = false,
+  hideName = false,
   isLoading = false,
   bulkArchiveAttemptsAction,
   revalidateAttemptAction,
@@ -114,29 +399,22 @@ export default function SimulationHistory({
   profileOptions,
   simulationOptions,
   scenarioOptions,
+  showModeFilter = true,
 }: SimulationHistoryProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Initialize state from URL search params
+  // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = React.useState(
     searchParams?.get("historySearch") || ""
   );
 
-  // Use deferred value for search to reduce re-renders
-  const deferredSearchTerm = React.useDeferredValue(searchTerm);
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState(
-    searchParams?.get("historySearch") || ""
-  );
-
-  // Debounce search term (300ms delay) - use deferred value
+  // Keep local state in sync if URL changes (back/forward, link, etc.)
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(deferredSearchTerm);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [deferredSearchTerm]);
+    const urlSearch = searchParams?.get("historySearch") || "";
+    setSearchTerm(urlSearch);
+  }, [searchParams]);
 
   // Initialize column filters from URL search params
   const [columnFilters, setColumnFilters] = React.useState<
@@ -187,6 +465,24 @@ export default function SimulationHistory({
       },
     ];
   });
+
+  // Table state
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({
+      search: false,
+      profileId: false,
+      simulationId: false,
+      scenarios: false,
+      infiniteMode: false,
+    });
+
+  // State for archive dialog
+  const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
+  const [archiveAction, setArchiveAction] = React.useState<boolean | null>(
+    null
+  );
+  const [isArchiving, setIsArchiving] = React.useState(false);
 
   // Helper function to update URL search params (preserves analytics filters)
   const updateHistoryParams = React.useCallback(
@@ -276,32 +572,21 @@ export default function SimulationHistory({
     [searchParams, pathname, router]
   );
 
-  // Update URL when debounced search term changes (keeps historySearch in sync)
-  React.useEffect(() => {
-    // Reset to page 0 when search changes, then update URL with new search term
-    updateHistoryParams({ page: 0, search: debouncedSearchTerm });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm]);
+  // Commit search to URL (called on Enter or blur)
+  const commitSearch = React.useCallback(
+    (value: string) => {
+      updateHistoryParams({
+        page: 0,
+        search: value.trim() || "",
+      });
+    },
+    [updateHistoryParams]
+  );
 
-  // Check if all attempts have the same profileId (only when singleProfile is true)
-  const allSameProfile = React.useMemo(() => {
-    if (!singleProfile || data.length === 0) {
-      return false;
-    }
-
-    const firstProfileId = data[0]?.profileId;
-    if (!firstProfileId) {
-      return false;
-    }
-
-    return data.every((item) => item.profileId === firstProfileId);
-  }, [data, singleProfile]);
-
-  // Filter profile options if all attempts have the same profile (hide Name filter when singleProfile is true)
+  // Filter profile options - always return available options for filter visibility
   const filteredProfileOptions = React.useMemo(() => {
-    if (allSameProfile) return [];
     return profileOptions;
-  }, [allSameProfile, profileOptions]);
+  }, [profileOptions]);
 
   // Create mode options (infinite, standard)
   const infiniteModeOptions = React.useMemo(() => {
@@ -314,6 +599,101 @@ export default function SimulationHistory({
       options.push({ value: "standard", label: "Standard Mode" });
     return options;
   }, [data]);
+
+  // Helper functions to normalize id and archived fields
+  const getRowId = (item: unknown) => {
+    const obj = item as Record<string, unknown>;
+    return String(obj["id"] ?? obj["attemptId"] ?? "");
+  };
+
+  const getArchived = (item: unknown) => {
+    const obj = item as Record<string, unknown>;
+    return Boolean(obj["archived"] ?? obj["isArchived"] ?? false);
+  };
+
+  // Handle bulk archive
+  const handleBulkArchive = React.useCallback(async (archive: boolean) => {
+    setArchiveAction(archive);
+    setShowArchiveDialog(true);
+  }, []);
+
+  // Handle column filters change
+  const handleColumnFiltersChange = React.useCallback(
+    (
+      updater:
+        | ColumnFiltersState
+        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+    ) => {
+      const newFilters =
+        typeof updater === "function" ? updater(columnFilters) : updater;
+      setColumnFilters(newFilters);
+
+      // Extract filter values and update URL
+      const profileIds = newFilters.find((f) => f.id === "profileId")?.value as
+        | string[]
+        | undefined;
+      const simulationIds = newFilters.find((f) => f.id === "simulationId")
+        ?.value as string[] | undefined;
+      const scenarioIds = newFilters.find((f) => f.id === "scenarios")
+        ?.value as string[] | undefined;
+      const infiniteModeFilter = newFilters.find((f) => f.id === "infiniteMode")
+        ?.value as string[] | undefined;
+      const infiniteMode: boolean | undefined =
+        infiniteModeFilter && infiniteModeFilter.length > 0
+          ? infiniteModeFilter.includes("infinite")
+          : undefined;
+
+      updateHistoryParams({
+        profileIds: profileIds || [],
+        simulationIds: simulationIds || [],
+        scenarioIds: scenarioIds || [],
+        ...(infiniteMode !== undefined && { infiniteMode }),
+      });
+    },
+    [columnFilters, updateHistoryParams]
+  );
+
+  // Handle sorting change
+  const handleSortingChange = React.useCallback(
+    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(newSorting);
+
+      const sortBy = newSorting[0]?.id || "date";
+      const sortOrder = newSorting[0]?.desc ? "desc" : "asc";
+
+      // Reset to page 0 whenever sort changes
+      updateHistoryParams({
+        page: 0,
+        sortBy,
+        sortOrder,
+      });
+    },
+    [sorting, updateHistoryParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = React.useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      updateHistoryParams({
+        page: newPagination.pageIndex,
+        pageSize: newPagination.pageSize,
+      });
+    },
+    [pageIndex, pageSize, updateHistoryParams]
+  );
 
   // Create column definitions that work with the new data structure
   const columns = React.useMemo(() => {
@@ -466,8 +846,8 @@ export default function SimulationHistory({
         enableSorting: true,
         sortDescFirst: true,
       },
-      // User Name column - only show if not all attempts have the same profile
-      ...(!allSameProfile
+      // User Name column - only show if hideName is false
+      ...(!hideName
         ? [
             {
               accessorKey: "profileName",
@@ -689,41 +1069,14 @@ export default function SimulationHistory({
           return value.includes("needs-improvement");
         },
       },
-      // Actions column
+      // Actions column - inlined from DataTableRowActions
       {
         id: "actions",
         cell: ({ row }) => {
           const item = row.original;
-
           return (
-            <DataTableRowActions
-              id={item.attemptId}
-              profileId={item.profileId}
-              simulationId={item.simulation_id}
-              departmentId={item.department_id}
-              scenarios={[]} // No need to pass scenarios anymore
-              interactionIds={item.scenario_ids}
-              isPractice={item.practiceSimulation || false}
-              infiniteMode={item.infiniteMode}
-              timeLimit={item.timeLimit ?? null}
-              attemptCreatedAt={(() => {
-                try {
-                  const date = new Date(item.date);
-                  return isNaN(date.getTime())
-                    ? new Date().toISOString()
-                    : date.toISOString();
-                } catch {
-                  return new Date().toISOString();
-                }
-              })()}
-              canView={item.showView}
-              canContinue={item.showContinue}
-              archived={item.isArchived}
-              showArchive={showArchive}
-              {...(item.practiceScenarioId && {
-                practiceScenarioId: item.practiceScenarioId,
-              })}
-              practiceSimulation={item.practiceSimulation ?? false}
+            <HistoryRowActions
+              item={item}
               {...(revalidateAttemptAction && { revalidateAttemptAction })}
             />
           );
@@ -732,91 +1085,491 @@ export default function SimulationHistory({
     ];
 
     return attemptColumns;
-  }, [allSameProfile, showArchive, revalidateAttemptAction]);
+  }, [hideName, revalidateAttemptAction]);
 
-  // Create a key based on the data to force re-render when data changes
-  const tableKey = React.useMemo(() => {
-    if (!data || data.length === 0) return "empty";
-    return data.map((item) => item.attemptId).join("-");
-  }, [data]);
+  // Add checkbox column when showArchive is true
+  const columnsWithCheckbox = React.useMemo(() => {
+    if (!showArchive) return columns;
+
+    const checkboxColumn: ColumnDef<HistoryDataItem> = {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => {
+            if (value) {
+              // select just the current page
+              table.toggleAllPageRowsSelected(true);
+            } else {
+              // clear *all* selection, not only the page
+              table.resetRowSelection();
+            }
+          }}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => {
+        return (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(val) => row.toggleSelected(!!val)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    return [checkboxColumn, ...columns];
+  }, [columns, showArchive]);
+
+  const table = useReactTable({
+    data,
+    columns: columnsWithCheckbox,
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+      pagination: { pageIndex, pageSize },
+    },
+    enableRowSelection: showArchive,
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: handlePaginationChange,
+    manualPagination: true,
+    manualFiltering: true,
+    manualSorting: true,
+    pageCount: Math.ceil(totalCount / pageSize),
+    getCoreRowModel: getCoreRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getRowId: (row, index) => getRowId(row) || String(index),
+    initialState: {
+      columnVisibility: {
+        search: false,
+        profileId: false,
+        simulationId: false,
+        scenarios: false,
+        infiniteMode: false,
+      },
+    },
+  });
+
+  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
+  // Extract pagination primitives directly to avoid object reference issues
+  const tablePageIndex = table.getState().pagination.pageIndex;
+  const tablePageSize = table.getState().pagination.pageSize;
+  // Stringify arrays for stable comparison (arrays are compared by reference)
+  const sortingKey = JSON.stringify(sorting);
+  const columnFiltersKey = JSON.stringify(columnFilters);
+  const tableRows = React.useMemo(() => {
+    return table.getRowModel().rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
+    sortingKey,
+    columnFiltersKey,
+    data.length,
+    // Use pagination primitives directly (not object references)
+    tablePageIndex,
+    tablePageSize,
+  ]);
+
+  // Extract row selection state for dependency tracking
+  const rowSelectionState = table.getState().rowSelection;
+
+  // Derive selectedAttempts from table selection (single source of truth)
+  const selectedAttempts = React.useMemo(() => {
+    return table
+      .getSelectedRowModel()
+      .flatRows.map((r) => getRowId(r.original));
+  }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Calculate archive/unarchive counts from selected rows
+  const { archiveCount, unarchiveCount } = React.useMemo(() => {
+    const selectedRows = table.getSelectedRowModel().flatRows;
+    let a = 0,
+      u = 0;
+    for (const r of selectedRows) {
+      if (getArchived(r.original)) u++;
+      else a++;
+    }
+    return { archiveCount: a, unarchiveCount: u };
+  }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Execute bulk archive
+  const executeBulkArchive = React.useCallback(async () => {
+    if (archiveAction === null || !bulkArchiveAttemptsAction) return;
+
+    const selectedRows = table.getSelectedRowModel().flatRows;
+    const attemptsToUpdate = selectedRows
+      .map((r) => r.original)
+      .filter((item) => {
+        const isArchived = getArchived(item);
+        return archiveAction ? !isArchived : isArchived;
+      })
+      .map((item) => getRowId(item));
+
+    if (attemptsToUpdate.length === 0) return;
+
+    setIsArchiving(true);
+    try {
+      await bulkArchiveAttemptsAction({
+        body: {
+          attemptIds: attemptsToUpdate,
+          archived: archiveAction,
+        },
+      });
+
+      toast.success(
+        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
+      );
+
+      // Clear selection after success
+      table.resetRowSelection();
+      setShowArchiveDialog(false);
+      setArchiveAction(null);
+
+      // Refresh the page to refetch data with updated archive status
+      router.refresh();
+    } catch {
+      toast.error("Failed to update simulation archive status");
+    } finally {
+      setIsArchiving(false);
+    }
+  }, [archiveAction, bulkArchiveAttemptsAction, router, table]);
+
+  // Toolbar state
+  const isFiltered = table.getState().columnFilters.length > 0;
+  const profileIdColumn = true ? table.getColumn("profileId") : null; // showAll is always true
+  const simulationIdColumn = table.getColumn("simulationId");
+  const scenariosColumn = table.getColumn("scenarios");
+  const infiniteModeColumn = table.getColumn("infiniteMode");
+
+  // Show mode filter only when flag is set, options are available, and not all 3 other filters are visible
+  const visibleMainFiltersCount = React.useMemo(() => {
+    let count = 0;
+    if (profileIdColumn && filteredProfileOptions.length > 0) count++;
+    if (simulationIdColumn && simulationOptions.length > 0) count++;
+    if (scenariosColumn && scenarioOptions.length > 0) count++;
+    return count;
+  }, [
+    profileIdColumn,
+    filteredProfileOptions.length,
+    simulationIdColumn,
+    simulationOptions.length,
+    scenariosColumn,
+    scenarioOptions.length,
+  ]);
+
+  const shouldShowModeFilter =
+    showModeFilter &&
+    infiniteModeColumn &&
+    infiniteModeOptions.length > 0 &&
+    visibleMainFiltersCount < 3;
+
+  // Detect if this is page selection vs filtered selection
+  const pageCount = table.getRowModel().rows.length;
+  const filteredCount = table.getFilteredRowModel().rows.length;
+  const selectedCount = selectedAttempts.length;
+
+  const isPageSelection =
+    selectedCount > 0 &&
+    selectedCount ===
+      table.getRowModel().rows.filter((r) => r.getIsSelected()).length;
+
+  const ofLabel = isPageSelection ? pageCount : filteredCount;
+
+  // Handle select all visible rows (for the "Select All Rows" button)
+  const handleSelectAllVisibleRows = React.useCallback(() => {
+    // Select all filtered rows (respects filters, ignores pagination)
+    const visible = table.getFilteredRowModel().rows;
+    const next: Record<string, boolean> = {};
+    visible.forEach((r) => {
+      next[r.id] = true;
+    });
+    table.setRowSelection(next);
+  }, [table]);
 
   if (isLoading) {
     return <HistorySkeleton rows={10} />;
   }
 
   return (
-    <DataTable
-      key={tableKey}
-      data={data}
-      columns={columns as never}
-      profileOptions={filteredProfileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-      infiniteModeOptions={infiniteModeOptions}
-      showExport={showExport}
-      showArchive={showArchive}
-      showAll={true} // Always show all since filtering is handled upstream
-      isServerDriven={true}
-      pageCount={Math.ceil(totalCount / pageSize)}
-      paginationState={{ pageIndex, pageSize }}
-      columnFiltersState={columnFilters}
-      sortingState={sorting}
-      onPaginationChange={(updater) => {
-        const newPagination =
-          typeof updater === "function"
-            ? updater({ pageIndex, pageSize })
-            : updater;
-        updateHistoryParams({
-          page: newPagination.pageIndex,
-          pageSize: newPagination.pageSize,
-        });
-      }}
-      onColumnFiltersChange={(updater) => {
-        const newFilters =
-          typeof updater === "function" ? updater(columnFilters) : updater;
-        setColumnFilters(newFilters);
+    <div className="space-y-4">
+      {/* Toolbar - inlined from DataTableToolbar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+          {/* Mobile: If showExport, wrap search and certificate button in 50/50 flex */}
+          {showExport ? (
+            <div className="flex gap-2 w-full md:w-auto md:flex-initial">
+              <Input
+                placeholder="Search by name, simulation, or scenarios..."
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    commitSearch(event.currentTarget.value);
+                  }
+                }}
+                onBlur={(event) => {
+                  // Commit on blur so URL stays in sync
+                  if (
+                    event.currentTarget.value !==
+                    (searchParams?.get("historySearch") || "")
+                  ) {
+                    commitSearch(event.currentTarget.value);
+                  }
+                }}
+                className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
+              />
+              <div className="flex-1 md:hidden">
+                <SingleProfileCertificateButton
+                  table={table}
+                  profileOptions={filteredProfileOptions}
+                />
+              </div>
+            </div>
+          ) : (
+            <Input
+              placeholder="Search by name, simulation, or scenarios..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  commitSearch(event.currentTarget.value);
+                }
+              }}
+              onBlur={(event) => {
+                // Commit on blur so URL stays in sync
+                if (
+                  event.currentTarget.value !==
+                  (searchParams?.get("historySearch") || "")
+                ) {
+                  commitSearch(event.currentTarget.value);
+                }
+              }}
+              className="h-8 w-full md:w-[150px] lg:w-[250px]"
+            />
+          )}
+          {/* Filters - separate row on mobile to prevent flicker */}
+          <div className="flex items-center space-x-2 flex-wrap">
+            {/* Name filter - only show if profileId column exists and has options */}
+            {profileIdColumn && filteredProfileOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={profileIdColumn}
+                title="Name"
+                options={filteredProfileOptions}
+                isServerDriven={true}
+              />
+            )}
 
-        // Extract filter values and update URL
-        const profileIds = newFilters.find((f) => f.id === "profileId")
-          ?.value as string[] | undefined;
-        const simulationIds = newFilters.find((f) => f.id === "simulationId")
-          ?.value as string[] | undefined;
-        const scenarioIds = newFilters.find((f) => f.id === "scenarios")
-          ?.value as string[] | undefined;
-        const infiniteModeFilter = newFilters.find(
-          (f) => f.id === "infiniteMode"
-        )?.value as string[] | undefined;
-        const infiniteMode: boolean | undefined =
-          infiniteModeFilter && infiniteModeFilter.length > 0
-            ? infiniteModeFilter.includes("infinite")
-            : undefined;
+            {/* Simulation filter */}
+            {simulationIdColumn && simulationOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={simulationIdColumn}
+                title="Simulation"
+                options={simulationOptions}
+                isServerDriven={true}
+              />
+            )}
 
-        updateHistoryParams({
-          profileIds: profileIds || [],
-          simulationIds: simulationIds || [],
-          scenarioIds: scenarioIds || [],
-          ...(infiniteMode !== undefined && { infiniteMode }),
-        });
-      }}
-      onSortingChange={(updater) => {
-        const newSorting =
-          typeof updater === "function" ? updater(sorting) : updater;
-        setSorting(newSorting);
+            {/* Scenarios filter */}
+            {scenariosColumn && scenarioOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={scenariosColumn}
+                title="Scenarios"
+                options={scenarioOptions}
+                isServerDriven={true}
+              />
+            )}
 
-        const sortBy = newSorting[0]?.id || "date";
-        const sortOrder = newSorting[0]?.desc ? "desc" : "asc";
-        updateHistoryParams({ sortBy, sortOrder });
-      }}
-      onSearchChange={(value) => {
-        setSearchTerm(value);
-        // Debounce is handled by useEffect, but we need to update URL when debounced value changes
-        // This will be handled by a separate effect that watches debouncedSearchTerm
-      }}
-      searchValue={searchTerm}
-      {...(showArchive && bulkArchiveAttemptsAction
-        ? { bulkArchiveAttemptsAction }
-        : {})}
-    />
+            {/* Mode filter - only show when not all 3 other filters are visible */}
+            {shouldShowModeFilter && (
+              <DataTableFacetedFilter
+                column={infiniteModeColumn}
+                title="Mode"
+                options={infiniteModeOptions}
+              />
+            )}
+
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                onClick={() => table.resetColumnFilters()}
+                className="h-8 px-2 lg:px-3 hidden md:flex"
+              >
+                Reset
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          {/* Select All Rows button - only show when showArchive is true, some rows are selected, but not all filtered */}
+          {showArchive &&
+            selectedAttempts.length > 0 &&
+            selectedAttempts.length <
+              table.getFilteredRowModel().rows.length && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAllVisibleRows}
+                className="h-8"
+              >
+                Select All Rows
+              </Button>
+            )}
+
+          {/* Bulk archive buttons - only show when showArchive is true and items are selected */}
+          {showArchive && selectedAttempts.length > 0 && (
+            <>
+              {archiveCount > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleBulkArchive(true)}
+                  className="h-8"
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive {archiveCount} of {ofLabel}
+                </Button>
+              )}
+              {unarchiveCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkArchive(false)}
+                  className="h-8"
+                >
+                  <Unlock className="mr-2 h-4 w-4" />
+                  Unarchive {unarchiveCount} of {ofLabel}
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Certificate button - only show on desktop when showExport is true (mobile is handled above in search area) */}
+          {showExport && (
+            <div className="hidden md:flex">
+              <SingleProfileCertificateButton
+                table={table}
+                profileOptions={filteredProfileOptions}
+              />
+            </div>
+          )}
+
+          <DataTableViewOptions table={table} />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className="pl-6"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {tableRows?.length ? (
+              tableRows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-6">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columnsWithCheckbox.length}
+                  className="h-24 text-center px-6"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <DataTablePagination table={table} />
+
+      {/* Bulk Archive Confirmation Dialog */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {archiveAction
+                ? `Archive ${archiveCount} Simulation Attempt${archiveCount > 1 ? "s" : ""}`
+                : `Unarchive ${unarchiveCount} Simulation Attempt${unarchiveCount > 1 ? "s" : ""}`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {archiveAction
+                ? `Are you sure you want to archive ${archiveCount} simulation attempt${archiveCount > 1 ? "s" : ""}? They will be hidden from the main simulation list but can be accessed through archived filters.`
+                : `Are you sure you want to unarchive ${unarchiveCount} simulation attempt${unarchiveCount > 1 ? "s" : ""}? They will be visible again in the main simulation list.`}
+              <br />
+              <br />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={executeBulkArchive}
+              disabled={isArchiving}
+              className={isArchiving ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              {isArchiving ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Processing...
+                </div>
+              ) : archiveAction ? (
+                "Archive"
+              ) : (
+                "Unarchive"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 
