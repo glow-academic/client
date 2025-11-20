@@ -17,9 +17,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import SimulationHistory, {
-  HistorySkeleton,
-} from "../common/history/SimulationHistory";
 import SimulationProgress, {
   SimulationProgressSkeleton,
   ViewMode,
@@ -35,50 +32,12 @@ export interface HomeProps {
     departmentIds: string[];
     roles: string[];
   };
-  historyData: Array<{
-    attemptId: string;
-    date: Date;
-    profileId: string;
-    profileName: string;
-    simulationName: string;
-    numScenarios: number | null;
-    numScenariosCompleted: number;
-    infiniteMode: boolean;
-    timeLimit: number | null;
-    personaNames: string[];
-    personaColors: string[];
-    score: number | null;
-    simulation_id: string;
-    department_id: string;
-    scenario_ids: string[];
-    scenario_titles: string[] | undefined;
-    isArchived: boolean;
-    showView: boolean;
-    showContinue: boolean;
-    practiceSimulation?: boolean;
-    passPct: number;
-    cohortNames: string[];
-    practiceScenarioId?: string;
-  }>;
-  historyTotalCount: number;
-  historyPage: number;
-  historyPageSize: number;
-  profileOptions: Array<{ value: string; label: string; count?: number }>;
-  simulationOptions: Array<{ value: string; label: string; count?: number }>;
-  scenarioOptions: Array<{ value: string; label: string; count?: number }>;
 }
 
 export default function Home({
   homeData,
   revalidateAttemptAction,
   initialFilters,
-  historyData,
-  historyTotalCount,
-  historyPage,
-  historyPageSize,
-  profileOptions,
-  simulationOptions,
-  scenarioOptions,
 }: HomeProps) {
   const {
     effectiveProfile,
@@ -506,24 +465,6 @@ export default function Home({
           )}
         </>
       )}
-
-      {/* History Section. Always show current user's history */}
-      <div className="mt-12">
-        <SimulationHistory
-          data={historyData}
-          totalCount={historyTotalCount}
-          pageIndex={historyPage}
-          pageSize={historyPageSize}
-          showExport={true}
-          showArchive={false}
-          singleProfile={true}
-          revalidateAttemptAction={revalidateAttemptAction}
-          initialFilters={initialFilters}
-          profileOptions={profileOptions}
-          simulationOptions={simulationOptions}
-          scenarioOptions={scenarioOptions}
-        />
-      </div>
     </div>
   );
 }
@@ -531,7 +472,6 @@ export default function Home({
 export function HomeSkeleton() {
   const PROGRESS_ROWS = 5;
   const CARD_COUNT = 3;
-  const HISTORY_ROWS = 5;
 
   return (
     <div className="space-y-8">
@@ -576,11 +516,6 @@ export function HomeSkeleton() {
             />
           ))}
         </div>
-      </div>
-
-      {/* History Section */}
-      <div className="mt-12">
-        <HistorySkeleton rows={HISTORY_ROWS} />
       </div>
     </div>
   );

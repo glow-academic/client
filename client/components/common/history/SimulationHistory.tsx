@@ -410,11 +410,23 @@ export default function SimulationHistory({
     searchParams?.get("historySearch") || ""
   );
 
+  // Ref to track debounce timeout for search
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   // Keep local state in sync if URL changes (back/forward, link, etc.)
   React.useEffect(() => {
     const urlSearch = searchParams?.get("historySearch") || "";
     setSearchTerm(urlSearch);
   }, [searchParams]);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize column filters from URL search params
   const [columnFilters, setColumnFilters] = React.useState<
@@ -572,7 +584,7 @@ export default function SimulationHistory({
     [searchParams, pathname, router]
   );
 
-  // Commit search to URL (called on Enter or blur)
+  // Commit search to URL (called on Enter or blur, or after debounce)
   const commitSearch = React.useCallback(
     (value: string) => {
       updateHistoryParams({
@@ -581,6 +593,31 @@ export default function SimulationHistory({
       });
     },
     [updateHistoryParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = React.useCallback(
+    (value: string) => {
+      // Update local state immediately for responsive UI
+      setSearchTerm(value);
+
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // If query becomes empty, commit immediately (no debounce)
+      if (value === "") {
+        commitSearch("");
+        return;
+      }
+
+      // Otherwise, debounce the search (500ms delay)
+      searchTimeoutRef.current = setTimeout(() => {
+        commitSearch(value);
+      }, 500);
+    },
+    [commitSearch]
   );
 
   // Filter profile options - always return available options for filter visibility
@@ -1164,6 +1201,9 @@ export default function SimulationHistory({
     },
   });
 
+  // Get visible columns for skeleton rows (matches actual rendered columns)
+  const visibleColumns = table.getVisibleLeafColumns();
+
   // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
   // Extract pagination primitives directly to avoid object reference issues
   const tablePageIndex = table.getState().pagination.pageIndex;
@@ -1300,10 +1340,6 @@ export default function SimulationHistory({
     table.setRowSelection(next);
   }, [table]);
 
-  if (isLoading) {
-    return <HistorySkeleton rows={10} />;
-  }
-
   return (
     <div className="space-y-4">
       {/* Toolbar - inlined from DataTableToolbar */}
@@ -1316,14 +1352,22 @@ export default function SimulationHistory({
                 placeholder="Search by name, simulation, or scenarios..."
                 value={searchTerm}
                 onChange={(event) => {
-                  setSearchTerm(event.target.value);
+                  handleSearchChange(event.target.value);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
+                    // Clear timeout and commit immediately
+                    if (searchTimeoutRef.current) {
+                      clearTimeout(searchTimeoutRef.current);
+                    }
                     commitSearch(event.currentTarget.value);
                   }
                 }}
                 onBlur={(event) => {
+                  // Clear timeout and commit immediately on blur
+                  if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                  }
                   // Commit on blur so URL stays in sync
                   if (
                     event.currentTarget.value !==
@@ -1345,13 +1389,23 @@ export default function SimulationHistory({
             <Input
               placeholder="Search by name, simulation, or scenarios..."
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) => {
+                handleSearchChange(event.target.value);
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
+                  // Clear timeout and commit immediately
+                  if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                  }
                   commitSearch(event.currentTarget.value);
                 }
               }}
               onBlur={(event) => {
+                // Clear timeout and commit immediately on blur
+                if (searchTimeoutRef.current) {
+                  clearTimeout(searchTimeoutRef.current);
+                }
                 // Commit on blur so URL stays in sync
                 if (
                   event.currentTarget.value !==
@@ -1500,7 +1554,109 @@ export default function SimulationHistory({
             ))}
           </TableHeader>
           <TableBody>
-            {tableRows?.length ? (
+            {isLoading ? (
+              // Skeleton rows while data is loading - match visible columns
+              Array.from({ length: pageSize || 10 }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  {visibleColumns.map((column) => {
+                    const id = column.id;
+
+                    if (id === "select") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <Skeleton className="h-4 w-4 rounded-sm" />
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "date") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Skeleton className="h-4 w-20 mb-1" />
+                              <Skeleton className="h-3 w-12" />
+                            </div>
+                            <Skeleton className="h-2 w-2 rounded-full" />
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "profileName") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <Skeleton className="h-4 w-28" />
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "simulationName") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-3 rounded-full" />
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "numScenariosCompleted") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <div className="flex flex-col items-center gap-1">
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "personaNames") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <div className="flex gap-1 max-w-[175px] overflow-hidden">
+                            <Skeleton className="h-5 w-14 rounded-full" />
+                            <Skeleton className="h-5 w-14 rounded-full" />
+                            <Skeleton className="h-5 w-10 rounded-full" />
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "score") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <div className="flex justify-center">
+                            <Skeleton className="h-6 w-16 rounded-full" />
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "actions") {
+                      return (
+                        <TableCell key={id} className="px-6">
+                          <div className="flex justify-end gap-2">
+                            <Skeleton className="h-8 w-20 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-md" />
+                          </div>
+                        </TableCell>
+                      );
+                    }
+
+                    // Fallback for any other column
+                    return (
+                      <TableCell key={id} className="px-6">
+                        <Skeleton className="h-4 w-[70%]" />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : tableRows?.length ? (
+              // Real data
               tableRows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -1517,6 +1673,7 @@ export default function SimulationHistory({
                 </TableRow>
               ))
             ) : (
+              // Empty state
               <TableRow>
                 <TableCell
                   colSpan={columnsWithCheckbox.length}

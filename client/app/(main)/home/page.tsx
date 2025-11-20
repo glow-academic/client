@@ -7,12 +7,15 @@
 
 import { getSession } from "@/auth";
 
+import HistorySection from "@/components/common/history/HistorySection";
+import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/api/v3/home/overview", "post">;
@@ -190,109 +193,22 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     history: [],
   };
 
-  // Fetch history data server-side using searchParams (DHH-style: URL is source of truth)
-  type HomeHistoryIn = InputOf<"/api/v3/home/history", "post">;
-  type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
-
-  const historyFilters: HomeHistoryIn = {
-    body: {
-      profileId: session?.effectiveProfileId || null,
-      startDate: defaultFilters.startDate,
-      endDate: defaultFilters.endDate,
-      cohortIds: defaultFilters.cohortIds,
-      departmentIds: defaultFilters.departmentIds,
-      roles: defaultFilters.roles,
-      page: historyPage,
-      pageSize: historyPageSize,
-      ...(historySearch && { search: historySearch }),
-      ...(historyProfileIds &&
-        historyProfileIds.length > 0 && {
-          profileIds: historyProfileIds,
-        }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
-        }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
-      }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
-    },
-  };
-
-  const historyData = await api.post("/home/history", historyFilters);
-
-  // Transform API response to match SimulationHistory expected format
-  type ApiHistoryItem = HomeHistoryOut["data"][number];
-  const transformedHistoryData = historyData.data.map(
-    (item: ApiHistoryItem) => ({
-      attemptId: item.attemptId,
-      date: new Date(item.date),
-      profileId: item.profileId,
-      profileName: item.profileName,
-      simulationName: item.simulationName,
-      numScenarios: item.numScenarios ?? null,
-      numScenariosCompleted: item.numScenariosCompleted,
-      infiniteMode: item.infiniteMode,
-      timeLimit: item.timeLimit ?? null,
-      personaNames: item.personaNames,
-      personaColors: item.personaColors,
-      scenario_titles: item.scenario_titles,
-      score: item.score ?? null,
-      simulation_id: item.simulation_id,
-      department_id: (() => {
-        const deptIds = item.department_ids;
-        if (
-          deptIds &&
-          Array.isArray(deptIds) &&
-          deptIds.length > 0 &&
-          deptIds[0]
-        ) {
-          return deptIds[0];
-        }
-        return "";
-      })() as string,
-      scenario_ids: item.scenario_ids,
-      isArchived: item.isArchived,
-      showView: item.showView,
-      showContinue: item.showContinue,
-      practiceSimulation: item.practiceSimulation ?? false,
-      passPct: item.passPct || 70,
-      cohortNames: item.cohortNames,
-      ...(item.practiceScenarioId && {
-        practiceScenarioId: item.practiceScenarioId,
-      }),
-    })
-  );
-
-  // Extract options from API response
-  type HistoryDataWithOptions = HomeHistoryOut & {
-    profileOptions?: Array<{ value: string; label: string; count?: number }>;
-    simulationOptions?: Array<{ value: string; label: string; count?: number }>;
-    scenarioOptions?: Array<{ value: string; label: string; count?: number }>;
-  };
-  const historyDataWithOptions =
-    historyData as unknown as HistoryDataWithOptions;
-  const profileOptions: Array<{
-    value: string;
-    label: string;
-    count?: number;
-  }> = historyDataWithOptions.profileOptions || [];
-  const simulationOptions: Array<{
-    value: string;
-    label: string;
-    count?: number;
-  }> = historyDataWithOptions.simulationOptions || [];
-  const scenarioOptions: Array<{
-    value: string;
-    label: string;
-    count?: number;
-  }> = historyDataWithOptions.scenarioOptions || [];
+  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
+  const historyKey = [
+    historyPage,
+    historyPageSize,
+    historySearch || "",
+    (historyProfileIds || []).join(","),
+    (historySimulationIds || []).join(","),
+    (historyScenarioIds || []).join(","),
+    historyInfiniteMode === undefined
+      ? "all"
+      : historyInfiniteMode
+        ? "inf"
+        : "std",
+    historySortBy,
+    historySortOrder,
+  ].join("|");
 
   return (
     <div className="space-y-6">
@@ -300,14 +216,48 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         homeData={homeDataWithoutHistory}
         revalidateAttemptAction={revalidateAttempt}
         initialFilters={defaultFilters}
-        historyData={transformedHistoryData}
-        historyTotalCount={historyData.totalCount}
-        historyPage={historyPage}
-        historyPageSize={historyPageSize}
-        profileOptions={profileOptions}
-        simulationOptions={simulationOptions}
-        scenarioOptions={scenarioOptions}
       />
+
+      {/* History section moved out of Home, fully server-driven */}
+      <div className="mt-12">
+        <Suspense
+          key={historyKey}
+          fallback={
+            <SimulationHistory
+              data={[]}
+              totalCount={0}
+              pageIndex={historyPage}
+              pageSize={historyPageSize}
+              showExport={true}
+              showArchive={false}
+              singleProfile={true}
+              revalidateAttemptAction={revalidateAttempt}
+              initialFilters={defaultFilters}
+              profileOptions={[]}
+              simulationOptions={[]}
+              scenarioOptions={[]}
+              isLoading={true}
+            />
+          }
+        >
+          <HistorySection
+            defaultFilters={defaultFilters}
+            historyPage={historyPage}
+            historyPageSize={historyPageSize}
+            {...(historySearch && { historySearch })}
+            {...(historyProfileIds && { historyProfileIds })}
+            {...(historySimulationIds && { historySimulationIds })}
+            {...(historyScenarioIds && { historyScenarioIds })}
+            {...(historyInfiniteMode !== undefined && {
+              historyInfiniteMode,
+            })}
+            historySortBy={historySortBy}
+            historySortOrder={historySortOrder}
+            effectiveProfileId={session?.effectiveProfileId ?? null}
+            revalidateAttemptAction={revalidateAttempt}
+          />
+        </Suspense>
+      </div>
     </div>
   );
 }
