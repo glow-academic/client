@@ -3608,6 +3608,22 @@ export interface components {
             historyProfileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+            /** Search */
+            search?: string | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
         };
         /**
          * AssistantChatFullRequest
@@ -6023,6 +6039,18 @@ export interface components {
             feedback: components["schemas"]["FeedbackItem"][];
         };
         /**
+         * FilterOption
+         * @description Filter option with count.
+         */
+        FilterOption: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
+        };
+        /**
          * FindCohortsRequest
          * @description Request to search cohorts.
          */
@@ -7873,6 +7901,29 @@ export interface components {
         ReportsBundleResponse: {
             /** Data */
             data: components["schemas"]["ProfileDataEnhanced"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /**
+             * Profileoptions
+             * @default []
+             */
+            profileOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Simulationoptions
+             * @default []
+             */
+            simulationOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Scenariooptions
+             * @default []
+             */
+            scenarioOptions: components["schemas"]["FilterOption"][];
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];

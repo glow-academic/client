@@ -390,6 +390,51 @@
                 LEFT JOIN stagnation_data_points sdp ON pm.profile_id = sdp.profile_id
                 LEFT JOIN profile_simulation_ids psi ON pm.profile_id = psi.profile_id
                 LEFT JOIN profile_scenario_ids psc ON pm.profile_id = psc.profile_id
+            ),
+            -- Get all unique profile options from all_metrics (before pagination)
+            profile_options_cte AS (
+                SELECT 
+                    am.profile_id,
+                    am.first_name || ' ' || am.last_name AS profile_name,
+                    COUNT(*) AS count
+                FROM all_metrics am
+                GROUP BY am.profile_id, am.first_name, am.last_name
+                ORDER BY profile_name
+            ),
+            -- Get all unique simulation options from all_metrics (before pagination)
+            simulation_options_cte AS (
+                SELECT 
+                    sim.id AS simulation_id,
+                    sim.title AS simulation_name,
+                    COUNT(DISTINCT am.profile_id) AS count
+                FROM all_metrics am
+                CROSS JOIN LATERAL UNNEST(am.simulation_ids) AS sim_id
+                JOIN simulations sim ON sim.id::text = sim_id
+                WHERE sim.active = true
+                GROUP BY sim.id, sim.title
+                ORDER BY simulation_name
+            ),
+            -- Get all unique scenario options from all_metrics (before pagination)
+            scenario_options_cte AS (
+                SELECT 
+                    s.id AS scenario_id,
+                    s.name AS scenario_title,
+                    COUNT(DISTINCT am.profile_id) AS count
+                FROM all_metrics am
+                CROSS JOIN LATERAL UNNEST(am.scenario_ids) AS scen_id
+                JOIN scenarios s ON s.id::text = scen_id
+                WHERE s.active = true
+                GROUP BY s.id, s.name
+                ORDER BY scenario_title
+            ),
+            -- Add pagination and sorting to all_metrics
+            paginated_metrics AS (
+                SELECT
+                    *,
+                    COUNT(*) OVER() AS total_count
+                FROM all_metrics
+                {ORDER_BY_CLAUSE}
+                {LIMIT_OFFSET_CLAUSE}
             )
             SELECT json_build_object(
                 'data', COALESCE((SELECT json_agg(json_build_object(
@@ -533,7 +578,32 @@
                             )
                         )
                     )
-                )) FROM all_metrics), '[]'::json),
+                ) {JSON_AGG_ORDER_BY}) FROM paginated_metrics), '[]'::json),
+                'totalCount', COALESCE((SELECT total_count FROM (SELECT * FROM paginated_metrics LIMIT 1) pm_count), 0),
+                'profileOptions', COALESCE((
+                    SELECT json_agg(json_build_object(
+                        'value', poc.profile_id::text,
+                        'label', poc.profile_name,
+                        'count', poc.count
+                    ))
+                    FROM profile_options_cte poc
+                ), '[]'::json),
+                'simulationOptions', COALESCE((
+                    SELECT json_agg(json_build_object(
+                        'value', soc.simulation_id::text,
+                        'label', soc.simulation_name,
+                        'count', soc.count
+                    ))
+                    FROM simulation_options_cte soc
+                ), '[]'::json),
+                'scenarioOptions', COALESCE((
+                    SELECT json_agg(json_build_object(
+                        'value', scoc.scenario_id::text,
+                        'label', scoc.scenario_title,
+                        'count', scoc.count
+                    ))
+                    FROM scenario_options_cte scoc
+                ), '[]'::json),
                 'scenario_mapping', COALESCE((
                     SELECT jsonb_object_agg(
                         s.id::text,

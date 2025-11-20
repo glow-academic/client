@@ -167,6 +167,10 @@ def build_profile_and_analytics_filters(
     sim_filters: list[str] | None = None,
     profile_id: str | None = None,
     department_ids: list[str] | None = None,
+    profile_ids: list[str] | None = None,
+    simulation_ids: list[str] | None = None,
+    scenario_ids: list[str] | None = None,
+    search: str | None = None,
 ) -> tuple[str, str, list[Any]]:
     """
     Build separate WHERE clauses for profiles and analytics queries.
@@ -269,6 +273,35 @@ def build_profile_and_analytics_filters(
         # Since we're filtering profiles first, this is handled at the profile level
         # No analytics condition needed - departments are filtered via profile join
         params.append(department_ids)
+        param_counter += 1
+
+    # Profile IDs filter (for reports table filtering)
+    if profile_ids:
+        profile_conditions.append(f"p.id = ANY(${param_counter}::uuid[])")
+        analytics_conditions.append(f"a.profile_id = ANY(${param_counter}::uuid[])")
+        params.append(profile_ids)
+        param_counter += 1
+
+    # Simulation IDs filter (for reports table filtering)
+    if simulation_ids:
+        analytics_conditions.append(f"a.simulation_id = ANY(${param_counter}::uuid[])")
+        params.append(simulation_ids)
+        param_counter += 1
+
+    # Scenario IDs filter (for reports table filtering)
+    if scenario_ids:
+        analytics_conditions.append(f"a.scenario_id = ANY(${param_counter}::uuid[])")
+        params.append(scenario_ids)
+        param_counter += 1
+
+    # Text search filter (for reports table - search across profile names)
+    if search:
+        search_pattern = f"%{search}%"
+        # Use the same parameter twice (valid in PostgreSQL) - only append once
+        profile_conditions.append(
+            f"(p.first_name ILIKE ${param_counter} OR p.last_name ILIKE ${param_counter})"
+        )
+        params.append(search_pattern)
         param_counter += 1
 
     profile_where = " AND ".join(profile_conditions) if profile_conditions else "TRUE"

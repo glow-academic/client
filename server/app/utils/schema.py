@@ -217,6 +217,15 @@ class AnalyticsFilters(BaseModel):
     profileId: str | None = None  # Used for main dashboard metrics filtering
     historyProfileId: str | None = None  # Used only for history showRetry calculation
     departmentIds: list[str] | None = None
+    # Pagination, search, sorting, and additional filters (for reports)
+    page: int | None = None
+    pageSize: int | None = None
+    search: str | None = None  # Text search across profile names
+    sortBy: str | None = None  # Column to sort by (e.g., "averageScore", "profileName")
+    sortOrder: str | None = None  # "asc" or "desc"
+    profileIds: list[str] | None = None  # Filter by specific profiles
+    simulationIds: list[str] | None = None  # Filter by specific simulations
+    scenarioIds: list[str] | None = None  # Filter by specific scenarios
 
 
 # Response Schemas

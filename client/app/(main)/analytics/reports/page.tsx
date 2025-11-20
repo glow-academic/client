@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v3/reports", "post">;
@@ -121,15 +122,168 @@ export default async function ReportsFullPage({
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
-  // Fetch reports data server-side
-  const reportsData = await api.post("/reports", {
-    body: filters,
-  });
+  // Extract pagination and filter params from search params for reports table
+  const reportsPage = searchParamsObj.get("reportsPage")
+    ? parseInt(searchParamsObj.get("reportsPage") || "0", 10)
+    : 0;
+  const reportsPageSize = searchParamsObj.get("reportsPageSize")
+    ? parseInt(searchParamsObj.get("reportsPageSize") || "100", 10)
+    : 100;
+  const reportsSearch = searchParamsObj.get("reportsSearch") || undefined;
+  const reportsProfileIds = searchParamsObj.get("reportsProfileIds")
+    ? searchParamsObj.get("reportsProfileIds")?.split(",").filter(Boolean)
+    : undefined;
+  const reportsSimulationIds = searchParamsObj.get("reportsSimulationIds")
+    ? searchParamsObj.get("reportsSimulationIds")?.split(",").filter(Boolean)
+    : undefined;
+  const reportsScenarioIds = searchParamsObj.get("reportsScenarioIds")
+    ? searchParamsObj.get("reportsScenarioIds")?.split(",").filter(Boolean)
+    : undefined;
+  const reportsSortBy = searchParamsObj.get("reportsSortBy") || "averageScore";
+  const reportsSortOrder = searchParamsObj.get("reportsSortOrder") || "desc";
+
+  // Create reportsKey for Suspense boundary to trigger re-fetch on URL param changes
+  const reportsKey = [
+    reportsPage,
+    reportsPageSize,
+    reportsSearch || "",
+    (reportsProfileIds || []).join(","),
+    (reportsSimulationIds || []).join(","),
+    (reportsScenarioIds || []).join(","),
+    reportsSortBy,
+    reportsSortOrder,
+  ].join("|");
+
+  // Create empty reports data for loading state
+  const emptyReportsData: ReportsOut = {
+    data: [],
+    totalCount: 0,
+    page: reportsPage,
+    pageSize: reportsPageSize,
+    totalPages: 0,
+    profileOptions: [],
+    simulationOptions: [],
+    scenarioOptions: [],
+    scenario_mapping: {},
+    simulation_mapping: {},
+  };
 
   return (
     <div className="space-y-6" data-page="reports-index">
-      <Reports reportsData={reportsData} filters={filters} />
+      <Suspense
+        key={reportsKey}
+        fallback={
+          <Reports
+            reportsData={emptyReportsData}
+            filters={filters}
+            isLoading={true}
+            profileOptions={[]}
+            simulationOptions={[]}
+            scenarioOptions={[]}
+          />
+        }
+      >
+        <ReportsSection
+          filters={filters}
+          reportsPage={reportsPage}
+          reportsPageSize={reportsPageSize}
+          reportsSearch={reportsSearch}
+          reportsProfileIds={reportsProfileIds}
+          reportsSimulationIds={reportsSimulationIds}
+          reportsScenarioIds={reportsScenarioIds}
+          reportsSortBy={reportsSortBy}
+          reportsSortOrder={reportsSortOrder}
+        />
+      </Suspense>
     </div>
+  );
+}
+
+/** ---- Inline reports section component (only used here) ---- */
+async function ReportsSection({
+  filters,
+  reportsPage,
+  reportsPageSize,
+  reportsSearch,
+  reportsProfileIds,
+  reportsSimulationIds,
+  reportsScenarioIds,
+  reportsSortBy,
+  reportsSortOrder,
+}: {
+  filters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
+  reportsPage: number;
+  reportsPageSize: number;
+  reportsSearch?: string | undefined;
+  reportsProfileIds?: string[] | undefined;
+  reportsSimulationIds?: string[] | undefined;
+  reportsScenarioIds?: string[] | undefined;
+  reportsSortBy: string;
+  reportsSortOrder: string;
+}) {
+  // Build reports filters with pagination/search/sorting/filtering params
+  const reportsFilters = {
+    ...filters,
+    page: reportsPage,
+    pageSize: reportsPageSize,
+    ...(reportsSearch && { search: reportsSearch }),
+    sortBy: reportsSortBy,
+    sortOrder: reportsSortOrder,
+    ...(reportsProfileIds &&
+      reportsProfileIds.length > 0 && {
+        profileIds: reportsProfileIds,
+      }),
+    ...(reportsSimulationIds &&
+      reportsSimulationIds.length > 0 && {
+        simulationIds: reportsSimulationIds,
+      }),
+    ...(reportsScenarioIds &&
+      reportsScenarioIds.length > 0 && {
+        scenarioIds: reportsScenarioIds,
+      }),
+  };
+
+  // Fetch reports data server-side
+  const reportsData = await api.post("/reports", {
+    body: reportsFilters,
+  });
+
+  // Extract and map filter options from API response
+  const profileOptions = (reportsData?.profileOptions || []).map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+    count: opt.count,
+  }));
+
+  const simulationOptions = (reportsData?.simulationOptions || []).map(
+    (opt) => ({
+      value: opt.value,
+      label: opt.label,
+      count: opt.count,
+    })
+  );
+
+  const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+    count: opt.count,
+  }));
+
+  return (
+    <Reports
+      reportsData={reportsData}
+      filters={filters}
+      isLoading={false}
+      profileOptions={profileOptions}
+      simulationOptions={simulationOptions}
+      scenarioOptions={scenarioOptions}
+    />
   );
 }
 

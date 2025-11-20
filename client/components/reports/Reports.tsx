@@ -5,8 +5,8 @@
 "use client";
 import { ColumnDef, Row, Table as TableType } from "@tanstack/react-table";
 import { Clock, Download, MessageCircle, Target, Timer, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { ReportsOut } from "@/app/(main)/analytics/reports/page";
@@ -52,30 +52,40 @@ import {
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
 interface ReportsProps {
   reportsData: ReportsOut;
   filters: AnalyticsFilters;
+  isLoading?: boolean;
+  profileOptions: Array<{ value: string; label: string; count?: number }>;
+  simulationOptions: Array<{ value: string; label: string; count?: number }>;
+  scenarioOptions: Array<{ value: string; label: string; count?: number }>;
 }
 
-export default function Reports({ reportsData, filters }: ReportsProps) {
+export default function Reports({
+  reportsData,
+  filters,
+  isLoading = false,
+  profileOptions,
+  simulationOptions,
+  scenarioOptions,
+}: ReportsProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Extract data from API response
   const profiles = useMemo(() => reportsData?.data || [], [reportsData?.data]);
-  const scenarioMapping = useMemo(
-    () => reportsData?.scenario_mapping || {},
-    [reportsData?.scenario_mapping]
-  );
   const simulationMapping = useMemo(
     () => reportsData?.simulation_mapping || {},
     [reportsData?.simulation_mapping]
   );
+
+  // Extract pagination metadata from server response
+  const page = reportsData?.page || 0;
+  const pageSize = reportsData?.pageSize || 100;
+  const totalPages = reportsData?.totalPages || 0;
 
   // Export state
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -83,7 +93,7 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
   const [brightspaceFormat, setBrightspaceFormat] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Table state
+  // Table state (only UI state, not data state)
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     personaResponseTimes: false,
@@ -92,53 +102,164 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
     scenarios: false,
     simulations: false,
   });
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "averageScore", desc: true },
-  ]);
 
-  // Build options from API data
-  const profileOptions = useMemo(() => {
-    if (!profiles || profiles.length === 0) return [];
+  // Sync URL params for sorting
+  const sortBy = searchParams.get("reportsSortBy") || "averageScore";
+  const sortOrder = searchParams.get("reportsSortOrder") || "desc";
+  const sorting: SortingState = useMemo(
+    () => [{ id: sortBy, desc: sortOrder === "desc" }],
+    [sortBy, sortOrder]
+  );
 
-    const uniqueProfiles = profiles.reduce(
-      (acc, profile) => {
-        if (
-          profile?.profileId &&
-          profile?.firstName &&
-          profile?.lastName &&
-          !acc.find((p) => p.value === profile.profileId)
-        ) {
-          acc.push({
-            value: profile.profileId,
-            label: `${profile.firstName} ${profile.lastName}`,
-          });
+  // Ref for the search input
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Local search state, initialized from URL
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("reportsSearch") || ""
+  );
+
+  // Ref to track debounce timeout for search
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep local state in sync if URL changes (back/forward, link, etc.)
+  useEffect(() => {
+    const urlSearch = searchParams.get("reportsSearch") || "";
+    setSearchTerm(urlSearch);
+  }, [searchParams]);
+
+  // Whenever we have a searchTerm, keep the input focused
+  useEffect(() => {
+    if (!searchInputRef.current) return;
+    if (!searchTerm) return; // don't auto-focus on completely empty state
+
+    const el = searchInputRef.current;
+    el.focus();
+    const len = searchTerm.length;
+    // put cursor at end of text
+    try {
+      el.setSelectionRange(len, len);
+    } catch {
+      // some browsers can be picky; ignore
+    }
+  }, [searchTerm]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Sync URL params for filters
+  const reportsSearch = searchParams.get("reportsSearch") || "";
+  const reportsProfileIdsParam = searchParams.get("reportsProfileIds");
+  const reportsSimulationIdsParam = searchParams.get("reportsSimulationIds");
+  const reportsScenarioIdsParam = searchParams.get("reportsScenarioIds");
+
+  const reportsProfileIds = useMemo(
+    () =>
+      reportsProfileIdsParam
+        ? reportsProfileIdsParam.split(",").filter(Boolean)
+        : [],
+    [reportsProfileIdsParam]
+  );
+  const reportsSimulationIds = useMemo(
+    () =>
+      reportsSimulationIdsParam
+        ? reportsSimulationIdsParam.split(",").filter(Boolean)
+        : [],
+    [reportsSimulationIdsParam]
+  );
+  const reportsScenarioIds = useMemo(
+    () =>
+      reportsScenarioIdsParam
+        ? reportsScenarioIdsParam.split(",").filter(Boolean)
+        : [],
+    [reportsScenarioIdsParam]
+  );
+
+  // Sync column filters with URL params (for DataTableFacetedFilter compatibility)
+  const columnFilters: ColumnFiltersState = useMemo(() => {
+    const filters: ColumnFiltersState = [];
+    if (reportsProfileIds.length > 0) {
+      filters.push({ id: "profileId", value: reportsProfileIds });
+    }
+    if (reportsSimulationIds.length > 0) {
+      filters.push({ id: "simulations", value: reportsSimulationIds });
+    }
+    if (reportsScenarioIds.length > 0) {
+      filters.push({ id: "scenarios", value: reportsScenarioIds });
+    }
+    return filters;
+  }, [reportsProfileIds, reportsSimulationIds, reportsScenarioIds]);
+
+  // Helper to update URL params (removes default values like updateHistoryParams)
+  const updateURLParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") {
+          params.delete(key);
+        } else {
+          // Remove default values from URL
+          if (key === "reportsPage" && value === "0") {
+            params.delete(key);
+          } else if (key === "reportsPageSize" && value === "100") {
+            params.delete(key);
+          } else if (key === "reportsSortBy" && value === "averageScore") {
+            params.delete(key);
+          } else if (key === "reportsSortOrder" && value === "desc") {
+            params.delete(key);
+          } else {
+            params.set(key, value);
+          }
         }
-        return acc;
-      },
-      [] as { value: string; label: string }[]
-    );
-
-    return uniqueProfiles;
-  }, [profiles]);
-
-  const scenarioOptions = useMemo(
-    () =>
-      Object.entries(scenarioMapping).map(([id, scenario]) => ({
-        value: id,
-        label: scenario.name,
-      })),
-    [scenarioMapping]
+      });
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
   );
 
-  const simulationOptions = useMemo(
-    () =>
-      Object.entries(simulationMapping).map(([id, simulation]) => ({
-        value: id,
-        label: simulation.name,
-      })),
-    [simulationMapping]
+  // Commit search to URL (called on Enter or blur, or after debounce)
+  const commitSearch = useCallback(
+    (value: string) => {
+      updateURLParams({
+        reportsPage: "0",
+        reportsSearch: value.trim() || null,
+      });
+    },
+    [updateURLParams]
   );
+
+  // Handle search input change with debounce
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      // Update local state immediately for responsive UI
+      setSearchTerm(value);
+
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // If query becomes empty, commit immediately (no debounce)
+      if (value === "") {
+        commitSearch("");
+        return;
+      }
+
+      // Otherwise, debounce the search (500ms delay)
+      searchTimeoutRef.current = setTimeout(() => {
+        commitSearch(value);
+      }, 500);
+    },
+    [commitSearch]
+  );
+
+  // Options are now provided as props from server
 
   const simulations = useMemo(
     () =>
@@ -911,7 +1032,7 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
     ];
   }, [router]);
 
-  // Create table instance
+  // Create table instance (server-driven, no client-side filtering/sorting/pagination)
   const table = useReactTable({
     data: profiles,
     columns,
@@ -919,45 +1040,86 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
       sorting,
       columnVisibility,
       rowSelection,
-      columnFilters,
+      columnFilters, // Synced with URL params for UI display
+      pagination: {
+        pageIndex: page,
+        pageSize: pageSize,
+      },
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: (updater) => {
+      // Update URL params when sorting changes
+      const newSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      if (newSorting.length > 0 && newSorting[0]) {
+        const sort = newSorting[0];
+        updateURLParams({
+          reportsSortBy: sort.id,
+          reportsSortOrder: sort.desc ? "desc" : "asc",
+          reportsPage: "0", // Reset to first page on sort change
+        });
+      }
+    },
+    onColumnFiltersChange: (updater) => {
+      // Update URL params when column filters change
+      const newFilters =
+        typeof updater === "function" ? updater(columnFilters) : updater;
+      const profileFilter = newFilters.find((f) => f.id === "profileId");
+      const simulationFilter = newFilters.find((f) => f.id === "simulations");
+      const scenarioFilter = newFilters.find((f) => f.id === "scenarios");
+
+      updateURLParams({
+        reportsProfileIds:
+          profileFilter &&
+          Array.isArray(profileFilter.value) &&
+          profileFilter.value.length > 0
+            ? profileFilter.value.join(",")
+            : null,
+        reportsSimulationIds:
+          simulationFilter &&
+          Array.isArray(simulationFilter.value) &&
+          simulationFilter.value.length > 0
+            ? simulationFilter.value.join(",")
+            : null,
+        reportsScenarioIds:
+          scenarioFilter &&
+          Array.isArray(scenarioFilter.value) &&
+          scenarioFilter.value.length > 0
+            ? scenarioFilter.value.join(",")
+            : null,
+        reportsPage: "0", // Reset to first page on filter change
+      });
+    },
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      // Update URL params when pagination changes
+      const currentPagination = { pageIndex: page, pageSize: pageSize };
+      const newPagination =
+        typeof updater === "function" ? updater(currentPagination) : updater;
+      updateURLParams({
+        reportsPage: String(newPagination.pageIndex),
+        reportsPageSize: String(newPagination.pageSize),
+      });
+    },
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 100,
-      },
-    },
+    manualPagination: true, // Server-driven pagination
+    manualSorting: true, // Server-driven sorting
+    manualFiltering: true, // Server-driven filtering
+    pageCount: totalPages,
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
-  const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
+  // Table rows are just the profiles (already filtered/sorted/paginated by server)
+  // With manualSorting: true, react-table should preserve the exact order from the data prop
+  // The table object already depends on profiles (via data prop), so we don't need to include it here
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    profiles.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  }, [table]);
+
+  // Get visible columns for skeleton rows (matches actual rendered columns)
+  const visibleColumns = table.getVisibleLeafColumns();
 
   // Export functionality
   const selectedRows = Object.keys(rowSelection).length;
@@ -977,26 +1139,20 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
   const getSelectedProfileIds = (): string[] => {
     const selectedRowsData =
       selectedRows > 0
-        ? table.getFilteredSelectedRowModel().rows
-        : table.getFilteredRowModel().rows;
+        ? table.getSelectedRowModel().rows
+        : table.getRowModel().rows;
 
     return selectedRowsData.map((row) => row.original.profileId);
   };
 
   const getSelectedSimulationIds = (): string[] => {
-    const simulationColumn = table.getColumn("simulations");
-    const filterValue = simulationColumn?.getFilterValue() as
-      | string[]
-      | undefined;
-    return filterValue || [];
+    // Get from URL params (server-side filter)
+    return reportsSimulationIds || [];
   };
 
   const getSelectedScenarioIds = (): string[] => {
-    const scenarioColumn = table.getColumn("scenarios");
-    const filterValue = scenarioColumn?.getFilterValue() as
-      | string[]
-      | undefined;
-    return filterValue || [];
+    // Get from URL params (server-side filter)
+    return reportsScenarioIds || [];
   };
 
   const handleExport = async () => {
@@ -1094,11 +1250,14 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
     isExporting || (brightspaceFormat && selectedMetrics.length === 0);
 
   // Get column references for toolbar
-  const profileNameColumn = table.getColumn("profileName");
   const profileIdColumn = table.getColumn("profileId");
   const scenariosColumn = table.getColumn("scenarios");
   const simulationsColumn = table.getColumn("simulations");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  const isFiltered =
+    reportsSearch !== "" ||
+    (reportsProfileIds && reportsProfileIds.length > 0) ||
+    (reportsSimulationIds && reportsSimulationIds.length > 0) ||
+    (reportsScenarioIds && reportsScenarioIds.length > 0);
 
   return (
     <div className="space-y-6" data-testid="reports-table-container">
@@ -1109,14 +1268,41 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
             <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
               {/* Mobile: Wrap search and export button in 50/50 flex */}
               <div className="flex gap-2 w-full md:w-auto md:flex-initial">
-                <Input
-                  placeholder="Search profiles by name or alias..."
-                  value={(profileNameColumn?.getFilterValue() as string) ?? ""}
-                  onChange={(event) =>
-                    profileNameColumn?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
-                />
+                {isLoading ? (
+                  <Skeleton className="h-8 flex-1 md:w-[150px] lg:w-[250px]" />
+                ) : (
+                  <Input
+                    ref={searchInputRef}
+                    placeholder="Search profiles by name or alias..."
+                    value={searchTerm}
+                    onChange={(event) => {
+                      handleSearchChange(event.target.value);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        // Clear timeout and commit immediately
+                        if (searchTimeoutRef.current) {
+                          clearTimeout(searchTimeoutRef.current);
+                        }
+                        commitSearch(event.currentTarget.value);
+                      }
+                    }}
+                    onBlur={(event) => {
+                      // Clear timeout and commit immediately on blur
+                      if (searchTimeoutRef.current) {
+                        clearTimeout(searchTimeoutRef.current);
+                      }
+                      // Commit on blur so URL stays in sync
+                      if (
+                        event.currentTarget.value !==
+                        (searchParams.get("reportsSearch") || "")
+                      ) {
+                        commitSearch(event.currentTarget.value);
+                      }
+                    }}
+                    className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
+                  />
+                )}
                 {/* Export Button - Mobile */}
                 <div className="flex-1 md:flex-initial md:w-auto md:hidden">
                   <PopoverTrigger asChild>
@@ -1134,37 +1320,59 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
               </div>
 
               <div className="flex items-center space-x-2 flex-wrap">
-                {/* Name Filter */}
-                {profileIdColumn && profileOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={profileIdColumn}
-                    title="Name"
-                    options={profileOptions}
-                  />
-                )}
+                {isLoading ? (
+                  <>
+                    {/* Skeleton filters - show typical filter layout */}
+                    <Skeleton className="h-8 w-[120px]" />
+                    <Skeleton className="h-8 w-[140px]" />
+                    <Skeleton className="h-8 w-[160px]" />
+                  </>
+                ) : (
+                  <>
+                    {/* Name Filter */}
+                    {profileIdColumn && profileOptions.length > 0 && (
+                      <DataTableFacetedFilter
+                        column={profileIdColumn}
+                        title="Name"
+                        options={profileOptions}
+                        isServerDriven={true}
+                      />
+                    )}
 
-                {/* Scenario Filter */}
-                {scenariosColumn && scenarioOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={scenariosColumn}
-                    title="Scenario"
-                    options={scenarioOptions}
-                  />
-                )}
+                    {/* Scenario Filter */}
+                    {scenariosColumn && scenarioOptions.length > 0 && (
+                      <DataTableFacetedFilter
+                        column={scenariosColumn}
+                        title="Scenario"
+                        options={scenarioOptions}
+                        isServerDriven={true}
+                      />
+                    )}
 
-                {/* Simulation Filter */}
-                {simulationsColumn && simulationOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={simulationsColumn}
-                    title="Simulation"
-                    options={simulationOptions}
-                  />
+                    {/* Simulation Filter */}
+                    {simulationsColumn && simulationOptions.length > 0 && (
+                      <DataTableFacetedFilter
+                        column={simulationsColumn}
+                        title="Simulation"
+                        options={simulationOptions}
+                        isServerDriven={true}
+                      />
+                    )}
+                  </>
                 )}
 
                 {isFiltered && (
                   <Button
                     variant="ghost"
-                    onClick={() => table.resetColumnFilters()}
+                    onClick={() => {
+                      updateURLParams({
+                        reportsSearch: null,
+                        reportsProfileIds: null,
+                        reportsSimulationIds: null,
+                        reportsScenarioIds: null,
+                        reportsPage: "0",
+                      });
+                    }}
                     className="h-8 px-2 lg:px-3 hidden md:flex"
                   >
                     Reset
@@ -1187,7 +1395,10 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
                   Export {selectedRows > 0 ? `(${selectedRows})` : ""}
                 </Button>
               </PopoverTrigger>
-              <DataTableViewOptions table={table} hiddenColumns={["simulations"]} />
+              <DataTableViewOptions
+                table={table}
+                hiddenColumns={["simulations"]}
+              />
             </div>
           </div>
           {/* Shared Popover Content */}
@@ -1308,7 +1519,48 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {tableRows?.length ? (
+            {isLoading ? (
+              // Skeleton rows while data is loading - match visible columns
+              Array.from({ length: pageSize || 10 }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`} className="h-6">
+                  {visibleColumns.map((column) => {
+                    const id = column.id;
+
+                    if (id === "select") {
+                      return (
+                        <TableCell
+                          key={id}
+                          className="border-r px-2 py-1 w-12 text-center"
+                        >
+                          <Skeleton className="h-4 w-4 rounded-sm" />
+                        </TableCell>
+                      );
+                    }
+
+                    if (id === "profileName") {
+                      return (
+                        <TableCell
+                          key={id}
+                          className="border-r px-2 py-1 text-left"
+                        >
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                      );
+                    }
+
+                    // Default skeleton for metric columns
+                    return (
+                      <TableCell
+                        key={id}
+                        className="border-r px-2 py-1 text-center"
+                      >
+                        <Skeleton className="h-4 w-12 mx-auto" />
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : tableRows?.length ? (
               tableRows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -1354,7 +1606,43 @@ export default function Reports({ reportsData, filters }: ReportsProps) {
       </div>
 
       {/* Pagination */}
-      <DataTablePagination table={table} staff={true} />
+      {isLoading ? (
+        <div className="flex items-center px-2">
+          {/* Mobile skeleton layout */}
+          <div className="flex items-center flex-1 md:hidden">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-[85px]" />
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8 rounded-md" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </div>
+          </div>
+          {/* Desktop skeleton layout */}
+          <div className="hidden md:flex items-center justify-between w-full">
+            <div className="flex-1"></div>
+            <div className="flex items-center space-x-6 lg:space-x-8">
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-[85px]" />
+              </div>
+              <Skeleton className="h-4 w-[100px]" />
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-8 w-8 rounded-md hidden lg:block" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <Skeleton className="h-8 w-8 rounded-md hidden lg:block" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <DataTablePagination table={table} staff={true} />
+      )}
     </div>
   );
 }
