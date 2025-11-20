@@ -405,6 +405,9 @@ export default function SimulationHistory({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Ref for the root search bar
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+
   // Local search state, initialized from URL
   const [searchTerm, setSearchTerm] = React.useState(
     searchParams?.get("historySearch") || ""
@@ -418,6 +421,22 @@ export default function SimulationHistory({
     const urlSearch = searchParams?.get("historySearch") || "";
     setSearchTerm(urlSearch);
   }, [searchParams]);
+
+  // Whenever we have a searchTerm, keep the input focused
+  React.useEffect(() => {
+    if (!searchInputRef.current) return;
+    if (!searchTerm) return; // don't auto-focus on completely empty state
+
+    const el = searchInputRef.current;
+    el.focus();
+    const len = searchTerm.length;
+    // put cursor at end of text
+    try {
+      el.setSelectionRange(len, len);
+    } catch {
+      // some browsers can be picky; ignore
+    }
+  }, [searchTerm]);
 
   // Cleanup timeout on unmount
   React.useEffect(() => {
@@ -1379,6 +1398,7 @@ export default function SimulationHistory({
           {showExport ? (
             <div className="flex gap-2 w-full md:w-auto md:flex-initial">
               <Input
+                ref={searchInputRef}
                 placeholder="Search by name, simulation, or scenarios..."
                 value={searchTerm}
                 onChange={(event) => {
@@ -1417,6 +1437,7 @@ export default function SimulationHistory({
             </div>
           ) : (
             <Input
+              ref={searchInputRef}
               placeholder="Search by name, simulation, or scenarios..."
               value={searchTerm}
               onChange={(event) => {
