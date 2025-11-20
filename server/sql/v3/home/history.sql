@@ -506,7 +506,20 @@ paginated_rows AS (
         fr.pass_pct,
         fr.department_ids,
         fr.practice_scenario_id,
-        fr.persona_ids_distinct
+        fr.persona_ids_distinct,
+        -- Computed sort columns for json_agg ordering
+        CASE 
+            WHEN $13 = 'date' AND $14 = 'desc' THEN fr.attempt_date
+            WHEN $13 = 'date' AND $14 = 'asc' THEN fr.attempt_date
+        END AS sort_date,
+        CASE 
+            WHEN $13 = 'simulationName' AND $14 = 'desc' THEN fr.simulation_name
+            WHEN $13 = 'simulationName' AND $14 = 'asc' THEN fr.simulation_name
+        END AS sort_simulation_name,
+        CASE 
+            WHEN $13 = 'score' AND $14 = 'desc' THEN COALESCE(fr.score_percent, -1)
+            WHEN $13 = 'score' AND $14 = 'asc' THEN COALESCE(fr.score_percent, 999999)
+        END AS sort_score
     FROM final_rows_with_search fr
     ORDER BY 
         CASE 
@@ -559,6 +572,26 @@ SELECT json_build_object(
                 'cohortNames', COALESCE(acn.cohort_names, ARRAY[]::text[]),
                 'practiceScenarioId', pr.practice_scenario_id
             )
+            ORDER BY 
+                CASE 
+                    WHEN $13 = 'date' AND $14 = 'desc' THEN pr.sort_date
+                END DESC NULLS LAST,
+                CASE 
+                    WHEN $13 = 'date' AND $14 = 'asc' THEN pr.sort_date
+                END ASC NULLS LAST,
+                CASE 
+                    WHEN $13 = 'simulationName' AND $14 = 'desc' THEN pr.sort_simulation_name
+                END DESC NULLS LAST,
+                CASE 
+                    WHEN $13 = 'simulationName' AND $14 = 'asc' THEN pr.sort_simulation_name
+                END ASC NULLS LAST,
+                CASE 
+                    WHEN $13 = 'score' AND $14 = 'desc' THEN pr.sort_score
+                END DESC,
+                CASE 
+                    WHEN $13 = 'score' AND $14 = 'asc' THEN pr.sort_score
+                END ASC,
+                pr.attempt_id DESC
         ),
         '[]'::json
     ),
