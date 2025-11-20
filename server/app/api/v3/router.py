@@ -9,7 +9,7 @@ from app.api.v3.analytics import router as analytics_router
 from app.api.v3.assistant import router as assistant_router
 from app.api.v3.attempts import router as attempts_router
 from app.api.v3.cohorts import router as cohorts_router
-from app.api.v3.dashboard.bundle import router as dashboard_router
+from app.api.v3.dashboard import router as dashboard_router
 # ============================================================================
 # Batch C: Secondary Resources (Complete CRUD)
 # ============================================================================
@@ -24,7 +24,7 @@ from app.api.v3.leaderboard.bundle import router as leaderboard_router
 from app.api.v3.logs import router as logs_router
 from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
-from app.api.v3.practice.overview import router as practice_router
+from app.api.v3.practice import router as practice_router
 from app.api.v3.pricing.analytics import router as pricing_router
 # ============================================================================
 # Batch B: Profile Routes

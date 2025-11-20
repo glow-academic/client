@@ -44,6 +44,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
+import type { OutputOf } from "@/lib/api/types";
 import {
   Column,
   ColumnDef,
@@ -71,32 +72,11 @@ import * as React from "react";
 import { toast } from "sonner";
 import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton";
 
-// New data structure for history items
-export interface HistoryDataItem {
-  attemptId: string;
-  date: Date;
-  profileId: string;
-  profileName: string;
-  simulationName: string;
-  numScenarios: number | null; // nullable for infinite mode
-  numScenariosCompleted: number;
-  infiniteMode: boolean;
-  timeLimit: number | null; // simulation time limit in seconds (from server)
-  personaNames: string[];
-  personaColors: string[];
-  score: number | null; // nullable
-  simulation_id: string;
-  department_id: string;
-  scenario_ids: string[];
-  scenario_titles: string[] | undefined;
-  isArchived: boolean;
-  showView: boolean;
-  showContinue: boolean;
-  practiceSimulation?: boolean; // Needed for routing to /practice/ vs /home/
-  passPct: number; // Pass percentage threshold for this simulation
-  cohortNames: string[];
-  practiceScenarioId?: string; // first scenario_id from attempt (for practice retry)
-}
+// Use strong server types directly (union of all history endpoint types)
+export type HistoryDataItem =
+  | OutputOf<"/api/v3/home/history", "post">["data"][number]
+  | OutputOf<"/api/v3/dashboard/history", "post">["data"][number]
+  | OutputOf<"/api/v3/practice/history", "post">["data"][number];
 
 // Inlined row actions component (from DataTableRowActions)
 function HistoryRowActions({
@@ -116,9 +96,12 @@ function HistoryRowActions({
   const isCurrentUser = effectiveProfile?.id === item.profileId;
 
   // Infinite-mode window check (owner-only)
+  // Parse date from string (server returns ISO string)
   const attemptCreatedAt = React.useMemo(() => {
     try {
-      const date = new Date(item.date);
+      // Server always returns date as string (ISO format)
+      const dateStr = item.date as string;
+      const date = new Date(dateStr);
       return isNaN(date.getTime())
         ? new Date().toISOString()
         : date.toISOString();
@@ -1008,7 +991,7 @@ export default function SimulationHistory({
         // Keep accessorFn solely to provide a sortable value (ratio)
         accessorFn: (row: HistoryDataItem) => {
           const total = row.numScenarios;
-          if (total === null || total === 0) return 0;
+          if (total === null || total === undefined || total === 0) return 0;
           return row.numScenariosCompleted / total;
         },
         // scenario filtering should read from original
@@ -1092,7 +1075,7 @@ export default function SimulationHistory({
         accessorFn: (row: HistoryDataItem) => row.score, // <-- no `|| 0`
         cell: ({ row }) => {
           const score = row.original.score; // <-- read original for display
-          if (score === null) {
+          if (score === null || score === undefined) {
             return (
               <div className="text-muted-foreground text-center min-w-0 max-w-[100px]">
                 Not graded
@@ -1120,7 +1103,8 @@ export default function SimulationHistory({
         // Use original for filter buckets too so null stays null
         filterFn: (row, _, value) => {
           const score = (row.original as HistoryDataItem).score;
-          if (score === null) return value.includes("not-graded");
+          if (score === null || score === undefined)
+            return value.includes("not-graded");
           if (score >= 80) return value.includes("excellent");
           if (score >= 70) return value.includes("good");
           return value.includes("needs-improvement");

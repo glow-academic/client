@@ -27,7 +27,7 @@ async function getProfileDetail(
 }
 
 async function getDashboard(input: DashboardIn): Promise<DashboardOut> {
-  return api.post("/dashboard", input);
+  return api.post("/dashboard/overview", input);
 }
 
 /** ---- Inline filters function for profile reports page ---- */

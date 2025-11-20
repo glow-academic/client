@@ -5,24 +5,16 @@
  * @AshokSaravanan222 & @siladiea
  * 10/15/2025
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import type {
-  BulkArchiveAttemptsIn,
-  BulkArchiveAttemptsOut,
-  DashboardOut,
-} from "@/app/(main)/analytics/dashboard/page";
+import type { DashboardOut } from "@/app/(main)/analytics/dashboard/page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { useProfile } from "@/contexts/profile-context";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import SimulationHistory, {
-  HistorySkeleton,
-} from "../common/history/SimulationHistory";
+import { HistorySkeleton } from "../common/history/SimulationHistory";
 import ScenarioPerformance from "./footer/ScenarioPerformance";
 import ScenarioStats from "./footer/ScenarioStats";
 import SimulationComposition from "./footer/SimulationComposition";
@@ -47,20 +39,12 @@ import SkillPerformance from "./secondary/SkillPerformance";
 interface DashboardProps {
   profileId?: string;
   dashboardData: DashboardOut;
-  bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn
-  ) => Promise<BulkArchiveAttemptsOut>;
-  revalidateAttemptAction?: (attemptId: string) => Promise<void>; // Optional: for redirect after retry/continue
 }
 
 export default function Dashboard({
   profileId,
   dashboardData,
-  bulkArchiveAttemptsAction,
-  revalidateAttemptAction,
 }: DashboardProps) {
-  const { effectiveProfile } = useProfile();
-
   // Carousel states
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
   const [primaryCarouselIndex, setPrimaryCarouselIndex] = useState(0);
@@ -600,12 +584,6 @@ export default function Dashboard({
     }
   };
 
-  // Determine if user can archive
-  const canArchive =
-    effectiveProfile?.role === "instructional" ||
-    effectiveProfile?.role === "admin" ||
-    effectiveProfile?.role === "superadmin";
-
   // Show no data state
   if (!bundle) {
     return (
@@ -964,23 +942,6 @@ export default function Dashboard({
           </div>
         </div>
       )}
-
-      <SimulationHistory
-        data={
-          (bundle?.history || []).map((item) => ({
-            ...item,
-            date: new Date(item.date),
-            passPct: item.passPct || 70,
-          })) as any
-        }
-        showExport={false}
-        showArchive={canArchive}
-        singleProfile={false}
-        {...(canArchive && bulkArchiveAttemptsAction
-          ? { bulkArchiveAttemptsAction }
-          : {})}
-        {...(revalidateAttemptAction && { revalidateAttemptAction })}
-      />
     </div>
   );
 }

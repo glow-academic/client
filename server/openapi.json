@@ -4794,7 +4794,7 @@
         ]
       }
     },
-    "/api/v3/dashboard": {
+    "/api/v3/dashboard/overview": {
       "post": {
         "tags": [
           "v3",
@@ -4802,7 +4802,7 @@
         ],
         "summary": "Get Dashboard",
         "description": "Get complete dashboard bundle with all metrics, history, insights, and mappings.",
-        "operationId": "get_dashboard_api_v3_dashboard_post",
+        "operationId": "get_dashboard_api_v3_dashboard_overview_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -4820,6 +4820,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DashboardBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v3/dashboard/history": {
+      "post": {
+        "tags": [
+          "v3",
+          "dashboard"
+        ],
+        "summary": "Get Dashboard History",
+        "description": "Get paginated dashboard history with search, filters, sorting, and pagination.",
+        "operationId": "get_dashboard_history_api_v3_dashboard_history_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardHistoryFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardHistoryResponse"
                 }
               }
             }
@@ -7001,7 +7048,7 @@
         ]
       }
     },
-    "/api/v3/practice": {
+    "/api/v3/practice/overview": {
       "post": {
         "tags": [
           "v3",
@@ -7009,7 +7056,7 @@
         ],
         "summary": "Get Practice Overview",
         "description": "Get practice overview data with history and all entity mappings.\n\nPractice uses simplified filters: only profileId and departmentIds.\nNo cohort/role/date filtering for personal practice.",
-        "operationId": "get_practice_overview_api_v3_practice_post",
+        "operationId": "get_practice_overview_api_v3_practice_overview_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -7027,6 +7074,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PracticeOverviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "practice"
+        ]
+      }
+    },
+    "/api/v3/practice/history": {
+      "post": {
+        "tags": [
+          "v3",
+          "practice"
+        ],
+        "summary": "Get Practice History",
+        "description": "Get paginated practice history with search, filters, sorting, and pagination.",
+        "operationId": "get_practice_history_api_v3_practice_history_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeHistoryFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeHistoryResponse"
                 }
               }
             }
@@ -11367,6 +11461,278 @@
         ],
         "title": "DashboardHeaderMetrics",
         "description": "Header metrics (10 total)."
+      },
+      "DashboardHistoryFilters": {
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "title": "Startdate"
+          },
+          "endDate": {
+            "type": "string",
+            "title": "Enddate"
+          },
+          "cohortIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohortids"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulationFilters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationfilters"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "historyProfileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historyprofileid"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize",
+            "default": 20
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          },
+          "infiniteMode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinitemode"
+          },
+          "sortBy": {
+            "type": "string",
+            "title": "Sortby",
+            "default": "date"
+          },
+          "sortOrder": {
+            "type": "string",
+            "title": "Sortorder",
+            "default": "desc"
+          }
+        },
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate"
+        ],
+        "title": "DashboardHistoryFilters",
+        "description": "Dashboard history filter request schema."
+      },
+      "DashboardHistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__dashboard__history__AttemptHistoryRow"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          },
+          "profileOptions": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Profileoptions"
+          },
+          "simulationOptions": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Simulationoptions"
+          },
+          "scenarioOptions": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenariooptions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "totalCount",
+          "page",
+          "pageSize",
+          "totalPages",
+          "profileOptions",
+          "simulationOptions",
+          "scenarioOptions"
+        ],
+        "title": "DashboardHistoryResponse",
+        "description": "Dashboard history paginated response."
       },
       "DashboardInsights": {
         "properties": {
@@ -16707,6 +17073,209 @@
         ],
         "title": "PracticeFilters",
         "description": "Practice filter request schema - simplified to profile-only."
+      },
+      "PracticeHistoryFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize",
+            "default": 20
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          },
+          "infiniteMode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinitemode"
+          },
+          "sortBy": {
+            "type": "string",
+            "title": "Sortby",
+            "default": "date"
+          },
+          "sortOrder": {
+            "type": "string",
+            "title": "Sortorder",
+            "default": "desc"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "PracticeHistoryFilters",
+        "description": "Practice history filter request schema."
+      },
+      "PracticeHistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__practice__history__AttemptHistoryRow"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          },
+          "profileOptions": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Profileoptions"
+          },
+          "simulationOptions": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Simulationoptions"
+          },
+          "scenarioOptions": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenariooptions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "totalCount",
+          "page",
+          "pageSize",
+          "totalPages",
+          "profileOptions",
+          "simulationOptions",
+          "scenarioOptions"
+        ],
+        "title": "PracticeHistoryResponse",
+        "description": "Practice history paginated response."
       },
       "PracticeOverviewResponse": {
         "properties": {
@@ -23551,6 +24120,184 @@
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
       },
+      "app__api__v3__dashboard__history__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
+      },
       "app__api__v3__departments__detail__DepartmentDetailResponse": {
         "properties": {
           "title": {
@@ -25137,6 +25884,184 @@
         ],
         "title": "PromptInfo",
         "description": "Prompt information."
+      },
+      "app__api__v3__practice__history__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row."
       },
       "app__api__v3__practice__overview__AttemptHistoryRow": {
         "properties": {

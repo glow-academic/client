@@ -21,7 +21,7 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter()
 
 
 # AttemptHistoryRow schema
@@ -1402,7 +1402,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     )
 
 
-@router.post("", response_model=DashboardBundleResponse)
+@router.post("/overview", response_model=DashboardBundleResponse)
 async def get_dashboard(
     filters: AnalyticsFilters,
     request: Request,

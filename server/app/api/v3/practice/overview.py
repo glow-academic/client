@@ -20,7 +20,7 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/practice", tags=["practice"])
+router = APIRouter()
 
 
 # Inline schemas
@@ -125,7 +125,7 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
         return obj
 
 
-@router.post("", response_model=PracticeOverviewResponse)
+@router.post("/overview", response_model=PracticeOverviewResponse)
 async def get_practice_overview(
     filters: PracticeFilters,
     request: Request,

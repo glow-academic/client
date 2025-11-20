@@ -7,7 +7,6 @@
 
 import { getSession } from "@/auth";
 
-import HistorySection from "@/components/common/history/HistorySection";
 import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
@@ -20,6 +19,8 @@ import { Suspense } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/api/v3/home/overview", "post">;
 type HomeOut = OutputOf<"/api/v3/home/overview", "post">;
+type HomeHistoryIn = InputOf<"/api/v3/home/history", "post">;
+type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
 
 /** ---- Inline filters function for home page ---- */
 async function getHomeFilters(searchParams?: URLSearchParams) {
@@ -215,7 +216,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <Home
         homeData={homeDataWithoutHistory}
         revalidateAttemptAction={revalidateAttempt}
-        initialFilters={defaultFilters}
       />
 
       {/* History section moved out of Home, fully server-driven */}
@@ -240,17 +240,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             />
           }
         >
-          <HistorySection
+          <HomeHistorySection
             defaultFilters={defaultFilters}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
-            {...(historySearch && { historySearch })}
-            {...(historyProfileIds && { historyProfileIds })}
-            {...(historySimulationIds && { historySimulationIds })}
-            {...(historyScenarioIds && { historyScenarioIds })}
-            {...(historyInfiniteMode !== undefined && {
-              historyInfiniteMode,
-            })}
+            historySearch={historySearch}
+            historyProfileIds={historyProfileIds}
+            historySimulationIds={historySimulationIds}
+            historyScenarioIds={historyScenarioIds}
+            historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
             effectiveProfileId={session?.effectiveProfileId ?? null}
@@ -262,5 +260,118 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 }
 
+/** ---- Inline history section component (only used here) ---- */
+async function HomeHistorySection({
+  defaultFilters,
+  historyPage,
+  historyPageSize,
+  historySearch,
+  historyProfileIds,
+  historySimulationIds,
+  historyScenarioIds,
+  historyInfiniteMode,
+  historySortBy,
+  historySortOrder,
+  effectiveProfileId,
+  revalidateAttemptAction,
+}: {
+  defaultFilters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
+  historyPage: number;
+  historyPageSize: number;
+  historySearch?: string | undefined;
+  historyProfileIds?: string[] | undefined;
+  historySimulationIds?: string[] | undefined;
+  historyScenarioIds?: string[] | undefined;
+  historyInfiniteMode?: boolean | undefined;
+  historySortBy: string;
+  historySortOrder: string;
+  effectiveProfileId?: string | null;
+  revalidateAttemptAction: (attemptId: string) => Promise<void>;
+}) {
+  // Build history filters matching logic from page.tsx
+  const historyFilters: HomeHistoryIn = {
+    body: {
+      profileId: effectiveProfileId || null,
+      startDate: defaultFilters.startDate,
+      endDate: defaultFilters.endDate,
+      cohortIds: defaultFilters.cohortIds,
+      departmentIds: defaultFilters.departmentIds,
+      roles: defaultFilters.roles,
+      page: historyPage,
+      pageSize: historyPageSize,
+      ...(historySearch && { search: historySearch }),
+      ...(historyProfileIds &&
+        historyProfileIds.length > 0 && {
+          profileIds: historyProfileIds,
+        }),
+      ...(historySimulationIds &&
+        historySimulationIds.length > 0 && {
+          simulationIds: historySimulationIds,
+        }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          scenarioIds: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        infiniteMode: historyInfiniteMode,
+      }),
+      sortBy: historySortBy,
+      sortOrder: historySortOrder,
+    },
+  };
+
+  const historyData = await api.post("/home/history", historyFilters);
+
+  // Use server-provided data directly (no transformation needed)
+  // Extract options from API response and cast to expected format
+  const profileOptions = (historyData.profileOptions || []).map((opt) => {
+    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    return {
+      value: String(opt["value"] || ""),
+      label: String(opt["label"] || ""),
+      ...(count !== undefined && { count }),
+    };
+  });
+  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
+    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    return {
+      value: String(opt["value"] || ""),
+      label: String(opt["label"] || ""),
+      ...(count !== undefined && { count }),
+    };
+  });
+  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
+    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    return {
+      value: String(opt["value"] || ""),
+      label: String(opt["label"] || ""),
+      ...(count !== undefined && { count }),
+    };
+  });
+
+  return (
+    <SimulationHistory
+      data={historyData.data}
+      totalCount={historyData.totalCount}
+      pageIndex={historyPage}
+      pageSize={historyPageSize}
+      showExport={true}
+      showArchive={false}
+      singleProfile={true}
+      revalidateAttemptAction={revalidateAttemptAction}
+      initialFilters={defaultFilters}
+      profileOptions={profileOptions}
+      simulationOptions={simulationOptions}
+      scenarioOptions={scenarioOptions}
+    />
+  );
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
-export type { HomeIn, HomeOut };
+export type { HomeHistoryIn, HomeHistoryOut, HomeIn, HomeOut };

@@ -15,9 +15,7 @@ import { useProfile } from "@/contexts/profile-context";
 // Note: createPracticeScenario endpoint is deprecated on backend (returns 410)
 // This functionality needs to be re-implemented or removed
 import { Skeleton } from "@/components/ui/skeleton";
-import SimulationHistory, {
-  HistorySkeleton,
-} from "../common/history/SimulationHistory";
+import { HistorySkeleton } from "../common/history/SimulationHistory";
 import { PracticeCustomizeDialog } from "./PracticeCustomizeDialog";
 import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
@@ -62,7 +60,6 @@ export default function Practice({
   // Extract data from practiceData
   const bundle = practiceData;
   const practiceOverview = bundle;
-  const historyData = practiceData?.history;
 
   // Extract entity mappings for PracticeCustomizeDialog (memoized to prevent reference changes)
   const personaMapping = useMemo(
@@ -308,47 +305,6 @@ export default function Practice({
           onStartInfiniteMode={handleStartInfiniteMode}
           loadingSimulation={loadingSimulation}
         />
-        {/* History Section for non-guests */}
-        {effectiveProfile?.role !== "guest" && (
-          <div className="space-y-2">
-            <SimulationHistory
-              data={
-                historyData
-                  ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    historyData.map((item: any) => ({
-                      attemptId: item.attemptId,
-                      date: new Date(item.date),
-                      profileId: item.profileId,
-                      profileName: item.profileName,
-                      simulationName: item.simulationName,
-                      numScenarios: item.numScenarios,
-                      numScenariosCompleted: item.numScenariosCompleted,
-                      infiniteMode: item.infiniteMode,
-                      timeLimit: item.timeLimit ?? null, // timeLimit comes from server in seconds
-                      personaNames: item.personaNames,
-                      personaColors: item.personaColors,
-                      score: item.score,
-                      simulation_id: item.simulation_id,
-                      department_id: item.department_ids?.[0] ?? "",
-                      scenario_titles: item.scenario_titles,
-                      scenario_ids: item.scenario_ids,
-                      isArchived: item.isArchived,
-                      showView: item.showView,
-                      showContinue: item.showContinue,
-                      practiceSimulation: item.practiceSimulation,
-                      passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
-                      cohortNames: item.cohortNames,
-                      practiceScenarioId: item.practiceScenarioId,
-                    }))
-                  : []
-              }
-              showExport={false}
-              showArchive={false}
-              singleProfile={true}
-              revalidateAttemptAction={revalidateAttemptAction}
-            />
-          </div>
-        )}
       </div>
 
       {/* Practice Customize Dialog */}

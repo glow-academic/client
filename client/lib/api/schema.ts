@@ -2239,7 +2239,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/dashboard": {
+    "/api/v3/dashboard/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -2252,7 +2252,27 @@ export interface paths {
          * Get Dashboard
          * @description Get complete dashboard bundle with all metrics, history, insights, and mappings.
          */
-        post: operations["get_dashboard_api_v3_dashboard_post"];
+        post: operations["get_dashboard_api_v3_dashboard_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/dashboard/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Dashboard History
+         * @description Get paginated dashboard history with search, filters, sorting, and pagination.
+         */
+        post: operations["get_dashboard_history_api_v3_dashboard_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3212,7 +3232,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/practice": {
+    "/api/v3/practice/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -3228,7 +3248,27 @@ export interface paths {
          *     Practice uses simplified filters: only profileId and departmentIds.
          *     No cohort/role/date filtering for personal practice.
          */
-        post: operations["get_practice_overview_api_v3_practice_post"];
+        post: operations["get_practice_overview_api_v3_practice_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/practice/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Practice History
+         * @description Get paginated practice history with search, filters, sorting, and pagination.
+         */
+        post: operations["get_practice_history_api_v3_practice_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5000,6 +5040,86 @@ export interface components {
             stagnationRate: components["schemas"]["MetricResponse"];
             timeSpent: components["schemas"]["MetricResponse"];
             totalAttempts: components["schemas"]["MetricResponse"];
+        };
+        /**
+         * DashboardHistoryFilters
+         * @description Dashboard history filter request schema.
+         */
+        DashboardHistoryFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: string[] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Historyprofileid */
+            historyProfileId?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 20
+             */
+            pageSize: number;
+            /** Search */
+            search?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Infinitemode */
+            infiniteMode?: boolean | null;
+            /**
+             * Sortby
+             * @default date
+             */
+            sortBy: string;
+            /**
+             * Sortorder
+             * @default desc
+             */
+            sortOrder: string;
+        };
+        /**
+         * DashboardHistoryResponse
+         * @description Dashboard history paginated response.
+         */
+        DashboardHistoryResponse: {
+            /** Data */
+            data: components["schemas"]["app__api__v3__dashboard__history__AttemptHistoryRow"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /** Profileoptions */
+            profileOptions: {
+                [key: string]: string | number;
+            }[];
+            /** Simulationoptions */
+            simulationOptions: {
+                [key: string]: string | number;
+            }[];
+            /** Scenariooptions */
+            scenarioOptions: {
+                [key: string]: string | number;
+            }[];
         };
         /**
          * DashboardInsights
@@ -7073,6 +7193,74 @@ export interface components {
             profileId: string;
             /** Departmentids */
             departmentIds?: string[] | null;
+        };
+        /**
+         * PracticeHistoryFilters
+         * @description Practice history filter request schema.
+         */
+        PracticeHistoryFilters: {
+            /** Profileid */
+            profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 20
+             */
+            pageSize: number;
+            /** Search */
+            search?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Infinitemode */
+            infiniteMode?: boolean | null;
+            /**
+             * Sortby
+             * @default date
+             */
+            sortBy: string;
+            /**
+             * Sortorder
+             * @default desc
+             */
+            sortOrder: string;
+        };
+        /**
+         * PracticeHistoryResponse
+         * @description Practice history paginated response.
+         */
+        PracticeHistoryResponse: {
+            /** Data */
+            data: components["schemas"]["app__api__v3__practice__history__AttemptHistoryRow"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /** Profileoptions */
+            profileOptions: {
+                [key: string]: string | number;
+            }[];
+            /** Simulationoptions */
+            simulationOptions: {
+                [key: string]: string | number;
+            }[];
+            /** Scenariooptions */
+            scenarioOptions: {
+                [key: string]: string | number;
+            }[];
         };
         /**
          * PracticeOverviewResponse
@@ -9726,6 +9914,58 @@ export interface components {
             practiceScenarioId?: string | null;
         };
         /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__dashboard__history__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
+        };
+        /**
          * DepartmentDetailResponse
          * @description Response for department detail.
          */
@@ -10312,6 +10552,58 @@ export interface components {
             department_ids: string[] | null;
             /** Can Delete */
             can_delete: boolean;
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__practice__history__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -14380,7 +14672,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_api_v3_dashboard_post: {
+    get_dashboard_api_v3_dashboard_overview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -14400,6 +14692,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_history_api_v3_dashboard_history_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardHistoryFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardHistoryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -15920,7 +16245,7 @@ export interface operations {
             };
         };
     };
-    get_practice_overview_api_v3_practice_post: {
+    get_practice_overview_api_v3_practice_overview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15940,6 +16265,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PracticeOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_history_api_v3_practice_history_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeHistoryFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeHistoryResponse"];
                 };
             };
             /** @description Validation Error */

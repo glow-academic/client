@@ -25,20 +25,9 @@ import SimulationProgress, {
 export interface HomeProps {
   homeData: HomeOut;
   revalidateAttemptAction: (attemptId: string) => Promise<void>;
-  initialFilters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-  };
 }
 
-export default function Home({
-  homeData,
-  revalidateAttemptAction,
-  initialFilters,
-}: HomeProps) {
+export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
   const {
     effectiveProfile,
     activeProfile,
