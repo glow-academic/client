@@ -1342,9 +1342,8 @@ export default function SimulationHistory({
 
   return (
     <div className="space-y-4">
-      {/* Toolbar - inlined from DataTableToolbar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
+        <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0 min-w-0">
           {/* Mobile: If showExport, wrap search and certificate button in 50/50 flex */}
           {showExport ? (
             <div className="flex gap-2 w-full md:w-auto md:flex-initial">
@@ -1418,57 +1417,67 @@ export default function SimulationHistory({
             />
           )}
           {/* Filters - separate row on mobile to prevent flicker */}
-          <div className="flex items-center space-x-2 flex-wrap">
-            {/* Name filter - only show if profileId column exists and has options */}
-            {profileIdColumn && filteredProfileOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={profileIdColumn}
-                title="Name"
-                options={filteredProfileOptions}
-                isServerDriven={true}
-              />
-            )}
+          {isLoading ? (
+            <div className="flex items-center space-x-2 overflow-x-auto flex-nowrap min-w-0 max-w-[600px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {/* Skeleton filters - show typical filter layout */}
+              <Skeleton className="h-8 w-[120px]" />
+              <Skeleton className="h-8 w-[140px]" />
+              <Skeleton className="h-8 w-[160px]" />
+              <Skeleton className="h-8 w-[100px] hidden md:block" />
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 overflow-x-auto flex-nowrap min-w-0 max-w-[600px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {/* Name filter - only show if profileId column exists and has options */}
+              {profileIdColumn && filteredProfileOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={profileIdColumn}
+                  title="Name"
+                  options={filteredProfileOptions}
+                  isServerDriven={true}
+                />
+              )}
 
-            {/* Simulation filter */}
-            {simulationIdColumn && simulationOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={simulationIdColumn}
-                title="Simulation"
-                options={simulationOptions}
-                isServerDriven={true}
-              />
-            )}
+              {/* Simulation filter */}
+              {simulationIdColumn && simulationOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={simulationIdColumn}
+                  title="Simulation"
+                  options={simulationOptions}
+                  isServerDriven={true}
+                />
+              )}
 
-            {/* Scenarios filter */}
-            {scenariosColumn && scenarioOptions.length > 0 && (
-              <DataTableFacetedFilter
-                column={scenariosColumn}
-                title="Scenarios"
-                options={scenarioOptions}
-                isServerDriven={true}
-              />
-            )}
+              {/* Scenarios filter */}
+              {scenariosColumn && scenarioOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={scenariosColumn}
+                  title="Scenarios"
+                  options={scenarioOptions}
+                  isServerDriven={true}
+                />
+              )}
 
-            {/* Mode filter - only show when not all 3 other filters are visible */}
-            {shouldShowModeFilter && (
-              <DataTableFacetedFilter
-                column={infiniteModeColumn}
-                title="Mode"
-                options={infiniteModeOptions}
-              />
-            )}
+              {/* Mode filter - only show when not all 3 other filters are visible */}
+              {shouldShowModeFilter && (
+                <DataTableFacetedFilter
+                  column={infiniteModeColumn}
+                  title="Mode"
+                  options={infiniteModeOptions}
+                />
+              )}
 
-            {isFiltered && (
-              <Button
-                variant="ghost"
-                onClick={() => table.resetColumnFilters()}
-                className="h-8 px-2 lg:px-3 hidden md:flex"
-              >
-                Reset
-                <X className="ml-2 h-4 w-4" />
-              </Button>
-            )}
-          </div>
+              {isFiltered && (
+                <Button
+                  variant="ghost"
+                  onClick={() => table.resetColumnFilters()}
+                  className="h-8 px-2 lg:px-3 hidden md:flex"
+                >
+                  Reset
+                  <X className="ml-2 h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           {/* Select All Rows button - only show when showArchive is true, some rows are selected, but not all filtered */}
@@ -1523,7 +1532,6 @@ export default function SimulationHistory({
               />
             </div>
           )}
-
           <DataTableViewOptions table={table} />
         </div>
       </div>
@@ -1686,7 +1694,43 @@ export default function SimulationHistory({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      {isLoading ? (
+        <div className="flex items-center px-2">
+          {/* Mobile skeleton layout */}
+          <div className="flex items-center flex-1 md:hidden">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-[70px]" />
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-8 rounded-md" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </div>
+          </div>
+          {/* Desktop skeleton layout */}
+          <div className="hidden md:flex items-center justify-between w-full">
+            <div className="flex-1"></div>
+            <div className="flex items-center space-x-6 lg:space-x-8">
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-[70px]" />
+              </div>
+              <Skeleton className="h-4 w-[100px]" />
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-8 w-8 rounded-md hidden lg:block" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <Skeleton className="h-8 w-8 rounded-md hidden lg:block" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <DataTablePagination table={table} />
+      )}
 
       {/* Bulk Archive Confirmation Dialog */}
       <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
