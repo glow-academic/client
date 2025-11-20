@@ -25,7 +25,7 @@ from app.api.v3.logs import router as logs_router
 from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
 from app.api.v3.practice import router as practice_router
-from app.api.v3.pricing.analytics import router as pricing_router
+from app.api.v3.pricing import router as pricing_router
 # ============================================================================
 # Batch B: Profile Routes
 # ============================================================================

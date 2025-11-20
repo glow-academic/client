@@ -8,9 +8,12 @@
  * - Displays summary cards and a stacked area chart (per model) + total line
  */
 
-import type { PricingOut } from "@/app/(main)/analytics/pricing/page";
+import type {
+  PricingOut,
+  PricingRunsOut,
+} from "@/app/(main)/analytics/pricing/page";
 import { format } from "date-fns";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { TooltipProps } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,12 +148,23 @@ function SortedChartTooltipContent({
 
 interface PricingProps {
   pricingData: PricingOut;
+  runsData: PricingRunsOut;
+  isLoading?: boolean;
+  modelOptions: Array<{ value: string; label: string; count?: number }>;
+  profileOptions: Array<{ value: string; label: string; count?: number }>;
+  actorOptions: Array<{ value: string; label: string; count?: number }>;
 }
 
-export default function Pricing({ pricingData }: PricingProps) {
-  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
-  const [selectedActorIds, setSelectedActorIds] = useState<string[]>([]); // Combined agent/persona IDs
-  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+export default function Pricing({
+  pricingData,
+  runsData,
+  isLoading = false,
+  modelOptions,
+  profileOptions,
+  actorOptions,
+}: PricingProps) {
+  // Chart uses all data from summary endpoint (no filtering)
+  // Table uses paginated/filtered data from runs endpoint
   // Extract data from V3 API response
   const modelRuns = useMemo(() => pricingData?.model_runs || [], [pricingData]);
   const modelMapping = useMemo(
@@ -170,23 +184,18 @@ export default function Pricing({ pricingData }: PricingProps) {
     [pricingData]
   );
 
-  // Compute spend per run and aggregate by day, filtered by agents/personas/profiles; series per model
-  const { chartData, totals, chartConfig, filteredRuns } = useMemo(() => {
+  // Compute spend per run and aggregate by day (chart shows all data, no filtering)
+  const { chartData, totals, chartConfig } = useMemo(() => {
     if (!modelRuns?.length || Object.keys(modelMapping).length === 0) {
       return {
         chartData: [] as Array<Record<string, number | string>>,
         totals: { totalSpend: 0, runCount: 0, avgCost: 0 },
         chartConfig: {} as Record<string, { label: string; color: string }>,
-        filteredRuns: [] as typeof modelRuns,
       };
     }
 
-    // Build include sets (empty selection means All)
-    const includeModels = new Set(
-      selectedModelIds.length ? selectedModelIds : Object.keys(modelMapping)
-    );
-    const includeActors = new Set(selectedActorIds); // Combined agents and personas
-    const includeProfiles = new Set(selectedProfileIds);
+    // Include all models (chart shows all data)
+    const includeModels = new Set(Object.keys(modelMapping));
 
     const byDay = new Map<
       string,
@@ -196,28 +205,10 @@ export default function Pricing({ pricingData }: PricingProps) {
     let totalSpend = 0;
     let runCount = 0;
 
-    const matchedRuns: typeof modelRuns = [];
+    // Process all runs (no filtering for chart)
     for (const run of modelRuns) {
       const modelId = run.model_id;
-      const runProfileId = run.profile_id;
-      const runAgentId = run.agent_id;
-      const runPersonaId = run.persona_id;
-
       if (!modelId || !includeModels.has(modelId)) continue;
-      // Check if run matches any selected actor (agent or persona) - additive filtering
-      if (
-        includeActors.size > 0 &&
-        (!runAgentId || !includeActors.has(runAgentId)) &&
-        (!runPersonaId || !includeActors.has(runPersonaId))
-      )
-        continue;
-      if (
-        includeProfiles.size > 0 &&
-        (!runProfileId || !includeProfiles.has(runProfileId))
-      )
-        continue;
-
-      matchedRuns.push(run);
 
       // Pricing comes from model mapping
       const modelInfo = modelMapping[modelId];
@@ -287,19 +278,12 @@ export default function Pricing({ pricingData }: PricingProps) {
         avgCost: runCount ? Number((totalSpend / runCount).toFixed(2)) : 0,
       },
       chartConfig: config,
-      filteredRuns: matchedRuns,
     };
-  }, [
-    modelRuns,
-    modelMapping,
-    selectedModelIds,
-    selectedActorIds,
-    selectedProfileIds,
-  ]);
+  }, [modelRuns, modelMapping]);
 
-  // Build rows for runs table
+  // Build rows for runs table from runsData (server-driven, paginated)
   const runRows = useMemo(() => {
-    return (filteredRuns || []).map((run) => {
+    return (runsData?.data || []).map((run) => {
       const modelId = run.model_id ?? null;
       const agentId = run.agent_id ?? null;
       const personaId = run.persona_id ?? null;
@@ -338,7 +322,7 @@ export default function Pricing({ pricingData }: PricingProps) {
       return row;
     });
   }, [
-    filteredRuns,
+    runsData?.data,
     modelMapping,
     agentMapping,
     personaMapping,
@@ -423,10 +407,7 @@ export default function Pricing({ pricingData }: PricingProps) {
                 <ChartLegend content={<ChartLegendContent />} />
 
                 {/* Stacked areas per selected models */}
-                {(selectedModelIds.length
-                  ? selectedModelIds
-                  : Object.keys(modelMapping)
-                ).map((id) => (
+                {Object.keys(modelMapping).map((id) => (
                   <Area
                     key={id}
                     type="monotone"
@@ -480,16 +461,16 @@ export default function Pricing({ pricingData }: PricingProps) {
       <div className="mt-6" data-testid="pricing-runs-table">
         <RunsDataTable
           rows={runRows}
-          modelMapping={modelMapping}
-          profileMapping={profileMapping}
-          agentMapping={agentMapping}
-          personaMapping={personaMapping}
-          selectedModelIds={selectedModelIds}
-          selectedActorIds={selectedActorIds}
-          selectedProfileIds={selectedProfileIds}
-          setSelectedModelIds={setSelectedModelIds}
-          setSelectedActorIds={setSelectedActorIds}
-          setSelectedProfileIds={setSelectedProfileIds}
+          modelMapping={runsData?.model_mapping || {}}
+          profileMapping={runsData?.profile_mapping || {}}
+          agentMapping={runsData?.agent_mapping || {}}
+          personaMapping={runsData?.persona_mapping || {}}
+          isLoading={isLoading}
+          modelOptions={modelOptions}
+          profileOptions={profileOptions}
+          actorOptions={actorOptions}
+          totalCount={runsData?.totalCount || 0}
+          totalPages={runsData?.totalPages || 0}
         />
       </div>
     </div>

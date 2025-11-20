@@ -8,12 +8,10 @@ import {
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { Bug } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
@@ -32,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { useProfile } from "@/contexts/profile-context";
 import { format } from "date-fns";
 import { X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type DebugInfoItem = {
   id: string;
@@ -76,12 +75,12 @@ export interface RunsDataTableProps {
   profileMapping: Record<string, string>;
   agentMapping: Record<string, string>;
   personaMapping: Record<string, string>;
-  selectedModelIds: string[];
-  selectedActorIds: string[]; // Combined agent/persona IDs
-  selectedProfileIds: string[];
-  setSelectedModelIds: (ids: string[]) => void;
-  setSelectedActorIds: (ids: string[]) => void;
-  setSelectedProfileIds: (ids: string[]) => void;
+  isLoading?: boolean;
+  modelOptions: Array<{ value: string; label: string; count?: number }>;
+  profileOptions: Array<{ value: string; label: string; count?: number }>;
+  actorOptions: Array<{ value: string; label: string; count?: number }>;
+  totalCount: number;
+  totalPages: number;
 }
 
 export function RunsDataTable({
@@ -90,27 +89,179 @@ export function RunsDataTable({
   profileMapping,
   agentMapping,
   personaMapping,
-  selectedModelIds,
-  selectedActorIds,
-  selectedProfileIds,
-  setSelectedModelIds,
-  setSelectedActorIds,
-  setSelectedProfileIds,
+  isLoading = false,
+  modelOptions,
+  profileOptions,
+  actorOptions,
+  totalCount,
+  totalPages,
 }: RunsDataTableProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { effectiveProfile } = useProfile();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
-  const [runIdSearch, setRunIdSearch] = React.useState("");
+
+  // Ref for the search input
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Local search state, initialized from URL
+  const [searchTerm, setSearchTerm] = React.useState(
+    searchParams.get("pricingSearch") || ""
+  );
+
+  // Ref to track debounce timeout for search
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Keep local state in sync if URL changes (back/forward, link, etc.)
+  React.useEffect(() => {
+    const urlSearch = searchParams.get("pricingSearch") || "";
+    setSearchTerm(urlSearch);
+  }, [searchParams]);
+
+  // Whenever we have a searchTerm, keep the input focused
+  React.useEffect(() => {
+    if (!searchInputRef.current) return;
+    if (!searchTerm) return; // don't auto-focus on completely empty state
+
+    const el = searchInputRef.current;
+    el.focus();
+    const len = searchTerm.length;
+    // put cursor at end of text
+    try {
+      el.setSelectionRange(len, len);
+    } catch {
+      // some browsers can be picky; ignore
+    }
+  }, [searchTerm]);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       modelIdFilter: false,
       profileIdFilter: false,
+      actorIdFilter: false,
     });
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+
+  // Sync URL params for sorting
+  const sortBy = searchParams.get("pricingSortBy") || "createdAt";
+  const sortOrder = searchParams.get("pricingSortOrder") || "desc";
+  const sorting: SortingState = React.useMemo(
+    () => [{ id: sortBy, desc: sortOrder === "desc" }],
+    [sortBy, sortOrder]
   );
-  const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "createdAt", desc: true },
-  ]);
+
+  // Sync URL params for filters
+  const pricingModelIdsParam = searchParams.get("pricingModelIds");
+  const pricingProfileIdsParam = searchParams.get("pricingProfileIds");
+  const pricingActorIdsParam = searchParams.get("pricingActorIds");
+
+  const pricingModelIds = React.useMemo(
+    () =>
+      pricingModelIdsParam
+        ? pricingModelIdsParam.split(",").filter(Boolean)
+        : [],
+    [pricingModelIdsParam]
+  );
+  const pricingProfileIds = React.useMemo(
+    () =>
+      pricingProfileIdsParam
+        ? pricingProfileIdsParam.split(",").filter(Boolean)
+        : [],
+    [pricingProfileIdsParam]
+  );
+  const pricingActorIds = React.useMemo(
+    () =>
+      pricingActorIdsParam
+        ? pricingActorIdsParam.split(",").filter(Boolean)
+        : [],
+    [pricingActorIdsParam]
+  );
+
+  // Sync column filters with URL params (for DataTableFacetedFilter compatibility)
+  const columnFilters: ColumnFiltersState = React.useMemo(() => {
+    const filters: ColumnFiltersState = [];
+    if (pricingModelIds.length > 0) {
+      filters.push({ id: "modelIdFilter", value: pricingModelIds });
+    }
+    if (pricingProfileIds.length > 0) {
+      filters.push({ id: "profileIdFilter", value: pricingProfileIds });
+    }
+    if (pricingActorIds.length > 0) {
+      filters.push({ id: "actorIdFilter", value: pricingActorIds });
+    }
+    return filters;
+  }, [pricingModelIds, pricingProfileIds, pricingActorIds]);
+
+  // Helper to update URL params (removes default values)
+  const updateURLParams = React.useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "") {
+          params.delete(key);
+        } else {
+          // Remove default values from URL
+          if (key === "pricingPage" && value === "0") {
+            params.delete(key);
+          } else if (key === "pricingPageSize" && value === "10") {
+            params.delete(key);
+          } else if (key === "pricingSortBy" && value === "createdAt") {
+            params.delete(key);
+          } else if (key === "pricingSortOrder" && value === "desc") {
+            params.delete(key);
+          } else {
+            params.set(key, value);
+          }
+        }
+      });
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  // Commit search to URL (called on Enter or blur, or after debounce)
+  const commitSearch = React.useCallback(
+    (value: string) => {
+      updateURLParams({
+        pricingPage: "0",
+        pricingSearch: value.trim() || null,
+      });
+    },
+    [updateURLParams]
+  );
+
+  // Handle search input change with debounce
+  const handleSearchChange = React.useCallback(
+    (value: string) => {
+      // Update local state immediately for responsive UI
+      setSearchTerm(value);
+
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // If query becomes empty, commit immediately (no debounce)
+      if (value === "") {
+        commitSearch("");
+        return;
+      }
+
+      // Otherwise, debounce the search (500ms delay)
+      searchTimeoutRef.current = setTimeout(() => {
+        commitSearch(value);
+      }, 500);
+    },
+    [commitSearch]
+  );
 
   const columns = React.useMemo<ColumnDef<ModelRunRow>[]>(() => {
     const cols: ColumnDef<ModelRunRow>[] = [
@@ -307,53 +458,114 @@ export function RunsDataTable({
     return cols;
   }, [isSuperadmin]);
 
-  // Filter rows by search
-  const filteredRows = React.useMemo(() => {
-    if (!runIdSearch) return rows;
-    const searchLower = runIdSearch.toLowerCase();
-    return rows.filter((r) => {
-      // Search across model, persona, agent, name, and debug info
-      const matchesModel = r.modelName?.toLowerCase().includes(searchLower);
-      const matchesPersona = r.personaName?.toLowerCase().includes(searchLower);
-      const matchesAgent = r.agentName?.toLowerCase().includes(searchLower);
-      const matchesProfile = r.profileName?.toLowerCase().includes(searchLower);
+  // Extract pagination metadata from URL params
+  const pricingPage = searchParams.get("pricingPage")
+    ? parseInt(searchParams.get("pricingPage") || "0", 10)
+    : 0;
+  const pricingPageSize = searchParams.get("pricingPageSize")
+    ? parseInt(searchParams.get("pricingPageSize") || "10", 10)
+    : 10;
 
-      // Search debug info content if present
-      const matchesDebugInfo = r.debugInfo?.some((debugItem) =>
-        debugItem.content?.toLowerCase().includes(searchLower)
-      );
+  // Handle sorting change
+  const handleSortingChange = React.useCallback(
+    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
 
-      return (
-        matchesModel ||
-        matchesPersona ||
-        matchesAgent ||
-        matchesProfile ||
-        matchesDebugInfo
-      );
-    });
-  }, [rows, runIdSearch]);
+      const sortBy = newSorting[0]?.id || "createdAt";
+      const sortOrder = newSorting[0]?.desc ? "desc" : "asc";
+
+      // Reset to page 0 whenever sort changes
+      updateURLParams({
+        pricingPage: "0",
+        pricingSortBy: sortBy,
+        pricingSortOrder: sortOrder,
+      });
+    },
+    [sorting, updateURLParams]
+  );
+
+  // Handle column filters change
+  const handleColumnFiltersChange = React.useCallback(
+    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+      const newFilters =
+        typeof updater === "function" ? updater(columnFilters) : updater;
+
+      const modelFilter = newFilters.find((f) => f.id === "modelIdFilter");
+      const profileFilter = newFilters.find((f) => f.id === "profileIdFilter");
+      const actorFilter = newFilters.find((f) => f.id === "actorIdFilter");
+
+      updateURLParams({
+        pricingPage: "0",
+        pricingModelIds:
+          modelFilter &&
+          Array.isArray(modelFilter.value) &&
+          modelFilter.value.length > 0
+            ? modelFilter.value.join(",")
+            : null,
+        pricingProfileIds:
+          profileFilter &&
+          Array.isArray(profileFilter.value) &&
+          profileFilter.value.length > 0
+            ? profileFilter.value.join(",")
+            : null,
+        pricingActorIds:
+          actorFilter &&
+          Array.isArray(actorFilter.value) &&
+          actorFilter.value.length > 0
+            ? actorFilter.value.join(",")
+            : null,
+      });
+    },
+    [columnFilters, updateURLParams]
+  );
+
+  // Handle pagination change
+  const handlePaginationChange = React.useCallback(
+    (
+      updater:
+        | { pageIndex: number; pageSize: number }
+        | ((prev: { pageIndex: number; pageSize: number }) => {
+            pageIndex: number;
+            pageSize: number;
+          })
+    ) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex: pricingPage, pageSize: pricingPageSize })
+          : updater;
+      updateURLParams({
+        pricingPage: String(newPagination.pageIndex),
+        pricingPageSize: String(newPagination.pageSize),
+      });
+    },
+    [pricingPage, pricingPageSize, updateURLParams]
+  );
 
   const table = useReactTable({
-    data: filteredRows,
+    data: rows,
     columns,
     state: {
       sorting,
       columnVisibility,
       columnFilters,
+      pagination: {
+        pageIndex: pricingPage,
+        pageSize: pricingPageSize,
+      },
     },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     onColumnVisibilityChange: setColumnVisibility,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    manualPagination: true, // Server-driven pagination
+    manualSorting: true, // Server-driven sorting
+    manualFiltering: true, // Server-driven filtering
+    pageCount: totalPages,
     initialState: {
-      pagination: {
-        pageSize: 10,
-      },
       columnVisibility: {
         actorIdFilter: false,
         modelIdFilter: false,
@@ -376,175 +588,20 @@ export function RunsDataTable({
     // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
     sortingKey,
     columnFiltersKey,
-    filteredRows.length,
+    rows.length,
     // Use pagination primitives directly (not object references)
     pageIndex,
     pageSize,
   ]);
 
-  // Build filter options from mappings
-  const modelOptions = React.useMemo(() => {
-    return Object.entries(modelMapping).map(([id, data]) => ({
-      value: id,
-      label: data.name,
-    }));
-  }, [modelMapping]);
-
-  const profileOptions = React.useMemo(() => {
-    return Object.entries(profileMapping).map(([id, name]) => ({
-      value: id,
-      label: name,
-    }));
-  }, [profileMapping]);
-
-  // Combine agent and persona mappings into single actor options
-  const actorOptions = React.useMemo(() => {
-    const options: { value: string; label: string }[] = [];
-    // Add agents
-    Object.entries(agentMapping).forEach(([id, name]) => {
-      options.push({ value: id, label: name });
-    });
-    // Add personas
-    Object.entries(personaMapping).forEach(([id, name]) => {
-      options.push({ value: id, label: name });
-    });
-    return options;
-  }, [agentMapping, personaMapping]);
-
-  // Initialize table filter from props (only on mount or when props change externally)
-  React.useEffect(() => {
-    const actorIdFilterColumn = table.getColumn("actorIdFilter");
-    if (actorIdFilterColumn) {
-      const currentFilter = actorIdFilterColumn.getFilterValue() as
-        | string[]
-        | undefined;
-      const currentIds = currentFilter || [];
-      const selectedIds = selectedActorIds || [];
-      // Only update if they're different (avoid unnecessary updates)
-      if (
-        currentIds.length !== selectedIds.length ||
-        !currentIds.every((id) => selectedIds.includes(id)) ||
-        !selectedIds.every((id) => currentIds.includes(id))
-      ) {
-        actorIdFilterColumn.setFilterValue(
-          selectedActorIds.length > 0 ? selectedActorIds : undefined
-        );
-      }
-    }
-  }, [selectedActorIds, table]);
-
-  // Sync table filter changes back to selectedActorIds when user interacts with filter
-  React.useEffect(() => {
-    const actorIdFilterColumn = table.getColumn("actorIdFilter");
-    if (actorIdFilterColumn) {
-      const filterValue = actorIdFilterColumn.getFilterValue() as
-        | string[]
-        | undefined;
-      const newActorIds = filterValue || [];
-      const currentIds = selectedActorIds || [];
-      // Only update if they're different (avoid circular updates)
-      if (
-        newActorIds.length !== currentIds.length ||
-        !newActorIds.every((id) => currentIds.includes(id)) ||
-        !currentIds.every((id) => newActorIds.includes(id))
-      ) {
-        setSelectedActorIds(newActorIds);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table.getState().columnFilters]);
-
-  // Sync selectedModelIds with table filter
-  React.useEffect(() => {
-    const modelIdFilterColumn = table.getColumn("modelIdFilter");
-    if (modelIdFilterColumn) {
-      const currentFilter = modelIdFilterColumn.getFilterValue() as
-        | string[]
-        | undefined;
-      const currentIds = currentFilter || [];
-      const selectedIds = selectedModelIds || [];
-      if (
-        currentIds.length !== selectedIds.length ||
-        !currentIds.every((id) => selectedIds.includes(id)) ||
-        !selectedIds.every((id) => currentIds.includes(id))
-      ) {
-        modelIdFilterColumn.setFilterValue(
-          selectedModelIds.length > 0 ? selectedModelIds : undefined
-        );
-      }
-    }
-  }, [selectedModelIds, table]);
-
-  // Sync table filter changes back to selectedModelIds
-  React.useEffect(() => {
-    const modelIdFilterColumn = table.getColumn("modelIdFilter");
-    if (modelIdFilterColumn) {
-      const filterValue = modelIdFilterColumn.getFilterValue() as
-        | string[]
-        | undefined;
-      const newModelIds = filterValue || [];
-      const currentIds = selectedModelIds || [];
-      if (
-        newModelIds.length !== currentIds.length ||
-        !newModelIds.every((id) => currentIds.includes(id)) ||
-        !currentIds.every((id) => newModelIds.includes(id))
-      ) {
-        setSelectedModelIds(newModelIds);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table.getState().columnFilters]);
-
-  // Sync selectedProfileIds with table filter
-  React.useEffect(() => {
-    const profileIdFilterColumn = table.getColumn("profileIdFilter");
-    if (profileIdFilterColumn) {
-      const currentFilter = profileIdFilterColumn.getFilterValue() as
-        | string[]
-        | undefined;
-      const currentIds = currentFilter || [];
-      const selectedIds = selectedProfileIds || [];
-      if (
-        currentIds.length !== selectedIds.length ||
-        !currentIds.every((id) => selectedIds.includes(id)) ||
-        !selectedIds.every((id) => currentIds.includes(id))
-      ) {
-        profileIdFilterColumn.setFilterValue(
-          selectedProfileIds.length > 0 ? selectedProfileIds : undefined
-        );
-      }
-    }
-  }, [selectedProfileIds, table]);
-
-  // Sync table filter changes back to selectedProfileIds
-  React.useEffect(() => {
-    const profileIdFilterColumn = table.getColumn("profileIdFilter");
-    if (profileIdFilterColumn) {
-      const filterValue = profileIdFilterColumn.getFilterValue() as
-        | string[]
-        | undefined;
-      const newProfileIds = filterValue || [];
-      const currentIds = selectedProfileIds || [];
-      if (
-        newProfileIds.length !== currentIds.length ||
-        !newProfileIds.every((id) => currentIds.includes(id)) ||
-        !currentIds.every((id) => newProfileIds.includes(id))
-      ) {
-        setSelectedProfileIds(newProfileIds);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table.getState().columnFilters]);
-
   const actorIdFilterColumn = table.getColumn("actorIdFilter");
   const modelIdFilterColumn = table.getColumn("modelIdFilter");
   const profileIdFilterColumn = table.getColumn("profileIdFilter");
   const isFiltered =
-    table.getState().columnFilters.length > 0 ||
-    selectedModelIds.length > 0 ||
-    selectedActorIds.length > 0 ||
-    selectedProfileIds.length > 0 ||
-    runIdSearch.length > 0;
+    searchTerm !== "" ||
+    (pricingModelIds && pricingModelIds.length > 0) ||
+    (pricingProfileIds && pricingProfileIds.length > 0) ||
+    (pricingActorIds && pricingActorIds.length > 0);
 
   return (
     <div className="space-y-3">
@@ -553,20 +610,60 @@ export function RunsDataTable({
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
           {/* Search bar */}
           <div className="w-full md:w-auto">
+            {isLoading ? (
+              <Skeleton className="h-8 w-full md:w-[200px]" />
+            ) : (
             <Input
+                ref={searchInputRef}
               placeholder="Search by model, persona, agent, name, debug info..."
-              value={runIdSearch}
-              onChange={(e) => setRunIdSearch(e.target.value)}
+                value={searchTerm}
+                onChange={(event) => {
+                  handleSearchChange(event.target.value);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    // Clear timeout and commit immediately
+                    if (searchTimeoutRef.current) {
+                      clearTimeout(searchTimeoutRef.current);
+                    }
+                    commitSearch(event.currentTarget.value);
+                  }
+                }}
+                onBlur={(event) => {
+                  // Clear timeout and commit immediately on blur
+                  if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                  }
+                  // Commit on blur so URL stays in sync
+                  if (
+                    event.currentTarget.value !==
+                    (searchParams.get("pricingSearch") || "")
+                  ) {
+                    commitSearch(event.currentTarget.value);
+                  }
+                }}
               className="h-8 w-full md:w-[200px]"
             />
+            )}
           </div>
 
+          {/* Filters */}
+          {isLoading ? (
+            <>
+              {/* Skeleton filters - show typical filter layout */}
+              <Skeleton className="h-8 w-[120px]" />
+              <Skeleton className="h-8 w-[140px]" />
+              <Skeleton className="h-8 w-[160px]" />
+            </>
+          ) : (
+            <>
           {/* Model filter */}
           {modelIdFilterColumn && modelOptions.length > 0 && (
             <DataTableFacetedFilter
               column={modelIdFilterColumn}
               title="Model"
               options={modelOptions}
+                  isServerDriven={true}
             />
           )}
 
@@ -576,6 +673,7 @@ export function RunsDataTable({
               column={actorIdFilterColumn}
               title="Agent/Persona"
               options={actorOptions}
+                  isServerDriven={true}
             />
           )}
 
@@ -585,18 +683,23 @@ export function RunsDataTable({
               column={profileIdFilterColumn}
               title="Name"
               options={profileOptions}
+                  isServerDriven={true}
             />
+              )}
+            </>
           )}
 
-          {isFiltered && (
+          {isFiltered && !isLoading && (
             <Button
               variant="ghost"
               onClick={() => {
-                table.resetColumnFilters();
-                setSelectedModelIds([]);
-                setSelectedActorIds([]);
-                setSelectedProfileIds([]);
-                setRunIdSearch("");
+                updateURLParams({
+                  pricingSearch: null,
+                  pricingModelIds: null,
+                  pricingProfileIds: null,
+                  pricingActorIds: null,
+                  pricingPage: "0",
+                });
               }}
               className="h-8 px-2 lg:px-3 hidden md:flex"
             >
@@ -634,7 +737,18 @@ export function RunsDataTable({
             ))}
           </thead>
           <tbody>
-            {tableRows.length ? (
+            {isLoading ? (
+              // Skeleton rows
+              Array.from({ length: pricingPageSize }).map((_, idx) => (
+                <tr key={`skeleton-${idx}`} className="border-b">
+                  {table.getVisibleLeafColumns().map((column) => (
+                    <td key={column.id} className="px-4 py-3">
+                      <Skeleton className="h-4 w-full" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : tableRows.length ? (
               tableRows.map((row) => (
                 <tr
                   key={row.id}
@@ -662,7 +776,19 @@ export function RunsDataTable({
           </tbody>
         </table>
       </div>
+      {isLoading ? (
+        <div className="flex items-center justify-between px-2">
+          <div className="flex-1 text-sm text-muted-foreground">
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-8 w-[100px]" />
+            <Skeleton className="h-8 w-[100px]" />
+          </div>
+        </div>
+      ) : (
       <DataTablePagination table={table} />
+      )}
     </div>
   );
 }

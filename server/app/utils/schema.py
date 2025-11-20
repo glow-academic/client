@@ -226,6 +226,8 @@ class AnalyticsFilters(BaseModel):
     profileIds: list[str] | None = None  # Filter by specific profiles
     simulationIds: list[str] | None = None  # Filter by specific simulations
     scenarioIds: list[str] | None = None  # Filter by specific scenarios
+    modelIds: list[str] | None = None  # Filter by specific models (for pricing)
+    actorIds: list[str] | None = None  # Filter by specific agents/personas (for pricing)
 
 
 # Response Schemas

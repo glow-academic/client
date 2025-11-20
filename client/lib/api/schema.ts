@@ -3275,7 +3275,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/pricing": {
+    "/api/v3/pricing/analytics": {
         parameters: {
             query?: never;
             header?: never;
@@ -3288,7 +3288,27 @@ export interface paths {
          * Get Pricing
          * @description Get pricing metrics with model usage and cost analysis.
          */
-        post: operations["get_pricing_api_v3_pricing_post"];
+        post: operations["get_pricing_api_v3_pricing_analytics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/pricing/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Pricing Runs
+         * @description Get paginated, filtered, searched, sorted pricing runs for table.
+         */
+        post: operations["get_pricing_runs_api_v3_pricing_runs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3624,6 +3644,10 @@ export interface components {
             simulationIds?: string[] | null;
             /** Scenarioids */
             scenarioIds?: string[] | null;
+            /** Modelids */
+            modelIds?: string[] | null;
+            /** Actorids */
+            actorIds?: string[] | null;
         };
         /**
          * AssistantChatFullRequest
@@ -6782,30 +6806,6 @@ export interface components {
             output_ppm: number;
         };
         /**
-         * ModelRunItem
-         * @description Model run item with aggregated metrics.
-         */
-        ModelRunItem: {
-            /** Model Run Id */
-            model_run_id: string;
-            /** Created At */
-            created_at: string;
-            /** Input Tokens */
-            input_tokens: number;
-            /** Output Tokens */
-            output_tokens: number;
-            /** Model Id */
-            model_id?: string | null;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["app__api__v3__pricing__analytics__DebugInfoItem"][] | null;
-        };
-        /**
          * NumericAttemptFact
          * @description Numeric attempt fact.
          */
@@ -7425,7 +7425,54 @@ export interface components {
          */
         PricingAnalyticsResponse: {
             /** Model Runs */
-            model_runs: components["schemas"]["ModelRunItem"][];
+            model_runs: components["schemas"]["app__api__v3__pricing__analytics__ModelRunItem"][];
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["ModelMappingWithPricing"];
+            };
+            /** Profile Mapping */
+            profile_mapping: {
+                [key: string]: string;
+            };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: string;
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * PricingRunsResponse
+         * @description Response for pricing runs table.
+         */
+        PricingRunsResponse: {
+            /** Data */
+            data: components["schemas"]["app__api__v3__pricing__runs__ModelRunItem"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /**
+             * Modeloptions
+             * @default []
+             */
+            modelOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Profileoptions
+             * @default []
+             */
+            profileOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Actoroptions
+             * @default []
+             */
+            actorOptions: components["schemas"]["FilterOption"][];
             /** Model Mapping */
             model_mapping: {
                 [key: string]: components["schemas"]["ModelMappingWithPricing"];
@@ -10719,6 +10766,66 @@ export interface components {
             created_at: string;
             /** Content */
             content: string;
+        };
+        /**
+         * ModelRunItem
+         * @description Model run item with aggregated metrics.
+         */
+        app__api__v3__pricing__analytics__ModelRunItem: {
+            /** Model Run Id */
+            model_run_id: string;
+            /** Created At */
+            created_at: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Debug Info */
+            debug_info?: components["schemas"]["app__api__v3__pricing__analytics__DebugInfoItem"][] | null;
+        };
+        /**
+         * DebugInfoItem
+         * @description Debug information item.
+         */
+        app__api__v3__pricing__runs__DebugInfoItem: {
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Content */
+            content: string;
+        };
+        /**
+         * ModelRunItem
+         * @description Model run item with aggregated metrics.
+         */
+        app__api__v3__pricing__runs__ModelRunItem: {
+            /** Model Run Id */
+            model_run_id: string;
+            /** Created At */
+            created_at: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Model Id */
+            model_id?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Debug Info */
+            debug_info?: components["schemas"]["app__api__v3__pricing__runs__DebugInfoItem"][] | null;
         };
         /**
          * CohortItem
@@ -16362,7 +16469,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_api_v3_pricing_post: {
+    get_pricing_api_v3_pricing_analytics_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -16382,6 +16489,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingAnalyticsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pricing_runs_api_v3_pricing_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyticsFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingRunsResponse"];
                 };
             };
             /** @description Validation Error */

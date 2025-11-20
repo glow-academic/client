@@ -7142,7 +7142,7 @@
         ]
       }
     },
-    "/api/v3/pricing": {
+    "/api/v3/pricing/analytics": {
       "post": {
         "tags": [
           "v3",
@@ -7150,7 +7150,7 @@
         ],
         "summary": "Get Pricing",
         "description": "Get pricing metrics with model usage and cost analysis.",
-        "operationId": "get_pricing_api_v3_pricing_post",
+        "operationId": "get_pricing_api_v3_pricing_analytics_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -7168,6 +7168,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PricingAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "pricing"
+        ]
+      }
+    },
+    "/api/v3/pricing/runs": {
+      "post": {
+        "tags": [
+          "v3",
+          "pricing"
+        ],
+        "summary": "Get Pricing Runs",
+        "description": "Get paginated, filtered, searched, sorted pricing runs for table.",
+        "operationId": "get_pricing_runs_api_v3_pricing_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingRunsResponse"
                 }
               }
             }
@@ -7987,6 +8034,34 @@
               }
             ],
             "title": "Scenarioids"
+          },
+          "modelIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelids"
+          },
+          "actorIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actorids"
           }
         },
         "type": "object",
@@ -16108,93 +16183,6 @@
         "title": "ModelMappingWithPricing",
         "description": "Model mapping with pricing information."
       },
-      "ModelRunItem": {
-        "properties": {
-          "model_run_id": {
-            "type": "string",
-            "title": "Model Run Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "input_tokens": {
-            "type": "integer",
-            "title": "Input Tokens"
-          },
-          "output_tokens": {
-            "type": "integer",
-            "title": "Output Tokens"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "debug_info": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/app__api__v3__pricing__analytics__DebugInfoItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Debug Info"
-          }
-        },
-        "type": "object",
-        "required": [
-          "model_run_id",
-          "created_at",
-          "input_tokens",
-          "output_tokens"
-        ],
-        "title": "ModelRunItem",
-        "description": "Model run item with aggregated metrics."
-      },
       "NumericAttemptFact": {
         "properties": {
           "parameterId": {
@@ -17836,7 +17824,7 @@
         "properties": {
           "model_runs": {
             "items": {
-              "$ref": "#/components/schemas/ModelRunItem"
+              "$ref": "#/components/schemas/app__api__v3__pricing__analytics__ModelRunItem"
             },
             "type": "array",
             "title": "Model Runs"
@@ -17880,6 +17868,99 @@
         ],
         "title": "PricingAnalyticsResponse",
         "description": "Response for pricing analytics."
+      },
+      "PricingRunsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__pricing__runs__ModelRunItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          },
+          "modelOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Modeloptions",
+            "default": []
+          },
+          "profileOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Profileoptions",
+            "default": []
+          },
+          "actorOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Actoroptions",
+            "default": []
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ModelMappingWithPricing"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
+          "profile_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Profile Mapping"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "totalCount",
+          "page",
+          "pageSize",
+          "totalPages",
+          "model_mapping",
+          "profile_mapping",
+          "agent_mapping",
+          "persona_mapping"
+        ],
+        "title": "PricingRunsResponse",
+        "description": "Response for pricing runs table."
       },
       "ProcessCSVRequest": {
         "properties": {
@@ -26429,6 +26510,204 @@
         ],
         "title": "DebugInfoItem",
         "description": "Debug information item."
+      },
+      "app__api__v3__pricing__analytics__ModelRunItem": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "title": "Model Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "debug_info": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v3__pricing__analytics__DebugInfoItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debug Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "created_at",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "ModelRunItem",
+        "description": "Model run item with aggregated metrics."
+      },
+      "app__api__v3__pricing__runs__DebugInfoItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "content"
+        ],
+        "title": "DebugInfoItem",
+        "description": "Debug information item."
+      },
+      "app__api__v3__pricing__runs__ModelRunItem": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "title": "Model Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "debug_info": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/app__api__v3__pricing__runs__DebugInfoItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debug Info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "created_at",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "ModelRunItem",
+        "description": "Model run item with aggregated metrics."
       },
       "app__api__v3__profile__context__CohortItem": {
         "properties": {
