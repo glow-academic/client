@@ -7,7 +7,8 @@
 import { getSession } from "@/auth";
 import { Suspense } from "react";
 
-import Pricing from "@/components/pricing/Pricing";
+import { PricingRunsClient } from "@/components/pricing/PricingRunsClient";
+import { PricingSummary } from "@/components/pricing/PricingSummary";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -258,17 +259,14 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   return (
     <div className="space-y-6" data-page="pricing-index">
+      {/* This never gets unmounted when runsKey changes */}
+      <PricingSummary pricingData={pricingData} />
+
+      {/* Only the runs section is tied to runsKey */}
       <Suspense
         key={runsKey}
         fallback={
-          <Pricing
-            pricingData={pricingData}
-            runsData={emptyRunsData}
-            isLoading={true}
-            modelOptions={[]}
-            profileOptions={[]}
-            actorOptions={[]}
-          />
+          <PricingRunsClient runsData={emptyRunsData} isLoading={true} />
         }
       >
         <PricingRunsSection
@@ -281,7 +279,6 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           pricingActorIds={pricingActorIds}
           pricingSortBy={pricingSortBy}
           pricingSortOrder={pricingSortOrder}
-          pricingData={pricingData}
         />
       </Suspense>
     </div>
@@ -299,7 +296,6 @@ async function PricingRunsSection({
   pricingActorIds,
   pricingSortBy,
   pricingSortOrder,
-  pricingData,
 }: {
   filters: {
     startDate: string;
@@ -316,7 +312,6 @@ async function PricingRunsSection({
   pricingActorIds?: string[] | undefined;
   pricingSortBy: string;
   pricingSortOrder: string;
-  pricingData: PricingOut;
 }) {
   // Build runs filters with pagination/search/sorting/filtering params
   const runsFilters = {
@@ -345,35 +340,7 @@ async function PricingRunsSection({
     body: runsFilters,
   });
 
-  // Extract and map filter options from API response
-  const modelOptions = (runsData?.modelOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
-  const profileOptions = (runsData?.profileOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
-  const actorOptions = (runsData?.actorOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
-  return (
-    <Pricing
-      pricingData={pricingData}
-      runsData={runsData}
-      isLoading={false}
-      modelOptions={modelOptions}
-      profileOptions={profileOptions}
-      actorOptions={actorOptions}
-    />
-  );
+  return <PricingRunsClient runsData={runsData} isLoading={false} />;
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

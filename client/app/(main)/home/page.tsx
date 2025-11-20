@@ -28,11 +28,9 @@ type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getHomeOverview = async (
-  input: HomeIn
-): Promise<HomeOut> => {
+const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/home/overview", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -51,10 +49,10 @@ async function isHardRefresh(): Promise<boolean> {
     const headersList = await headers();
     const cacheControl = headersList.get("cache-control");
     const pragma = headersList.get("pragma");
-    
+
     return (
-      (cacheControl?.toLowerCase().includes("no-cache") || 
-       cacheControl?.includes("max-age=0")) ||
+      cacheControl?.toLowerCase().includes("no-cache") ||
+      cacheControl?.includes("max-age=0") ||
       pragma?.toLowerCase() === "no-cache"
     );
   } catch {
@@ -71,7 +69,7 @@ const getHomeHistory = async (
   input: HomeHistoryIn
 ): Promise<HomeHistoryOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/home/history", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -293,7 +291,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     defaultFilters.cohortIds.join(","),
     defaultFilters.departmentIds.join(","),
     defaultFilters.roles.join(","),
-    (defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
+    (
+      defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }
+    ).simulationFilters?.join(",") || "general",
   ].join("|");
 
   return (
@@ -311,6 +311,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <SimulationHistory
               data={[]}
               totalCount={0}
+              archivedCount={0}
+              unarchivedCount={0}
               pageIndex={historyPage}
               pageSize={historyPageSize}
               showExport={true}
@@ -413,6 +415,14 @@ async function HomeHistorySection({
 
   const historyData = await getHomeHistory(historyFilters);
 
+  // Calculate archived/unarchived counts from data (home history API doesn't provide these)
+  const archivedCount = historyData.data.filter(
+    (item) => item.isArchived
+  ).length;
+  const unarchivedCount = historyData.data.filter(
+    (item) => !item.isArchived
+  ).length;
+
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
   const profileOptions = (historyData.profileOptions || []).map((opt) => {
@@ -444,6 +454,8 @@ async function HomeHistorySection({
     <SimulationHistory
       data={historyData.data}
       totalCount={historyData.totalCount}
+      archivedCount={archivedCount}
+      unarchivedCount={unarchivedCount}
       pageIndex={historyPage}
       pageSize={historyPageSize}
       showExport={true}

@@ -13,8 +13,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata, ResolvingMetadata } from "next";
-import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -32,7 +32,7 @@ type DashboardHistoryOut = OutputOf<"/api/v3/dashboard/history", "post">;
 const getProfileDetail = (profileId: string) =>
   unstable_cache(
     async (input: ProfileDetailIn): Promise<ProfileDetailOut> => {
-  return api.post("/profile/staff/detail", input);
+      return api.post("/profile/staff/detail", input);
     },
     ["profile:detail", profileId],
     { tags: ["profile:detail", `profile:detail:${profileId}`] }
@@ -46,10 +46,10 @@ async function isHardRefresh(): Promise<boolean> {
     const headersList = await headers();
     const cacheControl = headersList.get("cache-control");
     const pragma = headersList.get("pragma");
-    
+
     return (
-      (cacheControl?.toLowerCase().includes("no-cache") || 
-       cacheControl?.includes("max-age=0")) ||
+      cacheControl?.toLowerCase().includes("no-cache") ||
+      cacheControl?.includes("max-age=0") ||
       pragma?.toLowerCase() === "no-cache"
     );
   } catch {
@@ -66,7 +66,7 @@ const getDashboardOverview = async (
   input: DashboardIn
 ): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/dashboard/overview", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -86,7 +86,7 @@ const getDashboardHistory = async (
   input: DashboardHistoryIn
 ): Promise<DashboardHistoryOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/dashboard/history", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -296,7 +296,9 @@ export default async function ReportsPage({
     defaultFilters.cohortIds.join(","),
     defaultFilters.departmentIds.join(","),
     defaultFilters.roles.join(","),
-    (defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
+    (
+      defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }
+    ).simulationFilters?.join(",") || "general",
   ].join("|");
 
   // Fetch profile detail and dashboard data server-side
@@ -328,6 +330,8 @@ export default async function ReportsPage({
             <SimulationHistory
               data={[]}
               totalCount={0}
+              archivedCount={0}
+              unarchivedCount={0}
               pageIndex={historyPage}
               pageSize={historyPageSize}
               showExport={false}
@@ -366,7 +370,7 @@ async function ReportHistorySection({
   historyPage,
   historyPageSize,
   historySearch,
-  historyProfileIds,
+  historyProfileIds: _historyProfileIds,
   historySimulationIds,
   historyScenarioIds,
   historyInfiniteMode,
@@ -455,6 +459,8 @@ async function ReportHistorySection({
     <SimulationHistory
       data={historyData.data}
       totalCount={historyData.totalCount}
+      archivedCount={historyData.archivedCount}
+      unarchivedCount={historyData.unarchivedCount}
       pageIndex={historyPage}
       pageSize={historyPageSize}
       showExport={false}
@@ -470,10 +476,10 @@ async function ReportHistorySection({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  DashboardIn,
-  DashboardOut,
   DashboardHistoryIn,
   DashboardHistoryOut,
+  DashboardIn,
+  DashboardOut,
   ProfileDetailIn,
   ProfileDetailOut,
 };

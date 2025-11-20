@@ -27,10 +27,10 @@ import {
 } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/contexts/profile-context";
 import { format } from "date-fns";
 import { X } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 type DebugInfoItem = {
   id: string;
@@ -85,15 +85,15 @@ export interface RunsDataTableProps {
 
 export function RunsDataTable({
   rows,
-  modelMapping,
-  profileMapping,
-  agentMapping,
-  personaMapping,
+  modelMapping: _modelMapping,
+  profileMapping: _profileMapping,
+  agentMapping: _agentMapping,
+  personaMapping: _personaMapping,
   isLoading = false,
   modelOptions,
   profileOptions,
   actorOptions,
-  totalCount,
+  totalCount: _totalCount,
   totalPages,
 }: RunsDataTableProps) {
   const router = useRouter();
@@ -487,7 +487,11 @@ export function RunsDataTable({
 
   // Handle column filters change
   const handleColumnFiltersChange = React.useCallback(
-    (updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+    (
+      updater:
+        | ColumnFiltersState
+        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+    ) => {
       const newFilters =
         typeof updater === "function" ? updater(columnFilters) : updater;
 
@@ -611,34 +615,34 @@ export function RunsDataTable({
           {/* Search bar */}
           <div className="w-full md:w-auto">
             <Input
-                ref={searchInputRef}
+              ref={searchInputRef}
               placeholder="Search by model, persona, agent, name, debug info..."
-                value={searchTerm}
-                onChange={(event) => {
-                  handleSearchChange(event.target.value);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    // Clear timeout and commit immediately
-                    if (searchTimeoutRef.current) {
-                      clearTimeout(searchTimeoutRef.current);
-                    }
-                    commitSearch(event.currentTarget.value);
-                  }
-                }}
-                onBlur={(event) => {
-                  // Clear timeout and commit immediately on blur
+              value={searchTerm}
+              onChange={(event) => {
+                handleSearchChange(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  // Clear timeout and commit immediately
                   if (searchTimeoutRef.current) {
                     clearTimeout(searchTimeoutRef.current);
                   }
-                  // Commit on blur so URL stays in sync
-                  if (
-                    event.currentTarget.value !==
-                    (searchParams.get("pricingSearch") || "")
-                  ) {
-                    commitSearch(event.currentTarget.value);
-                  }
-                }}
+                  commitSearch(event.currentTarget.value);
+                }
+              }}
+              onBlur={(event) => {
+                // Clear timeout and commit immediately on blur
+                if (searchTimeoutRef.current) {
+                  clearTimeout(searchTimeoutRef.current);
+                }
+                // Commit on blur so URL stays in sync
+                if (
+                  event.currentTarget.value !==
+                  (searchParams.get("pricingSearch") || "")
+                ) {
+                  commitSearch(event.currentTarget.value);
+                }
+              }}
               className="h-8 w-full md:w-[200px]"
             />
           </div>
@@ -653,34 +657,34 @@ export function RunsDataTable({
             </>
           ) : (
             <>
-          {/* Model filter */}
-          {modelIdFilterColumn && modelOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={modelIdFilterColumn}
-              title="Model"
-              options={modelOptions}
+              {/* Model filter */}
+              {modelIdFilterColumn && modelOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={modelIdFilterColumn}
+                  title="Model"
+                  options={modelOptions}
                   isServerDriven={true}
-            />
-          )}
+                />
+              )}
 
-          {/* Agent/Persona filter - merged */}
-          {actorIdFilterColumn && actorOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={actorIdFilterColumn}
-              title="Agent/Persona"
-              options={actorOptions}
+              {/* Agent/Persona filter - merged */}
+              {actorIdFilterColumn && actorOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={actorIdFilterColumn}
+                  title="Agent/Persona"
+                  options={actorOptions}
                   isServerDriven={true}
-            />
-          )}
+                />
+              )}
 
-          {/* Name filter */}
-          {profileIdFilterColumn && profileOptions.length > 0 && (
-            <DataTableFacetedFilter
-              column={profileIdFilterColumn}
-              title="Name"
-              options={profileOptions}
+              {/* Name filter */}
+              {profileIdFilterColumn && profileOptions.length > 0 && (
+                <DataTableFacetedFilter
+                  column={profileIdFilterColumn}
+                  title="Name"
+                  options={profileOptions}
                   isServerDriven={true}
-            />
+                />
               )}
             </>
           )}
@@ -783,7 +787,7 @@ export function RunsDataTable({
           </div>
         </div>
       ) : (
-      <DataTablePagination table={table} />
+        <DataTablePagination table={table} />
       )}
     </div>
   );

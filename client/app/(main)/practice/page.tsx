@@ -236,6 +236,8 @@ export default async function PracticePage({
             <SimulationHistory
               data={[]}
               totalCount={0}
+              archivedCount={0}
+              unarchivedCount={0}
               pageIndex={historyPage}
               pageSize={historyPageSize}
               showExport={false}
@@ -330,6 +332,10 @@ async function PracticeHistorySection({
 
   const historyData = await getPracticeHistory(historyFilters);
 
+  // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
+  const archivedCount = historyData.data.filter((item) => item.isArchived).length;
+  const unarchivedCount = historyData.data.filter((item) => !item.isArchived).length;
+
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
   const profileOptions = (historyData.profileOptions || []).map((opt) => {
@@ -361,6 +367,8 @@ async function PracticeHistorySection({
     <SimulationHistory
       data={historyData.data}
       totalCount={historyData.totalCount}
+      archivedCount={archivedCount}
+      unarchivedCount={unarchivedCount}
       pageIndex={historyPage}
       pageSize={historyPageSize}
       showExport={false}
