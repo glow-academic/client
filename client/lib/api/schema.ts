@@ -5142,6 +5142,10 @@ export interface components {
             data: components["schemas"]["app__api__v3__dashboard__history__AttemptHistoryRow"][];
             /** Totalcount */
             totalCount: number;
+            /** Archivedcount */
+            archivedCount: number;
+            /** Unarchivedcount */
+            unarchivedCount: number;
             /** Page */
             page: number;
             /** Pagesize */

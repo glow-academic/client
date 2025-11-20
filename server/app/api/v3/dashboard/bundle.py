@@ -1412,18 +1412,22 @@ async def get_dashboard(
     """Get complete dashboard bundle with all metrics, history, insights, and mappings."""
     tags = ["dashboard"]  # From router tags
 
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+
     # Generate cache key from path and parsed body
     # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
     body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return DashboardBundleResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return DashboardBundleResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None

@@ -13,7 +13,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -22,12 +22,46 @@ type HomeOut = OutputOf<"/api/v3/home/overview", "post">;
 type HomeHistoryIn = InputOf<"/api/v3/home/history", "post">;
 type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
 
+/** ---- Cached fetch with Next tags ----
+ * Cache key includes input for per-request caching.
+ * Tags allow revalidateTag("home") to invalidate.
+ */
+const getHomeOverview = unstable_cache(
+  async (input: HomeIn): Promise<HomeOut> => {
+    return api.post("/home/overview", input);
+  },
+  ["home", "home:overview"],
+  { tags: ["home", "home:overview"] }
+);
+
+const getHomeHistory = unstable_cache(
+  async (input: HomeHistoryIn): Promise<HomeHistoryOut> => {
+    return api.post("/home/history", input);
+  },
+  ["home", "home:history"],
+  { tags: ["home", "home:history"] }
+);
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
+
 /** ---- Inline filters function for home page ---- */
 async function getHomeFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "",
       effectiveProfileId: session?.effectiveProfileId || "",
@@ -108,6 +142,9 @@ async function revalidateAttempt(attemptId: string): Promise<void> {
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
   // Invalidate home page cache so data refreshes when user returns
+  revalidateTag("home");
+  revalidateTag("home:overview");
+  revalidateTag("home:history");
   revalidatePath("/home");
   // Note: Chat-specific tags can be added here if chat IDs are known
   // For now, invalidating attempt-level cache ensures all chats refresh
@@ -134,6 +171,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   });
 
   // Get filters from search params or defaults, then subset to Home fields
+  // Note: getHomeFilters uses getProfileContext which is now cached
   const defaultFilters = await getHomeFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
@@ -186,7 +224,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
 
   // Fetch home data server-side (without history - history will be fetched separately)
-  const homeData = await api.post("/home/overview", homeFilters);
+  const homeData = await getHomeOverview(homeFilters);
 
   // Remove history from response for server-driven pagination
   const homeDataWithoutHistory = {
@@ -326,7 +364,7 @@ async function HomeHistorySection({
     },
   };
 
-  const historyData = await api.post("/home/history", historyFilters);
+  const historyData = await getHomeHistory(historyFilters);
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format

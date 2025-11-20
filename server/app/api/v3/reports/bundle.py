@@ -84,26 +84,31 @@ async def get_reports(
 ) -> ReportsBundleResponse:
     """Get reports bundle with aggregated metrics per profile and entity mappings."""
     tags = ["reports"]  # From router tags
+    
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    
     # Generate cache key from path and parsed body
     # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
     body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        # Ensure cached data has new fields (for backward compatibility with old cache entries)
-        cached_data = cached["data"]
-        if "profileOptions" not in cached_data:
-            cached_data["profileOptions"] = []
-        if "simulationOptions" not in cached_data:
-            cached_data["simulationOptions"] = []
-        if "scenarioOptions" not in cached_data:
-            cached_data["scenarioOptions"] = []
-        return ReportsBundleResponse.model_validate(cached_data)
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            # Ensure cached data has new fields (for backward compatibility with old cache entries)
+            cached_data = cached["data"]
+            if "profileOptions" not in cached_data:
+                cached_data["profileOptions"] = []
+            if "simulationOptions" not in cached_data:
+                cached_data["simulationOptions"] = []
+            if "scenarioOptions" not in cached_data:
+                cached_data["scenarioOptions"] = []
+            return ReportsBundleResponse.model_validate(cached_data)
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None

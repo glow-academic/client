@@ -12,18 +12,47 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v3/reports", "post">;
 type ReportsOut = OutputOf<"/api/v3/reports", "post">;
 
+/** ---- Direct fetch (no Next.js cache) ----
+ * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header to also bypass Redis cache on hard refresh.
+ */
+const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
+  return api.post("/reports", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
+
 /** ---- Inline filters function for reports page ---- */
 async function getReportsFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "",
       effectiveProfileId: session?.effectiveProfileId || "",
@@ -250,7 +279,7 @@ async function ReportsSection({
   };
 
   // Fetch reports data server-side
-  const reportsData = await api.post("/reports", {
+  const reportsData = await getReports({
     body: reportsFilters,
   });
 

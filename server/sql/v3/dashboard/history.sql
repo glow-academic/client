@@ -485,6 +485,13 @@ total_count_cte AS (
     SELECT COUNT(*)::int AS total_count
     FROM final_rows_with_search
 ),
+-- Get archived and unarchived counts for filtered set
+archive_counts_cte AS (
+    SELECT 
+        COUNT(*) FILTER (WHERE is_archived = true)::int AS archived_count,
+        COUNT(*) FILTER (WHERE is_archived = false)::int AS unarchived_count
+    FROM final_rows_with_search
+),
 -- Paginated and sorted results
 paginated_rows AS (
     SELECT
@@ -596,6 +603,8 @@ SELECT json_build_object(
         '[]'::json
     ),
     'totalCount', COALESCE((SELECT total_count FROM total_count_cte), 0),
+    'archivedCount', COALESCE((SELECT archived_count FROM archive_counts_cte), 0),
+    'unarchivedCount', COALESCE((SELECT unarchived_count FROM archive_counts_cte), 0),
     'profileOptions', COALESCE(
         (SELECT json_agg(json_build_object(
             'value', profile_id::text, 

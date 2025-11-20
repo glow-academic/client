@@ -33,6 +33,28 @@ const getPractice = unstable_cache(
   { tags: ["practice"] }
 );
 
+const getPracticeHistory = unstable_cache(
+  async (input: PracticeHistoryIn): Promise<PracticeHistoryOut> => {
+    return api.post("/practice/history", input);
+  },
+  ["practice", "practice:history"],
+  { tags: ["practice", "practice:history"] }
+);
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
+
 export const metadata: Metadata = {
   title: "Practice",
   description: `Practice page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -74,7 +96,7 @@ export default async function PracticePage({
   });
 
   // Get profileId and departmentIds from profile context
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "guest-profile-id",
       effectiveProfileId: session?.effectiveProfileId || "guest-profile-id",
@@ -252,7 +274,7 @@ async function PracticeHistorySection({
     },
   };
 
-  const historyData = await api.post("/practice/history", historyFilters);
+  const historyData = await getPracticeHistory(historyFilters);
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format

@@ -319,6 +319,12 @@ export interface SimulationHistoryProps {
   // Required: Total count for pagination (when using server-driven pagination)
   totalCount: number;
 
+  // Required: Archived count for filtered set (from server)
+  archivedCount: number;
+
+  // Required: Unarchived count for filtered set (from server)
+  unarchivedCount: number;
+
   // Required: Current page index (0-based)
   pageIndex: number;
 
@@ -369,6 +375,8 @@ export interface SimulationHistoryProps {
 export default function SimulationHistory({
   data,
   totalCount,
+  archivedCount: serverArchivedCount,
+  unarchivedCount: serverUnarchivedCount,
   pageIndex,
   pageSize,
   showExport,
@@ -497,6 +505,8 @@ export default function SimulationHistory({
     null
   );
   const [isArchiving, setIsArchiving] = React.useState(false);
+  // State to track if "Select All Rows" is active (all filtered rows selected)
+  const [isSelectAllActive, setIsSelectAllActive] = React.useState(false);
 
   // Helper function to update URL search params (preserves analytics filters)
   const updateHistoryParams = React.useCallback(
@@ -1263,7 +1273,12 @@ export default function SimulationHistory({
   }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate archive/unarchive counts from selected rows
+  // When "Select All" is active, we still only archive rows on current page,
+  // but show counts for all filtered rows to indicate the full scope
+  // Otherwise, count from selected rows on current page
   const { archiveCount, unarchiveCount } = React.useMemo(() => {
+    // Always count from selected rows (current page only)
+    // When "Select All" is active, all rows on current page are selected
     const selectedRows = table.getSelectedRowModel().flatRows;
     let a = 0,
       u = 0;
@@ -1272,7 +1287,11 @@ export default function SimulationHistory({
       else a++;
     }
     return { archiveCount: a, unarchiveCount: u };
-  }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    table,
+    rowSelectionState, // Needed to recalculate when selection changes
+  ]);
 
   // Execute bulk archive
   const executeBulkArchive = React.useCallback(async () => {
@@ -1304,6 +1323,7 @@ export default function SimulationHistory({
 
       // Clear selection after success
       table.resetRowSelection();
+      setIsSelectAllActive(false);
       setShowArchiveDialog(false);
       setArchiveAction(null);
 
@@ -1353,7 +1373,6 @@ export default function SimulationHistory({
 
   // Detect if this is page selection vs filtered selection
   const pageCount = table.getRowModel().rows.length;
-  const filteredCount = table.getFilteredRowModel().rows.length;
   const selectedCount = selectedAttempts.length;
 
   const isPageSelection =
@@ -1361,18 +1380,40 @@ export default function SimulationHistory({
     selectedCount ===
       table.getRowModel().rows.filter((r) => r.getIsSelected()).length;
 
-  const ofLabel = isPageSelection ? pageCount : filteredCount;
+  // Use totalCount when "Select All" is active to show full scope
+  // Otherwise, use pageCount for page selection, totalCount for cross-page selection
+  const ofLabel = isSelectAllActive
+    ? totalCount // Show total filtered count when "Select All" is active
+    : isPageSelection
+      ? pageCount
+      : selectedCount > 0
+        ? totalCount
+        : pageCount;
 
   // Handle select all visible rows (for the "Select All Rows" button)
   const handleSelectAllVisibleRows = React.useCallback(() => {
-    // Select all filtered rows (respects filters, ignores pagination)
+    // Select all rows on current page and set "Select All" mode
     const visible = table.getFilteredRowModel().rows;
     const next: Record<string, boolean> = {};
     visible.forEach((r) => {
       next[r.id] = true;
     });
     table.setRowSelection(next);
+    setIsSelectAllActive(true);
   }, [table]);
+
+  // Reset "Select All" mode when selection changes manually
+  React.useEffect(() => {
+    if (isSelectAllActive) {
+      const selectedRows = table.getSelectedRowModel().flatRows;
+      const allRowsSelected =
+        selectedRows.length === table.getFilteredRowModel().rows.length;
+      // If not all rows on current page are selected, reset "Select All" mode
+      if (!allRowsSelected) {
+        setIsSelectAllActive(false);
+      }
+    }
+  }, [rowSelectionState, isSelectAllActive, table]);
 
   return (
     <div className="space-y-4">
@@ -1519,8 +1560,8 @@ export default function SimulationHistory({
           {/* Select All Rows button - only show when showArchive is true, some rows are selected, but not all filtered */}
           {showArchive &&
             selectedAttempts.length > 0 &&
-            selectedAttempts.length <
-              table.getFilteredRowModel().rows.length && (
+            selectedAttempts.length < totalCount &&
+            !isSelectAllActive && (
               <Button
                 variant="outline"
                 size="sm"
@@ -1532,32 +1573,36 @@ export default function SimulationHistory({
             )}
 
           {/* Bulk archive buttons - only show when showArchive is true and items are selected */}
-          {showArchive && selectedAttempts.length > 0 && (
-            <>
-              {archiveCount > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleBulkArchive(true)}
-                  className="h-8"
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive {archiveCount} of {ofLabel}
-                </Button>
-              )}
-              {unarchiveCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkArchive(false)}
-                  className="h-8"
-                >
-                  <Unlock className="mr-2 h-4 w-4" />
-                  Unarchive {unarchiveCount} of {ofLabel}
-                </Button>
-              )}
-            </>
-          )}
+          {/* When "Select All" is active, show buttons if server counts > 0, otherwise show if selected rows have archivable/unarchivable items */}
+          {showArchive &&
+            (isSelectAllActive
+              ? serverArchivedCount > 0 || serverUnarchivedCount > 0
+              : selectedAttempts.length > 0) && (
+              <>
+                {archiveCount > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleBulkArchive(true)}
+                    className="h-8"
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive {archiveCount} of {ofLabel}
+                  </Button>
+                )}
+                {unarchiveCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkArchive(false)}
+                    className="h-8"
+                  >
+                    <Unlock className="mr-2 h-4 w-4" />
+                    Unarchive {unarchiveCount} of {ofLabel}
+                  </Button>
+                )}
+              </>
+            )}
 
           {/* Certificate button - only show on desktop when showExport is true (mobile is handled above in search area) */}
           {showExport && (

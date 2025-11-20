@@ -7,35 +7,80 @@
 
 import { getSession } from "@/auth";
 
+import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Report from "@/components/reports/Report";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata, ResolvingMetadata } from "next";
+import { unstable_cache } from "next/cache";
+import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProfileDetailIn = InputOf<"/api/v3/profile/staff/detail", "post">;
 type ProfileDetailOut = OutputOf<"/api/v3/profile/staff/detail", "post">;
-type DashboardIn = InputOf<"/api/v3/dashboard", "post">;
-type DashboardOut = OutputOf<"/api/v3/dashboard", "post">;
+type DashboardIn = InputOf<"/api/v3/dashboard/overview", "post">;
+type DashboardOut = OutputOf<"/api/v3/dashboard/overview", "post">;
+type DashboardHistoryIn = InputOf<"/api/v3/dashboard/history", "post">;
+type DashboardHistoryOut = OutputOf<"/api/v3/dashboard/history", "post">;
 
-/** ---- Fetch helpers used by page (prevents duplicate requests) ---- */
-async function getProfileDetail(
-  input: ProfileDetailIn
-): Promise<ProfileDetailOut> {
-  return api.post("/profile/staff/detail", input);
-}
+/** ---- Cached fetch with Next tags ----
+ * Tags allow revalidateTag("profile:detail") and revalidateTag("dashboard") to invalidate.
+ * Cache key includes profileId for per-profile caching.
+ */
+const getProfileDetail = (profileId: string) =>
+  unstable_cache(
+    async (input: ProfileDetailIn): Promise<ProfileDetailOut> => {
+      return api.post("/profile/staff/detail", input);
+    },
+    ["profile:detail", profileId],
+    { tags: ["profile:detail", `profile:detail:${profileId}`] }
+  );
 
-async function getDashboard(input: DashboardIn): Promise<DashboardOut> {
-  return api.post("/dashboard/overview", input);
-}
+/** ---- Direct fetch (no Next.js cache) ----
+ * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header to also bypass Redis cache on hard refresh.
+ */
+const getDashboardOverview = async (
+  input: DashboardIn
+): Promise<DashboardOut> => {
+  return api.post("/dashboard/overview", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
+
+const getDashboardHistory = unstable_cache(
+  async (input: DashboardHistoryIn): Promise<DashboardHistoryOut> => {
+    return api.post("/dashboard/history", input);
+  },
+  ["dashboard", "dashboard:history"],
+  { tags: ["dashboard", "dashboard:history"] }
+);
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
 
 /** ---- Inline filters function for profile reports page ---- */
 async function getProfileReportsFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "",
       effectiveProfileId: session?.effectiveProfileId || "",
@@ -111,7 +156,7 @@ export async function generateMetadata(
   const { profileId } = await params;
 
   try {
-    const profileData = await getProfileDetail({
+    const profileData = await getProfileDetail(profileId)({
       body: {
         profileId,
         currentProfileId: profileId,
@@ -168,15 +213,58 @@ export default async function ReportsPage({
     historyProfileId: profileId, // Used for history showRetry calculation
   };
 
+  // Extract pagination and filter params from search params for history
+  const historyPage = searchParamsObj.get("historyPage")
+    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
+    : 0;
+  const historyPageSize = searchParamsObj.get("historyPageSize")
+    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
+    : 10;
+  const historySearch = searchParamsObj.get("historySearch") || undefined;
+  const historyProfileIds = searchParamsObj.get("historyProfileIds")
+    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
+    : undefined;
+  const historySimulationIds = searchParamsObj.get("historySimulationIds")
+    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
+    : undefined;
+  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
+    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
+    : undefined;
+  const historyInfiniteMode =
+    searchParamsObj.get("historyInfiniteMode") === "true"
+      ? true
+      : searchParamsObj.get("historyInfiniteMode") === "false"
+        ? false
+        : undefined;
+  const historySortBy = searchParamsObj.get("historySortBy") || "date";
+  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
+
+  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
+  const historyKey = [
+    historyPage,
+    historyPageSize,
+    historySearch || "",
+    (historyProfileIds || []).join(","),
+    (historySimulationIds || []).join(","),
+    (historyScenarioIds || []).join(","),
+    historyInfiniteMode === undefined
+      ? "all"
+      : historyInfiniteMode
+        ? "inf"
+        : "std",
+    historySortBy,
+    historySortOrder,
+  ].join("|");
+
   // Fetch profile detail and dashboard data server-side
   const [profileData, dashboardData] = await Promise.all([
-    getProfileDetail({
+    getProfileDetail(profileId)({
       body: {
         profileId,
         currentProfileId: profileId,
       },
     }),
-    getDashboard({
+    getDashboardOverview({
       body: dashboardFilters,
     }),
   ]);
@@ -188,9 +276,161 @@ export default async function ReportsPage({
         profileData={profileData}
         dashboardData={dashboardData}
       />
+
+      {/* History section - filtered by profileId */}
+      <div className="mt-12">
+        <Suspense
+          key={historyKey}
+          fallback={
+            <SimulationHistory
+              data={[]}
+              totalCount={0}
+              pageIndex={historyPage}
+              pageSize={historyPageSize}
+              showExport={false}
+              showArchive={false}
+              singleProfile={true}
+              initialFilters={defaultFilters}
+              profileOptions={[]}
+              simulationOptions={[]}
+              scenarioOptions={[]}
+              isLoading={true}
+            />
+          }
+        >
+          <ReportHistorySection
+            defaultFilters={defaultFilters}
+            historyPage={historyPage}
+            historyPageSize={historyPageSize}
+            historySearch={historySearch}
+            historyProfileIds={historyProfileIds}
+            historySimulationIds={historySimulationIds}
+            historyScenarioIds={historyScenarioIds}
+            historyInfiniteMode={historyInfiniteMode}
+            historySortBy={historySortBy}
+            historySortOrder={historySortOrder}
+            profileId={profileId}
+          />
+        </Suspense>
+      </div>
     </div>
   );
 }
 
+/** ---- Inline history section component (only used here) ---- */
+async function ReportHistorySection({
+  defaultFilters,
+  historyPage,
+  historyPageSize,
+  historySearch,
+  historyProfileIds,
+  historySimulationIds,
+  historyScenarioIds,
+  historyInfiniteMode,
+  historySortBy,
+  historySortOrder,
+  profileId,
+}: {
+  defaultFilters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
+  historyPage: number;
+  historyPageSize: number;
+  historySearch?: string | undefined;
+  historyProfileIds?: string[] | undefined;
+  historySimulationIds?: string[] | undefined;
+  historyScenarioIds?: string[] | undefined;
+  historyInfiniteMode?: boolean | undefined;
+  historySortBy: string;
+  historySortOrder: string;
+  profileId: string;
+}) {
+  // Build history filters - filter by profileId
+  const historyFilters: DashboardHistoryIn = {
+    body: {
+      profileId: null, // Not used for filtering (we use profileIds instead)
+      startDate: defaultFilters.startDate,
+      endDate: defaultFilters.endDate,
+      cohortIds: defaultFilters.cohortIds,
+      departmentIds: defaultFilters.departmentIds,
+      roles: defaultFilters.roles,
+      simulationFilters: ["general", "practice", "archived"], // Show all types
+      page: historyPage,
+      pageSize: historyPageSize,
+      profileIds: [profileId], // Filter to this specific profile
+      ...(historySearch && { search: historySearch }),
+      ...(historySimulationIds &&
+        historySimulationIds.length > 0 && {
+          simulationIds: historySimulationIds,
+        }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          scenarioIds: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        infiniteMode: historyInfiniteMode,
+      }),
+      sortBy: historySortBy,
+      sortOrder: historySortOrder,
+      historyProfileId: profileId, // Used for showRetry calculation
+    },
+  };
+
+  const historyData = await getDashboardHistory(historyFilters);
+
+  // Extract options from API response and cast to expected format
+  const profileOptions = (historyData.profileOptions || []).map((opt) => {
+    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    return {
+      value: String(opt["value"] || ""),
+      label: String(opt["label"] || ""),
+      ...(count !== undefined && { count }),
+    };
+  });
+  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
+    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    return {
+      value: String(opt["value"] || ""),
+      label: String(opt["label"] || ""),
+      ...(count !== undefined && { count }),
+    };
+  });
+  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
+    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+    return {
+      value: String(opt["value"] || ""),
+      label: String(opt["label"] || ""),
+      ...(count !== undefined && { count }),
+    };
+  });
+
+  return (
+    <SimulationHistory
+      data={historyData.data}
+      totalCount={historyData.totalCount}
+      pageIndex={historyPage}
+      pageSize={historyPageSize}
+      showExport={false}
+      showArchive={false}
+      singleProfile={true}
+      initialFilters={defaultFilters}
+      profileOptions={profileOptions}
+      simulationOptions={simulationOptions}
+      scenarioOptions={scenarioOptions}
+    />
+  );
+}
+
 /** ---- Export types for client component (type-only imports) ---- */
-export type { DashboardIn, DashboardOut, ProfileDetailIn, ProfileDetailOut };
+export type {
+  DashboardIn,
+  DashboardOut,
+  DashboardHistoryIn,
+  DashboardHistoryOut,
+  ProfileDetailIn,
+  ProfileDetailOut,
+};

@@ -72,6 +72,8 @@ class DashboardHistoryResponse(BaseModel):
 
     data: list[AttemptHistoryRow]
     totalCount: int
+    archivedCount: int
+    unarchivedCount: int
     page: int
     pageSize: int
     totalPages: int
@@ -91,16 +93,20 @@ async def get_dashboard_history(
     """Get paginated dashboard history with search, filters, sorting, and pagination."""
     tags = ["dashboard", "history"]
     
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
     
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return DashboardHistoryResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return DashboardHistoryResponse.model_validate(cached["data"])
     
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -196,11 +202,15 @@ async def get_dashboard_history(
             scenario_options = []
 
         total_count = parsed_result.get("totalCount", 0)
+        archived_count = parsed_result.get("archivedCount", 0)
+        unarchived_count = parsed_result.get("unarchivedCount", 0)
         total_pages = (total_count + filters.pageSize - 1) // filters.pageSize if total_count > 0 else 0
 
         response_data = DashboardHistoryResponse(
             data=history,
             totalCount=total_count,
+            archivedCount=archived_count,
+            unarchivedCount=unarchived_count,
             page=filters.page,
             pageSize=filters.pageSize,
             totalPages=total_pages,

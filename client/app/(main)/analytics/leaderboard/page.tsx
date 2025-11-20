@@ -12,17 +12,43 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type LeaderboardIn = InputOf<"/api/v3/leaderboard", "post">;
 type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
+
+/** ---- Cached fetch with Next tags ----
+ * Tags allow revalidateTag("leaderboard") to invalidate.
+ */
+const getLeaderboard = unstable_cache(
+  async (input: LeaderboardIn): Promise<LeaderboardOut> => {
+    return api.post("/leaderboard", input);
+  },
+  ["leaderboard"],
+  { tags: ["leaderboard"] }
+);
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
 
 /** ---- Inline filters function for leaderboard page ---- */
 async function getLeaderboardFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "",
       effectiveProfileId: session?.effectiveProfileId || "",
@@ -121,7 +147,7 @@ export default async function LeaderboardPage({
   );
 
   // Fetch leaderboard data server-side
-  const leaderboardData = await api.post("/leaderboard", {
+  const leaderboardData = await getLeaderboard({
     body: filters,
   });
 

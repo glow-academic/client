@@ -13,7 +13,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -24,12 +24,52 @@ type DashboardHistoryOut = OutputOf<"/api/v3/dashboard/history", "post">;
 type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/bulk-archive", "post">;
 type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
 
+/** ---- Direct fetch (no Next.js cache) ----
+ * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header to also bypass Redis cache on hard refresh.
+ */
+const getDashboardOverview = async (
+  input: DashboardIn
+): Promise<DashboardOut> => {
+  return api.post("/dashboard/overview", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
+
+const getDashboardHistory = unstable_cache(
+  async (input: DashboardHistoryIn): Promise<DashboardHistoryOut> => {
+    // Note: X-Bypass-Cache header not needed here since unstable_cache handles Next.js cache
+    // Redis cache will still work for performance, but can be invalidated via revalidateTag
+    return api.post("/dashboard/history", input);
+  },
+  ["dashboard", "dashboard:history"],
+  { tags: ["dashboard", "dashboard:history"] }
+);
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
+
 /** ---- Inline filters function for dashboard page ---- */
 async function getDashboardFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "",
       effectiveProfileId: session?.effectiveProfileId || "",
@@ -168,7 +208,7 @@ export default async function DashboardPage({
   const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
 
   // Fetch dashboard data server-side (without history - history will be fetched separately)
-  const dashboardData = await api.post("/dashboard/overview", {
+  const dashboardData = await getDashboardOverview({
     body: dashboardRequestBody,
   });
 
@@ -207,6 +247,8 @@ export default async function DashboardPage({
             <SimulationHistory
               data={[]}
               totalCount={0}
+              archivedCount={0}
+              unarchivedCount={0}
               pageIndex={historyPage}
               pageSize={historyPageSize}
               showExport={false}
@@ -249,6 +291,9 @@ async function bulkArchiveAttempts(
   "use server";
   const result = await api.post("/attempts/bulk-archive", input);
   // Revalidate the dashboard page to refetch data with updated archive status
+  revalidateTag("dashboard");
+  revalidateTag("dashboard:overview");
+  revalidateTag("dashboard:history");
   revalidatePath("/analytics/dashboard");
   return result;
 }
@@ -260,6 +305,9 @@ async function revalidateAttempt(attemptId: string): Promise<void> {
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
   // Invalidate dashboard page cache so data refreshes when user returns
+  revalidateTag("dashboard");
+  revalidateTag("dashboard:overview");
+  revalidateTag("dashboard:history");
   revalidatePath("/analytics/dashboard");
   // Note: Chat-specific tags can be added here if chat IDs are known
   // For now, invalidating attempt-level cache ensures all chats refresh
@@ -336,7 +384,7 @@ async function DashboardHistorySection({
     },
   };
 
-  const historyData = await api.post("/dashboard/history", historyFilters);
+  const historyData = await getDashboardHistory(historyFilters);
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format
@@ -369,6 +417,8 @@ async function DashboardHistorySection({
     <SimulationHistory
       data={historyData.data}
       totalCount={historyData.totalCount}
+      archivedCount={historyData.archivedCount}
+      unarchivedCount={historyData.unarchivedCount}
       pageIndex={historyPage}
       pageSize={historyPageSize}
       showExport={false}

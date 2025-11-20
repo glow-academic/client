@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v3/pricing/analytics", "post">;
@@ -19,12 +20,45 @@ type PricingOut = OutputOf<"/api/v3/pricing/analytics", "post">;
 type PricingRunsIn = InputOf<"/api/v3/pricing/runs", "post">;
 type PricingRunsOut = OutputOf<"/api/v3/pricing/runs", "post">;
 
+/** ---- Cached fetch with Next tags ----
+ * Tags allow revalidateTag("pricing") to invalidate.
+ */
+const getPricingAnalytics = unstable_cache(
+  async (input: PricingIn): Promise<PricingOut> => {
+    return api.post("/pricing/analytics", input);
+  },
+  ["pricing", "pricing:analytics"],
+  { tags: ["pricing", "pricing:analytics"] }
+);
+
+const getPricingRuns = unstable_cache(
+  async (input: PricingRunsIn): Promise<PricingRunsOut> => {
+    return api.post("/pricing/runs", input);
+  },
+  ["pricing", "pricing:runs"],
+  { tags: ["pricing", "pricing:runs"] }
+);
+
+const getProfileContext = unstable_cache(
+  async (input: {
+    body: {
+      actualProfileId: string;
+      effectiveProfileId: string;
+      pathname: string;
+    };
+  }) => {
+    return api.post("/profile/context", input);
+  },
+  ["profile:context"],
+  { tags: ["profile:context"] }
+);
+
 /** ---- Inline filters function for pricing page ---- */
 async function getPricingFilters(searchParams?: URLSearchParams) {
   const session = await getSession();
 
   // Fetch profile context to get earliestAttemptDate
-  const profileContext = await api.post("/profile/context", {
+  const profileContext = await getProfileContext({
     body: {
       actualProfileId: session?.user?.profileId || "",
       effectiveProfileId: session?.effectiveProfileId || "",
@@ -122,7 +156,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   );
 
   // Fetch summary data server-side (for chart - all runs, no pagination)
-  const pricingData = await api.post("/pricing/analytics", {
+  const pricingData = await getPricingAnalytics({
     body: filters,
   });
 
@@ -259,7 +293,7 @@ async function PricingRunsSection({
   };
 
   // Fetch runs data server-side
-  const runsData = await api.post("/pricing/runs", {
+  const runsData = await getPricingRuns({
     body: runsFilters,
   });
 

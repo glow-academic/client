@@ -11828,6 +11828,14 @@
             "type": "integer",
             "title": "Totalcount"
           },
+          "archivedCount": {
+            "type": "integer",
+            "title": "Archivedcount"
+          },
+          "unarchivedCount": {
+            "type": "integer",
+            "title": "Unarchivedcount"
+          },
           "page": {
             "type": "integer",
             "title": "Page"
@@ -11896,6 +11904,8 @@
         "required": [
           "data",
           "totalCount",
+          "archivedCount",
+          "unarchivedCount",
           "page",
           "pageSize",
           "totalPages",
