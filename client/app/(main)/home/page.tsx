@@ -14,6 +14,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -34,13 +35,44 @@ const getHomeOverview = unstable_cache(
   { tags: ["home", "home:overview"] }
 );
 
-const getHomeHistory = unstable_cache(
-  async (input: HomeHistoryIn): Promise<HomeHistoryOut> => {
-    return api.post("/home/history", input);
-  },
-  ["home", "home:history"],
-  { tags: ["home", "home:history"] }
-);
+/** ---- Helper to detect hard refresh ----
+ * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
+ */
+async function isHardRefresh(): Promise<boolean> {
+  try {
+    const headersList = await headers();
+    const cacheControl = headersList.get("cache-control");
+    const pragma = headersList.get("pragma");
+    
+    return (
+      (cacheControl?.toLowerCase().includes("no-cache") || 
+       cacheControl?.includes("max-age=0")) ||
+      pragma?.toLowerCase() === "no-cache"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** ---- Direct fetch (no Next.js cache) ----
+ * Home history responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
+ */
+const getHomeHistory = async (
+  input: HomeHistoryIn
+): Promise<HomeHistoryOut> => {
+  const bypassCache = await isHardRefresh();
+  
+  return api.post("/home/history", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 const getProfileContext = unstable_cache(
   async (input: {
@@ -233,6 +265,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
+  // Include analytics filter params so history re-fetches when filters change
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -247,6 +280,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         : "std",
     historySortBy,
     historySortOrder,
+    defaultFilters.startDate, // Include analytics filters to trigger re-fetch when filters change
+    defaultFilters.endDate,
+    defaultFilters.cohortIds.join(","),
+    defaultFilters.departmentIds.join(","),
+    defaultFilters.roles.join(","),
+    (defaultFilters as typeof defaultFilters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
   ].join("|");
 
   return (

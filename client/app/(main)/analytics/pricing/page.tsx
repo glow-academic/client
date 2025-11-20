@@ -12,6 +12,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -31,13 +32,44 @@ const getPricingAnalytics = unstable_cache(
   { tags: ["pricing", "pricing:analytics"] }
 );
 
-const getPricingRuns = unstable_cache(
-  async (input: PricingRunsIn): Promise<PricingRunsOut> => {
-    return api.post("/pricing/runs", input);
-  },
-  ["pricing", "pricing:runs"],
-  { tags: ["pricing", "pricing:runs"] }
-);
+/** ---- Helper to detect hard refresh ----
+ * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
+ */
+async function isHardRefresh(): Promise<boolean> {
+  try {
+    const headersList = await headers();
+    const cacheControl = headersList.get("cache-control");
+    const pragma = headersList.get("pragma");
+    
+    return (
+      (cacheControl?.toLowerCase().includes("no-cache") || 
+       cacheControl?.includes("max-age=0")) ||
+      pragma?.toLowerCase() === "no-cache"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** ---- Direct fetch (no Next.js cache) ----
+ * Pricing runs responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
+ */
+const getPricingRuns = async (
+  input: PricingRunsIn
+): Promise<PricingRunsOut> => {
+  const bypassCache = await isHardRefresh();
+  
+  return api.post("/pricing/runs", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 const getProfileContext = unstable_cache(
   async (input: {
@@ -181,6 +213,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   const pricingSortOrder = searchParamsObj.get("pricingSortOrder") || "desc";
 
   // Create runsKey for Suspense boundary to trigger re-fetch on URL param changes
+  // Include analytics filter params so runs re-fetch when filters change
   const runsKey = [
     pricingPage,
     pricingPageSize,
@@ -190,6 +223,12 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     (pricingActorIds || []).join(","),
     pricingSortBy,
     pricingSortOrder,
+    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
+    filters.endDate,
+    filters.cohortIds.join(","),
+    filters.departmentIds.join(","),
+    filters.roles.join(","),
+    (filters as typeof filters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
   ].join("|");
 
   // Create empty runs data for loading state

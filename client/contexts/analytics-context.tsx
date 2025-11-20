@@ -291,7 +291,8 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
     if (newSearch !== currentSearch) {
       const newUrl = newSearch ? `${pathname}?${newSearch}` : pathname || "/";
       router.replace(newUrl, { scroll: false });
-      // router.refresh() is not needed - router.replace already causes server component to re-render
+      // Force server components to re-render with updated search params
+      router.refresh();
     }
   }, [
     startDate,

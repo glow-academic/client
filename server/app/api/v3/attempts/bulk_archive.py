@@ -14,10 +14,30 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
+# Filter schema for bulk archive (subset of DashboardHistoryFilters, without pagination/sorting)
+class BulkArchiveFilters(BaseModel):
+    """Filter schema for bulk archive operations."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    departmentIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[str] | None = None  # ["general", "practice", "archived"]
+    profileId: str | None = None
+    search: str | None = None
+    profileIds: list[str] | None = None
+    simulationIds: list[str] | None = None
+    scenarioIds: list[str] | None = None
+    infiniteMode: bool | None = None
+
+
 # Inline request/response schemas
 class BulkArchiveAttemptsRequest(BaseModel):
     archived: bool
-    attemptIds: list[str]
+    attemptIds: list[str] | None = None  # Optional: used when archiveAll is False
+    archiveAll: bool = False  # When True, use filters instead of attemptIds
+    filters: BulkArchiveFilters | None = None  # Optional: used when archiveAll is True
 
 
 class BulkArchiveAttemptsResponse(BaseModel):
@@ -43,10 +63,62 @@ async def bulk_archive_attempts(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Bulk archive attempts with count return in a single SQL file
-        sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_complete.sql")
-        sql_params = (request.archived, request.attemptIds)
-        result = await conn.fetchrow(sql_query, request.archived, request.attemptIds)
+        # Determine which operation mode to use
+        if request.archiveAll and request.filters:
+            # Filter-based bulk archive: archive all attempts matching filters
+            if not request.filters.startDate or not request.filters.endDate:
+                raise HTTPException(
+                    status_code=400,
+                    detail="startDate and endDate are required when using filter-based archive",
+                )
+
+            from datetime import datetime
+
+            sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_by_filters.sql")
+            
+            # Build parameters matching SQL file expectations:
+            # $1: archived (bool)
+            # $2, $3: start_date, end_date (datetime)
+            # $4: profile_id (uuid, optional)
+            # $5: cohort_ids (uuid[])
+            # $6: department_ids (uuid[])
+            # $7: roles (profile_role[])
+            # $8: simulationFilters (text[], optional)
+            # $9: search (text, optional)
+            # $10: profileIds filter (uuid[], optional)
+            # $11: simulationIds filter (uuid[], optional)
+            # $12: scenarioIds filter (uuid[], optional)
+            # $13: infiniteMode filter (bool, optional)
+            
+            roles = request.filters.roles if request.filters.roles else []
+            simulation_filters = request.filters.simulationFilters if request.filters.simulationFilters else ["general"]
+            
+            sql_params = (
+                request.archived,  # $1
+                datetime.fromisoformat(request.filters.startDate.replace("Z", "+00:00")),  # $2
+                datetime.fromisoformat(request.filters.endDate.replace("Z", "+00:00")),  # $3
+                request.filters.profileId if request.filters.profileId else None,  # $4
+                request.filters.cohortIds if request.filters.cohortIds else [],  # $5
+                request.filters.departmentIds if request.filters.departmentIds else [],  # $6
+                roles,  # $7
+                simulation_filters,  # $8
+                request.filters.search if request.filters.search else None,  # $9
+                request.filters.profileIds if request.filters.profileIds else [],  # $10
+                request.filters.simulationIds if request.filters.simulationIds else [],  # $11
+                request.filters.scenarioIds if request.filters.scenarioIds else [],  # $12
+                request.filters.infiniteMode,  # $13 (can be None)
+            )
+            result = await conn.fetchrow(sql_query, *sql_params)
+        elif request.attemptIds:
+            # AttemptIds-based bulk archive: archive specific attempts (backward compatible)
+            sql_query = load_sql("sql/v3/attempts/bulk_archive_attempts_complete.sql")
+            sql_params = (request.archived, request.attemptIds)
+            result = await conn.fetchrow(sql_query, request.archived, request.attemptIds)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Either attemptIds must be provided, or archiveAll=true with filters must be provided",
+            )
 
         if not result:
             updated_count = 0
@@ -75,9 +147,36 @@ async def bulk_archive_attempts(
                 exc_info=True,
             )
 
-        # Invalidate cache after mutation (includes analytics cache)
-        await invalidate_tags(tags + ["analytics"])
-        response.headers["X-Invalidate-Tags"] = ",".join(tags + ["analytics"])
+        # Invalidate cache after mutation (includes analytics and all history/overview caches)
+        # Archive/unarchive affects all analytics pages, so invalidate all relevant tags
+        await invalidate_tags(
+            tags
+            + [
+                "analytics",
+                "dashboard",
+                "dashboard:history",
+                "dashboard:overview",
+                "home",
+                "home:history",
+                "home:overview",
+                "practice",
+                "practice:history",
+            ]
+        )
+        response.headers["X-Invalidate-Tags"] = ",".join(
+            tags
+            + [
+                "analytics",
+                "dashboard",
+                "dashboard:history",
+                "dashboard:overview",
+                "home",
+                "home:history",
+                "home:overview",
+                "practice",
+                "practice:history",
+            ]
+        )
 
         return result_data
     except HTTPException:

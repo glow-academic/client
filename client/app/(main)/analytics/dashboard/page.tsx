@@ -14,6 +14,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -27,28 +28,63 @@ type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
 /** ---- Direct fetch (no Next.js cache) ----
  * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header to also bypass Redis cache on hard refresh.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDashboardOverview = async (
   input: DashboardIn
 ): Promise<DashboardOut> => {
+  const bypassCache = await isHardRefresh();
+
   return api.post("/dashboard/overview", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
+
+/** ---- Helper to detect hard refresh ----
+ * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
+ * Returns true if hard refresh detected, false otherwise.
+ */
+async function isHardRefresh(): Promise<boolean> {
+  try {
+    const headersList = await headers();
+    const cacheControl = headersList.get("cache-control");
+    const pragma = headersList.get("pragma");
+
+    // Hard refresh indicators:
+    // - Cache-Control: no-cache or max-age=0
+    // - Pragma: no-cache
+    return (
+      cacheControl?.toLowerCase().includes("no-cache") ||
+      cacheControl?.includes("max-age=0") ||
+      pragma?.toLowerCase() === "no-cache"
+    );
+  } catch {
+    // If headers() fails, default to false (use cache)
+    return false;
+  }
+}
+
+/** ---- Direct fetch (no Next.js cache) ----
+ * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Always bypassing Redis cache for dashboard history since it's frequently updated
+ * (archive/unarchive operations, new attempts, etc.) to ensure fresh data.
+ */
+const getDashboardHistory = async (
+  input: DashboardHistoryIn
+): Promise<DashboardHistoryOut> => {
+  return api.post("/dashboard/history", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
     },
   });
 };
-
-const getDashboardHistory = unstable_cache(
-  async (input: DashboardHistoryIn): Promise<DashboardHistoryOut> => {
-    // Note: X-Bypass-Cache header not needed here since unstable_cache handles Next.js cache
-    // Redis cache will still work for performance, but can be invalidated via revalidateTag
-    return api.post("/dashboard/history", input);
-  },
-  ["dashboard", "dashboard:history"],
-  { tags: ["dashboard", "dashboard:history"] }
-);
 
 const getProfileContext = unstable_cache(
   async (input: {
@@ -219,6 +255,9 @@ export default async function DashboardPage({
   };
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
+  // Include _refresh param if present to force re-render after mutations (archive/unarchive)
+  // Include analytics filter params so history re-fetches when filters change
+  const refreshParam = searchParamsObj.get("_refresh") || "";
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -233,6 +272,13 @@ export default async function DashboardPage({
         : "std",
     historySortBy,
     historySortOrder,
+    refreshParam, // Include refresh param to force re-render after archive/unarchive
+    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
+    filters.endDate,
+    filters.cohortIds.join(","),
+    filters.departmentIds.join(","),
+    filters.roles.join(","),
+    filters.simulationFilters.join(","),
   ].join("|");
 
   return (
@@ -265,6 +311,7 @@ export default async function DashboardPage({
         >
           <DashboardHistorySection
             defaultFilters={filters}
+            simulationFilters={filters.simulationFilters}
             historyPage={historyPage}
             historyPageSize={historyPageSize}
             historySearch={historySearch}
@@ -316,6 +363,7 @@ async function revalidateAttempt(attemptId: string): Promise<void> {
 /** ---- Inline history section component (only used here) ---- */
 async function DashboardHistorySection({
   defaultFilters,
+  simulationFilters,
   historyPage,
   historyPageSize,
   historySearch,
@@ -336,6 +384,7 @@ async function DashboardHistorySection({
     departmentIds: string[];
     roles: string[];
   };
+  simulationFilters: string[];
   historyPage: number;
   historyPageSize: number;
   historySearch?: string | undefined;
@@ -352,6 +401,10 @@ async function DashboardHistorySection({
   ) => Promise<BulkArchiveAttemptsOut>;
 }) {
   // Build history filters matching logic from dashboard page
+  // Use the provided simulationFilters as-is - don't override it
+  // This allows filtering to specific types (e.g., ["general"] excludes archived, ["archived"] shows only archived)
+  const historySimulationFilters = simulationFilters;
+
   const historyFilters: DashboardHistoryIn = {
     body: {
       profileId: effectiveProfileId || null,
@@ -360,7 +413,7 @@ async function DashboardHistorySection({
       cohortIds: defaultFilters.cohortIds,
       departmentIds: defaultFilters.departmentIds,
       roles: defaultFilters.roles,
-      simulationFilters: ["general", "practice", "archived"], // Dashboard shows all types
+      simulationFilters: historySimulationFilters,
       page: historyPage,
       pageSize: historyPageSize,
       ...(historySearch && { search: historySearch }),

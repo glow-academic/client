@@ -1273,12 +1273,18 @@ export default function SimulationHistory({
   }, [table, rowSelectionState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Calculate archive/unarchive counts from selected rows
-  // When "Select All" is active, we still only archive rows on current page,
-  // but show counts for all filtered rows to indicate the full scope
+  // When "Select All" is active, use server-provided counts for all filtered rows
   // Otherwise, count from selected rows on current page
   const { archiveCount, unarchiveCount } = React.useMemo(() => {
-    // Always count from selected rows (current page only)
-    // When "Select All" is active, all rows on current page are selected
+    // When "Select All" is active, use server-provided counts
+    if (isSelectAllActive) {
+      return {
+        archiveCount: serverUnarchivedCount, // Unarchived count = can be archived
+        unarchiveCount: serverArchivedCount, // Archived count = can be unarchived
+      };
+    }
+
+    // Otherwise, count from selected rows (current page only)
     const selectedRows = table.getSelectedRowModel().flatRows;
     let a = 0,
       u = 0;
@@ -1291,35 +1297,99 @@ export default function SimulationHistory({
   }, [
     table,
     rowSelectionState, // Needed to recalculate when selection changes
+    isSelectAllActive,
+    serverArchivedCount,
+    serverUnarchivedCount,
   ]);
 
   // Execute bulk archive
   const executeBulkArchive = React.useCallback(async () => {
     if (archiveAction === null || !bulkArchiveAttemptsAction) return;
 
-    const selectedRows = table.getSelectedRowModel().flatRows;
-    const attemptsToUpdate = selectedRows
-      .map((r) => r.original)
-      .filter((item) => {
-        const isArchived = getArchived(item);
-        return archiveAction ? !isArchived : isArchived;
-      })
-      .map((item) => getRowId(item));
-
-    if (attemptsToUpdate.length === 0) return;
-
     setIsArchiving(true);
     try {
-      await bulkArchiveAttemptsAction({
-        body: {
-          attemptIds: attemptsToUpdate,
-          archived: archiveAction,
-        },
-      });
+      let result;
+      let countMessage: string;
 
-      toast.success(
-        `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`
-      );
+      if (isSelectAllActive && _initialFilters) {
+        // Filter-based bulk archive: archive all attempts matching current filters
+        // Extract filters from URL params and initialFilters
+        const historySearch = searchParams?.get("historySearch") || undefined;
+        const historyProfileIds = searchParams?.get("historyProfileIds")
+          ? searchParams.get("historyProfileIds")?.split(",").filter(Boolean)
+          : undefined;
+        const historySimulationIds = searchParams?.get("historySimulationIds")
+          ? searchParams.get("historySimulationIds")?.split(",").filter(Boolean)
+          : undefined;
+        const historyScenarioIds = searchParams?.get("historyScenarioIds")
+          ? searchParams.get("historyScenarioIds")?.split(",").filter(Boolean)
+          : undefined;
+        const historyInfiniteMode =
+          searchParams?.get("historyInfiniteMode") === "true"
+            ? true
+            : searchParams?.get("historyInfiniteMode") === "false"
+              ? false
+              : undefined;
+
+        // Determine simulationFilters based on pathname
+        // Dashboard shows all types, home/practice might be different
+        const simulationFilters =
+          pathname?.includes("/dashboard") ||
+          pathname?.includes("/analytics/dashboard")
+            ? ["general", "practice", "archived"]
+            : ["general", "practice"];
+
+        result = await bulkArchiveAttemptsAction({
+          body: {
+            archiveAll: true,
+            archived: archiveAction,
+            filters: {
+              startDate: _initialFilters.startDate,
+              endDate: _initialFilters.endDate,
+              cohortIds: _initialFilters.cohortIds,
+              departmentIds: _initialFilters.departmentIds,
+              roles: _initialFilters.roles,
+              simulationFilters,
+              profileId: null, // Not used for filtering in history context
+              search: historySearch || null,
+              profileIds: historyProfileIds || null,
+              simulationIds: historySimulationIds || null,
+              scenarioIds: historyScenarioIds || null,
+              infiniteMode: historyInfiniteMode ?? null,
+            },
+          },
+        });
+
+        // Use server-provided count for "Select All" operations
+        countMessage = `${result.count} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`;
+      } else {
+        // AttemptIds-based bulk archive: archive specific attempts (backward compatible)
+        const selectedRows = table.getSelectedRowModel().flatRows;
+        const attemptsToUpdate = selectedRows
+          .map((r) => r.original)
+          .filter((item) => {
+            const isArchived = getArchived(item);
+            return archiveAction ? !isArchived : isArchived;
+          })
+          .map((item) => getRowId(item));
+
+        if (attemptsToUpdate.length === 0) {
+          setIsArchiving(false);
+          return;
+        }
+
+        result = await bulkArchiveAttemptsAction({
+          body: {
+            archiveAll: false,
+            attemptIds: attemptsToUpdate,
+            archived: archiveAction,
+          },
+        });
+
+        countMessage = `${attemptsToUpdate.length} simulation attempt(s) ${archiveAction ? "archived" : "unarchived"} successfully`;
+      }
+
+      toast.success(countMessage);
 
       // Clear selection after success
       table.resetRowSelection();
@@ -1328,13 +1398,29 @@ export default function SimulationHistory({
       setArchiveAction(null);
 
       // Refresh the page to refetch data with updated archive status
-      router.refresh();
+      // The server action already calls revalidatePath and revalidateTag,
+      // so router.refresh() will fetch fresh data from the server
+      // Add a timestamp query param to force Suspense boundary to re-render
+      // by changing the historyKey in the parent component
+      const currentParams = new URLSearchParams(searchParams.toString());
+      currentParams.set("_refresh", Date.now().toString());
+      router.push(`${pathname}?${currentParams.toString()}`, { scroll: false });
+      await router.refresh();
     } catch {
       toast.error("Failed to update simulation archive status");
     } finally {
       setIsArchiving(false);
     }
-  }, [archiveAction, bulkArchiveAttemptsAction, router, table]);
+  }, [
+    archiveAction,
+    bulkArchiveAttemptsAction,
+    router,
+    table,
+    isSelectAllActive,
+    _initialFilters,
+    searchParams,
+    pathname,
+  ]);
 
   // Toolbar state - check if any history filters/search/sorting are active
   const currentSortBy = sorting[0]?.id || "date";

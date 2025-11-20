@@ -13,23 +13,47 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v3/reports", "post">;
 type ReportsOut = OutputOf<"/api/v3/reports", "post">;
 
+/** ---- Helper to detect hard refresh ----
+ * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
+ */
+async function isHardRefresh(): Promise<boolean> {
+  try {
+    const headersList = await headers();
+    const cacheControl = headersList.get("cache-control");
+    const pragma = headersList.get("pragma");
+
+    return (
+      cacheControl?.toLowerCase().includes("no-cache") ||
+      cacheControl?.includes("max-age=0") ||
+      pragma?.toLowerCase() === "no-cache"
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header to also bypass Redis cache on hard refresh.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
+  const bypassCache = await isHardRefresh();
+
   return api.post("/reports", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
   });
 };
 
@@ -172,6 +196,7 @@ export default async function ReportsFullPage({
   const reportsSortOrder = searchParamsObj.get("reportsSortOrder") || "desc";
 
   // Create reportsKey for Suspense boundary to trigger re-fetch on URL param changes
+  // Include analytics filter params so reports re-fetch when filters change
   const reportsKey = [
     reportsPage,
     reportsPageSize,
@@ -181,6 +206,12 @@ export default async function ReportsFullPage({
     (reportsScenarioIds || []).join(","),
     reportsSortBy,
     reportsSortOrder,
+    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
+    filters.endDate,
+    filters.cohortIds.join(","),
+    filters.departmentIds.join(","),
+    filters.roles.join(","),
+    (filters as typeof filters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
   ].join("|");
 
   // Create empty reports data for loading state

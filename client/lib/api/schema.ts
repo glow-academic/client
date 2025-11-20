@@ -3874,7 +3874,13 @@ export interface components {
             /** Archived */
             archived: boolean;
             /** Attemptids */
-            attemptIds: string[];
+            attemptIds?: string[] | null;
+            /**
+             * Archiveall
+             * @default false
+             */
+            archiveAll: boolean;
+            filters?: components["schemas"]["BulkArchiveFilters"] | null;
         };
         /** BulkArchiveAttemptsResponse */
         BulkArchiveAttemptsResponse: {
@@ -3884,6 +3890,36 @@ export interface components {
             message: string;
             /** Count */
             count: number;
+        };
+        /**
+         * BulkArchiveFilters
+         * @description Filter schema for bulk archive operations.
+         */
+        BulkArchiveFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: string[] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Search */
+            search?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Infinitemode */
+            infiniteMode?: boolean | null;
         };
         /**
          * BulkCreateOrUpdateStaffRequest

@@ -103,26 +103,30 @@ async def get_pricing_runs(
     logger = logging.getLogger(__name__)
     logger.info(f"Filters: {filters}")
 
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+
     # Generate cache key from path and parsed body
     # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
     body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        # Ensure cached data has new fields (for backward compatibility with old cache entries)
-        cached_data = cached["data"]
-        if "modelOptions" not in cached_data:
-            cached_data["modelOptions"] = []
-        if "profileOptions" not in cached_data:
-            cached_data["profileOptions"] = []
-        if "actorOptions" not in cached_data:
-            cached_data["actorOptions"] = []
-        return PricingRunsResponse.model_validate(cached_data)
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            # Ensure cached data has new fields (for backward compatibility with old cache entries)
+            cached_data = cached["data"]
+            if "modelOptions" not in cached_data:
+                cached_data["modelOptions"] = []
+            if "profileOptions" not in cached_data:
+                cached_data["profileOptions"] = []
+            if "actorOptions" not in cached_data:
+                cached_data["actorOptions"] = []
+            return PricingRunsResponse.model_validate(cached_data)
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None

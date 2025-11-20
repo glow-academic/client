@@ -13,6 +13,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -33,13 +34,45 @@ const getPractice = unstable_cache(
   { tags: ["practice"] }
 );
 
-const getPracticeHistory = unstable_cache(
-  async (input: PracticeHistoryIn): Promise<PracticeHistoryOut> => {
-    return api.post("/practice/history", input);
-  },
-  ["practice", "practice:history"],
-  { tags: ["practice", "practice:history"] }
-);
+/** ---- Helper to detect hard refresh ----
+ * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
+ */
+async function isHardRefresh(): Promise<boolean> {
+  try {
+    const headersList = await headers();
+    const cacheControl = headersList.get("cache-control");
+    const pragma = headersList.get("pragma");
+    
+    return (
+      (cacheControl?.toLowerCase().includes("no-cache") || 
+       cacheControl?.includes("max-age=0")) ||
+      pragma?.toLowerCase() === "no-cache"
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** ---- Direct fetch (no Next.js cache) ----
+ * Practice history responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
+ * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
+ */
+const getPracticeHistory = async (
+  input: PracticeHistoryIn
+): Promise<PracticeHistoryOut> => {
+  const bypassCache = await isHardRefresh();
+  
+  return api.post("/practice/history", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 const getProfileContext = unstable_cache(
   async (input: {
@@ -151,6 +184,13 @@ export default async function PracticePage({
   };
 
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
+  // Include analytics filter params so history re-fetches when filters change
+  const analyticsStartDate = searchParamsObj.get("startDate") || "";
+  const analyticsEndDate = searchParamsObj.get("endDate") || "";
+  const analyticsCohortIds = searchParamsObj.get("cohortIds") || "";
+  const analyticsDepartmentIds = searchParamsObj.get("departmentIds") || "";
+  const analyticsRoles = searchParamsObj.get("roles") || "";
+  const analyticsSimulationFilters = searchParamsObj.get("simulationFilters") || "general";
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -165,6 +205,12 @@ export default async function PracticePage({
         : "std",
     historySortBy,
     historySortOrder,
+    analyticsStartDate, // Include analytics filters to trigger re-fetch when filters change
+    analyticsEndDate,
+    analyticsCohortIds,
+    analyticsDepartmentIds,
+    analyticsRoles,
+    analyticsSimulationFilters,
   ].join("|");
 
   return (
