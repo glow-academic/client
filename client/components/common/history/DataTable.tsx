@@ -50,10 +50,10 @@ import { DataTableToolbar } from "./DataTableToolbar";
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  profileOptions: { value: string; label: string }[];
-  simulationOptions: { value: string; label: string }[];
-  scenarioOptions?: { value: string; label: string }[];
-  infiniteModeOptions?: { value: string; label: string }[];
+  profileOptions: { value: string; label: string; count?: number }[];
+  simulationOptions: { value: string; label: string; count?: number }[];
+  scenarioOptions?: { value: string; label: string; count?: number }[];
+  infiniteModeOptions?: { value: string; label: string; count?: number }[];
   showExport?: boolean;
   showArchive?: boolean;
   showAll?: boolean;
@@ -62,6 +62,37 @@ export interface DataTableProps<TData, TValue> {
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
+  // Server-driven pagination props
+  isServerDriven?: boolean;
+  pageCount?: number;
+  onPaginationChange?: (
+    updater:
+      | { pageIndex: number; pageSize: number }
+      | ((prev: { pageIndex: number; pageSize: number }) => {
+          pageIndex: number;
+          pageSize: number;
+        })
+  ) => void;
+  // Controlled state from parent when server-driven
+  columnFiltersState?: ColumnFiltersState;
+  sortingState?: SortingState;
+  onColumnFiltersChange?: (
+    updater:
+      | Array<{ id: string; value: unknown }>
+      | ((
+          prev: Array<{ id: string; value: unknown }>
+        ) => Array<{ id: string; value: unknown }>)
+  ) => void;
+  onSortingChange?: (
+    updater:
+      | Array<{ id: string; desc: boolean }>
+      | ((
+          prev: Array<{ id: string; desc: boolean }>
+        ) => Array<{ id: string; desc: boolean }>)
+  ) => void;
+  onSearchChange?: (value: string) => void;
+  searchValue?: string;
+  paginationState?: { pageIndex: number; pageSize: number };
 }
 
 export function DataTable<TData, TValue>({
@@ -77,10 +108,20 @@ export function DataTable<TData, TValue>({
   startDate: _startDate,
   endDate: _endDate,
   bulkArchiveAttemptsAction,
+  isServerDriven = false,
+  pageCount,
+  onPaginationChange,
+  columnFiltersState,
+  sortingState,
+  onColumnFiltersChange,
+  onSortingChange,
+  onSearchChange,
+  searchValue,
+  paginationState,
 }: DataTableProps<TData, TValue>) {
   const router = useRouter();
   const [rowSelection, setRowSelection] = React.useState({});
-  const     [columnVisibility, setColumnVisibility] =
+  const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       search: false,
       profileId: false,
@@ -88,12 +129,56 @@ export function DataTable<TData, TValue>({
       scenarios: false,
       infiniteMode: false,
     });
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [sorting, setSorting] = React.useState<SortingState>([
+
+  // Internal state only used when NOT server-driven
+  const [internalColumnFilters, setInternalColumnFilters] =
+    React.useState<ColumnFiltersState>([]);
+  const [internalSorting, setInternalSorting] = React.useState<SortingState>([
     { id: "date", desc: true }, // Default to descending order by date
   ]);
+
+  // Choose which state to use
+  const columnFilters = isServerDriven
+    ? (columnFiltersState ?? [])
+    : internalColumnFilters;
+
+  const sorting = isServerDriven ? (sortingState ?? []) : internalSorting;
+
+  // Handle column filters change (server-driven or client-side)
+  const handleColumnFiltersChange = React.useCallback(
+    (
+      updater:
+        | ColumnFiltersState
+        | ((prev: ColumnFiltersState) => ColumnFiltersState)
+    ) => {
+      if (isServerDriven && onColumnFiltersChange) {
+        const current = columnFiltersState ?? [];
+        const next = typeof updater === "function" ? updater(current) : updater;
+        onColumnFiltersChange(next);
+      } else {
+        setInternalColumnFilters((prev) =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
+    },
+    [isServerDriven, onColumnFiltersChange, columnFiltersState]
+  );
+
+  // Handle sorting change (server-driven or client-side)
+  const handleSortingChange = React.useCallback(
+    (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+      if (isServerDriven && onSortingChange) {
+        const current = sortingState ?? [];
+        const next = typeof updater === "function" ? updater(current) : updater;
+        onSortingChange(next);
+      } else {
+        setInternalSorting((prev) =>
+          typeof updater === "function" ? updater(prev) : updater
+        );
+      }
+    },
+    [isServerDriven, onSortingChange, sortingState]
+  );
 
   // State for archive dialog
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
@@ -168,16 +253,27 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination: paginationState || {
+        pageIndex: 0,
+        pageSize: 10,
+      },
     },
     enableRowSelection: showArchive,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
+    ...(isServerDriven && onPaginationChange ? { onPaginationChange } : {}),
+    manualPagination: isServerDriven,
+    manualFiltering: isServerDriven,
+    manualSorting: isServerDriven,
+    ...(isServerDriven && pageCount !== undefined ? { pageCount } : {}),
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    ...(!isServerDriven ? { getFilteredRowModel: getFilteredRowModel() } : {}),
+    ...(!isServerDriven
+      ? { getPaginationRowModel: getPaginationRowModel() }
+      : {}),
+    ...(!isServerDriven ? { getSortedRowModel: getSortedRowModel() } : {}),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getRowId: (row, index) => getRowId(row) || String(index),
@@ -279,6 +375,7 @@ export function DataTable<TData, TValue>({
       setArchiveAction(null);
 
       // Refresh the page to refetch data with updated archive status
+      // router.refresh() preserves scroll position in Next.js App Router, so no scroll jump
       router.refresh();
     } catch {
       toast.error("Failed to update simulation archive status");
@@ -301,6 +398,9 @@ export function DataTable<TData, TValue>({
         selectedAttempts={selectedAttempts}
         onBulkArchive={handleBulkArchive}
         onSelectAllVisibleRows={handleSelectAllVisibleRows}
+        isServerDriven={isServerDriven}
+        {...(onSearchChange ? { onSearchChange } : {})}
+        {...(searchValue !== undefined ? { searchValue } : {})}
       />
       <div className="rounded-md border">
         <Table>

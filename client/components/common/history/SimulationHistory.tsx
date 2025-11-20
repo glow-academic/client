@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Column, ColumnDef, Row } from "@tanstack/react-table";
 import { Infinity as InfinityIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { DataTable } from "./DataTable";
 import { DataTableRowActions } from "./DataTableRowActions";
@@ -54,6 +55,15 @@ export interface SimulationHistoryProps {
   // Required: Array of history data items
   data: HistoryDataItem[];
 
+  // Required: Total count for pagination (when using server-driven pagination)
+  totalCount: number;
+
+  // Required: Current page index (0-based)
+  pageIndex: number;
+
+  // Required: Current page size
+  pageSize: number;
+
   // Required: Whether to show export functionality
   showExport: boolean;
 
@@ -73,17 +83,206 @@ export interface SimulationHistoryProps {
 
   // Optional: Server action for revalidating attempts (for redirect after retry/continue)
   revalidateAttemptAction?: (attemptId: string) => Promise<void>;
+
+  // Optional: Initial filters for history (for filter options only)
+  initialFilters?: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
+
+  // Required: Filter options (from server - all available options, not just current page)
+  profileOptions: Array<{ value: string; label: string; count?: number }>;
+  simulationOptions: Array<{ value: string; label: string; count?: number }>;
+  scenarioOptions: Array<{ value: string; label: string; count?: number }>;
 }
 
 export default function SimulationHistory({
   data,
+  totalCount,
+  pageIndex,
+  pageSize,
   showExport,
   showArchive,
   singleProfile = false,
   isLoading = false,
   bulkArchiveAttemptsAction,
   revalidateAttemptAction,
+  initialFilters: _initialFilters,
+  profileOptions,
+  simulationOptions,
+  scenarioOptions,
 }: SimulationHistoryProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL search params
+  const [searchTerm, setSearchTerm] = React.useState(
+    searchParams?.get("historySearch") || ""
+  );
+
+  // Use deferred value for search to reduce re-renders
+  const deferredSearchTerm = React.useDeferredValue(searchTerm);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState(
+    searchParams?.get("historySearch") || ""
+  );
+
+  // Debounce search term (300ms delay) - use deferred value
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(deferredSearchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [deferredSearchTerm]);
+
+  // Initialize column filters from URL search params
+  const [columnFilters, setColumnFilters] = React.useState<
+    Array<{ id: string; value: unknown }>
+  >(() => {
+    const filters: Array<{ id: string; value: unknown }> = [];
+    const profileIds = searchParams?.get("historyProfileIds");
+    if (profileIds) {
+      filters.push({
+        id: "profileId",
+        value: profileIds.split(",").filter(Boolean),
+      });
+    }
+    const simulationIds = searchParams?.get("historySimulationIds");
+    if (simulationIds) {
+      filters.push({
+        id: "simulationId",
+        value: simulationIds.split(",").filter(Boolean),
+      });
+    }
+    const scenarioIds = searchParams?.get("historyScenarioIds");
+    if (scenarioIds) {
+      filters.push({
+        id: "scenarios",
+        value: scenarioIds.split(",").filter(Boolean),
+      });
+    }
+    const infiniteMode = searchParams?.get("historyInfiniteMode");
+    if (infiniteMode) {
+      filters.push({
+        id: "infiniteMode",
+        value: infiniteMode === "true" ? ["infinite"] : ["standard"],
+      });
+    }
+    return filters;
+  });
+
+  // Initialize sorting from URL search params
+  const [sorting, setSorting] = React.useState<
+    Array<{ id: string; desc: boolean }>
+  >(() => {
+    const sortBy = searchParams?.get("historySortBy") || "date";
+    const sortOrder = searchParams?.get("historySortOrder") || "desc";
+    return [
+      {
+        id: sortBy,
+        desc: sortOrder === "desc",
+      },
+    ];
+  });
+
+  // Helper function to update URL search params (preserves analytics filters)
+  const updateHistoryParams = React.useCallback(
+    (updates: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      profileIds?: string[];
+      simulationIds?: string[];
+      scenarioIds?: string[];
+      infiniteMode?: boolean | undefined;
+      sortBy?: string;
+      sortOrder?: string;
+    }) => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+
+      // Update pagination
+      if (updates.page !== undefined) {
+        if (updates.page === 0) {
+          params.delete("historyPage");
+        } else {
+          params.set("historyPage", updates.page.toString());
+        }
+      }
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 10) {
+          params.delete("historyPageSize");
+        } else {
+          params.set("historyPageSize", updates.pageSize.toString());
+        }
+      }
+
+      // Update search
+      if (updates.search !== undefined) {
+        if (!updates.search) {
+          params.delete("historySearch");
+        } else {
+          params.set("historySearch", updates.search);
+        }
+      }
+
+      // Update filters
+      if (updates.profileIds !== undefined) {
+        if (!updates.profileIds.length) {
+          params.delete("historyProfileIds");
+        } else {
+          params.set("historyProfileIds", updates.profileIds.join(","));
+        }
+      }
+      if (updates.simulationIds !== undefined) {
+        if (!updates.simulationIds.length) {
+          params.delete("historySimulationIds");
+        } else {
+          params.set("historySimulationIds", updates.simulationIds.join(","));
+        }
+      }
+      if (updates.scenarioIds !== undefined) {
+        if (!updates.scenarioIds.length) {
+          params.delete("historyScenarioIds");
+        } else {
+          params.set("historyScenarioIds", updates.scenarioIds.join(","));
+        }
+      }
+      if (updates.infiniteMode !== undefined) {
+        params.set(
+          "historyInfiniteMode",
+          updates.infiniteMode ? "true" : "false"
+        );
+      } else {
+        // If infiniteMode is explicitly undefined, don't change the param
+      }
+
+      // Update sorting
+      if (updates.sortBy !== undefined && updates.sortOrder !== undefined) {
+        if (updates.sortBy === "date" && updates.sortOrder === "desc") {
+          params.delete("historySortBy");
+          params.delete("historySortOrder");
+        } else {
+          params.set("historySortBy", updates.sortBy);
+          params.set("historySortOrder", updates.sortOrder);
+        }
+      }
+
+      const newUrl = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      router.replace(newUrl, { scroll: false });
+    },
+    [searchParams, pathname, router]
+  );
+
+  // Update URL when debounced search term changes (keeps historySearch in sync)
+  React.useEffect(() => {
+    // Reset to page 0 when search changes, then update URL with new search term
+    updateHistoryParams({ page: 0, search: debouncedSearchTerm });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm]);
+
   // Check if all attempts have the same profileId (only when singleProfile is true)
   const allSameProfile = React.useMemo(() => {
     if (!singleProfile || data.length === 0) {
@@ -98,72 +297,11 @@ export default function SimulationHistory({
     return data.every((item) => item.profileId === firstProfileId);
   }, [data, singleProfile]);
 
-  // Create profile options from data
-  const profileOptions = React.useMemo(() => {
-    if (allSameProfile || !data || data.length === 0) return [];
-
-    const uniqueProfiles = data.reduce(
-      (acc, item) => {
-        if (
-          item?.profileId &&
-          item?.profileName &&
-          !acc.find((p) => p.value === item.profileId)
-        ) {
-          acc.push({
-            value: item.profileId,
-            label: item.profileName,
-          });
-        }
-        return acc;
-      },
-      [] as { value: string; label: string }[]
-    );
-
-    return uniqueProfiles;
-  }, [data, allSameProfile]);
-
-  // Create simulation options from data
-  const simulationOptions = React.useMemo(() => {
-    if (!data || data.length === 0) return [];
-
-    const uniqueSimulations = data.reduce(
-      (acc, item) => {
-        if (
-          item?.simulation_id &&
-          item?.simulationName &&
-          !acc.find((s) => s.value === item.simulation_id)
-        ) {
-          acc.push({
-            value: item.simulation_id,
-            label: item.simulationName,
-          });
-        }
-        return acc;
-      },
-      [] as { value: string; label: string }[]
-    );
-
-    return uniqueSimulations;
-  }, [data]);
-
-  // Create scenario options from data
-  const scenarioOptions = React.useMemo(() => {
-    if (!data || data.length === 0) return [];
-
-    const map = new Map<string, string>(); // id -> title
-    for (const item of data) {
-      const ids = item.scenario_ids || [];
-      const titles = item.scenario_titles || [];
-      ids.forEach((id, i) => {
-        const title = titles[i] || `Scenario ${id}`;
-        if (!map.has(id)) map.set(id, title);
-      });
-    }
-    return Array.from(map.entries()).map(([value, label]) => ({
-      value,
-      label,
-    }));
-  }, [data]);
+  // Filter profile options if all attempts have the same profile (hide Name filter when singleProfile is true)
+  const filteredProfileOptions = React.useMemo(() => {
+    if (allSameProfile) return [];
+    return profileOptions;
+  }, [allSameProfile, profileOptions]);
 
   // Create mode options (infinite, standard)
   const infiniteModeOptions = React.useMemo(() => {
@@ -611,13 +749,70 @@ export default function SimulationHistory({
       key={tableKey}
       data={data}
       columns={columns as never}
-      profileOptions={profileOptions}
+      profileOptions={filteredProfileOptions}
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}
       infiniteModeOptions={infiniteModeOptions}
       showExport={showExport}
       showArchive={showArchive}
       showAll={true} // Always show all since filtering is handled upstream
+      isServerDriven={true}
+      pageCount={Math.ceil(totalCount / pageSize)}
+      paginationState={{ pageIndex, pageSize }}
+      columnFiltersState={columnFilters}
+      sortingState={sorting}
+      onPaginationChange={(updater) => {
+        const newPagination =
+          typeof updater === "function"
+            ? updater({ pageIndex, pageSize })
+            : updater;
+        updateHistoryParams({
+          page: newPagination.pageIndex,
+          pageSize: newPagination.pageSize,
+        });
+      }}
+      onColumnFiltersChange={(updater) => {
+        const newFilters =
+          typeof updater === "function" ? updater(columnFilters) : updater;
+        setColumnFilters(newFilters);
+
+        // Extract filter values and update URL
+        const profileIds = newFilters.find((f) => f.id === "profileId")
+          ?.value as string[] | undefined;
+        const simulationIds = newFilters.find((f) => f.id === "simulationId")
+          ?.value as string[] | undefined;
+        const scenarioIds = newFilters.find((f) => f.id === "scenarios")
+          ?.value as string[] | undefined;
+        const infiniteModeFilter = newFilters.find(
+          (f) => f.id === "infiniteMode"
+        )?.value as string[] | undefined;
+        const infiniteMode: boolean | undefined =
+          infiniteModeFilter && infiniteModeFilter.length > 0
+            ? infiniteModeFilter.includes("infinite")
+            : undefined;
+
+        updateHistoryParams({
+          profileIds: profileIds || [],
+          simulationIds: simulationIds || [],
+          scenarioIds: scenarioIds || [],
+          ...(infiniteMode !== undefined && { infiniteMode }),
+        });
+      }}
+      onSortingChange={(updater) => {
+        const newSorting =
+          typeof updater === "function" ? updater(sorting) : updater;
+        setSorting(newSorting);
+
+        const sortBy = newSorting[0]?.id || "date";
+        const sortOrder = newSorting[0]?.desc ? "desc" : "asc";
+        updateHistoryParams({ sortBy, sortOrder });
+      }}
+      onSearchChange={(value) => {
+        setSearchTerm(value);
+        // Debounce is handled by useEffect, but we need to update URL when debounced value changes
+        // This will be handled by a separate effect that watches debouncedSearchTerm
+      }}
+      searchValue={searchTerm}
       {...(showArchive && bulkArchiveAttemptsAction
         ? { bulkArchiveAttemptsAction }
         : {})}

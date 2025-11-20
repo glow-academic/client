@@ -15,8 +15,8 @@ import type { Metadata } from "next";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v3/home", "post">;
-type HomeOut = OutputOf<"/api/v3/home", "post">;
+type HomeIn = InputOf<"/api/v3/home/overview", "post">;
+type HomeOut = OutputOf<"/api/v3/home/overview", "post">;
 
 /** ---- Inline filters function for home page ---- */
 async function getHomeFilters(searchParams?: URLSearchParams) {
@@ -155,12 +155,159 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     body: homeFiltersBody,
   };
 
-  // Fetch home data server-side
-  const homeData = await api.post("/home", homeFilters);
+  // Extract pagination and filter params from search params
+  const historyPage = searchParamsObj.get("historyPage")
+    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
+    : 0;
+  const historyPageSize = searchParamsObj.get("historyPageSize")
+    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
+    : 10;
+  const historySearch = searchParamsObj.get("historySearch") || undefined;
+  const historyProfileIds = searchParamsObj.get("historyProfileIds")
+    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
+    : undefined;
+  const historySimulationIds = searchParamsObj.get("historySimulationIds")
+    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
+    : undefined;
+  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
+    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
+    : undefined;
+  const historyInfiniteMode =
+    searchParamsObj.get("historyInfiniteMode") === "true"
+      ? true
+      : searchParamsObj.get("historyInfiniteMode") === "false"
+        ? false
+        : undefined;
+  const historySortBy = searchParamsObj.get("historySortBy") || "date";
+  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
+
+  // Fetch home data server-side (without history - history will be fetched separately)
+  const homeData = await api.post("/home/overview", homeFilters);
+
+  // Remove history from response for server-driven pagination
+  const homeDataWithoutHistory = {
+    ...homeData,
+    history: [],
+  };
+
+  // Fetch history data server-side using searchParams (DHH-style: URL is source of truth)
+  type HomeHistoryIn = InputOf<"/api/v3/home/history", "post">;
+  type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
+
+  const historyFilters: HomeHistoryIn = {
+    body: {
+      profileId: session?.effectiveProfileId || null,
+      startDate: defaultFilters.startDate,
+      endDate: defaultFilters.endDate,
+      cohortIds: defaultFilters.cohortIds,
+      departmentIds: defaultFilters.departmentIds,
+      roles: defaultFilters.roles,
+      page: historyPage,
+      pageSize: historyPageSize,
+      ...(historySearch && { search: historySearch }),
+      ...(historyProfileIds &&
+        historyProfileIds.length > 0 && {
+          profileIds: historyProfileIds,
+        }),
+      ...(historySimulationIds &&
+        historySimulationIds.length > 0 && {
+          simulationIds: historySimulationIds,
+        }),
+      ...(historyScenarioIds &&
+        historyScenarioIds.length > 0 && {
+          scenarioIds: historyScenarioIds,
+        }),
+      ...(historyInfiniteMode !== undefined && {
+        infiniteMode: historyInfiniteMode,
+      }),
+      sortBy: historySortBy,
+      sortOrder: historySortOrder,
+    },
+  };
+
+  const historyData = await api.post("/home/history", historyFilters);
+
+  // Transform API response to match SimulationHistory expected format
+  type ApiHistoryItem = HomeHistoryOut["data"][number];
+  const transformedHistoryData = historyData.data.map(
+    (item: ApiHistoryItem) => ({
+      attemptId: item.attemptId,
+      date: new Date(item.date),
+      profileId: item.profileId,
+      profileName: item.profileName,
+      simulationName: item.simulationName,
+      numScenarios: item.numScenarios ?? null,
+      numScenariosCompleted: item.numScenariosCompleted,
+      infiniteMode: item.infiniteMode,
+      timeLimit: item.timeLimit ?? null,
+      personaNames: item.personaNames,
+      personaColors: item.personaColors,
+      scenario_titles: item.scenario_titles,
+      score: item.score ?? null,
+      simulation_id: item.simulation_id,
+      department_id: (() => {
+        const deptIds = item.department_ids;
+        if (
+          deptIds &&
+          Array.isArray(deptIds) &&
+          deptIds.length > 0 &&
+          deptIds[0]
+        ) {
+          return deptIds[0];
+        }
+        return "";
+      })() as string,
+      scenario_ids: item.scenario_ids,
+      isArchived: item.isArchived,
+      showView: item.showView,
+      showContinue: item.showContinue,
+      practiceSimulation: item.practiceSimulation ?? false,
+      passPct: item.passPct || 70,
+      cohortNames: item.cohortNames,
+      ...(item.practiceScenarioId && {
+        practiceScenarioId: item.practiceScenarioId,
+      }),
+    })
+  );
+
+  // Extract options from API response
+  type HistoryDataWithOptions = HomeHistoryOut & {
+    profileOptions?: Array<{ value: string; label: string; count?: number }>;
+    simulationOptions?: Array<{ value: string; label: string; count?: number }>;
+    scenarioOptions?: Array<{ value: string; label: string; count?: number }>;
+  };
+  const historyDataWithOptions =
+    historyData as unknown as HistoryDataWithOptions;
+  const profileOptions: Array<{
+    value: string;
+    label: string;
+    count?: number;
+  }> = historyDataWithOptions.profileOptions || [];
+  const simulationOptions: Array<{
+    value: string;
+    label: string;
+    count?: number;
+  }> = historyDataWithOptions.simulationOptions || [];
+  const scenarioOptions: Array<{
+    value: string;
+    label: string;
+    count?: number;
+  }> = historyDataWithOptions.scenarioOptions || [];
 
   return (
     <div className="space-y-6">
-      <Home homeData={homeData} revalidateAttemptAction={revalidateAttempt} />
+      <Home
+        homeData={homeDataWithoutHistory}
+        revalidateAttemptAction={revalidateAttempt}
+        initialFilters={defaultFilters}
+        historyData={transformedHistoryData}
+        historyTotalCount={historyData.totalCount}
+        historyPage={historyPage}
+        historyPageSize={historyPageSize}
+        profileOptions={profileOptions}
+        simulationOptions={simulationOptions}
+        scenarioOptions={scenarioOptions}
+      />
     </div>
   );
 }

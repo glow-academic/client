@@ -3170,7 +3170,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/home": {
+    "/api/v3/home/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -3185,7 +3185,27 @@ export interface paths {
          *
          *     Home always shows general simulations only (no simulationFilters parameter).
          */
-        post: operations["get_home_overview_api_v3_home_post"];
+        post: operations["get_home_overview_api_v3_home_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/home/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Home History
+         * @description Get paginated home history with search, filters, sorting, and pagination.
+         */
+        post: operations["get_home_history_api_v3_home_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6151,6 +6171,84 @@ export interface components {
             departmentIds?: string[] | null;
             /** Roles */
             roles?: string[] | null;
+        };
+        /**
+         * HomeHistoryFilters
+         * @description Home history filter request schema.
+         */
+        HomeHistoryFilters: {
+            /** Profileid */
+            profileId?: string | null;
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: string[] | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 20
+             */
+            pageSize: number;
+            /** Search */
+            search?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Infinitemode */
+            infiniteMode?: boolean | null;
+            /**
+             * Sortby
+             * @default date
+             */
+            sortBy: string;
+            /**
+             * Sortorder
+             * @default desc
+             */
+            sortOrder: string;
+        };
+        /**
+         * HomeHistoryResponse
+         * @description Home history paginated response.
+         */
+        HomeHistoryResponse: {
+            /** Data */
+            data: components["schemas"]["app__api__v3__home__history__AttemptHistoryRow"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /** Profileoptions */
+            profileOptions: {
+                [key: string]: string | number;
+            }[];
+            /** Simulationoptions */
+            simulationOptions: {
+                [key: string]: string | number;
+            }[];
+            /** Scenariooptions */
+            scenarioOptions: {
+                [key: string]: string | number;
+            }[];
         };
         /**
          * HomeOverviewResponse
@@ -9862,6 +9960,58 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row.
+         */
+        app__api__v3__home__history__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -15704,7 +15854,7 @@ export interface operations {
             };
         };
     };
-    get_home_overview_api_v3_home_post: {
+    get_home_overview_api_v3_home_overview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15724,6 +15874,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HomeOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_home_history_api_v3_home_history_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeHistoryFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeHistoryResponse"];
                 };
             };
             /** @description Validation Error */

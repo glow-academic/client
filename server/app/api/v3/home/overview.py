@@ -15,7 +15,7 @@ from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/home", tags=["home"])
+router = APIRouter()
 
 
 # Inline schemas
@@ -117,7 +117,7 @@ def _parse_json_strings_recursive(obj: Any) -> Any:  # noqa: ANN401
         return obj
 
 
-@router.post("", response_model=HomeOverviewResponse)
+@router.post("/overview", response_model=HomeOverviewResponse)
 async def get_home_overview(
     filters: HomeFilters,
     request: Request,

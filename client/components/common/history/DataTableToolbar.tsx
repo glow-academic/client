@@ -12,9 +12,9 @@ import { SingleProfileCertificateButton } from "./SingleProfileCertificateButton
 
 export interface DataTableToolbarProps<TData> {
   table: Table<TData>;
-  profileOptions?: { value: string; label: string }[];
-  simulationOptions?: { value: string; label: string }[];
-  scenarioOptions?: { value: string; label: string }[];
+  profileOptions?: { value: string; label: string; count?: number }[];
+  simulationOptions?: { value: string; label: string; count?: number }[];
+  scenarioOptions?: { value: string; label: string; count?: number }[];
   infiniteModeOptions?: { value: string; label: string }[];
   isAdmin?: boolean;
   showExport?: boolean;
@@ -23,6 +23,9 @@ export interface DataTableToolbarProps<TData> {
   selectedAttempts?: string[];
   onBulkArchive?: (archive: boolean) => Promise<void>;
   onSelectAllVisibleRows?: () => void;
+  isServerDriven?: boolean;
+  onSearchChange?: (value: string) => void;
+  searchValue?: string;
 }
 
 export function DataTableToolbar<TData>({
@@ -38,6 +41,9 @@ export function DataTableToolbar<TData>({
   selectedAttempts: _selectedAttempts = [],
   onBulkArchive,
   onSelectAllVisibleRows,
+  isServerDriven = false,
+  onSearchChange,
+  searchValue,
 }: DataTableToolbarProps<TData>) {
   // Check if any filters are active
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -96,11 +102,20 @@ export function DataTableToolbar<TData>({
               <Input
                 placeholder="Search by name, simulation, or scenarios..."
                 value={
-                  (table.getColumn("search")?.getFilterValue() as string) ?? ""
+                  isServerDriven && searchValue !== undefined
+                    ? searchValue
+                    : ((table
+                        .getColumn("search")
+                        ?.getFilterValue() as string) ?? "")
                 }
-                onChange={(event) =>
-                  table.getColumn("search")?.setFilterValue(event.target.value)
-                }
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (isServerDriven && onSearchChange) {
+                    onSearchChange(value);
+                  } else {
+                    table.getColumn("search")?.setFilterValue(value);
+                  }
+                }}
                 className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
               />
               <div className="flex-1 md:hidden">
@@ -130,6 +145,7 @@ export function DataTableToolbar<TData>({
                 column={profileIdColumn}
                 title="Name"
                 options={profileOptions}
+                isServerDriven={isServerDriven}
               />
             )}
 
@@ -139,6 +155,7 @@ export function DataTableToolbar<TData>({
                 column={simulationIdColumn}
                 title="Simulation"
                 options={simulationOptions}
+                isServerDriven={isServerDriven}
               />
             )}
 
@@ -148,6 +165,7 @@ export function DataTableToolbar<TData>({
                 column={scenariosColumn}
                 title="Scenarios"
                 options={scenarioOptions}
+                isServerDriven={isServerDriven}
               />
             )}
 

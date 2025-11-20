@@ -19,8 +19,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -29,13 +29,16 @@ export interface DataTableFacetedFilterProps<TData, TValue> {
     label: string;
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
+    count?: number;
   }[];
+  isServerDriven?: boolean;
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  isServerDriven = false,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const isMobile = useIsMobile();
 
@@ -49,11 +52,8 @@ export function DataTableFacetedFilter<TData, TValue>({
     return null;
   }
 
-  // Get faceted values with defensive check
-  const facets = column?.getFacetedUniqueValues?.();
-  if (!facets) {
-    return null; // Table not fully initialized yet
-  }
+  // Get faceted values with defensive check (only needed for client-side counting)
+  const facets = !isServerDriven ? column?.getFacetedUniqueValues?.() : null;
 
   const filterValue = column?.getFilterValue?.();
   const selectedValues = new Set(Array.isArray(filterValue) ? filterValue : []);
@@ -126,7 +126,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                       }
                       const filterValues = Array.from(selectedValues);
                       column.setFilterValue(
-                        filterValues.length ? filterValues : undefined,
+                        filterValues.length ? filterValues : undefined
                       );
                     }}
                   >
@@ -135,7 +135,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                         isSelected
                           ? "bg-primary text-primary-foreground"
-                          : "opacity-50 [&_svg]:invisible",
+                          : "opacity-50 [&_svg]:invisible"
                       )}
                     >
                       <Check />
@@ -150,6 +150,14 @@ export function DataTableFacetedFilter<TData, TValue>({
                       {option.label}
                     </span>
                     {(() => {
+                      // Use server-provided count if available, otherwise calculate from facets
+                      if (isServerDriven && option.count !== undefined) {
+                        return option.count > 0 ? (
+                          <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                            {option.count}
+                          </span>
+                        ) : null;
+                      }
                       if (!facets) return null;
                       let cnt = 0;
                       // facets is Map<any, number>
@@ -189,4 +197,3 @@ export function DataTableFacetedFilter<TData, TValue>({
     </Popover>
   );
 }
-

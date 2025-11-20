@@ -230,6 +230,9 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
 
   // Sync filter state to search params
   const syncFiltersToSearchParams = useCallback(() => {
+    // Start with current search params to preserve non-analytics params (e.g., history* params)
+    const params = new URLSearchParams(searchParams.toString());
+
     const currentFilters: {
       startDate: string;
       endDate: string;
@@ -261,15 +264,34 @@ export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
       currentFilters.departmentIds = selectedDepartmentIds;
     }
 
-    const params = filtersToSearchParams(currentFilters, defaultFilters);
+    // Get analytics-only params from filtersToSearchParams
+    const analyticsParams = filtersToSearchParams(
+      currentFilters,
+      defaultFilters
+    );
+
+    // Update only analytics-related params, preserving all other params (e.g., history*)
+    // Delete all existing analytics params first
+    params.delete("startDate");
+    params.delete("endDate");
+    params.delete("cohortIds");
+    params.delete("roles");
+    params.delete("simulationFilters");
+    params.delete("departmentIds");
+
+    // Then set only non-default analytics params
+    analyticsParams.forEach((value, key) => {
+      params.set(key, value);
+    });
+
     const newSearch = params.toString();
     const currentSearch = searchParams.toString();
 
     // Only update if search params actually changed
     if (newSearch !== currentSearch) {
       const newUrl = newSearch ? `${pathname}?${newSearch}` : pathname || "/";
-      router.replace(newUrl);
-      router.refresh();
+      router.replace(newUrl, { scroll: false });
+      // router.refresh() is not needed - router.replace already causes server component to re-render
     }
   }, [
     startDate,

@@ -28,9 +28,58 @@ import SimulationProgress, {
 export interface HomeProps {
   homeData: HomeOut;
   revalidateAttemptAction: (attemptId: string) => Promise<void>;
+  initialFilters: {
+    startDate: string;
+    endDate: string;
+    cohortIds: string[];
+    departmentIds: string[];
+    roles: string[];
+  };
+  historyData: Array<{
+    attemptId: string;
+    date: Date;
+    profileId: string;
+    profileName: string;
+    simulationName: string;
+    numScenarios: number | null;
+    numScenariosCompleted: number;
+    infiniteMode: boolean;
+    timeLimit: number | null;
+    personaNames: string[];
+    personaColors: string[];
+    score: number | null;
+    simulation_id: string;
+    department_id: string;
+    scenario_ids: string[];
+    scenario_titles: string[] | undefined;
+    isArchived: boolean;
+    showView: boolean;
+    showContinue: boolean;
+    practiceSimulation?: boolean;
+    passPct: number;
+    cohortNames: string[];
+    practiceScenarioId?: string;
+  }>;
+  historyTotalCount: number;
+  historyPage: number;
+  historyPageSize: number;
+  profileOptions: Array<{ value: string; label: string; count?: number }>;
+  simulationOptions: Array<{ value: string; label: string; count?: number }>;
+  scenarioOptions: Array<{ value: string; label: string; count?: number }>;
 }
 
-export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
+export default function Home({
+  homeData,
+  revalidateAttemptAction,
+  initialFilters,
+  historyData,
+  historyTotalCount,
+  historyPage,
+  historyPageSize,
+  profileOptions,
+  simulationOptions,
+  scenarioOptions,
+}: HomeProps) {
   const {
     effectiveProfile,
     activeProfile,
@@ -41,7 +90,6 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
 
   // Use data directly from props (fetched server-side)
   const homeOverview = homeData;
-  const historyData = homeData?.history;
 
   // Extract rubric mappings from home overview data
   const standardGroupsMapping = useMemo(
@@ -462,41 +510,18 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
       {/* History Section. Always show current user's history */}
       <div className="mt-12">
         <SimulationHistory
-          data={
-            historyData
-              ? historyData.map((item) => ({
-                  attemptId: item.attemptId,
-                  date: new Date(item.date),
-                  profileId: item.profileId,
-                  profileName: item.profileName,
-                  simulationName: item.simulationName,
-                  numScenarios: item.numScenarios ?? null,
-                  numScenariosCompleted: item.numScenariosCompleted,
-                  infiniteMode: item.infiniteMode,
-                  timeLimit: item.timeLimit ?? null, // timeLimit comes from server in seconds
-                  personaNames: item.personaNames,
-                  personaColors: item.personaColors,
-                  scenario_titles: item.scenario_titles,
-                  score: item.score ?? null,
-                  simulation_id: item.simulation_id,
-                  department_id: item.department_ids?.[0] ?? "",
-                  scenario_ids: item.scenario_ids,
-                  isArchived: item.isArchived,
-                  showView: item.showView,
-                  showContinue: item.showContinue,
-                  practiceSimulation: item.practiceSimulation,
-                  passPct: item.passPct || 70, // Use rubric pass percentage or default to 70
-                  cohortNames: item.cohortNames,
-                  ...(item.practiceScenarioId && {
-                    practiceScenarioId: item.practiceScenarioId,
-                  }),
-                }))
-              : []
-          }
+          data={historyData}
+          totalCount={historyTotalCount}
+          pageIndex={historyPage}
+          pageSize={historyPageSize}
           showExport={true}
           showArchive={false}
           singleProfile={true}
           revalidateAttemptAction={revalidateAttemptAction}
+          initialFilters={initialFilters}
+          profileOptions={profileOptions}
+          simulationOptions={simulationOptions}
+          scenarioOptions={scenarioOptions}
         />
       </div>
     </div>

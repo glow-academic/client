@@ -268,7 +268,7 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
-            GLOW
+            Glow
           </h1>
           {/* <p className="text-blue-100/80 text-sm">
             Graduate Learning Orientation Workshop

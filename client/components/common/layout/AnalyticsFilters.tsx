@@ -238,8 +238,8 @@ export function AnalyticsFilters({
 
   // Handle reset button click - navigate to page without search params
   const handleReset = () => {
-    router.replace(pathname);
-    router.refresh();
+    router.replace(pathname, { scroll: false });
+    // router.refresh() is not needed - router.replace already causes server component to re-render
   };
 
   return (

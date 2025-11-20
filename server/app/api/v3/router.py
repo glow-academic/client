@@ -19,7 +19,7 @@ from app.api.v3.feedback import router as feedback_router
 # ============================================================================
 # Batch G: Utility Routes
 # ============================================================================
-from app.api.v3.home.overview import router as home_router
+from app.api.v3.home import router as home_router
 from app.api.v3.leaderboard.bundle import router as leaderboard_router
 from app.api.v3.logs import router as logs_router
 from app.api.v3.parameters import router as parameters_router
