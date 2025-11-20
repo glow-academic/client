@@ -681,6 +681,7 @@ export default function SimulationHistory({
           : undefined;
 
       updateHistoryParams({
+        page: 0,
         profileIds: profileIds || [],
         simulationIds: simulationIds || [],
         scenarioIds: scenarioIds || [],
@@ -1201,6 +1202,30 @@ export default function SimulationHistory({
     },
   });
 
+  // Handle comprehensive reset (filters, search, sorting, pagination)
+  const handleResetAll = React.useCallback(() => {
+    // Reset table state
+    table.resetColumnFilters();
+    table.resetSorting();
+
+    // Reset local state
+    setColumnFilters([]);
+    setSearchTerm("");
+    setSorting([{ id: "date", desc: true }]);
+
+    // Update URL with all reset values (preserve pageSize)
+    updateHistoryParams({
+      page: 0,
+      search: "",
+      profileIds: [],
+      simulationIds: [],
+      scenarioIds: [],
+      infiniteMode: undefined,
+      sortBy: "date",
+      sortOrder: "desc",
+    });
+  }, [table, updateHistoryParams]);
+
   // Get visible columns for skeleton rows (matches actual rendered columns)
   const visibleColumns = table.getVisibleLeafColumns();
 
@@ -1288,8 +1313,14 @@ export default function SimulationHistory({
     }
   }, [archiveAction, bulkArchiveAttemptsAction, router, table]);
 
-  // Toolbar state
-  const isFiltered = table.getState().columnFilters.length > 0;
+  // Toolbar state - check if any history filters/search/sorting are active
+  const currentSortBy = sorting[0]?.id || "date";
+  const currentSortOrder = sorting[0]?.desc ? "desc" : "asc";
+  const isFiltered =
+    table.getState().columnFilters.length > 0 ||
+    searchTerm !== "" ||
+    currentSortBy !== "date" ||
+    currentSortOrder !== "desc";
   const profileIdColumn = true ? table.getColumn("profileId") : null; // showAll is always true
   const simulationIdColumn = table.getColumn("simulationId");
   const scenariosColumn = table.getColumn("scenarios");
@@ -1469,7 +1500,7 @@ export default function SimulationHistory({
               {isFiltered && (
                 <Button
                   variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
+                  onClick={handleResetAll}
                   className="h-8 px-2 lg:px-3 hidden md:flex"
                 >
                   Reset
