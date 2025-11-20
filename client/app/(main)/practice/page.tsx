@@ -22,17 +22,25 @@ type PracticeOut = OutputOf<"/api/v3/practice/overview", "post">;
 type PracticeHistoryIn = InputOf<"/api/v3/practice/history", "post">;
 type PracticeHistoryOut = OutputOf<"/api/v3/practice/history", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes input for per-request caching.
- * Tags allow revalidateTag("practice") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Practice overview responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getPractice = unstable_cache(
-  async (input: PracticeIn): Promise<PracticeOut> => {
-    return api.post("/practice/overview", input);
-  },
-  ["practice"],
-  { tags: ["practice"] }
-);
+const getPractice = async (
+  input: PracticeIn
+): Promise<PracticeOut> => {
+  const bypassCache = await isHardRefresh();
+  
+  return api.post("/practice/overview", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 /** ---- Helper to detect hard refresh ----
  * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.

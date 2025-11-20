@@ -77,13 +77,25 @@ const getDashboardOverview = async (
   });
 };
 
-const getDashboardHistory = unstable_cache(
-  async (input: DashboardHistoryIn): Promise<DashboardHistoryOut> => {
-    return api.post("/dashboard/history", input);
-  },
-  ["dashboard", "dashboard:history"],
-  { tags: ["dashboard", "dashboard:history"] }
-);
+/** ---- Direct fetch (no Next.js cache) ----
+ * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
+ */
+const getDashboardHistory = async (
+  input: DashboardHistoryIn
+): Promise<DashboardHistoryOut> => {
+  const bypassCache = await isHardRefresh();
+  
+  return api.post("/dashboard/history", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 const getProfileContext = unstable_cache(
   async (input: {

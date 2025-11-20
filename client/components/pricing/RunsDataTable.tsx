@@ -610,9 +610,6 @@ export function RunsDataTable({
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
           {/* Search bar */}
           <div className="w-full md:w-auto">
-            {isLoading ? (
-              <Skeleton className="h-8 w-full md:w-[200px]" />
-            ) : (
             <Input
                 ref={searchInputRef}
               placeholder="Search by model, persona, agent, name, debug info..."
@@ -644,7 +641,6 @@ export function RunsDataTable({
                 }}
               className="h-8 w-full md:w-[200px]"
             />
-            )}
           </div>
 
           {/* Filters */}

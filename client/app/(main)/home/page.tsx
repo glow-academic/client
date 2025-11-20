@@ -23,17 +23,25 @@ type HomeOut = OutputOf<"/api/v3/home/overview", "post">;
 type HomeHistoryIn = InputOf<"/api/v3/home/history", "post">;
 type HomeHistoryOut = OutputOf<"/api/v3/home/history", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes input for per-request caching.
- * Tags allow revalidateTag("home") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Home overview responses can get large and exceed Next.js 2MB cache limit.
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getHomeOverview = unstable_cache(
-  async (input: HomeIn): Promise<HomeOut> => {
-    return api.post("/home/overview", input);
-  },
-  ["home", "home:overview"],
-  { tags: ["home", "home:overview"] }
-);
+const getHomeOverview = async (
+  input: HomeIn
+): Promise<HomeOut> => {
+  const bypassCache = await isHardRefresh();
+  
+  return api.post("/home/overview", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 /** ---- Helper to detect hard refresh ----
  * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.

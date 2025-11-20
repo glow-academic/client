@@ -99,9 +99,6 @@ async def get_pricing_runs(
 ) -> PricingRunsResponse:
     """Get paginated, filtered, searched, sorted pricing runs for table."""
     tags = ["pricing"]  # From router tags
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"Filters: {filters}")
 
     # Check for cache bypass header (for hard refresh)
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"

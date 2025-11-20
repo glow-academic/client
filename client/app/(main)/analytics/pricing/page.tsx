@@ -12,8 +12,8 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
+import { headers } from "next/headers";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/api/v3/pricing/analytics", "post">;
@@ -21,16 +21,23 @@ type PricingOut = OutputOf<"/api/v3/pricing/analytics", "post">;
 type PricingRunsIn = InputOf<"/api/v3/pricing/runs", "post">;
 type PricingRunsOut = OutputOf<"/api/v3/pricing/runs", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Tags allow revalidateTag("pricing") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Pricing analytics responses can get large and exceed Next.js 2MB cache limit (~9MB).
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getPricingAnalytics = unstable_cache(
-  async (input: PricingIn): Promise<PricingOut> => {
-    return api.post("/pricing/analytics", input);
-  },
-  ["pricing", "pricing:analytics"],
-  { tags: ["pricing", "pricing:analytics"] }
-);
+const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
+  const bypassCache = await isHardRefresh();
+
+  return api.post("/pricing/analytics", input, {
+    cache: "no-store",
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
+  });
+};
 
 /** ---- Helper to detect hard refresh ----
  * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
@@ -40,10 +47,10 @@ async function isHardRefresh(): Promise<boolean> {
     const headersList = await headers();
     const cacheControl = headersList.get("cache-control");
     const pragma = headersList.get("pragma");
-    
+
     return (
-      (cacheControl?.toLowerCase().includes("no-cache") || 
-       cacheControl?.includes("max-age=0")) ||
+      cacheControl?.toLowerCase().includes("no-cache") ||
+      cacheControl?.includes("max-age=0") ||
       pragma?.toLowerCase() === "no-cache"
     );
   } catch {
@@ -60,7 +67,7 @@ const getPricingRuns = async (
   input: PricingRunsIn
 ): Promise<PricingRunsOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/pricing/runs", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -228,7 +235,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     filters.cohortIds.join(","),
     filters.departmentIds.join(","),
     filters.roles.join(","),
-    (filters as typeof filters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
+    (
+      filters as typeof filters & { simulationFilters?: string[] }
+    ).simulationFilters?.join(",") || "general",
   ].join("|");
 
   // Create empty runs data for loading state

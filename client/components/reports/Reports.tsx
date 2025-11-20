@@ -1268,9 +1268,6 @@ export default function Reports({
             <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
               {/* Mobile: Wrap search and export button in 50/50 flex */}
               <div className="flex gap-2 w-full md:w-auto md:flex-initial">
-                {isLoading ? (
-                  <Skeleton className="h-8 flex-1 md:w-[150px] lg:w-[250px]" />
-                ) : (
                   <Input
                     ref={searchInputRef}
                     placeholder="Search profiles by name or alias..."
@@ -1302,7 +1299,6 @@ export default function Reports({
                     }}
                     className="h-8 flex-1 md:w-[150px] lg:w-[250px]"
                   />
-                )}
                 {/* Export Button - Mobile */}
                 <div className="flex-1 md:flex-initial md:w-auto md:hidden">
                   <PopoverTrigger asChild>
@@ -1709,32 +1705,32 @@ export function ReportsSkeleton() {
             <TableBody>
               {[...Array(10)].map((_, i) => (
                 <TableRow key={i} className="h-6">
-                  <TableCell className="w-12 text-center">
+                  <TableCell className="w-12 text-center px-2 py-1">
                     <Skeleton className="h-4 w-4" />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-2 py-1">
                     <div className="flex items-center gap-2">
                       <Skeleton className="h-8 w-8 rounded-full" />
-                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-48" />
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-20" />
-                  </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-center px-2 py-1">
                     <Skeleton className="h-4 w-24" />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-4 w-20" />
+                  <TableCell className="text-center px-2 py-1">
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell className="text-center px-2 py-1">
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell className="text-center px-2 py-1">
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell className="text-center px-2 py-1">
+                    <Skeleton className="h-4 w-32" />
+                  </TableCell>
+                  <TableCell className="text-center px-2 py-1">
+                    <Skeleton className="h-4 w-28" />
                   </TableCell>
                 </TableRow>
               ))}
