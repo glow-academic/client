@@ -150,18 +150,51 @@ async def bulk_archive_attempts(
         # Invalidate cache after mutation - only invalidate history sections
         # Overview sections are based on materialized views and don't need invalidation
         # History sections need invalidation since archive status affects what's shown
-        await invalidate_tags(
-            tags
-            + [
-                "history",  # Invalidates all history endpoints (dashboard, home, practice)
-            ]
-        )
-        response.headers["X-Invalidate-Tags"] = ",".join(
-            tags
-            + [
-                "history",
-            ]
-        )
+        
+        # Build base invalidation tags
+        # Dashboard uses general tags (no profileId filter), so always invalidate it
+        # Home, reports, and practice use profile-specific tags (require profileId)
+        invalidation_tags = tags + [
+            "dashboard",  # Invalidates dashboard history endpoint (no profileId filter)
+        ]
+        
+        # Determine which profileIds to invalidate
+        profile_ids_to_invalidate: set[str] = set()
+        
+        if request.archiveAll and request.filters and request.filters.profileId:
+            # Filter-based archive with specific profileId
+            profile_ids_to_invalidate.add(request.filters.profileId)
+        elif request.attemptIds:
+            # AttemptIds-based archive - query database to get unique profileIds
+            try:
+                profile_ids_query = """
+                    SELECT DISTINCT ap.profile_id::text
+                    FROM attempt_profiles ap
+                    WHERE ap.attempt_id = ANY($1::uuid[])
+                    AND ap.active = true
+                    AND ap.profile_id IS NOT NULL
+                """
+                profile_id_rows = await conn.fetch(profile_ids_query, request.attemptIds)
+                profile_ids_to_invalidate = {str(row["profile_id"]) for row in profile_id_rows if row["profile_id"]}
+            except Exception as profile_query_error:
+                # Log error but continue with general invalidation
+                logger.warning(
+                    f"Failed to query profileIds from attemptIds: {profile_query_error}",
+                    exc_info=True,
+                )
+        
+        # Add profile-specific tags for each affected profileId
+        # These endpoints require profileId, so we only need profile-specific invalidation
+        for profile_id in profile_ids_to_invalidate:
+            invalidation_tags.extend([
+                f"home:profile:{profile_id}",
+                f"reports:profile:{profile_id}",
+                f"practice:profile:{profile_id}",
+                f"history:profile:{profile_id}",
+            ])
+        
+        await invalidate_tags(invalidation_tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(invalidation_tags)
 
         return result_data
     except HTTPException:

@@ -6,11 +6,11 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.api.v3.dashboard.history import DashboardHistoryResponse
 from app.main import get_db
-from app.utils.schema import AttemptHistoryRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.schema import AttemptHistoryRow
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -165,12 +165,14 @@ async def get_reports_history(
             scenarioOptions=scenario_options,
         )
 
-        # Cache response
+        # Cache response with profile-specific tags
+        # Add profile-specific tags for granular invalidation
+        profile_specific_tags = tags + [f"reports:profile:{profile_id}", f"history:profile:{profile_id}"]
         await set_cached(
             cache_key_val,
             {"data": response_data.model_dump()},
             ttl=300,
-            tags=tags,
+            tags=profile_specific_tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"

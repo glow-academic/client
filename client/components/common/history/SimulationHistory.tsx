@@ -1399,12 +1399,8 @@ export default function SimulationHistory({
 
       // Refresh the page to refetch data with updated archive status
       // The server action already calls revalidatePath and revalidateTag,
+      // and the server endpoint invalidates Redis cache tags,
       // so router.refresh() will fetch fresh data from the server
-      // Add a timestamp query param to force Suspense boundary to re-render
-      // by changing the historyKey in the parent component
-      const currentParams = new URLSearchParams(searchParams.toString());
-      currentParams.set("_refresh", Date.now().toString());
-      router.push(`${pathname}?${currentParams.toString()}`, { scroll: false });
       await router.refresh();
     } catch {
       toast.error("Failed to update simulation archive status");

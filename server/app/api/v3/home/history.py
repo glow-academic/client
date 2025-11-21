@@ -181,12 +181,14 @@ async def get_home_history(
             scenarioOptions=scenario_options,
         )
         
-        # Cache response
+        # Cache response with profile-specific tags
+        # Add profile-specific tags for granular invalidation
+        profile_specific_tags = tags + [f"home:profile:{profile_id}", f"history:profile:{profile_id}"]
         await set_cached(
             cache_key_val,
             {"data": response_data.model_dump()},
             ttl=300,
-            tags=tags,
+            tags=profile_specific_tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"

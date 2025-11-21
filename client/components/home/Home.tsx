@@ -71,6 +71,7 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
       }
       const { attemptId } = event.detail;
       // Invalidate cache and refresh current page before navigation to ensure fresh data
+      // Server-side Redis cache is already invalidated by the WebSocket handler
       await revalidateAttemptAction(attemptId);
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(`/home/a/${attemptId}`);

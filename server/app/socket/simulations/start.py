@@ -11,6 +11,7 @@ from agents.items import TResponseInputItem
 from app.main import get_pool, scenario_progress, scenario_results, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
@@ -311,6 +312,39 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
             logger.info(
                 f"Created attempt {start_payload['attempt_id']} for simulation {simulation_id}"
             )
+
+            # Invalidate cache after creating attempt - invalidate history sections
+            # Overview sections are based on materialized views and don't need invalidation
+            # History sections need invalidation since new attempts affect what's shown
+            try:
+                # Build invalidation tags
+                # Dashboard uses general tags (no profileId filter), so always invalidate it
+                # Home, reports, and practice use profile-specific tags (require profileId)
+                invalidation_tags = [
+                    "dashboard",  # Invalidates dashboard history endpoint (no profileId filter)
+                    "attempts",  # Invalidates attempt-level cache
+                ]
+                
+                # Add profile-specific tags for home/reports/practice when profile_id is available
+                # These endpoints require profileId, so we only need profile-specific invalidation
+                if profile_id:
+                    invalidation_tags.extend([
+                        f"home:profile:{profile_id}",
+                        f"reports:profile:{profile_id}",
+                        f"practice:profile:{profile_id}",
+                        f"history:profile:{profile_id}",
+                    ])
+                
+                await invalidate_tags(invalidation_tags)
+                logger.info(
+                    f"Invalidated cache for tags: {invalidation_tags} after creating attempt {start_payload['attempt_id']}"
+                )
+            except Exception as cache_error:
+                # Log error but don't fail the simulation start
+                logger.warning(
+                    f"Failed to invalidate cache after simulation start: {cache_error}",
+                    exc_info=True,
+                )
 
             # Join the client to the simulation room for real-time updates
             simulation_room = f"simulation_{start_payload['chat_id']}"

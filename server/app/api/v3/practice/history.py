@@ -5,6 +5,9 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -79,6 +82,23 @@ async def get_practice_history(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PracticeHistoryResponse:
     """Get paginated practice history with search, filters, sorting, and pagination."""
+    tags = ["practice", "history"]
+    
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+    
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+    
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return PracticeHistoryResponse.model_validate(cached["data"])
+    
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
@@ -152,7 +172,7 @@ async def get_practice_history(
         total_count = parsed_result.get("totalCount", 0)
         total_pages = (total_count + filters.pageSize - 1) // filters.pageSize if total_count > 0 else 0
 
-        return PracticeHistoryResponse(
+        response_data = PracticeHistoryResponse(
             data=history,
             totalCount=total_count,
             page=filters.page,
@@ -162,6 +182,20 @@ async def get_practice_history(
             simulationOptions=simulation_options,
             scenarioOptions=scenario_options,
         )
+        
+        # Cache response with profile-specific tags
+        # Add profile-specific tags for granular invalidation
+        profile_specific_tags = tags + [f"practice:profile:{profile_id}", f"history:profile:{profile_id}"]
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=300,
+            tags=profile_specific_tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+        
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:
