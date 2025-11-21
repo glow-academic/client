@@ -281,7 +281,7 @@ export default async function DashboardPage({
       <Dashboard dashboardData={dashboardDataWithoutHistory} />
 
       {/* History section moved out of Dashboard, fully server-driven */}
-      <div className="mt-12">
+      <div className="">
         <Suspense
           key={historyKey}
           fallback={

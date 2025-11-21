@@ -320,7 +320,7 @@ export default async function ReportsPage({
       />
 
       {/* History section - filtered by profileId */}
-      <div className="mt-12">
+      <div className="">
         <Suspense
           key={historyKey}
           fallback={
