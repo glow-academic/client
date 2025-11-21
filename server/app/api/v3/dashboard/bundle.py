@@ -10,18 +10,30 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AnalyticsFilters, DataPoint, Method,
-                              MetricResponse, ParameterItemMapping,
-                              ParameterItemMappingItem, ParameterMapping,
-                              ParameterMappingItem, RubricMapping,
-                              RubricMappingItem, SimulationFilter,
-                              SimulationMapping, SimulationMappingItem,
-                              TrendData)
+from app.utils.schema import (DataPoint, Method, MetricResponse,
+                              ParameterItemMapping, ParameterItemMappingItem,
+                              ParameterMapping, ParameterMappingItem,
+                              RubricMapping, RubricMappingItem,
+                              SimulationFilter, SimulationMapping,
+                              SimulationMappingItem, TrendData)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 router = APIRouter()
+
+
+# Inline filter schemas
+class DashboardBundleFilters(BaseModel):
+    """Dashboard bundle filter request schema."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[SimulationFilter] | None = None
+    profileId: str | None = None  # Optional: used for filtering when provided
+    departmentIds: list[str] | None = None
 
 
 # AttemptHistoryRow schema
@@ -1404,7 +1416,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
 
 @router.post("/overview", response_model=DashboardBundleResponse)
 async def get_dashboard(
-    filters: AnalyticsFilters,
+    filters: DashboardBundleFilters,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

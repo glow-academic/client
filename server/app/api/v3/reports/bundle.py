@@ -12,8 +12,8 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AnalyticsFilters, MetricResponse,
-                              ScenarioMapping, ScenarioMappingItem,
+from app.utils.schema import (MetricResponse, ScenarioMapping,
+                              ScenarioMappingItem, SimulationFilter,
                               SimulationMapping, SimulationMappingItem)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -21,6 +21,28 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 router.include_router(export_router)
+
+
+# Inline filter schemas
+class ReportsBundleFilters(BaseModel):
+    """Reports bundle filter request schema."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[SimulationFilter] | None = None
+    profileId: str | None = None
+    departmentIds: list[str] | None = None
+    # Pagination, search, sorting, and additional filters
+    page: int | None = None
+    pageSize: int | None = None
+    search: str | None = None  # Text search across profile names
+    sortBy: str | None = None  # Column to sort by (e.g., "averageScore", "profileName")
+    sortOrder: str | None = None  # "asc" or "desc"
+    profileIds: list[str] | None = None  # Filter by specific profiles
+    simulationIds: list[str] | None = None  # Filter by specific simulations
+    scenarioIds: list[str] | None = None  # Filter by specific scenarios
 
 
 # Inline schemas
@@ -77,7 +99,7 @@ class ReportsBundleResponse(BaseModel):
 
 @router.post("", response_model=ReportsBundleResponse)
 async def get_reports(
-    filters: AnalyticsFilters,
+    filters: ReportsBundleFilters,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

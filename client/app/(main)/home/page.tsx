@@ -126,7 +126,6 @@ async function getHomeFilters(searchParams?: URLSearchParams) {
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
     cohortIds: [] as string[],
-    roles: [] as string[],
     simulationFilters: ["general" as const],
     departmentIds: [] as string[],
   };
@@ -213,19 +212,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 
   // Extract subset for Home: startDate, endDate (required)
-  // Always include cohortIds, departmentIds, and roles (they are guaranteed to be non-empty from getHomeFilters)
+  // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
   const homeFiltersBody: HomeIn["body"] = {
     startDate: defaultFilters.startDate,
     endDate: defaultFilters.endDate,
     cohortIds: defaultFilters.cohortIds, // Always non-empty
     departmentIds: defaultFilters.departmentIds, // Always non-empty
-    roles: defaultFilters.roles, // Scoped roles from profile context
   };
 
-  // profileId is required for TA mode detection and filtering
-  // Use effectiveProfileId so the SQL can determine if user is TA and filter accordingly
+  // profileId is required for TA mode detection and role hierarchy filtering
+  // Use effectiveProfileId so the SQL can determine role and compute role hierarchy
   if (session?.effectiveProfileId) {
     homeFiltersBody.profileId = session.effectiveProfileId;
+  } else {
+    // If no session, use guest-profile-id as fallback
+    homeFiltersBody.profileId = "guest-profile-id";
   }
 
   const homeFilters: HomeIn = {

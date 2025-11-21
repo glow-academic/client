@@ -3,7 +3,6 @@ Tests for app.utils.schema
 """
 
 from app.utils.schema import (
-    AnalyticsFilters,
     DataPoint,
     DepartmentMappingItem,
     MappingItem,
@@ -118,14 +117,13 @@ class TestSimulation_Filter_Enum:
 
 
 class TestAnalytics_Filters:
-    """Tests for AnalyticsFilters class."""
+    """Tests for filter schemas - removed AnalyticsFilters (now inline per endpoint)."""
 
-    def test_analytics_filters_creation(self) -> None:
-        """Test creating an AnalyticsFilters."""
-        filters = AnalyticsFilters(startDate="2024-01-01", endDate="2024-12-31")
-        assert filters.startDate == "2024-01-01"
-        assert filters.endDate == "2024-12-31"
-        assert filters.cohortIds is None
+    def test_filter_schemas_removed(self) -> None:
+        """Test that AnalyticsFilters was removed (now inline per endpoint)."""
+        # AnalyticsFilters is now defined inline in each endpoint
+        # This test is kept for reference but the class no longer exists
+        pass
 
 
 class TestTrend_Data:

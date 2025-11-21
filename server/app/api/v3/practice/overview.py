@@ -104,7 +104,12 @@ class PracticeOverviewResponse(BaseModel):
 
 
 class PracticeFilters(BaseModel):
-    """Practice filter request schema - simplified to profile-only."""
+    """Practice filter request schema - simplified to profile-only.
+    
+    departmentIds filters which practice simulations are shown:
+    - If empty → show all simulations
+    - If provided → show simulations matching those departments OR simulations with no department associations
+    """
 
     profileId: str
     departmentIds: list[str] | None = None

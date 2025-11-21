@@ -96,9 +96,8 @@ class HomeFilters(BaseModel):
     startDate: str
     endDate: str
     cohortIds: list[str] | None = None
-    profileId: str | None = None  # Optional: used for TA mode detection and filtering
+    profileId: str  # Required: used for TA mode detection and role hierarchy filtering
     departmentIds: list[str] | None = None
-    roles: list[str] | None = None  # Scoped roles for filtering (e.g., ["ta"], ["instructional", "ta"])
 
 
 def _parse_json_strings_recursive(obj: Any) -> Any:  # noqa: ANN401
@@ -144,22 +143,8 @@ async def get_home_overview(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
-        profile_id = filters.profileId
-        
-        # For roles above TA (instructional, admin, superadmin), ignore profileId to see all data
-        # Only TAs should have profileId filtering applied
-        if profile_id and profile_id != "guest-profile-id":
-            try:
-                # Check the role of the profile
-                role_query = "SELECT role FROM profiles WHERE id = $1"
-                role_row = await conn.fetchrow(role_query, profile_id)
-                if role_row and role_row["role"] != "ta":
-                    # Role is above TA, set profileId to None to ignore filtering
-                    profile_id = None
-            except Exception:
-                # If we can't determine role, keep profileId as-is (fallback to safe behavior)
-                pass
+        # Profile ID is required and passed as-is (including "guest-profile-id" string) - SQL handles resolution
+        # SQL will infer role hierarchy from profileId
 
         # Build WHERE clause for home overview
         # Note: Home always shows general simulations only (hardcoded)
@@ -181,16 +166,13 @@ async def get_home_overview(
         # $3: profile_id
         # $4: cohort_ids
         # $5: department_ids
-        # $6: roles (scoped roles from filters, default to ["ta"] for backward compatibility)
-        # Use scoped roles from filters, default to ["ta"] for backward compatibility
-        roles = filters.roles if filters.roles else ["ta"]
+        # Roles are now inferred from profileId in SQL (no longer a parameter)
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
-            profile_id if profile_id else None,  # $3
+            filters.profileId,  # $3 (required)
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
-            roles,  # $6
         ]
         sql_params = tuple(params)
 

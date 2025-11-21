@@ -10,13 +10,27 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (AnalyticsFilters, ScenarioMapping,
-                              ScenarioMappingItem, SimulationMapping)
+from app.utils.schema import (ScenarioMapping,
+                              ScenarioMappingItem, SimulationMapping,
+                              SimulationFilter)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
+
+
+# Inline filter schemas
+class LeaderboardBundleFilters(BaseModel):
+    """Leaderboard bundle filter request schema."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[SimulationFilter] | None = None
+    profileId: str | None = None
+    departmentIds: list[str] | None = None
 
 
 # Inline schemas
@@ -66,7 +80,7 @@ class LeaderboardBundleResponse(BaseModel):
 
 @router.post("", response_model=LeaderboardBundleResponse)
 async def get_leaderboard(
-    filters: AnalyticsFilters,
+    filters: LeaderboardBundleFilters,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],

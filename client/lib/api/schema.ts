@@ -3608,48 +3608,6 @@ export interface components {
             previousChats: components["schemas"]["PreviousChat"][];
         };
         /**
-         * AnalyticsFilters
-         * @description Analytics filter request schema.
-         */
-        AnalyticsFilters: {
-            /** Startdate */
-            startDate: string;
-            /** Enddate */
-            endDate: string;
-            /** Cohortids */
-            cohortIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
-            /** Simulationfilters */
-            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Historyprofileid */
-            historyProfileId?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
-            /** Search */
-            search?: string | null;
-            /** Sortby */
-            sortBy?: string | null;
-            /** Sortorder */
-            sortOrder?: string | null;
-            /** Profileids */
-            profileIds?: string[] | null;
-            /** Simulationids */
-            simulationIds?: string[] | null;
-            /** Scenarioids */
-            scenarioIds?: string[] | null;
-            /** Modelids */
-            modelIds?: string[] | null;
-            /** Actorids */
-            actorIds?: string[] | null;
-        };
-        /**
          * AssistantChatFullRequest
          * @description Request schema for assistant chat full data.
          */
@@ -5062,6 +5020,26 @@ export interface components {
             cohortId?: string | null;
         };
         /**
+         * DashboardBundleFilters
+         * @description Dashboard bundle filter request schema.
+         */
+        DashboardBundleFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+        };
+        /**
          * DashboardBundleResponse
          * @description Complete dashboard bundle with all metrics, history, insights, and mappings.
          */
@@ -6058,7 +6036,7 @@ export interface components {
          * @description Request to export reports data.
          */
         ExportRequest: {
-            filters: components["schemas"]["AnalyticsFilters"];
+            filters: components["schemas"]["ReportsExportFilters"];
             /** Profileids */
             profileIds?: string[] | null;
             /** Simulationids */
@@ -6374,11 +6352,9 @@ export interface components {
             /** Cohortids */
             cohortIds?: string[] | null;
             /** Profileid */
-            profileId?: string | null;
+            profileId: string;
             /** Departmentids */
             departmentIds?: string[] | null;
-            /** Roles */
-            roles?: string[] | null;
         };
         /**
          * HomeHistoryFilters
@@ -6539,6 +6515,26 @@ export interface components {
             cohortName?: string | null;
             /** Cohortnames */
             cohortNames?: string | null;
+        };
+        /**
+         * LeaderboardBundleFilters
+         * @description Leaderboard bundle filter request schema.
+         */
+        LeaderboardBundleFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
         };
         /**
          * LeaderboardBundleResponse
@@ -7251,6 +7247,10 @@ export interface components {
         /**
          * PracticeFilters
          * @description Practice filter request schema - simplified to profile-only.
+         *
+         *     departmentIds filters which practice simulations are shown:
+         *     - If empty → show all simulations
+         *     - If provided → show simulations matching those departments OR simulations with no department associations
          */
         PracticeFilters: {
             /** Profileid */
@@ -7456,6 +7456,26 @@ export interface components {
             percentage: number | null;
         };
         /**
+         * PricingAnalyticsFilters
+         * @description Pricing analytics filter request schema.
+         */
+        PricingAnalyticsFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+        };
+        /**
          * PricingAnalyticsResponse
          * @description Response for pricing analytics.
          */
@@ -7478,6 +7498,42 @@ export interface components {
             persona_mapping: {
                 [key: string]: string;
             };
+        };
+        /**
+         * PricingRunsFilters
+         * @description Pricing runs filter request schema.
+         */
+        PricingRunsFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+            /** Search */
+            search?: string | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /** Modelids */
+            modelIds?: string[] | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Actorids */
+            actorIds?: string[] | null;
         };
         /**
          * PricingRunsResponse
@@ -7978,6 +8034,42 @@ export interface components {
             message: string;
         };
         /**
+         * ReportsBundleFilters
+         * @description Reports bundle filter request schema.
+         */
+        ReportsBundleFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+            /** Search */
+            search?: string | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+        };
+        /**
          * ReportsBundleResponse
          * @description Reports bundle response with entity mappings.
          */
@@ -8015,6 +8107,42 @@ export interface components {
             simulation_mapping: {
                 [key: string]: components["schemas"]["SimulationMappingItem"];
             };
+        };
+        /**
+         * ReportsExportFilters
+         * @description Reports export filter request schema.
+         */
+        ReportsExportFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+            /** Search */
+            search?: string | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
         };
         /**
          * RubricDetailDefaultRequest
@@ -14875,7 +15003,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
+                "application/json": components["schemas"]["DashboardBundleFilters"];
             };
         };
         responses: {
@@ -14974,7 +15102,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
+                "application/json": components["schemas"]["ReportsBundleFilters"];
             };
         };
         responses: {
@@ -15007,7 +15135,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
+                "application/json": components["schemas"]["LeaderboardBundleFilters"];
             };
         };
         responses: {
@@ -16514,7 +16642,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
+                "application/json": components["schemas"]["PricingAnalyticsFilters"];
             };
         };
         responses: {
@@ -16547,7 +16675,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalyticsFilters"];
+                "application/json": components["schemas"]["PricingRunsFilters"];
             };
         };
         responses: {

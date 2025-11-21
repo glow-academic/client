@@ -1,16 +1,15 @@
 -- Home overview query - complete analytics with embedded history and mappings
 -- This query uses dynamic WHERE clause building from AnalyticsQueryBuilder
 -- Parameters will be built in the route using the query builder pattern
--- See app/queries/home_queries.py for parameter construction logic
 --
 -- Note: This SQL file contains the template structure. The WHERE clause
 -- for the 'filt' CTE is built dynamically using AnalyticsQueryBuilder.build_base_filter
 -- Parameters (in order):
--- Base filter params (from build_base_filter): start_date (datetime), end_date (datetime), 
---   cohort_ids (uuid[]), department_ids (uuid[])
--- Then: cohort_ids (uuid[]), department_ids (uuid[]), profile_id (uuid), 
---   roles (profile_role[]), history_start_date (datetime), history_end_date (datetime),
---   history_profile_id (uuid), history_cohort_ids (uuid[]), history_dept_ids (uuid[])
+-- $1, $2: start_date (datetime), end_date (datetime) - for WHERE clause
+-- $3: profile_id (uuid) - required, used for TA mode detection and role hierarchy computation
+-- $4: cohort_ids (uuid[])
+-- $5: department_ids (uuid[])
+-- Roles are inferred from profile_id in the profile_role_lookup CTE (no longer a parameter)
 --
 -- The WHERE clause for 'filt' CTE is inserted at the marked location below
 
@@ -54,7 +53,7 @@ resolve_profile_id AS (
             ELSE $3::uuid
         END as resolved_profile_id
 ),
--- Look up profile role if profileId provided
+-- Look up profile role if profileId provided and compute role hierarchy
 profile_role_lookup AS (
     SELECT 
         CASE 
@@ -65,7 +64,17 @@ profile_role_lookup AS (
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN false
             ELSE COALESCE((SELECT role = 'ta' FROM profiles WHERE id = rpi.resolved_profile_id), false)
-        END AS is_ta_mode
+        END AS is_ta_mode,
+        -- Compute role hierarchy array based on profile's role
+        CASE
+            WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'ta', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'ta', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'admin' THEN ARRAY['admin', 'instructional', 'ta', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'instructional' THEN ARRAY['instructional', 'ta', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'ta' THEN ARRAY['ta', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'guest' THEN ARRAY['guest']::profile_role[]
+            ELSE ARRAY['instructional', 'ta', 'guest']::profile_role[]  -- Default fallback
+        END AS role_hierarchy
     FROM resolve_profile_id rpi
 ),
 -- Filter analytics for items: for TA mode include profileId filter
@@ -152,7 +161,7 @@ cohort_membership AS (
     CROSS JOIN resolve_profile_id rpi
     WHERE cp.active = true  -- Only active cohort memberships for non-history queries
       AND (cardinality($4::uuid[]) = 0 OR c.id = ANY($4::uuid[]))
-      AND p.role = ANY($6::profile_role[])
+      AND p.role = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_role_lookup
       -- When TA mode, only include the current TA's profile_id
       AND (NOT prl.is_ta_mode OR cp.profile_id = rpi.resolved_profile_id)
     GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, p.role, c.id

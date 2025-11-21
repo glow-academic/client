@@ -10,12 +10,34 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import AnalyticsFilters
+from app.utils.schema import SimulationFilter
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
+
+
+# Inline filter schemas
+class PricingRunsFilters(BaseModel):
+    """Pricing runs filter request schema."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[SimulationFilter] | None = None
+    profileId: str | None = None
+    departmentIds: list[str] | None = None
+    # Pagination, search, sorting, and additional filters
+    page: int | None = None
+    pageSize: int | None = None
+    search: str | None = None
+    sortBy: str | None = None
+    sortOrder: str | None = None
+    modelIds: list[str] | None = None  # Filter by specific models
+    profileIds: list[str] | None = None  # Filter by specific profiles
+    actorIds: list[str] | None = None  # Filter by specific agents/personas
 
 
 # Inline schemas
@@ -92,7 +114,7 @@ def _parse_json_strings_recursive(obj: Any) -> Any:
 
 @router.post("/runs", response_model=PricingRunsResponse)
 async def get_pricing_runs(
-    filters: AnalyticsFilters,
+    filters: PricingRunsFilters,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -104,9 +126,7 @@ async def get_pricing_runs(
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
-    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache (unless bypassed)

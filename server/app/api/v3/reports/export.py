@@ -13,7 +13,7 @@ from app.main import get_db
 from app.utils.analytics_query_builder import \
     build_profile_and_analytics_filters
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import AnalyticsFilters
+from app.utils.schema import SimulationFilter
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -23,11 +23,33 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["reports"])
 
 
+# Inline filter schemas
+class ReportsExportFilters(BaseModel):
+    """Reports export filter request schema."""
+
+    startDate: str
+    endDate: str
+    cohortIds: list[str] | None = None
+    roles: list[str] | None = None
+    simulationFilters: list[SimulationFilter] | None = None
+    profileId: str | None = None
+    departmentIds: list[str] | None = None
+    # Pagination, search, sorting, and additional filters
+    page: int | None = None
+    pageSize: int | None = None
+    search: str | None = None  # Text search across profile names
+    sortBy: str | None = None  # Column to sort by (e.g., "averageScore", "profileName")
+    sortOrder: str | None = None  # "asc" or "desc"
+    profileIds: list[str] | None = None  # Filter by specific profiles
+    simulationIds: list[str] | None = None  # Filter by specific simulations
+    scenarioIds: list[str] | None = None  # Filter by specific scenarios
+
+
 # Inline request/response schemas
 class ExportRequest(BaseModel):
     """Request to export reports data."""
 
-    filters: AnalyticsFilters
+    filters: ReportsExportFilters
     profileIds: list[str] | None = None
     simulationIds: list[str] | None = None
     scenarioIds: list[str] | None = None

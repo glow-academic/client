@@ -206,30 +206,6 @@ class SimulationFilter(str, Enum):
 
 
 # Request Schemas
-class AnalyticsFilters(BaseModel):
-    """Analytics filter request schema."""
-
-    startDate: str
-    endDate: str
-    cohortIds: list[str] | None = None
-    roles: list[str] | None = None
-    simulationFilters: list[SimulationFilter] | None = None
-    profileId: str | None = None  # Used for main dashboard metrics filtering
-    historyProfileId: str | None = None  # Used only for history showRetry calculation
-    departmentIds: list[str] | None = None
-    # Pagination, search, sorting, and additional filters (for reports)
-    page: int | None = None
-    pageSize: int | None = None
-    search: str | None = None  # Text search across profile names
-    sortBy: str | None = None  # Column to sort by (e.g., "averageScore", "profileName")
-    sortOrder: str | None = None  # "asc" or "desc"
-    profileIds: list[str] | None = None  # Filter by specific profiles
-    simulationIds: list[str] | None = None  # Filter by specific simulations
-    scenarioIds: list[str] | None = None  # Filter by specific scenarios
-    modelIds: list[str] | None = None  # Filter by specific models (for pricing)
-    actorIds: list[str] | None = None  # Filter by specific agents/personas (for pricing)
-
-
 # Response Schemas
 class TrendData(BaseModel):
     """Trend data point."""
