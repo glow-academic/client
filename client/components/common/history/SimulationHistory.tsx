@@ -1397,6 +1397,13 @@ export default function SimulationHistory({
       setShowArchiveDialog(false);
       setArchiveAction(null);
 
+      // Update URL with _refresh param to trigger analytics filter update and Suspense boundary re-render
+      // The dashboard page uses _refresh param in historyKey to force re-fetch after mutations
+      const params = new URLSearchParams(searchParams?.toString() || "");
+      params.set("_refresh", Date.now().toString());
+      const newUrl = `${pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      router.replace(newUrl, { scroll: false });
+
       // Refresh the page to refetch data with updated archive status
       // The server action already calls revalidatePath and revalidateTag,
       // and the server endpoint invalidates Redis cache tags,

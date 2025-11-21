@@ -13,7 +13,7 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 
@@ -331,23 +331,20 @@ async function bulkArchiveAttempts(
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
   const result = await api.post("/attempts/bulk-archive", input);
-  // Revalidate history sections only - overview sections are based on MVs and don't need invalidation
-  revalidateTag("dashboard:history");
+  // Server invalidates Redis cache with "dashboard" and "history" tags
+  // Revalidate path to trigger page re-render and fresh data fetch
+  // Note: revalidateTag is not needed since dashboard data uses cache: "no-store" (not unstable_cache)
   revalidatePath("/analytics/dashboard");
   return result;
 }
 
 /** ---- Server action to revalidate attempt cache when simulation starts ---- */
-async function revalidateAttempt(attemptId: string): Promise<void> {
+async function revalidateAttempt(_attemptId: string): Promise<void> {
   "use server";
-  // Invalidate attempt-level cache
-  revalidateTag("attempts");
-  revalidateTag(`attempt:${attemptId}`);
-  // Invalidate history sections only - overview sections are based on MVs and don't need invalidation
-  revalidateTag("dashboard:history");
+  // Server invalidates Redis cache with "dashboard", "history", and "attempts" tags
+  // Revalidate path to trigger page re-render and fresh data fetch
+  // Note: revalidateTag is not needed since dashboard data uses cache: "no-store" (not unstable_cache)
   revalidatePath("/analytics/dashboard");
-  // Note: Chat-specific tags can be added here if chat IDs are known
-  // For now, invalidating attempt-level cache ensures all chats refresh
 }
 
 /** ---- Inline history section component (only used here) ---- */
