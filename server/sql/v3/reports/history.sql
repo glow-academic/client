@@ -1,30 +1,41 @@
--- Dashboard history query with pagination, search, filters, and sorting
+-- Reports history query with pagination, search, filters, and sorting
+-- Assumes profile_id ($3) is always non-null
 -- Parameters (in order):
 -- $1, $2: start_date (datetime), end_date (datetime)
--- $3: cohort_ids (uuid[])
--- $4: department_ids (uuid[])
--- $5: roles (profile_role[])
--- $6: simulationFilters (text[], optional) - ["general", "practice", "archived"]
--- $7: search (text, optional) - searches profile name, simulation name, persona names
--- $8: profileIds filter (uuid[], optional)
--- $9: simulationIds filter (uuid[], optional)
--- $10: scenarioIds filter (uuid[], optional)
--- $11: infiniteMode filter (bool, optional)
--- $12: sortBy (text, default: "date")
--- $13: sortOrder (text, default: "desc")
--- $14: pageSize (int, LIMIT)
--- $15: offset (int, OFFSET)
+-- $3: profile_id (uuid, required, non-null)
+-- $4: cohort_ids (uuid[])
+-- $5: department_ids (uuid[])
+-- $6: roles (profile_role[], kept for compatibility but not used for filtering)
+-- Note: Cast explicitly in SQL as $6::profile_role[] to help PostgreSQL determine type
+-- $7: simulationFilters (text[], optional) - ["general", "practice", "archived"]
+-- $8: search (text, optional) - searches profile name, simulation name, persona names
+-- $9: profileIds filter (uuid[], optional)
+-- $10: simulationIds filter (uuid[], optional)
+-- $11: scenarioIds filter (uuid[], optional)
+-- $12: infiniteMode filter (bool, optional)
+-- $13: sortBy (text, default: "date")
+-- $14: sortOrder (text, default: "desc")
+-- $15: pageSize (int, LIMIT)
+-- $16: offset (int, OFFSET)
 
 WITH 
--- Expanded cohort list: union of provided cohortIds (dashboard never filters by profile)
+-- Cast roles parameter to help PostgreSQL determine type
+roles_param AS (
+    SELECT $6::profile_role[] as roles_array
+),
+-- Expanded cohort list: union of provided cohortIds + profileId cohorts
 expanded_history_cohort_ids AS (
     SELECT DISTINCT cohort_id
     FROM (
-        SELECT unnest($3::uuid[]) as cohort_id
-        WHERE cardinality($3::uuid[]) > 0
+        SELECT unnest($4::uuid[]) as cohort_id
+        WHERE cardinality($4::uuid[]) > 0
+        UNION
+        SELECT cp.cohort_id
+        FROM cohort_profiles cp
+        WHERE cp.profile_id = $3::uuid
     ) combined
 ),
--- Filter attempts by date, cohorts, departments, and roles
+-- Filter attempts by date, profile, cohorts, departments
 history_attempts AS (
     SELECT DISTINCT
         sa.id AS attempt_id,
@@ -50,24 +61,24 @@ history_attempts AS (
     ) sdd ON sdd.simulation_id = sim.id
     WHERE sa.created_at >= $1
       AND sa.created_at <= $2
-      -- Dashboard never filters by profile - always filter by roles
-      AND p_attempt.role = ANY($5::profile_role[])
+      -- Profile_id is always non-null for reports - always filter by it
+      AND ap.profile_id = $3::uuid
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (
-        ($6::text[] IS NULL OR cardinality($6::text[]) = 0) AND sim.practice_simulation = FALSE
+        ($7::text[] IS NULL OR cardinality($7::text[]) = 0) AND sim.practice_simulation = FALSE
         OR
-        ($6::text[] IS NOT NULL AND cardinality($6::text[]) > 0 AND (
-          ('general' = ANY($6::text[]) AND sim.practice_simulation = FALSE) OR
-          ('practice' = ANY($6::text[]) AND sim.practice_simulation = TRUE) OR
-          ('archived' = ANY($6::text[]) AND sa.archived = TRUE)
+        ($7::text[] IS NOT NULL AND cardinality($7::text[]) > 0 AND (
+          ('general' = ANY($7::text[]) AND sim.practice_simulation = FALSE) OR
+          ('practice' = ANY($7::text[]) AND sim.practice_simulation = TRUE) OR
+          ('archived' = ANY($7::text[]) AND sa.archived = TRUE)
         ))
       )
       -- Exclude archived attempts unless 'archived' is explicitly in the filter list
       AND (
-        $6::text[] IS NULL OR cardinality($6::text[]) = 0 OR 'archived' = ANY($6::text[]) OR sa.archived = FALSE
+        $7::text[] IS NULL OR cardinality($7::text[]) = 0 OR 'archived' = ANY($7::text[]) OR sa.archived = FALSE
       )
-      AND (cardinality($4::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $4::uuid[]::text[])
+      AND (cardinality($5::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $5::uuid[]::text[])
 ),
 -- Get cohorts for each attempt's profile (includes inactive links for history)
 history_attempt_cohorts AS (
@@ -141,11 +152,11 @@ history_attempts_with_filters AS (
     FROM history_attempts_filtered haf
     WHERE 
         -- Profile filter
-        (cardinality($8::uuid[]) = 0 OR haf.profile_id = ANY($8::uuid[]))
+        (cardinality($9::uuid[]) = 0 OR haf.profile_id = ANY($9::uuid[]))
         -- Simulation filter
-        AND (cardinality($9::uuid[]) = 0 OR haf.simulation_id = ANY($9::uuid[]))
+        AND (cardinality($10::uuid[]) = 0 OR haf.simulation_id = ANY($10::uuid[]))
         -- Infinite mode filter
-        AND ($11::bool IS NULL OR haf.infinite_mode = $11::bool)
+        AND ($12::bool IS NULL OR haf.infinite_mode = $12::bool)
 ),
 -- Get scenario IDs for each attempt (for scenario filtering)
 attempt_scenario_ids AS (
@@ -164,7 +175,7 @@ history_attempts_final AS (
     LEFT JOIN attempt_scenario_ids asi ON asi.attempt_id = haf.attempt_id
     WHERE 
         -- Scenario filter (if any scenario matches, include the attempt)
-        (cardinality($10::uuid[]) = 0 OR asi.scenario_ids IS NULL OR asi.scenario_ids && $10::uuid[])
+        (cardinality($11::uuid[]) = 0 OR asi.scenario_ids IS NULL OR asi.scenario_ids && $11::uuid[])
 ),
 -- Aggregate chats per attempt
 history_chat_rollup AS (
@@ -399,14 +410,14 @@ final_rows_with_search AS (
     FROM final_rows fr
     WHERE 
         -- Search filter: if search term provided, search in profile name, simulation name, or persona names
-        ($7::text IS NULL OR $7::text = '' OR
-         LOWER(fr.profile_name) LIKE '%' || LOWER($7::text) || '%' OR
-         LOWER(fr.simulation_name) LIKE '%' || LOWER($7::text) || '%' OR
+        ($8::text IS NULL OR $8::text = '' OR
+         LOWER(fr.profile_name) LIKE '%' || LOWER($8::text) || '%' OR
+         LOWER(fr.simulation_name) LIKE '%' || LOWER($8::text) || '%' OR
          EXISTS (
              SELECT 1
              FROM unnest(fr.persona_ids_distinct) AS pid
              JOIN personas per ON per.id = pid
-             WHERE LOWER(per.name) LIKE '%' || LOWER($7::text) || '%'
+             WHERE LOWER(per.name) LIKE '%' || LOWER($8::text) || '%'
          ))
 ),
 persona_labels AS (
@@ -469,40 +480,40 @@ paginated_rows AS (
         fr.persona_ids_distinct,
         -- Computed sort columns for json_agg ordering
         CASE 
-            WHEN $12 = 'date' AND $13 = 'desc' THEN fr.attempt_date
-            WHEN $12 = 'date' AND $13 = 'asc' THEN fr.attempt_date
+            WHEN $13 = 'date' AND $14 = 'desc' THEN fr.attempt_date
+            WHEN $13 = 'date' AND $14 = 'asc' THEN fr.attempt_date
         END AS sort_date,
         CASE 
-            WHEN $12 = 'simulationName' AND $13 = 'desc' THEN fr.simulation_name
-            WHEN $12 = 'simulationName' AND $13 = 'asc' THEN fr.simulation_name
+            WHEN $13 = 'simulationName' AND $14 = 'desc' THEN fr.simulation_name
+            WHEN $13 = 'simulationName' AND $14 = 'asc' THEN fr.simulation_name
         END AS sort_simulation_name,
         CASE 
-            WHEN $12 = 'score' AND $13 = 'desc' THEN COALESCE(fr.score_percent, -1)
-            WHEN $12 = 'score' AND $13 = 'asc' THEN COALESCE(fr.score_percent, 999999)
+            WHEN $13 = 'score' AND $14 = 'desc' THEN COALESCE(fr.score_percent, -1)
+            WHEN $13 = 'score' AND $14 = 'asc' THEN COALESCE(fr.score_percent, 999999)
         END AS sort_score
     FROM final_rows_with_search fr
     ORDER BY 
         CASE 
-            WHEN $12 = 'date' AND $13 = 'desc' THEN fr.attempt_date
+            WHEN $13 = 'date' AND $14 = 'desc' THEN fr.attempt_date
         END DESC NULLS LAST,
         CASE 
-            WHEN $12 = 'date' AND $13 = 'asc' THEN fr.attempt_date
+            WHEN $13 = 'date' AND $14 = 'asc' THEN fr.attempt_date
         END ASC NULLS LAST,
         CASE 
-            WHEN $12 = 'simulationName' AND $13 = 'desc' THEN fr.simulation_name
+            WHEN $13 = 'simulationName' AND $14 = 'desc' THEN fr.simulation_name
         END DESC NULLS LAST,
         CASE 
-            WHEN $12 = 'simulationName' AND $13 = 'asc' THEN fr.simulation_name
+            WHEN $13 = 'simulationName' AND $14 = 'asc' THEN fr.simulation_name
         END ASC NULLS LAST,
         CASE 
-            WHEN $12 = 'score' AND $13 = 'desc' THEN COALESCE(fr.score_percent, -1)
+            WHEN $13 = 'score' AND $14 = 'desc' THEN COALESCE(fr.score_percent, -1)
         END DESC,
         CASE 
-            WHEN $12 = 'score' AND $13 = 'asc' THEN COALESCE(fr.score_percent, 999999)
+            WHEN $13 = 'score' AND $14 = 'asc' THEN COALESCE(fr.score_percent, 999999)
         END ASC,
         fr.attempt_id DESC
-    LIMIT $14
-    OFFSET $15
+    LIMIT $15
+    OFFSET $16
 )
 SELECT json_build_object(
     'data', COALESCE(
@@ -534,22 +545,22 @@ SELECT json_build_object(
             )
             ORDER BY 
                 CASE 
-                    WHEN $12 = 'date' AND $13 = 'desc' THEN pr.sort_date
+                    WHEN $13 = 'date' AND $14 = 'desc' THEN pr.sort_date
                 END DESC NULLS LAST,
                 CASE 
-                    WHEN $12 = 'date' AND $13 = 'asc' THEN pr.sort_date
+                    WHEN $13 = 'date' AND $14 = 'asc' THEN pr.sort_date
                 END ASC NULLS LAST,
                 CASE 
-                    WHEN $12 = 'simulationName' AND $13 = 'desc' THEN pr.sort_simulation_name
+                    WHEN $13 = 'simulationName' AND $14 = 'desc' THEN pr.sort_simulation_name
                 END DESC NULLS LAST,
                 CASE 
-                    WHEN $12 = 'simulationName' AND $13 = 'asc' THEN pr.sort_simulation_name
+                    WHEN $13 = 'simulationName' AND $14 = 'asc' THEN pr.sort_simulation_name
                 END ASC NULLS LAST,
                 CASE 
-                    WHEN $12 = 'score' AND $13 = 'desc' THEN pr.sort_score
+                    WHEN $13 = 'score' AND $14 = 'desc' THEN pr.sort_score
                 END DESC,
                 CASE 
-                    WHEN $12 = 'score' AND $13 = 'asc' THEN pr.sort_score
+                    WHEN $13 = 'score' AND $14 = 'asc' THEN pr.sort_score
                 END ASC,
                 pr.attempt_id DESC
         ),

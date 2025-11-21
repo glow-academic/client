@@ -1,6 +1,7 @@
 
             -- =====================================================
             -- DASHBOARD BUNDLE QUERY - ALL METRICS IN ONE QUERY
+            -- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: department_ids
             -- =====================================================
             WITH
             -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
@@ -48,8 +49,8 @@
                     AND (
                         'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                     )
-                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid) 
-                    AND ($6::uuid IS NOT NULL OR a.profile_role = ANY($4::profile_role[])) 
+                    -- Dashboard never filters by profile - always filter by roles
+                    AND a.profile_role = ANY($4::profile_role[])
                     -- Filter by simulation_ids from cohorts (new filtering order)
                     AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                     -- Department filtering removed - now handled via profile_departments join at profile level
@@ -121,12 +122,8 @@
                 AND (
                     'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                 )
-                -- Department filtering removed - now handled via profile_departments join at profile level
-                AND (
-                    $6::uuid IS NOT NULL
-                    OR a.profile_role = ANY($4::profile_role[])
-                )
-                AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
+                -- Dashboard never filters by profile - always filter by roles
+                AND a.profile_role = ANY($4::profile_role[])
                 -- Filter by simulation_ids from cohorts (new filtering order)
                 AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
@@ -1017,8 +1014,8 @@
                     -- Department filtering removed - now handled via profile_departments join at profile level
                     -- Filter by simulation_ids from cohorts (new filtering order)
                     AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                    AND (($3::uuid[] IS NOT NULL AND cardinality($3::uuid[]) > 0 OR a.profile_role = ANY($4::profile_role[]))
-                         OR ($6::uuid IS NOT NULL AND a.profile_id = $6::uuid))
+                    -- Dashboard never filters by profile - always filter by roles
+                    AND a.profile_role = ANY($4::profile_role[])
                     AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
                     AND (
                         $5::text[] IS NULL OR (
@@ -1031,7 +1028,6 @@
                     AND (
                         'archived' = ANY($5::text[]) OR a.is_archived = FALSE
                     )
-                    AND ($6::uuid IS NULL OR a.profile_id = $6::uuid)
             ),
             latest_grade_for_skills AS (
                 SELECT DISTINCT ON (scg.simulation_chat_id, scg.rubric_id)
@@ -1385,8 +1381,8 @@
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
                   AND s.active = true
                   AND (
-                      cardinality($7::uuid[]) = 0 
-                      OR sd.department_id = ANY($7::uuid[])
+                      cardinality($6::uuid[]) = 0 
+                      OR sd.department_id = ANY($6::uuid[])
                       OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
                   )
             ),
@@ -1417,12 +1413,12 @@
                 FROM parameters p
                 WHERE p.active = true
                   AND (
-                      cardinality($7::uuid[]) = 0 
+                      cardinality($6::uuid[]) = 0 
                       OR EXISTS (
                           SELECT 1 
                           FROM parameter_items pi
                           JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-                          WHERE pi.parameter_id = p.id AND pid.department_id = ANY($7::uuid[])
+                          WHERE pi.parameter_id = p.id AND pid.department_id = ANY($6::uuid[])
                       )
                       OR NOT EXISTS (
                           SELECT 1 
@@ -1449,8 +1445,8 @@
                 LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
                 WHERE p.active = true
                   AND (
-                      cardinality($7::uuid[]) = 0 
-                      OR pid.department_id = ANY($7::uuid[])
+                      cardinality($6::uuid[]) = 0 
+                      OR pid.department_id = ANY($6::uuid[])
                       OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
                   )
             )
@@ -1680,11 +1676,8 @@
                             'name', cohort_name,
                             'passRate', ROUND(
                                 CASE 
-                                    -- Single profile mode: use attempt-based pass rate
-                                    WHEN $6::uuid IS NOT NULL AND total_attempts > 0 THEN 
-                                        COALESCE(pass_rate_attempts, 0)::numeric
-                                    -- Multi-profile mode: use student-based pass rate  
-                                    WHEN $6::uuid IS NULL AND total_students_seen > 0 THEN 
+                                    -- Dashboard mode: always use student-based pass rate (no profile_id filtering)
+                                    WHEN total_students_seen > 0 THEN 
                                         (100.0 * passed_students / total_students_seen)::numeric
                                     ELSE 0
                                 END, 2

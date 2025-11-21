@@ -10,12 +10,13 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DataPoint, Method, MetricResponse,
-                              ParameterItemMapping, ParameterItemMappingItem,
-                              ParameterMapping, ParameterMappingItem,
-                              RubricMapping, RubricMappingItem,
-                              SimulationFilter, SimulationMapping,
-                              SimulationMappingItem, TrendData)
+from app.utils.schema import (AttemptHistoryRow, DataPoint, Method,
+                              MetricResponse, ParameterItemMapping,
+                              ParameterItemMappingItem, ParameterMapping,
+                              ParameterMappingItem, RubricMapping,
+                              RubricMappingItem, SimulationFilter,
+                              SimulationMapping, SimulationMappingItem,
+                              TrendData)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -34,42 +35,7 @@ class DashboardBundleFilters(BaseModel):
     simulationFilters: list[SimulationFilter] | None = None
     departmentIds: list[str] | None = None
 
-
-# AttemptHistoryRow schema
-class AttemptHistoryRow(BaseModel):
-    """Attempt history row."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    attemptId: str
-    date: str
-    profileId: str
-    profileName: str
-    simulationName: str
-    numScenarios: int | None = None
-    numScenariosCompleted: int
-    infiniteMode: bool
-    timeLimit: int | None = (
-        None  # simulation time limit in seconds (from simulation_time_limits)
-    )
-    personaNames: list[str]
-    personaColors: list[str]
-    score: int | None = None
-    simulation_id: str
-    scenario_ids: list[str]
-    scenario_titles: list[str]
-    isArchived: bool
-    showView: bool
-    showContinue: bool
-    practiceSimulation: bool
-    passPct: int | None = None
-    department_ids: list[str] | None = Field(
-        None, alias="department_id"
-    )  # Simulation's department associations
-    cohortNames: list[str]
-    practiceScenarioId: str | None = None
-
-    @field_validator("department_ids", mode="before")
+    @field_validator("departmentIds", mode="before")
     @classmethod
     def convert_department_id(cls, v: Any) -> list[str] | None:  # noqa: ANN401
         """Convert single department_id string to list, or return None."""
@@ -80,6 +46,9 @@ class AttemptHistoryRow(BaseModel):
         if isinstance(v, list):
             return v
         return [str(v)] if v else None
+
+
+# AttemptHistoryRow is imported from app.utils.schema
 
 
 AttemptHistoryResponse = list[AttemptHistoryRow]
@@ -1444,8 +1413,8 @@ async def get_dashboard(
     try:
         sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
-        # Build parameters in the same order as the query expects ($1-$7)
-        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (NULL for dashboard), $7: department_ids
+        # Build parameters in the same order as the query expects ($1-$6)
+        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: department_ids
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         cohort_ids = filters.cohortIds or []
@@ -1458,7 +1427,6 @@ async def get_dashboard(
             if filters.simulationFilters
             else ["general"]
         )
-        profile_id = None  # Dashboard doesn't filter by profileId
         department_ids = filters.departmentIds or []
 
         sql_params = (
@@ -1467,7 +1435,6 @@ async def get_dashboard(
             cohort_ids,
             roles,
             sim_filters,
-            profile_id,
             department_ids,
         )
 

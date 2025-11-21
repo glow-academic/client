@@ -1,10 +1,12 @@
 -- Home history query with pagination, search, filters, and sorting
+-- Assumes profile_id ($3) is always non-null (required)
 -- Parameters (in order):
 -- $1, $2: start_date (datetime), end_date (datetime)
--- $3: profile_id (uuid, optional)
+-- $3: profile_id (uuid, required, non-null)
 -- $4: cohort_ids (uuid[])
 -- $5: department_ids (uuid[])
--- $6: roles (profile_role[])
+-- $6: roles (profile_role[], kept for compatibility but not used for filtering)
+-- Note: Cast explicitly in SQL as $6::profile_role[] to help PostgreSQL determine type
 -- $7: simulationFilters (text[], optional) - ["general", "practice", "archived"]
 -- $8: search (text, optional) - searches profile name, simulation name, persona names
 -- $9: profileIds filter (uuid[], optional)
@@ -17,37 +19,9 @@
 -- $16: offset (int, OFFSET)
 
 WITH 
--- Resolve guest-profile-id to actual profile ID
-resolve_profile_id AS (
-    SELECT 
-        CASE 
-            WHEN $3::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            WHEN $3::text IS NULL OR $3::text = '' THEN NULL::uuid
-            ELSE $3::uuid
-        END as resolved_profile_id
-),
--- Cast roles parameter to help PostgreSQL determine type (even if not used for filtering)
+-- Cast roles parameter to help PostgreSQL determine type
 roles_param AS (
     SELECT $6::profile_role[] as roles_array
-),
--- Get the role of the profileId viewer (for role-based filtering)
--- When profileId is NULL, use the highest role from the roles parameter
-history_viewer_role AS (
-    SELECT 
-        CASE 
-            WHEN rpi.resolved_profile_id IS NULL THEN
-                -- Use highest role from roles parameter, default to 'superadmin' if roles includes it
-                CASE 
-                    WHEN 'superadmin'::profile_role = ANY($6::profile_role[]) THEN 'superadmin'::text
-                    WHEN 'admin'::profile_role = ANY($6::profile_role[]) THEN 'admin'::text
-                    WHEN 'instructional'::profile_role = ANY($6::profile_role[]) THEN 'instructional'::text
-                    WHEN 'ta'::profile_role = ANY($6::profile_role[]) THEN 'ta'::text
-                    ELSE 'guest'::text
-                END
-            ELSE COALESCE((SELECT role::text FROM profiles WHERE id = rpi.resolved_profile_id), 'guest'::text)
-        END::profile_role as role
-    FROM resolve_profile_id rpi
 ),
 -- Expanded cohort list: union of provided cohortIds + profileId cohorts
 expanded_history_cohort_ids AS (
@@ -58,11 +32,10 @@ expanded_history_cohort_ids AS (
         UNION
         SELECT cp.cohort_id
         FROM cohort_profiles cp
-        JOIN resolve_profile_id rpi ON cp.profile_id = rpi.resolved_profile_id
-        WHERE rpi.resolved_profile_id IS NOT NULL
+        WHERE cp.profile_id = $3::uuid
     ) combined
 ),
--- Filter attempts by date, profile, cohorts, departments, and role hierarchy
+-- Filter attempts by date, profile, cohorts, departments
 history_attempts AS (
     SELECT DISTINCT
         sa.id AS attempt_id,
@@ -78,7 +51,6 @@ history_attempts AS (
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
     JOIN simulations sim ON sim.id = sa.simulation_id
     JOIN profiles p_attempt ON p_attempt.id = ap.profile_id
-    CROSS JOIN history_viewer_role hvr
     LEFT JOIN (
         SELECT 
             sd.simulation_id,
@@ -89,6 +61,8 @@ history_attempts AS (
     ) sdd ON sdd.simulation_id = sim.id
     WHERE sa.created_at >= $1
       AND sa.created_at <= $2
+      -- Profile_id is always non-null for home history - always filter by it
+      AND ap.profile_id = $3::uuid
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (
@@ -104,17 +78,7 @@ history_attempts AS (
       AND (
         $7::text[] IS NULL OR cardinality($7::text[]) = 0 OR 'archived' = ANY($7::text[]) OR sa.archived = FALSE
       )
-      -- Only filter by profileId if provided (TA mode) - roles above TA pass NULL to see all data
-      AND (($3::text IS NULL OR $3::text = '' OR $3::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $3::text = 'guest-profile-id' THEN (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1) ELSE $3::uuid END)
       AND (cardinality($5::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $5::uuid[]::text[])
-      -- Role hierarchy filtering: viewer can only see attempts from roles at or below their level
-      AND (
-        hvr.role = 'superadmin' OR
-        (hvr.role = 'admin' AND p_attempt.role IN ('admin', 'instructional', 'ta', 'guest')) OR
-        (hvr.role = 'instructional' AND p_attempt.role IN ('instructional', 'ta', 'guest')) OR
-        (hvr.role = 'ta' AND p_attempt.role IN ('ta', 'guest')) OR
-        (hvr.role = 'guest' AND p_attempt.role = 'guest')
-      )
 ),
 -- Get cohorts for each attempt's profile (includes inactive links for history)
 history_attempt_cohorts AS (

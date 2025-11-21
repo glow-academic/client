@@ -11621,7 +11621,7 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__dashboard__bundle__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
             },
             "type": "array",
             "title": "History"
@@ -11915,7 +11915,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__dashboard__history__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
             },
             "type": "array",
             "title": "Data"
@@ -15165,7 +15165,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__home__history__AttemptHistoryRow"
+              "$ref": "#/components/schemas/app__utils__schema__AttemptHistoryRow"
             },
             "type": "array",
             "title": "Data"
@@ -25178,362 +25178,6 @@
         "title": "CohortItem",
         "description": "Cohort item for list view."
       },
-      "app__api__v3__dashboard__bundle__AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_id": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          },
-          "practiceScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practicescenarioid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row."
-      },
-      "app__api__v3__dashboard__history__AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          },
-          "practiceScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practicescenarioid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row."
-      },
       "app__api__v3__departments__detail__DepartmentDetailResponse": {
         "properties": {
           "title": {
@@ -26046,184 +25690,6 @@
         ],
         "title": "DepartmentItem",
         "description": "Department item for list view."
-      },
-      "app__api__v3__home__history__AttemptHistoryRow": {
-        "properties": {
-          "attemptId": {
-            "type": "string",
-            "title": "Attemptid"
-          },
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          },
-          "profileName": {
-            "type": "string",
-            "title": "Profilename"
-          },
-          "simulationName": {
-            "type": "string",
-            "title": "Simulationname"
-          },
-          "numScenarios": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Numscenarios"
-          },
-          "numScenariosCompleted": {
-            "type": "integer",
-            "title": "Numscenarioscompleted"
-          },
-          "infiniteMode": {
-            "type": "boolean",
-            "title": "Infinitemode"
-          },
-          "timeLimit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timelimit"
-          },
-          "personaNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personanames"
-          },
-          "personaColors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Personacolors"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_titles": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Titles"
-          },
-          "isArchived": {
-            "type": "boolean",
-            "title": "Isarchived"
-          },
-          "showView": {
-            "type": "boolean",
-            "title": "Showview"
-          },
-          "showContinue": {
-            "type": "boolean",
-            "title": "Showcontinue"
-          },
-          "practiceSimulation": {
-            "type": "boolean",
-            "title": "Practicesimulation"
-          },
-          "passPct": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passpct"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "cohortNames": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohortnames"
-          },
-          "practiceScenarioId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practicescenarioid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attemptId",
-          "date",
-          "profileId",
-          "profileName",
-          "simulationName",
-          "numScenariosCompleted",
-          "infiniteMode",
-          "personaNames",
-          "personaColors",
-          "simulation_id",
-          "scenario_ids",
-          "scenario_titles",
-          "isArchived",
-          "showView",
-          "showContinue",
-          "practiceSimulation",
-          "cohortNames"
-        ],
-        "title": "AttemptHistoryRow",
-        "description": "Attempt history row."
       },
       "app__api__v3__home__overview__AttemptHistoryRow": {
         "properties": {
@@ -29461,6 +28927,184 @@
         ],
         "title": "SimulationItem",
         "description": "Simulation item in list response."
+      },
+      "app__utils__schema__AttemptHistoryRow": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "profileName": {
+            "type": "string",
+            "title": "Profilename"
+          },
+          "simulationName": {
+            "type": "string",
+            "title": "Simulationname"
+          },
+          "numScenarios": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numscenarios"
+          },
+          "numScenariosCompleted": {
+            "type": "integer",
+            "title": "Numscenarioscompleted"
+          },
+          "infiniteMode": {
+            "type": "boolean",
+            "title": "Infinitemode"
+          },
+          "timeLimit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timelimit"
+          },
+          "personaNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personanames"
+          },
+          "personaColors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Personacolors"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_titles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Titles"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "title": "Isarchived"
+          },
+          "showView": {
+            "type": "boolean",
+            "title": "Showview"
+          },
+          "showContinue": {
+            "type": "boolean",
+            "title": "Showcontinue"
+          },
+          "practiceSimulation": {
+            "type": "boolean",
+            "title": "Practicesimulation"
+          },
+          "passPct": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passpct"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "cohortNames": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohortnames"
+          },
+          "practiceScenarioId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practicescenarioid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "date",
+          "profileId",
+          "profileName",
+          "simulationName",
+          "numScenariosCompleted",
+          "infiniteMode",
+          "personaNames",
+          "personaColors",
+          "simulation_id",
+          "scenario_ids",
+          "scenario_titles",
+          "isArchived",
+          "showView",
+          "showContinue",
+          "practiceSimulation",
+          "cohortNames"
+        ],
+        "title": "AttemptHistoryRow",
+        "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
       },
       "app__utils__schema__StandardGroupMappingItem": {
         "properties": {

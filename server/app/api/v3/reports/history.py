@@ -4,9 +4,9 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from app.api.v3.dashboard.history import (AttemptHistoryRow,
-                                          DashboardHistoryResponse)
+from app.api.v3.dashboard.history import DashboardHistoryResponse
 from app.main import get_db
+from app.utils.schema import AttemptHistoryRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -68,39 +68,18 @@ async def get_reports_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is required for individual reports
+        # Profile ID is required for individual reports - always use it (no role checking)
         profile_id = filters.profileId
 
-        # For roles above TA (instructional, admin, superadmin), we still pass profileId
-        # but SQL will ignore it for filtering (only uses it for department scoping)
-        # Only TAs should have profileId filtering applied
-        sql_profile_id: str | None = None  # Will be set to None for non-TA roles to disable filtering
-        if profile_id and profile_id != "guest-profile-id":
-            try:
-                # Check the role of the profile
-                role_query = "SELECT role FROM profiles WHERE id = $1"
-                role_row = await conn.fetchrow(role_query, profile_id)
-                if role_row and role_row["role"] != "ta":
-                    # Role is above TA, set sql_profile_id to None to ignore filtering
-                    sql_profile_id = None
-                else:
-                    # TA role - use profileId for filtering
-                    sql_profile_id = profile_id
-            except Exception:
-                # If we can't determine role, use profileId as-is (fallback to safe behavior)
-                sql_profile_id = profile_id
-        else:
-            sql_profile_id = profile_id
-
         # Load SQL query
-        sql_query = load_sql("sql/v3/dashboard/history.sql")
+        sql_query = load_sql("sql/v3/reports/history.sql")
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)
-        # $3: profile_id
+        # $3: profile_id (required, non-null)
         # $4: cohort_ids
         # $5: department_ids
-        # $6: roles (scoped roles from filters)
+        # $6: roles (kept for compatibility but not used for filtering)
         # $7: simulationFilters (text[], optional)
         # $8: search (text, optional)
         # $9: profileIds filter (uuid[], optional)
@@ -113,15 +92,16 @@ async def get_reports_history(
         # $16: offset (int, OFFSET)
         from datetime import datetime
 
+        # Roles parameter - cast in SQL CTE to help PostgreSQL determine type
         roles = filters.roles if filters.roles else []
         simulation_filters = filters.simulationFilters if filters.simulationFilters else ["general"]
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
-            sql_profile_id,  # $3 - None for non-TA roles, profile_id for TAs
+            profile_id,  # $3 - always required for reports
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
-            roles,  # $6
+            roles,  # $6 - cast in SQL CTE as $6::profile_role[]
             simulation_filters,  # $7
             filters.search if filters.search else None,  # $8
             filters.profileIds if filters.profileIds else [],  # $9

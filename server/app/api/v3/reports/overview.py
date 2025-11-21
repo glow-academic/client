@@ -62,10 +62,10 @@ async def get_reports_overview(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
+        sql_query = load_sql("sql/v3/reports/overview.sql")
 
         # Build parameters in the same order as the query expects ($1-$7)
-        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id, $7: department_ids
+        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required), $7: department_ids
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         cohort_ids = filters.cohortIds or []

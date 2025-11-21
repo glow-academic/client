@@ -9,40 +9,12 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import SimulationFilter
+from app.utils.schema import AttemptHistoryRow, SimulationFilter
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
-
-
-class AttemptHistoryRow(BaseModel):
-    """Attempt history row."""
-
-    attemptId: str
-    date: str
-    profileId: str
-    profileName: str
-    simulationName: str
-    numScenarios: int | None = None
-    numScenariosCompleted: int
-    infiniteMode: bool
-    timeLimit: int | None = None
-    personaNames: list[str]
-    personaColors: list[str]
-    score: int | None = None
-    simulation_id: str
-    scenario_ids: list[str]
-    scenario_titles: list[str]
-    isArchived: bool
-    showView: bool
-    showContinue: bool
-    practiceSimulation: bool
-    passPct: int | None = None
-    department_ids: list[str] | None = None
-    cohortNames: list[str]
-    practiceScenarioId: str | None = None
 
 
 class DashboardHistoryFilters(BaseModel):
@@ -110,28 +82,24 @@ async def get_dashboard_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Dashboard doesn't filter by profileId - always pass None
-        profile_id = None
-
         # Load SQL query
         sql_query = load_sql("sql/v3/dashboard/history.sql")
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)
-        # $3: profile_id (NULL for dashboard)
-        # $4: cohort_ids
-        # $5: department_ids
-        # $6: roles (scoped roles from filters)
-        # $7: simulationFilters (text[], optional)
-        # $8: search (text, optional)
-        # $9: profileIds filter (uuid[], optional)
-        # $10: simulationIds filter (uuid[], optional)
-        # $11: scenarioIds filter (uuid[], optional)
-        # $12: infiniteMode filter (bool, optional)
-        # $13: sortBy (text)
-        # $14: sortOrder (text)
-        # $15: pageSize (int, LIMIT)
-        # $16: offset (int, OFFSET)
+        # $3: cohort_ids
+        # $4: department_ids
+        # $5: roles (scoped roles from filters)
+        # $6: simulationFilters (text[], optional)
+        # $7: search (text, optional)
+        # $8: profileIds filter (uuid[], optional)
+        # $9: simulationIds filter (uuid[], optional)
+        # $10: scenarioIds filter (uuid[], optional)
+        # $11: infiniteMode filter (bool, optional)
+        # $12: sortBy (text)
+        # $13: sortOrder (text)
+        # $14: pageSize (int, LIMIT)
+        # $15: offset (int, OFFSET)
         from datetime import datetime
 
         roles = filters.roles if filters.roles else []
@@ -139,20 +107,19 @@ async def get_dashboard_history(
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
-            None,  # $3 - profile_id (NULL for dashboard)
-            filters.cohortIds if filters.cohortIds else [],  # $4
-            filters.departmentIds if filters.departmentIds else [],  # $5
-            roles,  # $6
-            simulation_filters,  # $7
-            filters.search if filters.search else None,  # $8
-            filters.profileIds if filters.profileIds else [],  # $9
-            filters.simulationIds if filters.simulationIds else [],  # $10
-            filters.scenarioIds if filters.scenarioIds else [],  # $11
-            filters.infiniteMode,  # $12 (can be None)
-            filters.sortBy,  # $13
-            filters.sortOrder,  # $14
-            filters.pageSize,  # $15
-            filters.page * filters.pageSize,  # $16 (OFFSET)
+            filters.cohortIds if filters.cohortIds else [],  # $3
+            filters.departmentIds if filters.departmentIds else [],  # $4
+            roles,  # $5
+            simulation_filters,  # $6
+            filters.search if filters.search else None,  # $7
+            filters.profileIds if filters.profileIds else [],  # $8
+            filters.simulationIds if filters.simulationIds else [],  # $9
+            filters.scenarioIds if filters.scenarioIds else [],  # $10
+            filters.infiniteMode,  # $11 (can be None)
+            filters.sortBy,  # $12
+            filters.sortOrder,  # $13
+            filters.pageSize,  # $14
+            filters.page * filters.pageSize,  # $15 (OFFSET)
         ]
         sql_params = tuple(params)
 

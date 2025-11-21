@@ -9,39 +9,12 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.schema import AttemptHistoryRow
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
-
-
-class AttemptHistoryRow(BaseModel):
-    """Attempt history row."""
-
-    attemptId: str
-    date: str
-    profileId: str
-    profileName: str
-    simulationName: str
-    numScenarios: int | None = None
-    numScenariosCompleted: int
-    infiniteMode: bool
-    timeLimit: int | None = None
-    personaNames: list[str]
-    personaColors: list[str]
-    score: int | None = None
-    simulation_id: str
-    scenario_ids: list[str]
-    scenario_titles: list[str]
-    isArchived: bool
-    showView: bool
-    showContinue: bool
-    practiceSimulation: bool
-    passPct: int | None = None
-    department_ids: list[str] | None = None
-    cohortNames: list[str]
-    practiceScenarioId: str | None = None
 
 
 class HomeHistoryFilters(BaseModel):
@@ -108,47 +81,18 @@ async def get_home_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is required - used for department scoping
+        # Profile ID is required - always use it (no role checking)
         profile_id = filters.profileId
-
-        # For roles above TA (instructional, admin, superadmin), we still pass profileId
-        # but SQL will ignore it for filtering (only uses it for department scoping)
-        # Only TAs should have profileId filtering applied
-        sql_profile_id: str | None = None  # Will be set to None for non-TA roles to disable filtering
-        if profile_id and profile_id != "guest-profile-id":
-            try:
-                # Check the role of the profile
-                role_query = "SELECT role FROM profiles WHERE id = $1"
-                role_row = await conn.fetchrow(role_query, profile_id)
-                if role_row and role_row["role"] != "ta":
-                    # Role is above TA, set sql_profile_id to None to ignore filtering
-                    # but keep profile_id for department scoping
-                    sql_profile_id = None
-                else:
-                    # TA role - use profileId for filtering
-                    sql_profile_id = profile_id
-            except Exception:
-                # If we can't determine role, use profileId as-is (fallback to safe behavior)
-                sql_profile_id = profile_id
-        else:
-            sql_profile_id = profile_id
 
         # Load SQL query
         sql_query = load_sql("sql/v3/home/history.sql")
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)
-        # $3: profile_id
+        # $3: profile_id (required, non-null)
         # $4: cohort_ids
         # $5: department_ids
-        # $6: roles (scoped roles from filters, default to ["ta"] for backward compatibility)
-        # $7: search term (optional)
-        # $8: profileIds filter (optional)
-        # $9: simulationIds filter (optional)
-        # $10: scenarioIds filter (optional)
-        # $11: infiniteMode filter (optional)
-        # $12: sortBy column
-        # $13: sortOrder (asc/desc)
+        # $6: roles (kept for compatibility but not used for filtering)
         # $7: simulationFilters (text[], optional)
         # $8: search (text, optional)
         # $9: profileIds (uuid[], optional)
@@ -161,12 +105,12 @@ async def get_home_history(
         # $16: offset (int, OFFSET)
         from datetime import datetime
 
-        roles = filters.roles if filters.roles else ["ta"]
+        roles = filters.roles if filters.roles else []
         simulation_filters = filters.simulationFilters if filters.simulationFilters else ["general"]
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
-            sql_profile_id,  # $3 - None for non-TA roles, profile_id for TAs
+            profile_id,  # $3 - always required for home history
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
             roles,  # $6

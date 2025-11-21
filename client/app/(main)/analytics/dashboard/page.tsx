@@ -207,10 +207,9 @@ export default async function DashboardPage({
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
-  // profileId is left null for main dashboard metrics (not used for filtering)
+  // Dashboard bundle no longer uses profileId - removed from request
   const dashboardRequestBody = {
     ...filters,
-    profileId: null, // Not used for main dashboard metrics
   };
 
   // Extract pagination and filter params from search params

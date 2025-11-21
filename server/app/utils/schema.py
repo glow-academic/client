@@ -7,7 +7,7 @@ Resource-specific schemas should be defined inline in route files.
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class MappingItem(BaseModel):
@@ -239,3 +239,38 @@ class MetricResponse(BaseModel):
     trendData: list[TrendData]
     dataPoints: list[DataPoint]
     hover: dict[str, Any] | None = None
+
+
+# ============================================================================
+# History Schemas (used across multiple v3 routes)
+# ============================================================================
+
+
+class AttemptHistoryRow(BaseModel):
+    """Attempt history row - shared across dashboard, home, reports, and practice history endpoints."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    attemptId: str
+    date: str
+    profileId: str
+    profileName: str
+    simulationName: str
+    numScenarios: int | None = None
+    numScenariosCompleted: int
+    infiniteMode: bool
+    timeLimit: int | None = None
+    personaNames: list[str]
+    personaColors: list[str]
+    score: int | None = None
+    simulation_id: str
+    scenario_ids: list[str]
+    scenario_titles: list[str]
+    isArchived: bool
+    showView: bool
+    showContinue: bool
+    practiceSimulation: bool
+    passPct: int | None = None
+    department_ids: list[str] | None = None
+    cohortNames: list[str]
+    practiceScenarioId: str | None = None

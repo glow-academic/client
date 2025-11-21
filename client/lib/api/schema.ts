@@ -5087,7 +5087,7 @@ export interface components {
             secondary: components["schemas"]["DashboardSecondaryMetrics"];
             footer: components["schemas"]["DashboardFooterMetrics"];
             /** History */
-            history: components["schemas"]["app__api__v3__dashboard__bundle__AttemptHistoryRow"][];
+            history: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
             insights: components["schemas"]["DashboardInsights"];
             thresholds: components["schemas"]["Thresholds"];
             /** Simulation Mapping */
@@ -5187,7 +5187,7 @@ export interface components {
          */
         DashboardHistoryResponse: {
             /** Data */
-            data: components["schemas"]["app__api__v3__dashboard__history__AttemptHistoryRow"][];
+            data: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
             /** Totalcount */
             totalCount: number;
             /** Archivedcount */
@@ -6448,7 +6448,7 @@ export interface components {
          */
         HomeHistoryResponse: {
             /** Data */
-            data: components["schemas"]["app__api__v3__home__history__AttemptHistoryRow"][];
+            data: components["schemas"]["app__utils__schema__AttemptHistoryRow"][];
             /** Totalcount */
             totalCount: number;
             /** Page */
@@ -10222,110 +10222,6 @@ export interface components {
             can_leave: boolean;
         };
         /**
-         * AttemptHistoryRow
-         * @description Attempt history row.
-         */
-        app__api__v3__dashboard__bundle__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Id */
-            department_id?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-            /** Practicescenarioid */
-            practiceScenarioId?: string | null;
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row.
-         */
-        app__api__v3__dashboard__history__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-            /** Practicescenarioid */
-            practiceScenarioId?: string | null;
-        };
-        /**
          * DepartmentDetailResponse
          * @description Response for department detail.
          */
@@ -10560,58 +10456,6 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
-        };
-        /**
-         * AttemptHistoryRow
-         * @description Attempt history row.
-         */
-        app__api__v3__home__history__AttemptHistoryRow: {
-            /** Attemptid */
-            attemptId: string;
-            /** Date */
-            date: string;
-            /** Profileid */
-            profileId: string;
-            /** Profilename */
-            profileName: string;
-            /** Simulationname */
-            simulationName: string;
-            /** Numscenarios */
-            numScenarios?: number | null;
-            /** Numscenarioscompleted */
-            numScenariosCompleted: number;
-            /** Infinitemode */
-            infiniteMode: boolean;
-            /** Timelimit */
-            timeLimit?: number | null;
-            /** Personanames */
-            personaNames: string[];
-            /** Personacolors */
-            personaColors: string[];
-            /** Score */
-            score?: number | null;
-            /** Simulation Id */
-            simulation_id: string;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Titles */
-            scenario_titles: string[];
-            /** Isarchived */
-            isArchived: boolean;
-            /** Showview */
-            showView: boolean;
-            /** Showcontinue */
-            showContinue: boolean;
-            /** Practicesimulation */
-            practiceSimulation: boolean;
-            /** Passpct */
-            passPct?: number | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Cohortnames */
-            cohortNames: string[];
-            /** Practicescenarioid */
-            practiceScenarioId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -11736,6 +11580,58 @@ export interface components {
             num_cohorts: number;
             /** Cohort Ids */
             cohort_ids: string[];
+        };
+        /**
+         * AttemptHistoryRow
+         * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
+         */
+        app__utils__schema__AttemptHistoryRow: {
+            /** Attemptid */
+            attemptId: string;
+            /** Date */
+            date: string;
+            /** Profileid */
+            profileId: string;
+            /** Profilename */
+            profileName: string;
+            /** Simulationname */
+            simulationName: string;
+            /** Numscenarios */
+            numScenarios?: number | null;
+            /** Numscenarioscompleted */
+            numScenariosCompleted: number;
+            /** Infinitemode */
+            infiniteMode: boolean;
+            /** Timelimit */
+            timeLimit?: number | null;
+            /** Personanames */
+            personaNames: string[];
+            /** Personacolors */
+            personaColors: string[];
+            /** Score */
+            score?: number | null;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Titles */
+            scenario_titles: string[];
+            /** Isarchived */
+            isArchived: boolean;
+            /** Showview */
+            showView: boolean;
+            /** Showcontinue */
+            showContinue: boolean;
+            /** Practicesimulation */
+            practiceSimulation: boolean;
+            /** Passpct */
+            passPct?: number | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Cohortnames */
+            cohortNames: string[];
+            /** Practicescenarioid */
+            practiceScenarioId?: string | null;
         };
         /**
          * StandardGroupMappingItem
