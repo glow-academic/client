@@ -309,11 +309,11 @@ function MainLayoutContent({
       return null;
     }
 
-    if (pathname === "/system/providers") {
+    if (pathname === "/system/models") {
       return (
-        <Button onClick={() => router.push("/system/providers/new")} size="sm">
+        <Button onClick={() => router.push("/system/models/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create Provider
+          Create Model
         </Button>
       );
     }

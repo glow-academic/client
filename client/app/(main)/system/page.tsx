@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function SystemPage() {
-  return redirect("/management/departments");
+  return redirect("/system/models");
 }

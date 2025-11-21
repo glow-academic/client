@@ -117,8 +117,8 @@ export const getSectionRoute = (
       return "/system";
     case "staff":
       return "/system/staff";
-    case "providers":
-      return "/system/providers";
+    case "models":
+      return "/system/models";
     case "feedback":
       return "/system/feedback";
     case "logs":
@@ -180,23 +180,9 @@ export const getSectionRoute = (
         const parameterId = section.replace("parameter-", "");
         return `/management/parameters/p/${parameterId}`;
       }
-      if (section.startsWith("provider-")) {
-        const providerId = section.replace("provider-", "");
-        return `/system/providers/p/${providerId}`;
-      }
       if (section.startsWith("model-")) {
         const modelId = section.replace("model-", "");
-        // Need to extract providerId from current pathname
-        if (currentPathname) {
-          const providerMatch = currentPathname.match(
-            /\/providers\/p\/([^/]+)/,
-          );
-          if (providerMatch) {
-            return `/system/providers/p/${providerMatch[1]}/m/${modelId}`;
-          }
-        }
-        // Fallback if we can't determine provider
-        return "/system/providers";
+        return `/system/models/${modelId}`;
       }
       if (section.startsWith("profile-")) {
         const profileId = section.replace("profile-", "");

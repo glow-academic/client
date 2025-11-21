@@ -30,6 +30,7 @@ from app.api.v3.pricing import router as pricing_router
 # Batch B: Profile Routes
 # ============================================================================
 from app.api.v3.profile import router as profile_router
+from app.api.v3.models import router as models_router
 from app.api.v3.providers import router as providers_router
 from app.api.v3.reports import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
@@ -71,8 +72,10 @@ router.include_router(leaderboard_router)
 
 # Batch F: Supporting Resources
 router.include_router(agents_router)
-router.include_router(providers_router)
+router.include_router(models_router)
 router.include_router(parameters_router)
+# Providers router kept for simple list endpoint (picker use only)
+router.include_router(providers_router)
 router.include_router(feedback_router)
 router.include_router(logs_router)
 router.include_router(attempts_router)

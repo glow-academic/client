@@ -5546,20 +5546,20 @@
         ]
       }
     },
-    "/api/v3/providers/list": {
+    "/api/v3/models/list": {
       "post": {
         "tags": [
           "v3",
-          "providers"
+          "models"
         ],
-        "summary": "Get Providers List",
-        "description": "Get providers list with nested models (hierarchical).",
-        "operationId": "get_providers_list_api_v3_providers_list_post",
+        "summary": "Get Models List",
+        "description": "Get models list (flat structure with provider info).",
+        "operationId": "get_models_list_api_v3_models_list_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProvidersFilters"
+                "$ref": "#/components/schemas/ModelsFilters"
               }
             }
           },
@@ -5571,7 +5571,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProvidersListResponse"
+                  "$ref": "#/components/schemas/ModelsListResponse"
                 }
               }
             }
@@ -5589,302 +5589,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "providers"
+          "models"
         ]
       }
     },
-    "/api/v3/providers/detail": {
+    "/api/v3/models/detail": {
       "post": {
         "tags": [
           "v3",
-          "providers"
-        ],
-        "summary": "Get Provider Detail",
-        "description": "Get detailed provider information.",
-        "operationId": "get_provider_detail_api_v3_providers_detail_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProviderDetailRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProviderDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
-      }
-    },
-    "/api/v3/providers/create": {
-      "post": {
-        "tags": [
-          "v3",
-          "providers"
-        ],
-        "summary": "Create Provider",
-        "description": "Create a new provider.",
-        "operationId": "create_provider_api_v3_providers_create_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProviderRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateProviderResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
-      }
-    },
-    "/api/v3/providers/update": {
-      "post": {
-        "tags": [
-          "v3",
-          "providers"
-        ],
-        "summary": "Update Provider",
-        "description": "Update an existing provider.",
-        "operationId": "update_provider_api_v3_providers_update_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProviderRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateProviderResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
-      }
-    },
-    "/api/v3/providers/delete": {
-      "post": {
-        "tags": [
-          "v3",
-          "providers"
-        ],
-        "summary": "Delete Provider",
-        "description": "Delete a provider if no models are in use.",
-        "operationId": "delete_provider_api_v3_providers_delete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteProviderRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteProviderResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
-      }
-    },
-    "/api/v3/providers/duplicate": {
-      "post": {
-        "tags": [
-          "v3",
-          "providers"
-        ],
-        "summary": "Duplicate Provider",
-        "description": "Duplicate a provider with all its models.",
-        "operationId": "duplicate_provider_api_v3_providers_duplicate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DuplicateProviderRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DuplicateProviderResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
-      }
-    },
-    "/api/v3/providers/decrypt-key": {
-      "post": {
-        "tags": [
-          "v3",
-          "providers"
-        ],
-        "summary": "Decrypt Provider Key",
-        "description": "Decrypt provider API key for authorized users.",
-        "operationId": "decrypt_provider_key_api_v3_providers_decrypt_key_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DecryptProviderKeyRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DecryptProviderKeyResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "providers"
-        ]
-      }
-    },
-    "/api/v3/providers/models/detail": {
-      "post": {
-        "tags": [
-          "v3",
-          "providers",
-          "providers"
+          "models"
         ],
         "summary": "Get Model Detail",
         "description": "Get detailed model information.",
-        "operationId": "get_model_detail_api_v3_providers_models_detail_post",
+        "operationId": "get_model_detail_api_v3_models_detail_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5919,21 +5636,66 @@
         },
         "x-cache-tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ]
       }
     },
-    "/api/v3/providers/models/create": {
+    "/api/v3/models/detail-default": {
       "post": {
         "tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
+        ],
+        "summary": "Get Model Detail Default",
+        "description": "Get default model detail for creation mode (provider mapping).",
+        "operationId": "get_model_detail_default_api_v3_models_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelDetailDefaultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDetailDefaultResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "models"
+        ]
+      }
+    },
+    "/api/v3/models/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "models"
         ],
         "summary": "Create Model",
         "description": "Create a new model.",
-        "operationId": "create_model_api_v3_providers_models_create_post",
+        "operationId": "create_model_api_v3_models_create_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5968,21 +5730,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ]
       }
     },
-    "/api/v3/providers/models/update": {
+    "/api/v3/models/update": {
       "post": {
         "tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ],
         "summary": "Update Model",
         "description": "Update an existing model.",
-        "operationId": "update_model_api_v3_providers_models_update_post",
+        "operationId": "update_model_api_v3_models_update_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6017,21 +5777,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ]
       }
     },
-    "/api/v3/providers/models/delete": {
+    "/api/v3/models/delete": {
       "post": {
         "tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ],
         "summary": "Delete Model",
         "description": "Delete a model if not in use.",
-        "operationId": "delete_model_api_v3_providers_models_delete_post",
+        "operationId": "delete_model_api_v3_models_delete_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6066,21 +5824,19 @@
         },
         "x-cache-tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ]
       }
     },
-    "/api/v3/providers/models/duplicate": {
+    "/api/v3/models/duplicate": {
       "post": {
         "tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ],
         "summary": "Duplicate Model",
         "description": "Duplicate a model.",
-        "operationId": "duplicate_model_api_v3_providers_models_duplicate_post",
+        "operationId": "duplicate_model_api_v3_models_duplicate_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6115,8 +5871,7 @@
         },
         "x-cache-tags": [
           "v3",
-          "providers",
-          "providers"
+          "models"
         ]
       }
     },
@@ -11031,63 +10786,6 @@
         "title": "CreatePersonaResponse",
         "description": "Response from create persona."
       },
-      "CreateProviderRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "api_key": {
-            "type": "string",
-            "title": "Api Key"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "api_key"
-        ],
-        "title": "CreateProviderRequest"
-      },
-      "CreateProviderResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "providerId",
-          "message"
-        ],
-        "title": "CreateProviderResponse"
-      },
       "CreateRubricRequest": {
         "properties": {
           "name": {
@@ -12308,39 +12006,6 @@
         "title": "DataPoint",
         "description": "Individual data point."
       },
-      "DecryptProviderKeyRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId",
-          "profileId"
-        ],
-        "title": "DecryptProviderKeyRequest",
-        "description": "Request to decrypt provider API key."
-      },
-      "DecryptProviderKeyResponse": {
-        "properties": {
-          "api_key": {
-            "type": "string",
-            "title": "Api Key"
-          }
-        },
-        "type": "object",
-        "required": [
-          "api_key"
-        ],
-        "title": "DecryptProviderKeyResponse",
-        "description": "Response with decrypted API key."
-      },
       "DeleteAgentPromptRequest": {
         "properties": {
           "agentId": {
@@ -12665,39 +12330,6 @@
         ],
         "title": "DeletePersonaResponse",
         "description": "Response from delete persona."
-      },
-      "DeleteProviderRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId"
-        ],
-        "title": "DeleteProviderRequest",
-        "description": "Request to delete provider."
-      },
-      "DeleteProviderResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeleteProviderResponse",
-        "description": "Response from delete provider."
       },
       "DeleteRubricRequest": {
         "properties": {
@@ -13868,44 +13500,6 @@
         ],
         "title": "DuplicatePersonaResponse",
         "description": "Response from duplicate persona."
-      },
-      "DuplicateProviderRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId"
-        ],
-        "title": "DuplicateProviderRequest",
-        "description": "Request to duplicate provider."
-      },
-      "DuplicateProviderResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "providerId",
-          "message"
-        ],
-        "title": "DuplicateProviderResponse",
-        "description": "Response from duplicate provider."
       },
       "DuplicateRubricRequest": {
         "properties": {
@@ -16257,15 +15851,48 @@
         "title": "MetricResponse",
         "description": "Standard metric response."
       },
+      "ModelDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ModelDetailDefaultRequest"
+      },
+      "ModelDetailDefaultResponse": {
+        "properties": {
+          "valid_provider_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Provider Ids"
+          },
+          "provider_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProviderMappingItem"
+            },
+            "type": "object",
+            "title": "Provider Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_provider_ids",
+          "provider_mapping"
+        ],
+        "title": "ModelDetailDefaultResponse"
+      },
       "ModelDetailRequest": {
         "properties": {
           "modelId": {
             "type": "string",
             "title": "Modelid"
-          },
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
           },
           "profileId": {
             "type": "string",
@@ -16275,7 +15902,6 @@
         "type": "object",
         "required": [
           "modelId",
-          "providerId",
           "profileId"
         ],
         "title": "ModelDetailRequest"
@@ -16366,9 +15992,25 @@
             "type": "boolean",
             "title": "Custom Model"
           },
+          "image_model": {
+            "type": "boolean",
+            "title": "Image Model"
+          },
           "updated_at": {
             "type": "string",
             "title": "Updated At"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "provider_description": {
+            "type": "string",
+            "title": "Provider Description"
           },
           "can_edit": {
             "type": "boolean",
@@ -16386,7 +16028,11 @@
           "description",
           "active",
           "custom_model",
+          "image_model",
           "updated_at",
+          "provider_id",
+          "provider_name",
+          "provider_description",
           "can_edit",
           "can_delete"
         ],
@@ -16439,6 +16085,76 @@
         ],
         "title": "ModelMappingWithPricing",
         "description": "Model mapping with pricing information."
+      },
+      "ModelsFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ModelsFilters"
+      },
+      "ModelsListResponse": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelItem"
+            },
+            "type": "array",
+            "title": "Models"
+          },
+          "provider_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProviderMappingItem"
+            },
+            "type": "object",
+            "title": "Provider Mapping"
+          },
+          "provider_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Provider Options"
+          },
+          "custom_model_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Custom Model Options"
+          },
+          "status_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Status Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "models",
+          "provider_mapping",
+          "provider_options",
+          "custom_model_options",
+          "status_options"
+        ],
+        "title": "ModelsListResponse"
       },
       "NumericAttemptFact": {
         "properties": {
@@ -19103,59 +18819,6 @@
         "title": "ProfileSearchResult",
         "description": "Profile search result."
       },
-      "ProviderDetailRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId",
-          "profileId"
-        ],
-        "title": "ProviderDetailRequest"
-      },
-      "ProviderDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "api_key": {
-            "type": "string",
-            "title": "Api Key"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "api_key",
-          "base_url"
-        ],
-        "title": "ProviderDetailResponse"
-      },
       "ProviderMappingItem": {
         "properties": {
           "name": {
@@ -19173,109 +18836,6 @@
           "description"
         ],
         "title": "ProviderMappingItem"
-      },
-      "ProviderWithModels": {
-        "properties": {
-          "provider_id": {
-            "type": "string",
-            "title": "Provider Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "models": {
-            "items": {
-              "$ref": "#/components/schemas/ModelItem"
-            },
-            "type": "array",
-            "title": "Models"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description",
-          "can_edit",
-          "can_delete",
-          "models"
-        ],
-        "title": "ProviderWithModels"
-      },
-      "ProvidersFilters": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "ProvidersFilters"
-      },
-      "ProvidersListResponse": {
-        "properties": {
-          "providers": {
-            "items": {
-              "$ref": "#/components/schemas/ProviderWithModels"
-            },
-            "type": "array",
-            "title": "Providers"
-          },
-          "provider_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Provider Options"
-          },
-          "custom_model_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Custom Model Options"
-          },
-          "status_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Status Options"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providers",
-          "provider_options",
-          "custom_model_options",
-          "status_options"
-        ],
-        "title": "ProvidersListResponse"
       },
       "QueryDataRequest": {
         "properties": {
@@ -23294,6 +22854,10 @@
             "type": "string",
             "title": "Modelid"
           },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -23326,6 +22890,7 @@
         "type": "object",
         "required": [
           "modelId",
+          "provider_id",
           "name",
           "description",
           "active",
@@ -23692,71 +23257,6 @@
         ],
         "title": "UpdateProfileRequest",
         "description": "Request to update profile fields."
-      },
-      "UpdateProviderRequest": {
-        "properties": {
-          "providerId": {
-            "type": "string",
-            "title": "Providerid"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "api_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Api Key"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "providerId",
-          "name",
-          "description"
-        ],
-        "title": "UpdateProviderRequest",
-        "description": "Request to update provider.\n\nNote: Providers are global (not department-specific)."
-      },
-      "UpdateProviderResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "UpdateProviderResponse",
-        "description": "Response from update provider."
       },
       "UpdateRubricRequest": {
         "properties": {

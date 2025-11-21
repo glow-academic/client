@@ -19,7 +19,7 @@ const shouldDropSegment = (segment: string): boolean => {
 const getSectionFromSegments = (segments: string[]): string => {
   if (segments.length === 0) return "dashboard";
 
-  const [first, second, third, fourth, fifth, sixth] = segments;
+  const [first, second, third, fourth] = segments;
 
   // Handle main routes
   switch (first) {
@@ -126,14 +126,11 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "staff";
       }
-      if (second === "providers") {
-        if (third === "p" && fourth && fifth === "m" && sixth) {
-          return `model-${sixth}`;
+      if (second === "models") {
+        if (third) {
+          return `model-${third}`;
         }
-        if (third === "p" && fourth) {
-          return `provider-${fourth}`;
-        }
-        return "providers";
+        return "models";
       }
       if (second === "feedback") {
         return "feedback";
@@ -239,8 +236,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "staff":
         title = "Staff";
         break;
-      case "providers":
-        title = "Providers";
+      case "models":
+        title = "Models";
         break;
       case "parameters":
         title = "Parameters";

@@ -2559,7 +2559,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/list": {
+    "/api/v3/models/list": {
         parameters: {
             query?: never;
             header?: never;
@@ -2569,137 +2569,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Providers List
-         * @description Get providers list with nested models (hierarchical).
+         * Get Models List
+         * @description Get models list (flat structure with provider info).
          */
-        post: operations["get_providers_list_api_v3_providers_list_post"];
+        post: operations["get_models_list_api_v3_models_list_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Provider Detail
-         * @description Get detailed provider information.
-         */
-        post: operations["get_provider_detail_api_v3_providers_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/providers/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Provider
-         * @description Create a new provider.
-         */
-        post: operations["create_provider_api_v3_providers_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/providers/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Provider
-         * @description Update an existing provider.
-         */
-        post: operations["update_provider_api_v3_providers_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/providers/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Provider
-         * @description Delete a provider if no models are in use.
-         */
-        post: operations["delete_provider_api_v3_providers_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/providers/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate Provider
-         * @description Duplicate a provider with all its models.
-         */
-        post: operations["duplicate_provider_api_v3_providers_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/providers/decrypt-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Decrypt Provider Key
-         * @description Decrypt provider API key for authorized users.
-         */
-        post: operations["decrypt_provider_key_api_v3_providers_decrypt_key_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/providers/models/detail": {
+    "/api/v3/models/detail": {
         parameters: {
             query?: never;
             header?: never;
@@ -2712,14 +2592,34 @@ export interface paths {
          * Get Model Detail
          * @description Get detailed model information.
          */
-        post: operations["get_model_detail_api_v3_providers_models_detail_post"];
+        post: operations["get_model_detail_api_v3_models_detail_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/models/create": {
+    "/api/v3/models/detail-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Model Detail Default
+         * @description Get default model detail for creation mode (provider mapping).
+         */
+        post: operations["get_model_detail_default_api_v3_models_detail_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/models/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2732,14 +2632,14 @@ export interface paths {
          * Create Model
          * @description Create a new model.
          */
-        post: operations["create_model_api_v3_providers_models_create_post"];
+        post: operations["create_model_api_v3_models_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/models/update": {
+    "/api/v3/models/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2752,14 +2652,14 @@ export interface paths {
          * Update Model
          * @description Update an existing model.
          */
-        post: operations["update_model_api_v3_providers_models_update_post"];
+        post: operations["update_model_api_v3_models_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/models/delete": {
+    "/api/v3/models/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2772,14 +2672,14 @@ export interface paths {
          * Delete Model
          * @description Delete a model if not in use.
          */
-        post: operations["delete_model_api_v3_providers_models_delete_post"];
+        post: operations["delete_model_api_v3_models_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v3/providers/models/duplicate": {
+    "/api/v3/models/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2792,7 +2692,7 @@ export interface paths {
          * Duplicate Model
          * @description Duplicate a model.
          */
-        post: operations["duplicate_model_api_v3_providers_models_duplicate_post"];
+        post: operations["duplicate_model_api_v3_models_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4848,26 +4748,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** CreateProviderRequest */
-        CreateProviderRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key: string;
-            /** Base Url */
-            base_url?: string | null;
-        };
-        /** CreateProviderResponse */
-        CreateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Providerid */
-            providerId: string;
-            /** Message */
-            message: string;
-        };
         /**
          * CreateRubricRequest
          * @description Request for creating a rubric.
@@ -5301,24 +5181,6 @@ export interface components {
             /** Count */
             count?: number | null;
         };
-        /**
-         * DecryptProviderKeyRequest
-         * @description Request to decrypt provider API key.
-         */
-        DecryptProviderKeyRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * DecryptProviderKeyResponse
-         * @description Response with decrypted API key.
-         */
-        DecryptProviderKeyResponse: {
-            /** Api Key */
-            api_key: string;
-        };
         /** DeleteAgentPromptRequest */
         DeleteAgentPromptRequest: {
             /** Agentid */
@@ -5472,24 +5334,6 @@ export interface components {
          * @description Response from delete persona.
          */
         DeletePersonaResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeleteProviderRequest
-         * @description Request to delete provider.
-         */
-        DeleteProviderRequest: {
-            /** Providerid */
-            providerId: string;
-        };
-        /**
-         * DeleteProviderResponse
-         * @description Response from delete provider.
-         */
-        DeleteProviderResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -5958,26 +5802,6 @@ export interface components {
             success: boolean;
             /** Personaid */
             personaId: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DuplicateProviderRequest
-         * @description Request to duplicate provider.
-         */
-        DuplicateProviderRequest: {
-            /** Providerid */
-            providerId: string;
-        };
-        /**
-         * DuplicateProviderResponse
-         * @description Response from duplicate provider.
-         */
-        DuplicateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Providerid */
-            providerId: string;
             /** Message */
             message: string;
         };
@@ -6832,12 +6656,24 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** ModelDetailDefaultRequest */
+        ModelDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** ModelDetailDefaultResponse */
+        ModelDetailDefaultResponse: {
+            /** Valid Provider Ids */
+            valid_provider_ids: string[];
+            /** Provider Mapping */
+            provider_mapping: {
+                [key: string]: components["schemas"]["ProviderMappingItem"];
+            };
+        };
         /** ModelDetailRequest */
         ModelDetailRequest: {
             /** Modelid */
             modelId: string;
-            /** Providerid */
-            providerId: string;
             /** Profileid */
             profileId: string;
         };
@@ -6878,8 +6714,16 @@ export interface components {
             active: boolean;
             /** Custom Model */
             custom_model: boolean;
+            /** Image Model */
+            image_model: boolean;
             /** Updated At */
             updated_at: string;
+            /** Provider Id */
+            provider_id: string;
+            /** Provider Name */
+            provider_name: string;
+            /** Provider Description */
+            provider_description: string;
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -6908,6 +6752,32 @@ export interface components {
             input_ppm: number;
             /** Output Ppm */
             output_ppm: number;
+        };
+        /** ModelsFilters */
+        ModelsFilters: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** ModelsListResponse */
+        ModelsListResponse: {
+            /** Models */
+            models: components["schemas"]["ModelItem"][];
+            /** Provider Mapping */
+            provider_mapping: {
+                [key: string]: components["schemas"]["ProviderMappingItem"];
+            };
+            /** Provider Options */
+            provider_options: {
+                [key: string]: string;
+            }[];
+            /** Custom Model Options */
+            custom_model_options: {
+                [key: string]: string;
+            }[];
+            /** Status Options */
+            status_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * NumericAttemptFact
@@ -7892,67 +7762,12 @@ export interface components {
             /** Score */
             score: number;
         };
-        /** ProviderDetailRequest */
-        ProviderDetailRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /** ProviderDetailResponse */
-        ProviderDetailResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key: string;
-            /** Base Url */
-            base_url: string | null;
-        };
         /** ProviderMappingItem */
         ProviderMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
-        };
-        /** ProviderWithModels */
-        ProviderWithModels: {
-            /** Provider Id */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Models */
-            models: components["schemas"]["ModelItem"][];
-        };
-        /** ProvidersFilters */
-        ProvidersFilters: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** ProvidersListResponse */
-        ProvidersListResponse: {
-            /** Providers */
-            providers: components["schemas"]["ProviderWithModels"][];
-            /** Provider Options */
-            provider_options: {
-                [key: string]: string;
-            }[];
-            /** Custom Model Options */
-            custom_model_options: {
-                [key: string]: string;
-            }[];
-            /** Status Options */
-            status_options: {
-                [key: string]: string;
-            }[];
         };
         /**
          * QueryDataRequest
@@ -9544,6 +9359,8 @@ export interface components {
         UpdateModelRequest: {
             /** Modelid */
             modelId: string;
+            /** Provider Id */
+            provider_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -9670,34 +9487,6 @@ export interface components {
             reqPerDay?: number | null;
             /** Lastactive */
             lastActive?: string | null;
-        };
-        /**
-         * UpdateProviderRequest
-         * @description Request to update provider.
-         *
-         *     Note: Providers are global (not department-specific).
-         */
-        UpdateProviderRequest: {
-            /** Providerid */
-            providerId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Api Key */
-            api_key?: string | null;
-            /** Base Url */
-            base_url?: string | null;
-        };
-        /**
-         * UpdateProviderResponse
-         * @description Response from update provider.
-         */
-        UpdateProviderResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
         };
         /**
          * UpdateRubricRequest
@@ -15554,7 +15343,7 @@ export interface operations {
             };
         };
     };
-    get_providers_list_api_v3_providers_list_post: {
+    get_models_list_api_v3_models_list_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15563,7 +15352,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProvidersFilters"];
+                "application/json": components["schemas"]["ModelsFilters"];
             };
         };
         responses: {
@@ -15573,7 +15362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProvidersListResponse"];
+                    "application/json": components["schemas"]["ModelsListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -15587,205 +15376,7 @@ export interface operations {
             };
         };
     };
-    get_provider_detail_api_v3_providers_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProviderDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProviderDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_provider_api_v3_providers_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_provider_api_v3_providers_update_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_provider_api_v3_providers_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    duplicate_provider_api_v3_providers_duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DuplicateProviderRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DuplicateProviderResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    decrypt_provider_key_api_v3_providers_decrypt_key_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DecryptProviderKeyRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DecryptProviderKeyResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_model_detail_api_v3_providers_models_detail_post: {
+    get_model_detail_api_v3_models_detail_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15818,7 +15409,40 @@ export interface operations {
             };
         };
     };
-    create_model_api_v3_providers_models_create_post: {
+    get_model_detail_default_api_v3_models_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelDetailDefaultRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelDetailDefaultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_model_api_v3_models_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15851,7 +15475,7 @@ export interface operations {
             };
         };
     };
-    update_model_api_v3_providers_models_update_post: {
+    update_model_api_v3_models_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15884,7 +15508,7 @@ export interface operations {
             };
         };
     };
-    delete_model_api_v3_providers_models_delete_post: {
+    delete_model_api_v3_models_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15917,7 +15541,7 @@ export interface operations {
             };
         };
     };
-    duplicate_model_api_v3_providers_models_duplicate_post: {
+    duplicate_model_api_v3_models_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;

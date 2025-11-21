@@ -64,7 +64,7 @@ def _resolve_profile_ids(
     *,
     profile_id: str,
     effective_profile_id: str | None,
-    pathname: str = "/system/providers",
+    pathname: str = "/system/models",
 ) -> tuple[str, str]:
     """Resolve placeholder profile IDs (like guest-profile-id) to real UUIDs."""
     effective = effective_profile_id or profile_id
@@ -93,14 +93,14 @@ def _resolve_profile_ids(
     return resolved_actual, resolved_effective
 
 
-def fetch_providers_list(
+def fetch_models_list(
     request: APIRequestContext,
     *,
     profile_id: str = PROFILE_ID,
     effective_profile_id: str | None = None,
     bypass_cache: bool = True,
 ) -> dict[str, Any]:
-    """Fetch providers list via the signed API for the current profile."""
+    """Fetch models list via the signed API for the current profile."""
     resolved_actual, resolved_effective = _resolve_profile_ids(
         request,
         profile_id=profile_id,
@@ -108,7 +108,7 @@ def fetch_providers_list(
     )
     return _post_json(
         request,
-        "/api/v3/providers/list",
+        "/api/v3/models/list",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -143,7 +143,6 @@ def fetch_provider_detail(
 def fetch_model_detail(
     request: APIRequestContext,
     model_id: str,
-    provider_id: str,
     *,
     profile_id: str = PROFILE_ID,
     effective_profile_id: str | None = None,
@@ -157,10 +156,9 @@ def fetch_model_detail(
     )
     return _post_json(
         request,
-        "/api/v3/providers/models/detail",
+        "/api/v3/models/detail",
         {
             "modelId": model_id,
-            "providerId": provider_id,
             "profileId": resolved_effective,
         },
         profile_id=resolved_actual,
@@ -239,7 +237,7 @@ def create_model_api(
     }
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v3/providers/models/create",
+        "/api/v3/models/create",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -291,7 +289,6 @@ def update_provider_api(
 def update_model_api(
     request: APIRequestContext,
     model_id: str,
-    provider_id: str,
     *,
     name: str | None = None,
     description: str | None = None,
@@ -311,7 +308,6 @@ def update_model_api(
     )
     payload: dict[str, Any] = {
         "modelId": model_id,
-        "providerId": provider_id,
     }
     if name is not None:
         payload["name"] = name
@@ -330,7 +326,7 @@ def update_model_api(
 
     _post_json(
         request,
-        "/api/v3/providers/models/update",
+        "/api/v3/models/update",
         payload,
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -376,7 +372,7 @@ def delete_model_api(
     )
     _post_json(
         request,
-        "/api/v3/providers/models/delete",
+        "/api/v3/models/delete",
         {"modelId": model_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
@@ -426,7 +422,7 @@ def duplicate_model_api(
     )
     data: dict[str, Any] = _post_json(
         request,
-        "/api/v3/providers/models/duplicate",
+        "/api/v3/models/duplicate",
         {"modelId": model_id},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

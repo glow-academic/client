@@ -323,8 +323,8 @@ export function UnifiedSidebar({
       }
     }
 
-    // System  - Available only for superadmin
-    if (effectiveProfile.role === "superadmin") {
+    // System  - Available for admin and superadmin
+    if (effectiveProfile.role === "admin" || effectiveProfile.role === "superadmin") {
       const systemItems: MenuItem[] = [];
 
       menu.push({
@@ -342,11 +342,11 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("providers")) {
+      if (availableSections.includes("models")) {
         systemItems.push({
-          title: "Providers",
+          title: "Models",
           url: "#",
-          section: "providers",
+          section: "models",
         });
       }
 
