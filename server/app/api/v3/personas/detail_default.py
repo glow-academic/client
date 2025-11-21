@@ -5,12 +5,15 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
                               ModelMapping, ModelMappingItem, ReasoningMapping,
                               ReasoningMappingItem)
 from app.utils.sql_helper import load_sql
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 
@@ -101,9 +104,23 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
 async def get_persona_detail_default(
     request: PersonaDetailDefaultRequest,
     http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PersonaDetailResponse:
     """Get default persona structure for creation mode."""
+    tags = ["personas"]  # From router tags
+
+    # Generate cache key from path and parsed body
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+
+    # Try cache
+    cached = await get_cached(cache_key_val)
+    if cached:
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "1"
+        return PersonaDetailResponse.model_validate(cached["data"])
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
@@ -241,7 +258,7 @@ async def get_persona_detail_default(
         # Debug info (empty for now)
         debug_info: list[DebugInfoItem] = []
 
-        return PersonaDetailResponse(
+        response_data = PersonaDetailResponse(
             # Basic fields (empty defaults for creation)
             name="",
             description="",
@@ -279,6 +296,18 @@ async def get_persona_detail_default(
             # Debug info
             debug_info=debug_info,
         )
+
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:
