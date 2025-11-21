@@ -76,7 +76,7 @@ class LeaderboardBundleResponse(BaseModel):
     scenario_mapping: ScenarioMapping = {}
 
 
-@router.post("/", response_model=LeaderboardBundleResponse)
+@router.post("/bundle", response_model=LeaderboardBundleResponse)
 async def get_leaderboard(
     filters: LeaderboardBundleFilters,
     request: Request,

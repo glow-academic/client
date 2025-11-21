@@ -2359,7 +2359,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/leaderboard/": {
+    "/api/v3/leaderboard/bundle": {
         parameters: {
             query?: never;
             header?: never;
@@ -2372,7 +2372,7 @@ export interface paths {
          * Get Leaderboard
          * @description Get leaderboard bundle with all metrics and profile data.
          */
-        post: operations["get_leaderboard_api_v3_leaderboard__post"];
+        post: operations["get_leaderboard_api_v3_leaderboard_bundle_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15224,7 +15224,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_api_v3_leaderboard__post: {
+    get_leaderboard_api_v3_leaderboard_bundle_post: {
         parameters: {
             query?: never;
             header?: never;

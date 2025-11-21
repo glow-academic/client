@@ -7,7 +7,7 @@
 "use client";
 
 import type {
-  DashboardOut,
+  ReportsOverviewOut,
   ProfileDetailOut,
 } from "@/app/(main)/analytics/reports/p/[profileId]/page";
 import Dashboard from "@/components/dashboard/Dashboard";
@@ -52,7 +52,7 @@ const getRoleDisplayName = (role: string) => {
 export interface ReportProps {
   profileId: string;
   profileData: ProfileDetailOut;
-  dashboardData: DashboardOut;
+  dashboardData: ReportsOverviewOut;
 }
 
 export default function Report({

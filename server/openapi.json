@@ -5076,7 +5076,7 @@
         ]
       }
     },
-    "/api/v3/leaderboard/": {
+    "/api/v3/leaderboard/bundle": {
       "post": {
         "tags": [
           "v3",
@@ -5084,7 +5084,7 @@
         ],
         "summary": "Get Leaderboard",
         "description": "Get leaderboard bundle with all metrics and profile data.",
-        "operationId": "get_leaderboard_api_v3_leaderboard__post",
+        "operationId": "get_leaderboard_api_v3_leaderboard_bundle_post",
         "requestBody": {
           "content": {
             "application/json": {

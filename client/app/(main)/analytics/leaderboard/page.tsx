@@ -16,8 +16,8 @@ import { unstable_cache } from "next/cache";
 import { headers } from "next/headers";
 
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/api/v3/leaderboard", "post">;
-type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
+type LeaderboardIn = InputOf<"/api/v3/leaderboard/bundle", "post">;
+type LeaderboardOut = OutputOf<"/api/v3/leaderboard/bundle", "post">;
 
 /** ---- Helper to detect hard refresh ----
  * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
@@ -48,7 +48,7 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/leaderboard", input, {
+  return api.post("/leaderboard/bundle", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
