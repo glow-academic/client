@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Departments from "@/components/departments/Departments";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentsListOut = OutputOf<"/api/v3/departments/list", "post">;
@@ -19,43 +19,43 @@ type DuplicateDepartmentOut = OutputOf<"/api/v3/departments/duplicate", "post">;
 type DeleteDepartmentIn = InputOf<"/api/v3/departments/delete", "post">;
 type DeleteDepartmentOut = OutputOf<"/api/v3/departments/delete", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("departments") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getDepartmentsList = unstable_cache(
-  async (profileId: string): Promise<DepartmentsListOut> => {
-    return api.post("/departments/list", { body: { profileId } });
-  },
-  ["departments:list"],
-  { tags: ["departments"] }
-);
+const getDepartmentsList = async (
+  profileId: string
+): Promise<DepartmentsListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/departments/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateDepartment(
   input: DuplicateDepartmentIn
 ): Promise<DuplicateDepartmentOut> {
   "use server";
-  const out = await api.post("/departments/duplicate", input);
-  revalidateTag("departments");
-  const departmentId = input.body?.departmentId;
-  if (departmentId) {
-    revalidateTag(`department:${departmentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/departments/duplicate", input);
 }
 
 export async function deleteDepartment(
   input: DeleteDepartmentIn
 ): Promise<DeleteDepartmentOut> {
   "use server";
-  const out = await api.post("/departments/delete", input);
-  revalidateTag("departments");
-  const departmentId = input.body?.departmentId;
-  if (departmentId) {
-    revalidateTag(`department:${departmentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/departments/delete", input);
 }
 
 export const metadata: Metadata = {

@@ -24,10 +24,9 @@ import SimulationProgress, {
 
 export interface HomeProps {
   homeData: HomeOut;
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
 }
 
-export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
+export default function Home({ homeData }: HomeProps) {
   const {
     effectiveProfile,
     activeProfile,
@@ -70,9 +69,7 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
         setLoadingToastId(null);
       }
       const { attemptId } = event.detail;
-      // Invalidate cache and refresh current page before navigation to ensure fresh data
       // Server-side Redis cache is already invalidated by the WebSocket handler
-      await revalidateAttemptAction(attemptId);
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(`/home/a/${attemptId}`);
     };
@@ -105,7 +102,7 @@ export default function Home({ homeData, revalidateAttemptAction }: HomeProps) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId, revalidateAttemptAction]);
+  }, [router, loadingToastId]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {

@@ -11,8 +11,6 @@ import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
-import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioDetailDefaultIn = InputOf<
@@ -32,48 +30,55 @@ type GenerateAIScenarioOut = OutputOf<"/api/v3/scenarios/generate-ai", "post">;
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getScenarioDefault = cache(
-  async (input: ScenarioDetailDefaultIn): Promise<ScenarioDetailDefaultOut> => {
-    return api.post("/scenarios/detail-default", input);
-  }
-);
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getScenarioDefault = async (
+  input: ScenarioDetailDefaultIn
+): Promise<ScenarioDetailDefaultOut> => {
+  return api.post(
+    "/scenarios/detail-default",
+    input,
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createScenario(
   input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/create", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/create", input);
 }
 
 async function updateScenario(
   input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/update", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/update", input);
 }
 
 async function generateAIScenario(
   input: GenerateAIScenarioIn
 ): Promise<GenerateAIScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/generate-ai", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/generate-ai", input);
 }
 
 async function randomizeScenario(
   input: RandomizeScenarioIn
 ): Promise<RandomizeScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/randomize", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/randomize", input);
 }
 
 export const metadata: Metadata = {

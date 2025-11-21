@@ -58,7 +58,7 @@ async function createModel(
 ): Promise<CreateModelOut> {
   "use server";
   const out = await api.post("/providers/models/create", input);
-  revalidateTag("providers");
+  // No revalidateTag needed - Redis cache handles invalidation
   return out;
 }
 

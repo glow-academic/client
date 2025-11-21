@@ -12,7 +12,6 @@ import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAcc
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 // Import staff types and actions from staff page
 
@@ -41,20 +40,24 @@ type RemoveProfilesFromDepartmentOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ----
- * Cache key includes departmentId and profileId so entries are per-user per-department.
- * Tags allow revalidateTag("departments") and revalidateTag(`department:${departmentId}`) to invalidate.
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getDepartment = (departmentId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<DepartmentDetailOut> => {
-      return api.post("/departments/detail", {
-        body: { departmentId, profileId },
-      });
-    },
-    ["departments:detail", departmentId],
-    { tags: ["departments", `department:${departmentId}`] }
+const getDepartment = async (
+  departmentId: string,
+  profileId: string
+): Promise<DepartmentDetailOut> => {
+  return api.post(
+    "/departments/detail",
+    { body: { departmentId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -66,7 +69,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const department = await getDepartment(departmentId)(profileId);
+    const department = await getDepartment(departmentId, profileId);
     return {
       title: `${department?.title || "Department"} Department`,
       description: `${department ? `${department.title} ${department.description || ""}` : "Department"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -84,26 +87,16 @@ async function updateDepartment(
   input: UpdateDepartmentIn,
 ): Promise<UpdateDepartmentOut> {
   "use server";
-  const out = await api.post("/departments/update", input);
-  revalidateTag("departments");
-  const departmentId = input.body?.departmentId;
-  if (departmentId) {
-    revalidateTag(`department:${departmentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/departments/update", input);
 }
 
 async function removeProfilesFromDepartment(
   input: RemoveProfilesFromDepartmentIn,
 ): Promise<RemoveProfilesFromDepartmentOut> {
   "use server";
-  const out = await api.post("/departments/remove-profiles", input);
-  revalidateTag("departments");
-  const departmentId = input.body?.departmentId;
-  if (departmentId) {
-    revalidateTag(`department:${departmentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/departments/remove-profiles", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -116,9 +109,9 @@ export default async function DepartmentEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch department detail (cached, won't duplicate with metadata)
+  // Fetch department detail (always fresh - source of truth)
   try {
-    const departmentDetail = await getDepartment(departmentId)(profileId);
+    const departmentDetail = await getDepartment(departmentId, profileId);
 
   // Fetch initial search data (empty query) for SearchExistingStaffModal
   const initialSearchData = await searchStaff({

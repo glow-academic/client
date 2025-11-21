@@ -11,7 +11,6 @@ import Parameter from "@/components/parameters/Parameter";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParameterDetailDefaultIn = InputOf<
@@ -27,34 +26,39 @@ type CreateParameterOut = OutputOf<"/api/v3/parameters/create", "post">;
 type UpdateParameterIn = InputOf<"/api/v3/parameters/update", "post">;
 type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
 
-/** ---- Cached fetch with Next tags ---- */
-const getParameterDefault = unstable_cache(
-  async (profileId: string): Promise<ParameterDetailDefaultOut> => {
-    return api.post("/parameters/detail-default", {
-      body: { profileId },
-    });
-  },
-  ["parameters:detail-default"],
-  { tags: ["parameters"] }
-);
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getParameterDefault = async (
+  profileId: string
+): Promise<ParameterDetailDefaultOut> => {
+  return api.post(
+    "/parameters/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createParameter(
   input: CreateParameterIn,
 ): Promise<CreateParameterOut> {
   "use server";
-  const out = await api.post("/parameters/create", input);
-  revalidateTag("parameters");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/parameters/create", input);
 }
 
 async function updateParameter(
   input: UpdateParameterIn,
 ): Promise<UpdateParameterOut> {
   "use server";
-  const out = await api.post("/parameters/update", input);
-  revalidateTag("parameters");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/parameters/update", input);
 }
 
 export const metadata: Metadata = {

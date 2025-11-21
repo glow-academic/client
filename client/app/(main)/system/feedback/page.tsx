@@ -33,7 +33,7 @@ async function bulkDeleteFeedback(
 ): Promise<BulkDeleteFeedbackOut> {
   "use server";
   const out = await api.post("/feedback/bulk-delete", input);
-  revalidateTag("feedback");
+  // No revalidateTag needed - Redis cache handles invalidation
   return out;
 }
 

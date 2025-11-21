@@ -12,7 +12,6 @@ import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaDetailOut = OutputOf<"/api/v3/personas/detail", "post">;
@@ -34,17 +33,24 @@ type DeletePersonaPromptOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getPersona = (personaId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<PersonaDetailOut> => {
-      return api.post("/personas/detail", {
-        body: { personaId, profileId },
-      });
-    },
-    ["personas:detail", personaId],
-    { tags: ["personas", `persona:${personaId}`] }
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getPersona = async (
+  personaId: string,
+  profileId: string
+): Promise<PersonaDetailOut> => {
+  return api.post(
+    "/personas/detail",
+    { body: { personaId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -56,7 +62,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const persona = await getPersona(personaId)(profileId);
+    const persona = await getPersona(personaId, profileId);
     return {
       title: `${persona?.name || "Persona"} Persona`,
       description: `${persona ? `${persona.name} ${persona.description || ""}` : "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -74,35 +80,24 @@ async function createPersona(
   input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
-  const out = await api.post("/personas/create", input);
-  revalidateTag("personas");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/personas/create", input);
 }
 
 async function updatePersona(
   input: UpdatePersonaIn
 ): Promise<UpdatePersonaOut> {
   "use server";
-  const out = await api.post("/personas/update", input);
-  revalidateTag("personas");
-  const personaId = input.body?.personaId;
-  if (personaId) {
-    revalidateTag(`persona:${personaId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/personas/update", input);
 }
 
 async function deletePersonaPrompt(
   input: DeletePersonaPromptIn
 ): Promise<DeletePersonaPromptOut> {
   "use server";
-  const out = await api.post("/personas/delete-prompt", input);
-  revalidateTag("personas");
-  const personaId = input.body?.personaId;
-  if (personaId) {
-    revalidateTag(`persona:${personaId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/personas/delete-prompt", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -115,9 +110,9 @@ export default async function PersonaEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch persona detail (cached, won't duplicate with metadata)
+  // Fetch persona detail (always fresh - source of truth)
   try {
-    const personaDetail = await getPersona(personaId)(profileId);
+    const personaDetail = await getPersona(personaId, profileId);
 
     return (
       <div

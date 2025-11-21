@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Rubrics from "@/components/rubrics/Rubrics";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricsListOut = OutputOf<"/api/v3/rubrics/list", "post">;
@@ -23,61 +23,59 @@ type CreateRubricOut = OutputOf<"/api/v3/rubrics/create", "post">;
 type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("rubrics") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getRubricsList = unstable_cache(
-  async (profileId: string): Promise<RubricsListOut> => {
-    return api.post("/rubrics/list", { body: { profileId } });
-  },
-  ["rubrics:list"],
-  { tags: ["rubrics"] }
-);
+const getRubricsList = async (
+  profileId: string
+): Promise<RubricsListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/rubrics/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 export async function duplicateRubric(
   input: DuplicateRubricIn
 ): Promise<DuplicateRubricOut> {
   "use server";
-  const out = await api.post("/rubrics/duplicate", input);
-  revalidateTag("rubrics");
-  const rubricId = input.body?.rubricId;
-  if (rubricId) {
-    revalidateTag(`rubric:${rubricId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/rubrics/duplicate", input);
 }
 
 export async function deleteRubric(
   input: DeleteRubricIn
 ): Promise<DeleteRubricOut> {
   "use server";
-  const out = await api.post("/rubrics/delete", input);
-  revalidateTag("rubrics");
-  const rubricId = input.body?.rubricId;
-  if (rubricId) {
-    revalidateTag(`rubric:${rubricId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/rubrics/delete", input);
 }
 
 export async function createRubric(
   input: CreateRubricIn
 ): Promise<CreateRubricOut> {
   "use server";
-  const out = await api.post("/rubrics/create", input);
-  revalidateTag("rubrics");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/rubrics/create", input);
 }
 
 export async function updateRubric(
   input: UpdateRubricIn
 ): Promise<UpdateRubricOut> {
   "use server";
-  const out = await api.post("/rubrics/update", input);
-  revalidateTag("rubrics");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/rubrics/update", input);
 }
 
 export const metadata: Metadata = {

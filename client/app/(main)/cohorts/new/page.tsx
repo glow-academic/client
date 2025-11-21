@@ -11,7 +11,6 @@ import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 // Import staff actions from staff page
 import {
@@ -30,25 +29,31 @@ type CohortDetailDefaultOut = OutputOf<
 type CreateCohortIn = InputOf<"/api/v3/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Per-profile cache entry tagged as 'cohorts' so create() can invalidate.
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getCohortDefault = unstable_cache(
-  async (profileId: string): Promise<CohortDetailDefaultOut> => {
-    return api.post("/cohorts/detail-default", { body: { profileId } });
-  },
-  ["cohorts:detail-default"],
-  { tags: ["cohorts"] }
-);
+const getCohortDefault = async (
+  profileId: string
+): Promise<CohortDetailDefaultOut> => {
+  return api.post(
+    "/cohorts/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Strongly-typed server action ---- */
 async function createCohort(
   input: CreateCohortIn,
 ): Promise<CreateCohortOut> {
   "use server";
-  const out = await api.post("/cohorts/create", input);
-  revalidateTag("cohorts");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/cohorts/create", input);
 }
 
 export const metadata: Metadata = {

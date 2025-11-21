@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Providers from "@/components/providers/Providers";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProvidersListOut = OutputOf<"/api/v3/providers/list", "post">;
@@ -23,69 +23,59 @@ type DuplicateModelOut = OutputOf<"/api/v3/providers/models/duplicate", "post">;
 type DeleteModelIn = InputOf<"/api/v3/providers/models/delete", "post">;
 type DeleteModelOut = OutputOf<"/api/v3/providers/models/delete", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("providers") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getProvidersList = unstable_cache(
-  async (profileId: string): Promise<ProvidersListOut> => {
-    return api.post("/providers/list", { body: { profileId } });
-  },
-  ["providers:list"],
-  { tags: ["providers"] }
-);
+const getProvidersList = async (
+  profileId: string
+): Promise<ProvidersListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/providers/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateProvider(
   input: DuplicateProviderIn,
 ): Promise<DuplicateProviderOut> {
   "use server";
-  const out = await api.post("/providers/duplicate", input);
-  revalidateTag("providers");
-  const providerId = input.body?.providerId;
-  if (providerId) {
-    revalidateTag(`provider:${providerId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/duplicate", input);
 }
 
 async function deleteProvider(
   input: DeleteProviderIn,
 ): Promise<DeleteProviderOut> {
   "use server";
-  const out = await api.post("/providers/delete", input);
-  revalidateTag("providers");
-  const providerId = input.body?.providerId;
-  if (providerId) {
-    revalidateTag(`provider:${providerId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/delete", input);
 }
 
 async function duplicateModel(
   input: DuplicateModelIn,
 ): Promise<DuplicateModelOut> {
   "use server";
-  const out = await api.post("/providers/models/duplicate", input);
-  revalidateTag("providers");
-  const modelId = input.body?.modelId;
-  if (modelId) {
-    revalidateTag(`model:${modelId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/models/duplicate", input);
 }
 
 async function deleteModel(
   input: DeleteModelIn,
 ): Promise<DeleteModelOut> {
   "use server";
-  const out = await api.post("/providers/models/delete", input);
-  revalidateTag("providers");
-  const modelId = input.body?.modelId;
-  if (modelId) {
-    revalidateTag(`model:${modelId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/models/delete", input);
 }
 
 export const metadata: Metadata = {

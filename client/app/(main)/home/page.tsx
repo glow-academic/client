@@ -11,10 +11,9 @@ import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Home from "@/components/home/Home";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
-import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -41,25 +40,6 @@ const getHomeOverview = async (input: HomeIn): Promise<HomeOut> => {
   });
 };
 
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
-
-    return (
-      cacheControl?.toLowerCase().includes("no-cache") ||
-      cacheControl?.includes("max-age=0") ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    return false;
-  }
-}
-
 /** ---- Direct fetch (no Next.js cache) ----
  * Home history responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -80,19 +60,23 @@ const getHomeHistory = async (
   });
 };
 
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
+ */
+const getProfileContext = async (input: {
+  body: {
+    actualProfileId: string;
+    effectiveProfileId: string;
+    pathname: string;
+  };
+}) => {
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
 
 /** ---- Inline filters function for home page ---- */
 async function getHomeFilters(searchParams?: URLSearchParams) {
@@ -173,19 +157,6 @@ export const metadata: Metadata = {
   title: "Home",
   description: `Home page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
-
-/** ---- Server action to revalidate attempt cache when simulation starts ---- */
-async function revalidateAttempt(attemptId: string): Promise<void> {
-  "use server";
-  // Invalidate attempt-level cache
-  revalidateTag("attempts");
-  revalidateTag(`attempt:${attemptId}`);
-  // Invalidate history sections only - overview sections are based on MVs and don't need invalidation
-  revalidateTag("home:history");
-  revalidatePath("/home");
-  // Note: Chat-specific tags can be added here if chat IDs are known
-  // For now, invalidating attempt-level cache ensures all chats refresh
-}
 
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -289,10 +260,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div className="space-y-6">
-      <Home
-        homeData={homeDataWithoutHistory}
-        revalidateAttemptAction={revalidateAttempt}
-      />
+      <Home homeData={homeDataWithoutHistory} />
 
       {/* History section moved out of Home, fully server-driven */}
       <div className="mt-12">
@@ -309,7 +277,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               showExport={true}
               showArchive={false}
               singleProfile={true}
-              revalidateAttemptAction={revalidateAttempt}
               initialFilters={defaultFilters}
               profileOptions={[]}
               simulationOptions={[]}
@@ -330,7 +297,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
             effectiveProfileId={session?.effectiveProfileId ?? null}
-            revalidateAttemptAction={revalidateAttempt}
           />
         </Suspense>
       </div>
@@ -351,7 +317,6 @@ async function HomeHistorySection({
   historySortBy,
   historySortOrder,
   effectiveProfileId,
-  revalidateAttemptAction,
 }: {
   defaultFilters: {
     startDate: string;
@@ -370,7 +335,6 @@ async function HomeHistorySection({
   historySortBy: string;
   historySortOrder: string;
   effectiveProfileId?: string | null;
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
 }) {
   // Build history filters matching logic from page.tsx
   // profileId is required for department scoping
@@ -453,7 +417,6 @@ async function HomeHistorySection({
       showExport={true}
       showArchive={false}
       singleProfile={true}
-      revalidateAttemptAction={revalidateAttemptAction}
       initialFilters={defaultFilters}
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}

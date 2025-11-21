@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Parameters from "@/components/parameters/Parameters";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ParametersListOut = OutputOf<"/api/v3/parameters/list", "post">;
@@ -24,52 +24,51 @@ type CreateParameterItemOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("parameters") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getParametersList = unstable_cache(
-  async (profileId: string): Promise<ParametersListOut> => {
-    return api.post("/parameters/list", { body: { profileId } });
-  },
-  ["parameters:list"],
-  { tags: ["parameters"] }
-);
+const getParametersList = async (
+  profileId: string
+): Promise<ParametersListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/parameters/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateParameter(
   input: DuplicateParameterIn
 ): Promise<DuplicateParameterOut> {
   "use server";
-  const out = await api.post("/parameters/duplicate", input);
-  revalidateTag("parameters");
-  const parameterId = input.body?.parameterId;
-  if (parameterId) {
-    revalidateTag(`parameter:${parameterId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/parameters/duplicate", input);
 }
 
 async function deleteParameter(
   input: DeleteParameterIn
 ): Promise<DeleteParameterOut> {
   "use server";
-  const out = await api.post("/parameters/delete", input);
-  revalidateTag("parameters");
-  const parameterId = input.body?.parameterId;
-  if (parameterId) {
-    revalidateTag(`parameter:${parameterId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/parameters/delete", input);
 }
 
 export async function createParameterItem(
   input: CreateParameterItemIn
 ): Promise<CreateParameterItemOut> {
   "use server";
-  const out = await api.post("/parameters/items/create", input);
-  revalidateTag("parameters");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/parameters/items/create", input);
 }
 
 export const metadata: Metadata = {

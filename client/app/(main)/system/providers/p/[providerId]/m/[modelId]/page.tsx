@@ -11,7 +11,6 @@ import Model from "@/components/providers/Model";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ModelDetailIn = InputOf<"/api/v3/providers/models/detail", "post">;
@@ -26,28 +25,41 @@ type UpdateModelOut = OutputOf<"/api/v3/providers/models/update", "post">;
 type CreateModelIn = InputOf<"/api/v3/providers/models/create", "post">;
 type CreateModelOut = OutputOf<"/api/v3/providers/models/create", "post">;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getModel = (modelId: string, providerId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<ModelDetailOut> => {
-      return api.post("/providers/models/detail", {
-        body: { modelId, providerId, profileId },
-      });
-    },
-    ["providers:models:detail", modelId, providerId],
-    { tags: ["providers", `model:${modelId}`] }
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getModel = async (
+  modelId: string,
+  providerId: string,
+  profileId: string
+): Promise<ModelDetailOut> => {
+  return api.post(
+    "/providers/models/detail",
+    { body: { modelId, providerId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
-const getProvider = (providerId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<ProviderDetailOut> => {
-      return api.post("/providers/detail", {
-        body: { providerId, profileId },
-      });
-    },
-    ["providers:detail", providerId],
-    { tags: ["providers", `provider:${providerId}`] }
+const getProvider = async (
+  providerId: string,
+  profileId: string
+): Promise<ProviderDetailOut> => {
+  return api.post(
+    "/providers/detail",
+    { body: { providerId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -59,7 +71,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const model = await getModel(modelId, providerId)(profileId);
+    const model = await getModel(modelId, providerId, profileId);
     return {
       title: `${model?.name || "Model"}`,
       description:
@@ -79,26 +91,16 @@ async function createModel(
   input: CreateModelIn,
 ): Promise<CreateModelOut> {
   "use server";
-  const out = await api.post("/providers/models/create", input);
-  revalidateTag("providers");
-  const modelId = out.modelId;
-  if (modelId) {
-    revalidateTag(`model:${modelId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/models/create", input);
 }
 
 async function updateModel(
   input: UpdateModelIn,
 ): Promise<UpdateModelOut> {
   "use server";
-  const out = await api.post("/providers/models/update", input);
-  revalidateTag("providers");
-  const modelId = input.body?.modelId;
-  if (modelId) {
-    revalidateTag(`model:${modelId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/providers/models/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -111,10 +113,10 @@ export default async function ModelEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch both model and provider data (cached, won't duplicate)
+  // Fetch both model and provider data (always fresh - source of truth)
   const [model, provider] = await Promise.all([
-    getModel(modelId, providerId)(profileId),
-    getProvider(providerId)(profileId),
+    getModel(modelId, providerId, profileId),
+    getProvider(providerId, profileId),
   ]);
 
   return (

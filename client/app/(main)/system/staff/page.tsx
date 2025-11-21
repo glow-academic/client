@@ -10,8 +10,8 @@ import { getSession } from "@/auth";
 import Staff from "@/components/staff/Staff";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -52,17 +52,27 @@ type SearchStaffItem = SearchStaffOut["staff"][number];
 type ProcessedCSVRow = ProcessCSVOut["rows"][number];
 type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("staff") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getStaffList = unstable_cache(
-  async (input: StaffListIn): Promise<StaffListOut> => {
-    return api.post("/profile/staff/list", input);
-  },
-  ["staff:list"],
-  { tags: ["staff"] }
-);
+const getStaffList = async (
+  input: StaffListIn
+): Promise<StaffListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/profile/staff/list",
+    input,
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 const getInitialSearchData = cache(
   async (input: SearchStaffIn): Promise<SearchStaffOut> => {
@@ -75,36 +85,32 @@ export async function deleteStaff(
   input: DeleteStaffIn,
 ): Promise<DeleteStaffOut> {
   "use server";
-  const out = await api.post("/profile/staff/delete", input);
-  revalidateTag("staff");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/profile/staff/delete", input);
 }
 
 export async function bulkDeleteStaff(
   input: BulkDeleteStaffIn,
 ): Promise<BulkDeleteStaffOut> {
   "use server";
-  const out = await api.post("/profile/staff/bulk-delete", input);
-  revalidateTag("staff");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/profile/staff/bulk-delete", input);
 }
 
 export async function updateStaff(
   input: UpdateStaffIn,
 ): Promise<UpdateStaffOut> {
   "use server";
-  const out = await api.post("/profile/staff/update", input);
-  revalidateTag("staff");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/profile/staff/update", input);
 }
 
 export async function bulkUpdateStaff(
   input: BulkUpdateStaffIn,
 ): Promise<BulkUpdateStaffOut> {
   "use server";
-  const out = await api.post("/profile/staff/bulk-update", input);
-  revalidateTag("staff");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/profile/staff/bulk-update", input);
 }
 
 
@@ -131,12 +137,11 @@ export async function bulkCreateOrUpdateStaff(
   input: BulkCreateOrUpdateStaffIn,
 ): Promise<BulkCreateOrUpdateStaffOut> {
   "use server";
-  const out = await api.post(
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post(
     "/profile/staff/bulk-create-or-update-staff",
     input,
   );
-  revalidateTag("staff");
-  return out;
 }
 
 export const metadata: Metadata = {

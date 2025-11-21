@@ -11,10 +11,9 @@ import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Dashboard from "@/components/dashboard/Dashboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { revalidatePath, unstable_cache } from "next/cache";
-import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -45,30 +44,6 @@ const getDashboardOverview = async (
   });
 };
 
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- * Returns true if hard refresh detected, false otherwise.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
-
-    // Hard refresh indicators:
-    // - Cache-Control: no-cache or max-age=0
-    // - Pragma: no-cache
-    return (
-      cacheControl?.toLowerCase().includes("no-cache") ||
-      cacheControl?.includes("max-age=0") ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    // If headers() fails, default to false (use cache)
-    return false;
-  }
-}
-
 /** ---- Direct fetch (no Next.js cache) ----
  * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -89,19 +64,23 @@ const getDashboardHistory = async (
   });
 };
 
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
+ */
+const getProfileContext = async (input: {
+  body: {
+    actualProfileId: string;
+    effectiveProfileId: string;
+    pathname: string;
+  };
+}) => {
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
 
 /** ---- Inline filters function for dashboard page ---- */
 async function getDashboardFilters(searchParams?: URLSearchParams) {
@@ -295,7 +274,6 @@ export default async function DashboardPage({
               showExport={false}
               showArchive={true}
               singleProfile={false}
-              revalidateAttemptAction={revalidateAttempt}
               initialFilters={filters}
               profileOptions={[]}
               simulationOptions={[]}
@@ -316,7 +294,6 @@ export default async function DashboardPage({
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            revalidateAttemptAction={revalidateAttempt}
             bulkArchiveAttemptsAction={bulkArchiveAttempts}
           />
         </Suspense>
@@ -330,21 +307,8 @@ async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
-  const result = await api.post("/attempts/bulk-archive", input);
   // Server invalidates Redis cache with "dashboard" and "history" tags
-  // Revalidate path to trigger page re-render and fresh data fetch
-  // Note: revalidateTag is not needed since dashboard data uses cache: "no-store" (not unstable_cache)
-  revalidatePath("/analytics/dashboard");
-  return result;
-}
-
-/** ---- Server action to revalidate attempt cache when simulation starts ---- */
-async function revalidateAttempt(_attemptId: string): Promise<void> {
-  "use server";
-  // Server invalidates Redis cache with "dashboard", "history", and "attempts" tags
-  // Revalidate path to trigger page re-render and fresh data fetch
-  // Note: revalidateTag is not needed since dashboard data uses cache: "no-store" (not unstable_cache)
-  revalidatePath("/analytics/dashboard");
+  return api.post("/attempts/bulk-archive", input);
 }
 
 /** ---- Inline history section component (only used here) ---- */
@@ -360,7 +324,6 @@ async function DashboardHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  revalidateAttemptAction,
   bulkArchiveAttemptsAction,
 }: {
   defaultFilters: {
@@ -380,7 +343,6 @@ async function DashboardHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
@@ -461,7 +423,6 @@ async function DashboardHistorySection({
       showExport={false}
       showArchive={!!bulkArchiveAttemptsAction}
       singleProfile={false}
-      revalidateAttemptAction={revalidateAttemptAction}
       initialFilters={defaultFilters}
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}

@@ -11,7 +11,6 @@ import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type SimulationDetailDefaultOut = OutputOf<
@@ -21,30 +20,31 @@ type SimulationDetailDefaultOut = OutputOf<
 type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
 type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Per-profile cache entry tagged as 'simulations' so create() can invalidate.
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getSimulationDefault = unstable_cache(
-  async (profileId: string): Promise<SimulationDetailDefaultOut> => {
-    return api.post("/simulations/detail-default", { body: { profileId } });
-  },
-  ["simulations:detail-default"],
-  { tags: ["simulations"] }
-);
+const getSimulationDefault = async (
+  profileId: string
+): Promise<SimulationDetailDefaultOut> => {
+  return api.post(
+    "/simulations/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createSimulation(
   input: CreateSimulationIn,
 ): Promise<CreateSimulationOut> {
   "use server";
-  const out = await api.post("/simulations/create", input);
-  revalidateTag("simulations");
-  const simulationId = (out as { simulationId?: string } | undefined)
-    ?.simulationId;
-  if (simulationId) {
-    revalidateTag(`simulation:${simulationId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/simulations/create", input);
 }
 
 export const metadata: Metadata = {

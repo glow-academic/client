@@ -12,7 +12,6 @@ import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
@@ -26,27 +25,39 @@ type RubricDetailDefaultOut = OutputOf<
 type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
 type UpdateRubricOut = OutputOf<"/api/v3/rubrics/update", "post">;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getRubric = (rubricId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<RubricDetailOut> => {
-      return api.post("/rubrics/detail", {
-        body: { rubricId, profileId },
-      });
-    },
-    ["rubrics:detail", rubricId],
-    { tags: ["rubrics", `rubric:${rubricId}`] }
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getRubric = async (
+  rubricId: string,
+  profileId: string
+): Promise<RubricDetailOut> => {
+  return api.post(
+    "/rubrics/detail",
+    { body: { rubricId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
-const getRubricDefault = unstable_cache(
-  async (profileId: string): Promise<RubricDetailDefaultOut> => {
-    return api.post("/rubrics/detail-default", {
-      body: { profileId },
-    });
-  },
-  ["rubrics:detail-default"],
-  { tags: ["rubrics"] }
-);
+const getRubricDefault = async (
+  profileId: string
+): Promise<RubricDetailDefaultOut> => {
+  return api.post(
+    "/rubrics/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -58,7 +69,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const rubric = await getRubric(rubricId)(profileId);
+    const rubric = await getRubric(rubricId, profileId);
     return {
       title: `${rubric?.name || "Rubric"}`,
       description: `${rubric ? `${rubric.name} ${rubric.description || ""}` : "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -85,7 +96,7 @@ export default async function EditRubricPage({
   try {
     const [rubricDetail, rubricDetailDefault] = await Promise.all([
       rubricId
-        ? getRubric(rubricId)(profileId).catch(() => null)
+        ? getRubric(rubricId, profileId).catch(() => null)
         : Promise.resolve(null),
       !rubricId
         ? getRubricDefault(profileId).catch(() => null)
@@ -131,13 +142,8 @@ async function updateRubric(
   input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
-  const out = await api.post("/rubrics/update", input);
-  revalidateTag("rubrics");
-  const rubricId = input.body?.rubricId;
-  if (rubricId) {
-    revalidateTag(`rubric:${rubricId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/rubrics/update", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

@@ -86,14 +86,12 @@ interface AttemptChatProps {
   updateChatCreatedAtAction?: (
     input: UpdateChatCreatedAtIn
   ) => Promise<UpdateChatCreatedAtOut>;
-  revalidateAttemptAction?: (attemptId: string) => Promise<void>;
 }
 
 export default function AttemptChat({
   attemptId,
   attemptData: initialAttemptData,
   updateChatCreatedAtAction,
-  revalidateAttemptAction,
 }: AttemptChatProps) {
   const router = useRouter();
   const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
@@ -668,10 +666,7 @@ export default function AttemptChat({
 
       // Refresh when new message arrives for current chat
       if (data.chat_id === currentChatIdRef.current) {
-        // Revalidate cache to ensure we get the latest message state
-        if (revalidateAttemptAction) {
-          await revalidateAttemptAction(attemptId);
-        }
+        // Server-side Redis cache is already invalidated by the WebSocket handler
         router.refresh();
       }
     };
@@ -685,10 +680,7 @@ export default function AttemptChat({
       // Immediately refresh when user message is confirmed by server
       // This provides immediate feedback that the message was received
       if (data.chat_id === currentChatIdRef.current) {
-        // Revalidate cache first, then refresh router
-        if (revalidateAttemptAction) {
-          await revalidateAttemptAction(attemptId);
-        }
+        // Server-side Redis cache is already invalidated by the WebSocket handler
         router.refresh();
       }
     };
@@ -702,10 +694,7 @@ export default function AttemptChat({
     }) => {
       if (data.chat_id === currentChatIdRef.current) {
         setIsSendingMessage(false);
-        // Revalidate cache first to ensure we get the completed message content
-        if (revalidateAttemptAction) {
-          await revalidateAttemptAction(attemptId);
-        }
+        // Server-side Redis cache is already invalidated by the WebSocket handler
         router.refresh();
       }
     };
@@ -760,11 +749,7 @@ export default function AttemptChat({
       if (data.completed_chat_id === currentChatIdRef.current) {
         freshlyCompletedChatsRef.current.add(data.completed_chat_id);
 
-        // Revalidate cache first, then refresh
-        if (revalidateAttemptAction) {
-          await revalidateAttemptAction(attemptId);
-        }
-
+        // Server-side Redis cache is already invalidated by the WebSocket handler
         // Wait for router refresh to complete before checking for next chat
         await router.refresh();
 
@@ -804,10 +789,7 @@ export default function AttemptChat({
       attempt_id: string;
     }) => {
       if (data.attempt_id === attemptId) {
-        // Revalidate cache to ensure we get the final attempt state
-        if (revalidateAttemptAction) {
-          await revalidateAttemptAction(attemptId);
-        }
+        // Server-side Redis cache is already invalidated by the WebSocket handler
         router.refresh();
         setShowResults(true);
       }
@@ -1192,7 +1174,6 @@ export default function AttemptChat({
     router,
     isGrading,
     gradingProgress,
-    revalidateAttemptAction,
     chats,
     rubricStructure,
   ]);
@@ -1221,16 +1202,12 @@ export default function AttemptChat({
 
     // Chat not found yet - might need another refresh, retry after a short delay
     const retryTimeout = setTimeout(() => {
-      // Trigger a refresh to get the latest data
-      if (revalidateAttemptAction) {
-        revalidateAttemptAction(attemptId).then(() => {
-          router.refresh();
-        });
-      }
+      // Server-side Redis cache is already invalidated by the WebSocket handler
+      router.refresh();
     }, 500);
 
     return () => clearTimeout(retryTimeout);
-  }, [chats, revalidateAttemptAction, attemptId, router]);
+  }, [chats, attemptId, router]);
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
@@ -1498,7 +1475,9 @@ export default function AttemptChat({
   const timeRemaining = timer.remaining;
   const isAttemptActive = attemptData?.isActive ?? true; // Default to true for backwards compatibility
   const shouldForceChatView =
-    isAttemptInfinite && isAttemptActive && (!hasTimeLimit || (timeRemaining ?? 1) > 0);
+    isAttemptInfinite &&
+    isAttemptActive &&
+    (!hasTimeLimit || (timeRemaining ?? 1) > 0);
 
   // Show results screen (but not during active infinite mode)
   if (showResults && !shouldForceChatView) {

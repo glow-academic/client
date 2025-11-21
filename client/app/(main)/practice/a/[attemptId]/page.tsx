@@ -16,20 +16,25 @@ import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAcc
 import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes attemptId for per-attempt caching.
- * Tags allow revalidateTag("attempts") and revalidateTag(`attempt:${attemptId}`) to invalidate.
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for websocket/attempt pages.
  */
-const getAttemptFull = (attemptId: string) =>
-  unstable_cache(
-    async (input: AttemptFullIn): Promise<AttemptFullOut> => {
-      return api.post("/attempts/full", input);
-    },
-    ["attempts:full", attemptId],
-    { tags: ["attempts", `attempt:${attemptId}`] }
+const getAttemptFull = async (
+  attemptId: string,
+  input: AttemptFullIn
+): Promise<AttemptFullOut> => {
+  return api.post(
+    "/attempts/full",
+    input,
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -42,7 +47,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
   try {
-    const attemptData = await getAttemptFull(attemptId)({
+    const attemptData = await getAttemptFull(attemptId, {
       body: { attemptId, profileId },
     });
     const simulationTitle = attemptData?.simulation?.["title"];
@@ -63,23 +68,8 @@ async function updateChatCreatedAt(
   input: UpdateChatCreatedAtIn,
 ): Promise<UpdateChatCreatedAtOut> {
   "use server";
-  const out = await api.post("/attempts/chats/update-created-at", input);
-  revalidateTag("attempts");
-  const chatId = input.body?.chatId;
-  if (chatId) {
-    revalidateTag(`chat:${chatId}`);
-  }
-  return out;
-}
-
-/** ---- Server action to revalidate attempt cache when messages are sent ---- */
-async function revalidateAttempt(attemptId: string): Promise<void> {
-  "use server";
-  // Invalidate attempt-level cache
-  revalidateTag("attempts");
-  revalidateTag(`attempt:${attemptId}`);
-  // Note: Chat-specific tags can be added here if chat IDs are known
-  // For now, invalidating attempt-level cache ensures all chats refresh
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/attempts/chats/update-created-at", input);
 }
 
 /** ---- Page component ---- */
@@ -95,7 +85,7 @@ export default async function PracticeAttemptPage({
 
   // Fetch attempt data server-side
   try {
-    const attemptData = await getAttemptFull(attemptId)({
+    const attemptData = await getAttemptFull(attemptId, {
       body: { attemptId, profileId },
     });
 
@@ -105,7 +95,6 @@ export default async function PracticeAttemptPage({
           attemptId={attemptId}
           attemptData={attemptData}
           updateChatCreatedAtAction={updateChatCreatedAt}
-          revalidateAttemptAction={revalidateAttempt}
         />
       </div>
     );

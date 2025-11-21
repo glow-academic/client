@@ -10,34 +10,14 @@ import { getSession } from "@/auth";
 import Reports from "@/components/reports/Reports";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
-import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/api/v3/reports", "post">;
 type ReportsOut = OutputOf<"/api/v3/reports", "post">;
-
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
-
-    return (
-      cacheControl?.toLowerCase().includes("no-cache") ||
-      cacheControl?.includes("max-age=0") ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    return false;
-  }
-}
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -57,19 +37,23 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
+ */
+const getProfileContext = async (input: {
+  body: {
+    actualProfileId: string;
+    effectiveProfileId: string;
+    pathname: string;
+  };
+}) => {
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
+};
 
 /** ---- Inline filters function for reports page ---- */
 async function getReportsFilters(searchParams?: URLSearchParams) {
@@ -211,7 +195,9 @@ export default async function ReportsFullPage({
     filters.cohortIds.join(","),
     filters.departmentIds.join(","),
     filters.roles.join(","),
-    (filters as typeof filters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
+    (
+      filters as typeof filters & { simulationFilters?: string[] }
+    ).simulationFilters?.join(",") || "general",
   ].join("|");
 
   // Create empty reports data for loading state

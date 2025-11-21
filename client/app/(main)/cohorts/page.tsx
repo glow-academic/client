@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Cohorts from "@/components/cohorts/Cohorts";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortsListOut = OutputOf<"/api/v3/cohorts/list", "post">;
@@ -21,44 +21,51 @@ type DeleteCohortOut = OutputOf<"/api/v3/cohorts/delete", "post">;
 type LeaveCohortIn = InputOf<"/api/v3/cohorts/leave", "post">;
 type LeaveCohortOut = OutputOf<"/api/v3/cohorts/leave", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("cohorts") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getCohortsList = unstable_cache(
-  async (profileId: string): Promise<CohortsListOut> => {
-    return api.post("/cohorts/list", { body: { profileId } });
-  },
-  ["cohorts:list"],
-  { tags: ["cohorts"] }
-);
+const getCohortsList = async (
+  profileId: string
+): Promise<CohortsListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/cohorts/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateCohort(
   input: DuplicateCohortIn,
 ): Promise<DuplicateCohortOut> {
   "use server";
-  const out = await api.post("/cohorts/duplicate", input);
-  revalidateTag("cohorts");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/cohorts/duplicate", input);
 }
 
 async function deleteCohort(
   input: DeleteCohortIn,
 ): Promise<DeleteCohortOut> {
   "use server";
-  const out = await api.post("/cohorts/delete", input);
-  revalidateTag("cohorts");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/cohorts/delete", input);
 }
 
 async function leaveCohort(
   input: LeaveCohortIn,
 ): Promise<LeaveCohortOut> {
   "use server";
-  const out = await api.post("/cohorts/leave", input);
-  revalidateTag("cohorts");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/cohorts/leave", input);
 }
 
 export const metadata: Metadata = {

@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Agents from "@/components/agents/Agents";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
@@ -19,43 +19,43 @@ type DuplicateAgentOut = OutputOf<"/api/v3/agents/duplicate", "post">;
 type DeleteAgentIn = InputOf<"/api/v3/agents/delete", "post">;
 type DeleteAgentOut = OutputOf<"/api/v3/agents/delete", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("agents") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getAgentsList = unstable_cache(
-  async (profileId: string): Promise<AgentsListOut> => {
-    return api.post("/agents/list", { body: { profileId } });
-  },
-  ["agents:list"],
-  { tags: ["agents"] }
-);
+const getAgentsList = async (
+  profileId: string
+): Promise<AgentsListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/agents/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateAgent(
   input: DuplicateAgentIn,
 ): Promise<DuplicateAgentOut> {
   "use server";
-  const out = await api.post("/agents/duplicate", input);
-  revalidateTag("agents");
-  const agentId = input.body?.agentId;
-  if (agentId) {
-    revalidateTag(`agent:${agentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/duplicate", input);
 }
 
 async function deleteAgent(
   input: DeleteAgentIn,
 ): Promise<DeleteAgentOut> {
   "use server";
-  const out = await api.post("/agents/delete", input);
-  revalidateTag("agents");
-  const agentId = input.body?.agentId;
-  if (agentId) {
-    revalidateTag(`agent:${agentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/delete", input);
 }
 
 export const metadata: Metadata = {

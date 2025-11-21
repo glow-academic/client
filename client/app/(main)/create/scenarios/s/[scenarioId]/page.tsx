@@ -7,12 +7,11 @@
 
 import { getSession } from "@/auth";
 
-import Scenario from "@/components/scenarios/Scenario";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import Scenario from "@/components/scenarios/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioDetailIn = InputOf<"/api/v3/scenarios/detail", "post">;
@@ -34,17 +33,24 @@ type GenerateAIScenarioOut = OutputOf<"/api/v3/scenarios/generate-ai", "post">;
 type RandomizeScenarioIn = InputOf<"/api/v3/scenarios/randomize", "post">;
 type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getScenario = (scenarioId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<ScenarioDetailOut> => {
-      return api.post("/scenarios/detail", {
-        body: { scenarioId, profileId },
-      });
-    },
-    ["scenarios:detail", scenarioId],
-    { tags: ["scenarios", `scenario:${scenarioId}`] }
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getScenario = async (
+  scenarioId: string,
+  profileId: string
+): Promise<ScenarioDetailOut> => {
+  return api.post(
+    "/scenarios/detail",
+    { body: { scenarioId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -56,7 +62,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const scenario = await getScenario(scenarioId)(profileId);
+    const scenario = await getScenario(scenarioId, profileId);
     return {
       title: `${scenario?.name || "Scenario"}`,
       description: `${scenario ? `${scenario.name} ${scenario.problem_statement || ""}` : "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -74,40 +80,32 @@ async function createScenario(
   input: CreateScenarioIn
 ): Promise<CreateScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/create", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/create", input);
 }
 
 async function updateScenario(
   input: UpdateScenarioIn
 ): Promise<UpdateScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/update", input);
-  revalidateTag("scenarios");
-  const scenarioId = input.body?.scenarioId;
-  if (scenarioId) {
-    revalidateTag(`scenario:${scenarioId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/update", input);
 }
 
 async function generateAIScenario(
   input: GenerateAIScenarioIn
 ): Promise<GenerateAIScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/generate-ai", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/generate-ai", input);
 }
 
 async function randomizeScenario(
   input: RandomizeScenarioIn
 ): Promise<RandomizeScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/randomize", input);
-  revalidateTag("scenarios");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/randomize", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -120,9 +118,9 @@ export default async function EditScenarioPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch scenario detail (cached, won't duplicate with metadata)
+  // Fetch scenario detail (always fresh - source of truth)
   try {
-    const scenarioDetail = await getScenario(scenarioId)(profileId);
+    const scenarioDetail = await getScenario(scenarioId, profileId);
 
     return (
       <div

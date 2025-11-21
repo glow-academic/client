@@ -79,13 +79,7 @@ export type HistoryDataItem =
   | OutputOf<"/api/v3/practice/history", "post">["data"][number];
 
 // Inlined row actions component (from DataTableRowActions)
-function HistoryRowActions({
-  item,
-  revalidateAttemptAction,
-}: {
-  item: HistoryDataItem;
-  revalidateAttemptAction?: (attemptId: string) => Promise<void>;
-}) {
+function HistoryRowActions({ item }: { item: HistoryDataItem }) {
   const { effectiveProfile, activeProfile, isConnected, emitStartSimulation } =
     useProfile();
   const router = useRouter();
@@ -145,10 +139,8 @@ function HistoryRowActions({
   const shouldShowTry =
     isNotEmulating && !isOwnAttempt && (item.simulation_id ?? "") !== "";
 
-  // Set up redirect listener for simulation started events (only if revalidateAttemptAction is provided)
+  // Set up redirect listener for simulation started events
   React.useEffect(() => {
-    if (!revalidateAttemptAction) return;
-
     const handleSimulationStarted = async (event: CustomEvent) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -159,8 +151,7 @@ function HistoryRowActions({
       }
       setIsRetrying(false);
       const { attemptId } = event.detail;
-      // Invalidate cache and refresh current page before navigation to ensure fresh data
-      await revalidateAttemptAction(attemptId);
+      // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(
         `/${item.practiceSimulation ? "practice" : "home"}/a/${attemptId}`
@@ -195,12 +186,7 @@ function HistoryRowActions({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [
-    router,
-    revalidateAttemptAction,
-    item.practiceSimulation,
-    item.attemptId,
-  ]);
+  }, [router, item.practiceSimulation, item.attemptId]);
 
   const handleStartSimulation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -208,22 +194,20 @@ function HistoryRowActions({
     if (disabledForEmulation || !isConnected) return;
     setIsRetrying(true);
 
-    // Show loading toast if revalidateAttemptAction is provided (for redirect flow)
-    if (revalidateAttemptAction) {
-      const toastId = toast.loading("Starting simulation...", {
-        dismissible: true,
-      });
-      loadingToastIdRef.current = toastId;
+    // Show loading toast for redirect flow
+    const toastId = toast.loading("Starting simulation...", {
+      dismissible: true,
+    });
+    loadingToastIdRef.current = toastId;
 
-      // Set timeout for simulation start
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => {
-        toast.dismiss(toastId);
-        toast.error("Simulation start timed out. Please try again.");
-        loadingToastIdRef.current = null;
-        setIsRetrying(false);
-      }, 30000);
-    }
+    // Set timeout for simulation start
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      toast.dismiss(toastId);
+      toast.error("Simulation start timed out. Please try again.");
+      loadingToastIdRef.current = null;
+      setIsRetrying(false);
+    }, 30000);
 
     try {
       const profileIdForEmit =
@@ -351,9 +335,6 @@ export interface SimulationHistoryProps {
     input: BulkArchiveAttemptsIn
   ) => Promise<BulkArchiveAttemptsOut>;
 
-  // Optional: Server action for revalidating attempts (for redirect after retry/continue)
-  revalidateAttemptAction?: (attemptId: string) => Promise<void>;
-
   // Optional: Initial filters for history (for filter options only)
   initialFilters?: {
     startDate: string;
@@ -385,7 +366,6 @@ export default function SimulationHistory({
   hideName = false,
   isLoading = false,
   bulkArchiveAttemptsAction,
-  revalidateAttemptAction,
   initialFilters: _initialFilters,
   profileOptions,
   simulationOptions,
@@ -1125,18 +1105,13 @@ export default function SimulationHistory({
         id: "actions",
         cell: ({ row }) => {
           const item = row.original;
-          return (
-            <HistoryRowActions
-              item={item}
-              {...(revalidateAttemptAction && { revalidateAttemptAction })}
-            />
-          );
+          return <HistoryRowActions item={item} />;
         },
       },
     ];
 
     return attemptColumns;
-  }, [hideName, revalidateAttemptAction]);
+  }, [hideName]);
 
   // Add checkbox column when showArchive is true
   const columnsWithCheckbox = React.useMemo(() => {

@@ -11,7 +11,6 @@ import Cohort from "@/components/cohorts/Cohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 // Import staff actions from staff page
 import {
@@ -31,17 +30,24 @@ type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
 /** ---- Derived types from server responses ---- */
 type CohortStaffItem = CohortDetailOut["staff"][number];
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getCohort = (cohortId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<CohortDetailOut> => {
-      return api.post("/cohorts/detail", {
-        body: { cohortId, profileId },
-      });
-    },
-    ["cohorts:detail", cohortId],
-    { tags: ["cohorts", `cohort:${cohortId}`] }
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getCohort = async (
+  cohortId: string,
+  profileId: string
+): Promise<CohortDetailOut> => {
+  return api.post(
+    "/cohorts/detail",
+    { body: { cohortId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -53,7 +59,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const cohort = await getCohort(cohortId)(profileId);
+    const cohort = await getCohort(cohortId, profileId);
     return {
       title: `${cohort?.title || "Cohort"} Edit`,
       description: `${cohort ? `${cohort.title} ${cohort.description || ""}` : "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -71,13 +77,8 @@ async function updateCohort(
   input: UpdateCohortIn
 ): Promise<UpdateCohortOut> {
   "use server";
-  const out = await api.post("/cohorts/update", input);
-  revalidateTag("cohorts");
-  const cohortId = input.body?.cohortId;
-  if (cohortId) {
-    revalidateTag(`cohort:${cohortId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/cohorts/update", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -90,8 +91,8 @@ export default async function CohortEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch cohort detail (cached, won't duplicate with metadata)
-  const cohortDetail = await getCohort(cohortId)(profileId);
+  // Fetch cohort detail (always fresh - source of truth)
+  const cohortDetail = await getCohort(cohortId, profileId);
 
   // Fetch initial search data (empty query) for SearchExistingStaffModal
   const initialSearchData = await searchStaff({

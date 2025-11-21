@@ -50,7 +50,7 @@ async function createDepartment(
 ): Promise<CreateDepartmentOut> {
   "use server";
   const out = await api.post("/departments/create", input);
-  revalidateTag("departments");
+  // No revalidateTag needed - Redis cache handles invalidation
   return out;
 }
 

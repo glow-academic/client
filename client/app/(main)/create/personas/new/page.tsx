@@ -11,7 +11,6 @@ import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaDetailDefaultOut = OutputOf<
@@ -21,29 +20,31 @@ type PersonaDetailDefaultOut = OutputOf<
 type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Per-profile cache entry tagged as 'personas' so create() can invalidate.
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getPersonaDefault = unstable_cache(
-  async (profileId: string): Promise<PersonaDetailDefaultOut> => {
-    return api.post("/personas/detail-default", { body: { profileId } });
-  },
-  ["personas:detail-default"],
-  { tags: ["personas"] }
-);
+const getPersonaDefault = async (
+  profileId: string
+): Promise<PersonaDetailDefaultOut> => {
+  return api.post(
+    "/personas/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createPersona(
   input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
-  const out = await api.post("/personas/create", input);
-  revalidateTag("personas");
-  const personaId = (out as { personaId?: string } | undefined)?.personaId;
-  if (personaId) {
-    revalidateTag(`persona:${personaId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/personas/create", input);
 }
 
 export const metadata: Metadata = {

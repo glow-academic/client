@@ -21,7 +21,7 @@ async function createProvider(
 ): Promise<CreateProviderOut> {
   "use server";
   const out = await api.post("/providers/create", input);
-  revalidateTag("providers");
+  // No revalidateTag needed - Redis cache handles invalidation
   return out;
 }
 

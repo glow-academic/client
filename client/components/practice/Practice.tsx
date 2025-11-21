@@ -21,12 +21,10 @@ import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
 export interface PracticeProps {
   practiceData: PracticeOut;
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
 }
 
 export default function Practice({
   practiceData,
-  revalidateAttemptAction,
 }: PracticeProps) {
   const router = useRouter();
 
@@ -125,8 +123,7 @@ export default function Practice({
       }
       setIsStartingAttempt(false); // Reset practice scenario loading state
       const { attemptId } = event.detail;
-      // Invalidate cache and refresh current page before navigation to ensure fresh data
-      await revalidateAttemptAction(attemptId);
+      // Server-side Redis cache is already invalidated by the WebSocket handler
       router.refresh(); // Refresh current page data so it's updated when user returns
       router.push(`/practice/a/${attemptId}`);
     };
@@ -160,7 +157,7 @@ export default function Practice({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [router, loadingToastId, revalidateAttemptAction]);
+  }, [router, loadingToastId]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {

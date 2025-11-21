@@ -11,7 +11,6 @@ import SystemAgent from "@/components/agents/SystemAgent";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type AgentDetailDefaultOut = OutputOf<"/api/v3/agents/detail-default", "post">;
@@ -22,51 +21,47 @@ type UpdateAgentOut = OutputOf<"/api/v3/agents/update", "post">;
 type DeleteAgentPromptIn = InputOf<"/api/v3/agents/delete-prompt", "post">;
 type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Per-profile cache entry tagged as 'agents' so create() can invalidate.
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAgentDefault = unstable_cache(
-  async (profileId: string): Promise<AgentDetailDefaultOut> => {
-    return api.post("/agents/detail-default", { body: { profileId } });
-  },
-  ["agents:detail-default"],
-  { tags: ["agents"] }
-);
+const getAgentDefault = async (
+  profileId: string
+): Promise<AgentDetailDefaultOut> => {
+  return api.post(
+    "/agents/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAgent(
   input: CreateAgentIn
 ): Promise<CreateAgentOut> {
   "use server";
-  const out = await api.post("/agents/create", input);
-  revalidateTag("agents");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/create", input);
 }
 
 async function updateAgent(
   input: UpdateAgentIn
 ): Promise<UpdateAgentOut> {
   "use server";
-  const out = await api.post("/agents/update", input);
-  revalidateTag("agents");
-  const agentId = input.body?.agentId;
-  if (agentId) {
-    revalidateTag(`agent:${agentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/update", input);
 }
 
 async function deleteAgentPrompt(
   input: DeleteAgentPromptIn
 ): Promise<DeleteAgentPromptOut> {
   "use server";
-  const out = await api.post("/agents/delete-prompt", input);
-  revalidateTag("agents");
-  const agentId = input.body?.agentId;
-  if (agentId) {
-    revalidateTag(`agent:${agentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/delete-prompt", input);
 }
 
 export const metadata: Metadata = {

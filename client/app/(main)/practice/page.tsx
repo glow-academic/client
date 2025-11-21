@@ -11,9 +11,8 @@ import SimulationHistory from "@/components/common/history/SimulationHistory";
 import Practice from "@/components/practice/Practice";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
-import { headers } from "next/headers";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -42,24 +41,6 @@ const getPractice = async (
   });
 };
 
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
-    
-    return (
-      (cacheControl?.toLowerCase().includes("no-cache") || 
-       cacheControl?.includes("max-age=0")) ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    return false;
-  }
-}
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice history responses can get large and exceed Next.js 2MB cache limit.
@@ -82,37 +63,33 @@ const getPracticeHistory = async (
   });
 };
 
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
+ */
+const getProfileContext = async (input: {
+  body: {
+    actualProfileId: string;
+    effectiveProfileId: string;
+    pathname: string;
+  };
+}) => {
+  return api.post(
+    "/profile/context",
+    input,
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
 
 export const metadata: Metadata = {
   title: "Practice",
   description: `Practice page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
-/** ---- Server action to revalidate attempt cache when simulation starts ---- */
-async function revalidateAttempt(attemptId: string): Promise<void> {
-  "use server";
-  // Invalidate attempt-level cache
-  revalidateTag("attempts");
-  revalidateTag(`attempt:${attemptId}`);
-  // Invalidate practice page cache so data refreshes when user returns
-  revalidateTag("practice");
-  revalidatePath("/practice");
-  // Note: Chat-specific tags can be added here if chat IDs are known
-  // For now, invalidating attempt-level cache ensures all chats refresh
-}
 
 interface PracticePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -225,7 +202,6 @@ export default async function PracticePage({
     <div className="space-y-6">
       <Practice
         practiceData={practiceDataWithoutHistory}
-        revalidateAttemptAction={revalidateAttempt}
       />
 
       {/* History section moved out of Practice, fully server-driven */}
@@ -243,7 +219,6 @@ export default async function PracticePage({
               showExport={false}
               showArchive={false}
               singleProfile={true}
-              revalidateAttemptAction={revalidateAttempt}
               profileOptions={[]}
               simulationOptions={[]}
               scenarioOptions={[]}
@@ -266,7 +241,6 @@ export default async function PracticePage({
               session?.effectiveProfileId || "guest-profile-id"
             }
             departmentIds={profileContext.departmentIds || []}
-            revalidateAttemptAction={revalidateAttempt}
           />
         </Suspense>
       </div>
@@ -287,7 +261,6 @@ async function PracticeHistorySection({
   historySortOrder,
   effectiveProfileId,
   departmentIds,
-  revalidateAttemptAction,
 }: {
   historyPage: number;
   historyPageSize: number;
@@ -300,7 +273,6 @@ async function PracticeHistorySection({
   historySortOrder: string;
   effectiveProfileId: string;
   departmentIds: string[];
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
 }) {
   // Build history filters for practice (simplified: profileId and departmentIds only)
   const historyFilters: PracticeHistoryIn = {
@@ -374,7 +346,6 @@ async function PracticeHistorySection({
       showExport={false}
       showArchive={false}
       singleProfile={true}
-      revalidateAttemptAction={revalidateAttemptAction}
       profileOptions={profileOptions}
       simulationOptions={simulationOptions}
       scenarioOptions={scenarioOptions}

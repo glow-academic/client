@@ -12,7 +12,6 @@ import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAcc
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type AgentDetailOut = OutputOf<"/api/v3/agents/detail", "post">;
@@ -34,17 +33,24 @@ type DeleteAgentPromptOut = OutputOf<
   "post"
 >;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getAgent = (agentId: string) =>
-  unstable_cache(
-    async (profileId: string): Promise<AgentDetailOut> => {
-      return api.post("/agents/detail", {
-        body: { agentId, profileId },
-      });
-    },
-    ["agents:detail", agentId],
-    { tags: ["agents", `agent:${agentId}`] }
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getAgent = async (
+  agentId: string,
+  profileId: string
+): Promise<AgentDetailOut> => {
+  return api.post(
+    "/agents/detail",
+    { body: { agentId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
   );
+};
 
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
@@ -56,7 +62,7 @@ export async function generateMetadata(
   const profileId = session?.effectiveProfileId || "";
 
   try {
-    const agent = await getAgent(agentId)(profileId);
+    const agent = await getAgent(agentId, profileId);
     return {
       title: `${agent?.name || "Agent"} Agent`,
       description: `${agent ? `${agent.name} ${agent.description}` : "Agent"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -74,35 +80,24 @@ async function createAgent(
   input: CreateAgentIn,
 ): Promise<CreateAgentOut> {
   "use server";
-  const out = await api.post("/agents/create", input);
-  revalidateTag("agents");
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/create", input);
 }
 
 async function updateAgent(
   input: UpdateAgentIn,
 ): Promise<UpdateAgentOut> {
   "use server";
-  const out = await api.post("/agents/update", input);
-  revalidateTag("agents");
-  const agentId = input.body?.agentId;
-  if (agentId) {
-    revalidateTag(`agent:${agentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/update", input);
 }
 
 async function deleteAgentPrompt(
   input: DeleteAgentPromptIn,
 ): Promise<DeleteAgentPromptOut> {
   "use server";
-  const out = await api.post("/agents/delete-prompt", input);
-  revalidateTag("agents");
-  const agentId = input.body?.agentId;
-  if (agentId) {
-    revalidateTag(`agent:${agentId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/agents/delete-prompt", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -115,10 +110,10 @@ export default async function AgentEditPage({
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch agent detail (cached, won't duplicate with metadata)
+  // Fetch agent detail (always fresh - source of truth)
   try {
     const agentDetail = agentId
-      ? await getAgent(agentId)(profileId)
+      ? await getAgent(agentId, profileId)
       : null;
 
     return (

@@ -41,7 +41,7 @@ async function bulkDeleteLogs(
       profileId,
     },
   });
-  revalidateTag("logs");
+  // No revalidateTag needed - Redis cache handles invalidation
   return out;
 }
 
