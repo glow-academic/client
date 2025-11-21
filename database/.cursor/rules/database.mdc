@@ -15,19 +15,18 @@ alwaysApply: false
 - **Clear naming**: Descriptive table and column names
 
 ## Schema Management
-- **Drizzle for migrations only** - used exclusively in `database/` folder
-- Schema defined in SQL migration files
-- **No Drizzle in client or server code** - only for generating migrations
+- **Manual migrations** - SQL files in `database/migrate/` folder
+- Schema defined in SQL files in `database/app/` folder
+- **No ORM migrations** - all migrations are manual SQL files
 - Migration commands:
-  - `cd database && yarn drizzle:generate` - Generate migration from schema changes
-  - `cd database && yarn drizzle:migrate` - Apply pending migrations
-  - `cd database && yarn drizzle:studio` - Visual schema explorer
+  - `make migrate-db` - Apply pending migrations from migrate/ folder
+  - `cd database && yarn migrate` - Apply pending migrations
 
 ## Migration Workflow
-1. Make schema changes in SQL files or Drizzle schema (database folder only)
-2. Generate migration: `cd database && yarn drizzle:generate`
-3. Review generated migration in `database/drizzle/`
-4. Apply migration: `cd database && yarn drizzle:migrate`
+1. Make schema changes in SQL files in `database/app/` folder
+2. Create migration file: Create new SQL file in `database/migrate/` folder
+3. Write migration SQL: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
+4. Apply migration: Run `make migrate-db` or `cd database && yarn migrate`
 5. Restart services to pick up schema changes
 
 ## Database Operations

@@ -39,7 +39,8 @@ CREATE TABLE model_runs (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   input_tokens INTEGER     NOT NULL DEFAULT 0,
-  output_tokens INTEGER     NOT NULL DEFAULT 0
+  output_tokens INTEGER     NOT NULL DEFAULT 0,
+  cached_input_tokens INTEGER     NOT NULL DEFAULT 0
 );
 
 -- Model run junction tables (BCNF normalization - replaces nullable FKs)

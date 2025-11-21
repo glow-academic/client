@@ -16,7 +16,8 @@ DB_PASSWORD=${DB_PASSWORD:-mypassword}
 DB_NAME=${DB_NAME:-mydb}
 DB_HOST=${DB_HOST:-localhost}
 DB_PORT=${DB_PORT:-5432}
-HISTORY_DIR="history"
+# Use root history folder (one level up from database/)
+HISTORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/history"
 mkdir -p "$HISTORY_DIR"
 
 # Parse command line arguments
@@ -41,9 +42,9 @@ for arg in "$@"; do
     *)
       echo "Usage: $0 [--clean|--migrate|--connect]"
       echo "  --clean   : Create backup, then start fresh database from init.sql"
-      echo "  --migrate : Generate migration files (interactive)"
+      echo "  --migrate : Apply manual migrations from migrate/ folder"
       echo "  --connect : Connect to existing database"
-      echo "  (default) : Start from latest backup and apply migrations"
+      echo "  (default) : Start from latest backup (no migrations)"
       exit 1
       ;;
   esac
@@ -77,7 +78,7 @@ as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
 role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
 db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
 
-# Function to create backup
+# Function to create backup (only called in clean mode)
 create_backup() {
   # Only create backup if database exists and has data
   if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; then
@@ -89,14 +90,13 @@ create_backup() {
     
     if [[ "$table_count" -gt 0 ]]; then
       local timestamp=$(date +"%Y%m%d_%H%M%S")
-      local backup_file="$HISTORY_DIR/backup_${timestamp}.sql"
+      local backup_file="$HISTORY_DIR/restore_${timestamp}.sql.gz"
       
       echo "📦 Backup saved → $(basename "$backup_file")"
       
-      # Create backup excluding drizzle migration table
+      # Create compressed backup
       pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" \
-        --exclude-table=__drizzle_migrations \
-        > "$backup_file" 2>/dev/null || {
+        -F c -f "$backup_file" 2>/dev/null || {
         echo "⚠️  Backup creation had issues, but continuing..."
         touch "$backup_file"  # Create empty file so script doesn't fail
       }
@@ -110,10 +110,10 @@ create_backup() {
 
 # Function to get latest backup
 get_latest_backup() {
-  # Check if history directory exists and has backup files
-  if [[ -d "$HISTORY_DIR" ]] && ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
+  # Check if history directory exists and has restore files
+  if [[ -d "$HISTORY_DIR" ]] && ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
     # Simply get the most recent backup by modification time
-    ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -1
+    ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1
   else
     # Return empty string if no backups found
     echo ""
@@ -148,13 +148,26 @@ restore_from_backup() {
   as_admin -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1 || true
   as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null 2>&1
   
-  # Restore from backup
+  # Restore from compressed backup (pg_restore for custom format, or gunzip + psql for plain)
   export PGPASSWORD="$DB_PASSWORD"
+  if [[ "$backup_file" == *.gz ]]; then
+    # Check if it's a custom format (pg_dump -F c) or plain SQL (pg_dump | gzip)
+    if pg_restore -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -F c "$backup_file" > /dev/null 2>&1; then
+      echo "✅ Backup restored successfully (custom format)"
+    elif gunzip -c "$backup_file" | psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; then
+      echo "✅ Backup restored successfully (plain SQL)"
+    else
+      echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
+      echo "💡 This is normal when schema has changed since backup was created"
+    fi
+  else
+    # Fallback for non-compressed backups
   if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$backup_file" > /dev/null 2>&1; then
     echo "✅ Backup restored successfully"
   else
     echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
     echo "💡 This is normal when schema has changed since backup was created"
+    fi
   fi
   
   # Grant necessary permissions for migrations
@@ -199,25 +212,16 @@ start_fresh_from_init() {
 
 # Function to run migrations
 run_migrations() {
-  echo "🚀 Running Drizzle migrations..."
+  echo "🚀 Running manual migrations from migrate/ folder..."
   
-  # Set environment variables for drizzle-kit
-  export DB_USER DB_PASSWORD DB_NAME DB_HOST DB_PORT
   export PGPASSWORD="$DB_PASSWORD"
   
-  # Use drizzle-kit migrate instead of manual SQL application
-  if npx drizzle-kit migrate > /dev/null 2>&1; then
-    echo "✅ All migrations applied successfully"
-  else
-    echo "⚠️  Some migrations had issues - this may be normal for existing databases"
-    echo "💡 Attempting to continue with manual migration application..."
-    
-    # Fallback: Check if migration files exist and apply them manually
-    if ls drizzle/00*.sql 1> /dev/null 2>&1; then
-      echo "📁 Found migration files, applying them manually..."
+  # Check if migration files exist in migrate/ folder
+  if ls migrate/*.sql 1> /dev/null 2>&1; then
+    echo "📁 Found migration files, applying them..."
       
-      # Apply each migration file manually
-      for migration_file in drizzle/00*.sql; do
+    # Apply each migration file in order (sorted by filename)
+    for migration_file in migrate/*.sql; do
         echo "🔄 Applying migration: $(basename "$migration_file")"
         if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
           echo "✅ Migration applied: $(basename "$migration_file")"
@@ -228,8 +232,7 @@ run_migrations() {
       
       echo "✅ Manual migration application completed"
     else
-      echo "📝 No migration files found - database is up to date"
-    fi
+    echo "📝 No migration files found in migrate/ folder - database is up to date"
   fi
   
   # Keep audit triggers in sync with any new tables
@@ -248,45 +251,29 @@ fi
 
 # Handle migrate mode
 if [[ "$MIGRATE_DB" == true ]]; then
-  echo "🔄 Migration mode: Generating migration files from schema changes..."
-  echo "⚠️  Note: This creates a temporary clean database for migration generation only"
-  echo "⚠️  Your data will be preserved - use 'yarn start' afterward to apply migrations with data"
+  echo "🔄 Migration mode: Applying manual migrations from migrate/ folder..."
   echo ""
   
-  # Create backup first for migrate mode
-  create_backup
+  export PGPASSWORD="$DB_PASSWORD"
   
-  # Setup fresh database
-  setup_database
-  start_fresh_from_init
-  
-  # Pull latest schema from database first
-  echo "📥 Pulling latest schema from database..."
-  if npx drizzle-kit pull; then
-    echo "✅ Latest schema pulled successfully"
-  else
-    echo "⚠️  Pull failed, continuing with existing schema"
-  fi
-  
-  # Generate migrations with interactive diff
-  echo "🔍 Generating migrations (interactive diff will show)..."
-  if npx drizzle-kit generate; then
-    # Check if any new migration files were created
-    if ls drizzle/00*.sql 1> /dev/null 2>&1; then
-      echo "✅ Migration files generated successfully"
-      echo "📁 New migration files created in drizzle/ directory"
-      echo ""
-      echo "🎯 Next steps:"
-      echo "   1. Review the generated migration files in drizzle/"
-      echo "   2. Run 'yarn start' to apply migrations with your data restored"
-      echo "   3. Or run 'yarn connect' to connect to your database with data"
+  # Check if migration files exist in migrate/ folder
+  if ls migrate/*.sql 1> /dev/null 2>&1; then
+    echo "📁 Found migration files, applying them..."
+    
+    # Apply each migration file in order (sorted by filename)
+    for migration_file in migrate/*.sql; do
+      echo "🔄 Applying migration: $(basename "$migration_file")"
+      if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+        echo "✅ Migration applied: $(basename "$migration_file")"
+      else
+        echo "⚠️  Migration had issues: $(basename "$migration_file")"
+        exit 1
+      fi
+    done
+    
+    echo "✅ All migrations applied successfully"
     else
-      echo "📝 No schema changes detected - no migration files generated"
-      echo "💡 This means your schema is already in sync with the database"
-    fi
-  else
-    echo "❌ Migration generation failed"
-    exit 1
+    echo "📝 No migration files found in migrate/ folder"
   fi
   
   exit 0
@@ -307,8 +294,8 @@ if [[ "$CLEAN_DB" == true ]]; then
   exit 0
 fi
 
-# Default mode: Use latest backup then migrate (NO backup creation)
-echo "🔄 Default mode: Using latest backup then applying migrations..."
+# Default mode: Use latest backup (NO backup creation, NO migrations)
+echo "🔄 Default mode: Using latest backup..."
 
 # Get latest backup (don't create a new one)
 LATEST_BACKUP=$(get_latest_backup)
@@ -321,8 +308,7 @@ if [[ -n "$LATEST_BACKUP" ]]; then
   
   # Restore from backup
   if restore_from_backup "$LATEST_BACKUP"; then
-    # Apply any pending migrations
-    run_migrations
+    echo "✅ Database restored and ready"
   else
     echo "⚠️  Backup restoration failed, falling back to init.sql"
     start_fresh_from_init
@@ -332,9 +318,6 @@ else
   setup_database
   start_fresh_from_init
 fi
-
-# Generate and copy files
-generate_and_copy_files
 
 echo "✅ Database setup completed!"
 

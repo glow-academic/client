@@ -15,7 +15,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 \i app/users/init.sql
 
+\i app/keys/init.sql
+
 \i app/models/init.sql
+
+\i app/auth/init.sql
 
 \i app/documents/init.sql
 
@@ -36,8 +40,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i app/scenarios/init.sql
 
 -- 5. Seed base data for junction table dependencies
--- Import shared models (generated at seed/ level)
+-- Import shared models and keys (generated at seed/ level)
 \i seed/models.sql
+
+-- Import auth configuration (generated at seed/ level)
+\i seed/auth.sql
 
 -- Import root prompts (default prompts for personas and agents)
 \i seed/prompts.sql

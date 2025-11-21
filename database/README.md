@@ -1,6 +1,6 @@
 # Database Management
 
-This directory contains all database-related operations for the Glow project. All Drizzle operations now run from this folder, with generated files automatically copied to the client.
+This directory contains all database-related operations for the Glow project. Migrations are managed manually using SQL files in the `migrate/` folder.
 
 ## Workflow
 
@@ -12,8 +12,7 @@ yarn start
 ```
 - Finds the latest backup from `history/` folder
 - Restores the backup to a fresh database
-- Applies any pending migrations using `npx drizzle-kit migrate`
-- Generates and copies schema, types, queries, and mutations to client
+- Applies any pending migrations from `migrate/` folder
 - Keeps running until interrupted (creates backup on exit)
 
 ### 2. Clean Start (Fresh Database)
@@ -22,20 +21,18 @@ npm run start:clean
 # or
 yarn start:clean
 ```
-- Creates a fresh database from `init.sql`
-- Generates and copies schema, types, queries, and mutations to client
+- Creates a fresh database from `app/init.sql`
+- Generates all seed data
 - Exits after setup is complete
 
-### 3. Migration Mode (Generate New Migrations)
+### 3. Migration Mode (Apply Manual Migrations)
 ```bash
 npm run migrate
 # or
 yarn migrate
 ```
-- Starts with a clean database from `init.sql`
-- Runs `npx drizzle-kit generate` to show interactive diff
-- Generates migration files based on schema changes
-- Does NOT automatically apply migrations (use default start for that)
+- Applies all migration files from `migrate/` folder to the existing database
+- Migration files are applied in alphabetical order
 
 ### 4. Connect to Database
 ```bash
@@ -45,53 +42,33 @@ yarn connect
 ```
 - Opens an interactive psql session to the existing database
 
-## File Generation
-
-When any of the start commands run, the following files are automatically generated and copied to the client:
-
-### Generated Files:
-- **Schema**: `client/utils/drizzle/schema.ts` (cleaned version from `database/drizzle/schema.ts`)
-- **Types**: `client/types.ts` (TypeScript types for all tables and enums)
-- **Queries**: `client/utils/queries/[table]/` (GET operations for each table)
-- **Mutations**: `client/utils/mutations/[table]/` (CREATE, UPDATE, DELETE operations)
-
-### Manual Generation:
-You can also run the generation scripts individually:
-```bash
-npm run generate:schema    # Clean and copy schema
-npm run generate:types     # Generate TypeScript types
-npm run generate:queries   # Generate queries and mutations
-npm run generate:all       # Run all generation scripts
-```
-
 ## Directory Structure
 
 ```
 database/
-├── drizzle/              # Drizzle files (schema, migrations, relations)
-├── scripts/              # Generation scripts
-├── history/              # Database backups (auto-created)
-├── init.sql              # Initial database schema
-├── scripts/start.sh      # Main database management script
-├── drizzle.config.ts     # Drizzle configuration
-└── package.json          # Database-specific dependencies
+├── app/                 # Schema definitions (SQL files)
+│   ├── init.sql        # Master initialization script
+│   └── [module]/       # Module-specific schema files
+├── migrate/            # Manual migration SQL files
+├── seed/               # Seed data generation scripts
+├── scripts/            # Database management scripts
+├── history/            # Database backups (auto-created)
+└── package.json        # Database-specific dependencies
 ```
 
-## Client Integration
+## Migration Workflow
 
-The client no longer needs drizzle-kit or generation scripts. It simply uses:
-- `@/utils/drizzle/schema` - Database schema
-- `@/utils/drizzle/db` - Database connection
-- `@/types` - TypeScript types
-- `@/utils/queries/[table]/` - Query functions
-- `@/utils/mutations/[table]/` - Mutation functions
+1. **Create Migration File**: Create a new SQL file in `migrate/` folder (e.g., `migrate/1_add_new_table.sql`)
+2. **Write Migration SQL**: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
+3. **Apply Migration**: Run `yarn migrate` or `make migrate-db` to apply migrations
+4. **Restart Services**: Restart services to pick up schema changes
 
 ## Backup System
 
 - Backups are automatically created in `history/` folder with timestamp
 - Backups are created:
-  - Before any database operation
-  - When the database process exits
+  - Before any database operation (in clean mode)
+  - When the database process exits (in clean mode)
 - Latest backup is used when starting without `--clean` flag
 
 ## Environment Variables
@@ -105,14 +82,14 @@ Required environment variables:
 
 ## Development Workflow
 
-1. **Making Schema Changes**: Edit `database/drizzle/schema.ts`
-2. **Generate Migrations**: Run `npm run migrate` to see changes and generate migration files
-3. **Apply Changes**: Run `npm run start` to apply migrations and update client files
-4. **Fresh Start**: Use `npm run start:clean` when you want to start completely fresh
+1. **Making Schema Changes**: Edit SQL files in `app/` folder
+2. **Create Migration**: Create a new migration file in `migrate/` folder for existing databases
+3. **Apply Changes**: Run `yarn start` to apply migrations and restore data
+4. **Fresh Start**: Use `yarn start:clean` when you want to start completely fresh
 
 ## Notes
 
-- All drizzle-kit operations run from the database folder
-- Client automatically gets updated files when database starts
-- Migration files are stored in `database/drizzle/`
+- All migrations are manual SQL files in `migrate/` folder
+- Migration files are applied in alphabetical order
 - The system preserves data through backups during migrations 
+- Server uses asyncpg for all database operations

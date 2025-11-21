@@ -14,14 +14,9 @@
     "users": "bash scripts/sql-helpers.sh users",
     "counts": "bash scripts/sql-helpers.sh counts",
     "logs": "node scripts/stream-logs.js",
-    "drizzle:migrate": "npx drizzle-kit migrate",
-    "drizzle:generate": "npx drizzle-kit generate",
-    "drizzle:studio": "npx drizzle-kit studio",
     "generate-test-schema": "bash scripts/generate-test-schema.sh"
   },
   "dependencies": {
-    "drizzle-kit": "^0.31.1",
-    "drizzle-orm": "^0.44.2",
     "pg": "^8.16.0"
   },
   "devDependencies": {

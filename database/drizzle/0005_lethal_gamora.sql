@@ -1,2 +1,0 @@
-ALTER TABLE "simulation_chat_crowdsourced_feedbacks" ADD COLUMN "profile_id" uuid NOT NULL;--> statement-breakpoint
-ALTER TABLE "simulation_chat_crowdsourced_feedbacks" ADD CONSTRAINT "simulation_chat_crowdsourced_feedbacks_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;

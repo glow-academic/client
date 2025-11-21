@@ -49,7 +49,7 @@ make install-client  # Install client dependencies (yarn)
 ### Database Setup
 
 ```bash
-make start-db    # Start database (latest backup)
+make restore-db  # Restore database from latest backup
 make fresh-db    # Fresh database (backup first, then init.sql)
 make migrate-db  # Apply pending migrations
 make connect-db  # Connect to database shell
@@ -95,19 +95,17 @@ make test-e2e-headed  # Run E2E tests with browser visible
 ### Migration Commands
 
 ```bash
-make migrate-db  # Apply pending migrations
-cd database && yarn drizzle:generate  # Generate new migration
-cd database && yarn drizzle:studio    # Visual schema explorer
+make migrate-db  # Apply pending migrations from migrate/ folder
 ```
 
 ### Migration Workflow
-1. Make schema changes in `database/drizzle/` SQL files
-2. Generate migration: `cd database && yarn drizzle:generate`
-3. Review generated migration in `database/drizzle/`
+1. Make schema changes in `database/app/` SQL files
+2. Create migration file: Create new SQL file in `database/migrate/` folder
+3. Write migration SQL: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
 4. Apply migration: `make migrate-db`
 5. Restart services: `make stop && make run`
 
-**Note**: Drizzle is used exclusively in `database/` folder for migrations. Server uses asyncpg for all database operations.
+**Note**: Migrations are manual SQL files in `database/migrate/` folder. Server uses asyncpg for all database operations.
 
 ## Code Quality
 
@@ -136,7 +134,8 @@ cd client && npx tsc --noEmit
 - `client/components/` - React components (airgapped UI - presentation only)
 
 ### Database  
-- `database/drizzle/` - Migration files (Drizzle for migrations only)
+- `database/migrate/` - Manual migration SQL files
+- `database/app/` - Schema definitions (SQL files)
 - `database/seed/` - Seed data scripts
 
 ### Server
@@ -163,7 +162,7 @@ cd client && npx tsc --noEmit
 - **Chris Date principles**: Minimize nulls, eliminate redundancy
 - **BCNF normalization**: Boyce-Codd Normal Form - third normal form with no transitive dependencies
 - **Referential integrity**: All foreign keys with proper constraints
-- **Drizzle for migrations only**: Used exclusively in `database/` folder
+- **Manual migrations**: SQL files in `database/migrate/` folder
 
 ### Testing Strategy
 - **No client-side unit tests**: All testing happens on the server side

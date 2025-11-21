@@ -32,7 +32,7 @@ make install-client  # Install client dependencies (yarn)
 
 **Database setup:**
 ```bash
-make start-db    # Start database
+make restore-db  # Restore database from latest backup
 make migrate-db  # Run migrations
 make fresh-db    # Fresh start (with backup)
 ```
@@ -103,7 +103,7 @@ make typecheck   # Type check server (MyPy)
 
 ### Database
 - **SQL:** [PostgreSQL](https://www.postgresql.org/)
-- **Migrations:** [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) (database folder only)
+- **Migrations:** Manual SQL files in `database/migrate/` folder
 
 ### Architecture
 - **Client**: Airgapped UI - server actions dominate, presentation only

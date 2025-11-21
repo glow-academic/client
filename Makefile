@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types ws-gen gen-ws-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e restore-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types ws-gen gen-ws-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -276,11 +276,11 @@ install-client:
 	@cd client && yarn install
 	@echo "✅ Client dependencies installed"
 
-# Start database service
-start-db:
-	@echo "Starting database service..."
+# Restore database from latest backup
+restore-db:
+	@echo "Restoring database from latest backup..."
 	@cd database && yarn start
-	@echo "✅ Database started"
+	@echo "✅ Database restored"
 
 # Migrate database
 migrate-db:
@@ -314,7 +314,7 @@ help:
 	@echo "  install-client - Install client dependencies with yarn"
 	@echo ""
 	@echo "Database:"
-	@echo "  start-db     - Start database service"
+	@echo "  restore-db   - Restore database from latest backup"
 	@echo "  migrate-db   - Run database migrations"
 	@echo "  connect-db   - Connect to database"
 	@echo "  fresh-db     - Start database with fresh data"

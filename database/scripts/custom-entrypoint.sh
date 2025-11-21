@@ -43,19 +43,19 @@ backup_database() {
   
   # Generate timestamp
   ts=$(date +%Y%m%d_%H%M%S)
-  backup_file="$HISTORY_DIR/backup_${ts}.sql"
+  backup_file="$HISTORY_DIR/restore_${ts}.sql.gz"
   
   # Wait a moment for any ongoing transactions to complete
   sleep 2
   
-  # Create the backup
+  # Create compressed backup (custom format)
   log_info "Creating database backup: $backup_file"
-  if pg_dump "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}" > "$backup_file" 2>/dev/null; then
+  if pg_dump "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}" -F c -f "$backup_file" 2>/dev/null; then
     log_success "📦 Backup saved → $backup_file"
     
     # Keep only the last 10 backups to prevent disk space issues
     cd "$HISTORY_DIR"
-    ls -t backup_*.sql 2>/dev/null | tail -n +11 | xargs -r rm -- 2>/dev/null || true
+    ls -t restore_*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -- 2>/dev/null || true
     log_info "Cleaned up old backups (keeping last 10)"
   else
     log_warning "⚠️  Backup failed or database not ready"
@@ -63,8 +63,6 @@ backup_database() {
   
   log_success "Database backup completed"
 }
-
-
 
 # --- SIGNAL HANDLERS -------------------------------------------------
 cleanup() {
@@ -132,22 +130,34 @@ END $$;
 EOF
 
 # Create a SQL script to restore from backup if available (only if not cleaning)
-if [ "$CLEAN_DB" != "true" ] && ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
-  latest_backup=$(ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -1)
+if [ "$CLEAN_DB" != "true" ]; then
+  # Look for restore_*.sql.gz files in history volume
+  if ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
+    latest_backup=$(ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1)
   if [[ -n "$latest_backup" && -f "$latest_backup" ]]; then
     log_info "📁 Found latest backup: $(basename "$latest_backup")"
     log_info "🔄 Setting up backup restoration..."
     
-    # Copy the backup file to be restored during initialization
-    cp "$latest_backup" /docker-entrypoint-initdb.d/50-restore-backup.sql
-    log_success "Backup prepared for restoration"
+      # Decompress the backup file and copy to initdb.d
+      # Handle both custom format (pg_restore) and plain SQL (gunzip)
+      if gunzip -c "$latest_backup" > /docker-entrypoint-initdb.d/50-restore-backup.sql 2>/dev/null; then
+        log_success "Backup decompressed and prepared for restoration"
+      else
+        log_error "Failed to decompress backup file: $latest_backup"
+        exit 1
   fi
 else
-  if [ "$CLEAN_DB" = "true" ]; then
-    log_info "🧹 CLEAN_DB enabled - starting with fresh database (skipping backup restoration)"
+      log_error "❌ No backup file found in $HISTORY_DIR"
+      log_error "Backup is required when CLEAN_DB=false. Please ensure restore_*.sql.gz files exist in the history volume."
+      exit 1
+    fi
   else
-    log_info "📝 No backup files found - starting with fresh database"
+    log_error "❌ No restore_*.sql.gz files found in $HISTORY_DIR"
+    log_error "Backup is required when CLEAN_DB=false. Please ensure restore_*.sql.gz files exist in the history volume."
+    exit 1
   fi
+elif [ "$CLEAN_DB" = "true" ]; then
+    log_info "🧹 CLEAN_DB enabled - starting with fresh database (skipping backup restoration)"
   
   # Copy the main initialization script for fresh database
   log_info "📋 Setting up main database schema..."
