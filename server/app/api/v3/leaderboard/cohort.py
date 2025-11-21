@@ -1,11 +1,11 @@
-"""Leaderboard bundle v3 API endpoint."""
+"""Leaderboard cohort detail v3 API endpoint - requires cohortId."""
 
 import json
+from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.main import get_db
-from app.utils.analytics_query_builder import build_base_filter
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -19,72 +19,32 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
-# Inline filter schemas
-class LeaderboardBundleFilters(BaseModel):
-    """Leaderboard bundle filter request schema - for general leaderboard (multi-cohort or all cohorts)."""
+class LeaderboardCohortDetailFilters(BaseModel):
+    """Leaderboard cohort detail filter request schema - requires single cohortId."""
 
     startDate: str
     endDate: str
-    cohortIds: list[str] | None = None  # Optional: can be empty or multiple cohorts
+    cohortId: str  # Required: single cohort ID
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
     departmentIds: list[str] | None = None
 
 
-# Inline schemas
-class LeaderboardMetric(BaseModel):
-    """Leaderboard metric."""
-
-    hasData: bool
-    method: str
-    currentValue: int
-    keyField: str | None = None
-    trendData: list[Any]
-    dataPoints: list[Any]
-    hover: dict[str, Any]
+# Import shared response types from bundle
+from app.api.v3.leaderboard.bundle import (LeaderboardBundleResponse,
+                                           LeaderboardMetric,
+                                           LeaderboardMetrics, LeaderboardRow)
 
 
-class LeaderboardMetrics(BaseModel):
-    """Leaderboard metrics."""
-
-    totalAttempts: LeaderboardMetric
-    highestScoreAvg: LeaderboardMetric
-    messagesPerSession: LeaderboardMetric
-    personaResponseSeconds: LeaderboardMetric
-    timeSpentMinutes: LeaderboardMetric
-    improvementRatePerDay: LeaderboardMetric
-    perfectScoreCount: LeaderboardMetric
-    quickestPassMinutes: LeaderboardMetric
-
-
-class LeaderboardRow(BaseModel):
-    """Leaderboard row."""
-
-    profileId: str
-    firstName: str
-    lastName: str
-    simulationIds: list[str] = []
-    scenarioIds: list[str] = []
-    metrics: LeaderboardMetrics
-
-
-class LeaderboardBundleResponse(BaseModel):
-    """Leaderboard bundle response."""
-
-    data: list[LeaderboardRow]
-    simulation_mapping: SimulationMapping = {}
-    scenario_mapping: ScenarioMapping = {}
-
-
-@router.post("/", response_model=LeaderboardBundleResponse)
-async def get_leaderboard(
-    filters: LeaderboardBundleFilters,
+@router.post("/cohort", response_model=LeaderboardBundleResponse)
+async def get_leaderboard_cohort_detail(
+    filters: LeaderboardCohortDetailFilters,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> LeaderboardBundleResponse:
-    """Get leaderboard bundle with all metrics and profile data."""
-    tags = ["leaderboard"]  # From router tags
+    """Get leaderboard bundle for a specific cohort - requires cohortId."""
+    tags = ["leaderboard", "cohort-detail"]
 
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
@@ -101,27 +61,34 @@ async def get_leaderboard(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Build WHERE clause using analytics query builder utility
-        where_clause, params = build_base_filter(
-            start_date=filters.startDate,
-            end_date=filters.endDate,
-            cohort_ids=filters.cohortIds,
-            roles=filters.roles,
-            sim_filters=[f.value for f in filters.simulationFilters]
+        # Build parameters for cohort detail SQL
+        # $1-$2: dates, $3: cohort_id (required), $4: roles, $5: sim_filters, $6: department_ids
+        start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
+        cohort_id = filters.cohortId  # Required
+        roles = filters.roles or []
+        sim_filters = (
+            [
+                f.value if isinstance(f, SimulationFilter) else f
+                for f in filters.simulationFilters
+            ]
             if filters.simulationFilters
-            else None,
-            profile_id=None,  # Leaderboard doesn't filter by profileId
-            department_ids=filters.departmentIds,
+            else ["general"]
+        )
+        department_ids = filters.departmentIds or []
+
+        # Load SQL query
+        sql_query = load_sql("sql/v3/leaderboard/cohort_detail.sql")
+        sql_params = (
+            start_dt,
+            end_dt,
+            cohort_id,
+            roles,
+            sim_filters,
+            department_ids,
         )
 
-        # Load SQL template
-        sql_template = load_sql("sql/v3/leaderboard/leaderboard_bundle.sql")
-
-        # Replace WHERE clause placeholder
-        sql_query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
-        sql_params = tuple(params)
-
-        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        # Disable JIT compilation for this complex query
         async with conn.transaction():
             await conn.execute("SET LOCAL jit = off;")
             result = await conn.fetchval(sql_query, *sql_params)
@@ -217,8 +184,9 @@ async def get_leaderboard(
         handle_route_error(
             error=e,
             route_path=request.url.path,
-            operation="get_leaderboard",
+            operation="get_leaderboard_cohort_detail",
             sql_query=sql_query,
             sql_params=sql_params,
             request=request,
         )
+

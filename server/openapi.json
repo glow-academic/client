@@ -5076,7 +5076,7 @@
         ]
       }
     },
-    "/api/v3/leaderboard": {
+    "/api/v3/leaderboard/": {
       "post": {
         "tags": [
           "v3",
@@ -5084,12 +5084,59 @@
         ],
         "summary": "Get Leaderboard",
         "description": "Get leaderboard bundle with all metrics and profile data.",
-        "operationId": "get_leaderboard_api_v3_leaderboard_post",
+        "operationId": "get_leaderboard_api_v3_leaderboard__post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LeaderboardBundleFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "leaderboard"
+        ]
+      }
+    },
+    "/api/v3/leaderboard/cohort": {
+      "post": {
+        "tags": [
+          "v3",
+          "leaderboard"
+        ],
+        "summary": "Get Leaderboard Cohort Detail",
+        "description": "Get leaderboard bundle for a specific cohort - requires cohortId.",
+        "operationId": "get_leaderboard_cohort_detail_api_v3_leaderboard_cohort_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaderboardCohortDetailFilters"
               }
             }
           },
@@ -15608,7 +15655,7 @@
           "endDate"
         ],
         "title": "LeaderboardBundleFilters",
-        "description": "Leaderboard bundle filter request schema."
+        "description": "Leaderboard bundle filter request schema - for general leaderboard (multi-cohort or all cohorts)."
       },
       "LeaderboardBundleResponse": {
         "properties": {
@@ -15642,6 +15689,72 @@
         ],
         "title": "LeaderboardBundleResponse",
         "description": "Leaderboard bundle response."
+      },
+      "LeaderboardCohortDetailFilters": {
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "title": "Startdate"
+          },
+          "endDate": {
+            "type": "string",
+            "title": "Enddate"
+          },
+          "cohortId": {
+            "type": "string",
+            "title": "Cohortid"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulationFilters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SimulationFilter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationfilters"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate",
+          "cohortId"
+        ],
+        "title": "LeaderboardCohortDetailFilters",
+        "description": "Leaderboard cohort detail filter request schema - requires single cohortId."
       },
       "LeaderboardMetric": {
         "properties": {

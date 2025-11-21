@@ -7,8 +7,8 @@
 
 import { getSession } from "@/auth";
 
-import Leaderboard from "@/components/leaderboard/Leaderboard";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import Leaderboard from "@/components/leaderboard/Leaderboard";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
@@ -16,13 +16,13 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/api/v3/leaderboard", "post">;
-type LeaderboardOut = OutputOf<"/api/v3/leaderboard", "post">;
+type LeaderboardIn = InputOf<"/api/v3/leaderboard/cohort", "post">;
+type LeaderboardOut = OutputOf<"/api/v3/leaderboard/cohort", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getLeaderboard = cache(
   async (input: LeaderboardIn): Promise<LeaderboardOut> => {
-    return api.post("/leaderboard", input);
+    return api.post("/leaderboard/cohort", input);
   }
 );
 
@@ -121,11 +121,27 @@ export default async function CohortDashboardPage({
     }
   });
 
-  // Get filters from search params or defaults, then override cohortIds with the cohortId from URL
+  // Get filters from search params or defaults
   const defaultFilters = await getCohortFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
-  const filters = { ...defaultFilters, cohortIds: [cohortId] };
+
+  // Build filters for cohort detail endpoint (uses cohortId instead of cohortIds)
+  const filters = {
+    cohortId: cohortId, // Single cohort ID for cohort detail endpoint
+    startDate: defaultFilters.startDate,
+    endDate: defaultFilters.endDate,
+    ...(defaultFilters.roles &&
+      defaultFilters.roles.length > 0 && { roles: defaultFilters.roles }),
+    ...(defaultFilters.simulationFilters &&
+      defaultFilters.simulationFilters.length > 0 && {
+        simulationFilters: defaultFilters.simulationFilters,
+      }),
+    ...(defaultFilters.departmentIds &&
+      defaultFilters.departmentIds.length > 0 && {
+        departmentIds: defaultFilters.departmentIds,
+      }),
+  };
 
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
@@ -144,17 +160,14 @@ export default async function CohortDashboardPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
-          resourceType="cohort"
-          redirectPath="/cohorts"
-        />
+        <DepartmentAccessDenied resourceType="cohort" redirectPath="/cohorts" />
       );
     }
     // Re-throw other errors
     throw error;
   }
 
-  // Fetch leaderboard data server-side
+  // Fetch leaderboard data server-side using cohort detail endpoint
   const leaderboardData = await getLeaderboard({
     body: filters,
   });

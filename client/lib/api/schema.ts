@@ -2359,7 +2359,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/leaderboard": {
+    "/api/v3/leaderboard/": {
         parameters: {
             query?: never;
             header?: never;
@@ -2372,7 +2372,27 @@ export interface paths {
          * Get Leaderboard
          * @description Get leaderboard bundle with all metrics and profile data.
          */
-        post: operations["get_leaderboard_api_v3_leaderboard_post"];
+        post: operations["get_leaderboard_api_v3_leaderboard__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/leaderboard/cohort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Leaderboard Cohort Detail
+         * @description Get leaderboard bundle for a specific cohort - requires cohortId.
+         */
+        post: operations["get_leaderboard_cohort_detail_api_v3_leaderboard_cohort_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6554,7 +6574,7 @@ export interface components {
         };
         /**
          * LeaderboardBundleFilters
-         * @description Leaderboard bundle filter request schema.
+         * @description Leaderboard bundle filter request schema - for general leaderboard (multi-cohort or all cohorts).
          */
         LeaderboardBundleFilters: {
             /** Startdate */
@@ -6591,6 +6611,24 @@ export interface components {
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
             };
+        };
+        /**
+         * LeaderboardCohortDetailFilters
+         * @description Leaderboard cohort detail filter request schema - requires single cohortId.
+         */
+        LeaderboardCohortDetailFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortid */
+            cohortId: string;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
         };
         /**
          * LeaderboardMetric
@@ -15186,7 +15224,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_api_v3_leaderboard_post: {
+    get_leaderboard_api_v3_leaderboard__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15196,6 +15234,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LeaderboardBundleFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaderboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_leaderboard_cohort_detail_api_v3_leaderboard_cohort_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaderboardCohortDetailFilters"];
             };
         };
         responses: {
