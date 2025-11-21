@@ -3,12 +3,12 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
+from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -32,9 +32,12 @@ router = APIRouter()
 async def delete_persona(
     request: DeletePersonaRequest,
     http_request: Request,
+    response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeletePersonaResponse:
     """Delete a persona."""
+    tags = ["personas"]  # From router tags
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
@@ -56,10 +59,17 @@ async def delete_persona(
                 raise ValueError(f"Persona not found: {request.personaId}")
 
             persona_name = result.get("name", "Unknown")
-            return DeletePersonaResponse(
-                success=True,
-                message=f"Persona '{persona_name}' deleted successfully",
-            )
+
+        result_data = DeletePersonaResponse(
+            success=True,
+            message=f"Persona '{persona_name}' deleted successfully",
+        )
+
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        return result_data
     except HTTPException:
         raise
     except ValueError as e:

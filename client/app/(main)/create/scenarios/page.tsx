@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import { Scenarios } from "@/components/scenarios/Scenarios";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenariosListOut = OutputOf<"/api/v3/scenarios/list", "post">;
@@ -19,43 +19,43 @@ type DuplicateScenarioOut = OutputOf<"/api/v3/scenarios/duplicate", "post">;
 type DeleteScenarioIn = InputOf<"/api/v3/scenarios/delete", "post">;
 type DeleteScenarioOut = OutputOf<"/api/v3/scenarios/delete", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("scenarios") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getScenariosList = unstable_cache(
-  async (profileId: string): Promise<ScenariosListOut> => {
-    return api.post("/scenarios/list", { body: { profileId } });
-  },
-  ["scenarios:list"],
-  { tags: ["scenarios"] }
-);
+const getScenariosList = async (
+  profileId: string
+): Promise<ScenariosListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/scenarios/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateScenario(
   input: DuplicateScenarioIn
 ): Promise<DuplicateScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/duplicate", input);
-  revalidateTag("scenarios");
-  const scenarioId = input.body?.scenarioId;
-  if (scenarioId) {
-    revalidateTag(`scenario:${scenarioId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/duplicate", input);
 }
 
 async function deleteScenario(
   input: DeleteScenarioIn
 ): Promise<DeleteScenarioOut> {
   "use server";
-  const out = await api.post("/scenarios/delete", input);
-  revalidateTag("scenarios");
-  const scenarioId = input.body?.scenarioId;
-  if (scenarioId) {
-    revalidateTag(`scenario:${scenarioId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/scenarios/delete", input);
 }
 
 export const metadata: Metadata = {

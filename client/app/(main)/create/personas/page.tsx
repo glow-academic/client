@@ -9,8 +9,8 @@ import { getSession } from "@/auth";
 import Personas from "@/components/personas/Personas";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonasListOut = OutputOf<"/api/v3/personas/list", "post">;
@@ -19,43 +19,43 @@ type DuplicatePersonaOut = OutputOf<"/api/v3/personas/duplicate", "post">;
 type DeletePersonaIn = InputOf<"/api/v3/personas/delete", "post">;
 type DeletePersonaOut = OutputOf<"/api/v3/personas/delete", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("personas") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getPersonasList = unstable_cache(
-  async (profileId: string): Promise<PersonasListOut> => {
-    return api.post("/personas/list", { body: { profileId } });
-  },
-  ["personas:list"],
-  { tags: ["personas"] }
-);
+const getPersonasList = async (
+  profileId: string
+): Promise<PersonasListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/personas/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    }
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
-  const out = await api.post("/personas/duplicate", input);
-  revalidateTag("personas");
-  const personaId = input.body?.personaId;
-  if (personaId) {
-    revalidateTag(`persona:${personaId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/personas/duplicate", input);
 }
 
 async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
-  const out = await api.post("/personas/delete", input);
-  revalidateTag("personas");
-  const personaId = input.body?.personaId;
-  if (personaId) {
-    revalidateTag(`persona:${personaId}`);
-  }
-  return out;
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/personas/delete", input);
 }
 
 export const metadata: Metadata = {
