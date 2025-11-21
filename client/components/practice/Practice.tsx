@@ -304,7 +304,7 @@ export default function Practice({
               | "guest",
           }}
           onStartSimulation={handleStartSimulation}
-          onStartInfiniteMode={isGuest ? undefined : handleStartInfiniteMode}
+          onStartInfiniteMode={isGuest ? (() => {}) : handleStartInfiniteMode}
           loadingSimulation={loadingSimulation}
         />
       </div>
