@@ -391,7 +391,9 @@ export default function SimulationCard({
                 <p>You cannot start simulations on behalf of another user.</p>
               </TooltipContent>
             </Tooltip>
-          ) : type === "default" && onStartInfiniteMode ? (
+          ) : type === "default" &&
+            onStartInfiniteMode &&
+            effectiveProfile?.role !== "guest" ? (
             <div className="flex gap-2 w-full">
               <button
                 onClick={() => {
