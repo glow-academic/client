@@ -179,9 +179,7 @@ async function revalidateAttempt(attemptId: string): Promise<void> {
   // Invalidate attempt-level cache
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
-  // Invalidate home page cache so data refreshes when user returns
-  revalidateTag("home");
-  revalidateTag("home:overview");
+  // Invalidate history sections only - overview sections are based on MVs and don't need invalidation
   revalidateTag("home:history");
   revalidatePath("/home");
   // Note: Chat-specific tags can be added here if chat IDs are known
@@ -228,7 +226,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // Use effectiveProfileId so the SQL can determine if user is TA and filter accordingly
   if (session?.effectiveProfileId) {
     homeFiltersBody.profileId = session.effectiveProfileId;
-    homeFiltersBody.historyProfileId = session.effectiveProfileId;
   }
 
   const homeFilters: HomeIn = {

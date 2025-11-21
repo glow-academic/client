@@ -11882,17 +11882,6 @@
             ],
             "title": "Profileid"
           },
-          "historyProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Historyprofileid"
-          },
           "page": {
             "type": "integer",
             "title": "Page",
@@ -15054,17 +15043,6 @@
               }
             ],
             "title": "Profileid"
-          },
-          "historyProfileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Historyprofileid"
           },
           "departmentIds": {
             "anyOf": [

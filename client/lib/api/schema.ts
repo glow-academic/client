@@ -5136,8 +5136,6 @@ export interface components {
             simulationFilters?: string[] | null;
             /** Profileid */
             profileId?: string | null;
-            /** Historyprofileid */
-            historyProfileId?: string | null;
             /**
              * Page
              * @default 0
@@ -6377,8 +6375,6 @@ export interface components {
             cohortIds?: string[] | null;
             /** Profileid */
             profileId?: string | null;
-            /** Historyprofileid */
-            historyProfileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
             /** Roles */

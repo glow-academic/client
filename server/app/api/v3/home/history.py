@@ -181,7 +181,10 @@ async def get_home_history(
             params[0], params[1]
         )
 
-        result = await conn.fetchrow(sql_query, *params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchrow(sql_query, *params)
 
 
         # Parse JSON result

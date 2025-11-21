@@ -237,16 +237,14 @@ export default async function ReportsPage({
     }
   });
 
-  // Get filters from search params or defaults, then set profileId and historyProfileId
+  // Get filters from search params or defaults, then set profileId
   // profileId is used for filtering main dashboard metrics for this profile
-  // historyProfileId is used only for history showRetry calculation
   const defaultFilters = await getProfileReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
   const dashboardFilters = {
     ...defaultFilters,
     profileId, // Used for main dashboard metrics filtering
-    historyProfileId: profileId, // Used for history showRetry calculation
   };
 
   // Extract pagination and filter params from search params for history
@@ -423,7 +421,6 @@ async function ReportHistorySection({
       }),
       sortBy: historySortBy,
       sortOrder: historySortOrder,
-      historyProfileId: profileId, // Used for showRetry calculation
     },
   };
 

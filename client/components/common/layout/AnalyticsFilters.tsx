@@ -33,12 +33,14 @@ type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 export interface AnalyticsFiltersProps {
   homePage?: boolean;
   reportPage?: boolean;
+  practicePage?: boolean;
   refreshAnalytics: (input: RefreshAnalyticsIn) => Promise<RefreshAnalyticsOut>;
 }
 
 export function AnalyticsFilters({
   homePage = false,
   reportPage = false,
+  practicePage = false,
   refreshAnalytics,
 }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
@@ -243,7 +245,7 @@ export function AnalyticsFilters({
   };
 
   return (
-    <div className="pr-4">
+    <div className={practicePage ? "" : "pr-4"}>
       <div className="flex items-center gap-2">
         {/* On mobile, only show refresh button and date picker */}
         {isMobile ? (
@@ -261,41 +263,45 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* Date Range Picker - only show if it was allowed on desktop */}
-            <DatePickerWithRange
-              dateRange={dateRange}
-              setDateRange={handleDateRangeChange}
-              className="w-auto"
-            />
-
-            {/* Refresh Button */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              title="Refresh analytics data"
-            >
-              <RefreshCw
-                ref={iconRef}
-                aria-hidden
-                onAnimationIteration={() => {
-                  if (requestStop) {
-                    // clear fallback
-                    if (iconRef.current?.__fallbackStop) {
-                      clearTimeout(iconRef.current.__fallbackStop);
-                      iconRef.current.__fallbackStop = undefined;
-                    }
-                    setSpinning(false); // remove animate-spin at a lap boundary
-                    setRequestStop(false);
-                    spinStartRef.current = null;
-                  }
-                }}
-                className={`h-4 w-4 will-change-transform ${
-                  spinning ? "animate-spin" : ""
-                }`}
+            {/* Date Range Picker - hide on practice page */}
+            {!practicePage && (
+              <DatePickerWithRange
+                dateRange={dateRange}
+                setDateRange={handleDateRangeChange}
+                className="w-auto"
               />
-            </Button>
+            )}
+
+            {/* Refresh Button - hide on practice page */}
+            {!practicePage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                title="Refresh analytics data"
+              >
+                <RefreshCw
+                  ref={iconRef}
+                  aria-hidden
+                  onAnimationIteration={() => {
+                    if (requestStop) {
+                      // clear fallback
+                      if (iconRef.current?.__fallbackStop) {
+                        clearTimeout(iconRef.current.__fallbackStop);
+                        iconRef.current.__fallbackStop = undefined;
+                      }
+                      setSpinning(false); // remove animate-spin at a lap boundary
+                      setRequestStop(false);
+                      spinStartRef.current = null;
+                    }
+                  }}
+                  className={`h-4 w-4 will-change-transform ${
+                    spinning ? "animate-spin" : ""
+                  }`}
+                />
+              </Button>
+            )}
           </>
         ) : (
           <>
@@ -312,8 +318,8 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* General/Practice/Archived Selector (multi-select, matches RolePicker) */}
-            {!homePage && (
+            {/* General/Practice/Archived Selector - hide on home and practice pages */}
+            {!homePage && !practicePage && (
               <AttemptSelector
                 selected={attemptSelected}
                 onChange={(vals) => {
@@ -330,8 +336,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Role Picker */}
-            {!homePage && !reportPage && (
+            {/* Role Picker - hide on home, report, and practice pages */}
+            {!homePage && !reportPage && !practicePage && (
               <ProfileRolePicker
                 roles={
                   selectedCohortIds.length > 0
@@ -346,8 +352,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Cohort Picker - only show if more than 1 cohort */}
-            {activeCohorts.length > 1 && (
+            {/* Cohort Picker - hide on practice page */}
+            {!practicePage && activeCohorts.length > 1 && (
               <CohortSelector
                 cohorts={cohortOptions}
                 selectedCohorts={selectedCohorts}
@@ -368,41 +374,45 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Date Range Picker */}
-            <DatePickerWithRange
-              dateRange={dateRange}
-              setDateRange={handleDateRangeChange}
-              className="w-auto"
-            />
-
-            {/* Refresh Button */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              title="Refresh analytics data"
-            >
-              <RefreshCw
-                ref={iconRef}
-                aria-hidden
-                onAnimationIteration={() => {
-                  if (requestStop) {
-                    // clear fallback
-                    if (iconRef.current?.__fallbackStop) {
-                      clearTimeout(iconRef.current.__fallbackStop);
-                      iconRef.current.__fallbackStop = undefined;
-                    }
-                    setSpinning(false); // remove animate-spin at a lap boundary
-                    setRequestStop(false);
-                    spinStartRef.current = null;
-                  }
-                }}
-                className={`h-4 w-4 will-change-transform ${
-                  spinning ? "animate-spin" : ""
-                }`}
+            {/* Date Range Picker - hide on practice page */}
+            {!practicePage && (
+              <DatePickerWithRange
+                dateRange={dateRange}
+                setDateRange={handleDateRangeChange}
+                className="w-auto"
               />
-            </Button>
+            )}
+
+            {/* Refresh Button - hide on practice page */}
+            {!practicePage && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                title="Refresh analytics data"
+              >
+                <RefreshCw
+                  ref={iconRef}
+                  aria-hidden
+                  onAnimationIteration={() => {
+                    if (requestStop) {
+                      // clear fallback
+                      if (iconRef.current?.__fallbackStop) {
+                        clearTimeout(iconRef.current.__fallbackStop);
+                        iconRef.current.__fallbackStop = undefined;
+                      }
+                      setSpinning(false); // remove animate-spin at a lap boundary
+                      setRequestStop(false);
+                      spinStartRef.current = null;
+                    }
+                  }}
+                  className={`h-4 w-4 will-change-transform ${
+                    spinning ? "animate-spin" : ""
+                  }`}
+                />
+              </Button>
+            )}
           </>
         )}
       </div>

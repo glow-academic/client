@@ -213,8 +213,10 @@ async def get_pricing_runs(
             actor_ids,
         )
 
-        # Execute query
-        result = await conn.fetchval(sql_query, *sql_params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchval(sql_query, *sql_params)
 
         # Handle empty results gracefully - return empty structure instead of error
         # Parse JSONB result (may be string or dict)

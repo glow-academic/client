@@ -225,15 +225,25 @@ function MainLayoutContent({
     return pathname === "/home";
   }, [pathname]);
 
+  const isPracticePage = useMemo(() => {
+    return pathname === "/practice";
+  }, [pathname]);
+
   const canShowAnalyticsFilters = useMemo(() => {
     const allowedRoles = ["instructional", "admin", "superadmin"];
     return (
       effectiveProfile?.role &&
       allowedRoles.includes(effectiveProfile.role) &&
-      (isAnalyticsPage || isHomePage) &&
+      (isAnalyticsPage || isHomePage || isPracticePage) &&
       !pathname.includes("/edit")
     );
-  }, [effectiveProfile?.role, isAnalyticsPage, pathname, isHomePage]);
+  }, [
+    effectiveProfile?.role,
+    isAnalyticsPage,
+    pathname,
+    isHomePage,
+    isPracticePage,
+  ]);
 
   const handleSectionChange = createSectionChangeHandler(router, pathname);
 
@@ -399,6 +409,7 @@ function MainLayoutContent({
               <AnalyticsFilters
                 homePage={isHomePage}
                 reportPage={isReportPage}
+                practicePage={isPracticePage}
                 refreshAnalytics={refreshAnalyticsAction}
               />
             )}

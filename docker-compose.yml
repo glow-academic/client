@@ -42,14 +42,14 @@ services:
       - internal
 
   # --------------------
-  # PgBouncer - Connection Pooler
+  # PgBouncer - Connection Pooler (Session Mode for Prepared Statements)
   # --------------------
   pgbouncer:
     image: edoburu/pgbouncer:latest
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@database:5432/${DB_NAME}
-      - POOL_MODE=transaction
+      - POOL_MODE=session
       - MAX_CLIENT_CONN=1000
       - DEFAULT_POOL_SIZE=25
       - MIN_POOL_SIZE=5
@@ -122,6 +122,7 @@ services:
     environment:
       - DB_PORT=5432
       - DB_HOST=pgbouncer
+      - PGPOOL_MODE=session
       - DOCKER_ENV=1
       - APP_PREFIX=${APP_PREFIX}
       - INTERNAL_API_BASE=http://server:8000

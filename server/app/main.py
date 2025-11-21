@@ -241,8 +241,11 @@ async def init_db_pool() -> None:
         raise ValueError("Database configuration is incomplete")
 
     # Detect if we're connecting through PgBouncer
-    # PgBouncer in transaction mode requires disabling prepared statements
+    # PgBouncer pool mode determines if we can use prepared statements:
+    # - transaction mode: requires disabling prepared statements
+    # - session mode: can use prepared statements (better for long queries)
     using_pgbouncer = db_host == "pgbouncer"
+    pgbouncer_pool_mode = os.getenv("PGPOOL_MODE", "transaction").lower()
 
     print(f"🔌 Initializing asyncpg connection pool to {db_host}:{db_port}/{db_name}")
 
@@ -255,16 +258,23 @@ async def init_db_pool() -> None:
     }
 
     # Note: When using PgBouncer in production:
-    # - Set PgBouncer pool_mode=transaction (recommended for FastAPI)
+    # - Transaction mode: Set PGPOOL_MODE=transaction (requires disabling prepared statements)
+    # - Session mode: Set PGPOOL_MODE=session (allows prepared statements, better for long queries)
     # - Configure PgBouncer: default_pool_size=25, max_client_conn=200
     # - This gives you: 100 app connections -> PgBouncer -> 25 DB connections
     # - Reduces DB connection overhead while maintaining app concurrency
 
-    # Disable prepared statements for PgBouncer transaction mode
-    if using_pgbouncer:
+    # Disable prepared statements only for PgBouncer transaction mode
+    # Session mode allows prepared statements which significantly improves performance
+    if using_pgbouncer and pgbouncer_pool_mode == "transaction":
         pool_config["statement_cache_size"] = 0
         print(
-            "   ⚙️  PgBouncer detected: Disabling prepared statements for transaction mode compatibility"
+            f"   ⚙️  PgBouncer detected (transaction mode): Disabling prepared statements for compatibility"
+        )
+    elif using_pgbouncer and pgbouncer_pool_mode == "session":
+        # Session mode allows prepared statements - use default cache size
+        print(
+            f"   ⚙️  PgBouncer detected (session mode): Using prepared statements for better performance"
         )
     else:
         print(

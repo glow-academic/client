@@ -116,7 +116,10 @@ async def get_practice_history(
         ]
         sql_params = tuple(params)
 
-        result = await conn.fetchrow(sql_query, *params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchrow(sql_query, *params)
 
         # Parse JSON result
         parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]

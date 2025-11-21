@@ -147,34 +147,19 @@ async def bulk_archive_attempts(
                 exc_info=True,
             )
 
-        # Invalidate cache after mutation (includes analytics and all history/overview caches)
-        # Archive/unarchive affects all analytics pages, so invalidate all relevant tags
+        # Invalidate cache after mutation - only invalidate history sections
+        # Overview sections are based on materialized views and don't need invalidation
+        # History sections need invalidation since archive status affects what's shown
         await invalidate_tags(
             tags
             + [
-                "analytics",
-                "dashboard",
-                "dashboard:history",
-                "dashboard:overview",
-                "home",
-                "home:history",
-                "home:overview",
-                "practice",
-                "practice:history",
+                "history",  # Invalidates all history endpoints (dashboard, home, practice)
             ]
         )
         response.headers["X-Invalidate-Tags"] = ",".join(
             tags
             + [
-                "analytics",
-                "dashboard",
-                "dashboard:history",
-                "dashboard:overview",
-                "home",
-                "home:history",
-                "home:overview",
-                "practice",
-                "practice:history",
+                "history",
             ]
         )
 

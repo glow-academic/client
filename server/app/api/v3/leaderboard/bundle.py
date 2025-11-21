@@ -75,9 +75,7 @@ async def get_leaderboard(
     tags = ["leaderboard"]  # From router tags
 
     # Generate cache key from path and parsed body
-    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
-    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache
@@ -111,8 +109,10 @@ async def get_leaderboard(
         sql_query = sql_template.replace("{WHERE_CLAUSE}", where_clause)
         sql_params = tuple(params)
 
-        # Execute query and get JSON result
-        result = await conn.fetchval(sql_query, *sql_params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchval(sql_query, *sql_params)
 
         # Parse any JSON strings in nested structures
         parsed_result = result or {}

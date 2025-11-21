@@ -96,8 +96,7 @@ class HomeFilters(BaseModel):
     startDate: str
     endDate: str
     cohortIds: list[str] | None = None
-    profileId: str | None = None  # Used for main home metrics filtering
-    historyProfileId: str | None = None  # Used only for history showRetry calculation
+    profileId: str | None = None  # Optional: used for TA mode detection and filtering
     departmentIds: list[str] | None = None
     roles: list[str] | None = None  # Scoped roles for filtering (e.g., ["ta"], ["instructional", "ta"])
 
@@ -131,9 +130,7 @@ async def get_home_overview(
     tags = ["home"]  # From router tags
 
     # Generate cache key from path and parsed body
-    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
-    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache
@@ -185,11 +182,6 @@ async def get_home_overview(
         # $4: cohort_ids
         # $5: department_ids
         # $6: roles (scoped roles from filters, default to ["ta"] for backward compatibility)
-        # $7, $8: history dates
-        # $9: history_profile_id (legacy, kept for compatibility)
-        # $10, $11: history cohort_ids, dept_ids
-        # $12: historyProfileId (used for showRetry calculation)
-        history_profile_id = filters.historyProfileId
         # Use scoped roles from filters, default to ["ta"] for backward compatibility
         roles = filters.roles if filters.roles else ["ta"]
         params = [
@@ -199,16 +191,13 @@ async def get_home_overview(
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
             roles,  # $6
-            datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $7
-            datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $8
-            profile_id if profile_id else None,  # $9 (legacy)
-            filters.cohortIds if filters.cohortIds else [],  # $10
-            filters.departmentIds if filters.departmentIds else [],  # $11
-            history_profile_id if history_profile_id else None,  # $12
         ]
         sql_params = tuple(params)
 
-        result = await conn.fetchval(sql_query, *params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchval(sql_query, *params)
 
         # Parse JSON result recursively
         parsed_result = _parse_json_strings_recursive(result or {})

@@ -86,9 +86,7 @@ async def get_pricing(
     tags = ["pricing"]  # From router tags
 
     # Generate cache key from path and parsed body
-    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
-    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache
@@ -126,7 +124,10 @@ async def get_pricing(
         # Execute consolidated SQL query with all filter logic (including role check)
         sql_query = load_sql("sql/v3/pricing/get_pricing_analytics_complete.sql")
         sql_params = (start_dt, end_dt, department_ids, profile_uuid, roles, cohort_ids)
-        result = await conn.fetchval(sql_query, *sql_params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchval(sql_query, *sql_params)
 
         # Parse JSONB result
         parsed_result = _parse_json_strings_recursive(result or {})

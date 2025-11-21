@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM postgres:15-alpine
+FROM postgres:14-alpine
 
 # ──────────────────────────────────────────────────────────
 # 1️⃣  Extra packages (bash and nodejs) – put in one RUN layer

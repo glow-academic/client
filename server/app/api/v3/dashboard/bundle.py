@@ -1416,9 +1416,7 @@ async def get_dashboard(
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
-    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
-    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache (unless bypassed)
@@ -1435,8 +1433,8 @@ async def get_dashboard(
     try:
         sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
-        # Build parameters in the same order as the query expects ($1-$8)
-        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id, $7: department_ids, $8: historyProfileId
+        # Build parameters in the same order as the query expects ($1-$7)
+        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id, $7: department_ids
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         cohort_ids = filters.cohortIds or []
@@ -1451,7 +1449,6 @@ async def get_dashboard(
         )
         profile_id = filters.profileId
         department_ids = filters.departmentIds or []
-        history_profile_id = filters.historyProfileId
 
         sql_params = (
             start_dt,
@@ -1461,11 +1458,15 @@ async def get_dashboard(
             sim_filters,
             profile_id,
             department_ids,
-            history_profile_id,
         )
 
-        # Execute query
-        result = await conn.fetchrow(sql_query, *sql_params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        # JIT compilation overhead can be significant for large JSONB aggregation queries
+        # Using SET LOCAL in a transaction so it only affects this query
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            # Execute query within the same transaction
+            result = await conn.fetchrow(sql_query, *sql_params)
 
         # Handle empty results gracefully - return empty structure instead of error
         # The SQL should always return a row, but handle edge case where it doesn't

@@ -72,17 +72,20 @@ async function isHardRefresh(): Promise<boolean> {
 /** ---- Direct fetch (no Next.js cache) ----
  * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Always bypassing Redis cache for dashboard history since it's frequently updated
- * (archive/unarchive operations, new attempts, etc.) to ensure fresh data.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getDashboardHistory = async (
   input: DashboardHistoryIn
 ): Promise<DashboardHistoryOut> => {
+  const bypassCache = await isHardRefresh();
+
   return api.post("/dashboard/history", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    ...(bypassCache && {
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }),
   });
 };
 
@@ -206,15 +209,10 @@ export default async function DashboardPage({
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
-  // Add historyProfileId from session to request body (not search params)
   // profileId is left null for main dashboard metrics (not used for filtering)
-  // historyProfileId is used only for history showRetry calculation
   const dashboardRequestBody = {
     ...filters,
     profileId: null, // Not used for main dashboard metrics
-    ...(session?.effectiveProfileId && {
-      historyProfileId: session.effectiveProfileId,
-    }),
   };
 
   // Extract pagination and filter params from search params
@@ -337,9 +335,7 @@ async function bulkArchiveAttempts(
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
   const result = await api.post("/attempts/bulk-archive", input);
-  // Revalidate the dashboard page to refetch data with updated archive status
-  revalidateTag("dashboard");
-  revalidateTag("dashboard:overview");
+  // Revalidate history sections only - overview sections are based on MVs and don't need invalidation
   revalidateTag("dashboard:history");
   revalidatePath("/analytics/dashboard");
   return result;
@@ -351,9 +347,7 @@ async function revalidateAttempt(attemptId: string): Promise<void> {
   // Invalidate attempt-level cache
   revalidateTag("attempts");
   revalidateTag(`attempt:${attemptId}`);
-  // Invalidate dashboard page cache so data refreshes when user returns
-  revalidateTag("dashboard");
-  revalidateTag("dashboard:overview");
+  // Invalidate history sections only - overview sections are based on MVs and don't need invalidation
   revalidateTag("dashboard:history");
   revalidatePath("/analytics/dashboard");
   // Note: Chat-specific tags can be added here if chat IDs are known

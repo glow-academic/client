@@ -168,7 +168,10 @@ async def get_practice_overview(
             filters.departmentIds if filters.departmentIds else [],
         )
 
-        result = await conn.fetchval(sql_query, *sql_params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchval(sql_query, *sql_params)
 
         # Handle empty results gracefully - return empty structure instead of error
         # The SQL should always return a row, but handle edge case where it doesn't

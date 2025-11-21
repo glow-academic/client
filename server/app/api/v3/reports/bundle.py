@@ -89,9 +89,7 @@ async def get_reports(
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
     
     # Generate cache key from path and parsed body
-    # Exclude historyProfileId from cache key (used only for history showRetry calculation)
     body_dict = filters.model_dump()
-    body_dict.pop("historyProfileId", None)
     cache_key_val = cache_key(request.url.path, body_dict)
 
     # Try cache (unless bypassed)
@@ -174,8 +172,11 @@ async def get_reports(
         sql_query = sql_query.replace("{JSON_AGG_ORDER_BY}", json_agg_order_by)
         sql_params = tuple(params)
 
-        # Execute query
-        result = await conn.fetchval(sql_query, *sql_params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        # JIT compilation overhead can be significant for large JSONB aggregation queries
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchval(sql_query, *sql_params)
 
         # Handle empty results gracefully - return empty structure instead of error
         # Parse JSONB result (may be string or dict)

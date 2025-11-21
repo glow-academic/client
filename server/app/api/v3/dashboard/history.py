@@ -54,8 +54,7 @@ class DashboardHistoryFilters(BaseModel):
     departmentIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[str] | None = None  # ["general", "practice", "archived"]
-    profileId: str | None = None  # Used for main dashboard metrics filtering
-    historyProfileId: str | None = None  # Used only for history showRetry calculation
+    profileId: str | None = None  # Optional: used to scope history to a specific profile
     page: int = 0
     pageSize: int = 20
     search: str | None = None
@@ -172,7 +171,10 @@ async def get_dashboard_history(
         ]
         sql_params = tuple(params)
 
-        result = await conn.fetchrow(sql_query, *params)
+        # Disable JIT compilation for this complex query to avoid re-compilation overhead
+        async with conn.transaction():
+            await conn.execute("SET LOCAL jit = off;")
+            result = await conn.fetchrow(sql_query, *params)
         # Parse JSON result
         parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]
 
