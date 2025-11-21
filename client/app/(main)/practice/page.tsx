@@ -191,6 +191,12 @@ export default async function PracticePage({
     history: [],
   };
 
+  // Check if user is a guest
+  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
+  const isGuest =
+    effectiveProfileId === "guest-profile-id" ||
+    profileContext.effectiveProfile?.role === "guest";
+
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
   const analyticsStartDate = searchParamsObj.get("startDate") || "";
@@ -226,50 +232,51 @@ export default async function PracticePage({
       <Practice
         practiceData={practiceDataWithoutHistory}
         revalidateAttemptAction={revalidateAttempt}
+        isGuest={isGuest}
       />
 
-      {/* History section moved out of Practice, fully server-driven */}
-      <div className="mt-12">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <SimulationHistory
-              data={[]}
-              totalCount={0}
-              archivedCount={0}
-              unarchivedCount={0}
-              pageIndex={historyPage}
-              pageSize={historyPageSize}
-              showExport={false}
-              showArchive={false}
-              singleProfile={true}
-              revalidateAttemptAction={revalidateAttempt}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              isLoading={true}
-              showModeFilter={true}
-            />
-          }
-        >
-          <PracticeHistorySection
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historyProfileIds={historyProfileIds}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-            effectiveProfileId={
-              session?.effectiveProfileId || "guest-profile-id"
+      {/* History section moved out of Practice, fully server-driven - only show for non-guests */}
+      {!isGuest && (
+        <div className="mt-12">
+          <Suspense
+            key={historyKey}
+            fallback={
+              <SimulationHistory
+                data={[]}
+                totalCount={0}
+                archivedCount={0}
+                unarchivedCount={0}
+                pageIndex={historyPage}
+                pageSize={historyPageSize}
+                showExport={false}
+                showArchive={false}
+                singleProfile={true}
+                revalidateAttemptAction={revalidateAttempt}
+                profileOptions={[]}
+                simulationOptions={[]}
+                scenarioOptions={[]}
+                isLoading={true}
+                showModeFilter={true}
+              />
             }
-            departmentIds={profileContext.departmentIds || []}
-            revalidateAttemptAction={revalidateAttempt}
-          />
-        </Suspense>
-      </div>
+          >
+            <PracticeHistorySection
+              historyPage={historyPage}
+              historyPageSize={historyPageSize}
+              historySearch={historySearch}
+              historyProfileIds={historyProfileIds}
+              historySimulationIds={historySimulationIds}
+              historyScenarioIds={historyScenarioIds}
+              historyInfiniteMode={historyInfiniteMode}
+              historySortBy={historySortBy}
+              historySortOrder={historySortOrder}
+              effectiveProfileId={effectiveProfileId}
+              departmentIds={profileContext.departmentIds || []}
+              revalidateAttemptAction={revalidateAttempt}
+            />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }

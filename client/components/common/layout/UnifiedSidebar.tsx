@@ -496,7 +496,7 @@ export function UnifiedSidebar({
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
     if (activeProfile?.role === "guest") {
       // Navigate to login page for guests or when no user
-      router.push("/");
+      router.push("/login");
       return;
     }
 
@@ -506,7 +506,7 @@ export function UnifiedSidebar({
     toast.promise(
       async () => {
         try {
-          await signOut({ redirectTo: `${appPrefix}/` });
+          await signOut({ redirectTo: `${appPrefix}/login` });
           return "Logged out successfully";
         } catch (error) {
           throw new Error(

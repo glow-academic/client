@@ -7,6 +7,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -101,7 +102,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 3,
         animationDuration: Math.random() * 3 + 2,
-      })),
+      }))
     );
 
     setMovingSparkles(
@@ -111,7 +112,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 2,
         animationDuration: Math.random() * 2 + 3,
-      })),
+      }))
     );
 
     setFloatingSparkles(
@@ -121,7 +122,7 @@ const AnimatedSparkles = () => {
         top: Math.random() * 100,
         animationDelay: Math.random() * 4,
         animationDuration: Math.random() * 3 + 4,
-      })),
+      }))
     );
 
     setMounted(true);
@@ -248,7 +249,10 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in slide-in-from-bottom-4 duration-700 delay-200">
         {/* Header */}
-        <div className="text-center space-y-3 animate-in slide-in-from-top-4 duration-700 delay-300">
+        <Link
+          href="/"
+          className="text-center space-y-3 animate-in slide-in-from-top-4 duration-700 delay-300 block cursor-pointer hover:opacity-90 transition-opacity"
+        >
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg animate-in zoom-in duration-700 delay-400 relative overflow-hidden">
             {/* Logo sparkles */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -268,12 +272,12 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
-            Glow
+            GLOW
           </h1>
           {/* <p className="text-blue-100/80 text-sm">
             Graduate Learning Orientation Workshop
           </p> */}
-        </div>
+        </Link>
 
         {/* Form */}
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">

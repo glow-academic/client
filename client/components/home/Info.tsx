@@ -7,12 +7,14 @@
 
 "use client";
 
+import { GlowLogo } from "@/components/common/layout/GlowLogo";
 import {
   AnimatePresence,
   motion,
   useScroll,
   useTransform,
 } from "framer-motion";
+import { BarChart3, FilePlus, Layers, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -98,22 +100,22 @@ export default function Info() {
         transition={{ duration: 0.6 }}
         className="fixed top-6 left-6 z-50"
       >
-        <h1
-          className={`text-3xl font-bold transition-colors duration-300 ${
-            isInLicensing
-              ? "text-white drop-shadow-lg"
-              : "bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
-          }`}
-        >
-          GLOW
-        </h1>
+        <GlowLogo
+          mobileIconOnly={true}
+          clickable={true}
+          onClick={() => {
+            // Stay on same page, no navigation
+          }}
+          size="md"
+          invertColors={isInLicensing}
+        />
       </motion.div>
 
       {/* Navigation */}
       <motion.nav
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.3 }}
         className="fixed top-6 right-6 z-50"
       >
         <div className="flex items-center gap-3">
@@ -122,7 +124,7 @@ export default function Info() {
               href="/login"
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
             >
-              Sign In
+              Login
             </Link>
           </motion.div>
         </div>
@@ -273,9 +275,9 @@ export default function Info() {
               variants={fadeInUp}
               className="text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              Train Graduate Teaching Assistants with cutting-edge AI
-              technology. Practice realistic conversations through text, receive
-              intelligent hints, and master every scenario.
+              Train your Teaching Assistants with dynamic and diverse scenarios.
+              Practice realistic conversations, receive intelligent hints, and
+              get personalized feedback.
             </motion.p>
 
             {/* Stats Cards */}
@@ -500,53 +502,60 @@ export default function Info() {
                   num: 1,
                   title: "Create Individual Scenarios",
                   desc: "Faculty members create multiple individual scenarios, each representing a single student simulation. Configure location, student type (angry, happy, confused, or passive), difficulty level (1-10), and upload relevant class documents. Each scenario is a focused practice opportunity for one student interaction.",
+                  icon: FilePlus,
                 },
                 {
                   num: 2,
                   title: "Combine Scenarios into Simulations",
                   desc: "Simulations are created by combining multiple scenarios that Teaching Assistants need to accomplish within a given time period. These comprehensive simulations test GTAs' ability to manage multiple student interactions consecutively.",
+                  icon: Layers,
                 },
                 {
                   num: 3,
                   title: "GTAs Practice with AI Students",
                   desc: "As a Graduate Teaching Assistant, engage in realistic conversations through text-to-text interactions with AI-powered students. Receive hints when needed, and practice adapting your communication style in real-time across multiple scenarios.",
+                  icon: MessageSquare,
                 },
                 {
                   num: 4,
                   title: "Receive AI-Powered Feedback",
                   desc: "After each practice session, receive comprehensive AI-generated feedback including performance grades, specific strengths in your approach, and actionable recommendations tailored to your improvement areas. Track your progress over time and see how you handle multiple scenarios effectively.",
+                  icon: BarChart3,
                 },
-              ].map((step, index) => (
-                <motion.div
-                  key={index}
-                  variants={cardVariants}
-                  className="flex flex-col md:flex-row gap-8 items-start bg-white p-8 rounded-2xl shadow-xl border border-gray-100"
-                >
+              ].map((step, index) => {
+                const IconComponent = step.icon;
+                return (
                   <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    whileInView={{ scale: 1, rotate: 0 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      delay: index * 0.2,
-                      type: "spring",
-                      stiffness: 200,
-                    }}
-                    className="flex-shrink-0"
+                    key={index}
+                    variants={cardVariants}
+                    className="flex flex-col md:flex-row gap-8 items-start bg-white p-8 rounded-2xl shadow-xl border border-gray-100"
                   >
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
-                      {step.num}
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      whileInView={{ scale: 1, rotate: 0 }}
+                      viewport={{ once: true }}
+                      transition={{
+                        delay: index * 0.2,
+                        type: "spring",
+                        stiffness: 200,
+                      }}
+                      className="flex-shrink-0"
+                    >
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                        <IconComponent className="w-10 h-10" />
+                      </div>
+                    </motion.div>
+                    <div className="flex-1">
+                      <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                        {step.num}. {step.title}
+                      </h3>
+                      <p className="text-gray-600 text-lg leading-relaxed">
+                        {step.desc}
+                      </p>
                     </div>
                   </motion.div>
-                  <div className="flex-1">
-                    <h3 className="text-3xl font-bold text-gray-900 mb-4">
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-600 text-lg leading-relaxed">
-                      {step.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+                );
+              })}
             </motion.div>
           </div>
         </div>
@@ -676,7 +685,7 @@ export default function Info() {
       {/* Licensing Section */}
       <section
         ref={licensingRef}
-        className="py-42 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden"
+        className="py-16 md:py-24 lg:py-32 xl:py-42 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden"
       >
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -ml-48 -mt-48"></div>
@@ -695,10 +704,10 @@ export default function Info() {
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2, type: "spring" }}
-              className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-8"
+              className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6 md:mb-8"
             >
               <svg
-                className="w-10 h-10 text-white"
+                className="w-8 h-8 md:w-10 md:h-10 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -711,10 +720,10 @@ export default function Info() {
                 />
               </svg>
             </motion.div>
-            <h2 className="text-5xl font-bold text-white mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6">
               Bring GLOW to Your Institution
             </h2>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-blue-100 mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed px-4">
               We&apos;re working on licensing options for colleges and
               universities. Reach out to learn more.
             </p>
@@ -723,14 +732,14 @@ export default function Info() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20 max-w-xl mx-auto"
+              className="bg-white/10 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-white/20 max-w-xl mx-auto"
             >
-              <p className="text-lg text-white mb-3 font-semibold">
+              <p className="text-base md:text-lg text-white mb-2 md:mb-3 font-semibold">
                 Get in touch:
               </p>
               <a
                 href="mailto:redacted@purdue.edu"
-                className="text-xl text-blue-100 hover:text-white underline transition-colors"
+                className="text-lg md:text-xl text-blue-100 hover:text-white underline transition-colors break-all"
               >
                 redacted@purdue.edu
               </a>
