@@ -54,7 +54,6 @@ class DashboardHistoryFilters(BaseModel):
     departmentIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[str] | None = None  # ["general", "practice", "archived"]
-    profileId: str | None = None  # Optional: used to scope history to a specific profile
     page: int = 0
     pageSize: int = 20
     search: str | None = None
@@ -111,29 +110,15 @@ async def get_dashboard_history(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is passed as-is (including "guest-profile-id" string) - SQL handles resolution
-        profile_id = filters.profileId
-
-        # For roles above TA (instructional, admin, superadmin), ignore profileId to see all data
-        # Only TAs should have profileId filtering applied
-        if profile_id and profile_id != "guest-profile-id":
-            try:
-                # Check the role of the profile
-                role_query = "SELECT role FROM profiles WHERE id = $1"
-                role_row = await conn.fetchrow(role_query, profile_id)
-                if role_row and role_row["role"] != "ta":
-                    # Role is above TA, set profileId to None to ignore filtering
-                    profile_id = None
-            except Exception:
-                # If we can't determine role, keep profileId as-is (fallback to safe behavior)
-                pass
+        # Dashboard doesn't filter by profileId - always pass None
+        profile_id = None
 
         # Load SQL query
         sql_query = load_sql("sql/v3/dashboard/history.sql")
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)
-        # $3: profile_id
+        # $3: profile_id (NULL for dashboard)
         # $4: cohort_ids
         # $5: department_ids
         # $6: roles (scoped roles from filters)
@@ -154,7 +139,7 @@ async def get_dashboard_history(
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
             datetime.fromisoformat(filters.endDate.replace("Z", "+00:00")),  # $2
-            profile_id if profile_id else None,  # $3
+            None,  # $3 - profile_id (NULL for dashboard)
             filters.cohortIds if filters.cohortIds else [],  # $4
             filters.departmentIds if filters.departmentIds else [],  # $5
             roles,  # $6

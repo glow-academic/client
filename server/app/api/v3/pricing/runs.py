@@ -27,7 +27,6 @@ class PricingRunsFilters(BaseModel):
     cohortIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
-    profileId: str | None = None
     departmentIds: list[str] | None = None
     # Pagination, search, sorting, and additional filters
     page: int | None = None
@@ -165,8 +164,8 @@ async def get_pricing_runs(
             cohort_ids = [uuid.UUID(c) for c in filters.cohortIds]
 
         profile_uuid = None
-        if filters.profileId:
-            profile_uuid = uuid.UUID(filters.profileId)
+        # Pricing runs doesn't filter by profileId
+        profile_uuid = None
 
         roles = filters.roles or None
 

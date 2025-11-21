@@ -20,10 +20,10 @@ import { Suspense } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type ProfileDetailIn = InputOf<"/api/v3/profile/staff/detail", "post">;
 type ProfileDetailOut = OutputOf<"/api/v3/profile/staff/detail", "post">;
-type DashboardIn = InputOf<"/api/v3/dashboard/overview", "post">;
-type DashboardOut = OutputOf<"/api/v3/dashboard/overview", "post">;
-type DashboardHistoryIn = InputOf<"/api/v3/dashboard/history", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v3/dashboard/history", "post">;
+type ReportsOverviewIn = InputOf<"/api/v3/reports/overview", "post">;
+type ReportsOverviewOut = OutputOf<"/api/v3/reports/overview", "post">;
+type ReportsHistoryIn = InputOf<"/api/v3/reports/history", "post">;
+type ReportsHistoryOut = OutputOf<"/api/v3/reports/history", "post">;
 
 /** ---- Cached fetch with Next tags ----
  * Tags allow revalidateTag("profile:detail") and revalidateTag("dashboard") to invalidate.
@@ -58,16 +58,16 @@ async function isHardRefresh(): Promise<boolean> {
 }
 
 /** ---- Direct fetch (no Next.js cache) ----
- * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
+ * Reports overview responses exceed Next.js 2MB cache limit (~12.9MB).
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getDashboardOverview = async (
-  input: DashboardIn
-): Promise<DashboardOut> => {
+const getReportsOverview = async (
+  input: ReportsOverviewIn
+): Promise<ReportsOverviewOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/dashboard/overview", input, {
+  return api.post("/reports/overview", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -78,16 +78,16 @@ const getDashboardOverview = async (
 };
 
 /** ---- Direct fetch (no Next.js cache) ----
- * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
+ * Reports history responses can get large and exceed Next.js 2MB cache limit.
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getDashboardHistory = async (
-  input: DashboardHistoryIn
-): Promise<DashboardHistoryOut> => {
+const getReportsHistory = async (
+  input: ReportsHistoryIn
+): Promise<ReportsHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/dashboard/history", input, {
+  return api.post("/reports/history", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -237,14 +237,13 @@ export default async function ReportsPage({
     }
   });
 
-  // Get filters from search params or defaults, then set profileId
-  // profileId is used for filtering main dashboard metrics for this profile
+  // Get filters from search params or defaults
   const defaultFilters = await getProfileReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
-  const dashboardFilters = {
+  const reportsFilters = {
     ...defaultFilters,
-    profileId, // Used for main dashboard metrics filtering
+    profileId, // Required for reports overview
   };
 
   // Extract pagination and filter params from search params for history
@@ -299,16 +298,16 @@ export default async function ReportsPage({
     ).simulationFilters?.join(",") || "general",
   ].join("|");
 
-  // Fetch profile detail and dashboard data server-side
-  const [profileData, dashboardData] = await Promise.all([
+  // Fetch profile detail and reports overview data server-side
+  const [profileData, reportsData] = await Promise.all([
     getProfileDetail(profileId)({
       body: {
         profileId,
         currentProfileId: profileId,
       },
     }),
-    getDashboardOverview({
-      body: dashboardFilters,
+    getReportsOverview({
+      body: reportsFilters,
     }),
   ]);
 
@@ -317,7 +316,7 @@ export default async function ReportsPage({
       <Report
         profileId={profileId}
         profileData={profileData}
-        dashboardData={dashboardData}
+        dashboardData={reportsData}
       />
 
       {/* History section - filtered by profileId */}
@@ -394,10 +393,10 @@ async function ReportHistorySection({
   historySortOrder: string;
   profileId: string;
 }) {
-  // Build history filters - filter by profileId
-  const historyFilters: DashboardHistoryIn = {
+  // Build history filters - profileId is required for reports history
+  const historyFilters: ReportsHistoryIn = {
     body: {
-      profileId: null, // Not used for filtering (we use profileIds instead)
+      profileId, // Required for reports history
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds,
@@ -406,7 +405,6 @@ async function ReportHistorySection({
       simulationFilters: ["general", "practice", "archived"], // Show all types
       page: historyPage,
       pageSize: historyPageSize,
-      profileIds: [profileId], // Filter to this specific profile
       ...(historySearch && { search: historySearch }),
       ...(historySimulationIds &&
         historySimulationIds.length > 0 && {
@@ -424,7 +422,7 @@ async function ReportHistorySection({
     },
   };
 
-  const historyData = await getDashboardHistory(historyFilters);
+  const historyData = await getReportsHistory(historyFilters);
 
   // Extract options from API response and cast to expected format
   const profileOptions = (historyData.profileOptions || []).map((opt) => {
@@ -473,10 +471,10 @@ async function ReportHistorySection({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  DashboardHistoryIn,
-  DashboardHistoryOut,
-  DashboardIn,
-  DashboardOut,
   ProfileDetailIn,
   ProfileDetailOut,
+  ReportsHistoryIn,
+  ReportsHistoryOut,
+  ReportsOverviewIn,
+  ReportsOverviewOut,
 };

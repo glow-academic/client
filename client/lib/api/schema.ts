@@ -2319,6 +2319,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/reports/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Reports Overview
+         * @description Get complete reports overview bundle for individual profile - requires profileId.
+         */
+        post: operations["get_reports_overview_api_v3_reports_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/reports/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Reports History
+         * @description Get paginated reports history for individual profile - requires profileId.
+         */
+        post: operations["get_reports_history_api_v3_reports_history_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/leaderboard": {
         parameters: {
             query?: never;
@@ -5034,8 +5074,6 @@ export interface components {
             roles?: string[] | null;
             /** Simulationfilters */
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
         };
@@ -5112,8 +5150,6 @@ export interface components {
             roles?: string[] | null;
             /** Simulationfilters */
             simulationFilters?: string[] | null;
-            /** Profileid */
-            profileId?: string | null;
             /**
              * Page
              * @default 0
@@ -6358,11 +6394,11 @@ export interface components {
         };
         /**
          * HomeHistoryFilters
-         * @description Home history filter request schema.
+         * @description Home history filter request schema - requires profileId for department scoping.
          */
         HomeHistoryFilters: {
             /** Profileid */
-            profileId?: string | null;
+            profileId: string;
             /** Startdate */
             startDate: string;
             /** Enddate */
@@ -6531,8 +6567,6 @@ export interface components {
             roles?: string[] | null;
             /** Simulationfilters */
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
         };
@@ -7470,8 +7504,6 @@ export interface components {
             roles?: string[] | null;
             /** Simulationfilters */
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
         };
@@ -7514,8 +7546,6 @@ export interface components {
             roles?: string[] | null;
             /** Simulationfilters */
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
             /** Page */
@@ -8048,8 +8078,6 @@ export interface components {
             roles?: string[] | null;
             /** Simulationfilters */
             simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
-            /** Profileid */
-            profileId?: string | null;
             /** Departmentids */
             departmentIds?: string[] | null;
             /** Page */
@@ -8143,6 +8171,76 @@ export interface components {
             simulationIds?: string[] | null;
             /** Scenarioids */
             scenarioIds?: string[] | null;
+        };
+        /**
+         * ReportsHistoryFilters
+         * @description Reports history filter request schema - requires profileId for individual reports.
+         */
+        ReportsHistoryFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: string[] | null;
+            /** Profileid */
+            profileId: string;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 20
+             */
+            pageSize: number;
+            /** Search */
+            search?: string | null;
+            /** Profileids */
+            profileIds?: string[] | null;
+            /** Simulationids */
+            simulationIds?: string[] | null;
+            /** Scenarioids */
+            scenarioIds?: string[] | null;
+            /** Infinitemode */
+            infiniteMode?: boolean | null;
+            /**
+             * Sortby
+             * @default date
+             */
+            sortBy: string;
+            /**
+             * Sortorder
+             * @default desc
+             */
+            sortOrder: string;
+        };
+        /**
+         * ReportsOverviewFilters
+         * @description Reports overview filter request schema - requires profileId for individual reports.
+         */
+        ReportsOverviewFilters: {
+            /** Startdate */
+            startDate: string;
+            /** Enddate */
+            endDate: string;
+            /** Cohortids */
+            cohortIds?: string[] | null;
+            /** Roles */
+            roles?: string[] | null;
+            /** Simulationfilters */
+            simulationFilters?: components["schemas"]["SimulationFilter"][] | null;
+            /** Profileid */
+            profileId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
         };
         /**
          * RubricDetailDefaultRequest
@@ -15113,6 +15211,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportsBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reports_overview_api_v3_reports_overview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportsOverviewFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reports_history_api_v3_reports_history_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportsHistoryFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardHistoryResponse"];
                 };
             };
             /** @description Validation Error */

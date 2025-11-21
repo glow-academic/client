@@ -10,9 +10,8 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (ScenarioMapping,
-                              ScenarioMappingItem, SimulationMapping,
-                              SimulationFilter)
+from app.utils.schema import (ScenarioMapping, ScenarioMappingItem,
+                              SimulationFilter, SimulationMapping)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -29,7 +28,6 @@ class LeaderboardBundleFilters(BaseModel):
     cohortIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
-    profileId: str | None = None
     departmentIds: list[str] | None = None
 
 
@@ -112,7 +110,7 @@ async def get_leaderboard(
             sim_filters=[f.value for f in filters.simulationFilters]
             if filters.simulationFilters
             else None,
-            profile_id=filters.profileId,
+            profile_id=None,  # Leaderboard doesn't filter by profileId
             department_ids=filters.departmentIds,
         )
 

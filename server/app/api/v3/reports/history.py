@@ -1,9 +1,11 @@
-"""Home history endpoint - POST /home/history"""
+"""Reports history endpoint - POST /reports/history - requires profileId for individual reports."""
 
 import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+from app.api.v3.dashboard.history import (AttemptHistoryRow,
+                                          DashboardHistoryResponse)
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -16,44 +18,16 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
-class AttemptHistoryRow(BaseModel):
-    """Attempt history row."""
+class ReportsHistoryFilters(BaseModel):
+    """Reports history filter request schema - requires profileId for individual reports."""
 
-    attemptId: str
-    date: str
-    profileId: str
-    profileName: str
-    simulationName: str
-    numScenarios: int | None = None
-    numScenariosCompleted: int
-    infiniteMode: bool
-    timeLimit: int | None = None
-    personaNames: list[str]
-    personaColors: list[str]
-    score: int | None = None
-    simulation_id: str
-    scenario_ids: list[str]
-    scenario_titles: list[str]
-    isArchived: bool
-    showView: bool
-    showContinue: bool
-    practiceSimulation: bool
-    passPct: int | None = None
-    department_ids: list[str] | None = None
-    cohortNames: list[str]
-    practiceScenarioId: str | None = None
-
-
-class HomeHistoryFilters(BaseModel):
-    """Home history filter request schema - requires profileId for department scoping."""
-
-    profileId: str  # Required: used for department scoping
     startDate: str
     endDate: str
     cohortIds: list[str] | None = None
     departmentIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[str] | None = None  # ["general", "practice", "archived"]
+    profileId: str  # REQUIRED (not optional)
     page: int = 0
     pageSize: int = 20
     search: str | None = None
@@ -65,50 +39,36 @@ class HomeHistoryFilters(BaseModel):
     sortOrder: str = "desc"
 
 
-class HomeHistoryResponse(BaseModel):
-    """Home history paginated response."""
-
-    data: list[AttemptHistoryRow]
-    totalCount: int
-    page: int
-    pageSize: int
-    totalPages: int
-    # UI-ready facet options (precomputed on server)
-    profileOptions: list[dict[str, str | int]]  # Array of {value: profileId, label: profileName, count: int}
-    simulationOptions: list[dict[str, str | int]]  # Array of {value: simulationId, label: simulationName, count: int}
-    scenarioOptions: list[dict[str, str | int]]  # Array of {value: scenarioId, label: scenarioTitle, count: int}
-
-
-@router.post("/history", response_model=HomeHistoryResponse)
-async def get_home_history(
-    filters: HomeHistoryFilters,
+@router.post("/history", response_model=DashboardHistoryResponse)
+async def get_reports_history(
+    filters: ReportsHistoryFilters,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> HomeHistoryResponse:
-    """Get paginated home history with search, filters, sorting, and pagination."""
-    tags = ["home", "history"]
-    
+) -> DashboardHistoryResponse:
+    """Get paginated reports history for individual profile - requires profileId."""
+    tags = ["reports", "history"]
+
     # Check for cache bypass header (for hard refresh)
     bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
-    
+
     # Generate cache key from path and parsed body
     body_dict = filters.model_dump()
     cache_key_val = cache_key(request.url.path, body_dict)
-    
+
     # Try cache (unless bypassed)
     if not bypass_cache:
         cached = await get_cached(cache_key_val)
         if cached:
             response.headers["X-Cache-Tags"] = ",".join(tags)
             response.headers["X-Cache-Hit"] = "1"
-            return HomeHistoryResponse.model_validate(cached["data"])
-    
+            return DashboardHistoryResponse.model_validate(cached["data"])
+
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Profile ID is required - used for department scoping
+        # Profile ID is required for individual reports
         profile_id = filters.profileId
 
         # For roles above TA (instructional, admin, superadmin), we still pass profileId
@@ -122,7 +82,6 @@ async def get_home_history(
                 role_row = await conn.fetchrow(role_query, profile_id)
                 if role_row and role_row["role"] != "ta":
                     # Role is above TA, set sql_profile_id to None to ignore filtering
-                    # but keep profile_id for department scoping
                     sql_profile_id = None
                 else:
                     # TA role - use profileId for filtering
@@ -134,34 +93,27 @@ async def get_home_history(
             sql_profile_id = profile_id
 
         # Load SQL query
-        sql_query = load_sql("sql/v3/home/history.sql")
+        sql_query = load_sql("sql/v3/dashboard/history.sql")
 
         # Build parameter list matching SQL file expectations:
         # $1, $2: dates (for WHERE clause)
         # $3: profile_id
         # $4: cohort_ids
         # $5: department_ids
-        # $6: roles (scoped roles from filters, default to ["ta"] for backward compatibility)
-        # $7: search term (optional)
-        # $8: profileIds filter (optional)
-        # $9: simulationIds filter (optional)
-        # $10: scenarioIds filter (optional)
-        # $11: infiniteMode filter (optional)
-        # $12: sortBy column
-        # $13: sortOrder (asc/desc)
+        # $6: roles (scoped roles from filters)
         # $7: simulationFilters (text[], optional)
         # $8: search (text, optional)
-        # $9: profileIds (uuid[], optional)
-        # $10: simulationIds (uuid[], optional)
-        # $11: scenarioIds (uuid[], optional)
-        # $12: infiniteMode (bool, optional)
+        # $9: profileIds filter (uuid[], optional)
+        # $10: simulationIds filter (uuid[], optional)
+        # $11: scenarioIds filter (uuid[], optional)
+        # $12: infiniteMode filter (bool, optional)
         # $13: sortBy (text)
         # $14: sortOrder (text)
         # $15: pageSize (int, LIMIT)
         # $16: offset (int, OFFSET)
         from datetime import datetime
 
-        roles = filters.roles if filters.roles else ["ta"]
+        roles = filters.roles if filters.roles else []
         simulation_filters = filters.simulationFilters if filters.simulationFilters else ["general"]
         params = [
             datetime.fromisoformat(filters.startDate.replace("Z", "+00:00")),  # $1
@@ -182,19 +134,11 @@ async def get_home_history(
             filters.page * filters.pageSize,  # $16 (OFFSET)
         ]
         sql_params = tuple(params)
-        
-        # Check if there are any attempts in the date range at all
-        total_attempts = await conn.fetchval(
-            "SELECT COUNT(*) FROM simulation_attempts WHERE created_at >= $1 AND created_at <= $2",
-            params[0], params[1]
-        )
 
         # Disable JIT compilation for this complex query to avoid re-compilation overhead
         async with conn.transaction():
             await conn.execute("SET LOCAL jit = off;")
             result = await conn.fetchrow(sql_query, *params)
-
-
         # Parse JSON result
         parsed_result = json.loads(result["result"]) if isinstance(result["result"], str) else result["result"]
 
@@ -224,11 +168,15 @@ async def get_home_history(
             scenario_options = []
 
         total_count = parsed_result.get("totalCount", 0)
+        archived_count = parsed_result.get("archivedCount", 0)
+        unarchived_count = parsed_result.get("unarchivedCount", 0)
         total_pages = (total_count + filters.pageSize - 1) // filters.pageSize if total_count > 0 else 0
 
-        response_data = HomeHistoryResponse(
+        response_data = DashboardHistoryResponse(
             data=history,
             totalCount=total_count,
+            archivedCount=archived_count,
+            unarchivedCount=unarchived_count,
             page=filters.page,
             pageSize=filters.pageSize,
             totalPages=total_pages,
@@ -236,7 +184,7 @@ async def get_home_history(
             simulationOptions=simulation_options,
             scenarioOptions=scenario_options,
         )
-        
+
         # Cache response
         await set_cached(
             cache_key_val,
@@ -246,7 +194,7 @@ async def get_home_history(
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
-        
+
         return response_data
     except HTTPException:
         raise
@@ -256,7 +204,7 @@ async def get_home_history(
         handle_route_error(
             error=e,
             route_path=request.url.path,
-            operation="get_home_history",
+            operation="get_reports_history",
             sql_query=sql_query,
             sql_params=sql_params,
             request=request,

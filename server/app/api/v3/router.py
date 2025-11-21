@@ -31,7 +31,7 @@ from app.api.v3.pricing import router as pricing_router
 # ============================================================================
 from app.api.v3.profile import router as profile_router
 from app.api.v3.providers import router as providers_router
-from app.api.v3.reports.bundle import router as reports_router
+from app.api.v3.reports import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
 # ============================================================================
 # Batch C: Core Content Resources (Complete CRUD)

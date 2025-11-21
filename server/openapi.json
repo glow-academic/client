@@ -4982,6 +4982,100 @@
         ]
       }
     },
+    "/api/v3/reports/overview": {
+      "post": {
+        "tags": [
+          "v3",
+          "reports"
+        ],
+        "summary": "Get Reports Overview",
+        "description": "Get complete reports overview bundle for individual profile - requires profileId.",
+        "operationId": "get_reports_overview_api_v3_reports_overview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportsOverviewFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
+      }
+    },
+    "/api/v3/reports/history": {
+      "post": {
+        "tags": [
+          "v3",
+          "reports"
+        ],
+        "summary": "Get Reports History",
+        "description": "Get paginated reports history for individual profile - requires profileId.",
+        "operationId": "get_reports_history_api_v3_reports_history_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportsHistoryFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "reports"
+        ]
+      }
+    },
     "/api/v3/leaderboard": {
       "post": {
         "tags": [
@@ -11488,17 +11582,6 @@
             ],
             "title": "Simulationfilters"
           },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -11734,17 +11817,6 @@
               }
             ],
             "title": "Simulationfilters"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
           },
           "page": {
             "type": "integer",
@@ -14928,14 +15000,7 @@
       "HomeHistoryFilters": {
         "properties": {
           "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Profileid"
           },
           "startDate": {
@@ -15089,11 +15154,12 @@
         },
         "type": "object",
         "required": [
+          "profileId",
           "startDate",
           "endDate"
         ],
         "title": "HomeHistoryFilters",
-        "description": "Home history filter request schema."
+        "description": "Home history filter request schema - requires profileId for department scoping."
       },
       "HomeHistoryResponse": {
         "properties": {
@@ -15520,17 +15586,6 @@
               }
             ],
             "title": "Simulationfilters"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
           },
           "departmentIds": {
             "anyOf": [
@@ -17961,17 +18016,6 @@
             ],
             "title": "Simulationfilters"
           },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -18095,17 +18139,6 @@
               }
             ],
             "title": "Simulationfilters"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
           },
           "departmentIds": {
             "anyOf": [
@@ -19519,17 +19552,6 @@
             ],
             "title": "Simulationfilters"
           },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
           "departmentIds": {
             "anyOf": [
               {
@@ -19909,6 +19931,250 @@
         ],
         "title": "ReportsExportFilters",
         "description": "Reports export filter request schema."
+      },
+      "ReportsHistoryFilters": {
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "title": "Startdate"
+          },
+          "endDate": {
+            "type": "string",
+            "title": "Enddate"
+          },
+          "cohortIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohortids"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulationFilters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationfilters"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize",
+            "default": 20
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "profileIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileids"
+          },
+          "simulationIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationids"
+          },
+          "scenarioIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarioids"
+          },
+          "infiniteMode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinitemode"
+          },
+          "sortBy": {
+            "type": "string",
+            "title": "Sortby",
+            "default": "date"
+          },
+          "sortOrder": {
+            "type": "string",
+            "title": "Sortorder",
+            "default": "desc"
+          }
+        },
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate",
+          "profileId"
+        ],
+        "title": "ReportsHistoryFilters",
+        "description": "Reports history filter request schema - requires profileId for individual reports."
+      },
+      "ReportsOverviewFilters": {
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "title": "Startdate"
+          },
+          "endDate": {
+            "type": "string",
+            "title": "Enddate"
+          },
+          "cohortIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohortids"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "simulationFilters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SimulationFilter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulationfilters"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "startDate",
+          "endDate",
+          "profileId"
+        ],
+        "title": "ReportsOverviewFilters",
+        "description": "Reports overview filter request schema - requires profileId for individual reports."
       },
       "RubricDetailDefaultRequest": {
         "properties": {

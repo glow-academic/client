@@ -32,7 +32,6 @@ class DashboardBundleFilters(BaseModel):
     cohortIds: list[str] | None = None
     roles: list[str] | None = None
     simulationFilters: list[SimulationFilter] | None = None
-    profileId: str | None = None  # Optional: used for filtering when provided
     departmentIds: list[str] | None = None
 
 
@@ -1446,7 +1445,7 @@ async def get_dashboard(
         sql_query = load_sql("sql/v3/dashboard/get_dashboard_bundle.sql")
 
         # Build parameters in the same order as the query expects ($1-$7)
-        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id, $7: department_ids
+        # $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (NULL for dashboard), $7: department_ids
         start_dt = datetime.fromisoformat(filters.startDate.replace("Z", "+00:00"))
         end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
         cohort_ids = filters.cohortIds or []
@@ -1459,7 +1458,7 @@ async def get_dashboard(
             if filters.simulationFilters
             else ["general"]
         )
-        profile_id = filters.profileId
+        profile_id = None  # Dashboard doesn't filter by profileId
         department_ids = filters.departmentIds or []
 
         sql_params = (

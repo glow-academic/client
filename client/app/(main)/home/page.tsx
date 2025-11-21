@@ -126,6 +126,7 @@ async function getHomeFilters(searchParams?: URLSearchParams) {
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
     cohortIds: [] as string[],
+    roles: [] as string[],
     simulationFilters: ["general" as const],
     departmentIds: [] as string[],
   };
@@ -160,7 +161,8 @@ async function getHomeFilters(searchParams?: URLSearchParams) {
       : profileContext.scopedRoles || [];
 
   return {
-    ...filters,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
     cohortIds,
     departmentIds,
     roles,
@@ -211,26 +213,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     searchParamsObj.toString() ? searchParamsObj : undefined
   );
 
-  // Extract subset for Home: startDate, endDate (required)
+  // Extract subset for Home: startDate, endDate, profileId (required)
   // Always include cohortIds and departmentIds (they are guaranteed to be non-empty from getHomeFilters)
-  const homeFiltersBody: HomeIn["body"] = {
-    startDate: defaultFilters.startDate,
-    endDate: defaultFilters.endDate,
-    cohortIds: defaultFilters.cohortIds, // Always non-empty
-    departmentIds: defaultFilters.departmentIds, // Always non-empty
-  };
-
   // profileId is required for TA mode detection and role hierarchy filtering
-  // Use effectiveProfileId so the SQL can determine role and compute role hierarchy
-  if (session?.effectiveProfileId) {
-    homeFiltersBody.profileId = session.effectiveProfileId;
-  } else {
-    // If no session, use guest-profile-id as fallback
-    homeFiltersBody.profileId = "guest-profile-id";
-  }
-
   const homeFilters: HomeIn = {
-    body: homeFiltersBody,
+    body: {
+      startDate: defaultFilters.startDate,
+      endDate: defaultFilters.endDate,
+      cohortIds: defaultFilters.cohortIds, // Always non-empty
+      departmentIds: defaultFilters.departmentIds, // Always non-empty
+      profileId: session?.effectiveProfileId || "guest-profile-id", // Required for TA mode detection
+    },
   };
 
   // Extract pagination and filter params from search params
@@ -380,9 +373,10 @@ async function HomeHistorySection({
   revalidateAttemptAction: (attemptId: string) => Promise<void>;
 }) {
   // Build history filters matching logic from page.tsx
+  // profileId is required for department scoping
   const historyFilters: HomeHistoryIn = {
     body: {
-      profileId: effectiveProfileId || null,
+      profileId: effectiveProfileId || "guest-profile-id",
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds,

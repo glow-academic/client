@@ -189,8 +189,6 @@ interface DashboardPageProps {
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
-  const session = await getSession();
-
   // Parse search params
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -319,7 +317,6 @@ export default async function DashboardPage({
             historyInfiniteMode={historyInfiniteMode}
             historySortBy={historySortBy}
             historySortOrder={historySortOrder}
-            effectiveProfileId={session?.effectiveProfileId ?? null}
             revalidateAttemptAction={revalidateAttempt}
             bulkArchiveAttemptsAction={bulkArchiveAttempts}
           />
@@ -367,7 +364,6 @@ async function DashboardHistorySection({
   historyInfiniteMode,
   historySortBy,
   historySortOrder,
-  effectiveProfileId,
   revalidateAttemptAction,
   bulkArchiveAttemptsAction,
 }: {
@@ -388,7 +384,6 @@ async function DashboardHistorySection({
   historyInfiniteMode?: boolean | undefined;
   historySortBy: string;
   historySortOrder: string;
-  effectiveProfileId?: string | null;
   revalidateAttemptAction: (attemptId: string) => Promise<void>;
   bulkArchiveAttemptsAction?: (
     input: BulkArchiveAttemptsIn
@@ -401,7 +396,6 @@ async function DashboardHistorySection({
 
   const historyFilters: DashboardHistoryIn = {
     body: {
-      profileId: effectiveProfileId || null,
       startDate: defaultFilters.startDate,
       endDate: defaultFilters.endDate,
       cohortIds: defaultFilters.cohortIds,
