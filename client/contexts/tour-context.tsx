@@ -24,23 +24,8 @@ import { useProfile } from "@/contexts/profile-context";
 import { TourStep } from "@/utils/tour-steps";
 import { useRouter } from "next/navigation";
 
-type ProfileItem = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
-  active: boolean;
-  viewedIntro: boolean;
-  viewedChat: boolean;
-  defaultProfile: boolean;
-  reqPerDay: number | null;
-  lastLogin: string;
-  lastActive: string | null;
-  createdAt: string;
-  updatedAt: string;
-  primaryDepartmentId: string | null;
-};
+// ProfileItem type derived from server response (single source of truth)
+import type { ProfileItem } from "@/app/(main)/layout-server";
 
 // Tour state interface
 export interface TourContextState {

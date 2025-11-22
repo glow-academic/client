@@ -233,7 +233,7 @@ export default function SearchExistingStaffModal({
         profileId: profile.profile_id,
         firstName: profile.first_name,
         lastName: profile.last_name,
-        email: profile.email,
+        email: profile.primary_email || (profile.emails && profile.emails[0]) || "",
         role: profile.role,
         requestsPerDay: profile.requests_per_day,
         totalRequests: profile.total_requests,
@@ -340,7 +340,11 @@ export default function SearchExistingStaffModal({
                         <TableCell className="font-medium">
                           {profile.first_name} {profile.last_name}
                         </TableCell>
-                        <TableCell>{profile.email}</TableCell>
+                        <TableCell>
+                          {profile.emails && profile.emails.length > 0
+                            ? profile.emails.join(", ")
+                            : profile.primary_email || "No email"}
+                        </TableCell>
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(

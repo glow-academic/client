@@ -473,3 +473,6 @@ export type {
   ReportsOverviewIn,
   ReportsOverviewOut,
 };
+
+// Export ProfileItem type derived from server response
+export type ProfileItem = ProfileDetailOut["profile"];

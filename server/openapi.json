@@ -11289,9 +11289,23 @@
             "type": "string",
             "title": "Lastname"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
           },
           "role": {
             "type": "string",
@@ -11318,7 +11332,7 @@
         "required": [
           "firstName",
           "lastName",
-          "email",
+          "emails",
           "role"
         ],
         "title": "CreateOrUpdateStaffRequest",
@@ -12023,9 +12037,23 @@
             "type": "string",
             "title": "Lastname"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
           },
           "role": {
             "type": "string",
@@ -12047,7 +12075,7 @@
         "required": [
           "firstName",
           "lastName",
-          "email",
+          "emails",
           "role"
         ],
         "title": "CreateStaffRequest",
@@ -19198,16 +19226,18 @@
             ],
             "title": "Lastname"
           },
-          "email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails",
+            "default": []
+          },
+          "primary_email_index": {
+            "type": "integer",
+            "title": "Primary Email Index",
+            "default": 0
           },
           "role": {
             "anyOf": [
@@ -19249,7 +19279,6 @@
           "row_index",
           "firstName",
           "lastName",
-          "email",
           "role",
           "errors"
         ],
@@ -19409,6 +19438,25 @@
             ],
             "title": "Email"
           },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails",
+            "default": []
+          },
+          "primaryEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primaryemail"
+          },
           "role": {
             "type": "string",
             "title": "Role"
@@ -19439,6 +19487,7 @@
           "firstName",
           "lastName",
           "email",
+          "primaryEmail",
           "role",
           "metrics"
         ],
@@ -19486,9 +19535,23 @@
             "type": "string",
             "title": "Lastname"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primaryEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primaryemail"
           },
           "role": {
             "type": "string",
@@ -19561,7 +19624,8 @@
           "id",
           "firstName",
           "lastName",
-          "email",
+          "emails",
+          "primaryEmail",
           "role",
           "active",
           "viewedIntro",
@@ -19711,7 +19775,21 @@
             ],
             "title": "Last Name"
           },
-          "email": {
+          "emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails"
+          },
+          "primary_email": {
             "anyOf": [
               {
                 "type": "string"
@@ -19720,7 +19798,7 @@
                 "type": "null"
               }
             ],
-            "title": "Email"
+            "title": "Primary Email"
           },
           "role": {
             "anyOf": [
@@ -19747,7 +19825,8 @@
           "id",
           "first_name",
           "last_name",
-          "email",
+          "emails",
+          "primary_email",
           "role",
           "full_name",
           "score"
@@ -23045,9 +23124,23 @@
             "type": "string",
             "title": "Name"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
           },
           "role": {
             "type": "string",
@@ -23057,7 +23150,8 @@
         "type": "object",
         "required": [
           "name",
-          "email",
+          "emails",
+          "primary_email",
           "role"
         ],
         "title": "StaffDetailResponse",
@@ -24640,9 +24734,23 @@
             "type": "string",
             "title": "Last Name"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email Index"
           },
           "role": {
             "type": "string",
@@ -24699,7 +24807,7 @@
           "profileId",
           "first_name",
           "last_name",
-          "email",
+          "emails",
           "role",
           "requests_per_day",
           "primary_department_id",
@@ -25629,9 +25737,23 @@
             "type": "string",
             "title": "Last Name"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
           },
           "name": {
             "type": "string",
@@ -25729,7 +25851,8 @@
           "profile_id",
           "first_name",
           "last_name",
-          "email",
+          "emails",
+          "primary_email",
           "name",
           "role",
           "initials",
@@ -25936,9 +26059,23 @@
             "type": "string",
             "title": "Last Name"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
           },
           "name": {
             "type": "string",
@@ -26040,7 +26177,8 @@
           "profile_id",
           "first_name",
           "last_name",
-          "email",
+          "emails",
+          "primary_email",
           "name",
           "role",
           "initials",
@@ -27931,9 +28069,23 @@
             "type": "string",
             "title": "Last Name"
           },
-          "email": {
-            "type": "string",
-            "title": "Email"
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "primary_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Email"
           },
           "name": {
             "type": "string",
@@ -28027,7 +28179,8 @@
           "profile_id",
           "first_name",
           "last_name",
-          "email",
+          "emails",
+          "primary_email",
           "name",
           "role",
           "initials",

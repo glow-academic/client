@@ -5,10 +5,13 @@ WITH cohort_members AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.email
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email
     FROM profiles p
     JOIN cohort_profiles cp ON p.id = cp.profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     WHERE cp.cohort_id = $1 AND cp.active = true
+    GROUP BY p.id, p.first_name, p.last_name
 ),
 cohort_sims AS (
     SELECT 
@@ -78,7 +81,8 @@ SELECT
             'id', cm.id,
             'first_name', cm.first_name,
             'last_name', cm.last_name,
-            'email', cm.email
+            'emails', COALESCE(cm.emails, ARRAY[]::text[]),
+            'primaryEmail', cm.primary_email
         )) FILTER (WHERE cm.id IS NOT NULL),
         '[]'::json
     ) as members,

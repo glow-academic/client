@@ -17,7 +17,14 @@ async def get_superadmin_email(
     conn: asyncpg.Connection, email: str = "redacted@purdue.edu"
 ) -> str:
     """Get superadmin ID by email."""
-    profile_id = await conn.fetchval("SELECT id FROM profiles WHERE email = $1", email)
+    profile_id = await conn.fetchval(
+        "SELECT profile_id FROM profile_emails WHERE email = $1 AND active = true",
+        email
+    )
     if not profile_id:
         raise ValueError(f"Profile with email {email} not found in seed data")
     return str(profile_id)
+
+
+# Alias for backward compatibility
+get_superadmin_alias = get_superadmin_email

@@ -59,6 +59,17 @@ async def bulk_create_or_update_staff(
 
         async with transaction(conn):
             for profile_req in request.profiles:
+                # Validate emails array
+                if not profile_req.emails or len(profile_req.emails) == 0:
+                    raise HTTPException(status_code=400, detail="At least one email is required")
+
+                # Determine primary email index (default to 0)
+                primary_index = profile_req.primary_email_index if profile_req.primary_email_index is not None else 0
+                if primary_index < 0 or primary_index >= len(profile_req.emails):
+                    raise HTTPException(status_code=400, detail="Invalid primary_email_index")
+                
+                primary_email = profile_req.emails[primary_index]
+
                 # Convert string UUIDs to UUID arrays
                 dept_uuids = (
                     [uuid.UUID(d) for d in profile_req.department_ids]
@@ -77,7 +88,7 @@ async def bulk_create_or_update_staff(
                     profile_id_new,
                     profile_req.firstName,
                     profile_req.lastName,
-                    profile_req.email,
+                    primary_email,
                     profile_req.role,
                     True,  # active
                     dept_uuids,
@@ -91,7 +102,7 @@ async def bulk_create_or_update_staff(
                 if not result:
                     raise HTTPException(
                         status_code=500,
-                        detail=f"Failed to create or update staff profile: {profile_req.email}",
+                        detail=f"Failed to create or update staff profile: {primary_email}",
                     )
 
                 # Check for role validation error
@@ -104,6 +115,25 @@ async def bulk_create_or_update_staff(
 
                 profile_id = result["profile_id"]
                 created = result["created"]
+
+                # Update all emails: deactivate existing, then insert/activate new ones
+                # First, deactivate all existing emails for this profile
+                await conn.execute(
+                    "UPDATE profile_emails SET active = false, updated_at = NOW() WHERE profile_id = $1",
+                    profile_id
+                )
+                
+                # Insert/update all emails (set primary based on index)
+                for i, email in enumerate(profile_req.emails):
+                    is_primary = (i == primary_index)
+                    await conn.execute("""
+                        INSERT INTO profile_emails (profile_id, email, is_primary, active)
+                        VALUES ($1::uuid, $2, $3, true)
+                        ON CONFLICT (profile_id, email) DO UPDATE SET
+                            is_primary = EXCLUDED.is_primary,
+                            active = true,
+                            updated_at = NOW()
+                    """, profile_id, email, is_primary)
 
                 if created:
                     created_count += 1

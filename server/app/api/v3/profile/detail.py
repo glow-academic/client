@@ -28,7 +28,8 @@ class ProfileItem(BaseModel):
     id: str
     firstName: str
     lastName: str
-    email: str
+    emails: list[str]  # List of all active emails
+    primaryEmail: str | None  # Primary email (first in emails array if exists)
     role: str  # 'superadmin' | 'admin' | 'instructional' | 'ta' | 'guest'
     active: bool
     viewedIntro: bool
@@ -81,11 +82,14 @@ async def get_profile_detail(
             raise HTTPException(status_code=404, detail="Profile not found")
 
         # Transform database row to response (inline business logic)
+        emails = row.get("emails") or []
+        primary_email = row.get("primary_email")
         profile = ProfileItem(
             id=str(row["id"]),
             firstName=row["first_name"],
             lastName=row["last_name"],
-            email=row["email"],
+            emails=emails if isinstance(emails, list) else [],
+            primaryEmail=primary_email,
             role=row["role"],
             active=row["active"],
             viewedIntro=row["viewed_intro"],

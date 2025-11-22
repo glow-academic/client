@@ -16,7 +16,8 @@ simulatable_data AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
         p.viewed_intro,
@@ -30,6 +31,7 @@ simulatable_data AS (
         pd.department_id as primary_department_id
     FROM profiles p
     CROSS JOIN requester_role rr
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN LATERAL (
@@ -47,6 +49,9 @@ simulatable_data AS (
         ELSE false
       END
       {search_where_clause}
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.viewed_intro, p.viewed_chat, 
+             p.default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
+             p.created_at, p.updated_at, pd.department_id
     ORDER BY p.first_name, p.last_name
     LIMIT $2
 )
@@ -55,7 +60,8 @@ SELECT
         'id', sp.id::text,
         'first_name', sp.first_name,
         'last_name', sp.last_name,
-        'email', sp.email,
+        'emails', sp.emails,
+        'primary_email', sp.primary_email,
         'role', sp.role,
         'active', sp.active,
         'viewed_intro', sp.viewed_intro,

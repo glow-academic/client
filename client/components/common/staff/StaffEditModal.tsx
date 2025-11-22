@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useProfile } from "@/contexts/profile-context";
-import { CheckCircle2, Clock, User } from "lucide-react";
+import { CheckCircle2, Clock, User, PlusCircle, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -56,10 +56,15 @@ export default function StaffEditModal({
   // Extract data from ProfileListItem
   const targetUser = useMemo(() => {
     if (!staffItem) return null;
+    const emails = staffItem.emails && staffItem.emails.length > 0 
+      ? staffItem.emails 
+      : (staffItem.primary_email ? [staffItem.primary_email] : []);
+    const primaryIndex = emails.length > 0 ? 0 : -1;
     return {
       firstName: staffItem.first_name || "",
       lastName: staffItem.last_name || "",
-      email: staffItem.email || "",
+      emails: emails,
+      primaryEmailIndex: primaryIndex,
       role: staffItem.role || "",
       reqPerDay: staffItem.requests_per_day ?? null,
       defaultProfile: staffItem.default_profile ?? false,
@@ -73,7 +78,8 @@ export default function StaffEditModal({
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
+    emails: [""] as string[],
+    primaryEmailIndex: 0,
     role: "",
     reqPerDay: "" as number | "",
     defaultProfile: false,
@@ -93,7 +99,8 @@ export default function StaffEditModal({
       setFormData({
         firstName: targetUser.firstName || "",
         lastName: targetUser.lastName || "",
-        email: targetUser.email || "",
+        emails: targetUser.emails.length > 0 ? targetUser.emails : [""],
+        primaryEmailIndex: targetUser.primaryEmailIndex >= 0 ? targetUser.primaryEmailIndex : 0,
         role: targetUser.role || "",
         reqPerDay: targetUser.reqPerDay ?? "",
         defaultProfile: targetUser.defaultProfile ?? false,
@@ -117,6 +124,46 @@ export default function StaffEditModal({
     },
     []
   );
+
+  // Email management functions
+  const addEmail = useCallback(() => {
+    setFormData((prev) => ({
+      ...prev,
+      emails: [...prev.emails, ""],
+    }));
+  }, []);
+
+  const removeEmail = useCallback((index: number) => {
+    setFormData((prev) => {
+      const newEmails = prev.emails.filter((_, i) => i !== index);
+      // Ensure at least one email
+      if (newEmails.length === 0) {
+        return { ...prev, emails: [""], primaryEmailIndex: 0 };
+      }
+      // Adjust primary index if needed
+      let newPrimaryIndex = prev.primaryEmailIndex;
+      if (index === prev.primaryEmailIndex) {
+        // If removing primary, set first email as primary
+        newPrimaryIndex = 0;
+      } else if (index < prev.primaryEmailIndex) {
+        // If removing before primary, adjust index
+        newPrimaryIndex = prev.primaryEmailIndex - 1;
+      }
+      return { ...prev, emails: newEmails, primaryEmailIndex: newPrimaryIndex };
+    });
+  }, []);
+
+  const updateEmail = useCallback((index: number, value: string) => {
+    setFormData((prev) => {
+      const newEmails = [...prev.emails];
+      newEmails[index] = value;
+      return { ...prev, emails: newEmails };
+    });
+  }, []);
+
+  const setPrimaryEmail = useCallback((index: number) => {
+    setFormData((prev) => ({ ...prev, primaryEmailIndex: index }));
+  }, []);
 
   const handleConfirm = useCallback(async () => {
     if (!profileId) return;
@@ -144,13 +191,22 @@ export default function StaffEditModal({
         return;
       }
 
+      // Validate emails
+      const validEmails = formData.emails.filter(e => e.trim().length > 0);
+      if (validEmails.length === 0) {
+        toast.error("At least one email is required");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Build update payload
       // Only send intro_completed and chat_completed if tour_completed was explicitly changed
       const updateBody: {
         profileId: string;
         first_name: string;
         last_name: string;
-        email: string;
+        emails: string[];
+        primary_email_index?: number;
         role: string;
         requests_per_day: number | null;
         primary_department_id: string;
@@ -162,7 +218,10 @@ export default function StaffEditModal({
         profileId: profileId,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        email: formData.email,
+        emails: validEmails,
+        primary_email_index: formData.primaryEmailIndex >= 0 && formData.primaryEmailIndex < validEmails.length 
+          ? formData.primaryEmailIndex 
+          : 0,
         role: formData.role,
         requests_per_day: parsedReqPerDay,
         primary_department_id: departmentId,
@@ -260,17 +319,66 @@ export default function StaffEditModal({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label>Emails</Label>
                 {!isLoading ? (
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    placeholder="redacted@purdue.edu"
-                    disabled={isSubmitting}
-                    data-testid="input-staff-email"
-                  />
+                  <div className="space-y-2">
+                    {formData.emails.map((email, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="flex-1 relative">
+                          <Input
+                            type="email"
+                            value={email}
+                            onChange={(e) => updateEmail(index, e.target.value)}
+                            placeholder="redacted@purdue.edu"
+                            disabled={isSubmitting}
+                            data-testid={`input-staff-email-${index}`}
+                            className={formData.primaryEmailIndex === index ? "border-primary" : ""}
+                          />
+                          {formData.primaryEmailIndex === index && (
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant={formData.primaryEmailIndex === index ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => setPrimaryEmail(index)}
+                            disabled={isSubmitting || formData.primaryEmailIndex === index}
+                            className="h-8 w-8 shrink-0"
+                            title="Set as primary"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </Button>
+                          {formData.emails.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => removeEmail(index)}
+                              disabled={isSubmitting}
+                              className="h-8 w-8 shrink-0"
+                              title="Remove email"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={addEmail}
+                      disabled={isSubmitting}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add email
+                    </Button>
+                  </div>
                 ) : (
                   <Skeleton className="h-10 w-full" />
                 )}

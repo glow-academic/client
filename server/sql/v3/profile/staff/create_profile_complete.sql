@@ -4,20 +4,28 @@
 -- Returns: id, first_name, last_name, email_exists (boolean)
 
 WITH email_check AS (
-    -- Check if email already exists
-    SELECT EXISTS(SELECT 1 FROM profiles WHERE email = $4) as email_exists
+    -- Check if email already exists in profile_emails
+    SELECT EXISTS(SELECT 1 FROM profile_emails WHERE email = $4 AND active = true) as email_exists
 ),
 profile_insert AS (
     -- Insert profile (only if email doesn't exist)
     INSERT INTO profiles (
-        id, first_name, last_name, email, role, active, 
+        id, first_name, last_name, role, active, 
         default_profile, viewed_intro, viewed_chat
     )
     SELECT 
-        $1::uuid, $2, $3, $4, $5, $6,
+        $1::uuid, $2, $3, $5, $6,
         $7, $8, $9
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
     RETURNING id, first_name, last_name
+),
+email_insert AS (
+    -- Insert email into profile_emails (set as primary)
+    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    SELECT 
+        pi.id, $4, true, true
+    FROM profile_insert pi
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
 ),
 department_insert AS (
     -- Insert department relationship if provided and profile was created

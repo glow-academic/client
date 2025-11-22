@@ -12,11 +12,14 @@ target_profile AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.first_name || ' ' || p.last_name as name
     FROM profiles p
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     WHERE p.id = $1
+    GROUP BY p.id, p.first_name, p.last_name, p.role
 ),
 role_visibility_check AS (
     -- Check if current user can see target profile based on role hierarchy
@@ -35,7 +38,8 @@ role_visibility_check AS (
 )
 SELECT 
     name,
-    email,
+    emails,
+    primary_email,
     role
 FROM role_visibility_check
 WHERE can_see = true

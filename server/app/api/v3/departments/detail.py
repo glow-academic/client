@@ -29,7 +29,8 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    email: str
+    emails: list[str]  # List of all active emails
+    primary_email: str | None  # Primary email (first in emails array if exists)
     name: str
     role: str
     initials: str
@@ -98,7 +99,7 @@ async def get_department_detail(
         sql_query = load_sql("sql/v3/departments/get_department_detail_with_staff.sql")
         sql_params = (request_body.departmentId, request_body.profileId)
         dept_row = await conn.fetchrow(
-            sql_query, request_body.departmentId, request_body.profileId, campus_domain
+            sql_query, request_body.departmentId, request_body.profileId
         )
 
         if not dept_row:
@@ -145,12 +146,15 @@ async def get_department_detail(
                         else:
                             last_active = str(last_active_val)
 
+                    emails = staff_row.get("emails") or []
+                    primary_email = staff_row.get("primary_email")
                     staff_list.append(
                         StaffItem(
                             profile_id=str(staff_row["profile_id"]),
                             first_name=staff_row["first_name"],
                             last_name=staff_row["last_name"],
-                            email=staff_row["email"],
+                            emails=emails if isinstance(emails, list) else [],
+                            primary_email=primary_email,
                             name=staff_row["name"],
                             role=staff_row["role"],
                             initials=staff_row["initials"],

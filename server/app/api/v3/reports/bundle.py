@@ -66,7 +66,9 @@ class ProfileDataEnhanced(BaseModel):
     profileId: str
     firstName: str
     lastName: str
-    email: str | None
+    email: str | None  # Comma-separated emails for backward compatibility
+    emails: list[str] = []  # Array of emails
+    primaryEmail: str | None  # Primary email
     role: str
     simulationIds: list[str] = []
     scenarioIds: list[str] = []

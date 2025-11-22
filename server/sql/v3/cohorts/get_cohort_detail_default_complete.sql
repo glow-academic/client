@@ -266,7 +266,8 @@ cohort_staff AS (
         p.id as profile_id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.first_name || ' ' || p.last_name as name,
         p.role,
         SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
@@ -313,6 +314,7 @@ cohort_staff AS (
         END as can_remove
     FROM profiles p
     JOIN cohort_profile_ids cpi ON cpi.profile_id = p.id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
@@ -336,6 +338,10 @@ cohort_staff AS (
         (ups.role = 'ta' AND p.role IN ('ta', 'guest')) OR
         (ups.role = 'guest' AND p.role = 'guest')
     )
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
+             pa.last_active, prl.requests_per_day, p.viewed_intro, p.viewed_chat,
+             pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
+             pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count, ups.role
     ORDER BY p.id, p.last_name, p.first_name
 )
 SELECT 
@@ -396,7 +402,7 @@ SELECT
         p.id::text,
         jsonb_build_object(
             'name', p.first_name || ' ' || p.last_name,
-            'description', p.email
+            'description', COALESCE((SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1), '')
         )
      ), '{}'::jsonb)
      FROM profiles p

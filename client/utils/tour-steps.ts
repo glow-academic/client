@@ -1,21 +1,5 @@
-// ProfileItem type (matches v3 API structure from profile/detail)
-export interface ProfileItem {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
-  active: boolean;
-  viewedIntro: boolean;
-  viewedChat: boolean;
-  defaultProfile: boolean;
-  reqPerDay: number | null;
-  lastLogin: string;
-  lastActive: string | null;
-  createdAt: string;
-  updatedAt: string;
-  primaryDepartmentId: string | null;
-}
+// ProfileItem type derived from server response (single source of truth)
+import type { ProfileItem } from "@/app/(main)/layout-server";
 
 export interface TourStep {
   id: string;

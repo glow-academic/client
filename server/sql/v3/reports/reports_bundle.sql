@@ -1,9 +1,17 @@
             WITH
             -- Start from profiles to include all matching profiles, even without attempts
             filtered_profiles AS (
-                SELECT p.id, p.first_name, p.last_name, p.email, p.role
+                SELECT 
+                    p.id, 
+                    p.first_name, 
+                    p.last_name, 
+                    ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+                    (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
+                    p.role
                 FROM profiles p
+                LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
                 WHERE {PROFILE_WHERE_CLAUSE}
+                GROUP BY p.id, p.first_name, p.last_name, p.role
             ),
             filt AS (
                 SELECT a.* FROM analytics a
@@ -15,7 +23,8 @@
                     fp.id AS profile_id,
                     fp.first_name,
                     fp.last_name,
-                    fp.email,
+                    fp.emails,
+                    fp.primary_email,
                     fp.role,
                     AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS avg_score,
                     MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
@@ -24,7 +33,7 @@
                     AVG(f.time_taken_seconds / 60.0) FILTER (WHERE f.time_taken_seconds IS NOT NULL) AS avg_time_minutes
                 FROM filtered_profiles fp
                 LEFT JOIN filt f ON f.profile_id = fp.id
-                GROUP BY fp.id, fp.first_name, fp.last_name, fp.email, fp.role
+                GROUP BY fp.id, fp.first_name, fp.last_name, fp.emails, fp.primary_email, fp.role
             ),
             -- Total time spent per profile (SUM with 30-minute cap per chat, matching dashboard)
             total_time_per_profile AS (
@@ -435,13 +444,19 @@
                 FROM all_metrics
                 {ORDER_BY_CLAUSE}
                 {LIMIT_OFFSET_CLAUSE}
+            ),
+            -- Use paginated_metrics directly (emails already included from profile_metrics)
+            paginated_metrics_with_emails AS (
+                SELECT pm.*
+                FROM paginated_metrics pm
             )
             SELECT json_build_object(
                 'data', COALESCE((SELECT json_agg(json_build_object(
                     'profileId', profile_id::text,
                     'firstName', first_name,
                     'lastName', last_name,
-                    'email', email,
+                    'emails', COALESCE(emails, ARRAY[]::text[]),
+                    'primaryEmail', primary_email,
                     'role', role,
                     'simulationIds', simulation_ids,
                     'scenarioIds', scenario_ids,
@@ -578,7 +593,7 @@
                             )
                         )
                     )
-                ) {JSON_AGG_ORDER_BY}) FROM paginated_metrics), '[]'::json),
+                ) {JSON_AGG_ORDER_BY}) FROM paginated_metrics_with_emails), '[]'::json),
                 'totalCount', COALESCE((SELECT total_count FROM (SELECT * FROM paginated_metrics LIMIT 1) pm_count), 0),
                 'profileOptions', COALESCE((
                     SELECT json_agg(json_build_object(

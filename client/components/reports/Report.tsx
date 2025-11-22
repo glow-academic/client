@@ -7,8 +7,8 @@
 "use client";
 
 import type {
-  ReportsOverviewOut,
   ProfileDetailOut,
+  ReportsOverviewOut,
 } from "@/app/(main)/analytics/reports/p/[profileId]/page";
 import Dashboard from "@/components/dashboard/Dashboard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -69,7 +69,10 @@ export default function Report({
         ? {
             firstName: profileData.name?.split(" ")[0] || "",
             lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
-            email: profileData.email || "",
+            email:
+              profileData.emails && profileData.emails.length > 0
+                ? profileData.emails.join(", ")
+                : profileData.primary_email || "",
             role: profileData.role || "",
           }
         : null,
@@ -121,7 +124,7 @@ export default function Report({
                 {profile.firstName} {profile.lastName}
               </h1>
               <p className="text-muted-foreground">
-                {profile.email}
+                {profile.email || "No email"}
               </p>
             </div>
             <Badge variant={getRoleBadgeVariant(profile.role)}>

@@ -76,7 +76,7 @@ async def list_feedback(
                     if row["created_at"]
                     else "",
                     author_name=row["author_name"],
-                    author_alias=row["author_alias"],
+                    author_alias=row.get("author_email") or "",
                     author_profile_id=row["author_profile_id"],
                 )
             )

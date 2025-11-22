@@ -1,9 +1,18 @@
 -- Get complete student simulation report with attempts, chats, grades, messages, and feedback
 -- Params: $1 = profile_id, $2 = recent (limit messages per chat)
 WITH profile_info AS (
-    SELECT id, first_name, last_name, email, role, created_at
-    FROM profiles
-    WHERE id = $1
+    SELECT 
+        p.id, 
+        p.first_name, 
+        p.last_name, 
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
+        p.role, 
+        p.created_at
+    FROM profiles p
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
+    WHERE p.id = $1
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.created_at
 ),
 attempt_chats AS (
     SELECT 
@@ -82,7 +91,8 @@ SELECT
     pi.id,
     pi.first_name,
     pi.last_name,
-    pi.email,
+    pi.emails,
+    pi.primary_email,
     pi.role,
     pi.created_at,
     COALESCE(

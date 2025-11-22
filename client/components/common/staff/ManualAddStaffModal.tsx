@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/contexts/profile-context";
 import { useRouter } from "next/navigation";
+import { PlusCircle, Trash2, CheckCircle2 } from "lucide-react";
 
 type RoleValue = "superadmin" | "admin" | "instructional" | "ta" | "guest";
 
@@ -61,7 +62,8 @@ export default function ManualAddStaffModal({
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [emailInput, setEmailInput] = useState("");
+  const [emails, setEmails] = useState<string[]>([""]);
+  const [primaryEmailIndex, setPrimaryEmailIndex] = useState(0);
   const [selectedRole, setSelectedRole] = useState<RoleValue>("ta");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -102,10 +104,42 @@ export default function ManualAddStaffModal({
     if (!open) {
       setFirstName("");
       setLastName("");
-      setEmailInput("");
+      setEmails([""]);
+      setPrimaryEmailIndex(0);
       setSelectedRole("ta");
     }
   }, [open]);
+
+  // Email management functions
+  const addEmail = useCallback(() => {
+    setEmails((prev) => [...prev, ""]);
+  }, []);
+
+  const removeEmail = useCallback((index: number) => {
+    setEmails((prev) => {
+      const newEmails = prev.filter((_, i) => i !== index);
+      if (newEmails.length === 0) {
+        setPrimaryEmailIndex(0);
+        return [""];
+      }
+      let newPrimaryIndex = primaryEmailIndex;
+      if (index === primaryEmailIndex) {
+        newPrimaryIndex = 0;
+      } else if (index < primaryEmailIndex) {
+        newPrimaryIndex = primaryEmailIndex - 1;
+      }
+      setPrimaryEmailIndex(newPrimaryIndex);
+      return newEmails;
+    });
+  }, [primaryEmailIndex]);
+
+  const updateEmail = useCallback((index: number, value: string) => {
+    setEmails((prev) => {
+      const newEmails = [...prev];
+      newEmails[index] = value;
+      return newEmails;
+    });
+  }, []);
 
   // Submit handler
   const handleSubmit = useCallback(async () => {
@@ -118,10 +152,17 @@ export default function ManualAddStaffModal({
       toast.error("Please enter a last name");
       return;
     }
-    const email = emailInput.trim().toLowerCase();
-    if (!email || !email.includes("@")) {
-      toast.error("Please enter a valid email address");
+    // Validate emails
+    const validEmails = emails.filter(e => e.trim().length > 0).map(e => e.trim().toLowerCase());
+    if (validEmails.length === 0) {
+      toast.error("Please enter at least one email address");
       return;
+    }
+    for (const email of validEmails) {
+      if (!email.includes("@")) {
+        toast.error(`Invalid email address: ${email}`);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -159,7 +200,10 @@ export default function ManualAddStaffModal({
         {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          email,
+          emails: validEmails,
+          primary_email_index: primaryEmailIndex >= 0 && primaryEmailIndex < validEmails.length 
+            ? primaryEmailIndex 
+            : 0,
           role,
           department_ids: finalDepartmentIds,
           cohort_ids: finalCohortIds,
@@ -184,12 +228,13 @@ export default function ManualAddStaffModal({
       // When scoped, stage the profiles
       const firstProfileId = response.profileIds?.[0];
       if (isScoped && onStagedProfiles && firstProfileId) {
+        const primaryEmail = validEmails[primaryEmailIndex] || validEmails[0] || "";
         const stagedProfiles = [
           {
             profileId: firstProfileId,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
-            email,
+            email: primaryEmail,
             role,
           },
         ];
@@ -219,7 +264,8 @@ export default function ManualAddStaffModal({
   }, [
     firstName,
     lastName,
-    aliasInput,
+    emails,
+    primaryEmailIndex,
     selectedRole,
     validRoles,
     departmentIds,
@@ -250,7 +296,7 @@ export default function ManualAddStaffModal({
           className="space-y-4 py-4"
         >
           {/* Form fields */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName-input">First Name</Label>
               <Input
@@ -274,17 +320,66 @@ export default function ManualAddStaffModal({
                 disabled={isSubmitting}
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Emails</Label>
             <div className="space-y-2">
-              <Label htmlFor="email-input">Email</Label>
-              <Input
-                id="email-input"
-                type="email"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="jdoe"
-                required
+              {emails.map((email, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div className="flex-1 relative">
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => updateEmail(index, e.target.value)}
+                      placeholder="redacted@purdue.edu"
+                      required={index === 0}
+                      disabled={isSubmitting}
+                      className={primaryEmailIndex === index ? "border-primary" : ""}
+                    />
+                    {primaryEmailIndex === index && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
+                        Primary
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant={primaryEmailIndex === index ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => setPrimaryEmailIndex(index)}
+                      disabled={isSubmitting || primaryEmailIndex === index}
+                      className="h-8 w-8 shrink-0"
+                      title="Set as primary"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
+                    {emails.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeEmail(index)}
+                        disabled={isSubmitting}
+                        className="h-8 w-8 shrink-0"
+                        title="Remove email"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={addEmail}
                 disabled={isSubmitting}
-              />
+                size="sm"
+                className="w-full"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" /> Add email
+              </Button>
             </div>
           </div>
           <div className="space-y-2">
@@ -315,7 +410,7 @@ export default function ManualAddStaffModal({
                 isSubmitting ||
                 !firstName.trim() ||
                 !lastName.trim() ||
-                !emailInput.trim()
+                emails.filter(e => e.trim().length > 0).length === 0
               }
             >
               {isSubmitting ? "Processing..." : "Add Staff"}

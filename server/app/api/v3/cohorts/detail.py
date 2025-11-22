@@ -45,7 +45,8 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    email: str
+    emails: list[str]  # List of all active emails
+    primary_email: str | None  # Primary email (first in emails array if exists)
     name: str
     role: str
     initials: str
@@ -118,7 +119,7 @@ async def get_cohort_detail(
         sql_query = load_sql("sql/v3/cohorts/get_cohort_detail_complete.sql")
         sql_params = (request_body.cohortId, request_body.profileId)
         row = await conn.fetchrow(
-            sql_query, request_body.cohortId, request_body.profileId, campus_domain
+            sql_query, request_body.cohortId, request_body.profileId
         )
 
         if not row:
@@ -188,12 +189,15 @@ async def get_cohort_detail(
                             # Fallback to first department if no primary department set
                             primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
                         
+                        emails = s.get("emails") or []
+                        primary_email = s.get("primaryEmail")
                         staff.append(
                             StaffItem(
                                 profile_id=s.get("profile_id", ""),
                                 first_name=s.get("first_name", ""),
                                 last_name=s.get("last_name", ""),
-                                email=s.get("email", ""),
+                                emails=emails if isinstance(emails, list) else [],
+                                primary_email=primary_email,
                                 name=s.get("name", ""),
                                 role=s.get("role", ""),
                                 initials=s.get("initials", ""),

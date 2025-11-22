@@ -30,6 +30,8 @@ import {
 import { useProfile } from "@/contexts/profile-context";
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
+// ProfileItem type derived from server response (single source of truth)
+import type { ProfileItem } from "@/app/(main)/layout-server";
 
 type StandardGroupMappingItem = {
   name: string;
@@ -46,24 +48,6 @@ type StandardMappingItem = {
 
 type StandardGroupsMapping = Record<string, StandardGroupMappingItem>;
 type StandardsMapping = Record<string, StandardMappingItem>;
-
-type ProfileItem = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
-  active: boolean;
-  viewedIntro: boolean;
-  viewedChat: boolean;
-  defaultProfile: boolean;
-  reqPerDay: number | null;
-  lastLogin: string;
-  lastActive: string | null;
-  createdAt: string;
-  updatedAt: string;
-  primaryDepartmentId: string | null;
-};
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present

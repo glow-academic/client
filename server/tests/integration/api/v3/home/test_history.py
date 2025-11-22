@@ -34,13 +34,20 @@ async def _create_test_profile(
     email: str | None = None,
 ) -> str:
     """Create a test profile."""
+    test_email = email or f"test_{role}_{datetime.now().timestamp()}@purdue.edu"
     profile_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, role, email, active) "
-        "VALUES ($1, $2, $3, $4, true) RETURNING id",
+        "INSERT INTO profiles(first_name, last_name, role, active) "
+        "VALUES ($1, $2, $3, true) RETURNING id",
         first_name,
         last_name,
         role,
-        email or f"test_{role}_{datetime.now().timestamp()}@purdue.edu",
+    )
+    # Insert email into profile_emails
+    await db.execute(
+        "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+        "VALUES ($1, $2, true, true)",
+        profile_id,
+        test_email,
     )
     return str(profile_id)
 

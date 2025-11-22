@@ -5,23 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 
-type ProfileItem = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
-  active: boolean;
-  viewedIntro: boolean;
-  viewedChat: boolean;
-  defaultProfile: boolean;
-  reqPerDay: number | null;
-  lastLogin: string;
-  lastActive: string | null;
-  createdAt: string;
-  updatedAt: string;
-  primaryDepartmentId: string | null;
-};
+// ProfileItem type derived from server response (single source of truth)
+import type { ProfileItem } from "@/app/(main)/layout-server";
 
 type PracticeSimulationItem = {
   viewMode: "practice";

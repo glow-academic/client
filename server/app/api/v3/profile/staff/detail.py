@@ -27,7 +27,8 @@ class StaffDetailResponse(BaseModel):
     """Response for staff detail endpoint."""
 
     name: str
-    email: str
+    emails: list[str]  # List of all active emails
+    primary_email: str | None  # Primary email (first in emails array if exists)
     role: str
 
 
@@ -76,9 +77,12 @@ async def get_staff_detail(
             )
 
         # Build response
+        emails = row.get("emails") or []
+        primary_email = row.get("primary_email")
         response_data = StaffDetailResponse(
             name=row["name"],
-            email=row["email"],
+            emails=emails if isinstance(emails, list) else [],
+            primary_email=primary_email,
             role=row["role"],
         )
 

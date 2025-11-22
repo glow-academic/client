@@ -77,7 +77,7 @@ async def search_staff(
             # Cast role enum to text for ILIKE comparison
             # Also check concatenated full name for queries like "default admin"
             search_conditions.append(
-                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.email ILIKE ${param_idx} OR p.role::text ILIKE ${param_idx} OR (p.first_name || ' ' || p.last_name) ILIKE ${param_idx})"
+                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE ${param_idx}) OR p.role::text ILIKE ${param_idx} OR (p.first_name || ' ' || p.last_name) ILIKE ${param_idx})"
             )
             params.append(search_term)
             param_idx += 1
@@ -183,7 +183,11 @@ async def search_staff(
                     'profile_id', p.id::text,
                     'first_name', p.first_name,
                     'last_name', p.last_name,
-                    'email', p.email,
+                    'emails', COALESCE(
+                        ARRAY(SELECT pe.email FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true ORDER BY pe.is_primary DESC, pe.created_at),
+                        ARRAY[]::text[]
+                    ),
+                    'primary_email', (SELECT pe.email FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.is_primary = true AND pe.active = true LIMIT 1),
                     'name', p.first_name || ' ' || p.last_name,
                     'role', p.role,
                     'initials', SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1),
@@ -292,12 +296,15 @@ async def search_staff(
                         # Fallback to first department if no primary department set
                         primary_department_id = department_ids[0] if len(department_ids) > 0 else ""
 
+                    emails = item.get("emails") or []
+                    primary_email = item.get("primary_email")
                     staff.append(
                         StaffItem(
                             profile_id=str(item.get("profile_id", "")),
                             first_name=item.get("first_name", ""),
                             last_name=item.get("last_name", ""),
-                            email=item.get("email", ""),
+                            emails=emails if isinstance(emails, list) else [],
+                            primary_email=primary_email,
                             name=item.get("name", ""),
                             role=item.get("role", ""),
                             initials=item.get("initials", ""),

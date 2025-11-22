@@ -37,7 +37,6 @@ update_profile AS (
         id,
         first_name,
         last_name,
-        email,
         role,
         active,
         viewed_intro,
@@ -62,7 +61,8 @@ get_updated_profile AS (
         up.id,
         up.first_name,
         up.last_name,
-        up.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = up.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         up.role,
         up.active,
         up.viewed_intro,
@@ -78,6 +78,9 @@ get_updated_profile AS (
         up.updated_at,
         (SELECT department_id FROM profile_departments WHERE profile_id = up.id AND is_primary = TRUE LIMIT 1) as primary_department_id
     FROM update_profile up
+    LEFT JOIN profile_emails pe ON pe.profile_id = up.id AND pe.active = true
+    GROUP BY up.id, up.first_name, up.last_name, up.role, up.active, up.viewed_intro, 
+             up.viewed_chat, up.default_profile, up.last_login, up.created_at, up.updated_at
 )
 SELECT * FROM get_updated_profile
 

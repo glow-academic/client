@@ -68,7 +68,7 @@ async def search_simulatable_profiles(
             # Cast role enum to text for ILIKE comparison
             # Also check concatenated full name for queries like "default admin"
             search_where_clause = (
-                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.email ILIKE $3 OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
+                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE $3) OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
             )
             params.append(search_term)
 
@@ -107,12 +107,15 @@ async def search_simulatable_profiles(
                             return ""
                         return val
 
+                    emails = item.get("emails") or []
+                    primary_email = item.get("primary_email")
                     profiles.append(
                         ProfileItem(
                             id=str(item.get("id", "")),
                             firstName=item.get("first_name", ""),
                             lastName=item.get("last_name", ""),
-                            email=item.get("email", ""),
+                            emails=emails if isinstance(emails, list) else [],
+                            primaryEmail=primary_email,
                             role=item.get("role", ""),
                             active=item.get("active", False),
                             viewedIntro=item.get("viewed_intro", False),

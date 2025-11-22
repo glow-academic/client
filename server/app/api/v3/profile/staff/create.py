@@ -20,7 +20,8 @@ class CreateStaffRequest(BaseModel):
 
     firstName: str
     lastName: str
-    email: str
+    emails: list[str]  # List of emails (first one will be set as primary)
+    primary_email_index: int | None = None  # Index in emails array for primary (defaults to 0)
     role: str
     primary_department_id: str | None = None
 
@@ -47,13 +48,26 @@ async def create_profile(
         # Generate new profile ID
         profile_id = str(uuid.uuid4())
 
+        # Validate emails array
+        if not request.emails or len(request.emails) == 0:
+            raise HTTPException(status_code=400, detail="At least one email is required")
+
+        # Determine primary email index (default to 0)
+        primary_index = request.primary_email_index if request.primary_email_index is not None else 0
+        if primary_index < 0 or primary_index >= len(request.emails):
+            raise HTTPException(status_code=400, detail="Invalid primary_email_index")
+        
+        primary_email = request.emails[primary_index]
+
         # Single consolidated query: validates email, creates profile, and inserts department
+        # Note: For now, we create profile with primary email, then insert other emails
+        # TODO: Update SQL to handle multiple emails in one query
         sql_query = load_sql("sql/v3/profile/staff/create_profile_complete.sql")
         sql_params = (
             profile_id,
             request.firstName,
             request.lastName,
-            request.email,
+            primary_email,
             request.role,
             True,  # active
             False,  # default_profile
@@ -71,12 +85,24 @@ async def create_profile(
             # Check if email already exists (returned from query)
             if result["email_exists"]:
                 raise HTTPException(
-                    status_code=400, detail=f"Email '{request.email}' already exists"
+                    status_code=400, detail=f"Email '{primary_email}' already exists"
                 )
 
             # Verify profile was created
             if not result["id"]:
                 raise HTTPException(status_code=500, detail="Failed to create profile")
+
+            # Insert additional emails (if any)
+            if len(request.emails) > 1:
+                insert_email_sql = """
+                    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+                    SELECT $1::uuid, unnest($2::text[]), false, true
+                    WHERE NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = unnest($2::text[]) AND active = true)
+                """
+                # Get all emails except the primary one
+                additional_emails = [e for i, e in enumerate(request.emails) if i != primary_index]
+                if additional_emails:
+                    await conn.execute(insert_email_sql, profile_id, additional_emails)
 
         result_data = CreateStaffResponse(
             success=True,

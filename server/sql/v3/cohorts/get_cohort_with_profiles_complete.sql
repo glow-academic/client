@@ -34,7 +34,8 @@ all_staff AS (
         p.id as profile_id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.first_name || ' ' || p.last_name as name,
         p.role,
         SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
@@ -55,6 +56,7 @@ all_staff AS (
         END as can_delete
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN recent_runs rr ON rr.profile_id = p.id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
@@ -67,6 +69,8 @@ all_staff AS (
     ) pa ON true
     CROSS JOIN user_profile up
     WHERE pd.department_id = ANY($2)
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
+             pa.last_active, prl.requests_per_day, pc.cohort_ids, rr.run_count, up.role
     ORDER BY p.id, p.last_name, p.first_name
 ),
 available_profiles AS (
@@ -88,10 +92,10 @@ SELECT
             'profile_id', ap.profile_id::text,
             'first_name', ap.first_name,
             'last_name', ap.last_name,
-            'email', ap.email,
+            'emails', COALESCE(ap.emails, ARRAY[]::text[]),
+            'primaryEmail', ap.primary_email,
             'name', ap.name,
             'role', ap.role,
-            'email', ap.email,
             'initials', ap.initials,
             'active', ap.active,
             'lastActive', ap.lastActive,

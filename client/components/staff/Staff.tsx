@@ -428,7 +428,7 @@ export default function Staff({
                             className="text-red-600 dark:text-red-300"
                           >
                             • {staff.first_name} {staff.last_name} (
-                            {staff.email}){" "}
+                            {staff.primary_email || (staff.emails && staff.emails.length > 0 ? staff.emails[0] : "")}){" "}
                             {cohortCount > 0 ? (
                               <span className="text-xs text-muted-foreground">
                                 – affects {cohortCount} cohort
@@ -458,7 +458,7 @@ export default function Staff({
                             key={s.profile_id}
                             className="text-yellow-700 dark:text-yellow-300"
                           >
-                            • {s.first_name} {s.last_name} ({s.email})
+                            • {s.first_name} {s.last_name} ({s.primary_email || (s.emails && s.emails.length > 0 ? s.emails[0] : "")})
                             {s.profile_id === effectiveProfile?.id
                               ? " – your account"
                               : s.default_profile
@@ -543,7 +543,7 @@ export default function Staff({
                       <div className="mt-1 ml-4 border rounded-md p-2 bg-gray-50 dark:bg-gray-900">
                         <p className="text-sm text-yellow-700 dark:text-yellow-300">
                           • {staffMember.first_name} {staffMember.last_name} (
-                          {staffMember.email})
+                          {staffMember.primary_email || (staffMember.emails && staffMember.emails.length > 0 ? staffMember.emails[0] : "")})
                           {staffMember.profile_id === effectiveProfile?.id
                             ? " – your account"
                             : staffMember.default_profile
@@ -567,7 +567,7 @@ export default function Staff({
                       <ul className="text-sm space-y-2">
                         <li className="text-red-600 dark:text-red-300">
                           • {staffMember.first_name} {staffMember.last_name} (
-                          {staffMember.email}){" "}
+                          {staffMember.primary_email || (staffMember.emails && staffMember.emails.length > 0 ? staffMember.emails[0] : "")}){" "}
                           {cohortCount > 0 ? (
                             <span className="text-xs text-muted-foreground">
                               – affects {cohortCount} cohort

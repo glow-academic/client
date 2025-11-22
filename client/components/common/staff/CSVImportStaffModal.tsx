@@ -615,18 +615,21 @@ export default function CSVImportStaffModal({
     }
   }, [csvContent, columnMappings, includedColumns, processCSVAction]);
 
-  // Check for duplicate aliases in review stage
+  // Check for duplicate aliases in review stage (check all emails)
   const duplicateAliasMap = React.useMemo(() => {
     const aliasMap: Record<string, number[]> = {};
     processedRows.forEach((row, idx) => {
       const editableRow = editableRows[idx] || row;
-      const email = normalizeEmail(editableRow.email || "");
-      if (email) {
-        if (!aliasMap[email]) {
-          aliasMap[email] = [];
+      const emails = editableRow.emails || [];
+      emails.forEach((email) => {
+        const normalized = normalizeEmail(email);
+        if (normalized) {
+          if (!aliasMap[normalized]) {
+            aliasMap[normalized] = [];
+          }
+          aliasMap[normalized]!.push(idx);
         }
-        aliasMap[email]!.push(idx);
-      }
+      });
     });
     // Return set of row indices that have duplicate aliases
     const duplicates = new Set<number>();
@@ -648,9 +651,19 @@ export default function CSVImportStaffModal({
         const updated = { ...current } as ProcessedCSVRow &
           Record<string, string | null | string[]>;
 
-        // Handle arrays for department_ids and cohort_ids
+        // Handle arrays for department_ids, cohort_ids, and emails
         if (field === "department_ids" || field === "cohort_ids") {
           updated[field] = Array.isArray(value) ? value : [];
+        } else if (field === "emails") {
+          // Handle emails as array or comma-separated string
+          if (Array.isArray(value)) {
+            updated[field] = value;
+          } else if (typeof value === "string") {
+            // Parse comma-separated emails
+            updated[field] = value.split(",").map(e => e.trim()).filter(e => e.length > 0);
+          } else {
+            updated[field] = [];
+          }
         } else {
           updated[field] = value;
         }
@@ -703,25 +716,28 @@ export default function CSVImportStaffModal({
       return;
     }
 
-    // Validate email uniqueness within the batch
+    // Validate email uniqueness within the batch (check all emails)
     const emailCounts: Record<string, number[]> = {};
     validRows.forEach((row, idx) => {
-      const email = normalizeEmail(row.email || "");
-      if (email) {
-        if (!emailCounts[email]) {
-          emailCounts[email] = [];
+      const emails = row.emails || [];
+      emails.forEach((email) => {
+        const normalized = normalizeEmail(email);
+        if (normalized) {
+          if (!emailCounts[normalized]) {
+            emailCounts[normalized] = [];
+          }
+          emailCounts[normalized]!.push(idx);
         }
-        emailCounts[email]!.push(idx);
-      }
+      });
     });
 
     const duplicateEmails = Object.entries(emailCounts)
       .filter(([, indices]) => indices.length > 1)
       .map(([email]) => email);
 
-    if (duplicateAliases.length > 0) {
+    if (duplicateEmails.length > 0) {
       toast.error(
-        `Duplicate aliases found in CSV: ${duplicateAliases.join(", ")}`,
+        `Duplicate emails found in CSV: ${duplicateEmails.join(", ")}`,
       );
       return;
     }
@@ -794,10 +810,18 @@ export default function CSVImportStaffModal({
             .filter((id): id is string => id !== null);
         }
 
+        const emails = (row.emails || []).map(e => normalizeEmail(e)).filter(e => e.length > 0);
+        if (emails.length === 0) {
+          // Fallback to empty array if no emails (shouldn't happen due to validation)
+          emails.push("");
+        }
         return {
           firstName: row.firstName!,
           lastName: row.lastName!,
-          email: normalizeEmail(row.email || ""),
+          emails: emails,
+          primary_email_index: row.primary_email_index !== undefined && row.primary_email_index < emails.length
+            ? row.primary_email_index
+            : 0,
           role: row.role || "ta",
           department_ids: deptIds,
           cohort_ids: cohortIds,
@@ -825,11 +849,12 @@ export default function CSVImportStaffModal({
         // The profileIds array corresponds to the profiles array order
         const stagedProfiles = response.profileIds.map((profileId, index) => {
           const row = validRows[index];
+          const emails = row?.emails || [];
           return {
             profileId,
             firstName: row?.firstName ?? "",
             lastName: row?.lastName ?? "",
-            email: row?.email ?? "",
+            email: emails[0] || "",
             role: row?.role ?? "ta",
           };
         });
@@ -1243,14 +1268,15 @@ export default function CSVImportStaffModal({
                               }
                             >
                               <Input
-                                value={editableRow.email || ""}
+                                value={(editableRow.emails || []).join(", ") || ""}
                                 onChange={(e) =>
                                   updateEditableRow(
                                     index,
-                                    "email",
-                                    e.target.value || null,
+                                    "emails",
+                                    e.target.value || "",
                                   )
                                 }
+                                placeholder="redacted@purdue.edu, redacted@purdue.edu"
                                 className="h-8 w-full min-w-[120px]"
                               />
                             </TableCell>

@@ -8,7 +8,8 @@ SELECT
             'id', p.id,
             'first_name', p.first_name,
             'last_name', p.last_name,
-            'email', p.email,
+            'emails', COALESCE((SELECT ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) FROM profile_emails pe WHERE pe.profile_id = p.id), ARRAY[]::text[]),
+            'primaryEmail', (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1),
             'role', p.role
         ) ORDER BY p.last_name, p.first_name) FILTER (WHERE p.id IS NOT NULL),
         '[]'::jsonb

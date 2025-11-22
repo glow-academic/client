@@ -35,19 +35,19 @@ role_validation AS (
     WHERE NOT EXISTS (SELECT 1 FROM current_user_role)
 ),
 existing_profile AS (
-    SELECT id FROM profiles WHERE email = $4
+    -- Find existing profile by email in profile_emails table
+    SELECT pe.profile_id as id FROM profile_emails pe WHERE pe.email = $4 AND pe.active = true LIMIT 1
 ),
 profile_upsert AS (
     -- Insert or update profile (only if role validation passes)
     INSERT INTO profiles (
-        id, first_name, last_name, email, role, active,
+        id, first_name, last_name, role, active,
         default_profile, viewed_intro, viewed_chat, updated_at
     )
     SELECT
         COALESCE((SELECT id FROM existing_profile LIMIT 1), $1),  -- Use existing ID if found, else new UUID
         $2,  -- first_name
         $3,  -- last_name
-        $4,  -- email
         $5::profile_role,  -- role
         $6,  -- active
         false,  -- default_profile
@@ -55,7 +55,7 @@ profile_upsert AS (
         false,  -- viewed_chat
         NOW()  -- updated_at
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (email) DO UPDATE SET
+    ON CONFLICT (id) DO UPDATE SET
         first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
         role = CASE 
@@ -66,6 +66,28 @@ profile_upsert AS (
         active = EXCLUDED.active,
         updated_at = NOW()
     RETURNING id, first_name, last_name, NOT EXISTS(SELECT 1 FROM existing_profile) as created
+),
+email_upsert AS (
+    -- Insert or update email in profile_emails (set as primary)
+    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    SELECT 
+        pu.id, $4, true, true
+    FROM profile_upsert pu
+    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    ON CONFLICT (profile_id, email) DO UPDATE SET
+        is_primary = true,
+        active = true,
+        updated_at = NOW()
+),
+email_deactivate_others AS (
+    -- Deactivate other primary emails for this profile (ensure only one primary)
+    UPDATE profile_emails SET
+        is_primary = false,
+        updated_at = NOW()
+    WHERE profile_id = (SELECT id FROM profile_upsert LIMIT 1)
+      AND email != $4
+      AND is_primary = true
+      AND EXISTS (SELECT 1 FROM profile_upsert)
 ),
 final_profile AS (
     SELECT id, first_name, last_name, created FROM profile_upsert

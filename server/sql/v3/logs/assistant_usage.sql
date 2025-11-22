@@ -42,11 +42,14 @@ top_users_profiles AS (
         p.id::text as user_id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         uc.chat_count
     FROM user_counts uc
     JOIN profiles p ON p.id = uc.profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
+    GROUP BY p.id, p.first_name, p.last_name, p.role, uc.chat_count
 )
 SELECT
     COALESCE(
@@ -84,7 +87,8 @@ SELECT
             'user_id', tup.user_id,
             'first_name', tup.first_name,
             'last_name', tup.last_name,
-            'email', tup.email,
+            'emails', COALESCE(tup.emails, ARRAY[]::text[]),
+            'primaryEmail', tup.primary_email,
             'role', tup.role,
             'chat_count', tup.chat_count
         ))

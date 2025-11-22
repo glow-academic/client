@@ -154,9 +154,10 @@ def create_staff_api(
     payload = {
         "firstName": first_name,
         "lastName": last_name,
-        "email": email,
+        "emails": [email],
+        "primary_email_index": 0,
         "role": role,
-        "department_id": department_id,
+        "primary_department_id": department_id,
     }
     data: dict[str, Any] = _post_json(
         request,

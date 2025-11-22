@@ -254,7 +254,11 @@ export function EmulateProfileModal({
                         <TableCell className="font-medium">
                           {profile.firstName} {profile.lastName}
                         </TableCell>
-                        <TableCell>{profile.email}</TableCell>
+                        <TableCell>
+                          {profile.emails && profile.emails.length > 0
+                            ? profile.emails.join(", ")
+                            : profile.primaryEmail || "No email"}
+                        </TableCell>
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(

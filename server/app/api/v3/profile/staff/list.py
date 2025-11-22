@@ -31,7 +31,8 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    email: str
+    emails: list[str]  # List of all active emails
+    primary_email: str | None  # Primary email (first in emails array if exists)
     name: str  # Combined first_name + last_name
     role: str
     initials: str  # Derived from first_name + last_name
@@ -132,12 +133,15 @@ async def get_profile_list(
                 # Fallback to first department if no primary department set
                 primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
 
+            emails = row.get("emails") or []
+            primary_email = row.get("primary_email")
             staff.append(
                 StaffItem(
                     profile_id=str(row["profile_id"]),
                     first_name=row["first_name"],
                     last_name=row["last_name"],
-                    email=row["email"],
+                    emails=emails if isinstance(emails, list) else [],
+                    primary_email=primary_email,
                     name=row["name"],
                     role=row["role"],
                     initials=row["initials"],

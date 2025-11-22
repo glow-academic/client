@@ -28,7 +28,8 @@ async def test_get_profile_detail(
     assert profile["id"] == profile_id
     assert "firstName" in profile
     assert "lastName" in profile
-    assert "email" in profile
+    assert "emails" in profile
+    assert "primaryEmail" in profile
     assert "role" in profile
     assert "active" in profile
     assert "viewedIntro" in profile
@@ -64,10 +65,17 @@ async def test_get_profile_detail_guest_profile_id(
     """Test getting profile with guest-profile-id resolution."""
     # Create a default guest profile
     guest_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, email, role, default_profile) "
-        "VALUES('Guest', 'User', 'redacted@purdue.edu', 'guest', true) "
-        "ON CONFLICT (email) DO UPDATE SET default_profile = true "
+        "INSERT INTO profiles(first_name, last_name, role, default_profile) "
+        "VALUES('Guest', 'User', 'guest', true) "
+        "ON CONFLICT (id) DO UPDATE SET default_profile = true "
         "RETURNING id"
+    )
+    # Insert email into profile_emails
+    await db.execute(
+        "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+        "VALUES ($1, 'redacted@purdue.edu', true, true) "
+        "ON CONFLICT (profile_id, email) DO NOTHING",
+        guest_id
     )
 
     response = await client.post(

@@ -103,11 +103,14 @@ async def update_profile(
             raise HTTPException(status_code=404, detail="Profile not found")
 
         # Transform database row to response
+        emails = row.get("emails") or []
+        primary_email = row.get("primary_email")
         profile = ProfileItem(
             id=str(row["id"]),
             firstName=row["first_name"],
             lastName=row["last_name"],
-            email=row["email"],
+            emails=emails if isinstance(emails, list) else [],
+            primaryEmail=primary_email,
             role=row["role"],
             active=row["active"],
             viewedIntro=row["viewed_intro"],

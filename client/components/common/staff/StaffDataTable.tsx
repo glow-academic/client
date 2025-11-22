@@ -321,7 +321,9 @@ export function StaffDataTable({
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {staff.email}
+                    {staff.emails && staff.emails.length > 0 
+                      ? staff.emails.join(", ") 
+                      : staff.primary_email || "No email"}
                   </p>
                 </div>
               </div>
@@ -338,17 +340,25 @@ export function StaffDataTable({
         filterFn: (row, _, value) => {
           const staff = row.original;
           if (!value) return true;
+          const valueLower = value.toLowerCase();
+          const emails = staff.emails || [];
+          const emailMatch = emails.some(e => e.toLowerCase().includes(valueLower)) ||
+                            (staff.primary_email && staff.primary_email.toLowerCase().includes(valueLower));
           return (
-            staff.first_name.toLowerCase().includes(value.toLowerCase()) ||
-            staff.last_name.toLowerCase().includes(value.toLowerCase()) ||
-            staff.email.toLowerCase().includes(value.toLowerCase())
+            staff.first_name.toLowerCase().includes(valueLower) ||
+            staff.last_name.toLowerCase().includes(valueLower) ||
+            emailMatch
           );
         },
       },
       {
         id: "name",
-        accessorFn: (row: ProfileListItem) =>
-          `${row.first_name} ${row.last_name} ${row.email}`.toLowerCase(),
+        accessorFn: (row: ProfileListItem) => {
+          const emails = row.emails && row.emails.length > 0 
+            ? row.emails.join(" ") 
+            : row.primary_email || "";
+          return `${row.first_name} ${row.last_name} ${emails}`.toLowerCase();
+        },
         header: "Search",
         cell: () => null,
         enableHiding: false,

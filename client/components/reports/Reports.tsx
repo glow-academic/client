@@ -480,7 +480,7 @@ export default function Reports({
               onClick={() =>
                 router.push(`/analytics/reports/p/${profile.profileId}`)
               }
-              title={`${displayName}${profile.email ? ` (${profile.email})` : ""} - Click to view detailed report`}
+              title={`${displayName}${(profile.emails && profile.emails.length > 0) || profile.primaryEmail ? ` (${(profile.emails && profile.emails.length > 0) ? profile.emails.join(", ") : profile.primaryEmail || ""})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
             >
               <div className="flex flex-col items-start min-w-0 w-full">
@@ -490,12 +490,12 @@ export default function Reports({
                 >
                   {displayName}
                 </span>
-                {profile.email && (
+                {((profile.emails && profile.emails.length > 0) || profile.primaryEmail) && (
                   <span
                     className="text-xs text-muted-foreground truncate w-full"
-                    title={profile.email}
+                    title={(profile.emails && profile.emails.length > 0) ? profile.emails.join(", ") : profile.primaryEmail || ""}
                   >
-                    {profile.email}
+                    {(profile.emails && profile.emails.length > 0) ? profile.emails.join(", ") : profile.primaryEmail || ""}
                   </span>
                 )}
               </div>

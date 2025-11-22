@@ -23,7 +23,8 @@ class ProfileSearchResult(BaseModel):
     id: str
     first_name: str | None
     last_name: str | None
-    email: str | None
+    emails: list[str] | None  # List of all active emails
+    primary_email: str | None  # Primary email (first in emails array if exists)
     role: str | None
     full_name: str
     score: int
@@ -78,9 +79,12 @@ async def find_profiles(
             for row in rows:
                 first = row["first_name"]
                 last = row["last_name"]
-                email = row["email"]
+                emails = row.get("emails") or []
+                primary_email = row.get("primary_email")
+                # Use primary email or first email for full_name fallback
+                email_display = primary_email or (emails[0] if emails else None)
                 full_name = (
-                    " ".join(x for x in (first, last) if x) or email or "Unknown"
+                    " ".join(x for x in (first, last) if x) or email_display or "Unknown"
                 )
 
                 results.append(
@@ -88,7 +92,8 @@ async def find_profiles(
                         id=str(row["id"]),
                         first_name=first,
                         last_name=last,
-                        email=email,
+                        emails=emails if isinstance(emails, list) else None,
+                        primary_email=primary_email,
                         role=row["role"],
                         full_name=full_name,
                         score=int(row["score"]),

@@ -86,7 +86,8 @@ staff_data AS (
             'profile_id', p.id::text,
             'first_name', p.first_name,
             'last_name', p.last_name,
-            'email', p.email,
+            'emails', ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true),
+            'primary_email', (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1),
             'name', p.first_name || ' ' || p.last_name,
             'role', p.role,
             'active', p.active,
@@ -107,6 +108,7 @@ staff_data AS (
         ) as staff_item
     FROM profiles p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
@@ -129,6 +131,9 @@ staff_data AS (
         -- (used when adding staff to cohorts, so user should see all available)
         true
     )
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
+             pa.last_active, prl.requests_per_day, pc.cohort_ids, pda.department_ids,
+             ppd.department_id, ptr.total_requests, rr.run_count
     ORDER BY p.id, p.last_name, p.first_name
 ),
 staff_aggregated AS (

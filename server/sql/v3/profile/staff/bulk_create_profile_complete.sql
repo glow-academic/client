@@ -4,10 +4,10 @@
 -- Returns: profile_ids (uuid[]), existing_emails (text[])
 
 WITH email_check AS (
-    -- Check if any emails already exist
+    -- Check if any emails already exist in profile_emails
     SELECT array_agg(email) as existing_emails
-    FROM profiles 
-    WHERE email = ANY($4::text[])
+    FROM profile_emails 
+    WHERE email = ANY($4::text[]) AND active = true
 ),
 profiles_data AS (
     -- Prepare profile data using unnest (maintains parallel array relationship)
@@ -31,14 +31,13 @@ profiles_data AS (
 profile_insert AS (
     -- Insert all profiles (only if no emails exist)
     INSERT INTO profiles (
-        id, first_name, last_name, email, role, active, 
+        id, first_name, last_name, role, active, 
         default_profile, viewed_intro, viewed_chat
     )
     SELECT 
         pd.profile_id,
         pd.first_name,
         pd.last_name,
-        pd.email,
         pd.role,
         true,  -- active
         false,  -- default_profile
@@ -47,6 +46,17 @@ profile_insert AS (
     FROM profiles_data pd
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)
     RETURNING id
+),
+email_insert AS (
+    -- Insert all emails into profile_emails (set as primary)
+    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    SELECT 
+        pd.profile_id,
+        pd.email,
+        true,  -- is_primary
+        true   -- active
+    FROM profiles_data pd
+    WHERE EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)
 ),
 department_insert AS (
     -- Insert all department relationships

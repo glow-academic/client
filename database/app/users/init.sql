@@ -14,7 +14,6 @@ CREATE TABLE profiles (
   last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,
   last_name  TEXT        NOT NULL,
-  email      TEXT        NOT NULL,
   viewed_intro BOOLEAN   NOT NULL DEFAULT FALSE,
   viewed_chat BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -23,10 +22,33 @@ CREATE TABLE profiles (
   active     BOOLEAN     NOT NULL DEFAULT FALSE
   -- req_per_day moved to profile_request_limits junction table
   -- last_active moved to profile_activity junction table
+  -- email moved to profile_emails junction table
 );
 
--- Add unique constraint to email
-CREATE UNIQUE INDEX profiles_email_unique ON profiles(email);
+-- Profile ↔ Email M:N relationship (BCNF normalization)
+-- Allows multiple emails per profile with one primary email
+CREATE TABLE profile_emails (
+  profile_id UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  email      TEXT        NOT NULL,
+  is_primary BOOLEAN     NOT NULL DEFAULT FALSE,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (profile_id, email)
+);
+
+-- Global uniqueness constraint on email
+CREATE UNIQUE INDEX profile_emails_email_unique ON profile_emails(email);
+
+-- Enforce max one primary email per profile
+CREATE UNIQUE INDEX profile_emails_one_primary_per_profile
+  ON profile_emails (profile_id)
+  WHERE is_primary;
+
+-- Indexes for performance
+CREATE INDEX ON profile_emails (profile_id);
+CREATE INDEX ON profile_emails (profile_id, is_primary);
+CREATE INDEX ON profile_emails (email);
 
 -- Profile ↔ Department M:N relationship (BCNF normalization)
 CREATE TABLE profile_departments (

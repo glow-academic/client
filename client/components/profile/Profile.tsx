@@ -107,7 +107,9 @@ export function Profile({ className }: ProfileProps) {
               </CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1" data-testid="profile-email">
                 <Mail className="h-4 w-4" />
-                {activeProfile.email}
+                {activeProfile.emails && activeProfile.emails.length > 0
+                  ? activeProfile.emails.join(", ")
+                  : activeProfile.primaryEmail || "No email"}
               </CardDescription>
             </div>
             <Badge variant={roleInfo.color} data-testid="profile-role">{roleInfo.label}</Badge>

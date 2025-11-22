@@ -83,10 +83,10 @@ const normalizeCohortStaffItem = (
     profile_id: item.profile_id,
     first_name: item.first_name,
     last_name: item.last_name,
-    email: item.email,
+    emails: item.emails || [],
+    primary_email: item.primary_email || "",
     name: item.name,
     role: item.role,
-    email: item.email,
     initials: item.initials,
     active: item.active,
     last_active: item.lastActive ?? null,
@@ -1034,13 +1034,15 @@ export default function Cohort({
                 // Create minimal ProfileListItem from staged data
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
-                const email = staged.email || "";
+                const emails = staged.emails || [];
+                const primaryEmail = staged.primary_email || (emails.length > 0 ? emails[0] : "");
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
                   last_name: lastName,
-                  email: email,
-                  name: `${firstName} ${lastName}`.trim() || email,
+                  emails: emails,
+                  primary_email: primaryEmail,
+                  name: `${firstName} ${lastName}`.trim() || primaryEmail,
                   role: staged.role || "ta",
                   initials:
                     `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
@@ -1324,13 +1326,15 @@ export default function Cohort({
               .map((staged) => {
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
-                const email = staged.email || "";
+                const emails = staged.emails || [];
+                const primaryEmail = staged.primary_email || (emails.length > 0 ? emails[0] : "");
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
                   last_name: lastName,
-                  email: email,
-                  name: `${firstName} ${lastName}`.trim() || email,
+                  emails: emails,
+                  primary_email: primaryEmail,
+                  name: `${firstName} ${lastName}`.trim() || primaryEmail,
                   role: staged.role || "ta",
                   initials:
                     `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
@@ -1408,13 +1412,15 @@ export default function Cohort({
               .map((staged) => {
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
-                const email = staged.email || "";
+                const emails = staged.emails || [];
+                const primaryEmail = staged.primary_email || (emails.length > 0 ? emails[0] : "");
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
                   last_name: lastName,
-                  email: email,
-                  name: `${firstName} ${lastName}`.trim() || email,
+                  emails: emails,
+                  primary_email: primaryEmail,
+                  name: `${firstName} ${lastName}`.trim() || primaryEmail,
                   role: staged.role || "ta",
                   initials:
                     `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
@@ -1516,13 +1522,15 @@ export default function Cohort({
                       // Create minimal ProfileListItem from staged data
                       const firstName = staged.firstName || "";
                       const lastName = staged.lastName || "";
-                      const email = staged.email || "";
+                      const emails = staged.emails || (staged.email ? [staged.email] : []);
+                      const primaryEmail = staged.primary_email || staged.email || (emails.length > 0 ? emails[0] : "");
                       return {
                         profile_id: staged.profileId,
                         first_name: firstName,
                         last_name: lastName,
-                        email: email,
-                        name: `${firstName} ${lastName}`.trim() || email,
+                        emails: emails,
+                        primary_email: primaryEmail,
+                        name: `${firstName} ${lastName}`.trim() || primaryEmail,
                         role: staged.role || "ta",
                         initials:
                           `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||

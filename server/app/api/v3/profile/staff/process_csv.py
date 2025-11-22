@@ -45,7 +45,8 @@ class ProcessedCSVRow(BaseModel):
     row_index: int
     firstName: str | None
     lastName: str | None
-    email: str | None
+    emails: list[str] = []  # Array of emails (parsed from comma-separated values)
+    primary_email_index: int = 0  # Index of primary email (defaults to 0)
     role: str | None
     department_ids: list[str] = []  # Array for multi-select support
     cohort_ids: list[str] = []  # Array for multi-select support
@@ -102,7 +103,7 @@ async def process_csv(
             # Extract values based on mappings
             firstName = None
             lastName = None
-            email = None
+            emails: list[str] = []
             role = None
             department_ids: list[str] = []
             cohort_ids: list[str] = []
@@ -116,7 +117,11 @@ async def process_csv(
                 elif field == "lastName":
                     lastName = value if value else None
                 elif field == "email":
-                    email = value if value else None
+                    # Support comma-separated emails
+                    if value:
+                        email_values = [e.strip().lower() for e in value.split(",") if e.strip()]
+                        emails.extend(email_values)
+                    # If no emails found, emails stays empty
                 elif field == "role":
                     role = value if value else None
                 elif field == "department":
@@ -149,10 +154,10 @@ async def process_csv(
                         message="Last name is required",
                     )
                 )
-            if not email:
+            if len(emails) == 0:
                 errors.append(
                     CSVRowError(
-                        row_index=row_index, field="email", message="Email is required"
+                        row_index=row_index, field="emails", message="At least one email is required"
                     )
                 )
 
@@ -165,7 +170,8 @@ async def process_csv(
                     row_index=row_index,
                     firstName=firstName,
                     lastName=lastName,
-                    email=email,
+                    emails=emails,
+                    primary_email_index=0,  # First email is primary by default
                     role=role,
                     department_ids=department_ids,
                     cohort_ids=cohort_ids,

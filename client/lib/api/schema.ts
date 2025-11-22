@@ -4964,8 +4964,10 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email Index */
+            primary_email_index?: number | null;
             /** Role */
             role: string;
             /**
@@ -5279,8 +5281,10 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email Index */
+            primary_email_index?: number | null;
             /** Role */
             role: string;
             /** Primary Department Id */
@@ -7960,8 +7964,16 @@ export interface components {
             firstName: string | null;
             /** Lastname */
             lastName: string | null;
-            /** Email */
-            email: string | null;
+            /**
+             * Emails
+             * @default []
+             */
+            emails: string[];
+            /**
+             * Primary Email Index
+             * @default 0
+             */
+            primary_email_index: number;
             /** Role */
             role: string | null;
             /**
@@ -8036,6 +8048,13 @@ export interface components {
             lastName: string;
             /** Email */
             email: string | null;
+            /**
+             * Emails
+             * @default []
+             */
+            emails: string[];
+            /** Primaryemail */
+            primaryEmail: string | null;
             /** Role */
             role: string;
             /**
@@ -8076,8 +8095,10 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primaryemail */
+            primaryEmail: string | null;
             /** Role */
             role: string;
             /** Active */
@@ -8160,8 +8181,10 @@ export interface components {
             first_name: string | null;
             /** Last Name */
             last_name: string | null;
-            /** Email */
-            email: string | null;
+            /** Emails */
+            emails: string[] | null;
+            /** Primary Email */
+            primary_email: string | null;
             /** Role */
             role: string | null;
             /** Full Name */
@@ -9450,8 +9473,10 @@ export interface components {
         StaffDetailResponse: {
             /** Name */
             name: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email */
+            primary_email: string | null;
             /** Role */
             role: string;
         };
@@ -10098,8 +10123,10 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email Index */
+            primary_email_index?: number | null;
             /** Role */
             role: string;
             /** Requests Per Day */
@@ -10432,8 +10459,10 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email */
+            primary_email: string | null;
             /** Name */
             name: string;
             /** Role */
@@ -10554,8 +10583,10 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email */
+            primary_email: string | null;
             /** Name */
             name: string;
             /** Role */
@@ -11264,8 +11295,10 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Email */
-            email: string;
+            /** Emails */
+            emails: string[];
+            /** Primary Email */
+            primary_email: string | null;
             /** Name */
             name: string;
             /** Role */

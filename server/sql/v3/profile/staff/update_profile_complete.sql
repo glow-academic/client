@@ -2,6 +2,7 @@
 -- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, $6=active, 
 --             $7=primary_department_id (uuid), $8=requests_per_day (int, nullable), $9=default_profile (bool),
 --             $10=intro_completed (bool, nullable), $11=chat_completed (bool, nullable)
+-- Note: $4=email is now the primary email to update (replaces existing primary email)
 -- Returns: id, first_name, last_name, name (concatenated)
 
 WITH profile_check AS (
@@ -19,7 +20,6 @@ profile_update AS (
     UPDATE profiles SET
         first_name = $2,
         last_name = $3,
-        email = $4,
         role = $5,
         active = $6,
         default_profile = $9,
@@ -29,6 +29,31 @@ profile_update AS (
     WHERE id = $1::uuid
         AND EXISTS (SELECT 1 FROM profile_check)
     RETURNING id, first_name, last_name
+),
+email_deactivate AS (
+    -- Deactivate current primary email
+    UPDATE profile_emails SET
+        is_primary = false,
+        active = false,
+        updated_at = NOW()
+    WHERE profile_id = $1::uuid
+        AND is_primary = true
+        AND EXISTS (SELECT 1 FROM profile_update)
+        AND $4 IS NOT NULL
+),
+email_update AS (
+    -- Insert or activate new primary email
+    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    SELECT 
+        pu.id, $4, true, true
+    FROM profile_update pu
+    WHERE $4 IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM profile_emails WHERE email = $4 AND active = true)
+    ON CONFLICT (email) DO UPDATE SET
+        profile_id = EXCLUDED.profile_id,
+        is_primary = true,
+        active = true,
+        updated_at = NOW()
 ),
 department_update AS (
     -- Update department relationship

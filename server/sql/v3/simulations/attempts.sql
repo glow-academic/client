@@ -7,11 +7,14 @@ WITH attempt_data AS (
         ap.profile_id,
         p.first_name,
         p.last_name,
-        p.email
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email
     FROM simulation_attempts sa
     LEFT JOIN attempt_profiles ap ON sa.id = ap.attempt_id AND ap.active = true
     LEFT JOIN profiles p ON p.id = ap.profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     WHERE sa.simulation_id = $1
+    GROUP BY sa.id, sa.created_at, ap.profile_id, p.first_name, p.last_name
     ORDER BY sa.created_at DESC
     LIMIT $2
 ),
@@ -33,7 +36,8 @@ SELECT
     ad.profile_id,
     ad.first_name,
     ad.last_name,
-    ad.email,
+    COALESCE(ad.emails, ARRAY[]::text[]) as emails,
+    ad.primary_email,
     lg.score,
     lg.passed,
     lg.time_taken

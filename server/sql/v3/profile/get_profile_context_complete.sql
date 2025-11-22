@@ -68,7 +68,8 @@ actual_profile_data AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
         p.viewed_intro,
@@ -82,6 +83,7 @@ actual_profile_data AS (
         pd.department_id as primary_department_id
     FROM resolve_profile_ids rpi
     JOIN profiles p ON p.id = rpi.resolved_actual_profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN LATERAL (
@@ -91,6 +93,9 @@ actual_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.viewed_intro, p.viewed_chat, 
+             p.default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
+             p.created_at, p.updated_at, pd.department_id
 ),
 effective_profile_data AS (
     -- Fetch the profile being viewed (could be same as actual or emulated)
@@ -98,7 +103,8 @@ effective_profile_data AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.email,
+        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
         p.viewed_intro,
@@ -112,6 +118,7 @@ effective_profile_data AS (
         pd.department_id as primary_department_id
     FROM resolve_profile_ids rpi
     JOIN profiles p ON p.id = rpi.resolved_effective_profile_id
+    LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN LATERAL (
@@ -121,6 +128,9 @@ effective_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.viewed_intro, p.viewed_chat, 
+             p.default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
+             p.created_at, p.updated_at, pd.department_id
 ),
 dept_data AS (
     -- Departments for the effective profile
@@ -203,7 +213,8 @@ SELECT
     apd.id as actual_id,
     apd.first_name as actual_first_name,
     apd.last_name as actual_last_name,
-    apd.email as actual_email,
+    apd.emails as actual_emails,
+    apd.primary_email as actual_primary_email,
     apd.role as actual_role,
     apd.active as actual_active,
     apd.viewed_intro as actual_viewed_intro,
@@ -219,7 +230,8 @@ SELECT
     epd.id,
     epd.first_name,
     epd.last_name,
-    epd.email,
+    epd.emails,
+    epd.primary_email,
     epd.role,
     epd.active,
     epd.viewed_intro,

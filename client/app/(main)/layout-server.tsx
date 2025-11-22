@@ -96,6 +96,9 @@ const getAttemptFull = async (
 /** ---- Export type for client (type-only imports) ---- */
 export type LayoutContextResponse = LayoutContextOut;
 
+// Export ProfileItem type derived from server response
+export type ProfileItem = LayoutContextResponse["actualProfile"];
+
 export type SafeSessionSnapshot = {
   effectiveProfileId: string | null;
   fullEmulation: boolean;
