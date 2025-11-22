@@ -25,7 +25,9 @@ interface DepartmentAccessDeniedProps {
     | "department"
     | "agent"
     | "rubric"
-    | "parameter";
+    | "parameter"
+    | "key"
+    | "prompt";
   redirectPath: string;
 }
 
@@ -51,6 +53,10 @@ export function DepartmentAccessDenied({
         return "rubric";
       case "parameter":
         return "parameter";
+      case "key":
+        return "key";
+      case "prompt":
+        return "prompt";
       default:
         return "resource";
     }
@@ -74,6 +80,10 @@ export function DepartmentAccessDenied({
         return "/management/rubrics";
       case "parameter":
         return "/management/parameters";
+      case "key":
+        return "/engine/keys";
+      case "prompt":
+        return "/engine/prompts";
       default:
         return "/";
     }

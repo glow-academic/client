@@ -3,24 +3,15 @@
  * Used to display the keys page with table-based filtering and card layout.
  */
 "use client";
-import {
-  Copy,
-  Edit,
-  Eye,
-  Key,
-  Plus,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Edit, Eye, Key, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
-  KeysListOut,
   DeleteKeyIn,
   DeleteKeyOut,
+  KeysListOut,
 } from "@/app/(main)/engine/keys/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -88,10 +79,7 @@ export default function Keys({
   const isLoading = false; // No loading when using server data
 
   // Extract data from response
-  const keys = useMemo(
-    () => keysData?.keys || [],
-    [keysData?.keys]
-  );
+  const keys = useMemo(() => keysData?.keys || [], [keysData?.keys]);
 
   // Use server-provided facet options directly (no client-side computation)
   const departmentOptions = useMemo(
@@ -271,7 +259,9 @@ export default function Keys({
 
     setIsDeleting(true);
     try {
-      await deleteKeyAction({ body: { keyId: deleteItem.id, profileId: effectiveProfile?.id || "" } });
+      await deleteKeyAction({
+        body: { keyId: deleteItem.id, profileId: effectiveProfile?.id || "" },
+      });
       toast.success("Key deleted successfully");
       router.refresh();
     } catch {
@@ -318,9 +308,7 @@ export default function Keys({
                   <Key className="h-3 w-3 mr-1" />
                   {key.type.toUpperCase()}
                 </Badge>
-                {!key.active && (
-                  <Badge variant="secondary">Inactive</Badge>
-                )}
+                {!key.active && <Badge variant="secondary">Inactive</Badge>}
               </div>
             </div>
           </div>
@@ -361,9 +349,7 @@ export default function Keys({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        <p className="text-sm text-muted-foreground mb-2">
-          {key.key_masked}
-        </p>
+        <p className="text-sm text-muted-foreground mb-2">{key.key_masked}</p>
         {/* Info row: Models count */}
         {key.model_ids && key.model_ids.length > 0 && (
           <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
@@ -529,4 +515,3 @@ export default function Keys({
     </div>
   );
 }
-
