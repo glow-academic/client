@@ -16,7 +16,7 @@ import type {
   DecryptKeyOut,
   UpdateKeyIn,
   UpdateKeyOut,
-} from "@/app/(main)/system/authentication/page";
+} from "@/app/(main)/system/auth/page";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

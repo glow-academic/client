@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/health/loading.tsx
- * Loading skeleton for health page
+ * app/(main)/system/auth/loading.tsx
+ * Loading skeleton for auth page
  */
 import { Skeleton } from "@/components/ui/skeleton";
 

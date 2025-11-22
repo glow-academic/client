@@ -32,7 +32,7 @@ import type {
   CreateAuthOut,
   UpdateAuthIn,
   UpdateAuthOut,
-} from "@/app/(main)/system/authentication/a/[authId]/page";
+} from "@/app/(main)/system/auth/a/[authId]/page";
 import type {
   CreateKeyIn,
   CreateKeyOut,
@@ -40,7 +40,7 @@ import type {
   DecryptKeyOut,
   UpdateKeyIn,
   UpdateKeyOut,
-} from "@/app/(main)/system/authentication/page";
+} from "@/app/(main)/system/auth/page";
 
 type AuthItemFormData = {
   id?: string;
@@ -280,7 +280,7 @@ export default function Auth({
         toast.success("Auth created successfully!");
       }
 
-      router.push("/system/authentication");
+      router.push("/system/auth");
     } catch (error) {
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`
@@ -625,7 +625,7 @@ export default function Auth({
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/system/authentication")}
+            onClick={() => router.push("/system/auth")}
             disabled={isSubmitting}
           >
             Cancel

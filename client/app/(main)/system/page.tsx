@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function SystemPage() {
-  return redirect("/system/authentication");
+  return redirect("/system/auth");
 }

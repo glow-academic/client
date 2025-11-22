@@ -340,8 +340,8 @@ export function UnifiedSidebar({
       effectiveProfile.role === "superadmin" &&
       (availableSections.includes("agents") ||
         availableSections.includes("models") ||
-        availableSections.includes("providers") ||
-        availableSections.includes("evals"))
+        availableSections.includes("keys") ||
+        availableSections.includes("prompts"))
     ) {
       const engineItems: MenuItem[] = [];
 
@@ -368,19 +368,19 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("providers")) {
+      if (availableSections.includes("keys")) {
         engineItems.push({
-          title: "Providers",
+          title: "Keys",
           url: "#",
-          section: "providers",
+          section: "keys",
         });
       }
 
-      if (availableSections.includes("evals")) {
+      if (availableSections.includes("prompts")) {
         engineItems.push({
-          title: "Evals",
+          title: "Prompts",
           url: "#",
-          section: "evals",
+          section: "prompts",
         });
       }
     }
@@ -397,11 +397,11 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("authentication")) {
+      if (availableSections.includes("auth")) {
         systemItems.push({
-          title: "Authentication",
+          title: "Auth",
           url: "#",
-          section: "authentication",
+          section: "auth",
         });
       }
 
@@ -413,11 +413,11 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("health")) {
+      if (availableSections.includes("evals")) {
         systemItems.push({
-          title: "Health",
+          title: "Evals",
           url: "#",
-          section: "health",
+          section: "evals",
         });
       }
 

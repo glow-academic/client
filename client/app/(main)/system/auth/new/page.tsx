@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/authentication/new/page.tsx
+ * app/(main)/system/auth/new/page.tsx
  * Auth create page
  */
 
@@ -14,7 +14,7 @@ import type {
   CreateKeyOut,
   UpdateKeyIn,
   UpdateKeyOut,
-} from "@/app/(main)/system/authentication/page";
+} from "@/app/(main)/system/auth/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type AuthDetailDefaultIn = InputOf<
@@ -48,7 +48,7 @@ const getAuthDefault = async (
 };
 
 export const metadata: Metadata = {
-  title: "Create Authentication",
+  title: "Create Auth",
   description: `Create a new authentication method in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 

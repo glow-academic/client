@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/authentication/page.tsx
- * Authentication list page
+ * app/(main)/system/auth/page.tsx
+ * Auth list page
  */
 import { getSession } from "@/auth";
 
@@ -77,11 +77,11 @@ export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
 }
 
 export const metadata: Metadata = {
-  title: "Authentication",
+  title: "Auth",
   description: `Manage authentication methods in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
 
-export default async function AuthenticationPage() {
+export default async function AuthPage() {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
@@ -89,7 +89,7 @@ export default async function AuthenticationPage() {
   const listData = await getAuthList(profileId);
 
   return (
-    <div className="space-y-6" data-page="authentication-index">
+    <div className="space-y-6" data-page="auth-index">
       <Auths
         listData={listData}
         duplicateAuthAction={duplicateAuth}

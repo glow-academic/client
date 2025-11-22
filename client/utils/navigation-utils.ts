@@ -122,22 +122,22 @@ export const getSectionRoute = (
       return "/engine/agents";
     case "models":
       return "/engine/models";
-    case "providers":
-      return "/engine/models";
-    case "evals":
-      return "/engine/evals";
+    case "keys":
+      return "/engine/keys";
+    case "prompts":
+      return "/engine/prompts";
 
     // System routes
     case "system":
       return "/system";
     case "staff":
       return "/system/staff";
-    case "authentication":
-      return "/system/authentication";
+    case "auth":
+      return "/system/auth";
     case "logs":
       return "/system/logs";
-    case "health":
-      return "/system/health";
+    case "evals":
+      return "/system/evals";
 
     // Profile route
     case "profile":

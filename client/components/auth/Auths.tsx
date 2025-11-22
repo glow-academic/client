@@ -28,7 +28,7 @@ import type {
   DeleteAuthOut,
   DuplicateAuthIn,
   DuplicateAuthOut,
-} from "@/app/(main)/system/authentication/page";
+} from "@/app/(main)/system/auth/page";
 
 export interface AuthsProps {
   // Server-provided data (for server-side rendering)
@@ -166,7 +166,7 @@ export default function Auths({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    router.push(`/system/authentication/a/${auth.auth_id}`)
+                    router.push(`/system/auth/a/${auth.auth_id}`)
                   }
                   aria-label={`Edit ${auth.name}`}
                   data-testid="btn-edit-auth"
@@ -181,7 +181,7 @@ export default function Auths({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    router.push(`/system/authentication/a/${auth.auth_id}`)
+                    router.push(`/system/auth/a/${auth.auth_id}`)
                   }
                   aria-label={`View ${auth.name}`}
                   data-testid="btn-view-auth"
@@ -261,7 +261,7 @@ export default function Auths({
             Get started by creating your first authentication method
           </p>
           <Button
-            onClick={() => router.push("/system/authentication/new")}
+            onClick={() => router.push("/system/auth/new")}
             aria-label="Create new auth entry"
           >
             <Plus className="h-4 w-4 mr-2" />

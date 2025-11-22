@@ -283,10 +283,10 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/system/authentication") {
+    if (pathname === "/system/auth") {
       return (
         <Button
-          onClick={() => router.push("/system/authentication/new")}
+          onClick={() => router.push("/system/auth/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/authentication/loading.tsx
- * Loading skeleton for authentication page
+ * app/(main)/engine/keys/loading.tsx
+ * Loading skeleton for keys page
  */
 import { Skeleton } from "@/components/ui/skeleton";
 

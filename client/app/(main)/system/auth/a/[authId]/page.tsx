@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/authentication/a/[authId]/page.tsx
+ * app/(main)/system/auth/a/[authId]/page.tsx
  * Auth edit page
  */
 
@@ -12,7 +12,7 @@ import type {
   DecryptKeyOut,
   UpdateKeyIn,
   UpdateKeyOut,
-} from "@/app/(main)/system/authentication/page";
+} from "@/app/(main)/system/auth/page";
 import Auth from "@/components/auth/Auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -60,13 +60,13 @@ export async function generateMetadata(
   try {
     const auth = await getAuth(authId, profileId);
     return {
-      title: `${auth?.name || "Auth"} Authentication`,
-      description: `${auth ? `${auth.name} ${auth.description || ""}` : "Authentication"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      title: `${auth?.name || "Auth"} Auth`,
+      description: `${auth ? `${auth.name} ${auth.description || ""}` : "Auth"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {
-      title: "Authentication",
-      description: `Authentication in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      title: "Auth",
+      description: `Auth in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   }
 }
@@ -163,3 +163,4 @@ export type {
   UpdateAuthIn,
   UpdateAuthOut,
 };
+
