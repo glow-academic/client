@@ -16,57 +16,16 @@ import { Label } from "@/components/ui/label";
 
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { OutputOf } from "@/lib/api/types";
 
-type ScenarioMappingItem = {
-  name: string;
-  description: string;
-  persona_ids: string[];
-};
-type ScenarioMapping = Record<string, ScenarioMappingItem>;
-
-type PersonaMappingItem = {
-  name: string;
-  description: string;
-  color: string;
-  icon: string;
-};
-
-type PersonaMapping = Record<string, PersonaMappingItem>;
-
-// Note: These types are simplified - ParameterSelector expects additional fields
-// but we'll cast them appropriately since the API provides the full structure
-type ParameterMappingItem = {
-  name: string;
-  description: string;
-  numerical?: boolean;
-  document_parameter?: boolean;
-};
-
-type ParameterMapping = Record<string, ParameterMappingItem>;
-
-type ParameterItemMappingItem = {
-  name: string;
-  description: string;
-  parameter_id?: string;
-  parameter_name?: string;
-  value?: string;
-};
-
-type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
-
-type SimulationMappingItem = {
-  name: string;
-  description: string;
-};
-
-type SimulationMapping = Record<string, SimulationMappingItem>;
-
-type DepartmentMappingItem = {
-  name: string;
-  description: string;
-};
-
-type DepartmentMapping = Record<string, DepartmentMappingItem>;
+// Extract types from API response (single source of truth)
+type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
+type ScenarioMapping = PracticeOverviewOut["scenario_mapping"];
+type PersonaMapping = PracticeOverviewOut["persona_mapping"];
+type ParameterMapping = PracticeOverviewOut["parameter_mapping"];
+type ParameterItemMapping = PracticeOverviewOut["parameter_item_mapping"];
+type SimulationMapping = PracticeOverviewOut["simulation_mapping"];
+type DepartmentMapping = PracticeOverviewOut["department_mapping"];
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";

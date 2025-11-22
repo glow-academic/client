@@ -51,38 +51,17 @@ import {
 } from "@/components/ui/tooltip";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 
-type PersonaMappingItem = {
-  name: string;
-  description: string;
-  color: string;
-  icon: string;
-  image_model?: boolean | null;
-};
-
+// Extract types from API response (single source of truth)
+type SimulationsListOut = OutputOf<"/api/v3/simulations/list", "post">;
+type ScenarioMappingItem = SimulationsListOut["scenario_mapping"][string];
+type PersonaMappingItem = SimulationsListOut["scenario_mapping"][string]["persona_mapping"][string];
 type MappingItem = {
   name: string;
   description: string;
 };
-
-type ParameterItemMappingItem = {
-  name: string;
-  description: string;
-  parameter_id: string;
-  parameter_name: string;
-  value: string;
-};
-
-type ScenarioMappingItem = {
-  name: string;
-  description: string;
-  persona_ids: string[];
-  persona_mapping: Record<string, PersonaMappingItem>;
-  document_mapping: Record<string, MappingItem>;
-  parameter_item_mapping: Record<string, ParameterItemMappingItem>;
-  parameter_item_ids: string[];
-  document_ids: string[];
-};
+type ParameterItemMappingItem = SimulationsListOut["scenario_mapping"][string]["parameter_item_mapping"][string];
 
 // Filter key constants
 const NO_PERSONA_KEY = "__no_persona__";

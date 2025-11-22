@@ -32,22 +32,12 @@ import { getPersonaIconComponent } from "@/utils/persona-icons";
 import { Infinity, Info, Table, Timer, User, Users } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { OutputOf } from "@/lib/api/types";
 
-type StandardGroupMappingItem = {
-  name: string;
-  description: string;
-  points: number;
-  passPoints: number;
-};
-
-type StandardMappingItem = {
-  name: string;
-  description: string;
-  points: number;
-};
-
-type StandardGroupsMapping = Record<string, StandardGroupMappingItem>;
-type StandardsMapping = Record<string, StandardMappingItem>;
+// Extract types from API response (single source of truth)
+type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
+type StandardGroupsMapping = PracticeOverviewOut["standard_groups_mapping"];
+type StandardsMapping = PracticeOverviewOut["standards_mapping"];
 
 const generateGradientFromHex = (hexColor: string): string => {
   // Remove # if present

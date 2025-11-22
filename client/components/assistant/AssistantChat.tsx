@@ -24,47 +24,8 @@ export type ChatUIState =
   | "widget"
   | "expanded";
 
-// Type matching the API response structure
-export type AssistantChatFullResponse = {
-  chat: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    profileId: string;
-    title: string;
-    traceId: string | null;
-  } | null;
-  messages: Array<{
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    completedAt: string | null;
-    chatId: string;
-    role: "user" | "assistant";
-    content: string;
-    completed: boolean;
-  }>;
-  toolCalls: Array<{
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    completedAt: string | null;
-    chatId: string;
-    toolName: string;
-    toolType: "create" | "read" | "update" | "delete";
-    toolArguments: unknown;
-    toolResult: unknown;
-    completed: boolean;
-  }>;
-  allChats: Array<{
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    profileId: string;
-    title: string;
-    traceId: string | null;
-  }>;
-};
+// Extract types from API response (single source of truth)
+export type AssistantChatFullResponse = AssistantChatFullOut;
 
 interface AssistantChatProps {
   getAssistantChatList: (
@@ -131,9 +92,7 @@ export default function AssistantChat({
   const chats = useMemo(() => {
     if (!assistantData) return [];
     if ("allChats" in assistantData) {
-      return assistantData.allChats as NonNullable<
-        AssistantChatFullResponse["chat"]
-      >[];
+      return assistantData.allChats;
     }
     return [];
   }, [assistantData]);
@@ -141,9 +100,7 @@ export default function AssistantChat({
   const chat = useMemo(() => {
     if (!assistantData) return null;
     if ("chat" in assistantData && assistantData.chat) {
-      return assistantData.chat as NonNullable<
-        AssistantChatFullResponse["chat"]
-      >;
+      return assistantData.chat;
     }
     return null;
   }, [assistantData]);
@@ -151,7 +108,7 @@ export default function AssistantChat({
   const messages = useMemo(() => {
     if (!assistantData) return [];
     if ("messages" in assistantData) {
-      return assistantData.messages as AssistantChatFullResponse["messages"];
+      return assistantData.messages;
     }
     return [];
   }, [assistantData]);
@@ -159,7 +116,7 @@ export default function AssistantChat({
   const toolCalls = useMemo(() => {
     if (!assistantData) return [];
     if ("toolCalls" in assistantData) {
-      return assistantData.toolCalls as AssistantChatFullResponse["toolCalls"];
+      return assistantData.toolCalls;
     }
     return [];
   }, [assistantData]);
@@ -267,7 +224,7 @@ export default function AssistantChat({
           };
         } else {
           // Create new message if it doesn't exist
-          const newMessage: AssistantChatFullResponse["messages"][number] = {
+          const newMessage: AssistantChatFullOut["messages"][number] = {
             id: data.message_id,
             createdAt: data.created_at,
             updatedAt: data.created_at,
@@ -325,7 +282,7 @@ export default function AssistantChat({
           };
         } else {
           // Create new message if it doesn't exist
-          const newMessage: AssistantChatFullResponse["messages"][number] = {
+          const newMessage: AssistantChatFullOut["messages"][number] = {
             id: data.message_id,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -703,9 +660,10 @@ export default function AssistantChat({
         // Check if this is the first message in a new chat (no chat selected)
         // or if the existing chat has title "New Chat"
         const existingChat = chatId
-          ? chats.find((chat) => chat.id === chatId)
+          ? chats.find((chat) => chat["id"] === chatId)
           : null;
-        const isFirstMessage = !chatId || existingChat?.title === "New Chat";
+        const isFirstMessage =
+          !chatId || existingChat?.["title"] === "New Chat";
 
         if (!socket) {
           toast.error("WebSocket not connected. Please refresh the page.");
@@ -773,7 +731,12 @@ export default function AssistantChat({
 
   return (
     <>
-      <ChatFab up={false} onOpenWidget={openWidget} onExpand={expand} uiState={uiState} />
+      <ChatFab
+        up={false}
+        onOpenWidget={openWidget}
+        onExpand={expand}
+        uiState={uiState}
+      />
       <ChatWidget
         up={false}
         uiState={uiState}

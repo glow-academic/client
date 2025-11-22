@@ -7,49 +7,13 @@ import { useCallback, useState } from "react";
 
 // ProfileItem type derived from server response (single source of truth)
 import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { OutputOf } from "@/lib/api/types";
 
-type PracticeSimulationItem = {
-  viewMode: "practice";
-  id: string;
-  simulationTitle: string;
-  simulationDescription: string | null;
-  simulationName: string;
-  timeLimit?: number | null;
-  numSessions: number;
-  highestScore?: number | null;
-  standard_groups: Record<string, string[]>;
-  rubric_id?: string | null;
-  color?: string | null;
-  icon?: string | null;
-  hasPassed?: boolean | null;
-  passRate?: number | null;
-  status?: "not-started" | "in-progress" | "passed" | null;
-  completionPct?: number | null;
-  passedCount?: number | null;
-  inProgressCount?: number | null;
-  notStartedCount?: number | null;
-  passPct?: number | null;
-  cohortName?: string | null;
-  updatedAt?: string | null;
-  lastActivityTs?: string | null;
-  hasActivity?: boolean | null;
-};
-
-type StandardGroupMappingItem = {
-  name: string;
-  description: string;
-  points: number;
-  passPoints: number;
-};
-
-type StandardMappingItem = {
-  name: string;
-  description: string;
-  points: number;
-};
-
-type StandardGroupsMapping = Record<string, StandardGroupMappingItem>;
-type StandardsMapping = Record<string, StandardMappingItem>;
+// Extract types from API response (single source of truth)
+type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
+type PracticeSimulationItem = PracticeOverviewOut["items"][number];
+type StandardGroupsMapping = PracticeOverviewOut["standard_groups_mapping"];
+type StandardsMapping = PracticeOverviewOut["standards_mapping"];
 
 interface PracticeZoneProps {
   simulations: PracticeSimulationItem[];

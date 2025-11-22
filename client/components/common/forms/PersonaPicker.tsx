@@ -34,14 +34,12 @@ import {
 } from "@/components/ui/popover";
 import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
+import type { OutputOf } from "@/lib/api/types";
 
-type PersonaMappingItem = {
-  name: string;
-  description: string;
-  color: string;
-  icon: string;
-  image_model?: boolean | null;
-};
+// Extract type from API response (single source of truth)
+// Note: PersonaPicker uses persona_mapping from practice/overview endpoint
+type PracticeOverviewOut = OutputOf<"/api/v3/practice/overview", "post">;
+type PersonaMappingItem = PracticeOverviewOut["persona_mapping"][string];
 
 import { getPersonaIconComponent } from "@/utils/persona-icons";
 
