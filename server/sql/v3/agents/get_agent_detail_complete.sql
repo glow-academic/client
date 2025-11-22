@@ -29,6 +29,8 @@ agent_all_prompts AS (
         ap.agent_id::text as agent_id,
         ap.prompt_id::text as prompt_id,
         pr.system_prompt,
+        pr.name as prompt_name,
+        pr.description as prompt_description,
         pr.created_at as prompt_created_at,
         pr.updated_at as prompt_updated_at
     FROM agent_prompts ap
@@ -40,6 +42,8 @@ agent_all_prompts AS (
         adp.agent_id::text as agent_id,
         adp.prompt_id::text as prompt_id,
         pr.system_prompt,
+        pr.name as prompt_name,
+        pr.description as prompt_description,
         pr.created_at as prompt_created_at,
         pr.updated_at as prompt_updated_at
     FROM agent_department_prompts adp
@@ -68,6 +72,8 @@ prompt_mapping_data AS (
                 ap.prompt_id,
                 jsonb_build_object(
                     'system_prompt', ap.system_prompt,
+                    'name', COALESCE(ap.prompt_name, ''),
+                    'description', COALESCE(ap.prompt_description, ''),
                     'created_at', ap.prompt_created_at::text,
                     'updated_at', ap.prompt_updated_at::text,
                     'department_ids', COALESCE(pdd.department_ids, NULL),

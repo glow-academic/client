@@ -43,6 +43,8 @@ class PromptInfo(BaseModel):
     """Prompt information for version history."""
 
     system_prompt: str
+    name: str
+    description: str
     created_at: str
     updated_at: str
     department_ids: list[str] | None
@@ -210,6 +212,8 @@ async def get_agent_detail(
                         dept_ids = None
                     prompt_mapping[prompt_id] = PromptInfo(
                         system_prompt=prompt_data.get("system_prompt", ""),
+                        name=prompt_data.get("name", ""),
+                        description=prompt_data.get("description", ""),
                         created_at=prompt_data.get("created_at", ""),
                         updated_at=prompt_data.get("updated_at", ""),
                         department_ids=dept_ids,

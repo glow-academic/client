@@ -1,5 +1,5 @@
 -- Update agent with prompt and department links in a single transaction
--- Parameters: $1=agentId, $2=name, $3=description, $4=temperature, $5=model_id, $6=reasoning, $7=active, $8=role, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array), $12=department_id (nullable)
+-- Parameters: $1=agentId, $2=name, $3=description, $4=temperature, $5=model_id, $6=reasoning, $7=active, $8=role, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array), $12=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides)
 WITH update_agent AS (
     UPDATE agents
     SET 
@@ -29,39 +29,44 @@ selected_prompt_id AS (
     ) as prompt_id
     WHERE $9::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
-deactivate_department_prompt AS (
-    -- Deactivate existing department-specific prompt if department_id provided
+deactivate_department_prompts AS (
+    -- Deactivate existing department-specific prompts for departments in the array
     UPDATE agent_department_prompts
     SET active = false, updated_at = NOW()
     WHERE agent_id = $1::uuid 
-    AND department_id = $12::uuid 
+    AND department_id = ANY(SELECT dept_id::uuid FROM UNNEST($12::text[]) as dept_id)
     AND active = true
 ),
-handle_department_prompt AS (
-    -- Handle department-specific prompt if department_id and prompt provided
+handle_department_prompts AS (
+    -- Handle department-specific prompts for all departments in array (never create default prompts)
     INSERT INTO agent_department_prompts (agent_id, department_id, prompt_id, active, created_at, updated_at)
-    SELECT $1::uuid, $12::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
+    SELECT $1::uuid, dept_id::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
     FROM selected_prompt_id sp
-    WHERE $12::uuid IS NOT NULL AND sp.prompt_id IS NOT NULL
+    CROSS JOIN UNNEST($12::text[]) as dept_id
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0 AND sp.prompt_id IS NOT NULL
     ON CONFLICT (agent_id, department_id, prompt_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
-deactivate_default_prompts AS (
-    -- Deactivate all existing default prompts
-    UPDATE agent_prompts
-    SET active = false, updated_at = NOW()
-    WHERE agent_id = $1::uuid AND active = true
+get_default_prompt_content AS (
+    -- Get the default prompt content for comparison (for pruning)
+    SELECT pr.system_prompt
+    FROM agent_prompts ap
+    JOIN prompts pr ON pr.id = ap.prompt_id
+    WHERE ap.agent_id = $1::uuid AND ap.active = true
+    LIMIT 1
 ),
-handle_default_prompt AS (
-    -- Handle default prompt if no department_id but prompt provided
-    INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)
-    SELECT $1::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
-    FROM selected_prompt_id sp
-    WHERE $12::uuid IS NULL AND sp.prompt_id IS NOT NULL
-    ON CONFLICT (agent_id, prompt_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+prune_duplicate_prompts AS (
+    -- Prune department-specific prompts that match the default prompt content
+    DELETE FROM agent_department_prompts adp
+    WHERE adp.agent_id = $1::uuid
+    AND adp.department_id = ANY(SELECT dept_id::uuid FROM UNNEST($12::text[]) as dept_id)
+    AND EXISTS (
+        SELECT 1 FROM get_default_prompt_content gdc
+        JOIN selected_prompt_id sp ON sp.prompt_id IS NOT NULL
+        JOIN prompts pr ON pr.id = sp.prompt_id::uuid
+        WHERE pr.system_prompt = gdc.system_prompt
+    )
 ),
 replace_departments AS (
     -- Delete all existing department links

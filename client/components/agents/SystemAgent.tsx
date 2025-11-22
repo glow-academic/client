@@ -47,7 +47,7 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Bug, Copy, Eye, Power, Trash2 } from "lucide-react";
+import { Bug, Eye, Power, RotateCcw, Trash2 } from "lucide-react";
 import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
@@ -113,11 +113,7 @@ export default function SystemAgent({
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
     "editor"
   );
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
-    string | null
-  >(null); // null = "All Departments"
-  const [isCreatingNewPrompt, setIsCreatingNewPrompt] = useState(false);
-  const prevDepartmentIdRef = React.useRef<string | null>(null);
+  const prevDepartmentIdsRef = React.useRef<string[]>([]);
   const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
   const [promptToDelete, setPromptToDelete] = useState<{
     promptId: string;
@@ -164,52 +160,128 @@ export default function SystemAgent({
   const temperatureLower = agentData?.temperature_lower ?? 0.0;
   const temperatureUpper = agentData?.temperature_upper ?? 1.0;
 
-  // Filter prompt_mapping based on selected department
-  // When "All Departments" is selected, only show default prompts (null department_ids)
-  // When a department is selected, only show department-specific prompts for that department
+  // Filter prompt_mapping client-side based on selected departments from form
+  // API returns all prompts user has access to, then we filter by selected departments
+  // When "All Departments" selected (empty array): Show ALL prompts (default + all department-specific)
+  // When specific departments selected: Show default + prompts for those departments
   const filteredPromptMapping = useMemo(() => {
     if (!isEditMode || !agentDetail?.prompt_mapping) {
       return agentDetail?.prompt_mapping || {};
     }
 
+    const selectedDeptIds = formData?.departmentIds || [];
     const filtered: Record<string, PromptInfo> = {};
-    for (const [promptId, promptInfo] of Object.entries(
+
+    for (const [promptId, promptInfoRaw] of Object.entries(
       agentDetail.prompt_mapping
     )) {
-      if (!selectedDepartmentId) {
-        // "All Departments" selected - only show default prompts (null/empty department_ids)
-        if (
-          !promptInfo.department_ids ||
-          promptInfo.department_ids.length === 0
-        ) {
-          filtered[promptId] = promptInfo;
-        }
+      // Add default values for name and description if missing (for backward compatibility)
+      // Type assertion needed because API schema may not be fully updated in TypeScript types
+      const rawInfo = promptInfoRaw as PromptInfo & {
+        name?: string;
+        description?: string;
+      };
+      const promptInfo: PromptInfo = {
+        ...promptInfoRaw,
+        name: rawInfo.name || "",
+        description: rawInfo.description || "",
+      };
+
+      // Always include default prompt (no department_ids)
+      if (
+        !promptInfo.department_ids ||
+        promptInfo.department_ids.length === 0
+      ) {
+        filtered[promptId] = promptInfo;
+      } else if (selectedDeptIds.length === 0) {
+        // "All Departments" selected - show ALL prompts including department-specific ones
+        filtered[promptId] = promptInfo;
       } else {
-        // Department selected - only show department-specific prompts for that department
+        // Specific departments selected - show prompts for those departments
         if (
-          promptInfo.department_ids &&
-          promptInfo.department_ids.includes(selectedDepartmentId)
+          promptInfo.department_ids.some((deptId) =>
+            selectedDeptIds.includes(deptId)
+          )
         ) {
           filtered[promptId] = promptInfo;
         }
       }
     }
     return filtered;
-  }, [selectedDepartmentId, agentDetail?.prompt_mapping, isEditMode]);
+  }, [formData?.departmentIds, agentDetail?.prompt_mapping, isEditMode]);
 
-  // Detect if using default prompt (no department-specific prompt exists)
-  const isUsingDefaultPrompt = useMemo(() => {
-    if (!isEditMode || !selectedDepartmentId || !agentDetail) return false;
-    return !agentDetail.department_prompt_links?.[selectedDepartmentId];
-  }, [selectedDepartmentId, agentDetail, isEditMode]);
-
-  // Get default prompt content
+  // Get default prompt content (from agent_prompts table)
   const defaultPromptContent = useMemo(() => {
     if (!isEditMode || !agentDetail?.prompt_id || !agentDetail?.prompt_mapping)
       return "";
     const defaultPrompt = agentDetail.prompt_mapping[agentDetail.prompt_id];
     return defaultPrompt?.system_prompt || "";
   }, [agentDetail, isEditMode]);
+
+  // Get resolved prompt (what's actually saved/configured for selected departments from form)
+  // This is what would be used in production for the selected department(s)
+  const resolvedPrompt = useMemo(() => {
+    if (!isEditMode || !agentDetail?.prompt_mapping) {
+      return { promptId: null, content: "" };
+    }
+
+    const selectedDeptIds = formData?.departmentIds || [];
+    if (selectedDeptIds.length === 0) {
+      // "All Departments" - use default prompt
+      return {
+        promptId: agentDetail.prompt_id || null,
+        content: defaultPromptContent,
+      };
+    }
+
+    // For multiple departments, check if all have the same prompt
+    const firstDeptId = selectedDeptIds[0]!;
+    const firstPromptId =
+      agentDetail.department_prompt_links?.[firstDeptId] ||
+      agentDetail.prompt_id ||
+      null;
+
+    // Check if all selected departments have the same prompt
+    const allSamePrompt = selectedDeptIds.every((deptId) => {
+      const promptId =
+        agentDetail.department_prompt_links?.[deptId] ||
+        agentDetail.prompt_id ||
+        null;
+      return promptId === firstPromptId;
+    });
+
+    if (allSamePrompt && firstPromptId) {
+      const promptInfo = agentDetail.prompt_mapping[firstPromptId];
+      return {
+        promptId: firstPromptId,
+        content: promptInfo?.system_prompt || defaultPromptContent,
+      };
+    }
+
+    // Mixed prompts - return default
+    return {
+      promptId: agentDetail.prompt_id || null,
+      content: defaultPromptContent,
+    };
+  }, [
+    formData?.departmentIds,
+    agentDetail?.prompt_mapping,
+    agentDetail?.department_prompt_links,
+    agentDetail?.prompt_id,
+    defaultPromptContent,
+    isEditMode,
+  ]);
+
+  // Get resolved prompt content for change detection
+  const resolvedPromptContent = useMemo(() => {
+    return resolvedPrompt.content;
+  }, [resolvedPrompt]);
+
+  // Check if current prompt content differs from resolved prompt
+  const hasPromptChanges = useMemo(() => {
+    if (!formData?.systemPrompt) return false;
+    return formData.systemPrompt !== resolvedPromptContent;
+  }, [formData?.systemPrompt, resolvedPromptContent]);
 
   const defaultDepartmentIds = useMemo(
     () =>
@@ -263,6 +335,7 @@ export default function SystemAgent({
           ? agentDetail.valid_model_ids[0]
           : "");
 
+      const deptIds = agentDetail.department_ids || [];
       setFormData({
         name: agentDetail.name,
         description: agentDetail.description,
@@ -279,8 +352,10 @@ export default function SystemAgent({
             | undefined) || "none",
         active: agentDetail.active ?? true,
         role: agentDetail.role || "assistant",
-        departmentIds: agentDetail.department_ids || [],
+        departmentIds: deptIds,
       });
+      // Initialize the ref for department change tracking
+      prevDepartmentIdsRef.current = [...deptIds];
     } else if (!isEditMode && agentDetailDefault) {
       // For create mode, use defaults from API response
       // Ensure modelId is set - use default from API or first valid model
@@ -317,90 +392,38 @@ export default function SystemAgent({
   ]);
 
   // Update prompt when department selection changes
+  // Update prompt when department selection changes in form
   useEffect(() => {
-    if (!isEditMode || !agentDetail) return;
+    if (!isEditMode || !agentDetail || !formData?.departmentIds) return;
 
-    // Track department changes FIRST and reset creating flag when department changes
+    // Track department changes - compare arrays
+    const prevIds = prevDepartmentIdsRef.current;
+    const currentIds = formData.departmentIds || [];
     const departmentChanged =
-      prevDepartmentIdRef.current !== selectedDepartmentId;
+      prevIds.length !== currentIds.length ||
+      !prevIds.every((id) => currentIds.includes(id));
+
     if (departmentChanged) {
-      setIsCreatingNewPrompt(false);
-      prevDepartmentIdRef.current = selectedDepartmentId;
+      prevDepartmentIdsRef.current = [...currentIds];
     }
 
-    // Don't override state if user is actively creating a new prompt (unless department changed)
-    if (isCreatingNewPrompt && !departmentChanged) return;
+    // Only auto-set if user hasn't made changes (compare content to resolved prompt)
+    if (hasPromptChanges && !departmentChanged) return;
 
-    // Determine which prompt should be selected for the current department
-    const getCurrentPromptId = () => {
-      if (!selectedDepartmentId) {
-        // "All Departments" selected - use default prompt
-        return agentDetail.prompt_id || null;
-      }
-      // Specific department selected - use department-specific prompt if it exists
-      if (agentDetail.department_prompt_links?.[selectedDepartmentId]) {
-        return agentDetail.department_prompt_links[selectedDepartmentId];
-      }
-      // No department-specific prompt - return null to indicate using default
-      return null;
-    };
-
-    const currentPromptId = getCurrentPromptId();
-    const promptInfo =
-      currentPromptId && agentDetail.prompt_mapping?.[currentPromptId];
-
-    // Check if current formData.promptId is valid for the selected department
-    const currentPromptIsValid = formData?.promptId
-      ? filteredPromptMapping[formData.promptId] !== undefined
-      : true; // null promptId is valid (means using default)
-
-    // Only auto-select when department changes, or if current prompt is invalid for department
+    // Only auto-set when department changes - use resolvedPrompt which is computed for current selection
     if (departmentChanged) {
-      // Department changed - always update to the correct prompt
-      if (promptInfo) {
-        // Prompt exists (default or department-specific) - select it and update system prompt
-        setFormData((prev) => ({
-          ...prev,
-          promptId: currentPromptId,
-          systemPrompt: promptInfo.system_prompt,
-        }));
-      } else if (selectedDepartmentId && !currentPromptId) {
-        // Department selected but no department-specific prompt - using default
-        setFormData((prev) => ({
-          ...prev,
-          promptId: null,
-          systemPrompt: "", // Clear to show default prompt UI
-        }));
-      } else {
-        // "All Departments" selected but no default prompt, or other edge case
-        setFormData((prev) => ({
-          ...prev,
-          promptId: null,
-        }));
-      }
-    } else if (!currentPromptIsValid && formData?.promptId) {
-      // Current prompt is invalid for selected department - reset to default
-      if (promptInfo) {
-        setFormData((prev) => ({
-          ...prev,
-          promptId: currentPromptId,
-          systemPrompt: promptInfo.system_prompt,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          promptId: null,
-          systemPrompt: "",
-        }));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        promptId: resolvedPrompt.promptId,
+        systemPrompt: resolvedPrompt.content,
+      }));
     }
   }, [
-    selectedDepartmentId,
+    formData?.departmentIds,
     agentDetail,
     isEditMode,
-    formData?.promptId,
-    isCreatingNewPrompt,
-    filteredPromptMapping,
+    resolvedPrompt,
+    hasPromptChanges,
   ]);
 
   const handleInputChange = (
@@ -462,12 +485,62 @@ export default function SystemAgent({
       );
 
       if (isEditMode && agentId && agentDetail) {
+        // Safety check: Only create/update overrides for departments that:
+        // 1. Don't have an override yet (use default), OR
+        // 2. Are the only department selected, OR
+        // 3. All selected departments share the same existing override prompt
+        const selectedDeptIds = formData.departmentIds || [];
+        let departmentsForPromptOverride: string[] = [];
+
+        if (hasPromptChanges) {
+          const targetDeptIds =
+            selectedDeptIds.length === 0
+              ? agentDetail?.valid_department_ids || []
+              : selectedDeptIds;
+
+          if (targetDeptIds.length > 0) {
+            // If only one department selected, always allow update
+            if (targetDeptIds.length === 1) {
+              departmentsForPromptOverride = targetDeptIds;
+            } else {
+              // For multiple departments, check which ones are safe to update
+              const departmentPromptLinks = agentDetail?.department_prompt_links || {};
+              const existingPromptIds = targetDeptIds
+                .map((deptId) => departmentPromptLinks[deptId])
+                .filter((promptId) => promptId !== undefined);
+
+              const allShareSamePrompt =
+                existingPromptIds.length > 0 &&
+                existingPromptIds.every((promptId) => promptId === existingPromptIds[0]);
+
+              if (allShareSamePrompt) {
+                // All departments share the same override - safe to update all
+                departmentsForPromptOverride = targetDeptIds;
+              } else {
+                // Not all share same prompt - only update departments without overrides
+                const safeToUpdate: string[] = [];
+                for (const deptId of targetDeptIds) {
+                  if (!departmentPromptLinks[deptId]) {
+                    // Department doesn't have an override - safe to create one
+                    safeToUpdate.push(deptId);
+                  }
+                }
+                departmentsForPromptOverride = safeToUpdate;
+              }
+            }
+          }
+        }
+
+        // Always create new prompt version if content differs from resolved prompt
+        // Never create default prompts - always create department-specific overrides
+        const shouldCreateNewPrompt = hasPromptChanges;
+
         // Update existing agent using v3 API
         await handleUpdateAgent({
           agentId,
           name: formData.name!,
           description: formData.description!,
-          prompt_id: formData.promptId || null,
+          prompt_id: shouldCreateNewPrompt ? null : formData.promptId || null,
           system_prompt: formData.systemPrompt!,
           temperature: Number(formData.temperature),
           model_id: formData.modelId!.trim(),
@@ -478,7 +551,7 @@ export default function SystemAgent({
           active: formData.active ?? true,
           role: formData.role || "assistant",
           department_ids: finalDepartmentIds,
-          department_id: selectedDepartmentId || null,
+          department_ids_for_prompt: departmentsForPromptOverride,
         });
         toast.success("Agent updated successfully!");
         resetFormAndState();
@@ -758,30 +831,11 @@ export default function SystemAgent({
               <div className="flex items-center justify-between">
                 <Label htmlFor="systemPrompt">System Prompt *</Label>
                 <div className="flex gap-2">
-                  {isEditMode && agentDetail && (
-                    <DepartmentPicker
-                      mapping={agentDetail.department_mapping}
-                      validIds={agentDetail.valid_department_ids}
-                      selectedIds={
-                        selectedDepartmentId ? [selectedDepartmentId] : []
-                      }
-                      onSelect={(ids) => {
-                        setSelectedDepartmentId(
-                          ids.length > 0 ? ids[0]! : null
-                        );
-                      }}
-                      multiSelect={false}
-                      placeholder="All Departments"
-                      disabled={false}
-                      compact={true}
-                      buttonClassName="h-8"
-                    />
-                  )}
                   {isEditMode &&
                     agentDetail &&
                     filteredPromptMapping &&
                     (Object.keys(filteredPromptMapping).length > 0 ||
-                      selectedDepartmentId) && (
+                      (formData?.departmentIds && formData.departmentIds.length > 0)) && (
                       <PromptPicker
                         promptMapping={filteredPromptMapping}
                         selectedPromptId={formData?.promptId || null}
@@ -808,43 +862,31 @@ export default function SystemAgent({
                     )}
                   {formData?.systemPrompt !== undefined && (
                     <>
-                      {isEditMode &&
-                        (formData?.promptId || isUsingDefaultPrompt) && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  setIsCreatingNewPrompt(true);
-                                  // Duplicate current prompt - keep content but create new prompt
-                                  // If using default prompt, duplicate default content
-                                  // If All Departments selected, duplicate current prompt content
-                                  const contentToDuplicate =
-                                    isUsingDefaultPrompt
-                                      ? defaultPromptContent
-                                      : formData?.systemPrompt || "";
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    promptId: null,
-                                    systemPrompt: contentToDuplicate,
-                                  }));
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                {isUsingDefaultPrompt
-                                  ? "Branch from Default"
-                                  : "Duplicate"}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
+                      {hasPromptChanges && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  systemPrompt: resolvedPromptContent,
+                                  promptId: resolvedPrompt.promptId,
+                                }));
+                              }}
+                              className="h-8 w-8 p-0"
+                              data-testid="btn-reset-changes"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reset to saved prompt</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -930,82 +972,10 @@ export default function SystemAgent({
               </div>
               {formData?.systemPrompt !== undefined ? (
                 <>
-                  {isUsingDefaultPrompt &&
-                  formData.systemPrompt === "" &&
-                  !isCreatingNewPrompt ? (
-                    <div className="space-y-4">
-                      <div className="border rounded-lg p-6 bg-muted/50">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-blue-500" />
-                            <p className="text-sm font-medium">
-                              Using Default Prompt
-                            </p>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedDepartmentId &&
-                            agentDetail?.department_mapping?.[
-                              selectedDepartmentId
-                            ]
-                              ? `No department-specific prompt exists for ${agentDetail.department_mapping[selectedDepartmentId].name}. The default prompt is being used.`
-                              : "No department-specific prompt exists. The default prompt is being used."}
-                          </p>
-                          <div className="border-t pt-4 mt-4">
-                            <p className="text-xs font-medium mb-2 text-muted-foreground">
-                              Default Prompt Preview:
-                            </p>
-                            <div className="bg-background border rounded p-4 max-h-[200px] overflow-y-auto">
-                              <pre className="text-xs whitespace-pre-wrap font-mono">
-                                {defaultPromptContent || "No default prompt"}
-                              </pre>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              type="button"
-                              variant="default"
-                              size="sm"
-                              onClick={() => {
-                                setIsCreatingNewPrompt(true);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  promptId: null,
-                                  systemPrompt: "",
-                                }));
-                              }}
-                            >
-                              Create New Prompt
-                              {selectedDepartmentId &&
-                              agentDetail?.department_mapping?.[
-                                selectedDepartmentId
-                              ]
-                                ? ` for ${agentDetail.department_mapping[selectedDepartmentId].name}`
-                                : ""}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setIsCreatingNewPrompt(true);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  promptId: null,
-                                  systemPrompt: defaultPromptContent,
-                                }));
-                              }}
-                            >
-                              Branch from Default
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className="h-[500px]"
-                      data-testid="editor-system-prompt"
-                    >
+                  <div
+                    className="h-[500px]"
+                    data-testid="editor-system-prompt"
+                  >
                       <UnifiedPromptEditor
                         value={formData?.systemPrompt || ""}
                         onChange={(value) => {
@@ -1119,7 +1089,7 @@ export default function SystemAgent({
                       agentId,
                       promptId: promptToDelete.promptId,
                       departmentId: promptToDelete.isDepartmentSpecific
-                        ? selectedDepartmentId || null
+                        ? (formData?.departmentIds && formData.departmentIds.length > 0) ? formData.departmentIds[0]! : null
                         : null,
                     });
                     toast.success("Prompt deleted successfully");

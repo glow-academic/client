@@ -10176,8 +10176,8 @@ export interface components {
             role: string;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Department Id */
-            department_id?: string | null;
+            /** Department Ids For Prompt */
+            department_ids_for_prompt?: string[] | null;
         };
         /** UpdateAgentResponse */
         UpdateAgentResponse: {
@@ -10851,6 +10851,10 @@ export interface components {
         app__api__v3__agents__detail__PromptInfo: {
             /** System Prompt */
             system_prompt: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Created At */
             created_at: string;
             /** Updated At */

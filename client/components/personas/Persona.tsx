@@ -683,14 +683,54 @@ export default function Persona({
       );
 
       if (isEditMode) {
-        // Determine which departments to create overrides for
-        // If "All Departments" selected (empty array), create overrides for all valid departments
-        // Otherwise, create overrides for selected departments from form
+        // Safety check: Only create/update overrides for departments that:
+        // 1. Don't have an override yet (use default), OR
+        // 2. Are the only department selected, OR
+        // 3. All selected departments share the same existing override prompt
         const selectedDeptIds = formData.departmentIds || [];
-        const departmentsForPromptOverride =
-          selectedDeptIds.length === 0
-            ? personaData?.valid_department_ids || []
-            : selectedDeptIds;
+        let departmentsForPromptOverride: string[] = [];
+
+        if (hasPromptChanges) {
+          const targetDeptIds =
+            selectedDeptIds.length === 0
+              ? personaData?.valid_department_ids || []
+              : selectedDeptIds;
+
+          if (targetDeptIds.length > 0) {
+            // If only one department selected, always allow update
+            if (targetDeptIds.length === 1) {
+              departmentsForPromptOverride = targetDeptIds;
+            } else {
+              // For multiple departments, check which ones are safe to update
+              const departmentPromptLinks =
+                personaData?.department_prompt_links || {};
+              const existingPromptIds = targetDeptIds
+                .map((deptId) => departmentPromptLinks[deptId])
+                .filter((promptId) => promptId !== undefined);
+
+              const allShareSamePrompt =
+                existingPromptIds.length > 0 &&
+                existingPromptIds.every(
+                  (promptId) => promptId === existingPromptIds[0]
+                );
+
+              if (allShareSamePrompt) {
+                // All departments share the same override - safe to update all
+                departmentsForPromptOverride = targetDeptIds;
+              } else {
+                // Not all share same prompt - only update departments without overrides
+                const safeToUpdate: string[] = [];
+                for (const deptId of targetDeptIds) {
+                  if (!departmentPromptLinks[deptId]) {
+                    // Department doesn't have an override - safe to create one
+                    safeToUpdate.push(deptId);
+                  }
+                }
+                departmentsForPromptOverride = safeToUpdate;
+              }
+            }
+          }
+        }
 
         // Always create new prompt version if content differs from resolved prompt
         // Never create default prompts - always create department-specific overrides
