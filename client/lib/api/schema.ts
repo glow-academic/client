@@ -2699,6 +2699,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/keys/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Keys List
+         * @description Get keys list with permissions and relationships.
+         */
+        post: operations["get_keys_list_api_v3_keys_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Key Detail
+         * @description Get key detail information.
+         */
+        post: operations["get_key_detail_api_v3_keys_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/detail-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Key Detail Default
+         * @description Get default key detail information for new key creation.
+         */
+        post: operations["get_key_detail_default_api_v3_keys_detail_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/keys/create": {
         parameters: {
             query?: never;
@@ -2719,26 +2779,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/decrypt-key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Decrypt Key
-         * @description Decrypt a key's encrypted value.
-         */
-        post: operations["decrypt_key_api_v3_keys_decrypt_key_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/keys/update": {
         parameters: {
             query?: never;
@@ -2753,6 +2793,46 @@ export interface paths {
          * @description Update an existing key.
          */
         post: operations["update_key_api_v3_keys_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Key
+         * @description Delete a key with permission checks.
+         */
+        post: operations["delete_key_api_v3_keys_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/decrypt-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decrypt Key
+         * @description Decrypt a key's encrypted value.
+         */
+        post: operations["decrypt_key_api_v3_keys_decrypt_key_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4885,6 +4965,8 @@ export interface components {
              * @default true
              */
             active: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * CreateKeyResponse
@@ -5653,6 +5735,26 @@ export interface components {
          * @description Response from delete operation.
          */
         DeleteDocumentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeleteKeyRequest
+         * @description Request to delete key.
+         */
+        DeleteKeyRequest: {
+            /** Keyid */
+            keyId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DeleteKeyResponse
+         * @description Response from delete key.
+         */
+        DeleteKeyResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -6780,6 +6882,132 @@ export interface components {
             cohortName?: string | null;
             /** Cohortnames */
             cohortNames?: string | null;
+        };
+        /**
+         * KeyDetailDefaultRequest
+         * @description Request for default key detail.
+         */
+        KeyDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * KeyDetailRequest
+         * @description Request for key detail.
+         */
+        KeyDetailRequest: {
+            /** Keyid */
+            keyId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * KeyDetailResponse
+         * @description Response for key detail endpoint.
+         */
+        KeyDetailResponse: {
+            /** Key Id */
+            key_id: string;
+            /** Name */
+            name: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Type */
+            type: string;
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Model Ids */
+            model_ids: string[];
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /**
+         * KeyItem
+         * @description Key item for list view.
+         */
+        KeyItem: {
+            /** Key Id */
+            key_id: string;
+            /** Name */
+            name: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Type */
+            type: string;
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Model Ids */
+            model_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+        };
+        /**
+         * KeysListRequest
+         * @description Request for keys list.
+         */
+        KeysListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * KeysListResponse
+         * @description Response for keys list.
+         */
+        KeysListResponse: {
+            /** Keys */
+            keys: components["schemas"]["KeyItem"][];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
+            /** Type Options */
+            type_options: {
+                [key: string]: string;
+            }[];
+            /** Model Options */
+            model_options: {
+                [key: string]: string;
+            }[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
         };
         /**
          * LeaderboardBundleFilters
@@ -9809,6 +10037,8 @@ export interface components {
             key: string;
             /** Active */
             active: boolean;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * UpdateKeyResponse
@@ -16173,6 +16403,105 @@ export interface operations {
             };
         };
     };
+    get_keys_list_api_v3_keys_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeysListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeysListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_key_detail_api_v3_keys_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeyDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_key_detail_default_api_v3_keys_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyDetailDefaultRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeyDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_key_api_v3_keys_create_post: {
         parameters: {
             query?: never;
@@ -16206,39 +16535,6 @@ export interface operations {
             };
         };
     };
-    decrypt_key_api_v3_keys_decrypt_key_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DecryptKeyRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DecryptKeyResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     update_key_api_v3_keys_update_post: {
         parameters: {
             query?: never;
@@ -16259,6 +16555,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateKeyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_key_api_v3_keys_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteKeyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decrypt_key_api_v3_keys_decrypt_key_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecryptKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecryptKeyResponse"];
                 };
             };
             /** @description Validation Error */

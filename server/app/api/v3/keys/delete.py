@@ -1,4 +1,4 @@
-"""Keys update endpoint - v3 API following DHH principles."""
+"""Keys delete endpoint - v3 API following DHH principles."""
 
 from typing import Annotated, Any
 
@@ -7,43 +7,37 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
-from app.utils.auth.encrypt_api_key import encrypt_api_key
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
-class UpdateKeyRequest(BaseModel):
-    """Request to update key."""
+class DeleteKeyRequest(BaseModel):
+    """Request to delete key."""
 
     keyId: str
-    name: str
-    key: str  # Plain text key that will be encrypted
-    active: bool
-    department_ids: list[str] | None = None
+    profileId: str
 
 
-class UpdateKeyResponse(BaseModel):
-    """Response from update key."""
+class DeleteKeyResponse(BaseModel):
+    """Response from delete key."""
 
     success: bool
-    keyId: str
-    key_masked: str  # Masked key for display
     message: str
 
 
 router = APIRouter()
 
 
-@router.post("/update", response_model=UpdateKeyResponse)
-async def update_key(
-    request: UpdateKeyRequest,
+@router.post("/delete", response_model=DeleteKeyResponse)
+async def delete_key(
+    request: DeleteKeyRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> UpdateKeyResponse:
-    """Update an existing key."""
+) -> DeleteKeyResponse:
+    """Delete a key with permission checks."""
     tags = ["keys"]
 
     sql_query: str | None = None
@@ -51,34 +45,33 @@ async def update_key(
 
     try:
         async with transaction(conn):
-            # Encrypt the key before storing
-            encrypted_key = encrypt_api_key(request.key)
-
-            # Ensure department_ids is always an array (empty if None)
-            department_ids = request.department_ids if request.department_ids else []
-
-            # Update key with department links
-            sql_query = load_sql("sql/v3/keys/update_key.sql")
-            sql_params = (request.keyId, request.name, encrypted_key, request.active, department_ids)
+            # Delete key with permission checks (cascade deletes key_departments)
+            sql_query = load_sql("sql/v3/keys/delete_key.sql")
+            sql_params = (request.keyId, request.profileId)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
+                # Check if key exists but user doesn't have permission
+                key_exists_check = await conn.fetchval(
+                    "SELECT EXISTS(SELECT 1 FROM keys WHERE id = $1::uuid)",
+                    request.keyId,
+                )
+                if key_exists_check:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You don't have permission to delete this key. It may be restricted to other departments.",
+                    )
                 raise HTTPException(
                     status_code=404, detail=f"Key not found: {request.keyId}"
                 )
-
-            key_id = result["key_id"]
-            key_masked = result["key_masked"]
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return UpdateKeyResponse(
+        return DeleteKeyResponse(
             success=True,
-            keyId=key_id,
-            key_masked=key_masked,
-            message="Key updated successfully",
+            message="Key deleted successfully",
         )
     except HTTPException:
         raise
@@ -88,7 +81,7 @@ async def update_key(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="update_key",
+            operation="delete_key",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

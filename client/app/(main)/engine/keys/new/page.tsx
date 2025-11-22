@@ -1,0 +1,73 @@
+/**
+ * app/(main)/engine/keys/new/page.tsx
+ * New key page for the keys section.
+ */
+
+import { getSession } from "@/auth";
+
+import Key from "@/components/keys/Key";
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata } from "next";
+
+/** ---- Strong types from OpenAPI ---- */
+type KeyDetailDefaultIn = InputOf<"/api/v3/keys/detail-default", "post">;
+type KeyDetailDefaultOut = OutputOf<"/api/v3/keys/detail-default", "post">;
+type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
+
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getKeyDefault = async (
+  profileId: string
+): Promise<KeyDetailDefaultOut> => {
+  return api.post(
+    "/keys/detail-default",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
+
+/** ---- Strongly-typed server action ---- */
+async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/keys/create", input);
+}
+
+export const metadata: Metadata = {
+  title: "New Key",
+  description: `Create new keys in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+};
+
+export default async function NewKeyPage() {
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Fetch key default data (for dropdowns and defaults)
+  const keyDetailDefault = await getKeyDefault(profileId);
+
+  return (
+    <div
+      className="space-y-6"
+      data-page="key-new"
+      aria-label="Create new key page"
+    >
+      <Key keyDetailDefault={keyDetailDefault} createKeyAction={createKey} />
+    </div>
+  );
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  CreateKeyIn,
+  CreateKeyOut,
+  KeyDetailDefaultIn,
+  KeyDetailDefaultOut,
+};

@@ -5875,6 +5875,147 @@
         ]
       }
     },
+    "/api/v3/keys/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Get Keys List",
+        "description": "Get keys list with permissions and relationships.",
+        "operationId": "get_keys_list_api_v3_keys_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeysListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeysListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Get Key Detail",
+        "description": "Get key detail information.",
+        "operationId": "get_key_detail_api_v3_keys_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/detail-default": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Get Key Detail Default",
+        "description": "Get default key detail information for new key creation.",
+        "operationId": "get_key_detail_default_api_v3_keys_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyDetailDefaultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
     "/api/v3/keys/create": {
       "post": {
         "tags": [
@@ -5922,53 +6063,6 @@
         ]
       }
     },
-    "/api/v3/keys/decrypt-key": {
-      "post": {
-        "tags": [
-          "v3",
-          "keys"
-        ],
-        "summary": "Decrypt Key",
-        "description": "Decrypt a key's encrypted value.",
-        "operationId": "decrypt_key_api_v3_keys_decrypt_key_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DecryptKeyRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DecryptKeyResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
-      }
-    },
     "/api/v3/keys/update": {
       "post": {
         "tags": [
@@ -5995,6 +6089,100 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UpdateKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Delete Key",
+        "description": "Delete a key with permission checks.",
+        "operationId": "delete_key_api_v3_keys_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/decrypt-key": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Decrypt Key",
+        "description": "Decrypt a key's encrypted value.",
+        "operationId": "decrypt_key_api_v3_keys_decrypt_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecryptKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecryptKeyResponse"
                 }
               }
             }
@@ -11068,6 +11256,20 @@
             "type": "boolean",
             "title": "Active",
             "default": true
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",
@@ -13139,6 +13341,44 @@
         ],
         "title": "DeleteDocumentResponse",
         "description": "Response from delete operation."
+      },
+      "DeleteKeyRequest": {
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keyId",
+          "profileId"
+        ],
+        "title": "DeleteKeyRequest",
+        "description": "Request to delete key."
+      },
+      "DeleteKeyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeleteKeyResponse",
+        "description": "Response from delete key."
       },
       "DeleteModelRequest": {
         "properties": {
@@ -16011,6 +16251,295 @@
         ],
         "title": "HomeSimulationItem",
         "description": "Home simulation item."
+      },
+      "KeyDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "KeyDetailDefaultRequest",
+        "description": "Request for default key detail."
+      },
+      "KeyDetailRequest": {
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keyId",
+          "profileId"
+        ],
+        "title": "KeyDetailRequest",
+        "description": "Request for key detail."
+      },
+      "KeyDetailResponse": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "key_masked",
+          "type",
+          "active",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "model_ids",
+          "valid_department_ids",
+          "can_edit",
+          "department_mapping",
+          "model_mapping"
+        ],
+        "title": "KeyDetailResponse",
+        "description": "Response for key detail endpoint."
+      },
+      "KeyItem": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "key_masked",
+          "type",
+          "active",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "model_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "KeyItem",
+        "description": "Key item for list view."
+      },
+      "KeysListRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "KeysListRequest",
+        "description": "Request for keys list."
+      },
+      "KeysListResponse": {
+        "properties": {
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/KeyItem"
+            },
+            "type": "array",
+            "title": "Keys"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
+          },
+          "type_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Type Options"
+          },
+          "model_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Model Options"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keys",
+          "department_options",
+          "type_options",
+          "model_options",
+          "department_mapping",
+          "model_mapping"
+        ],
+        "title": "KeysListResponse",
+        "description": "Response for keys list."
       },
       "LeaderboardBundleFilters": {
         "properties": {
@@ -23884,6 +24413,20 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",

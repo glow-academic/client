@@ -20,6 +20,7 @@ class CreateKeyRequest(BaseModel):
     key: str
     type: str  # 'api' or 'auth'
     active: bool = True
+    department_ids: list[str] | None = None
 
 
 class CreateKeyResponse(BaseModel):
@@ -53,9 +54,12 @@ async def create_key(
             if request.type not in ("api", "auth"):
                 raise ValueError(f"Invalid key type: {request.type}. Must be 'api' or 'auth'")
 
-            # Create key
+            # Ensure department_ids is always an array (empty if None)
+            department_ids = request.department_ids if request.department_ids else []
+
+            # Create key with department links
             sql_query = load_sql("sql/v3/keys/create_key.sql")
-            sql_params = (request.name, request.key, request.type, request.active)
+            sql_params = (request.name, request.key, request.type, request.active, department_ids)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:
