@@ -26,3 +26,19 @@ CREATE INDEX ON keys (type);
 CREATE INDEX ON keys (active);
 CREATE INDEX ON keys (name);
 
+-- Key → Departments binary relationship table
+-- Tracks which keys are available to departments
+-- No records = available to all departments (cross-department)
+CREATE TABLE key_departments (
+  key_id        UUID NOT NULL REFERENCES keys(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (key_id, department_id)
+);
+
+CREATE INDEX ON key_departments (key_id);
+CREATE INDEX ON key_departments (department_id);
+CREATE INDEX ON key_departments (active);
+

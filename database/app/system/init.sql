@@ -48,3 +48,19 @@ CREATE TABLE prompts (
 );
 
 CREATE INDEX ON prompts (created_at);
+
+-- Prompt → Departments binary relationship table
+-- Tracks which prompts are available to departments
+-- No records = available to all departments (cross-department)
+CREATE TABLE prompt_departments (
+  prompt_id     UUID NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (prompt_id, department_id)
+);
+
+CREATE INDEX ON prompt_departments (prompt_id);
+CREATE INDEX ON prompt_departments (department_id);
+CREATE INDEX ON prompt_departments (active);
