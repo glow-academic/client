@@ -283,6 +283,18 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/system/authentication") {
+      return (
+        <Button
+          onClick={() => router.push("/system/authentication/new")}
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Auth
+        </Button>
+      );
+    }
+
     if (pathname === "/create/scenarios") {
       return (
         <Button onClick={() => router.push("/create/scenarios/new")} size="sm">

@@ -1335,6 +1335,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/auth/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth List
+         * @description Get auth list with item counts and permissions.
+         */
+        post: operations["get_auth_list_api_v3_auth_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/auth/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth Detail
+         * @description Get detailed auth information with nested items and keys.
+         */
+        post: operations["get_auth_detail_api_v3_auth_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/auth/detail-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth Detail Default
+         * @description Get default auth detail for creation mode.
+         */
+        post: operations["get_auth_detail_default_api_v3_auth_detail_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/auth/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Auth
+         * @description Create a new auth entry with nested items.
+         */
+        post: operations["create_auth_api_v3_auth_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/auth/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Auth
+         * @description Update an existing auth entry (replace all items).
+         */
+        post: operations["update_auth_api_v3_auth_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/auth/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Auth
+         * @description Duplicate an auth entry with all items and their key associations.
+         */
+        post: operations["duplicate_auth_api_v3_auth_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/auth/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Auth
+         * @description Delete an auth entry.
+         */
+        post: operations["delete_auth_api_v3_auth_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/departments/list": {
         parameters: {
             query?: never;
@@ -2559,6 +2699,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/keys/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Keys List
+         * @description Get keys list filtered by type.
+         */
+        post: operations["get_keys_list_api_v3_keys_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Key Detail
+         * @description Get key details (with masking option).
+         */
+        post: operations["get_key_detail_api_v3_keys_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Key
+         * @description Create a new key.
+         */
+        post: operations["create_key_api_v3_keys_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/models/list": {
         parameters: {
             query?: never;
@@ -3767,6 +3967,100 @@ export interface components {
             /** Active */
             active: boolean;
         };
+        /** AuthDetailDefaultRequest */
+        AuthDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** AuthDetailRequest */
+        AuthDetailRequest: {
+            /** Authid */
+            authId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /** AuthDetailResponse */
+        AuthDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Auth Items */
+            auth_items: components["schemas"]["AuthItemDetail"][];
+            /** Key Mapping */
+            key_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /** AuthFilters */
+        AuthFilters: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** AuthItem */
+        AuthItem: {
+            /** Auth Id */
+            auth_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Num Items */
+            num_items: number;
+            /** Sample Items */
+            sample_items: components["schemas"]["AuthSampleItem"][];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+        };
+        /**
+         * AuthItemCreate
+         * @description Auth item creation schema.
+         */
+        AuthItemCreate: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Key Ids */
+            key_ids?: string[] | null;
+        };
+        /** AuthItemDetail */
+        AuthItemDetail: {
+            /** Auth Item Id */
+            auth_item_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Key Ids */
+            key_ids: string[];
+        };
+        /** AuthListResponse */
+        AuthListResponse: {
+            /** Auths */
+            auths: components["schemas"]["AuthItem"][];
+        };
+        /** AuthSampleItem */
+        AuthSampleItem: {
+            /** Auth Item Id */
+            auth_item_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
         /**
          * AuthorizeEmulationRequest
          * @description Request to authorize emulation.
@@ -4464,6 +4758,32 @@ export interface components {
             message: string;
         };
         /**
+         * CreateAuthRequest
+         * @description Request to create auth with nested items.
+         */
+        CreateAuthRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Auth Items */
+            auth_items: components["schemas"]["AuthItemCreate"][];
+        };
+        /**
+         * CreateAuthResponse
+         * @description Response from create auth.
+         */
+        CreateAuthResponse: {
+            /** Success */
+            success: boolean;
+            /** Authid */
+            authId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * CreateCohortRequest
          * @description Request for creating a cohort.
          */
@@ -4546,6 +4866,35 @@ export interface components {
             feedback_id: number;
             /** Success */
             success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * CreateKeyRequest
+         * @description Request to create key.
+         */
+        CreateKeyRequest: {
+            /** Key */
+            key: string;
+            /** Type */
+            type: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /**
+         * CreateKeyResponse
+         * @description Response from create key.
+         */
+        CreateKeyResponse: {
+            /** Success */
+            success: boolean;
+            /** Keyid */
+            keyId: string;
+            /** Key Masked */
+            key_masked: string;
             /** Message */
             message: string;
         };
@@ -5210,6 +5559,24 @@ export interface components {
             message: string;
         };
         /**
+         * DeleteAuthRequest
+         * @description Request to delete auth.
+         */
+        DeleteAuthRequest: {
+            /** Authid */
+            authId: string;
+        };
+        /**
+         * DeleteAuthResponse
+         * @description Response from delete auth.
+         */
+        DeleteAuthResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * DeleteCohortRequest
          * @description Request for deleting a cohort.
          */
@@ -5702,6 +6069,26 @@ export interface components {
             success: boolean;
             /** Agentid */
             agentId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DuplicateAuthRequest
+         * @description Request to duplicate auth.
+         */
+        DuplicateAuthRequest: {
+            /** Authid */
+            authId: string;
+        };
+        /**
+         * DuplicateAuthResponse
+         * @description Response from duplicate auth.
+         */
+        DuplicateAuthResponse: {
+            /** Success */
+            success: boolean;
+            /** Authid */
+            authId: string;
             /** Message */
             message: string;
         };
@@ -6395,6 +6782,59 @@ export interface components {
             cohortName?: string | null;
             /** Cohortnames */
             cohortNames?: string | null;
+        };
+        /** KeyDetailRequest */
+        KeyDetailRequest: {
+            /** Keyid */
+            keyId: string;
+            /**
+             * Show Full
+             * @default false
+             */
+            show_full: boolean;
+        };
+        /** KeyDetailResponse */
+        KeyDetailResponse: {
+            /** Key Id */
+            key_id: string;
+            /** Key */
+            key: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Type */
+            type: string;
+            /** Active */
+            active: boolean;
+        };
+        /** KeyItem */
+        KeyItem: {
+            /** Key Id */
+            key_id: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Type */
+            type: string;
+            /** Active */
+            active: boolean;
+        };
+        /** KeysFilters */
+        KeysFilters: {
+            /**
+             * Type
+             * @default auth
+             */
+            type: string;
+        };
+        /** KeysListResponse */
+        KeysListResponse: {
+            /** Keys */
+            keys: components["schemas"]["KeyItem"][];
+            /** Key Mapping */
+            key_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
         };
         /**
          * LeaderboardBundleFilters
@@ -9236,6 +9676,32 @@ export interface components {
         };
         /** UpdateAgentResponse */
         UpdateAgentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UpdateAuthRequest
+         * @description Request to update auth with nested items.
+         */
+        UpdateAuthRequest: {
+            /** Authid */
+            authId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Auth Items */
+            auth_items: components["schemas"]["AuthItemCreate"][];
+        };
+        /**
+         * UpdateAuthResponse
+         * @description Response from update auth.
+         */
+        UpdateAuthResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -13364,6 +13830,237 @@ export interface operations {
             };
         };
     };
+    get_auth_list_api_v3_auth_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_detail_api_v3_auth_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_detail_default_api_v3_auth_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthDetailDefaultRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_auth_api_v3_auth_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_auth_api_v3_auth_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateAuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_auth_api_v3_auth_duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateAuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_auth_api_v3_auth_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteAuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_departments_list_api_v3_departments_list_post: {
         parameters: {
             query?: never;
@@ -15330,6 +16027,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteAgentPromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_keys_list_api_v3_keys_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeysFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeysListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_key_detail_api_v3_keys_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeyDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_key_api_v3_keys_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateKeyResponse"];
                 };
             };
             /** @description Validation Error */

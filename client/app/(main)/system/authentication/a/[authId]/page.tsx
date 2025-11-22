@@ -1,0 +1,150 @@
+/**
+ * app/(main)/system/authentication/a/[authId]/page.tsx
+ * Auth edit page
+ */
+
+import { getSession } from "@/auth";
+
+import Auth from "@/components/auth/Auth";
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata, ResolvingMetadata } from "next";
+import type {
+  CreateKeyIn,
+  CreateKeyOut,
+} from "@/app/(main)/system/authentication/page";
+
+/** ---- Strong types from OpenAPI ---- */
+type AuthDetailIn = InputOf<"/api/v3/auth/detail", "post">;
+type AuthDetailOut = OutputOf<"/api/v3/auth/detail", "post">;
+
+type CreateAuthIn = InputOf<"/api/v3/auth/create", "post">;
+type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
+
+type UpdateAuthIn = InputOf<"/api/v3/auth/update", "post">;
+type UpdateAuthOut = OutputOf<"/api/v3/auth/update", "post">;
+
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getAuth = async (
+  authId: string,
+  profileId: string
+): Promise<AuthDetailOut> => {
+  return api.post(
+    "/auth/detail",
+    { body: { authId, profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
+
+/** ---- Metadata uses the same cached fetch ---- */
+export async function generateMetadata(
+  { params }: { params: Promise<{ authId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { authId } = await params;
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  try {
+    const auth = await getAuth(authId, profileId);
+    return {
+      title: `${auth?.name || "Auth"} Authentication`,
+      description: `${auth ? `${auth.name} ${auth.description || ""}` : "Authentication"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  } catch {
+    return {
+      title: "Authentication",
+      description: `Authentication in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+    };
+  }
+}
+
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/auth/create", input);
+}
+
+async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/auth/update", input);
+}
+
+async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/keys/create", input);
+}
+
+/** ---- Server renders client with typed data and actions ---- */
+export default async function AuthEditPage({
+  params,
+}: {
+  params: Promise<{ authId: string }>;
+}) {
+  const { authId } = await params;
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Fetch auth detail (always fresh - source of truth)
+  try {
+    const authDetail = await getAuth(authId, profileId);
+
+    return (
+      <div
+        className="space-y-6"
+        data-page="auth-edit"
+        data-auth-id={authId}
+      >
+        <Auth
+          authId={authId}
+          mode="edit"
+          authDetail={authDetail}
+          createAuthAction={createAuth}
+          updateAuthAction={updateAuth}
+          createKeyAction={createKey}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-center h-96">
+            <p className="text-muted-foreground">
+              You don't have access to this auth entry.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
+}
+
+/** ---- Export types for client component (type-only imports) ---- */
+export type {
+  AuthDetailIn,
+  AuthDetailOut,
+  CreateAuthIn,
+  CreateAuthOut,
+  UpdateAuthIn,
+  UpdateAuthOut,
+};
+

@@ -2731,6 +2731,335 @@
         ]
       }
     },
+    "/api/v3/auth/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Get Auth List",
+        "description": "Get auth list with item counts and permissions.",
+        "operationId": "get_auth_list_api_v3_auth_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
+    "/api/v3/auth/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Get Auth Detail",
+        "description": "Get detailed auth information with nested items and keys.",
+        "operationId": "get_auth_detail_api_v3_auth_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
+    "/api/v3/auth/detail-default": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Get Auth Detail Default",
+        "description": "Get default auth detail for creation mode.",
+        "operationId": "get_auth_detail_default_api_v3_auth_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthDetailDefaultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
+    "/api/v3/auth/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Create Auth",
+        "description": "Create a new auth entry with nested items.",
+        "operationId": "create_auth_api_v3_auth_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
+    "/api/v3/auth/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Update Auth",
+        "description": "Update an existing auth entry (replace all items).",
+        "operationId": "update_auth_api_v3_auth_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
+    "/api/v3/auth/duplicate": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Duplicate Auth",
+        "description": "Duplicate an auth entry with all items and their key associations.",
+        "operationId": "duplicate_auth_api_v3_auth_duplicate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
+    "/api/v3/auth/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Delete Auth",
+        "description": "Delete an auth entry.",
+        "operationId": "delete_auth_api_v3_auth_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteAuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
     "/api/v3/departments/list": {
       "post": {
         "tags": [
@@ -5546,6 +5875,147 @@
         ]
       }
     },
+    "/api/v3/keys/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Get Keys List",
+        "description": "Get keys list filtered by type.",
+        "operationId": "get_keys_list_api_v3_keys_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeysFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeysListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Get Key Detail",
+        "description": "Get key details (with masking option).",
+        "operationId": "get_key_detail_api_v3_keys_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Create Key",
+        "description": "Create a new key.",
+        "operationId": "create_key_api_v3_keys_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
     "/api/v3/models/list": {
       "post": {
         "tags": [
@@ -8201,6 +8671,254 @@
         ],
         "title": "AttemptProfileItem"
       },
+      "AuthDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "AuthDetailDefaultRequest"
+      },
+      "AuthDetailRequest": {
+        "properties": {
+          "authId": {
+            "type": "string",
+            "title": "Authid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authId",
+          "profileId"
+        ],
+        "title": "AuthDetailRequest"
+      },
+      "AuthDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "auth_items": {
+            "items": {
+              "$ref": "#/components/schemas/AuthItemDetail"
+            },
+            "type": "array",
+            "title": "Auth Items"
+          },
+          "key_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Key Mapping"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "active",
+          "auth_items",
+          "key_mapping",
+          "can_edit"
+        ],
+        "title": "AuthDetailResponse"
+      },
+      "AuthFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "AuthFilters"
+      },
+      "AuthItem": {
+        "properties": {
+          "auth_id": {
+            "type": "string",
+            "title": "Auth Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "num_items": {
+            "type": "integer",
+            "title": "Num Items"
+          },
+          "sample_items": {
+            "items": {
+              "$ref": "#/components/schemas/AuthSampleItem"
+            },
+            "type": "array",
+            "title": "Sample Items"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_id",
+          "name",
+          "description",
+          "active",
+          "num_items",
+          "sample_items",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "AuthItem"
+      },
+      "AuthItemCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "key_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "AuthItemCreate",
+        "description": "Auth item creation schema."
+      },
+      "AuthItemDetail": {
+        "properties": {
+          "auth_item_id": {
+            "type": "string",
+            "title": "Auth Item Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "key_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Key Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "name",
+          "description",
+          "key_ids"
+        ],
+        "title": "AuthItemDetail"
+      },
+      "AuthListResponse": {
+        "properties": {
+          "auths": {
+            "items": {
+              "$ref": "#/components/schemas/AuthItem"
+            },
+            "type": "array",
+            "title": "Auths"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auths"
+        ],
+        "title": "AuthListResponse"
+      },
+      "AuthSampleItem": {
+        "properties": {
+          "auth_item_id": {
+            "type": "string",
+            "title": "Auth Item Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auth_item_id",
+          "name",
+          "description"
+        ],
+        "title": "AuthSampleItem"
+      },
       "AuthorizeEmulationRequest": {
         "properties": {
           "requesterProfileId": {
@@ -10099,6 +10817,62 @@
         ],
         "title": "CreateAgentResponse"
       },
+      "CreateAuthRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "auth_items": {
+            "items": {
+              "$ref": "#/components/schemas/AuthItemCreate"
+            },
+            "type": "array",
+            "title": "Auth Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "active",
+          "auth_items"
+        ],
+        "title": "CreateAuthRequest",
+        "description": "Request to create auth with nested items."
+      },
+      "CreateAuthResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "authId": {
+            "type": "string",
+            "title": "Authid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "authId",
+          "message"
+        ],
+        "title": "CreateAuthResponse",
+        "description": "Response from create auth."
+      },
       "CreateCohortRequest": {
         "properties": {
           "title": {
@@ -10275,6 +11049,59 @@
           "message"
         ],
         "title": "CreateFeedbackResponse"
+      },
+      "CreateKeyRequest": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "type"
+        ],
+        "title": "CreateKeyRequest",
+        "description": "Request to create key."
+      },
+      "CreateKeyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "keyId",
+          "key_masked",
+          "message"
+        ],
+        "title": "CreateKeyResponse",
+        "description": "Response from create key."
       },
       "CreateLogRequest": {
         "properties": {
@@ -12084,6 +12911,39 @@
         ],
         "title": "DeleteAgentResponse"
       },
+      "DeleteAuthRequest": {
+        "properties": {
+          "authId": {
+            "type": "string",
+            "title": "Authid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authId"
+        ],
+        "title": "DeleteAuthRequest",
+        "description": "Request to delete auth."
+      },
+      "DeleteAuthResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeleteAuthResponse",
+        "description": "Response from delete auth."
+      },
       "DeleteCohortRequest": {
         "properties": {
           "cohortId": {
@@ -13310,6 +14170,44 @@
           "message"
         ],
         "title": "DuplicateAgentResponse"
+      },
+      "DuplicateAuthRequest": {
+        "properties": {
+          "authId": {
+            "type": "string",
+            "title": "Authid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authId"
+        ],
+        "title": "DuplicateAuthRequest",
+        "description": "Request to duplicate auth."
+      },
+      "DuplicateAuthResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "authId": {
+            "type": "string",
+            "title": "Authid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "authId",
+          "message"
+        ],
+        "title": "DuplicateAuthResponse",
+        "description": "Response from duplicate auth."
       },
       "DuplicateCohortRequest": {
         "properties": {
@@ -15175,6 +16073,121 @@
         ],
         "title": "HomeSimulationItem",
         "description": "Home simulation item."
+      },
+      "KeyDetailRequest": {
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "show_full": {
+            "type": "boolean",
+            "title": "Show Full",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "keyId"
+        ],
+        "title": "KeyDetailRequest"
+      },
+      "KeyDetailResponse": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "key",
+          "key_masked",
+          "type",
+          "active"
+        ],
+        "title": "KeyDetailResponse"
+      },
+      "KeyItem": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "key_masked",
+          "type",
+          "active"
+        ],
+        "title": "KeyItem"
+      },
+      "KeysFilters": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "auth"
+          }
+        },
+        "type": "object",
+        "title": "KeysFilters"
+      },
+      "KeysListResponse": {
+        "properties": {
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/KeyItem"
+            },
+            "type": "array",
+            "title": "Keys"
+          },
+          "key_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Key Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keys",
+          "key_mapping"
+        ],
+        "title": "KeysListResponse"
       },
       "LeaderboardBundleFilters": {
         "properties": {
@@ -22610,6 +23623,62 @@
           "message"
         ],
         "title": "UpdateAgentResponse"
+      },
+      "UpdateAuthRequest": {
+        "properties": {
+          "authId": {
+            "type": "string",
+            "title": "Authid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "auth_items": {
+            "items": {
+              "$ref": "#/components/schemas/AuthItemCreate"
+            },
+            "type": "array",
+            "title": "Auth Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authId",
+          "name",
+          "description",
+          "active",
+          "auth_items"
+        ],
+        "title": "UpdateAuthRequest",
+        "description": "Request to update auth with nested items."
+      },
+      "UpdateAuthResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "UpdateAuthResponse",
+        "description": "Response from update auth."
       },
       "UpdateChatCompletedAtRequest": {
         "properties": {

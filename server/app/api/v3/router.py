@@ -8,6 +8,7 @@ from app.api.v3.agents import router as agents_router
 from app.api.v3.analytics import router as analytics_router
 from app.api.v3.assistant import router as assistant_router
 from app.api.v3.attempts import router as attempts_router
+from app.api.v3.auth import router as auth_router
 from app.api.v3.cohorts import router as cohorts_router
 from app.api.v3.dashboard import router as dashboard_router
 # ============================================================================
@@ -20,8 +21,10 @@ from app.api.v3.feedback import router as feedback_router
 # Batch G: Utility Routes
 # ============================================================================
 from app.api.v3.home import router as home_router
+from app.api.v3.keys import router as keys_router
 from app.api.v3.leaderboard import router as leaderboard_router
 from app.api.v3.logs import router as logs_router
+from app.api.v3.models import router as models_router
 from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
 from app.api.v3.practice import router as practice_router
@@ -30,7 +33,6 @@ from app.api.v3.pricing import router as pricing_router
 # Batch B: Profile Routes
 # ============================================================================
 from app.api.v3.profile import router as profile_router
-from app.api.v3.models import router as models_router
 from app.api.v3.providers import router as providers_router
 from app.api.v3.reports import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
@@ -59,6 +61,7 @@ router.include_router(simulations_router)
 router.include_router(personas_router)
 
 # Batch C: Secondary Resources (Complete CRUD)
+router.include_router(auth_router)
 router.include_router(departments_router)
 router.include_router(cohorts_router)
 router.include_router(documents_router)
@@ -72,6 +75,7 @@ router.include_router(leaderboard_router)
 
 # Batch F: Supporting Resources
 router.include_router(agents_router)
+router.include_router(keys_router)
 router.include_router(models_router)
 router.include_router(parameters_router)
 # Providers router kept for simple list endpoint (picker use only)

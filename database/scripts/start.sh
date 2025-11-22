@@ -23,6 +23,7 @@ mkdir -p "$HISTORY_DIR"
 # Parse command line arguments
 CLEAN_DB=false
 MIGRATE_DB=false
+MIGRATE_ALL=false
 CONNECT_DB=false
 
 for arg in "$@"; do
@@ -35,17 +36,29 @@ for arg in "$@"; do
       MIGRATE_DB=true
       shift
       ;;
+    --migrate-all|--all)
+      MIGRATE_DB=true
+      MIGRATE_ALL=true
+      shift
+      ;;
     --connect)
       CONNECT_DB=true
       shift
       ;;
     *)
-      echo "Usage: $0 [--clean|--migrate|--connect]"
-      echo "  --clean   : Create backup, then start fresh database from init.sql"
-      echo "  --migrate : Apply manual migrations from migrate/ folder"
-      echo "  --connect : Connect to existing database"
-      echo "  (default) : Start from latest backup (no migrations)"
-      exit 1
+      # Check if --migrate was already set and this is --all
+      if [[ "$MIGRATE_DB" == true ]] && [[ "$arg" == "--all" ]]; then
+        MIGRATE_ALL=true
+        shift
+      else
+        echo "Usage: $0 [--clean|--migrate [--all]|--migrate-all|--connect]"
+        echo "  --clean       : Create backup, then start fresh database from init.sql"
+        echo "  --migrate     : Apply most recent migration from migrate/ folder"
+        echo "  --migrate --all or --migrate-all : Apply all migrations from migrate/ folder"
+        echo "  --connect     : Connect to existing database"
+        echo "  (default)     : Start from latest backup (no migrations)"
+        exit 1
+      fi
       ;;
   esac
 done
@@ -251,28 +264,53 @@ fi
 
 # Handle migrate mode
 if [[ "$MIGRATE_DB" == true ]]; then
-  echo "🔄 Migration mode: Applying manual migrations from migrate/ folder..."
+  if [[ "$MIGRATE_ALL" == true ]]; then
+    echo "🔄 Migration mode: Applying all migrations from migrate/ folder..."
+  else
+    echo "🔄 Migration mode: Applying most recent migration from migrate/ folder..."
+  fi
   echo ""
   
   export PGPASSWORD="$DB_PASSWORD"
   
   # Check if migration files exist in migrate/ folder
   if ls migrate/*.sql 1> /dev/null 2>&1; then
-    echo "📁 Found migration files, applying them..."
-    
-    # Apply each migration file in order (sorted by filename)
-    for migration_file in migrate/*.sql; do
-      echo "🔄 Applying migration: $(basename "$migration_file")"
-      if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
-        echo "✅ Migration applied: $(basename "$migration_file")"
-      else
-        echo "⚠️  Migration had issues: $(basename "$migration_file")"
-        exit 1
-      fi
-    done
-    
-    echo "✅ All migrations applied successfully"
+    if [[ "$MIGRATE_ALL" == true ]]; then
+      # Apply all migration files in order (sorted by filename)
+      echo "📁 Found migration files, applying all of them..."
+      for migration_file in migrate/*.sql; do
+        echo "🔄 Applying migration: $(basename "$migration_file")"
+        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+          echo "✅ Migration applied: $(basename "$migration_file")"
+        else
+          echo "⚠️  Migration had issues: $(basename "$migration_file")"
+          exit 1
+        fi
+      done
+      echo "✅ All migrations applied successfully"
+      # Create backup after all migrations succeed
+      create_backup
     else
+      # Get the most recent migration file (sorted by modification time, newest first)
+      migration_file=$(ls -t migrate/*.sql 2>/dev/null | head -1)
+      
+      if [[ -n "$migration_file" ]]; then
+        echo "📁 Found migration file: $(basename "$migration_file")"
+        echo "🔄 Applying migration: $(basename "$migration_file")"
+        
+        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+          echo "✅ Migration applied successfully: $(basename "$migration_file")"
+          # Create backup after successful migration
+          create_backup
+        else
+          echo "⚠️  Migration had issues: $(basename "$migration_file")"
+          exit 1
+        fi
+      else
+        echo "📝 No migration files found in migrate/ folder"
+      fi
+    fi
+  else
     echo "📝 No migration files found in migrate/ folder"
   fi
   
@@ -320,25 +358,4 @@ else
 fi
 
 echo "✅ Database setup completed!"
-
-# Set up cleanup trap - only create backup on exit for clean mode
-cleanup() {
-  echo "🛑 Shutting down..."
-  # Only create backup on exit if we're in clean mode
-  if [[ "$CLEAN_DB" == true ]]; then
-    create_backup
-  fi
-}
-
-trap cleanup EXIT
-
-# Keep script running if not in CI
-if [[ -z "${CI:-}" ]]; then
-  echo "💡 Database is ready. Press Ctrl+C to stop."
-  echo "🔗 Connect with: psql '$USER_CONN'"
-  
-  # Keep running until interrupted
-  while true; do
-    sleep 1
-  done
-fi
+exit 0

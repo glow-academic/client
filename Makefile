@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e restore-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types ws-gen gen-ws-types
+.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e restore-db migrate-db migrate-db-all connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types ws-gen gen-ws-types
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -282,11 +282,17 @@ restore-db:
 	@cd database && yarn start
 	@echo "✅ Database restored"
 
-# Migrate database
+# Migrate database (most recent migration only)
 migrate-db:
-	@echo "Running database migrations..."
+	@echo "Running database migrations (most recent only)..."
 	@cd database && yarn migrate
 	@echo "✅ Database migrations completed"
+
+# Migrate database (all migrations)
+migrate-db-all:
+	@echo "Running all database migrations..."
+	@cd database && yarn migrate:all
+	@echo "✅ All database migrations completed"
 
 # Connect to database
 connect-db:
@@ -314,10 +320,11 @@ help:
 	@echo "  install-client - Install client dependencies with yarn"
 	@echo ""
 	@echo "Database:"
-	@echo "  restore-db   - Restore database from latest backup"
-	@echo "  migrate-db   - Run database migrations"
-	@echo "  connect-db   - Connect to database"
-	@echo "  fresh-db     - Start database with fresh data"
+	@echo "  restore-db     - Restore database from latest backup"
+	@echo "  migrate-db     - Run most recent database migration"
+	@echo "  migrate-db-all - Run all database migrations"
+	@echo "  connect-db     - Connect to database"
+	@echo "  fresh-db       - Start database with fresh data"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"

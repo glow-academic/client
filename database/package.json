@@ -8,6 +8,7 @@
     "start": "bash scripts/start.sh",
     "start:clean": "bash scripts/start.sh --clean",
     "migrate": "bash scripts/start.sh --migrate",
+    "migrate:all": "bash scripts/start.sh --migrate-all",
     "connect": "bash scripts/start.sh --connect",
     "query": "bash scripts/sql-helpers.sh",
     "tables": "bash scripts/sql-helpers.sh tables",
