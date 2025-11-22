@@ -14,7 +14,7 @@ type ProfileItem = {
   id: string;
   firstName: string;
   lastName: string;
-  alias: string;
+  email: string;
   role: "superadmin" | "admin" | "instructional" | "ta" | "guest";
   active: boolean;
   viewedIntro: boolean;

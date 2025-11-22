@@ -531,7 +531,7 @@ export default function Leaderboard({
                             firstName: accolade.holder.firstName ?? "",
                             lastName: accolade.holder.lastName ?? "",
                             role: "guest" as ProfileRole,
-                            alias: "",
+                            email: "",
                             active: true,
                             createdAt: new Date().toISOString(),
                             defaultProfile: false,

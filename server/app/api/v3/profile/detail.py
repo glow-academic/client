@@ -28,7 +28,7 @@ class ProfileItem(BaseModel):
     id: str
     firstName: str
     lastName: str
-    alias: str
+    email: str
     role: str  # 'superadmin' | 'admin' | 'instructional' | 'ta' | 'guest'
     active: bool
     viewedIntro: bool
@@ -85,7 +85,7 @@ async def get_profile_detail(
             id=str(row["id"]),
             firstName=row["first_name"],
             lastName=row["last_name"],
-            alias=row["alias"],
+            email=row["email"],
             role=row["role"],
             active=row["active"],
             viewedIntro=row["viewed_intro"],

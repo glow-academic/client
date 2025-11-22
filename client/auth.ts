@@ -35,13 +35,11 @@ export const {
         if (!user.email) {
           return;
         }
-        const alias = user.email.split("@")[0];
-
-        // V3 API - fetch profile by alias
+        // V3 API - fetch profile by email
         let existingProfile = null;
         try {
-          const profileResponse = await api.post("/profile/by-alias", {
-            body: { alias: alias || "" },
+          const profileResponse = await api.post("/profile/by-email", {
+            body: { email: user.email || "" },
           });
           existingProfile = profileResponse.profile;
         } catch {
@@ -67,7 +65,7 @@ export const {
             body: {
               firstName,
               lastName,
-              alias: alias || "",
+              email: user.email || "",
               role: "guest",
             },
           });
@@ -87,16 +85,15 @@ export const {
             profile?.name?.split(" ") || user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
-          const alias = user.email.split("@")[0] || "";
-          if (!alias) {
+          if (!user.email) {
             return;
           }
 
-          // V3 API - fetch profile by alias
+          // V3 API - fetch profile by email
           let existingProfile = null;
           try {
-            const profileResponse = await api.post("/profile/by-alias", {
-              body: { alias },
+            const profileResponse = await api.post("/profile/by-email", {
+              body: { email: user.email },
             });
             existingProfile = profileResponse.profile;
           } catch {
@@ -124,28 +121,24 @@ export const {
   callbacks: {
     // 🔑 Put identity & emulation into the JWT
     async jwt({ token, user, trigger, session }) {
-      // On initial sign in, attach canonical profileId/role from email → alias lookup
+      // On initial sign in, attach canonical profileId/role from email lookup
       if (user?.email) {
-        const aliasParts = user.email.split("@");
-        const alias = aliasParts[0];
-        if (alias && alias.length > 0) {
-          // V3 API - fetch profile by alias
-          try {
-            const profileResponse = await api.post("/profile/by-alias", {
-              body: { alias },
-            });
-            const profile = profileResponse.profile;
+        // V3 API - fetch profile by email
+        try {
+          const profileResponse = await api.post("/profile/by-email", {
+            body: { email: user.email },
+          });
+          const profile = profileResponse.profile;
 
-            if (profile) {
-              token["profileId"] = profile.id;
-              token["role"] = profile.role;
-              // initialize effectiveProfileId to self
-              token["effectiveProfileId"] =
-                token["effectiveProfileId"] ?? profile.id;
-            }
-          } catch {
-            // Profile not found - will be created in createUser event
+          if (profile) {
+            token["profileId"] = profile.id;
+            token["role"] = profile.role;
+            // initialize effectiveProfileId to self
+            token["effectiveProfileId"] =
+              token["effectiveProfileId"] ?? profile.id;
           }
+        } catch {
+          // Profile not found - will be created in createUser event
         }
       }
 

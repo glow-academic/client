@@ -69,7 +69,7 @@ export default function Report({
         ? {
             firstName: profileData.name?.split(" ")[0] || "",
             lastName: profileData.name?.split(" ").slice(1).join(" ") || "",
-            alias: profileData.email?.split("@")[0] || "",
+            email: profileData.email || "",
             role: profileData.role || "",
           }
         : null,
@@ -121,7 +121,7 @@ export default function Report({
                 {profile.firstName} {profile.lastName}
               </h1>
               <p className="text-muted-foreground">
-                {profile.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                {profile.email}
               </p>
             </div>
             <Badge variant={getRoleBadgeVariant(profile.role)}>

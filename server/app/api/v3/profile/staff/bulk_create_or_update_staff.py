@@ -77,7 +77,7 @@ async def bulk_create_or_update_staff(
                     profile_id_new,
                     profile_req.firstName,
                     profile_req.lastName,
-                    profile_req.alias,
+                    profile_req.email,
                     profile_req.role,
                     True,  # active
                     dept_uuids,
@@ -91,7 +91,7 @@ async def bulk_create_or_update_staff(
                 if not result:
                     raise HTTPException(
                         status_code=500,
-                        detail=f"Failed to create or update staff profile: {profile_req.alias}",
+                        detail=f"Failed to create or update staff profile: {profile_req.email}",
                     )
 
                 # Check for role validation error

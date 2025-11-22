@@ -3,7 +3,7 @@
 -- Returns data needed for both Brightspace and regular CSV exports
 
 WITH filtered_profiles AS (
-    SELECT p.id, p.first_name, p.last_name, p.alias, p.role
+    SELECT p.id, p.first_name, p.last_name, p.email, p.role
     FROM profiles p
     WHERE {PROFILE_WHERE_CLAUSE}{PROFILE_IDS_FILTER}
 ),
@@ -18,7 +18,7 @@ profile_metrics AS (
         fp.id AS profile_id,
         fp.first_name,
         fp.last_name,
-        fp.alias,
+        fp.email,
         fp.role,
         AVG(f.grade_percent) AS avg_score,
         MAX(f.grade_percent) AS highest_score,
@@ -27,7 +27,7 @@ profile_metrics AS (
         AVG(f.time_taken_seconds / 60.0) AS avg_time_minutes
     FROM filtered_profiles fp
     LEFT JOIN filt f ON f.profile_id = fp.id AND f.grade_percent IS NOT NULL
-    GROUP BY fp.id, fp.first_name, fp.last_name, fp.alias, fp.role
+    GROUP BY fp.id, fp.first_name, fp.last_name, fp.email, fp.role
 ),
 completion_per_profile AS (
     SELECT
@@ -221,7 +221,7 @@ SELECT json_agg(json_build_object(
     'profileId', profile_id::text,
     'firstName', first_name,
     'lastName', last_name,
-    'alias', alias,
+    'email', email,
     'role', role,
     'metrics', json_build_object(
         'averageScore', json_build_object(

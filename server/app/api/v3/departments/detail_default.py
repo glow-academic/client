@@ -26,10 +26,9 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    alias: str
+    email: str
     name: str
     role: str
-    email: str
     initials: str
     active: bool
     last_active: str | None = None

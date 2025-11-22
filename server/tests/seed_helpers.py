@@ -13,11 +13,11 @@ async def get_cs_dept_id(conn: asyncpg.Connection) -> str:
     return str(dept_id)
 
 
-async def get_superadmin_alias(
-    conn: asyncpg.Connection, alias: str = "sarava18"
+async def get_superadmin_email(
+    conn: asyncpg.Connection, email: str = "redacted@purdue.edu"
 ) -> str:
-    """Get superadmin ID by alias."""
-    profile_id = await conn.fetchval("SELECT id FROM profiles WHERE alias = $1", alias)
+    """Get superadmin ID by email."""
+    profile_id = await conn.fetchval("SELECT id FROM profiles WHERE email = $1", email)
     if not profile_id:
-        raise ValueError(f"Profile with alias {alias} not found in seed data")
+        raise ValueError(f"Profile with email {email} not found in seed data")
     return str(profile_id)

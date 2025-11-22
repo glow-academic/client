@@ -1,5 +1,5 @@
 -- Update staff profile with lookup, update, department, and request limit in single query (DHH style)
--- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=alias, $5=role, $6=active, 
+-- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, $6=active, 
 --             $7=primary_department_id (uuid), $8=requests_per_day (int, nullable), $9=default_profile (bool),
 --             $10=intro_completed (bool, nullable), $11=chat_completed (bool, nullable)
 -- Returns: id, first_name, last_name, name (concatenated)
@@ -19,7 +19,7 @@ profile_update AS (
     UPDATE profiles SET
         first_name = $2,
         last_name = $3,
-        alias = $4,
+        email = $4,
         role = $5,
         active = $6,
         default_profile = $9,

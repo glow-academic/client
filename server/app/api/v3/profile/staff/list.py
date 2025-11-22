@@ -31,10 +31,9 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    alias: str
+    email: str
     name: str  # Combined first_name + last_name
     role: str
-    email: str  # alias + campus email domain
     initials: str  # Derived from first_name + last_name
     active: bool
     last_active: str | None
@@ -92,15 +91,12 @@ async def get_profile_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get campus email domain from environment
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
-
         # Load SQL string (includes current user role in result)
         sql_query = load_sql("sql/v3/profile/staff/list_staff.sql")
-        sql_params = (filters.profileId, campus_domain)
+        sql_params = (filters.profileId,)
 
         # Execute query
-        result = await conn.fetch(sql_query, filters.profileId, campus_domain)
+        result = await conn.fetch(sql_query, filters.profileId)
 
         # Get current user's role from first row (same for all rows)
         current_user_role = (
@@ -141,10 +137,9 @@ async def get_profile_list(
                     profile_id=str(row["profile_id"]),
                     first_name=row["first_name"],
                     last_name=row["last_name"],
-                    alias=row["alias"],
+                    email=row["email"],
                     name=row["name"],
                     role=row["role"],
-                    email=row["email"],
                     initials=row["initials"],
                     active=row["active"],
                     last_active=row["lastactive"].isoformat()

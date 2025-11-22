@@ -3,7 +3,7 @@
 --   $1 = profile_id (uuid) - new UUID for create, existing for update
 --   $2 = first_name (text)
 --   $3 = last_name (text)
---   $4 = alias (text)
+--   $4 = email (text)
 --   $5 = role (text)
 --   $6 = active (boolean)
 --   $7 = department_ids (uuid[]) - array of department UUIDs (empty array means remove all)
@@ -35,19 +35,19 @@ role_validation AS (
     WHERE NOT EXISTS (SELECT 1 FROM current_user_role)
 ),
 existing_profile AS (
-    SELECT id FROM profiles WHERE alias = $4
+    SELECT id FROM profiles WHERE email = $4
 ),
 profile_upsert AS (
     -- Insert or update profile (only if role validation passes)
     INSERT INTO profiles (
-        id, first_name, last_name, alias, role, active,
+        id, first_name, last_name, email, role, active,
         default_profile, viewed_intro, viewed_chat, updated_at
     )
     SELECT
         COALESCE((SELECT id FROM existing_profile LIMIT 1), $1),  -- Use existing ID if found, else new UUID
         $2,  -- first_name
         $3,  -- last_name
-        $4,  -- alias
+        $4,  -- email
         $5::profile_role,  -- role
         $6,  -- active
         false,  -- default_profile
@@ -55,7 +55,7 @@ profile_upsert AS (
         false,  -- viewed_chat
         NOW()  -- updated_at
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (alias) DO UPDATE SET
+    ON CONFLICT (email) DO UPDATE SET
         first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
         role = CASE 

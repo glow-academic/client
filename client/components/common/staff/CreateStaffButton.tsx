@@ -29,7 +29,7 @@ export interface CreateStaffButtonProps {
       profileId: string;
       firstName?: string;
       lastName?: string;
-      alias?: string;
+      email?: string;
       role?: string;
     }>
   ) => void;

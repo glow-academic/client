@@ -86,7 +86,7 @@ staff_data AS (
             'profile_id', p.id::text,
             'first_name', p.first_name,
             'last_name', p.last_name,
-            'alias', p.alias,
+            'email', p.email,
             'name', p.first_name || ' ' || p.last_name,
             'role', p.role,
             'active', p.active,

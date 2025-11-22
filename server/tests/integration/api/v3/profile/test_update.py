@@ -104,9 +104,9 @@ async def test_update_profile_guest_profile_id(
     """Test updating profile with guest-profile-id resolution."""
     # Create a default guest profile
     guest_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role, default_profile) "
-        "VALUES('Guest', 'User', 'default_guest', 'guest', true) "
-        "ON CONFLICT (alias) DO UPDATE SET default_profile = true "
+        "INSERT INTO profiles(first_name, last_name, email, role, default_profile) "
+        "VALUES('Guest', 'User', 'redacted@purdue.edu', 'guest', true) "
+        "ON CONFLICT (email) DO UPDATE SET default_profile = true "
         "RETURNING id"
     )
 

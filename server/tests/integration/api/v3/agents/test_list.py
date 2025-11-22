@@ -89,8 +89,8 @@ async def test_list_agents_permissions_non_superadmin(
     """Test non-superadmin does not have edit/delete permissions but can duplicate."""
     # Create a non-superadmin profile
     ta_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role) "
-        "VALUES('Test', 'TA', 'test_ta_agent', 'ta') RETURNING id"
+        "INSERT INTO profiles(first_name, last_name, email, role) "
+        "VALUES('Test', 'TA', 'redacted@purdue.edu', 'ta') RETURNING id"
     )
 
     response = await client.post(

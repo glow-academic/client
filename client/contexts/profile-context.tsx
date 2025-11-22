@@ -51,7 +51,7 @@ const GUEST_PROFILE: ProfileItem = {
   id: "guest-profile-id",
   firstName: "Guest",
   lastName: "User",
-  alias: "guest",
+  email: "redacted@purdue.edu",
   role: "guest",
   active: true,
   viewedIntro: true,

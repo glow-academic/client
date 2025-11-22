@@ -21,8 +21,8 @@ async def test_add_profiles_to_cohort(
     profile_id1 = await db.fetchval("SELECT id FROM profiles LIMIT 1")
     if not profile_id1:
         profile_id1 = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, alias, role, active) "
-            "VALUES ('Test', 'User1', 'testuser1', 'guest', true) RETURNING id"
+            "INSERT INTO profiles(first_name, last_name, email, role, active) "
+            "VALUES ('Test', 'User1', 'redacted@purdue.edu', 'guest', true) RETURNING id"
         )
 
     profile_id2 = await db.fetchval(
@@ -30,8 +30,8 @@ async def test_add_profiles_to_cohort(
     )
     if not profile_id2:
         profile_id2 = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, alias, role, active) "
-            "VALUES ('Test', 'User2', 'testuser2', 'guest', true) RETURNING id"
+            "INSERT INTO profiles(first_name, last_name, email, role, active) "
+            "VALUES ('Test', 'User2', 'redacted@purdue.edu', 'guest', true) RETURNING id"
         )
 
     response = await client.post(

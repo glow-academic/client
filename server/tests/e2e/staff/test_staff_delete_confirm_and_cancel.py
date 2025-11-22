@@ -38,7 +38,7 @@ def test_staff_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
         parts = staff_name.split()
         first_name = parts[0] if parts else "Deletable"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"deletable-staff-{int(time.time() * 1000)}"
+        email = f"deletable-staff-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
             page.context.request,
@@ -51,7 +51,7 @@ def test_staff_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             profile_id=ADMIN_PROFILE_ID,
@@ -175,13 +175,13 @@ def test_staff_bulk_delete_confirm_and_cancel(page: Page, base_url: str) -> None
             parts = staff_name.split()
             first_name = parts[0] if parts else f"BulkDel{i}"
             last_name = parts[1] if len(parts) > 1 else "Staff"
-            alias = f"bulk-delete-{i}-{int(time.time() * 1000) + i}"
+            email = f"bulk-delete-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
                 first_name=first_name,
                 last_name=last_name,
-                alias=alias,
+                email=email,
                 role="guest",
                 department_id=department_id,
                 profile_id=ADMIN_PROFILE_ID,
@@ -271,7 +271,7 @@ def test_staff_bulk_delete_mixed_deletable_non_deletable(
         parts = staff_name.split()
         first_name = parts[0] if parts else "Mixed"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"mixed-delete-{int(time.time() * 1000)}"
+        email = f"mixed-delete-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
             page.context.request,
@@ -284,7 +284,7 @@ def test_staff_bulk_delete_mixed_deletable_non_deletable(
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             profile_id=ADMIN_PROFILE_ID,

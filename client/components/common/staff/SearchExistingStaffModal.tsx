@@ -45,7 +45,7 @@ export interface SearchExistingStaffModalProps {
       profileId: string;
       firstName?: string;
       lastName?: string;
-      alias?: string;
+      email?: string;
       role?: string;
       requestsPerDay?: number | null;
       totalRequests?: number;
@@ -233,7 +233,7 @@ export default function SearchExistingStaffModal({
         profileId: profile.profile_id,
         firstName: profile.first_name,
         lastName: profile.last_name,
-        alias: profile.alias,
+        email: profile.email,
         role: profile.role,
         requestsPerDay: profile.requests_per_day,
         totalRequests: profile.total_requests,
@@ -281,7 +281,7 @@ export default function SearchExistingStaffModal({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="search"
-              placeholder="Search by name or alias"
+              placeholder="Search by name or email"
               value={searchQuery}
               onChange={(e) => handleSearchQueryChange(e.target.value)}
               className="pl-10"
@@ -340,7 +340,7 @@ export default function SearchExistingStaffModal({
                         <TableCell className="font-medium">
                           {profile.first_name} {profile.last_name}
                         </TableCell>
-                        <TableCell>{profile.alias}</TableCell>
+                        <TableCell>{profile.email}</TableCell>
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(

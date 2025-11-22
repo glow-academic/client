@@ -188,7 +188,7 @@ SELECT
             p.id::text,
             jsonb_build_object(
                 'name', p.first_name || ' ' || p.last_name,
-                'description', p.alias || '@' || $2
+                'description', p.email
             )
         ), '{}'::jsonb)
         FROM profiles p

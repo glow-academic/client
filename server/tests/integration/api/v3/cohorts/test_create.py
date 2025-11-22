@@ -5,7 +5,7 @@ import httpx
 import pytest
 from tests.seed_helpers import (
     get_cs_dept_id,  # type: ignore
-    get_superadmin_alias,
+    get_superadmin_email,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -15,7 +15,7 @@ async def test_create_cohort(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test creating a new cohort with all fields."""
-    await get_superadmin_alias(db)
+    await get_superadmin_email(db)
     dept_id = await get_cs_dept_id(db)
 
     # Get a simulation ID
@@ -36,12 +36,12 @@ async def test_create_cohort(
 
     # Get a profile ID (not the superadmin)
     other_profile_id = await db.fetchval(
-        "SELECT id FROM profiles WHERE alias != 'sarava18' LIMIT 1"
+        "SELECT id FROM profiles WHERE email != 'redacted@purdue.edu' LIMIT 1"
     )
     if not other_profile_id:
         other_profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, alias, role, active) "
-            "VALUES ('Test', 'User', 'testuser', 'guest', true) RETURNING id"
+            "INSERT INTO profiles(first_name, last_name, email, role, active) "
+            "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
         )
 
     response = await client.post(

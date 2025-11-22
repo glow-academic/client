@@ -1,13 +1,13 @@
 -- Bulk create staff profiles with validation and department inserts in single query (DHH style)
 -- Parameters: $1=profile_ids (uuid[]), $2=first_names (text[]), $3=last_names (text[]), 
---             $4=aliases (text[]), $5=roles (text[]), $6=department_ids (uuid[], nullable, parallel array)
--- Returns: profile_ids (uuid[]), existing_aliases (text[])
+--             $4=emails (text[]), $5=roles (text[]), $6=department_ids (uuid[], nullable, parallel array)
+-- Returns: profile_ids (uuid[]), existing_emails (text[])
 
-WITH alias_check AS (
-    -- Check if any aliases already exist
-    SELECT array_agg(alias) as existing_aliases
+WITH email_check AS (
+    -- Check if any emails already exist
+    SELECT array_agg(email) as existing_emails
     FROM profiles 
-    WHERE alias = ANY($4::text[])
+    WHERE email = ANY($4::text[])
 ),
 profiles_data AS (
     -- Prepare profile data using unnest (maintains parallel array relationship)
@@ -16,7 +16,7 @@ profiles_data AS (
         t.profile_id,
         t.first_name,
         t.last_name,
-        t.alias,
+        t.email,
         t.role,
         t.dept_id
     FROM UNNEST(
@@ -26,26 +26,26 @@ profiles_data AS (
         $4::text[], 
         $5::text[],
         COALESCE($6::uuid[], ARRAY[]::uuid[])
-    ) AS t(profile_id, first_name, last_name, alias, role, dept_id)
+    ) AS t(profile_id, first_name, last_name, email, role, dept_id)
 ),
 profile_insert AS (
-    -- Insert all profiles (only if no aliases exist)
+    -- Insert all profiles (only if no emails exist)
     INSERT INTO profiles (
-        id, first_name, last_name, alias, role, active, 
+        id, first_name, last_name, email, role, active, 
         default_profile, viewed_intro, viewed_chat
     )
     SELECT 
         pd.profile_id,
         pd.first_name,
         pd.last_name,
-        pd.alias,
+        pd.email,
         pd.role,
         true,  -- active
         false,  -- default_profile
         false,  -- viewed_intro
         false   -- viewed_chat
     FROM profiles_data pd
-    WHERE NOT EXISTS (SELECT 1 FROM alias_check WHERE existing_aliases IS NOT NULL)
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)
     RETURNING id
 ),
 department_insert AS (
@@ -61,11 +61,11 @@ department_insert AS (
         AND EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)
     ON CONFLICT (profile_id, department_id) DO NOTHING
 )
--- Return created profile IDs and existing aliases
+-- Return created profile IDs and existing emails
 SELECT 
     COALESCE(array_agg(pi.id ORDER BY pi.id), ARRAY[]::uuid[]) as profile_ids,
-    COALESCE(ac.existing_aliases, ARRAY[]::text[]) as existing_aliases
+    COALESCE(ec.existing_emails, ARRAY[]::text[]) as existing_emails
 FROM profile_insert pi
-CROSS JOIN alias_check ac
-GROUP BY ac.existing_aliases
+CROSS JOIN email_check ec
+GROUP BY ec.existing_emails
 

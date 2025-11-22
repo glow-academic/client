@@ -37,7 +37,7 @@ async def profile_overview(
     Accepts UUID or name.
 
     Input
-      • profile_id - UUID or name/alias to search for
+      • profile_id - UUID or name/email to search for
 
     Returns
       { "profile": { … }, "latest_grades": [ … ] }
@@ -69,7 +69,7 @@ async def profile_overview(
                 "id": str(result["id"]),
                 "first_name": result["first_name"],
                 "last_name": result["last_name"],
-                "alias": result["alias"],
+                "email": result["email"],
                 "role": result["role"],
                 "last_login": result["last_login"].isoformat()
                 if result["last_login"]

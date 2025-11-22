@@ -5,7 +5,7 @@ WITH cohort_members AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.alias
+        p.email
     FROM profiles p
     JOIN cohort_profiles cp ON p.id = cp.profile_id
     WHERE cp.cohort_id = $1 AND cp.active = true
@@ -78,7 +78,7 @@ SELECT
             'id', cm.id,
             'first_name', cm.first_name,
             'last_name', cm.last_name,
-            'alias', cm.alias
+            'email', cm.email
         )) FILTER (WHERE cm.id IS NOT NULL),
         '[]'::json
     ) as members,

@@ -51,9 +51,9 @@ async def test_get_profile_context_guest_profile_id(
     """Test profile context with guest-profile-id resolution."""
     # Create a default guest profile
     guest_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role, default_profile) "
-        "VALUES('Guest', 'User', 'default_guest', 'guest', true) "
-        "ON CONFLICT (alias) DO UPDATE SET default_profile = true "
+        "INSERT INTO profiles(first_name, last_name, email, role, default_profile) "
+        "VALUES('Guest', 'User', 'redacted@purdue.edu', 'guest', true) "
+        "ON CONFLICT (email) DO UPDATE SET default_profile = true "
         "RETURNING id"
     )
 
@@ -80,9 +80,9 @@ async def test_get_profile_context_emulation_authorized(
 
     # Create a target profile (TA role - superadmin can emulate)
     target_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role) "
-        "VALUES('Target', 'User', 'test_target', 'ta') "
-        "ON CONFLICT (alias) DO UPDATE SET role = 'ta' "
+        "INSERT INTO profiles(first_name, last_name, email, role) "
+        "VALUES('Target', 'User', 'redacted@purdue.edu', 'ta') "
+        "ON CONFLICT (email) DO UPDATE SET role = 'ta' "
         "RETURNING id"
     )
 
@@ -107,9 +107,9 @@ async def test_get_profile_context_emulation_unauthorized(
     """Test profile context with unauthorized emulation."""
     # Create a TA profile (cannot emulate)
     ta_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role) "
-        "VALUES('TA', 'User', 'test_ta', 'ta') "
-        "ON CONFLICT (alias) DO UPDATE SET role = 'ta' "
+        "INSERT INTO profiles(first_name, last_name, email, role) "
+        "VALUES('TA', 'User', 'redacted@purdue.edu', 'ta') "
+        "ON CONFLICT (email) DO UPDATE SET role = 'ta' "
         "RETURNING id"
     )
 

@@ -3,7 +3,7 @@
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from tests.seed_helpers import get_superadmin_alias  # type: ignore
+from tests.seed_helpers import get_superadmin_email  # type: ignore
 
 pytestmark = pytest.mark.asyncio
 
@@ -12,7 +12,7 @@ async def test_get_persona_detail_default(
     client: httpx.AsyncClient, db: asyncpg.Connection, disable_cache: None
 ) -> None:
     """Test getting default persona detail."""
-    profile_id = await get_superadmin_alias(db)
+    profile_id = await get_superadmin_email(db)
 
     response = await client.post(
         "/api/v3/personas/detail-default",
@@ -47,8 +47,8 @@ async def test_get_persona_detail_default_not_found(
     """Test getting default persona detail for profile with no department access."""
     # Create a new profile with no department access
     new_profile_id = await db.fetchval(
-        "INSERT INTO profiles (first_name, last_name, alias, role, active) "
-        "VALUES ('Test', 'User', 'testuser2', 'guest', true) RETURNING id"
+        "INSERT INTO profiles (first_name, last_name, email, role, active) "
+        "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
     )
 
     response = await client.post(

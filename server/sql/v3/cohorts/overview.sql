@@ -8,7 +8,7 @@ SELECT
             'id', p.id,
             'first_name', p.first_name,
             'last_name', p.last_name,
-            'alias', p.alias,
+            'email', p.email,
             'role', p.role
         ) ORDER BY p.last_name, p.first_name) FILTER (WHERE p.id IS NOT NULL),
         '[]'::jsonb

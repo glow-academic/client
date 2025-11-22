@@ -77,7 +77,7 @@ const normalizeDepartmentStaffItem = (
   profile_id: item.profile_id,
   first_name: item.first_name,
   last_name: item.last_name,
-  alias: item.alias,
+    email: item.email,
   name: item.name,
   role: item.role,
   email: item.email,

@@ -21,7 +21,7 @@ class SearchSimulatableProfilesRequest(BaseModel):
     """Request for simulatable profiles search."""
 
     query: str | None = (
-        None  # Search term (first_name, last_name, alias, role). Empty/None returns all profiles (up to limit)
+        None  # Search term (first_name, last_name, email, role). Empty/None returns all profiles (up to limit)
     )
     limit: int = 200  # Maximum number of results
     profileId: str  # Current user's profile ID for permissions
@@ -68,7 +68,7 @@ async def search_simulatable_profiles(
             # Cast role enum to text for ILIKE comparison
             # Also check concatenated full name for queries like "default admin"
             search_where_clause = (
-                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.alias ILIKE $3 OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
+                "AND (p.first_name ILIKE $3 OR p.last_name ILIKE $3 OR p.email ILIKE $3 OR p.role::text ILIKE $3 OR (p.first_name || ' ' || p.last_name) ILIKE $3)"
             )
             params.append(search_term)
 
@@ -112,7 +112,7 @@ async def search_simulatable_profiles(
                             id=str(item.get("id", "")),
                             firstName=item.get("first_name", ""),
                             lastName=item.get("last_name", ""),
-                            alias=item.get("alias", ""),
+                            email=item.get("email", ""),
                             role=item.get("role", ""),
                             active=item.get("active", False),
                             viewedIntro=item.get("viewed_intro", False),

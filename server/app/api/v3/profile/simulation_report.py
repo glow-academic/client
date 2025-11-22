@@ -68,7 +68,7 @@ async def student_sim_report(
                 "id": str(result["id"]),
                 "first_name": result["first_name"],
                 "last_name": result["last_name"],
-                "alias": result["alias"],
+                "email": result["email"],
                 "role": result["role"],
                 "created_at": result["created_at"].isoformat()
                 if result["created_at"]

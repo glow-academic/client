@@ -143,13 +143,13 @@ def test_staff_pagination_persists_filters(page: Page, base_url: str) -> None:
                 parts = staff_name.split()
                 first_name = parts[0] if parts else "Pagination"
                 last_name = parts[1] if len(parts) > 1 else f"Staff{i}"
-                alias = f"pagination-staff-{i}"
+                email = f"pagination-staff-{i}@purdue.edu"
 
                 profile_id = create_staff_api(
                     page.context.request,
                     first_name=first_name,
                     last_name=last_name,
-                    alias=alias,
+                    email=email,
                     role="guest",
                     department_id=department_id,
                     profile_id=ADMIN_PROFILE_ID,

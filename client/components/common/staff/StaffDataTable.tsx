@@ -151,7 +151,7 @@ export interface StaffDataTableProps {
       profileId: string;
       firstName?: string;
       lastName?: string;
-      alias?: string;
+      email?: string;
       role?: string;
     }>
   ) => void;
@@ -321,7 +321,7 @@ export function StaffDataTable({
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {staff.alias}@{process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}
+                    {staff.email}
                   </p>
                 </div>
               </div>
@@ -341,14 +341,14 @@ export function StaffDataTable({
           return (
             staff.first_name.toLowerCase().includes(value.toLowerCase()) ||
             staff.last_name.toLowerCase().includes(value.toLowerCase()) ||
-            staff.alias.toLowerCase().includes(value.toLowerCase())
+            staff.email.toLowerCase().includes(value.toLowerCase())
           );
         },
       },
       {
         id: "name",
         accessorFn: (row: ProfileListItem) =>
-          `${row.first_name} ${row.last_name} ${row.alias}`.toLowerCase(),
+          `${row.first_name} ${row.last_name} ${row.email}`.toLowerCase(),
         header: "Search",
         cell: () => null,
         enableHiding: false,
@@ -817,7 +817,7 @@ export function StaffDataTable({
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="mb-2 w-full md:w-auto">
               <Input
-                placeholder="Search staff by name or alias..."
+                placeholder="Search staff by name or email..."
                 value={(nameColumn?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
                   nameColumn?.setFilterValue(event.target.value)

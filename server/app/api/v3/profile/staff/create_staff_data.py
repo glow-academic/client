@@ -97,10 +97,9 @@ async def get_create_staff_data(
                             profile_id=str(item.get("profile_id", "")),
                             first_name=item.get("first_name", ""),
                             last_name=item.get("last_name", ""),
-                            alias=item.get("alias", ""),
+                            email=item.get("email", ""),
                             name=item.get("name", ""),
                             role=item.get("role", ""),
-                            email="",  # Not needed for search modal
                             initials="",  # Not needed for search modal
                             active=item.get("active", False),
                             last_active=item.get("last_active"),

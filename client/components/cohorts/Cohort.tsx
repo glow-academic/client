@@ -83,7 +83,7 @@ const normalizeCohortStaffItem = (
     profile_id: item.profile_id,
     first_name: item.first_name,
     last_name: item.last_name,
-    alias: item.alias,
+    email: item.email,
     name: item.name,
     role: item.role,
     email: item.email,
@@ -195,7 +195,7 @@ export default function Cohort({
     profileId: string;
     firstName?: string;
     lastName?: string;
-    alias?: string;
+    email?: string;
     role?: string;
     requestsPerDay?: number | null;
     totalRequests?: number;
@@ -1034,17 +1034,14 @@ export default function Cohort({
                 // Create minimal ProfileListItem from staged data
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
-                const alias = staged.alias || "";
+                const email = staged.email || "";
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
                   last_name: lastName,
-                  alias: alias,
-                  name: `${firstName} ${lastName}`.trim() || alias,
+                  email: email,
+                  name: `${firstName} ${lastName}`.trim() || email,
                   role: staged.role || "ta",
-                  email: alias
-                    ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`
-                    : "",
                   initials:
                     `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
                     "??",
@@ -1150,7 +1147,7 @@ export default function Cohort({
                       profileId: string;
                       firstName?: string;
                       lastName?: string;
-                      alias?: string;
+                      email?: string;
                       role?: string;
                       requestsPerDay?: number | null;
                       totalRequests?: number;
@@ -1327,17 +1324,14 @@ export default function Cohort({
               .map((staged) => {
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
-                const alias = staged.alias || "";
+                const email = staged.email || "";
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
                   last_name: lastName,
-                  alias: alias,
-                  name: `${firstName} ${lastName}`.trim() || alias,
+                  email: email,
+                  name: `${firstName} ${lastName}`.trim() || email,
                   role: staged.role || "ta",
-                  email: alias
-                    ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`
-                    : "",
                   initials:
                     `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
                     "??",
@@ -1414,17 +1408,14 @@ export default function Cohort({
               .map((staged) => {
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
-                const alias = staged.alias || "";
+                const email = staged.email || "";
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
                   last_name: lastName,
-                  alias: alias,
-                  name: `${firstName} ${lastName}`.trim() || alias,
+                  email: email,
+                  name: `${firstName} ${lastName}`.trim() || email,
                   role: staged.role || "ta",
-                  email: alias
-                    ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`
-                    : "",
                   initials:
                     `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
                     "??",
@@ -1525,17 +1516,14 @@ export default function Cohort({
                       // Create minimal ProfileListItem from staged data
                       const firstName = staged.firstName || "";
                       const lastName = staged.lastName || "";
-                      const alias = staged.alias || "";
+                      const email = staged.email || "";
                       return {
                         profile_id: staged.profileId,
                         first_name: firstName,
                         last_name: lastName,
-                        alias: alias,
-                        name: `${firstName} ${lastName}`.trim() || alias,
+                        email: email,
+                        name: `${firstName} ${lastName}`.trim() || email,
                         role: staged.role || "ta",
-                        email: alias
-                          ? `${alias}@${process.env["NEXT_PUBLIC_CAMPUS_EMAIL"]}`
-                          : "",
                         initials:
                           `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
                           "??",

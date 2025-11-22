@@ -95,8 +95,8 @@ async def test_list_simulations_permissions_non_superadmin(
     """Test non-superadmin does not have edit/delete permissions but can duplicate."""
     # Create a non-superadmin profile
     profile_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role) "
-        "VALUES('Test', 'User', 'test_user', 'guest') RETURNING id"
+        "INSERT INTO profiles(first_name, last_name, email, role) "
+        "VALUES('Test', 'User', 'redacted@purdue.edu', 'guest') RETURNING id"
     )
 
     response = await client.post(

@@ -70,20 +70,17 @@ async def get_cohort_detail_with_profiles(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql_query = load_sql("sql/v3/cohorts/get_cohort_with_profiles_complete.sql")
         sql_params = (
             request_body.cohortId,
             [uuid.UUID(did) for did in request_body.departmentIds],
             request_body.currentProfileId,
-            campus_domain,
         )
         row = await conn.fetchrow(
             sql_query,
             request_body.cohortId,
             [uuid.UUID(did) for did in request_body.departmentIds],
             request_body.currentProfileId,
-            campus_domain,
         )
 
         if not row:
@@ -112,10 +109,9 @@ async def get_cohort_detail_with_profiles(
                                 profile_id=p.get("profile_id", ""),
                                 first_name=p.get("first_name", ""),
                                 last_name=p.get("last_name", ""),
-                                alias=p.get("alias", ""),
+                                email=p.get("email", ""),
                                 name=p.get("name", ""),
                                 role=p.get("role", ""),
-                                email=p.get("email", ""),
                                 initials=p.get("initials", ""),
                                 active=p.get("active", False),
                                 lastActive=last_active,

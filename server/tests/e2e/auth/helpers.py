@@ -88,20 +88,20 @@ def authorize_emulation(
     )
 
 
-def get_profile_by_alias(
+def get_profile_by_email(
     request: APIRequestContext,
-    alias: str,
+    email: str,
     *,
     profile_id: str = PROFILE_ID,
     effective_profile_id: str | None = None,
     bypass_cache: bool = True,
 ) -> dict[str, Any]:
-    """Fetch profile by alias."""
+    """Fetch profile by email."""
     effective_id = effective_profile_id or profile_id
-    payload = {"alias": alias}
+    payload = {"email": email}
     return _post_json(
         request,
-        "/api/v3/profile/by-alias",
+        "/api/v3/profile/by-email",
         payload,
         profile_id=profile_id,
         effective_profile_id=effective_id,

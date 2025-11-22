@@ -136,7 +136,7 @@ profile_mapping_data AS (
             p.id::text,
             jsonb_build_object(
                 'name', p.first_name || ' ' || p.last_name,
-                'description', COALESCE(p.alias, '')
+                'description', COALESCE(p.email, '')
             )
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb

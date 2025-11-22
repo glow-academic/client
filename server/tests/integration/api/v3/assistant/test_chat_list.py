@@ -56,8 +56,8 @@ async def test_get_assistant_chats_list_empty(
     """Test getting assistant chats list when no chats exist."""
     # Create a profile with no chats
     profile_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role, active) "
-        "VALUES ('Test', 'User', 'testuser_nochats', 'guest', true) RETURNING id"
+        "INSERT INTO profiles(first_name, last_name, email, role, active) "
+        "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
     )
 
     response = await client.post(

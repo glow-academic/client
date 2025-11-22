@@ -4,7 +4,7 @@ SELECT
     COALESCE(af.message, '') as message,
     af.created_at,
     COALESCE(p.first_name || ' ' || p.last_name, 'Anonymous') as author_name,
-    COALESCE(p.alias, '') as author_alias,
+    COALESCE(p.email, '') as author_email,
     COALESCE(afp.profile_id::text, '') as author_profile_id
 FROM app_feedback af
 LEFT JOIN app_feedback_profiles afp ON afp.app_feedback_id = af.id AND afp.role = 'author'

@@ -36,13 +36,13 @@ def test_staff_bulk_edit_role(page: Page, base_url: str) -> None:
             parts = staff_name.split()
             first_name = parts[0] if parts else f"Bulk{i}"
             last_name = parts[1] if len(parts) > 1 else "Staff"
-            alias = f"bulk-edit-{i}-{int(time.time() * 1000) + i}"
+            email = f"bulk-edit-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
                 first_name=first_name,
                 last_name=last_name,
-                alias=alias,
+                email=email,
                 role="guest",
                 department_id=department_id,
                 profile_id=ADMIN_PROFILE_ID,
@@ -145,13 +145,13 @@ def test_staff_bulk_edit_requests_per_day(page: Page, base_url: str) -> None:
             parts = staff_name.split()
             first_name = parts[0] if parts else f"BulkReq{i}"
             last_name = parts[1] if len(parts) > 1 else "Staff"
-            alias = f"bulk-requests-{i}-{int(time.time() * 1000) + i}"
+            email = f"bulk-requests-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
                 first_name=first_name,
                 last_name=last_name,
-                alias=alias,
+                email=email,
                 role="guest",
                 department_id=department_id,
                 profile_id=ADMIN_PROFILE_ID,
@@ -229,13 +229,13 @@ def test_staff_bulk_edit_keep_current(page: Page, base_url: str) -> None:
             parts = staff_name.split()
             first_name = parts[0] if parts else f"Keep{i}"
             last_name = parts[1] if len(parts) > 1 else "Staff"
-            alias = f"keep-current-{i}-{int(time.time() * 1000) + i}"
+            email = f"keep-current-{i}-{int(time.time() * 1000) + i}@purdue.edu"
 
             profile_id = create_staff_api(
                 page.context.request,
                 first_name=first_name,
                 last_name=last_name,
-                alias=alias,
+                email=email,
                 role=role,
                 department_id=department_id,
                 profile_id=ADMIN_PROFILE_ID,

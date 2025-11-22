@@ -138,7 +138,7 @@ def create_staff_api(
     *,
     first_name: str,
     last_name: str,
-    alias: str,
+    email: str,
     role: str,
     department_id: str | None = None,
     requests_per_day: int | None = None,
@@ -154,7 +154,7 @@ def create_staff_api(
     payload = {
         "firstName": first_name,
         "lastName": last_name,
-        "alias": alias,
+        "email": email,
         "role": role,
         "department_id": department_id,
     }

@@ -14,7 +14,7 @@ SELECT
     p.id,
     p.first_name,
     p.last_name,
-    p.alias,
+    p.email,
     p.role,
     p.active,
     p.viewed_intro,

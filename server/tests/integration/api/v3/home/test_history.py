@@ -16,7 +16,7 @@ import asyncpg  # type: ignore
 import httpx
 import pytest
 from tests.seed_helpers import (get_cs_dept_id,  # type: ignore
-                                get_superadmin_alias)
+                                get_superadmin_email)
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,16 +31,16 @@ async def _create_test_profile(
     role: str = "ta",
     first_name: str = "Test",
     last_name: str = "User",
-    alias: str | None = None,
+    email: str | None = None,
 ) -> str:
     """Create a test profile."""
     profile_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, role, alias, active) "
+        "INSERT INTO profiles(first_name, last_name, role, email, active) "
         "VALUES ($1, $2, $3, $4, true) RETURNING id",
         first_name,
         last_name,
         role,
-        alias or f"test_{role}_{datetime.now().timestamp()}",
+        email or f"test_{role}_{datetime.now().timestamp()}@purdue.edu",
     )
     return str(profile_id)
 

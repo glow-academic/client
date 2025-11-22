@@ -480,7 +480,7 @@ export default function Reports({
               onClick={() =>
                 router.push(`/analytics/reports/p/${profile.profileId}`)
               }
-              title={`${displayName}${profile.alias ? ` (${profile.alias})` : ""} - Click to view detailed report`}
+              title={`${displayName}${profile.email ? ` (${profile.email})` : ""} - Click to view detailed report`}
               data-testid={`reports-profile-row-${profile.profileId}`}
             >
               <div className="flex flex-col items-start min-w-0 w-full">
@@ -490,12 +490,12 @@ export default function Reports({
                 >
                   {displayName}
                 </span>
-                {profile.alias && (
+                {profile.email && (
                   <span
                     className="text-xs text-muted-foreground truncate w-full"
-                    title={profile.alias}
+                    title={profile.email}
                   >
-                    {profile.alias}
+                    {profile.email}
                   </span>
                 )}
               </div>
@@ -1270,7 +1270,7 @@ export default function Reports({
               <div className="flex gap-2 w-full md:w-auto md:flex-initial">
                   <Input
                     ref={searchInputRef}
-                    placeholder="Search profiles by name or alias..."
+                    placeholder="Search profiles by name or email..."
                     value={searchTerm}
                     onChange={(event) => {
                       handleSearchChange(event.target.value);

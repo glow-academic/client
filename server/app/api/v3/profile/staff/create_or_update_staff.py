@@ -1,4 +1,4 @@
-"""Staff create or update endpoint - create or update a staff member based on alias."""
+"""Staff create or update endpoint - create or update a staff member based on email."""
 
 import uuid
 from typing import Annotated, Any
@@ -20,7 +20,7 @@ class CreateOrUpdateStaffRequest(BaseModel):
 
     firstName: str
     lastName: str
-    alias: str
+    email: str
     role: str
     department_ids: list[str] = []
     cohort_ids: list[str] = []
@@ -42,7 +42,7 @@ async def create_or_update_staff(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateOrUpdateStaffResponse:
-    """Create or update a staff member based on alias."""
+    """Create or update a staff member based on email."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
@@ -64,7 +64,7 @@ async def create_or_update_staff(
             profile_id_new,
             request.firstName,
             request.lastName,
-            request.alias,
+            request.email,
             request.role,
             True,  # active
             dept_uuids,

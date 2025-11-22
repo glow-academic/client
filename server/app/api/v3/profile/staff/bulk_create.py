@@ -46,20 +46,20 @@ async def bulk_create_profile(
         profile_ids = [str(uuid.uuid4()) for _ in request.profiles]
         first_names = [p.firstName for p in request.profiles]
         last_names = [p.lastName for p in request.profiles]
-        aliases = [p.alias for p in request.profiles]
+        emails = [p.email for p in request.profiles]
         roles = [p.role for p in request.profiles]
         # Department IDs must be parallel array (use None/null for profiles without departments)
         department_ids = [
             p.department_id if p.department_id else None for p in request.profiles
         ]
 
-        # Single consolidated query: validates aliases, creates all profiles, and inserts departments
+        # Single consolidated query: validates emails, creates all profiles, and inserts departments
         sql_query = load_sql("sql/v3/profile/staff/bulk_create_profile_complete.sql")
         sql_params = (
             profile_ids,
             first_names,
             last_names,
-            aliases,
+            emails,
             roles,
             department_ids if department_ids else [],
         )
@@ -70,12 +70,12 @@ async def bulk_create_profile(
             if not result:
                 raise HTTPException(status_code=500, detail="Failed to create profiles")
 
-            # Check if any aliases already exist
-            existing_aliases = result.get("existing_aliases", [])
-            if existing_aliases:
+            # Check if any emails already exist
+            existing_emails = result.get("existing_emails", [])
+            if existing_emails:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Aliases already exist: {', '.join(existing_aliases)}",
+                    detail=f"Emails already exist: {', '.join(existing_emails)}",
                 )
 
             # Get created profile IDs

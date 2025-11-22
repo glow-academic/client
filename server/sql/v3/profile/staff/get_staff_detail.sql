@@ -2,7 +2,7 @@
 -- Parameters:
 --   $1 = profileId (uuid) - target profile to get details for
 --   $2 = currentProfileId (uuid) - current user's profile ID for role visibility check
---   $3 = campus_domain (text) - campus email domain
+--   $3 = unused (kept for compatibility, previously campus_domain)
 -- Returns: name, email, role (only if visible to current user based on role hierarchy)
 WITH current_user_role AS (
     SELECT role FROM profiles WHERE id = $2
@@ -12,10 +12,9 @@ target_profile AS (
         p.id,
         p.first_name,
         p.last_name,
-        p.alias,
+        p.email,
         p.role,
-        p.first_name || ' ' || p.last_name as name,
-        p.alias || '@' || $3 as email
+        p.first_name || ' ' || p.last_name as name
     FROM profiles p
     WHERE p.id = $1
 ),

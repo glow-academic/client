@@ -21,7 +21,7 @@ class CSVColumnMapping(BaseModel):
     """Mapping of CSV column to target field."""
 
     csv_column: str
-    target_field: str | None  # firstName, lastName, alias, department, cohort
+    target_field: str | None  # firstName, lastName, email, department, cohort
 
 
 class CSVRowError(BaseModel):
@@ -45,7 +45,7 @@ class ProcessedCSVRow(BaseModel):
     row_index: int
     firstName: str | None
     lastName: str | None
-    alias: str | None
+    email: str | None
     role: str | None
     department_ids: list[str] = []  # Array for multi-select support
     cohort_ids: list[str] = []  # Array for multi-select support
@@ -102,7 +102,7 @@ async def process_csv(
             # Extract values based on mappings
             firstName = None
             lastName = None
-            alias = None
+            email = None
             role = None
             department_ids: list[str] = []
             cohort_ids: list[str] = []
@@ -115,11 +115,8 @@ async def process_csv(
                     firstName = value if value else None
                 elif field == "lastName":
                     lastName = value if value else None
-                elif field == "alias":
-                    alias = value if value else None
-                    # Extract alias from email if needed
-                    if alias and "@" in alias:
-                        alias = alias.split("@")[0].strip()
+                elif field == "email":
+                    email = value if value else None
                 elif field == "role":
                     role = value if value else None
                 elif field == "department":
@@ -152,10 +149,10 @@ async def process_csv(
                         message="Last name is required",
                     )
                 )
-            if not alias:
+            if not email:
                 errors.append(
                     CSVRowError(
-                        row_index=row_index, field="alias", message="Alias is required"
+                        row_index=row_index, field="email", message="Email is required"
                     )
                 )
 
@@ -168,7 +165,7 @@ async def process_csv(
                     row_index=row_index,
                     firstName=firstName,
                     lastName=lastName,
-                    alias=alias,
+                    email=email,
                     role=role,
                     department_ids=department_ids,
                     cohort_ids=cohort_ids,

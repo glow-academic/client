@@ -1,7 +1,7 @@
 -- Get complete student simulation report with attempts, chats, grades, messages, and feedback
 -- Params: $1 = profile_id, $2 = recent (limit messages per chat)
 WITH profile_info AS (
-    SELECT id, first_name, last_name, alias, role, created_at
+    SELECT id, first_name, last_name, email, role, created_at
     FROM profiles
     WHERE id = $1
 ),
@@ -82,7 +82,7 @@ SELECT
     pi.id,
     pi.first_name,
     pi.last_name,
-    pi.alias,
+    pi.email,
     pi.role,
     pi.created_at,
     COALESCE(

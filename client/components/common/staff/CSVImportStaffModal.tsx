@@ -74,7 +74,7 @@ export interface CSVImportStaffModalProps {
       profileId: string;
       firstName?: string;
       lastName?: string;
-      alias?: string;
+      email?: string;
       role?: string;
     }>,
   ) => void;
@@ -98,9 +98,9 @@ const TARGET_FIELDS = [
     required: true,
   },
   {
-    value: "alias",
-    label: "Alias/Email",
-    description: "Username or email address (alias only, without @domain)",
+    value: "email",
+    label: "Email",
+    description: "Email address (full email with @domain)",
     required: true,
   },
   {
@@ -167,11 +167,11 @@ const autoMapColumn = (columnName: string): string | null => {
 
   // Alias/email patterns
   if (
-    ["alias", "email", "username", "user", "login", "email address"].includes(
+    ["email", "alias", "username", "user", "login", "email address"].includes(
       lower,
     )
   ) {
-    return "alias";
+    return "email";
   }
 
   // Role patterns
@@ -192,11 +192,9 @@ const autoMapColumn = (columnName: string): string | null => {
   return null;
 };
 
-// Extract alias from email
-const extractAliasFromEmail = (email: string): string => {
-  if (!email || !email.includes("@")) return email;
-  const parts = email.split("@");
-  return parts[0]?.trim() || email;
+// Normalize email (keep full email)
+const normalizeEmail = (email: string): string => {
+  return email.trim().toLowerCase();
 };
 
 // ColumnPicker Component for destination column mapping
@@ -371,7 +369,7 @@ export default function CSVImportStaffModal({
   // Download template function
   const downloadTemplate = useCallback(() => {
     // Determine columns based on scoping
-    const columns: string[] = ["firstName", "lastName", "alias", "role"];
+    const columns: string[] = ["firstName", "lastName", "email", "role"];
     if (!departmentIds || departmentIds.length === 0) {
       columns.push("department");
     }
@@ -384,7 +382,7 @@ export default function CSVImportStaffModal({
       {
         firstName: "Sarah",
         lastName: "Johnson",
-        alias: "sjohnson",
+        email: "redacted@purdue.edu",
         role: "instructional",
         ...(columns.includes("department") ? { department: "" } : {}),
         ...(columns.includes("cohort") ? { cohort: "" } : {}),
@@ -392,7 +390,7 @@ export default function CSVImportStaffModal({
       {
         firstName: "Jane",
         lastName: "Smith",
-        alias: "jsmith",
+        email: "redacted@purdue.edu",
         role: "instructional",
         ...(columns.includes("department") ? { department: "" } : {}),
         ...(columns.includes("cohort") ? { cohort: "" } : {}),
@@ -400,7 +398,7 @@ export default function CSVImportStaffModal({
       {
         firstName: "John",
         lastName: "Doe",
-        alias: "jdoe",
+        email: "redacted@purdue.edu",
         role: "ta",
         ...(columns.includes("department") ? { department: "" } : {}),
         ...(columns.includes("cohort") ? { cohort: "" } : {}),
@@ -504,7 +502,7 @@ export default function CSVImportStaffModal({
           setColumnMappings(mappings);
 
           // Initialize include state - default to true for required fields
-          const requiredFields = ["firstName", "lastName", "alias"];
+          const requiredFields = ["firstName", "lastName", "email"];
           const initialIncludes: Record<string, boolean> = {};
           headers.forEach((header) => {
             const mappedField = autoMapColumn(header);
@@ -575,7 +573,7 @@ export default function CSVImportStaffModal({
     );
 
     // Validate that required fields are mapped
-    const requiredFields = ["firstName", "lastName", "alias"];
+    const requiredFields = ["firstName", "lastName", "email"];
     const mappedFields = activeMappings
       .map((m) => m.target_field)
       .filter((f): f is string => f !== null);
@@ -622,14 +620,12 @@ export default function CSVImportStaffModal({
     const aliasMap: Record<string, number[]> = {};
     processedRows.forEach((row, idx) => {
       const editableRow = editableRows[idx] || row;
-      const alias = extractAliasFromEmail(
-        editableRow.alias || "",
-      ).toLowerCase();
-      if (alias) {
-        if (!aliasMap[alias]) {
-          aliasMap[alias] = [];
+      const email = normalizeEmail(editableRow.email || "");
+      if (email) {
+        if (!aliasMap[email]) {
+          aliasMap[email] = [];
         }
-        aliasMap[alias]!.push(idx);
+        aliasMap[email]!.push(idx);
       }
     });
     // Return set of row indices that have duplicate aliases
@@ -707,21 +703,21 @@ export default function CSVImportStaffModal({
       return;
     }
 
-    // Validate alias uniqueness within the batch
-    const aliasCounts: Record<string, number[]> = {};
+    // Validate email uniqueness within the batch
+    const emailCounts: Record<string, number[]> = {};
     validRows.forEach((row, idx) => {
-      const alias = extractAliasFromEmail(row.alias || "").toLowerCase();
-      if (alias) {
-        if (!aliasCounts[alias]) {
-          aliasCounts[alias] = [];
+      const email = normalizeEmail(row.email || "");
+      if (email) {
+        if (!emailCounts[email]) {
+          emailCounts[email] = [];
         }
-        aliasCounts[alias]!.push(idx);
+        emailCounts[email]!.push(idx);
       }
     });
 
-    const duplicateAliases = Object.entries(aliasCounts)
+    const duplicateEmails = Object.entries(emailCounts)
       .filter(([, indices]) => indices.length > 1)
-      .map(([alias]) => alias);
+      .map(([email]) => email);
 
     if (duplicateAliases.length > 0) {
       toast.error(
@@ -801,7 +797,7 @@ export default function CSVImportStaffModal({
         return {
           firstName: row.firstName!,
           lastName: row.lastName!,
-          alias: extractAliasFromEmail(row.alias || ""),
+          email: normalizeEmail(row.email || ""),
           role: row.role || "ta",
           department_ids: deptIds,
           cohort_ids: cohortIds,
@@ -833,7 +829,7 @@ export default function CSVImportStaffModal({
             profileId,
             firstName: row?.firstName ?? "",
             lastName: row?.lastName ?? "",
-            alias: row?.alias ?? "",
+            email: row?.email ?? "",
             role: row?.role ?? "ta",
           };
         });
@@ -1181,7 +1177,7 @@ export default function CSVImportStaffModal({
                           (e) => e.field === "lastName",
                         );
                         const hasAliasError = editableRow.errors.some(
-                          (e) => e.field === "alias",
+                          (e) => e.field === "email",
                         );
                         const hasDuplicateAlias = duplicateAliasMap.has(index);
                         const hasRoleError = editableRow.errors.some(
@@ -1247,11 +1243,11 @@ export default function CSVImportStaffModal({
                               }
                             >
                               <Input
-                                value={editableRow.alias || ""}
+                                value={editableRow.email || ""}
                                 onChange={(e) =>
                                   updateEditableRow(
                                     index,
-                                    "alias",
+                                    "email",
                                     e.target.value || null,
                                   )
                                 }

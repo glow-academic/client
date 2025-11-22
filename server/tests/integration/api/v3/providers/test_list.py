@@ -223,8 +223,8 @@ async def test_list_providers_permissions_non_superadmin(
     """Test non-superadmin does not have edit permissions."""
     # Create a non-superadmin profile
     ta_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role) "
-        "VALUES('Test', 'TA', 'test_ta_provider', 'ta') RETURNING id"
+        "INSERT INTO profiles(first_name, last_name, email, role) "
+        "VALUES('Test', 'TA', 'redacted@purdue.edu', 'ta') RETURNING id"
     )
 
     response = await client.post(

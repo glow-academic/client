@@ -23,7 +23,7 @@ class ProfileSearchResult(BaseModel):
     id: str
     first_name: str | None
     last_name: str | None
-    alias: str | None
+    email: str | None
     role: str | None
     full_name: str
     score: int
@@ -37,10 +37,10 @@ async def find_profiles(
     """
     🔎 Find profiles by name
     ------------------------
-    Fuzzy first/last/alias search.
+    Fuzzy first/last/email search.
 
     Input
-      • query - Name or alias to search for
+      • query - Name or email to search for
       • limit - Max results (default: 10)
 
     Returns
@@ -49,9 +49,9 @@ async def find_profiles(
           "id": str,           # Profile UUID
           "first_name": str | None,
           "last_name": str | None,
-          "alias": str | None,
+          "email": str | None,
           "role": str | None,
-          "full_name": str,    # "First Last" or alias or "Unknown"
+          "full_name": str,    # "First Last" or email or "Unknown"
           "score": int         # Heuristic match score
         },
         ...
@@ -78,9 +78,9 @@ async def find_profiles(
             for row in rows:
                 first = row["first_name"]
                 last = row["last_name"]
-                alias = row["alias"]
+                email = row["email"]
                 full_name = (
-                    " ".join(x for x in (first, last) if x) or alias or "Unknown"
+                    " ".join(x for x in (first, last) if x) or email or "Unknown"
                 )
 
                 results.append(
@@ -88,7 +88,7 @@ async def find_profiles(
                         id=str(row["id"]),
                         first_name=first,
                         last_name=last,
-                        alias=alias,
+                        email=email,
                         role=row["role"],
                         full_name=full_name,
                         score=int(row["score"]),

@@ -14,7 +14,7 @@ CREATE TABLE profiles (
   last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,
   last_name  TEXT        NOT NULL,
-  alias      TEXT        NOT NULL,
+  email      TEXT        NOT NULL,
   viewed_intro BOOLEAN   NOT NULL DEFAULT FALSE,
   viewed_chat BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -25,8 +25,8 @@ CREATE TABLE profiles (
   -- last_active moved to profile_activity junction table
 );
 
--- Add unique constraint to alias (derived from email)
-CREATE UNIQUE INDEX profiles_alias_unique ON profiles(alias);
+-- Add unique constraint to email
+CREATE UNIQUE INDEX profiles_email_unique ON profiles(email);
 
 -- Profile ↔ Department M:N relationship (BCNF normalization)
 CREATE TABLE profile_departments (

@@ -44,7 +44,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/by-alias": {
+    "/api/v3/profile/by-email": {
         parameters: {
             query?: never;
             header?: never;
@@ -54,10 +54,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Profile By Alias
-         * @description Get profile by alias (for auth operations).
+         * Get Profile By Email
+         * @description Get profile by email (for auth operations).
          */
-        post: operations["get_profile_by_alias_api_v3_profile_by_alias_post"];
+        post: operations["get_profile_by_email_api_v3_profile_by_email_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -161,7 +161,7 @@ export interface paths {
          *     Accepts UUID or name.
          *
          *     Input
-         *       • profile_id - UUID or name/alias to search for
+         *       • profile_id - UUID or name/email to search for
          *
          *     Returns
          *       { "profile": { … }, "latest_grades": [ … ] }
@@ -192,10 +192,10 @@ export interface paths {
          * Find Profiles
          * @description 🔎 Find profiles by name
          *     ------------------------
-         *     Fuzzy first/last/alias search.
+         *     Fuzzy first/last/email search.
          *
          *     Input
-         *       • query - Name or alias to search for
+         *       • query - Name or email to search for
          *       • limit - Max results (default: 10)
          *
          *     Returns
@@ -204,9 +204,9 @@ export interface paths {
          *           "id": str,           # Profile UUID
          *           "first_name": str | None,
          *           "last_name": str | None,
-         *           "alias": str | None,
+         *           "email": str | None,
          *           "role": str | None,
-         *           "full_name": str,    # "First Last" or alias or "Unknown"
+         *           "full_name": str,    # "First Last" or email or "Unknown"
          *           "score": int         # Heuristic match score
          *         },
          *         ...
@@ -510,7 +510,7 @@ export interface paths {
         put?: never;
         /**
          * Create Or Update Staff
-         * @description Create or update a staff member based on alias.
+         * @description Create or update a staff member based on email.
          */
         post: operations["create_or_update_staff_api_v3_profile_staff_create_or_update_staff_post"];
         delete?: never;
@@ -4964,8 +4964,8 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Role */
             role: string;
             /**
@@ -5279,8 +5279,8 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Role */
             role: string;
             /** Primary Department Id */
@@ -7960,8 +7960,8 @@ export interface components {
             firstName: string | null;
             /** Lastname */
             lastName: string | null;
-            /** Alias */
-            alias: string | null;
+            /** Email */
+            email: string | null;
             /** Role */
             role: string | null;
             /**
@@ -7978,12 +7978,12 @@ export interface components {
             errors: components["schemas"]["CSVRowError"][];
         };
         /**
-         * ProfileByAliasRequest
-         * @description Request to get profile by alias.
+         * ProfileByEmailRequest
+         * @description Request to get profile by email.
          */
-        ProfileByAliasRequest: {
-            /** Alias */
-            alias: string;
+        ProfileByEmailRequest: {
+            /** Email */
+            email: string;
         };
         /**
          * ProfileContextRequest
@@ -8034,8 +8034,8 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Alias */
-            alias: string | null;
+            /** Email */
+            email: string | null;
             /** Role */
             role: string;
             /**
@@ -8076,8 +8076,8 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Role */
             role: string;
             /** Active */
@@ -8160,8 +8160,8 @@ export interface components {
             first_name: string | null;
             /** Last Name */
             last_name: string | null;
-            /** Alias */
-            alias: string | null;
+            /** Email */
+            email: string | null;
             /** Role */
             role: string | null;
             /** Full Name */
@@ -10098,8 +10098,8 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Role */
             role: string;
             /** Requests Per Day */
@@ -10432,14 +10432,12 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Name */
             name: string;
             /** Role */
             role: string;
-            /** Email */
-            email: string;
             /** Initials */
             initials: string;
             /** Active */
@@ -10556,14 +10554,12 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Name */
             name: string;
             /** Role */
             role: string;
-            /** Email */
-            email: string;
             /** Initials */
             initials: string;
             /** Active */
@@ -10658,14 +10654,12 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Name */
             name: string;
             /** Role */
             role: string;
-            /** Email */
-            email: string;
             /** Initials */
             initials: string;
             /** Active */
@@ -11270,14 +11264,12 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
-            /** Alias */
-            alias: string;
+            /** Email */
+            email: string;
             /** Name */
             name: string;
             /** Role */
             role: string;
-            /** Email */
-            email: string;
             /** Initials */
             initials: string;
             /** Active */
@@ -12010,7 +12002,7 @@ export interface operations {
             };
         };
     };
-    get_profile_by_alias_api_v3_profile_by_alias_post: {
+    get_profile_by_email_api_v3_profile_by_email_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -12019,7 +12011,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProfileByAliasRequest"];
+                "application/json": components["schemas"]["ProfileByEmailRequest"];
             };
         };
         responses: {

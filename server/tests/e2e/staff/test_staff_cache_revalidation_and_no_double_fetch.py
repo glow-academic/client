@@ -67,7 +67,7 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
         parts = staff_name.split()
         first_name = parts[0] if parts else "CacheEdit"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"cache-edit-{int(time.time() * 1000)}"
+        email = f"cache-edit-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
             page.context.request,
@@ -80,7 +80,7 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             profile_id=ADMIN_PROFILE_ID,
@@ -159,7 +159,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
         parts = staff_name.split()
         first_name = parts[0] if parts else "CacheDel"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"cache-delete-{int(time.time() * 1000)}"
+        email = f"cache-delete-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
             page.context.request,
@@ -172,7 +172,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             profile_id=ADMIN_PROFILE_ID,
@@ -276,7 +276,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
         parts = staff_name.split()
         first_name = parts[0] if parts else "Refresh"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"refresh-staff-{int(time.time() * 1000)}"
+        email = f"refresh-staff-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
             page.context.request,
@@ -289,7 +289,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             profile_id=ADMIN_PROFILE_ID,

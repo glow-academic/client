@@ -30,7 +30,7 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
         parts = staff_name.split()
         first_name = parts[0] if parts else "Editable"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"editable-staff-{int(time.time() * 1000)}"
+        email = f"editable-staff-{int(time.time() * 1000)}@purdue.edu"
 
         # Get department ID from existing staff list
         data = fetch_staff_list(
@@ -44,7 +44,7 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             requests_per_day=100,
@@ -76,9 +76,9 @@ def test_staff_edit_happy_path(page: Page, base_url: str) -> None:
         last_name_input = page.get_by_test_id("input-staff-last-name")
         expect(last_name_input).to_have_value(last_name)
 
-        alias_input = page.get_by_test_id("input-staff-alias")
-        expect(alias_input).to_have_value(alias)
-        expect(alias_input).to_be_disabled()
+        email_input = page.get_by_test_id("input-staff-email")
+        expect(email_input).to_have_value(email)
+        expect(email_input).to_be_disabled()
 
         # Update fields
         updated_first_name = f"{first_name} Updated"
@@ -246,7 +246,7 @@ def test_staff_edit_unlimited_requests(page: Page, base_url: str) -> None:
         parts = staff_name.split()
         first_name = parts[0] if parts else "Unlimited"
         last_name = parts[1] if len(parts) > 1 else "Staff"
-        alias = f"unlimited-staff-{int(time.time() * 1000)}"
+        email = f"unlimited-staff-{int(time.time() * 1000)}@purdue.edu"
 
         data = fetch_staff_list(
             page.context.request,
@@ -259,7 +259,7 @@ def test_staff_edit_unlimited_requests(page: Page, base_url: str) -> None:
             page.context.request,
             first_name=first_name,
             last_name=last_name,
-            alias=alias,
+            email=email,
             role="guest",
             department_id=department_id,
             requests_per_day=100,

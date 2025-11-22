@@ -66,7 +66,7 @@ class ProfileDataEnhanced(BaseModel):
     profileId: str
     firstName: str
     lastName: str
-    alias: str | None
+    email: str | None
     role: str
     simulationIds: list[str] = []
     scenarioIds: list[str] = []

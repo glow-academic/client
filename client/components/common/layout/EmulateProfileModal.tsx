@@ -193,7 +193,7 @@ export function EmulateProfileModal({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="search"
-              placeholder="Search by name or alias"
+              placeholder="Search by name or email"
               value={searchQuery}
               onChange={(e) => handleSearchQueryChange(e.target.value)}
               className="pl-10"
@@ -254,7 +254,7 @@ export function EmulateProfileModal({
                         <TableCell className="font-medium">
                           {profile.firstName} {profile.lastName}
                         </TableCell>
-                        <TableCell>{profile.alias}</TableCell>
+                        <TableCell>{profile.email}</TableCell>
                         <TableCell>
                           {(() => {
                             const roleData = STAFF_ROLES.find(

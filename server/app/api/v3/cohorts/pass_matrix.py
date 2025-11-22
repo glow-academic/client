@@ -93,12 +93,12 @@ async def cohort_pass_matrix(
                 student_id = str(student["id"])
                 student_name = f"{student['first_name'] or ''} {student['last_name'] or ''}".strip()
                 if not student_name:
-                    student_name = student["alias"] or "Unknown"
+                    student_name = student["email"] or "Unknown"
 
                 student_row: dict[str, Any] = {
                     "student_id": student_id,
                     "student_name": student_name,
-                    "alias": student["alias"],
+                    "email": student["email"],
                     "simulations": {},
                 }
 

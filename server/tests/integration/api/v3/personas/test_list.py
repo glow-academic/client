@@ -58,8 +58,8 @@ async def test_list_personas_empty(
 
     # Create a new profile with no department access
     new_profile_id = await db.fetchval(
-        "INSERT INTO profiles (first_name, last_name, alias, role, active) "
-        "VALUES ('Test', 'User', 'testuser', 'guest', true) RETURNING id"
+        "INSERT INTO profiles (first_name, last_name, email, role, active) "
+        "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
     )
 
     response = await client.post(

@@ -1,7 +1,7 @@
             WITH
             -- Start from profiles to include all matching profiles, even without attempts
             filtered_profiles AS (
-                SELECT p.id, p.first_name, p.last_name, p.alias, p.role
+                SELECT p.id, p.first_name, p.last_name, p.email, p.role
                 FROM profiles p
                 WHERE {PROFILE_WHERE_CLAUSE}
             ),
@@ -15,7 +15,7 @@
                     fp.id AS profile_id,
                     fp.first_name,
                     fp.last_name,
-                    fp.alias,
+                    fp.email,
                     fp.role,
                     AVG(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS avg_score,
                     MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
@@ -24,7 +24,7 @@
                     AVG(f.time_taken_seconds / 60.0) FILTER (WHERE f.time_taken_seconds IS NOT NULL) AS avg_time_minutes
                 FROM filtered_profiles fp
                 LEFT JOIN filt f ON f.profile_id = fp.id
-                GROUP BY fp.id, fp.first_name, fp.last_name, fp.alias, fp.role
+                GROUP BY fp.id, fp.first_name, fp.last_name, fp.email, fp.role
             ),
             -- Total time spent per profile (SUM with 30-minute cap per chat, matching dashboard)
             total_time_per_profile AS (
@@ -441,7 +441,7 @@
                     'profileId', profile_id::text,
                     'firstName', first_name,
                     'lastName', last_name,
-                    'alias', alias,
+                    'email', email,
                     'role', role,
                     'simulationIds', simulation_ids,
                     'scenarioIds', scenario_ids,

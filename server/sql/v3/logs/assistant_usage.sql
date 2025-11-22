@@ -42,7 +42,7 @@ top_users_profiles AS (
         p.id::text as user_id,
         p.first_name,
         p.last_name,
-        p.alias,
+        p.email,
         p.role,
         uc.chat_count
     FROM user_counts uc
@@ -84,7 +84,7 @@ SELECT
             'user_id', tup.user_id,
             'first_name', tup.first_name,
             'last_name', tup.last_name,
-            'alias', tup.alias,
+            'email', tup.email,
             'role', tup.role,
             'chat_count', tup.chat_count
         ))

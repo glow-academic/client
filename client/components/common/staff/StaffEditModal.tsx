@@ -59,7 +59,7 @@ export default function StaffEditModal({
     return {
       firstName: staffItem.first_name || "",
       lastName: staffItem.last_name || "",
-      alias: staffItem.alias || "",
+      email: staffItem.email || "",
       role: staffItem.role || "",
       reqPerDay: staffItem.requests_per_day ?? null,
       defaultProfile: staffItem.default_profile ?? false,
@@ -73,7 +73,7 @@ export default function StaffEditModal({
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    alias: "",
+    email: "",
     role: "",
     reqPerDay: "" as number | "",
     defaultProfile: false,
@@ -93,7 +93,7 @@ export default function StaffEditModal({
       setFormData({
         firstName: targetUser.firstName || "",
         lastName: targetUser.lastName || "",
-        alias: targetUser.alias || "",
+        email: targetUser.email || "",
         role: targetUser.role || "",
         reqPerDay: targetUser.reqPerDay ?? "",
         defaultProfile: targetUser.defaultProfile ?? false,
@@ -150,7 +150,7 @@ export default function StaffEditModal({
         profileId: string;
         first_name: string;
         last_name: string;
-        alias: string;
+        email: string;
         role: string;
         requests_per_day: number | null;
         primary_department_id: string;
@@ -162,7 +162,7 @@ export default function StaffEditModal({
         profileId: profileId,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        alias: formData.alias,
+        email: formData.email,
         role: formData.role,
         requests_per_day: parsedReqPerDay,
         primary_department_id: departmentId,
@@ -260,15 +260,16 @@ export default function StaffEditModal({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="alias">Alias</Label>
+                <Label htmlFor="email">Email</Label>
                 {!isLoading ? (
                   <Input
-                    id="alias"
-                    value={formData.alias}
-                    onChange={(e) => handleInputChange("alias", e.target.value)}
-                    placeholder="jsmith"
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    placeholder="redacted@purdue.edu"
                     disabled={isSubmitting}
-                    data-testid="input-staff-alias"
+                    data-testid="input-staff-email"
                   />
                 ) : (
                   <Skeleton className="h-10 w-full" />

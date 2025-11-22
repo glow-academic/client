@@ -22,7 +22,7 @@ class SearchStaffRequest(BaseModel):
     """Request for staff search."""
 
     query: str | None = (
-        None  # Search term (first_name, last_name, alias, role). Empty/None returns all profiles (up to limit)
+        None  # Search term (first_name, last_name, email, role). Empty/None returns all profiles (up to limit)
     )
     cohortIds: list[str] | None = None  # Cohort IDs to EXCLUDE profiles from (optional)
     departmentIds: list[str] | None = (
@@ -62,9 +62,6 @@ async def search_staff(
         return SearchStaffResponse.model_validate(cached["data"])
 
     try:
-        # Get campus email domain from environment
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "@example.edu")
-
         # Build dynamic SQL query (similar to staff_queries.search_staff)
         # Start with current_profile_id (used in CTEs)
         params: list[Any] = [request.profileId]
@@ -80,7 +77,7 @@ async def search_staff(
             # Cast role enum to text for ILIKE comparison
             # Also check concatenated full name for queries like "default admin"
             search_conditions.append(
-                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.alias ILIKE ${param_idx} OR p.role::text ILIKE ${param_idx} OR (p.first_name || ' ' || p.last_name) ILIKE ${param_idx})"
+                f"(p.first_name ILIKE ${param_idx} OR p.last_name ILIKE ${param_idx} OR p.email ILIKE ${param_idx} OR p.role::text ILIKE ${param_idx} OR (p.first_name || ' ' || p.last_name) ILIKE ${param_idx})"
             )
             params.append(search_term)
             param_idx += 1
@@ -107,11 +104,6 @@ async def search_staff(
         # Add limit
         params.append(request.limit)
         limit_param = param_idx
-        param_idx += 1
-
-        # Add campus_domain
-        params.append(campus_domain)
-        campus_param = param_idx
         param_idx += 1
 
         # Build the full SQL query dynamically
@@ -191,10 +183,9 @@ async def search_staff(
                     'profile_id', p.id::text,
                     'first_name', p.first_name,
                     'last_name', p.last_name,
-                    'alias', p.alias,
+                    'email', p.email,
                     'name', p.first_name || ' ' || p.last_name,
                     'role', p.role,
-                    'email', p.alias || ${campus_param},
                     'initials', SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1),
                     'active', p.active,
                     'last_active', CASE WHEN pa.last_active IS NOT NULL THEN pa.last_active::text ELSE NULL END,
@@ -306,10 +297,9 @@ async def search_staff(
                             profile_id=str(item.get("profile_id", "")),
                             first_name=item.get("first_name", ""),
                             last_name=item.get("last_name", ""),
-                            alias=item.get("alias", ""),
+                            email=item.get("email", ""),
                             name=item.get("name", ""),
                             role=item.get("role", ""),
-                            email=item.get("email", ""),
                             initials=item.get("initials", ""),
                             active=item.get("active", False),
                             last_active=item.get("last_active"),

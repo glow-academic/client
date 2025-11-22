@@ -1,5 +1,5 @@
 -- Get profile overview with latest grades
--- Supports searching by UUID or name (first_name, last_name, alias)
+-- Supports searching by UUID or name (first_name, last_name, email)
 -- Params: $1 = profile_id_or_name, $2 = search_pattern, $3 = limit
 WITH profile_match AS (
     SELECT id
@@ -7,7 +7,7 @@ WITH profile_match AS (
     WHERE id::text = $1 
         OR LOWER(first_name) LIKE $2
         OR LOWER(last_name) LIKE $2
-        OR LOWER(alias) LIKE $2
+        OR LOWER(email) LIKE $2
     LIMIT 1
 ),
 latest_attempts AS (
@@ -34,7 +34,7 @@ attempt_grades AS (
     JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
 )
 SELECT 
-    p.id, p.first_name, p.last_name, p.alias, p.role, 
+    p.id, p.first_name, p.last_name, p.email, p.role, 
     p.last_login, p.viewed_intro, p.active, p.created_at,
     COALESCE(
         (SELECT jsonb_agg(jsonb_build_object(

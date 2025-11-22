@@ -64,8 +64,8 @@ async def test_get_cohort_detail_default_not_found(
     """Test default cohort detail when no cohort exists for user's departments."""
     # Create a profile not linked to any department
     profile_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, alias, role, active) "
-        "VALUES ('Test', 'User', 'testuser2', 'guest', true) RETURNING id"
+        "INSERT INTO profiles(first_name, last_name, email, role, active) "
+        "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
     )
 
     response = await client.post(

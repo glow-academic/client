@@ -100,20 +100,20 @@
         ]
       }
     },
-    "/api/v3/profile/by-alias": {
+    "/api/v3/profile/by-email": {
       "post": {
         "tags": [
           "v3",
           "profile"
         ],
-        "summary": "Get Profile By Alias",
-        "description": "Get profile by alias (for auth operations).",
-        "operationId": "get_profile_by_alias_api_v3_profile_by_alias_post",
+        "summary": "Get Profile By Email",
+        "description": "Get profile by email (for auth operations).",
+        "operationId": "get_profile_by_email_api_v3_profile_by_email_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProfileByAliasRequest"
+                "$ref": "#/components/schemas/ProfileByEmailRequest"
               }
             }
           },
@@ -342,7 +342,7 @@
           "profile"
         ],
         "summary": "Profile Overview",
-        "description": "Profile overview\n----------------\nProfile + last login, classes, dashboard flags, latest grades.\nAccepts UUID or name.\n\nInput\n  \u2022 profile_id - UUID or name/alias to search for\n\nReturns\n  { \"profile\": { \u2026 }, \"latest_grades\": [ \u2026 ] }\n\nQuick-start\n  ask:  \"Show me Nina Park's profile\"\n  call: profile_overview(\"Nina Park\")\n\nSee also \ud83d\udc49 student_sim_report() for per-chat detail.",
+        "description": "Profile overview\n----------------\nProfile + last login, classes, dashboard flags, latest grades.\nAccepts UUID or name.\n\nInput\n  \u2022 profile_id - UUID or name/email to search for\n\nReturns\n  { \"profile\": { \u2026 }, \"latest_grades\": [ \u2026 ] }\n\nQuick-start\n  ask:  \"Show me Nina Park's profile\"\n  call: profile_overview(\"Nina Park\")\n\nSee also \ud83d\udc49 student_sim_report() for per-chat detail.",
         "operationId": "profile_overview_api_v3_profile_overview_post",
         "requestBody": {
           "content": {
@@ -389,7 +389,7 @@
           "profile"
         ],
         "summary": "Find Profiles",
-        "description": "\ud83d\udd0e Find profiles by name\n------------------------\nFuzzy first/last/alias search.\n\nInput\n  \u2022 query - Name or alias to search for\n  \u2022 limit - Max results (default: 10)\n\nReturns\n  [\n    {\n      \"id\": str,           # Profile UUID\n      \"first_name\": str | None,\n      \"last_name\": str | None,\n      \"alias\": str | None,\n      \"role\": str | None,\n      \"full_name\": str,    # \"First Last\" or alias or \"Unknown\"\n      \"score\": int         # Heuristic match score\n    },\n    ...\n  ]\n\nQuick-start\n  ask:  \"Find everyone named Jordan\"\n  call: await find_profiles(\"Jordan\")\n\nSee also \ud83d\udc49 profile_overview() for detailed profile data.",
+        "description": "\ud83d\udd0e Find profiles by name\n------------------------\nFuzzy first/last/email search.\n\nInput\n  \u2022 query - Name or email to search for\n  \u2022 limit - Max results (default: 10)\n\nReturns\n  [\n    {\n      \"id\": str,           # Profile UUID\n      \"first_name\": str | None,\n      \"last_name\": str | None,\n      \"email\": str | None,\n      \"role\": str | None,\n      \"full_name\": str,    # \"First Last\" or email or \"Unknown\"\n      \"score\": int         # Heuristic match score\n    },\n    ...\n  ]\n\nQuick-start\n  ask:  \"Find everyone named Jordan\"\n  call: await find_profiles(\"Jordan\")\n\nSee also \ud83d\udc49 profile_overview() for detailed profile data.",
         "operationId": "find_profiles_api_v3_profile_search_post",
         "requestBody": {
           "content": {
@@ -1074,7 +1074,7 @@
           "staff"
         ],
         "summary": "Create Or Update Staff",
-        "description": "Create or update a staff member based on alias.",
+        "description": "Create or update a staff member based on email.",
         "operationId": "create_or_update_staff_api_v3_profile_staff_create_or_update_staff_post",
         "requestBody": {
           "content": {
@@ -11289,9 +11289,9 @@
             "type": "string",
             "title": "Lastname"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "type": "string",
@@ -11318,7 +11318,7 @@
         "required": [
           "firstName",
           "lastName",
-          "alias",
+          "email",
           "role"
         ],
         "title": "CreateOrUpdateStaffRequest",
@@ -12023,9 +12023,9 @@
             "type": "string",
             "title": "Lastname"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "type": "string",
@@ -12047,7 +12047,7 @@
         "required": [
           "firstName",
           "lastName",
-          "alias",
+          "email",
           "role"
         ],
         "title": "CreateStaffRequest",
@@ -19198,7 +19198,7 @@
             ],
             "title": "Lastname"
           },
-          "alias": {
+          "email": {
             "anyOf": [
               {
                 "type": "string"
@@ -19207,7 +19207,7 @@
                 "type": "null"
               }
             ],
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "anyOf": [
@@ -19249,26 +19249,26 @@
           "row_index",
           "firstName",
           "lastName",
-          "alias",
+          "email",
           "role",
           "errors"
         ],
         "title": "ProcessedCSVRow",
         "description": "Processed row from CSV."
       },
-      "ProfileByAliasRequest": {
+      "ProfileByEmailRequest": {
         "properties": {
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           }
         },
         "type": "object",
         "required": [
-          "alias"
+          "email"
         ],
-        "title": "ProfileByAliasRequest",
-        "description": "Request to get profile by alias."
+        "title": "ProfileByEmailRequest",
+        "description": "Request to get profile by email."
       },
       "ProfileContextRequest": {
         "properties": {
@@ -19398,7 +19398,7 @@
             "type": "string",
             "title": "Lastname"
           },
-          "alias": {
+          "email": {
             "anyOf": [
               {
                 "type": "string"
@@ -19407,7 +19407,7 @@
                 "type": "null"
               }
             ],
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "type": "string",
@@ -19438,7 +19438,7 @@
           "profileId",
           "firstName",
           "lastName",
-          "alias",
+          "email",
           "role",
           "metrics"
         ],
@@ -19486,9 +19486,9 @@
             "type": "string",
             "title": "Lastname"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "type": "string",
@@ -19561,7 +19561,7 @@
           "id",
           "firstName",
           "lastName",
-          "alias",
+          "email",
           "role",
           "active",
           "viewedIntro",
@@ -19711,7 +19711,7 @@
             ],
             "title": "Last Name"
           },
-          "alias": {
+          "email": {
             "anyOf": [
               {
                 "type": "string"
@@ -19720,7 +19720,7 @@
                 "type": "null"
               }
             ],
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "anyOf": [
@@ -19747,7 +19747,7 @@
           "id",
           "first_name",
           "last_name",
-          "alias",
+          "email",
           "role",
           "full_name",
           "score"
@@ -24640,9 +24640,9 @@
             "type": "string",
             "title": "Last Name"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "role": {
             "type": "string",
@@ -24699,7 +24699,7 @@
           "profileId",
           "first_name",
           "last_name",
-          "alias",
+          "email",
           "role",
           "requests_per_day",
           "primary_department_id",
@@ -25629,9 +25629,9 @@
             "type": "string",
             "title": "Last Name"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "name": {
             "type": "string",
@@ -25640,10 +25640,6 @@
           "role": {
             "type": "string",
             "title": "Role"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
           },
           "initials": {
             "type": "string",
@@ -25733,10 +25729,9 @@
           "profile_id",
           "first_name",
           "last_name",
-          "alias",
+          "email",
           "name",
           "role",
-          "email",
           "initials",
           "active",
           "cohort_ids",
@@ -25941,9 +25936,9 @@
             "type": "string",
             "title": "Last Name"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "name": {
             "type": "string",
@@ -25952,10 +25947,6 @@
           "role": {
             "type": "string",
             "title": "Role"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
           },
           "initials": {
             "type": "string",
@@ -26049,10 +26040,9 @@
           "profile_id",
           "first_name",
           "last_name",
-          "alias",
+          "email",
           "name",
           "role",
-          "email",
           "initials",
           "active",
           "primary_department_id",
@@ -26156,9 +26146,9 @@
             "type": "string",
             "title": "Last Name"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "name": {
             "type": "string",
@@ -26167,10 +26157,6 @@
           "role": {
             "type": "string",
             "title": "Role"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
           },
           "initials": {
             "type": "string",
@@ -26264,10 +26250,9 @@
           "profile_id",
           "first_name",
           "last_name",
-          "alias",
+          "email",
           "name",
           "role",
-          "email",
           "initials",
           "active",
           "primary_department_id",
@@ -27946,9 +27931,9 @@
             "type": "string",
             "title": "Last Name"
           },
-          "alias": {
+          "email": {
             "type": "string",
-            "title": "Alias"
+            "title": "Email"
           },
           "name": {
             "type": "string",
@@ -27957,10 +27942,6 @@
           "role": {
             "type": "string",
             "title": "Role"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
           },
           "initials": {
             "type": "string",
@@ -28046,10 +28027,9 @@
           "profile_id",
           "first_name",
           "last_name",
-          "alias",
+          "email",
           "name",
           "role",
-          "email",
           "initials",
           "active",
           "last_active",

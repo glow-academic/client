@@ -115,9 +115,8 @@ async def get_cohorts_list(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql_query = load_sql("sql/v3/cohorts/list_cohorts.sql")
-        sql_params = (filters.profileId, campus_domain)
+        sql_params = (filters.profileId,)
         rows = await conn.fetch(sql_query, filters.profileId, campus_domain)
 
         cohorts = []

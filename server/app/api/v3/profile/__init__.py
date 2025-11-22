@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from .authorize_emulation import router as authorize_emulation_router
-from .by_alias import router as by_alias_router
+from .by_email import router as by_email_router
 from .context import router as context_router
 from .detail import router as detail_router
 from .mark_chat_complete import router as mark_chat_complete_router
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/profile", tags=["profile"])
 # Include all profile endpoint routers
 router.include_router(detail_router)
 router.include_router(update_router)
-router.include_router(by_alias_router)
+router.include_router(by_email_router)
 router.include_router(context_router)
 router.include_router(authorize_emulation_router)
 router.include_router(mark_intro_complete_router)

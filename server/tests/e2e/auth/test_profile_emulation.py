@@ -34,7 +34,7 @@ def test_profile_emulation_authorization(page: Page, base_url: str) -> None:
 
     # Admin should be able to emulate other profiles
     # Find a TA profile to test emulation
-    # Try to find a TA profile by searching staff list or using a known alias
+    # Try to find a TA profile by searching staff list or using a known email
     # For now, we'll test authorization API directly
 
     # Test self-emulation (should be allowed)

@@ -35,7 +35,7 @@ export interface ManualAddStaffModalProps {
       profileId: string;
       firstName?: string;
       lastName?: string;
-      alias?: string;
+      email?: string;
       role?: string;
     }>
   ) => void;
@@ -61,7 +61,7 @@ export default function ManualAddStaffModal({
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [aliasInput, setAliasInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const [selectedRole, setSelectedRole] = useState<RoleValue>("ta");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -102,7 +102,7 @@ export default function ManualAddStaffModal({
     if (!open) {
       setFirstName("");
       setLastName("");
-      setAliasInput("");
+      setEmailInput("");
       setSelectedRole("ta");
     }
   }, [open]);
@@ -118,12 +118,9 @@ export default function ManualAddStaffModal({
       toast.error("Please enter a last name");
       return;
     }
-    const alias = aliasInput
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9._-]/g, "");
-    if (!alias || alias.length < 2) {
-      toast.error("Please enter a valid alias (at least 2 characters)");
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -162,7 +159,7 @@ export default function ManualAddStaffModal({
         {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          alias,
+          email,
           role,
           department_ids: finalDepartmentIds,
           cohort_ids: finalCohortIds,
@@ -192,7 +189,7 @@ export default function ManualAddStaffModal({
             profileId: firstProfileId,
             firstName: firstName.trim(),
             lastName: lastName.trim(),
-            alias,
+            email,
             role,
           },
         ];
@@ -278,11 +275,12 @@ export default function ManualAddStaffModal({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="alias-input">Alias</Label>
+              <Label htmlFor="email-input">Email</Label>
               <Input
-                id="alias-input"
-                value={aliasInput}
-                onChange={(e) => setAliasInput(e.target.value)}
+                id="email-input"
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
                 placeholder="jdoe"
                 required
                 disabled={isSubmitting}
@@ -317,7 +315,7 @@ export default function ManualAddStaffModal({
                 isSubmitting ||
                 !firstName.trim() ||
                 !lastName.trim() ||
-                !aliasInput.trim()
+                !emailInput.trim()
               }
             >
               {isSubmitting ? "Processing..." : "Add Staff"}

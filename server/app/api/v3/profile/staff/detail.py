@@ -56,20 +56,16 @@ async def get_staff_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get campus email domain from environment
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
-
         # Load SQL query
         sql_query = load_sql("sql/v3/profile/staff/get_staff_detail.sql")
         sql_params = (
             request_body.profileId,
             request_body.currentProfileId,
-            campus_domain,
         )
 
         # Execute query
         row = await conn.fetchrow(
-            sql_query, request_body.profileId, request_body.currentProfileId, campus_domain
+            sql_query, request_body.profileId, request_body.currentProfileId
         )
 
         # If no row returned, profile is not visible to current user (role hierarchy)

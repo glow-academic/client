@@ -11,10 +11,7 @@ import uuid
 import pytest
 from playwright.sync_api import Page, expect
 
-from server.tests.e2e.staff.helpers import (
-    delete_staff_api,
-    fetch_staff_list,
-)
+from server.tests.e2e.staff.helpers import delete_staff_api, fetch_staff_list
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"
 
@@ -30,20 +27,20 @@ def _create_test_csv(
             {
                 "firstName": "John",
                 "lastName": "Doe",
-                "alias": "jdoe",
+                "email": "redacted@purdue.edu",
                 "role": "ta",
             },
             {
                 "firstName": "Jane",
                 "lastName": "Smith",
-                "alias": "jsmith",
+                "email": "redacted@purdue.edu",
                 "role": "instructional",
             },
         ]
 
     # Create CSV content
     if not rows:
-        headers = ["firstName", "lastName", "alias", "role"]
+        headers = ["firstName", "lastName", "email", "role"]
     else:
         headers = list(rows[0].keys())
 
@@ -110,13 +107,13 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
         {
             "firstName": "John",
             "lastName": f"CSVTest{suffix1}",
-            "alias": f"csvtest1_{suffix1}",
+            "email": f"csvtest1_{suffix1}@purdue.edu",
             "role": "ta",
         },
         {
             "firstName": "Jane",
             "lastName": f"CSVTest{suffix2}",
-            "alias": f"csvtest2_{suffix2}",
+            "email": f"csvtest2_{suffix2}@purdue.edu",
             "role": "instructional",
         },
     ]
@@ -139,7 +136,7 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
         mapping_table.wait_for(state="visible", timeout=5000)
         expect(mapping_table).to_be_visible()
 
-        # Verify columns are auto-mapped (firstName, lastName, alias, role)
+        # Verify columns are auto-mapped (firstName, lastName, email, role)
         # The auto-mapping should have already mapped these columns
         # We can verify by checking that mapping rows exist
         first_name_mapping = page.get_by_test_id("csv-column-mapping-firstName")
@@ -193,9 +190,9 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
         # Search for one of the test staff members
         search_input = page.get_by_test_id("staff-search")
         if search_input.count() > 0:
-            # Search for the alias we created
-            test_alias = test_csv_rows[0]["alias"]
-            search_input.fill(test_alias)
+            # Search for the email we created
+            test_email = test_csv_rows[0]["email"]
+            search_input.fill(test_email)
             page.wait_for_timeout(500)
 
             # Verify staff member appears in results
@@ -215,10 +212,10 @@ def test_staff_csv_upload_workflow(page: Page, base_url: str) -> None:
 
         # Find and delete test staff members
         for row in test_csv_rows:
-            alias = row["alias"]
-            # Find staff member by alias
+            email = row["email"]
+            # Find staff member by email
             for staff in staff_list.get("staff", []):
-                if staff.get("alias") == alias:
+                if staff.get("email") == email:
                     try:
                         delete_staff_api(
                             page.context.request,
@@ -266,13 +263,13 @@ def test_staff_csv_upload_with_validation_errors(page: Page, base_url: str) -> N
         {
             "firstName": "",  # Missing first name - should cause error
             "lastName": "Doe",
-            "alias": "testuser",
+            "email": "redacted@purdue.edu",
             "role": "ta",
         },
         {
             "firstName": "Jane",
             "lastName": "",  # Missing last name - should cause error
-            "alias": "testuser2",
+            "email": "redacted@purdue.edu",
             "role": "instructional",
         },
     ]

@@ -20,7 +20,7 @@ class CreateStaffRequest(BaseModel):
 
     firstName: str
     lastName: str
-    alias: str
+    email: str
     role: str
     primary_department_id: str | None = None
 
@@ -47,13 +47,13 @@ async def create_profile(
         # Generate new profile ID
         profile_id = str(uuid.uuid4())
 
-        # Single consolidated query: validates alias, creates profile, and inserts department
+        # Single consolidated query: validates email, creates profile, and inserts department
         sql_query = load_sql("sql/v3/profile/staff/create_profile_complete.sql")
         sql_params = (
             profile_id,
             request.firstName,
             request.lastName,
-            request.alias,
+            request.email,
             request.role,
             True,  # active
             False,  # default_profile
@@ -68,10 +68,10 @@ async def create_profile(
             if not result:
                 raise HTTPException(status_code=500, detail="Failed to create profile")
 
-            # Check if alias already exists (returned from query)
-            if result["alias_exists"]:
+            # Check if email already exists (returned from query)
+            if result["email_exists"]:
                 raise HTTPException(
-                    status_code=400, detail=f"Alias '{request.alias}' already exists"
+                    status_code=400, detail=f"Email '{request.email}' already exists"
                 )
 
             # Verify profile was created

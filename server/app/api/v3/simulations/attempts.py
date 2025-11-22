@@ -65,10 +65,10 @@ async def simulation_attempts(
             for row in rows:
                 first = row["first_name"] or ""
                 last = row["last_name"] or ""
-                alias = row["alias"] or ""
+                email = row["email"] or ""
                 student_name = (
                     " ".join(x for x in (first, last) if x).strip()
-                    or alias
+                    or email
                     or "Unknown"
                 )
 

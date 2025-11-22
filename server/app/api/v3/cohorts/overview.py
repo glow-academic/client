@@ -95,7 +95,7 @@ async def cohort_overview(
                             "id": str(profile["id"]),
                             "first_name": profile["first_name"],
                             "last_name": profile["last_name"],
-                            "alias": profile["alias"],
+                            "email": profile["email"],
                             "role": profile["role"],
                         }
                     )

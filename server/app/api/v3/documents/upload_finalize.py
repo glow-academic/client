@@ -150,7 +150,7 @@ async def upload_finalize(
                                 insert_profile_sql,
                                 user_id,
                                 name,  # first_name (using full name as first_name)
-                                username,  # alias
+                                username,  # email
                                 "ta",  # role
                                 False,  # viewed_intro
                             )

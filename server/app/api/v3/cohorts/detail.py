@@ -45,10 +45,9 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    alias: str
+    email: str
     name: str
     role: str
-    email: str
     initials: str
     active: bool
     lastActive: str | None = None
@@ -116,9 +115,8 @@ async def get_cohort_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.com")
         sql_query = load_sql("sql/v3/cohorts/get_cohort_detail_complete.sql")
-        sql_params = (request_body.cohortId, request_body.profileId, campus_domain)
+        sql_params = (request_body.cohortId, request_body.profileId)
         row = await conn.fetchrow(
             sql_query, request_body.cohortId, request_body.profileId, campus_domain
         )
@@ -195,10 +193,9 @@ async def get_cohort_detail(
                                 profile_id=s.get("profile_id", ""),
                                 first_name=s.get("first_name", ""),
                                 last_name=s.get("last_name", ""),
-                                alias=s.get("alias", ""),
+                                email=s.get("email", ""),
                                 name=s.get("name", ""),
                                 role=s.get("role", ""),
-                                email=s.get("email", ""),
                                 initials=s.get("initials", ""),
                                 active=s.get("active", False),
                                 lastActive=last_active,

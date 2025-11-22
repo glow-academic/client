@@ -146,10 +146,9 @@ cohort_staff AS (
         p.id as profile_id,
         p.first_name,
         p.last_name,
-        p.alias,
+        p.email,
         p.first_name || ' ' || p.last_name as name,
         p.role,
-        p.alias || '@' || $3 as email,
         SUBSTRING(p.first_name FROM 1 FOR 1) || SUBSTRING(p.last_name FROM 1 FOR 1) as initials,
         p.active,
         pa.last_active as lastActive,
@@ -413,7 +412,7 @@ SELECT
             'profile_id', cs.profile_id::text,
             'first_name', cs.first_name,
             'last_name', cs.last_name,
-            'alias', cs.alias,
+            'email', cs.email,
             'name', cs.name,
             'role', cs.role,
             'email', cs.email,
@@ -440,7 +439,7 @@ SELECT
         p.id::text,
         jsonb_build_object(
             'name', p.first_name || ' ' || p.last_name,
-            'description', p.alias || '@' || $3
+            'description', p.email
         )
      ), '{}'::jsonb)
      FROM profiles p

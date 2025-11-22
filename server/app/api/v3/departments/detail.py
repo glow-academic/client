@@ -29,10 +29,9 @@ class StaffItem(BaseModel):
     profile_id: str
     first_name: str
     last_name: str
-    alias: str
+    email: str
     name: str
     role: str
-    email: str
     initials: str
     active: bool
     last_active: str | None = None
@@ -96,9 +95,8 @@ async def get_department_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        campus_domain = os.getenv("NEXT_PUBLIC_CAMPUS_EMAIL", "example.edu")
         sql_query = load_sql("sql/v3/departments/get_department_detail_with_staff.sql")
-        sql_params = (request_body.departmentId, request_body.profileId, campus_domain)
+        sql_params = (request_body.departmentId, request_body.profileId)
         dept_row = await conn.fetchrow(
             sql_query, request_body.departmentId, request_body.profileId, campus_domain
         )
@@ -152,10 +150,9 @@ async def get_department_detail(
                             profile_id=str(staff_row["profile_id"]),
                             first_name=staff_row["first_name"],
                             last_name=staff_row["last_name"],
-                            alias=staff_row["alias"],
+                            email=staff_row["email"],
                             name=staff_row["name"],
                             role=staff_row["role"],
-                            email=staff_row["email"],
                             initials=staff_row["initials"],
                             active=staff_row["active"],
                             last_active=last_active,

@@ -107,7 +107,7 @@ async def update_profile(
             id=str(row["id"]),
             firstName=row["first_name"],
             lastName=row["last_name"],
-            alias=row["alias"],
+            email=row["email"],
             role=row["role"],
             active=row["active"],
             viewedIntro=row["viewed_intro"],

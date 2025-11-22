@@ -7,7 +7,7 @@ WITH attempt_data AS (
         ap.profile_id,
         p.first_name,
         p.last_name,
-        p.alias
+        p.email
     FROM simulation_attempts sa
     LEFT JOIN attempt_profiles ap ON sa.id = ap.attempt_id AND ap.active = true
     LEFT JOIN profiles p ON p.id = ap.profile_id
@@ -33,7 +33,7 @@ SELECT
     ad.profile_id,
     ad.first_name,
     ad.last_name,
-    ad.alias,
+    ad.email,
     lg.score,
     lg.passed,
     lg.time_taken

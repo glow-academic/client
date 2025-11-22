@@ -336,7 +336,7 @@ async def export_reports(
                 "profileId": profile.get("profileId", ""),
                 "firstName": profile.get("firstName", ""),
                 "lastName": profile.get("lastName", ""),
-                "alias": profile.get("alias") or "",
+                "email": profile.get("email") or "",
                 "role": profile.get("role", ""),
                 "metrics": export_metrics,
                 "simulationMetrics": per_simulation_metrics.get(profile.get("profileId", ""), {}),
@@ -447,8 +447,8 @@ def generate_brightspace_csv(
 
     # Create data rows
     for profile in data:
-        alias = profile.get("alias") or ""
-        row = [alias]
+        email = profile.get("email") or ""
+        row = [email]
 
         # Get simulation metrics for this profile
         sim_metrics = profile.get("simulationMetrics", {}) or {}
@@ -510,11 +510,11 @@ def generate_regular_csv(
         row = []
         metrics_data = profile.get("metrics", {}) or {}
 
-        # Add name and alias
+        # Add name and email
         first_name = profile.get("firstName", "")
         last_name = profile.get("lastName", "")
         row.append(f"{first_name} {last_name}".strip())
-        row.append(profile.get("alias") or "")
+        row.append(profile.get("email") or "")
 
         # Add selected metrics
         for metric in metrics:
