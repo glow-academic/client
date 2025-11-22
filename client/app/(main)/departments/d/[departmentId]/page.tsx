@@ -39,6 +39,12 @@ type RemoveProfilesFromDepartmentOut = OutputOf<
   "/api/v3/departments/remove-profiles",
   "post"
 >;
+type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -99,6 +105,21 @@ async function removeProfilesFromDepartment(
   return api.post("/departments/remove-profiles", input);
 }
 
+export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
+  "use server";
+  return api.post("/keys/create", input);
+}
+
+export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+  "use server";
+  return api.post("/keys/decrypt-key", input);
+}
+
+export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+  "use server";
+  return api.post("/keys/update", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DepartmentEditPage({
   params,
@@ -151,6 +172,9 @@ export default async function DepartmentEditPage({
           initialSearchData={initialSearchData}
           initialCreateStaffData={initialCreateStaffData}
           updateStaffAction={updateStaff}
+          createKeyAction={createKey}
+          decryptKeyAction={decryptKey}
+          updateKeyAction={updateKey}
         />
       </div>
     );
@@ -185,4 +209,10 @@ export type {
   RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
+  CreateKeyIn,
+  CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 };

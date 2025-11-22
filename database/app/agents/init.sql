@@ -40,8 +40,11 @@ CREATE TABLE model_runs (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   input_tokens INTEGER     NOT NULL DEFAULT 0,
   output_tokens INTEGER     NOT NULL DEFAULT 0,
-  cached_input_tokens INTEGER     NOT NULL DEFAULT 0
+  cached_input_tokens INTEGER     NOT NULL DEFAULT 0,
+  key_id     UUID        REFERENCES keys(id) ON DELETE SET NULL
 );
+
+CREATE INDEX ON model_runs (key_id);
 
 -- Model run junction tables (BCNF normalization - replaces nullable FKs)
 CREATE TABLE model_run_models (

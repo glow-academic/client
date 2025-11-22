@@ -18,6 +18,12 @@ type ModelDetailOut = OutputOf<"/api/v3/models/detail", "post">;
 
 type UpdateModelIn = InputOf<"/api/v3/models/update", "post">;
 type UpdateModelOut = OutputOf<"/api/v3/models/update", "post">;
+type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -70,6 +76,21 @@ async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   return api.post("/models/update", input);
 }
 
+export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
+  "use server";
+  return api.post("/keys/create", input);
+}
+
+export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+  "use server";
+  return api.post("/keys/decrypt-key", input);
+}
+
+export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+  "use server";
+  return api.post("/keys/update", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ModelEditPage({
   params,
@@ -89,10 +110,24 @@ export default async function ModelEditPage({
         modelId={modelId}
         modelDetail={model}
         updateModelAction={updateModel}
+        createKeyAction={createKey}
+        decryptKeyAction={decryptKey}
+        updateKeyAction={updateKey}
       />
     </div>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { ModelDetailIn, ModelDetailOut, UpdateModelIn, UpdateModelOut };
+export type {
+  ModelDetailIn,
+  ModelDetailOut,
+  UpdateModelIn,
+  UpdateModelOut,
+  CreateKeyIn,
+  CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
+};

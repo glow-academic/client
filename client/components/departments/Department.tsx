@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import {
@@ -25,6 +26,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -43,11 +52,17 @@ import type {
 } from "@/app/(main)/departments/new/page";
 // Import types from edit page (update action)
 import type {
+  CreateKeyIn,
+  CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
   DepartmentDetailOut,
   RemoveProfilesFromDepartmentIn,
   RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 } from "@/app/(main)/departments/d/[departmentId]/page";
 // Import types from list page (delete/duplicate actions)
 import type {
@@ -77,8 +92,8 @@ const normalizeDepartmentStaffItem = (
   profile_id: item.profile_id,
   first_name: item.first_name,
   last_name: item.last_name,
-  emails: item.emails || [],
-  primary_email: item.primary_email || "",
+  emails: "emails" in item ? item.emails || [] : [],
+  primary_email: "primary_email" in item ? item.primary_email || "" : "",
   name: item.name,
   role: item.role,
   initials: item.initials,
@@ -143,6 +158,10 @@ export interface DepartmentProps {
   initialCreateStaffData?: CreateStaffDataOut;
   // Staff edit actions
   updateStaffAction?: UpdateStaffAction;
+  // Key management actions
+  createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
+  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
+  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
 }
 
 interface FormErrors {
@@ -171,6 +190,9 @@ export default function Department({
   initialSearchData,
   initialCreateStaffData,
   updateStaffAction,
+  createKeyAction,
+  decryptKeyAction,
+  updateKeyAction,
 }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile, scopedRoles } = useProfile();
@@ -382,7 +404,7 @@ export default function Department({
         body: { departmentId },
       });
       toast.success("Department duplicated successfully");
-        router.push("/departments");
+      router.push("/departments");
     } catch (error) {
       toast.error(
         `Failed to duplicate department: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -401,7 +423,7 @@ export default function Department({
         body: { departmentId },
       });
       toast.success("Department deleted successfully");
-        router.push("/departments");
+      router.push("/departments");
     } catch (error) {
       toast.error(
         `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -522,6 +544,105 @@ export default function Department({
             </p>
           </div>
         </div>
+
+        {/* Models Management */}
+        {departmentId && departmentData && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Models & API Keys</Label>
+              <p className="text-xs text-muted-foreground">
+                Manage API keys for models available to this department. Default
+                models are included.
+              </p>
+            </div>
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Model</TableHead>
+                    <TableHead className="text-right">API Key</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {departmentData &&
+                  "valid_model_ids" in departmentData &&
+                  departmentData.valid_model_ids &&
+                  departmentData.valid_model_ids.length > 0 ? (
+                    departmentData.valid_model_ids.map((modelId: string) => {
+                      const modelMapping =
+                        "model_mapping" in departmentData
+                          ? departmentData.model_mapping
+                          : {};
+                      const model = modelMapping?.[modelId] as
+                        | { name: string; description: string }
+                        | undefined;
+                      const modelKeyMapping =
+                        "model_key_mapping" in departmentData
+                          ? departmentData.model_key_mapping
+                          : {};
+                      const currentKeyId =
+                        (modelKeyMapping?.[modelId] as string | undefined) ||
+                        null;
+                      const keyMapping =
+                        "key_mapping" in departmentData
+                          ? departmentData.key_mapping
+                          : {};
+                      const validKeyIds =
+                        "valid_key_ids" in departmentData
+                          ? departmentData.valid_key_ids
+                          : [];
+                      return (
+                        <TableRow key={modelId}>
+                          <TableCell className="font-medium">
+                            {model?.name || modelId}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <KeyPicker
+                              mapping={
+                                keyMapping as Record<
+                                  string,
+                                  {
+                                    name: string;
+                                    description: string;
+                                    key_masked: string;
+                                    active: boolean;
+                                  }
+                                >
+                              }
+                              validIds={validKeyIds as string[]}
+                              selectedIds={currentKeyId ? [currentKeyId] : []}
+                              onSelect={(_ids) => {
+                                // TODO: Update model_key_mapping via API
+                                toast.info(
+                                  "Model key update functionality coming soon"
+                                );
+                              }}
+                              multiSelect={false}
+                              keyType="api"
+                              disabled={isReadonly}
+                              {...(createKeyAction && { createKeyAction })}
+                              {...(decryptKeyAction && { decryptKeyAction })}
+                              {...(updateKeyAction && { updateKeyAction })}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={2}
+                        className="text-center text-muted-foreground"
+                      >
+                        No models available
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
 
         {/* Staff Management */}
         {departmentId && departmentData && (

@@ -74,6 +74,7 @@ WITH user_departments AS (
             WHERE pd.profile_id = $1 AND d.active = true
         ),
         valid_models AS (
+            -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
@@ -86,8 +87,13 @@ WITH user_departments AS (
                     '{}'::jsonb
                 ) as model_mapping,
                 array_agg(m.id::text ORDER BY m.name) as model_ids
-            FROM models m 
+            FROM models m
+            LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
             WHERE m.active = true
+            GROUP BY m.id
+            HAVING 
+                COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
         ),
         usage_data AS (
             SELECT COUNT(*) as usage_count

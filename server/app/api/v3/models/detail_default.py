@@ -25,9 +25,34 @@ class ProviderMappingItem(BaseModel):
     description: str
 
 
+class DepartmentMappingItem(BaseModel):
+    name: str
+    description: str
+
+
+class KeyMappingItem(BaseModel):
+    name: str
+    description: str
+    key_masked: str
+    active: bool
+
+
+class ModelMappingItem(BaseModel):
+    name: str
+    description: str
+
+
 class ModelDetailDefaultResponse(BaseModel):
     valid_provider_ids: list[str]
     provider_mapping: dict[str, ProviderMappingItem]
+    valid_department_ids: list[str]
+    department_mapping: dict[str, DepartmentMappingItem]
+    valid_model_ids: list[str]
+    model_mapping: dict[str, ModelMappingItem]
+    valid_key_ids: list[str]
+    key_mapping: dict[str, KeyMappingItem]
+    user_role: str
+    primary_department_id: str | None
 
 
 router = APIRouter()
@@ -58,13 +83,13 @@ async def get_model_detail_default(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        sql_query = load_sql("sql/v3/models/detail_default.sql")
-        sql_params = None
-        result = await conn.fetchrow(sql_query)
+        sql_query = load_sql("sql/v3/models/get_model_detail_default_complete.sql")
+        sql_params = (request.profileId,)
+        result = await conn.fetchrow(sql_query, request.profileId)
 
         if not result:
             raise HTTPException(
-                status_code=500, detail="Failed to fetch provider mapping"
+                status_code=500, detail="Failed to fetch model detail data"
             )
 
         # Parse valid_provider_ids from array
@@ -86,9 +111,76 @@ async def get_model_detail_default(
                         description=pdata.get("description", ""),
                     )
 
+        # Parse valid_department_ids from array
+        valid_department_ids: list[str] = []
+        valid_department_ids_raw = result.get("valid_department_ids")
+        if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):
+            valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
+
+        # Parse department_mapping from JSONB
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        department_mapping_data = result.get("department_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for dept_id, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        # Parse valid_model_ids from array
+        valid_model_ids: list[str] = []
+        valid_model_ids_raw = result.get("valid_model_ids")
+        if valid_model_ids_raw and isinstance(valid_model_ids_raw, (list, tuple)):
+            valid_model_ids = [str(mid) for mid in valid_model_ids_raw if mid]
+
+        # Parse model_mapping from JSONB
+        model_mapping: dict[str, ModelMappingItem] = {}
+        model_mapping_data = result.get("model_mapping")
+        if isinstance(model_mapping_data, str):
+            model_mapping_data = json.loads(model_mapping_data)
+        if model_mapping_data and isinstance(model_mapping_data, dict):
+            for model_id, mdata in model_mapping_data.items():
+                if isinstance(mdata, dict):
+                    model_mapping[model_id] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", ""),
+                    )
+
+        # Parse valid_key_ids from array
+        valid_key_ids: list[str] = []
+        valid_key_ids_raw = result.get("valid_key_ids")
+        if valid_key_ids_raw and isinstance(valid_key_ids_raw, (list, tuple)):
+            valid_key_ids = [str(kid) for kid in valid_key_ids_raw if kid]
+
+        # Parse key_mapping from JSONB
+        key_mapping: dict[str, KeyMappingItem] = {}
+        key_mapping_data = result.get("key_mapping")
+        if isinstance(key_mapping_data, str):
+            key_mapping_data = json.loads(key_mapping_data)
+        if key_mapping_data and isinstance(key_mapping_data, dict):
+            for key_id, kdata in key_mapping_data.items():
+                if isinstance(kdata, dict):
+                    key_mapping[key_id] = KeyMappingItem(
+                        name=kdata.get("name", ""),
+                        description=kdata.get("description", ""),
+                        key_masked=kdata.get("key_masked", ""),
+                        active=kdata.get("active", True),
+                    )
+
         response_data = ModelDetailDefaultResponse(
             valid_provider_ids=valid_provider_ids,
             provider_mapping=provider_mapping,
+            valid_department_ids=valid_department_ids,
+            department_mapping=department_mapping,
+            valid_model_ids=valid_model_ids,
+            model_mapping=model_mapping,
+            valid_key_ids=valid_key_ids,
+            key_mapping=key_mapping,
+            user_role=str(result.get("user_role", "")),
+            primary_department_id=str(result.get("primary_department_id")) if result.get("primary_department_id") else None,
         )
 
         # Cache response

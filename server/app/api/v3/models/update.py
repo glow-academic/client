@@ -25,6 +25,8 @@ class UpdateModelRequest(BaseModel):
     image_model: bool
     input_ppm: float
     output_ppm: float
+    department_ids: list[str] | None = None
+    key_id: str | None = None
 
 
 class UpdateModelResponse(BaseModel):
@@ -59,8 +61,10 @@ async def update_model(
             if not existing:
                 raise ValueError(f"Model not found: {request.modelId}")
 
-            # Update model (track primary operation)
-            sql_query = load_sql("sql/v3/models/update.sql")
+            # Update model with departments and keys (track primary operation)
+            sql_query = load_sql("sql/v3/models/update_model_complete.sql")
+            # Ensure department_ids is always an array (empty if None)
+            department_ids = request.department_ids if request.department_ids else []
             sql_params = (
                 request.modelId,
                 request.provider_id,
@@ -71,6 +75,8 @@ async def update_model(
                 request.image_model,
                 request.input_ppm,
                 request.output_ppm,
+                department_ids,
+                request.key_id,
             )
             await conn.execute(
                 sql_query,
@@ -83,6 +89,8 @@ async def update_model(
                 request.image_model,
                 request.input_ppm,
                 request.output_ppm,
+                department_ids,
+                request.key_id,
             )
 
             result_data = UpdateModelResponse(

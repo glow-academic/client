@@ -57,3 +57,40 @@ CREATE TABLE model_keys (
 CREATE INDEX ON model_keys (model_id);
 CREATE INDEX ON model_keys (key_id);
 CREATE INDEX ON model_keys (active);
+
+-- Model → Departments binary relationship table
+-- Tracks which models are available to departments (no key_id)
+-- No records = available to all departments (cross-department)
+CREATE TABLE model_departments (
+  model_id      UUID NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, department_id)
+);
+
+CREATE INDEX ON model_departments (model_id);
+CREATE INDEX ON model_departments (department_id);
+CREATE INDEX ON model_departments (active);
+
+-- Model → Department → Keys ternary relationship table (BCNF normalization)
+-- Supports department-specific key overrides for models
+-- No records = available to all departments (cross-department)
+CREATE TABLE model_department_keys (
+  model_id      UUID NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  key_id        UUID NOT NULL REFERENCES keys(id) ON DELETE RESTRICT,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, department_id, key_id)
+);
+
+CREATE INDEX ON model_department_keys (model_id);
+CREATE INDEX ON model_department_keys (department_id);
+CREATE INDEX ON model_department_keys (key_id);
+
+-- Only one active per (model_id, department_id, key_id)
+CREATE UNIQUE INDEX model_department_keys_one_active_per_model_dept_key
+  ON model_department_keys(model_id, department_id, key_id) WHERE active = true;

@@ -24,6 +24,8 @@ class CreateModelRequest(BaseModel):
     image_model: bool
     input_ppm: float
     output_ppm: float
+    department_ids: list[str] | None = None
+    key_id: str | None = None
 
 
 class CreateModelResponse(BaseModel):
@@ -52,7 +54,9 @@ async def create_model(
 
     try:
         async with transaction(conn):
-            sql_query = load_sql("sql/v3/models/create.sql")
+            sql_query = load_sql("sql/v3/models/create_model_complete.sql")
+            # Ensure department_ids is always an array (empty if None)
+            department_ids = request.department_ids if request.department_ids else []
             sql_params = (
                 request.provider_id,
                 request.name,
@@ -62,6 +66,8 @@ async def create_model(
                 request.image_model,
                 request.input_ppm,
                 request.output_ppm,
+                department_ids,
+                request.key_id,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -73,6 +79,8 @@ async def create_model(
                 request.image_model,
                 request.input_ppm,
                 request.output_ppm,
+                department_ids,
+                request.key_id,
             )
 
             if not result:

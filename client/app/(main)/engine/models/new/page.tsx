@@ -17,6 +17,12 @@ type ModelDetailDefaultIn = InputOf<"/api/v3/models/detail-default", "post">;
 type ModelDetailDefaultOut = OutputOf<"/api/v3/models/detail-default", "post">;
 type CreateModelIn = InputOf<"/api/v3/models/create", "post">;
 type CreateModelOut = OutputOf<"/api/v3/models/create", "post">;
+type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
+type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
+type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
+type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
@@ -49,6 +55,21 @@ async function createModel(
   return api.post("/models/create", input);
 }
 
+export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
+  "use server";
+  return api.post("/keys/create", input);
+}
+
+export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+  "use server";
+  return api.post("/keys/decrypt-key", input);
+}
+
+export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+  "use server";
+  return api.post("/keys/update", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewModelPage() {
   const session = await getSession();
@@ -62,6 +83,9 @@ export default async function NewModelPage() {
       <Model
         modelDetailDefault={modelDetailDefault}
         createModelAction={createModel}
+        createKeyAction={createKey}
+        decryptKeyAction={decryptKey}
+        updateKeyAction={updateKey}
       />
     </div>
   );
@@ -73,5 +97,11 @@ export type {
   CreateModelOut,
   ModelDetailDefaultIn,
   ModelDetailDefaultOut,
+  CreateKeyIn,
+  CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 };
 

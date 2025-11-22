@@ -8058,14 +8058,14 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -10055,7 +10055,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -10078,7 +10078,7 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "$ref": "#/components/schemas/DepartmentMappingItem"
+                  "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
                 },
                 "type": "object"
               },
@@ -10178,7 +10178,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -10543,7 +10543,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -11239,6 +11239,31 @@
           "output_ppm": {
             "type": "number",
             "title": "Output Ppm"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
           }
         },
         "type": "object",
@@ -11997,7 +12022,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -13422,165 +13447,6 @@
         "title": "DepartmentDetailRequest",
         "description": "Request for department detail."
       },
-      "DepartmentMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          },
-          "rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Ids"
-          },
-          "parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Ids"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Ids"
-          },
-          "staff_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Staff Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "DepartmentMappingItem",
-        "description": "Department mapping item - extends MappingItem with optional entity ID arrays"
-      },
       "DepartmentsListRequest": {
         "properties": {
           "profileId": {
@@ -13686,7 +13552,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -13880,7 +13746,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -14128,7 +13994,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -16843,12 +16709,77 @@
             },
             "type": "object",
             "title": "Provider Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__detail_default__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Model Ids"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__detail_default__ModelMappingItem"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
+          "valid_key_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Key Ids"
+          },
+          "key_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__detail_default__KeyMappingItem"
+            },
+            "type": "object",
+            "title": "Key Mapping"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
           }
         },
         "type": "object",
         "required": [
           "valid_provider_ids",
-          "provider_mapping"
+          "provider_mapping",
+          "valid_department_ids",
+          "department_mapping",
+          "valid_model_ids",
+          "model_mapping",
+          "valid_key_ids",
+          "key_mapping",
+          "user_role",
+          "primary_department_id"
         ],
         "title": "ModelDetailDefaultResponse"
       },
@@ -16917,6 +16848,52 @@
             },
             "type": "object",
             "title": "Provider Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__detail__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "valid_key_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Key Ids"
+          },
+          "key_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__detail__KeyMappingItem"
+            },
+            "type": "object",
+            "title": "Key Mapping"
+          },
+          "default_key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Key Id"
           }
         },
         "type": "object",
@@ -16930,7 +16907,13 @@
           "output_ppm",
           "provider_id",
           "valid_provider_ids",
-          "provider_mapping"
+          "provider_mapping",
+          "valid_department_ids",
+          "department_mapping",
+          "department_ids",
+          "valid_key_ids",
+          "key_mapping",
+          "default_key_id"
         ],
         "title": "ModelDetailResponse"
       },
@@ -17001,25 +16984,6 @@
           "can_delete"
         ],
         "title": "ModelItem"
-      },
-      "ModelMappingItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ModelMappingItem",
-        "description": "Model mapping item - extends MappingItem"
       },
       "ModelMappingWithPricing": {
         "properties": {
@@ -18036,14 +18000,14 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -18399,7 +18363,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -20977,7 +20941,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -21312,7 +21276,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -21979,7 +21943,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -22154,7 +22118,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -22902,7 +22866,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -23189,7 +23153,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -24029,6 +23993,31 @@
           "output_ppm": {
             "type": "number",
             "title": "Output Ppm"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
           }
         },
         "type": "object",
@@ -25153,7 +25142,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -25181,7 +25170,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -25383,7 +25372,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -25413,7 +25402,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -26013,7 +26002,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -26024,6 +26013,41 @@
             },
             "type": "array",
             "title": "Valid Department Ids"
+          },
+          "valid_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Model Ids"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__departments__detail__ModelMappingItem"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
+          "valid_key_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Key Ids"
+          },
+          "key_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__departments__detail__KeyMappingItem"
+            },
+            "type": "object",
+            "title": "Key Mapping"
+          },
+          "model_key_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Model Key Mapping"
           }
         },
         "type": "object",
@@ -26040,10 +26064,63 @@
           "staff",
           "cohort_mapping",
           "department_mapping",
-          "valid_department_ids"
+          "valid_department_ids",
+          "valid_model_ids",
+          "model_mapping",
+          "valid_key_ids",
+          "key_mapping",
+          "model_key_mapping"
         ],
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
+      },
+      "app__api__v3__departments__detail__KeyMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "key_masked",
+          "active"
+        ],
+        "title": "KeyMappingItem",
+        "description": "Key mapping item."
+      },
+      "app__api__v3__departments__detail__ModelMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ModelMappingItem",
+        "description": "Model mapping item."
       },
       "app__api__v3__departments__detail__StaffItem": {
         "properties": {
@@ -26246,7 +26323,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -26655,6 +26732,116 @@
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
       },
+      "app__api__v3__models__detail__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem"
+      },
+      "app__api__v3__models__detail__KeyMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "key_masked",
+          "active"
+        ],
+        "title": "KeyMappingItem"
+      },
+      "app__api__v3__models__detail_default__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem"
+      },
+      "app__api__v3__models__detail_default__KeyMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "key_masked",
+          "active"
+        ],
+        "title": "KeyMappingItem"
+      },
+      "app__api__v3__models__detail_default__ModelMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ModelMappingItem"
+      },
       "app__api__v3__parameters__detail__ParameterItemDetail": {
         "properties": {
           "parameter_item_id": {
@@ -26977,7 +27164,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -26991,7 +27178,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -27266,7 +27453,7 @@
           },
           "model_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/ModelMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
             "title": "Model Mapping"
@@ -27280,7 +27467,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -28624,7 +28811,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -28931,7 +29118,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -29325,7 +29512,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -29579,7 +29766,7 @@
           },
           "department_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/DepartmentMappingItem"
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
             },
             "type": "object",
             "title": "Department Mapping"
@@ -29901,6 +30088,184 @@
         ],
         "title": "AttemptHistoryRow",
         "description": "Attempt history row - shared across dashboard, home, reports, and practice history endpoints."
+      },
+      "app__utils__schema__DepartmentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "persona_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Ids"
+          },
+          "document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Ids"
+          },
+          "rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Ids"
+          },
+          "parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ids"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
+          },
+          "agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Ids"
+          },
+          "staff_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Ids"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DepartmentMappingItem",
+        "description": "Department mapping item - extends MappingItem with optional entity ID arrays"
+      },
+      "app__utils__schema__ModelMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ModelMappingItem",
+        "description": "Model mapping item - extends MappingItem"
       },
       "app__utils__schema__StandardGroupMappingItem": {
         "properties": {

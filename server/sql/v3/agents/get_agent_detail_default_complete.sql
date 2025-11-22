@@ -7,15 +7,26 @@ primary_department_id AS (
     WHERE profile_id = $1::uuid AND is_primary = TRUE
     LIMIT 1
 ),
+user_departments_for_models AS (
+    SELECT DISTINCT pd.department_id
+    FROM profile_departments pd
+    WHERE pd.profile_id = $1::uuid
+),
 valid_models AS (
+    -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
-        id::text as model_id,
-        name,
-        COALESCE(description, '') as description,
-        active
-    FROM models
-    WHERE active = true
-    ORDER BY name
+        m.id::text as model_id,
+        m.name,
+        COALESCE(m.description, '') as description,
+        m.active
+    FROM models m
+    LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
+    WHERE m.active = true
+    GROUP BY m.id, m.name, m.description, m.active
+    HAVING 
+        COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments_for_models)) > 0
+        OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
+    ORDER BY m.name
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description

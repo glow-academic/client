@@ -3713,11 +3713,11 @@ export interface components {
             agents: components["schemas"]["AgentItem"][];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
         };
         /** AggregatedResults */
@@ -4464,7 +4464,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping?: {
@@ -4472,7 +4472,7 @@ export interface components {
             } | null;
             /** Department Mapping For Staff */
             department_mapping_for_staff?: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             } | null;
         };
         /**
@@ -4506,7 +4506,7 @@ export interface components {
             available_profiles: components["schemas"]["app__api__v3__cohorts__detail__StaffItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -4680,7 +4680,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Profile Options */
             profile_options: {
@@ -4942,6 +4942,10 @@ export interface components {
             input_ppm: number;
             /** Output Ppm */
             output_ppm: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Key Id */
+            key_id?: string | null;
         };
         /**
          * CreateModelResponse
@@ -5263,7 +5267,7 @@ export interface components {
             staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -5821,36 +5825,6 @@ export interface components {
             profileId: string;
         };
         /**
-         * DepartmentMappingItem
-         * @description Department mapping item - extends MappingItem with optional entity ID arrays
-         */
-        DepartmentMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Staff Ids */
-            staff_ids?: string[] | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-        };
-        /**
          * DepartmentsListRequest
          * @description Request for departments list.
          */
@@ -5899,7 +5873,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
@@ -5971,7 +5945,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
@@ -6059,7 +6033,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Parameter Mapping */
             parameter_mapping: {
@@ -7080,6 +7054,28 @@ export interface components {
             provider_mapping: {
                 [key: string]: components["schemas"]["ProviderMappingItem"];
             };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__detail_default__DepartmentMappingItem"];
+            };
+            /** Valid Model Ids */
+            valid_model_ids: string[];
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__detail_default__ModelMappingItem"];
+            };
+            /** Valid Key Ids */
+            valid_key_ids: string[];
+            /** Key Mapping */
+            key_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__detail_default__KeyMappingItem"];
+            };
+            /** User Role */
+            user_role: string;
+            /** Primary Department Id */
+            primary_department_id: string | null;
         };
         /** ModelDetailRequest */
         ModelDetailRequest: {
@@ -7112,6 +7108,22 @@ export interface components {
             provider_mapping: {
                 [key: string]: components["schemas"]["ProviderMappingItem"];
             };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__detail__DepartmentMappingItem"];
+            };
+            /** Department Ids */
+            department_ids: string[];
+            /** Valid Key Ids */
+            valid_key_ids: string[];
+            /** Key Mapping */
+            key_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__detail__KeyMappingItem"];
+            };
+            /** Default Key Id */
+            default_key_id: string | null;
         };
         /** ModelItem */
         ModelItem: {
@@ -7139,16 +7151,6 @@ export interface components {
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
-        };
-        /**
-         * ModelMappingItem
-         * @description Model mapping item - extends MappingItem
-         */
-        ModelMappingItem: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
         };
         /**
          * ModelMappingWithPricing
@@ -7578,11 +7580,11 @@ export interface components {
             };
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Scenario Options */
             scenario_options: {
@@ -7725,7 +7727,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -8582,7 +8584,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
         };
         /**
@@ -8717,7 +8719,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Simulation Mapping */
             simulation_mapping: {
@@ -8997,7 +8999,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Persona Options */
             persona_options: {
@@ -9067,7 +9069,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
         };
         /**
@@ -9381,7 +9383,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Cohort Mapping */
             cohort_mapping: {
@@ -9501,7 +9503,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
@@ -9861,6 +9863,10 @@ export interface components {
             input_ppm: number;
             /** Output Ppm */
             output_ppm: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Key Id */
+            key_id?: string | null;
         };
         /**
          * UpdateModelResponse
@@ -10255,7 +10261,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Department Prompt Links */
             department_prompt_links: {
@@ -10269,7 +10275,7 @@ export interface components {
             debug_info: components["schemas"]["app__api__v3__agents__detail__DebugInfoItem"][];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -10340,7 +10346,7 @@ export interface components {
             valid_department_ids: string[];
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Department Prompt Links */
             department_prompt_links: {
@@ -10358,7 +10364,7 @@ export interface components {
             }[];
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -10567,10 +10573,50 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Valid Model Ids */
+            valid_model_ids: string[];
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__departments__detail__ModelMappingItem"];
+            };
+            /** Valid Key Ids */
+            valid_key_ids: string[];
+            /** Key Mapping */
+            key_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__departments__detail__KeyMappingItem"];
+            };
+            /** Model Key Mapping */
+            model_key_mapping: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * KeyMappingItem
+         * @description Key mapping item.
+         */
+        app__api__v3__departments__detail__KeyMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Active */
+            active: boolean;
+        };
+        /**
+         * ModelMappingItem
+         * @description Model mapping item.
+         */
+        app__api__v3__departments__detail__ModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * StaffItem
@@ -10671,7 +10717,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
         };
         /**
@@ -10822,6 +10868,49 @@ export interface components {
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
         };
+        /** DepartmentMappingItem */
+        app__api__v3__models__detail__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** KeyMappingItem */
+        app__api__v3__models__detail__KeyMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Active */
+            active: boolean;
+        };
+        /** DepartmentMappingItem */
+        app__api__v3__models__detail_default__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** KeyMappingItem */
+        app__api__v3__models__detail_default__KeyMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Key Masked */
+            key_masked: string;
+            /** Active */
+            active: boolean;
+        };
+        /** ModelMappingItem */
+        app__api__v3__models__detail_default__ModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
         /** ParameterItemDetail */
         app__api__v3__parameters__detail__ParameterItemDetail: {
             /** Parameter Item Id */
@@ -10939,7 +11028,7 @@ export interface components {
             };
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -10947,7 +11036,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
@@ -11041,7 +11130,7 @@ export interface components {
             };
             /** Model Mapping */
             model_mapping: {
-                [key: string]: components["schemas"]["ModelMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Reasoning Mapping */
             reasoning_mapping: {
@@ -11049,7 +11138,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail_default__DebugInfoItem"][];
@@ -11513,7 +11602,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Problem Statement Mapping */
             problem_statement_mapping: {
@@ -11629,7 +11718,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Problem Statement Mapping */
             problem_statement_mapping: {
@@ -11761,7 +11850,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
@@ -11853,7 +11942,7 @@ export interface components {
             };
             /** Department Mapping */
             department_mapping: {
-                [key: string]: components["schemas"]["DepartmentMappingItem"];
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Parameter Item Mapping */
             parameter_item_mapping: {
@@ -11945,6 +12034,46 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
+        };
+        /**
+         * DepartmentMappingItem
+         * @description Department mapping item - extends MappingItem with optional entity ID arrays
+         */
+        app__utils__schema__DepartmentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Staff Ids */
+            staff_ids?: string[] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+        };
+        /**
+         * ModelMappingItem
+         * @description Model mapping item - extends MappingItem
+         */
+        app__utils__schema__ModelMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
         };
         /**
          * StandardGroupMappingItem

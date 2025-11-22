@@ -15,8 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useProfile } from "@/contexts/profile-context";
+import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { Power, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -36,6 +40,8 @@ interface FormData {
   customModel?: boolean;
   inputPpm?: string; // USD per 1M input tokens
   outputPpm?: string; // USD per 1M output tokens
+  departmentIds?: string[] | null;
+  keyId?: string | null;
 }
 
 // Type-only import from server pages
@@ -45,9 +51,15 @@ import type {
   UpdateModelOut,
 } from "@/app/(main)/engine/models/[modelId]/page";
 import type {
+  CreateKeyIn,
+  CreateKeyOut,
   CreateModelIn,
   CreateModelOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
   ModelDetailDefaultOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 } from "@/app/(main)/engine/models/new/page";
 
 export interface ModelProps {
@@ -58,6 +70,10 @@ export interface ModelProps {
   modelDetail?: ModelDetailOut;
   createModelAction?: (input: CreateModelIn) => Promise<CreateModelOut>;
   updateModelAction?: (input: UpdateModelIn) => Promise<UpdateModelOut>;
+  // Key management actions
+  createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
+  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
+  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
 }
 
 export default function Model({
@@ -66,12 +82,26 @@ export default function Model({
   modelDetail: serverModelDetail,
   createModelAction,
   updateModelAction,
+  createKeyAction,
+  decryptKeyAction,
+  updateKeyAction,
 }: ModelProps) {
   const router = useRouter();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { effectiveProfile } = useProfile();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
+
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId || null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -82,8 +112,10 @@ export default function Model({
       customModel: false,
       inputPpm: "0",
       outputPpm: "0",
+      departmentIds: defaultDepartmentIds,
+      keyId: null,
     }),
-    []
+    [defaultDepartmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>({});
@@ -110,6 +142,63 @@ export default function Model({
     }
     await updateModelAction({ body });
   };
+
+  // Store image_model from modelDetail for mutations
+  const imageModel = modelDetail?.image_model ?? false;
+
+  // Get provider mapping and valid IDs
+  const providerMapping = useMemo(() => {
+    if (isEditMode && modelDetail) {
+      return modelDetail.provider_mapping || {};
+    }
+    if (!isEditMode && modelDetailDefault) {
+      return modelDetailDefault.provider_mapping || {};
+    }
+    return {};
+  }, [isEditMode, modelDetail, modelDetailDefault]);
+
+  const validProviderIds = useMemo(() => {
+    if (isEditMode && modelDetail) {
+      return modelDetail.valid_provider_ids || [];
+    }
+    if (!isEditMode && modelDetailDefault) {
+      return modelDetailDefault.valid_provider_ids || [];
+    }
+    return [];
+  }, [isEditMode, modelDetail, modelDetailDefault]);
+
+  // Get department and key mappings
+  const modelDataForMappings = isEditMode ? modelDetail : modelDetailDefault;
+  const departmentMapping = useMemo(() => {
+    return modelDataForMappings?.department_mapping || {};
+  }, [modelDataForMappings]);
+
+  const validDepartmentIds = useMemo(() => {
+    return modelDataForMappings?.valid_department_ids || [];
+  }, [modelDataForMappings]);
+
+  const keyMapping = useMemo(() => {
+    return modelDataForMappings?.key_mapping || {};
+  }, [modelDataForMappings]);
+
+  const validKeyIds = useMemo(() => {
+    return modelDataForMappings?.valid_key_ids || [];
+  }, [modelDataForMappings]);
+
+  // Get current department_ids and key_id for edit mode
+  const currentDepartmentIds = useMemo(() => {
+    if (isEditMode && modelDetail && "department_ids" in modelDetail) {
+      return (modelDetail.department_ids as string[]) || [];
+    }
+    return defaultDepartmentIds;
+  }, [isEditMode, modelDetail, defaultDepartmentIds]);
+
+  const currentKeyId = useMemo(() => {
+    if (isEditMode && modelDetail && "default_key_id" in modelDetail) {
+      return (modelDetail.default_key_id as string | null) || null;
+    }
+    return null;
+  }, [isEditMode, modelDetail]);
 
   // Set breadcrumb context for model (edit mode only)
   useEffect(() => {
@@ -145,36 +234,20 @@ export default function Model({
         customModel: modelDetail.custom_model,
         inputPpm: modelDetail.input_ppm?.toString?.() ?? "0",
         outputPpm: modelDetail.output_ppm?.toString?.() ?? "0",
+        departmentIds: currentDepartmentIds,
+        keyId: currentKeyId,
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
       setFormData(initialFormData);
     }
-  }, [isEditMode, modelDetail, initialFormData]);
-
-  // Store image_model from modelDetail for mutations
-  const imageModel = modelDetail?.image_model ?? false;
-
-  // Get provider mapping and valid IDs
-  const providerMapping = useMemo(() => {
-    if (isEditMode && modelDetail) {
-      return modelDetail.provider_mapping || {};
-    }
-    if (!isEditMode && modelDetailDefault) {
-      return modelDetailDefault.provider_mapping || {};
-    }
-    return {};
-  }, [isEditMode, modelDetail, modelDetailDefault]);
-
-  const validProviderIds = useMemo(() => {
-    if (isEditMode && modelDetail) {
-      return modelDetail.valid_provider_ids || [];
-    }
-    if (!isEditMode && modelDetailDefault) {
-      return modelDetailDefault.valid_provider_ids || [];
-    }
-    return [];
-  }, [isEditMode, modelDetail, modelDetailDefault]);
+  }, [
+    isEditMode,
+    modelDetail,
+    initialFormData,
+    currentDepartmentIds,
+    currentKeyId,
+  ]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -244,6 +317,8 @@ export default function Model({
           image_model: imageModel,
           input_ppm: inputPpmNum,
           output_ppm: outputPpmNum,
+          department_ids: formData.departmentIds || null,
+          key_id: formData.keyId || null,
         });
         resetFormAndState();
         toast.success("Model updated successfully!");
@@ -258,6 +333,8 @@ export default function Model({
           image_model: false, // Default to false for new models
           input_ppm: inputPpmNum,
           output_ppm: outputPpmNum,
+          department_ids: formData.departmentIds || null,
+          key_id: formData.keyId || null,
         });
         resetFormAndState();
         toast.success("Model created successfully!");
@@ -318,9 +395,7 @@ export default function Model({
               mapping={providerMapping}
               validIds={validProviderIds}
               selectedIds={formData.providerId ? [formData.providerId] : []}
-              onSelect={(ids) =>
-                handleInputChange("providerId", ids[0] || "")
-              }
+              onSelect={(ids) => handleInputChange("providerId", ids[0] || "")}
               placeholder="Select a provider..."
               hideSelectedChips={true}
               buttonClassName={errors.providerId ? "border-destructive" : ""}
@@ -330,6 +405,54 @@ export default function Model({
             <p className="text-sm text-destructive">{errors.providerId}</p>
           )}
         </div>
+
+        {/* Department Selection */}
+        {validDepartmentIds && validDepartmentIds.length > 1 ? (
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            {formData?.departmentIds !== undefined ? (
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={validDepartmentIds}
+                selectedIds={formData.departmentIds || []}
+                onSelect={(ids) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    departmentIds: ids,
+                  }))
+                }
+                placeholder="All Departments"
+                multiSelect={true}
+                triggerProps={{ "data-testid": "picker-department" }}
+              />
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* Key Selection */}
+        {validKeyIds && validKeyIds.length > 0 ? (
+          <div className="space-y-2">
+            <Label htmlFor="keyId">API Key</Label>
+            {formData?.keyId !== undefined ? (
+              <KeyPicker
+                mapping={keyMapping}
+                validIds={validKeyIds}
+                selectedIds={formData.keyId ? [formData.keyId] : []}
+                onSelect={(ids) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    keyId: ids[0] || null,
+                  }))
+                }
+                multiSelect={false}
+                keyType="api"
+                {...(createKeyAction && { createKeyAction })}
+                {...(decryptKeyAction && { decryptKeyAction })}
+                {...(updateKeyAction && { updateKeyAction })}
+              />
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Active and Custom Model Switches */}
         <div className="space-y-2 pt-2">

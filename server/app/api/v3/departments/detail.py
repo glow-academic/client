@@ -50,6 +50,22 @@ class StaffItem(BaseModel):
     can_remove: bool
 
 
+class ModelMappingItem(BaseModel):
+    """Model mapping item."""
+
+    name: str
+    description: str
+
+
+class KeyMappingItem(BaseModel):
+    """Key mapping item."""
+
+    name: str
+    description: str
+    key_masked: str
+    active: bool
+
+
 class DepartmentDetailResponse(BaseModel):
     """Response for department detail."""
 
@@ -66,6 +82,11 @@ class DepartmentDetailResponse(BaseModel):
     cohort_mapping: dict[str, CohortMappingItem]
     department_mapping: dict[str, DepartmentMappingItem]
     valid_department_ids: list[str]
+    valid_model_ids: list[str]
+    model_mapping: dict[str, ModelMappingItem]
+    valid_key_ids: list[str]
+    key_mapping: dict[str, KeyMappingItem]
+    model_key_mapping: dict[str, str]  # model_id -> key_id
 
 
 router = APIRouter()
@@ -206,6 +227,56 @@ async def get_department_detail(
         # Get valid_department_ids from department_mapping keys
         valid_department_ids = list(department_mapping.keys())
 
+        # Parse model mapping from JSONB
+        model_mapping: dict[str, ModelMappingItem] = {}
+        model_mapping_data = dept_row.get("model_mapping")
+        if isinstance(model_mapping_data, str):
+            model_mapping_data = json.loads(model_mapping_data)
+        if model_mapping_data and isinstance(model_mapping_data, dict):
+            for mid, mdata in model_mapping_data.items():
+                if isinstance(mdata, dict):
+                    model_mapping[mid] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", ""),
+                    )
+
+        # Parse valid_model_ids from array
+        valid_model_ids: list[str] = []
+        valid_model_ids_raw = dept_row.get("valid_model_ids")
+        if valid_model_ids_raw and isinstance(valid_model_ids_raw, (list, tuple)):
+            valid_model_ids = [str(mid) for mid in valid_model_ids_raw if mid]
+
+        # Parse key mapping from JSONB
+        key_mapping: dict[str, KeyMappingItem] = {}
+        key_mapping_data = dept_row.get("key_mapping")
+        if isinstance(key_mapping_data, str):
+            key_mapping_data = json.loads(key_mapping_data)
+        if key_mapping_data and isinstance(key_mapping_data, dict):
+            for kid, kdata in key_mapping_data.items():
+                if isinstance(kdata, dict):
+                    key_mapping[kid] = KeyMappingItem(
+                        name=kdata.get("name", ""),
+                        description=kdata.get("description", ""),
+                        key_masked=kdata.get("key_masked", ""),
+                        active=kdata.get("active", True),
+                    )
+
+        # Parse valid_key_ids from array
+        valid_key_ids: list[str] = []
+        valid_key_ids_raw = dept_row.get("valid_key_ids")
+        if valid_key_ids_raw and isinstance(valid_key_ids_raw, (list, tuple)):
+            valid_key_ids = [str(kid) for kid in valid_key_ids_raw if kid]
+
+        # Parse model_key_mapping from JSONB
+        model_key_mapping: dict[str, str] = {}
+        model_key_mapping_data = dept_row.get("model_key_mapping")
+        if isinstance(model_key_mapping_data, str):
+            model_key_mapping_data = json.loads(model_key_mapping_data)
+        if model_key_mapping_data and isinstance(model_key_mapping_data, dict):
+            for mid, kid in model_key_mapping_data.items():
+                if kid:
+                    model_key_mapping[mid] = str(kid)
+
         # Ensure can_delete is stricter than can_edit
         can_edit = dept_row["can_edit"]
         can_delete = dept_row["can_delete"] and can_edit
@@ -224,6 +295,11 @@ async def get_department_detail(
             cohort_mapping=cohort_mapping,
             department_mapping=department_mapping,
             valid_department_ids=valid_department_ids,
+            valid_model_ids=valid_model_ids,
+            model_mapping=model_mapping,
+            valid_key_ids=valid_key_ids,
+            key_mapping=key_mapping,
+            model_key_mapping=model_key_mapping,
         )
 
         # Cache response

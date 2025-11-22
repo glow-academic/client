@@ -157,6 +157,107 @@ department_mapping_data AS (
     WHERE (d.id = $1::uuid OR d.id IN (SELECT department_id FROM all_department_ids))
     AND d.active = true
 ),
+department_models AS (
+    -- Get all models available to this department (default + department-specific)
+    SELECT DISTINCT
+        m.id::text as model_id,
+        m.name,
+        COALESCE(m.description, '') as description,
+        m.active
+    FROM models m
+    LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
+    WHERE m.active = true
+    AND (
+        md.department_id = $1::uuid
+        OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
+    )
+    ORDER BY m.name
+),
+department_keys AS (
+    -- Get all API keys available to this department (default + department-specific)
+    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
+    FROM keys k
+    WHERE k.type = 'api' AND k.active = true
+    UNION
+    -- Also include department-specific keys for this department
+    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
+    FROM keys k
+    JOIN model_department_keys mdk ON mdk.key_id = k.id AND mdk.active = true
+    WHERE k.type = 'api' AND k.active = true
+    AND mdk.department_id = $1::uuid
+),
+model_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            dm.model_id,
+            jsonb_build_object(
+                'name', dm.name,
+                'description', dm.description
+            )
+        ),
+        '{}'::jsonb
+    ) as model_mapping,
+    array_agg(dm.model_id ORDER BY dm.name) as model_ids
+    FROM department_models dm
+),
+key_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            dk.key_id,
+            jsonb_build_object(
+                'name', dk.name,
+                'description', CASE 
+                    WHEN LENGTH(dk.key) > 4 THEN LEFT(dk.key, 4) || '****'
+                    ELSE '****'
+                END,
+                'key_masked', CASE 
+                    WHEN LENGTH(dk.key) > 4 THEN LEFT(dk.key, 4) || '****'
+                    ELSE '****'
+                END,
+                'active', dk.active
+            )
+        ) FILTER (WHERE dk.key_id IS NOT NULL),
+        '{}'::jsonb
+    ) as key_mapping,
+    array_agg(dk.key_id ORDER BY dk.name) as key_ids
+    FROM department_keys dk
+),
+model_key_associations AS (
+    -- Get model-key associations for this department (default + department-specific)
+    SELECT 
+        m.id::text as model_id,
+        COALESCE(
+            -- Prefer department-specific key if exists
+            (SELECT mdk.key_id::text
+             FROM model_department_keys mdk
+             WHERE mdk.model_id = m.id 
+             AND mdk.department_id = $1::uuid 
+             AND mdk.active = true
+             LIMIT 1),
+            -- Otherwise use default key
+            (SELECT mk.key_id::text
+             FROM model_keys mk
+             WHERE mk.model_id = m.id 
+             AND mk.active = true
+             LIMIT 1)
+        ) as key_id
+    FROM models m
+    WHERE m.active = true
+    AND (
+        EXISTS (SELECT 1 FROM model_departments md WHERE md.model_id = m.id AND md.department_id = $1::uuid AND md.active = true)
+        OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
+    )
+),
+model_key_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            mka.model_id,
+            mka.key_id
+        ) FILTER (WHERE mka.key_id IS NOT NULL),
+        '{}'::jsonb
+    ) as model_key_mapping
+    FROM model_key_associations mka
+),
 department_staff AS (
     SELECT DISTINCT ON (p.id)
         p.id as profile_id,
@@ -287,7 +388,12 @@ SELECT
      FROM department_staff ds
     ) as staff,
     cmd.cohort_mapping,
-    dmd.department_mapping
+    dmd.department_mapping,
+    COALESCE(mmd.model_mapping, '{}'::jsonb) as model_mapping,
+    COALESCE(mmd.model_ids, ARRAY[]::text[]) as valid_model_ids,
+    COALESCE(kmd.key_mapping, '{}'::jsonb) as key_mapping,
+    COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
+    COALESCE(mkmd.model_key_mapping, '{}'::jsonb) as model_key_mapping
 FROM departments d
 LEFT JOIN department_price_spent dps ON dps.department_id = d.id
 LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
@@ -296,6 +402,9 @@ CROSS JOIN user_profile up
 CROSS JOIN user_department_access uda
 CROSS JOIN cohort_mapping_data cmd
 CROSS JOIN department_mapping_data dmd
+CROSS JOIN model_mapping_data mmd
+CROSS JOIN key_mapping_data kmd
+CROSS JOIN model_key_mapping_data mkmd
 WHERE d.id = $1
 AND uda.has_access = true
 

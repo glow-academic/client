@@ -26,6 +26,18 @@ class ProviderMappingItem(BaseModel):
     description: str
 
 
+class DepartmentMappingItem(BaseModel):
+    name: str
+    description: str
+
+
+class KeyMappingItem(BaseModel):
+    name: str
+    description: str
+    key_masked: str
+    active: bool
+
+
 class ModelDetailResponse(BaseModel):
     name: str
     description: str
@@ -37,6 +49,12 @@ class ModelDetailResponse(BaseModel):
     provider_id: str
     valid_provider_ids: list[str]
     provider_mapping: dict[str, ProviderMappingItem]
+    valid_department_ids: list[str]
+    department_mapping: dict[str, DepartmentMappingItem]
+    department_ids: list[str]
+    valid_key_ids: list[str]
+    key_mapping: dict[str, KeyMappingItem]
+    default_key_id: str | None
 
 
 router = APIRouter()
@@ -67,9 +85,9 @@ async def get_model_detail(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        sql_query = load_sql("sql/v3/models/detail.sql")
-        sql_params = (request.modelId,)
-        model = await conn.fetchrow(sql_query, request.modelId)
+        sql_query = load_sql("sql/v3/models/get_model_detail_complete.sql")
+        sql_params = (request.modelId, request.profileId)
+        model = await conn.fetchrow(sql_query, request.modelId, request.profileId)
 
         if not model:
             raise HTTPException(
@@ -95,6 +113,54 @@ async def get_model_detail(
                         description=pdata.get("description", ""),
                     )
 
+        # Parse valid_department_ids from array
+        valid_department_ids: list[str] = []
+        valid_department_ids_raw = model.get("valid_department_ids")
+        if valid_department_ids_raw and isinstance(valid_department_ids_raw, (list, tuple)):
+            valid_department_ids = [str(did) for did in valid_department_ids_raw if did]
+
+        # Parse department_mapping from JSONB
+        department_mapping: dict[str, DepartmentMappingItem] = {}
+        department_mapping_data = model.get("department_mapping")
+        if isinstance(department_mapping_data, str):
+            department_mapping_data = json.loads(department_mapping_data)
+        if department_mapping_data and isinstance(department_mapping_data, dict):
+            for dept_id, ddata in department_mapping_data.items():
+                if isinstance(ddata, dict):
+                    department_mapping[dept_id] = DepartmentMappingItem(
+                        name=ddata.get("name", ""),
+                        description=ddata.get("description", ""),
+                    )
+
+        # Parse department_ids from array
+        department_ids: list[str] = []
+        department_ids_raw = model.get("department_ids")
+        if department_ids_raw and isinstance(department_ids_raw, (list, tuple)):
+            department_ids = [str(did) for did in department_ids_raw if did]
+
+        # Parse valid_key_ids from array
+        valid_key_ids: list[str] = []
+        valid_key_ids_raw = model.get("valid_key_ids")
+        if valid_key_ids_raw and isinstance(valid_key_ids_raw, (list, tuple)):
+            valid_key_ids = [str(kid) for kid in valid_key_ids_raw if kid]
+
+        # Parse key_mapping from JSONB
+        key_mapping: dict[str, KeyMappingItem] = {}
+        key_mapping_data = model.get("key_mapping")
+        if isinstance(key_mapping_data, str):
+            key_mapping_data = json.loads(key_mapping_data)
+        if key_mapping_data and isinstance(key_mapping_data, dict):
+            for key_id, kdata in key_mapping_data.items():
+                if isinstance(kdata, dict):
+                    key_mapping[key_id] = KeyMappingItem(
+                        name=kdata.get("name", ""),
+                        description=kdata.get("description", ""),
+                        key_masked=kdata.get("key_masked", ""),
+                        active=kdata.get("active", True),
+                    )
+
+        default_key_id = str(model.get("default_key_id")) if model.get("default_key_id") else None
+
         response_data = ModelDetailResponse(
             name=model["name"],
             description=model["description"],
@@ -106,6 +172,12 @@ async def get_model_detail(
             provider_id=str(model["provider_id"]),
             valid_provider_ids=valid_provider_ids,
             provider_mapping=provider_mapping,
+            valid_department_ids=valid_department_ids,
+            department_mapping=department_mapping,
+            department_ids=department_ids,
+            valid_key_ids=valid_key_ids,
+            key_mapping=key_mapping,
+            default_key_id=default_key_id,
         )
 
         # Cache response
