@@ -158,9 +158,14 @@ async def test_connect_guest_profile_id_resolution(
 
     # Create a new default guest profile
     guest_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, email, role, default_profile) "
-        "VALUES('Guest', 'User', 'redacted@purdue.edu', 'guest', true) "
+        "INSERT INTO profiles(first_name, last_name, role, default_profile) "
+        "VALUES('Guest', 'User', 'guest', true) "
         "RETURNING id"
+    )
+    await db.execute(
+        "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+        "VALUES($1, 'redacted@purdue.edu', true, true)",
+        guest_id
     )
 
     sid = "test_sid_guest"

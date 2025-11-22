@@ -78,7 +78,7 @@ scenario_full_data AS (
         pr.id as provider_id,
         pr.name as provider_name,
         COALESCE(pe.base_url, '') as base_url,
-        pr.api_key,
+        k.key as api_key,
         -- Documents (aggregated)
         COALESCE(
             json_agg(
@@ -119,6 +119,8 @@ scenario_full_data AS (
     LEFT JOIN models m ON m.id = p.model_id
     LEFT JOIN providers pr ON pr.id = m.provider_id
     LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+    LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
+    LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
     LEFT JOIN documents d ON d.id = sd.document_id
     LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
@@ -128,7 +130,7 @@ scenario_full_data AS (
     GROUP BY s.id, s.name, sps.problem_statement, s.active, 
              s.generated, p.id, p.name, pr_prompt.system_prompt, 
              p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
-             pr.id, pr.name, pr.api_key, pe.base_url
+             pr.id, pr.name, k.key, pe.base_url
 ),
 -- Create simulation chat (without attempt_id - uses junction table)
 new_chat AS (

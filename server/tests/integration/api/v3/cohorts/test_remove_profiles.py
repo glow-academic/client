@@ -26,8 +26,13 @@ async def test_remove_profiles_from_cohort(
     )
     if not profile_id1:
         profile_id1 = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, email, role, active) "
-            "VALUES ('Test', 'User1', 'redacted@purdue.edu', 'guest', true) RETURNING id"
+            "INSERT INTO profiles(first_name, last_name, role, active) "
+            "VALUES ('Test', 'User1', 'guest', true) RETURNING id"
+        )
+        await db.execute(
+            "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+            "VALUES($1, 'redacted@purdue.edu', true, true)",
+            profile_id1
         )
 
     profile_id2 = await db.fetchval(
@@ -37,8 +42,13 @@ async def test_remove_profiles_from_cohort(
     )
     if not profile_id2:
         profile_id2 = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, email, role, active) "
-            "VALUES ('Test', 'User2', 'redacted@purdue.edu', 'guest', true) RETURNING id"
+            "INSERT INTO profiles(first_name, last_name, role, active) "
+            "VALUES ('Test', 'User2', 'guest', true) RETURNING id"
+        )
+        await db.execute(
+            "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+            "VALUES($1, 'redacted@purdue.edu', true, true)",
+            profile_id2
         )
 
     # Add profiles to cohort

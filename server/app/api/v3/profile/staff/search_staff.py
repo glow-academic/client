@@ -184,7 +184,18 @@ async def search_staff(
                     'first_name', p.first_name,
                     'last_name', p.last_name,
                     'emails', COALESCE(
-                        ARRAY(SELECT pe.email FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true ORDER BY pe.is_primary DESC, pe.created_at),
+                        ARRAY(
+                            SELECT email FROM (
+                                SELECT DISTINCT ON (pe2.email) 
+                                    pe2.email,
+                                    pe2.is_primary,
+                                    pe2.created_at
+                                FROM profile_emails pe2 
+                                WHERE pe2.profile_id = p.id AND pe2.active = true 
+                                ORDER BY pe2.email, pe2.is_primary DESC, pe2.created_at
+                            ) distinct_emails
+                            ORDER BY is_primary DESC, created_at
+                        ),
                         ARRAY[]::text[]
                     ),
                     'primary_email', (SELECT pe.email FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.is_primary = true AND pe.active = true LIMIT 1),

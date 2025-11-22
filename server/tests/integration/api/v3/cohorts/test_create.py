@@ -35,13 +35,21 @@ async def test_create_cohort(
         )
 
     # Get a profile ID (not the superadmin)
+    # Find a profile that doesn't have the superadmin email
     other_profile_id = await db.fetchval(
-        "SELECT id FROM profiles WHERE email != 'redacted@purdue.edu' LIMIT 1"
+        "SELECT p.id FROM profiles p "
+        "WHERE NOT EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.email = 'redacted@purdue.edu' AND pe.active = true) "
+        "LIMIT 1"
     )
     if not other_profile_id:
         other_profile_id = await db.fetchval(
-            "INSERT INTO profiles(first_name, last_name, email, role, active) "
-            "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
+            "INSERT INTO profiles(first_name, last_name, role, active) "
+            "VALUES ('Test', 'User', 'guest', true) RETURNING id"
+        )
+        await db.execute(
+            "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+            "VALUES($1, 'redacted@purdue.edu', true, true)",
+            other_profile_id
         )
 
     response = await client.post(

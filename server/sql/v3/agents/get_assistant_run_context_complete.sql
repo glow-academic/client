@@ -107,7 +107,7 @@ SELECT
     pr.id::text as provider_id,
     pr.name as provider_name,
     COALESCE(pe.base_url, '') as base_url,
-    pr.api_key,
+    k.key as api_key,
     
     -- Aggregated messages and tool_calls
     COALESCE(ma.messages, '[]'::jsonb) as messages,
@@ -125,6 +125,8 @@ INNER JOIN agents a ON a.id = ba.agent_id
 INNER JOIN models m ON m.id = a.model_id
 INNER JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 -- Try department-specific prompt first, fall back to default prompt
 LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = $2::uuid AND adp_prompt.active = true
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id

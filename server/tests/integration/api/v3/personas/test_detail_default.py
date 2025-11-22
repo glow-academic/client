@@ -47,8 +47,13 @@ async def test_get_persona_detail_default_not_found(
     """Test getting default persona detail for profile with no department access."""
     # Create a new profile with no department access
     new_profile_id = await db.fetchval(
-        "INSERT INTO profiles (first_name, last_name, email, role, active) "
-        "VALUES ('Test', 'User', 'redacted@purdue.edu', 'guest', true) RETURNING id"
+        "INSERT INTO profiles (first_name, last_name, role, active) "
+        "VALUES ('Test', 'User', 'guest', true) RETURNING id"
+    )
+    await db.execute(
+        "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+        "VALUES($1, 'redacted@purdue.edu', true, true)",
+        new_profile_id
     )
 
     response = await client.post(

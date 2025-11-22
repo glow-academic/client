@@ -86,7 +86,21 @@ staff_data AS (
             'profile_id', p.id::text,
             'first_name', p.first_name,
             'last_name', p.last_name,
-            'emails', ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true),
+            'emails', COALESCE(
+                ARRAY(
+                    SELECT email FROM (
+                        SELECT DISTINCT ON (pe2.email) 
+                            pe2.email,
+                            pe2.is_primary,
+                            pe2.created_at
+                        FROM profile_emails pe2 
+                        WHERE pe2.profile_id = p.id AND pe2.active = true 
+                        ORDER BY pe2.email, pe2.is_primary DESC, pe2.created_at
+                    ) distinct_emails
+                    ORDER BY is_primary DESC, created_at
+                ),
+                ARRAY[]::text[]
+            ),
             'primary_email', (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1),
             'name', p.first_name || ' ' || p.last_name,
             'role', p.role,

@@ -61,7 +61,7 @@ SELECT
     pr.id::text as provider_id,
     pr.name as provider_name,
     COALESCE(pe.base_url, '') as base_url,
-    pr.api_key,
+    k.key as api_key,
     
     -- Chat data
     ac.id::text as chat_id,
@@ -87,6 +87,8 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 INNER JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 INNER JOIN assistant_chats ac ON ac.id = p.chat_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt

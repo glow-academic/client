@@ -54,7 +54,7 @@ SELECT
     pr.id::text as provider_id,
     pr.name as provider_name,
     COALESCE(pe.base_url, '') as base_url,
-    pr.api_key,
+    k.key as api_key,
     
     -- Rate limit data (for default guest profile)
     prl.req_per_day,
@@ -86,11 +86,13 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 INNER JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 LEFT JOIN documents d ON d.id = ANY($1::uuid[])
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 GROUP BY a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
          m.id, m.name, m.custom_model,
-         pr.id, pr.name, pr.api_key, pe.base_url,
+         pr.id, pr.name, k.key, pe.base_url,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 

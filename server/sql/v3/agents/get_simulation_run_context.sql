@@ -96,7 +96,7 @@ SELECT
     pr.id::text as provider_id,
     pr.name as provider_name,
     COALESCE(pe.base_url, '') as base_url,
-    pr.api_key,
+    k.key as api_key,
     
     -- Scenario settings (flags moved from simulations to scenarios)
     s.image_input_enabled,
@@ -143,6 +143,8 @@ LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = pp.prompt_id
 LEFT JOIN models m ON m.id = p.model_id
 LEFT JOIN providers pr ON pr.id = m.provider_id
 LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents d ON d.id = sd.document_id
@@ -155,7 +157,7 @@ GROUP BY sc.id, sc.title, sc.trace_id,
          s.id, sps.problem_statement,
          p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, p.temperature, p.reasoning,
          m.id, m.name, m.custom_model,
-         pr.id, pr.name, pr.api_key, pe.base_url,
+         pr.id, pr.name, k.key, pe.base_url,
          s.image_input_enabled, s.copy_paste_allowed, s.output_guardrail_enabled,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at

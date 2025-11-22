@@ -135,11 +135,14 @@ async def get_profile_context(
                 )
 
         # Parse actual profile from result (with actual_ prefix)
+        actual_emails = result.get("actual_emails") or []
+        actual_emails_list = actual_emails if isinstance(actual_emails, list) else []
         actual_profile = ProfileItem(
             id=str(result["actual_id"]),
             firstName=result["actual_first_name"],
             lastName=result["actual_last_name"],
-            email=result["actual_email"],
+            emails=actual_emails_list,
+            primaryEmail=result.get("actual_primary_email"),
             role=result["actual_role"],
             active=result["actual_active"],
             viewedIntro=result["actual_viewed_intro"],
@@ -164,11 +167,14 @@ async def get_profile_context(
         )
 
         # Parse effective profile from result (unprefixed for backward compatibility)
+        effective_emails = result.get("emails") or []
+        effective_emails_list = effective_emails if isinstance(effective_emails, list) else []
         effective_profile = ProfileItem(
             id=str(result["id"]),
             firstName=result["first_name"],
             lastName=result["last_name"],
-            email=result["email"],
+            emails=effective_emails_list,
+            primaryEmail=result.get("primary_email"),
             role=result["role"],
             active=result["active"],
             viewedIntro=result["viewed_intro"],

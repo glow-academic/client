@@ -61,10 +61,15 @@ async def test_mark_intro_complete_guest_profile_id(
     """Test marking intro complete with guest-profile-id resolution."""
     # Create a default guest profile
     guest_id = await db.fetchval(
-        "INSERT INTO profiles(first_name, last_name, email, role, default_profile, viewed_intro) "
-        "VALUES('Guest', 'User', 'redacted@purdue.edu', 'guest', true, false) "
-        "ON CONFLICT (email) DO UPDATE SET default_profile = true, viewed_intro = false "
+        "INSERT INTO profiles(first_name, last_name, role, default_profile, viewed_intro) "
+        "VALUES('Guest', 'User', 'guest', true, false) "
         "RETURNING id"
+    )
+    await db.execute(
+        "INSERT INTO profile_emails(profile_id, email, is_primary, active) "
+        "VALUES($1, 'redacted@purdue.edu', true, true) "
+        "ON CONFLICT DO NOTHING",
+        guest_id
     )
 
     response = await client.post(

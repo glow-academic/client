@@ -250,7 +250,21 @@ SELECT DISTINCT ON (p.id)
     p.id as profile_id,
     p.first_name,
     p.last_name,
-    ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+    COALESCE(
+        ARRAY(
+            SELECT email FROM (
+                SELECT DISTINCT ON (pe2.email) 
+                    pe2.email,
+                    pe2.is_primary,
+                    pe2.created_at
+                FROM profile_emails pe2 
+                WHERE pe2.profile_id = p.id AND pe2.active = true 
+                ORDER BY pe2.email, pe2.is_primary DESC, pe2.created_at
+            ) distinct_emails
+            ORDER BY is_primary DESC, created_at
+        ),
+        ARRAY[]::text[]
+    ) as emails,
     (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
     p.first_name || ' ' || p.last_name as name,
     p.role,
