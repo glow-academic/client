@@ -27,6 +27,7 @@ from app.api.v3.logs import router as logs_router
 from app.api.v3.models import router as models_router
 from app.api.v3.parameters import router as parameters_router
 from app.api.v3.personas import router as personas_router
+from app.api.v3.prompts import router as prompts_router
 from app.api.v3.practice import router as practice_router
 from app.api.v3.pricing import router as pricing_router
 # ============================================================================
@@ -77,6 +78,7 @@ router.include_router(agents_router)
 router.include_router(keys_router)
 router.include_router(models_router)
 router.include_router(parameters_router)
+router.include_router(prompts_router)
 router.include_router(feedback_router)
 router.include_router(logs_router)
 router.include_router(attempts_router)

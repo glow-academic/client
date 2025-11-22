@@ -3139,6 +3139,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/prompts/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Prompts List
+         * @description Get prompts list with permissions and relationships.
+         */
+        post: operations["get_prompts_list_api_v3_prompts_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/prompts/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Prompt Detail
+         * @description Get prompt detail information.
+         */
+        post: operations["get_prompt_detail_api_v3_prompts_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/prompts/detail-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Prompt Detail Default
+         * @description Get default prompt detail information for new prompt creation.
+         */
+        post: operations["get_prompt_detail_default_api_v3_prompts_detail_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/prompts/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Prompt
+         * @description Create a new prompt.
+         */
+        post: operations["create_prompt_api_v3_prompts_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/prompts/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Prompt
+         * @description Update an existing prompt.
+         */
+        post: operations["update_prompt_api_v3_prompts_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/prompts/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Prompt
+         * @description Delete a prompt.
+         */
+        post: operations["delete_prompt_api_v3_prompts_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/feedback/list": {
         parameters: {
             query?: never;
@@ -5188,6 +5308,28 @@ export interface components {
             message: string;
         };
         /**
+         * CreatePromptRequest
+         * @description Request to create prompt.
+         */
+        CreatePromptRequest: {
+            /** System Prompt */
+            system_prompt: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /**
+         * CreatePromptResponse
+         * @description Response from create prompt.
+         */
+        CreatePromptResponse: {
+            /** Success */
+            success: boolean;
+            /** Promptid */
+            promptId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * CreateRubricRequest
          * @description Request for creating a rubric.
          */
@@ -5831,6 +5973,24 @@ export interface components {
          * @description Response from delete persona.
          */
         DeletePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeletePromptRequest
+         * @description Request to delete prompt.
+         */
+        DeletePromptRequest: {
+            /** Promptid */
+            promptId: string;
+        };
+        /**
+         * DeletePromptResponse
+         * @description Response from delete prompt.
+         */
+        DeletePromptResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -8406,6 +8566,134 @@ export interface components {
             /** Score */
             score: number;
         };
+        /**
+         * PromptDetailDefaultRequest
+         * @description Request for default prompt detail.
+         */
+        PromptDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * PromptDetailRequest
+         * @description Request for prompt detail.
+         */
+        PromptDetailRequest: {
+            /** Promptid */
+            promptId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * PromptDetailResponse
+         * @description Response for prompt detail endpoint.
+         */
+        PromptDetailResponse: {
+            /** Prompt Id */
+            prompt_id: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Agent Ids */
+            agent_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+        };
+        /**
+         * PromptItem
+         * @description Prompt item for list view.
+         */
+        PromptItem: {
+            /** Prompt Id */
+            prompt_id: string;
+            /** System Prompt Preview */
+            system_prompt_preview: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Agent Ids */
+            agent_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+        };
+        /**
+         * PromptsListRequest
+         * @description Request for prompts list.
+         */
+        PromptsListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * PromptsListResponse
+         * @description Response for prompts list.
+         */
+        PromptsListResponse: {
+            /** Prompts */
+            prompts: components["schemas"]["PromptItem"][];
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
+            /** Agent Options */
+            agent_options: {
+                [key: string]: string;
+            }[];
+            /** Persona Options */
+            persona_options: {
+                [key: string]: string;
+            }[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Persona Mapping */
+            persona_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+        };
         /** ProviderMappingItem */
         ProviderMappingItem: {
             /** Name */
@@ -10193,6 +10481,30 @@ export interface components {
             reqPerDay?: number | null;
             /** Lastactive */
             lastActive?: string | null;
+        };
+        /**
+         * UpdatePromptRequest
+         * @description Request to update prompt.
+         */
+        UpdatePromptRequest: {
+            /** Promptid */
+            promptId: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
+        };
+        /**
+         * UpdatePromptResponse
+         * @description Response from update prompt.
+         */
+        UpdatePromptResponse: {
+            /** Success */
+            success: boolean;
+            /** Promptid */
+            promptId: string;
+            /** Message */
+            message: string;
         };
         /**
          * UpdateRubricRequest
@@ -17116,6 +17428,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateParameterItemResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prompts_list_api_v3_prompts_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptsListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptsListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prompt_detail_api_v3_prompts_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prompt_detail_default_api_v3_prompts_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptDetailDefaultRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_prompt_api_v3_prompts_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatePromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_prompt_api_v3_prompts_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdatePromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_prompt_api_v3_prompts_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeletePromptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletePromptResponse"];
                 };
             };
             /** @description Validation Error */

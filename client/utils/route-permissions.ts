@@ -371,8 +371,20 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
       },
       {
         path: "/engine/prompts",
-        roles: ["superadmin"],
+        roles: ["admin", "superadmin"],
         title: "Prompts",
+        redirectTo: "/engine/prompts",
+      },
+      {
+        path: "/engine/prompts/new",
+        roles: ["admin", "superadmin"],
+        title: "New Prompt",
+        redirectTo: "/engine/prompts",
+      },
+      {
+        path: "/engine/prompts/p/[promptId]",
+        roles: ["admin", "superadmin"],
+        title: "Edit Prompt",
         redirectTo: "/engine/prompts",
       },
     ],

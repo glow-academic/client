@@ -6911,6 +6911,288 @@
         ]
       }
     },
+    "/api/v3/prompts/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "prompts"
+        ],
+        "summary": "Get Prompts List",
+        "description": "Get prompts list with permissions and relationships.",
+        "operationId": "get_prompts_list_api_v3_prompts_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptsListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
+      }
+    },
+    "/api/v3/prompts/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "prompts"
+        ],
+        "summary": "Get Prompt Detail",
+        "description": "Get prompt detail information.",
+        "operationId": "get_prompt_detail_api_v3_prompts_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
+      }
+    },
+    "/api/v3/prompts/detail-default": {
+      "post": {
+        "tags": [
+          "v3",
+          "prompts"
+        ],
+        "summary": "Get Prompt Detail Default",
+        "description": "Get default prompt detail information for new prompt creation.",
+        "operationId": "get_prompt_detail_default_api_v3_prompts_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptDetailDefaultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
+      }
+    },
+    "/api/v3/prompts/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "prompts"
+        ],
+        "summary": "Create Prompt",
+        "description": "Create a new prompt.",
+        "operationId": "create_prompt_api_v3_prompts_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePromptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePromptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
+      }
+    },
+    "/api/v3/prompts/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "prompts"
+        ],
+        "summary": "Update Prompt",
+        "description": "Update an existing prompt.",
+        "operationId": "update_prompt_api_v3_prompts_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePromptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatePromptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
+      }
+    },
+    "/api/v3/prompts/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "prompts"
+        ],
+        "summary": "Delete Prompt",
+        "description": "Delete a prompt.",
+        "operationId": "delete_prompt_api_v3_prompts_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePromptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePromptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "prompts"
+        ]
+      }
+    },
     "/api/v3/feedback/list": {
       "post": {
         "tags": [
@@ -11865,6 +12147,58 @@
         "title": "CreatePersonaResponse",
         "description": "Response from create persona."
       },
+      "CreatePromptRequest": {
+        "properties": {
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "system_prompt"
+        ],
+        "title": "CreatePromptRequest",
+        "description": "Request to create prompt."
+      },
+      "CreatePromptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "promptId",
+          "message"
+        ],
+        "title": "CreatePromptResponse",
+        "description": "Response from create prompt."
+      },
       "CreateRubricRequest": {
         "properties": {
           "name": {
@@ -13527,6 +13861,39 @@
         ],
         "title": "DeletePersonaResponse",
         "description": "Response from delete persona."
+      },
+      "DeletePromptRequest": {
+        "properties": {
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "promptId"
+        ],
+        "title": "DeletePromptRequest",
+        "description": "Request to delete prompt."
+      },
+      "DeletePromptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeletePromptResponse",
+        "description": "Response from delete prompt."
       },
       "DeleteRubricRequest": {
         "properties": {
@@ -20296,6 +20663,303 @@
         "title": "ProfileSearchResult",
         "description": "Profile search result."
       },
+      "PromptDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "PromptDetailDefaultRequest",
+        "description": "Request for default prompt detail."
+      },
+      "PromptDetailRequest": {
+        "properties": {
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "promptId",
+          "profileId"
+        ],
+        "title": "PromptDetailRequest",
+        "description": "Request for prompt detail."
+      },
+      "PromptDetailResponse": {
+        "properties": {
+          "prompt_id": {
+            "type": "string",
+            "title": "Prompt Id"
+          },
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Agent Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt_id",
+          "system_prompt",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "agent_ids",
+          "persona_ids",
+          "valid_department_ids",
+          "can_edit",
+          "department_mapping",
+          "agent_mapping",
+          "persona_mapping"
+        ],
+        "title": "PromptDetailResponse",
+        "description": "Response for prompt detail endpoint."
+      },
+      "PromptItem": {
+        "properties": {
+          "prompt_id": {
+            "type": "string",
+            "title": "Prompt Id"
+          },
+          "system_prompt_preview": {
+            "type": "string",
+            "title": "System Prompt Preview"
+          },
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Agent Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt_id",
+          "system_prompt_preview",
+          "system_prompt",
+          "created_at",
+          "updated_at",
+          "agent_ids",
+          "persona_ids",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "PromptItem",
+        "description": "Prompt item for list view."
+      },
+      "PromptsListRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "PromptsListRequest",
+        "description": "Request for prompts list."
+      },
+      "PromptsListResponse": {
+        "properties": {
+          "prompts": {
+            "items": {
+              "$ref": "#/components/schemas/PromptItem"
+            },
+            "type": "array",
+            "title": "Prompts"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
+          },
+          "agent_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Agent Options"
+          },
+          "persona_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Persona Options"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompts",
+          "department_options",
+          "agent_options",
+          "persona_options",
+          "department_mapping",
+          "agent_mapping",
+          "persona_mapping"
+        ],
+        "title": "PromptsListResponse",
+        "description": "Response for prompts list."
+      },
       "ProviderMappingItem": {
         "properties": {
           "name": {
@@ -24908,6 +25572,63 @@
         ],
         "title": "UpdateProfileRequest",
         "description": "Request to update profile fields."
+      },
+      "UpdatePromptRequest": {
+        "properties": {
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          },
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "promptId",
+          "system_prompt"
+        ],
+        "title": "UpdatePromptRequest",
+        "description": "Request to update prompt."
+      },
+      "UpdatePromptResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "promptId": {
+            "type": "string",
+            "title": "Promptid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "promptId",
+          "message"
+        ],
+        "title": "UpdatePromptResponse",
+        "description": "Response from update prompt."
       },
       "UpdateRubricRequest": {
         "properties": {
