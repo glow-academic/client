@@ -178,7 +178,7 @@ export default function PracticeZone({
                 // Removed passRate for practice cards to prevent fallback to rubric threshold
                 type="default"
                 onStartSimulation={onStartSimulation}
-                onStartInfiniteMode={onStartInfiniteMode ?? (() => {})}
+                {...(onStartInfiniteMode && { onStartInfiniteMode })}
                 loadingSimulation={loadingSimulation}
                 effectiveProfile={profile}
               />

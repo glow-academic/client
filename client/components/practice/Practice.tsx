@@ -21,10 +21,12 @@ import PracticeZone, { PracticeZoneSkeleton } from "./PracticeZone";
 
 export interface PracticeProps {
   practiceData: PracticeOut;
+  isGuest?: boolean;
 }
 
 export default function Practice({
   practiceData,
+  isGuest = false,
 }: PracticeProps) {
   const router = useRouter();
 
@@ -299,7 +301,7 @@ export default function Practice({
               | "guest",
           }}
           onStartSimulation={handleStartSimulation}
-          onStartInfiniteMode={handleStartInfiniteMode}
+          {...(!isGuest && { onStartInfiniteMode: handleStartInfiniteMode })}
           loadingSimulation={loadingSimulation}
         />
       </div>

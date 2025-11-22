@@ -26,11 +26,9 @@ type PracticeHistoryOut = OutputOf<"/api/v3/practice/history", "post">;
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getPractice = async (
-  input: PracticeIn
-): Promise<PracticeOut> => {
+const getPractice = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/practice/overview", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -40,7 +38,6 @@ const getPractice = async (
     }),
   });
 };
-
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Practice history responses can get large and exceed Next.js 2MB cache limit.
@@ -52,7 +49,7 @@ const getPracticeHistory = async (
   input: PracticeHistoryIn
 ): Promise<PracticeHistoryOut> => {
   const bypassCache = await isHardRefresh();
-  
+
   return api.post("/practice/history", input, {
     cache: "no-store",
     ...(bypassCache && {
@@ -73,23 +70,18 @@ const getProfileContext = async (input: {
     pathname: string;
   };
 }) => {
-  return api.post(
-    "/profile/context",
-    input,
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  return api.post("/profile/context", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 export const metadata: Metadata = {
   title: "Practice",
   description: `Practice page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
 };
-
 
 interface PracticePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -168,6 +160,12 @@ export default async function PracticePage({
     history: [],
   };
 
+  // Check if user is a guest
+  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
+  const isGuest =
+    effectiveProfileId === "guest-profile-id" ||
+    profileContext.effectiveProfile?.role === "guest";
+
   // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
   // Include analytics filter params so history re-fetches when filters change
   const analyticsStartDate = searchParamsObj.get("startDate") || "";
@@ -175,7 +173,8 @@ export default async function PracticePage({
   const analyticsCohortIds = searchParamsObj.get("cohortIds") || "";
   const analyticsDepartmentIds = searchParamsObj.get("departmentIds") || "";
   const analyticsRoles = searchParamsObj.get("roles") || "";
-  const analyticsSimulationFilters = searchParamsObj.get("simulationFilters") || "general";
+  const analyticsSimulationFilters =
+    searchParamsObj.get("simulationFilters") || "general";
   const historyKey = [
     historyPage,
     historyPageSize,
@@ -200,50 +199,48 @@ export default async function PracticePage({
 
   return (
     <div className="space-y-6">
-      <Practice
-        practiceData={practiceDataWithoutHistory}
-      />
+      <Practice practiceData={practiceDataWithoutHistory} isGuest={isGuest} />
 
-      {/* History section moved out of Practice, fully server-driven */}
-      <div className="mt-12">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <SimulationHistory
-              data={[]}
-              totalCount={0}
-              archivedCount={0}
-              unarchivedCount={0}
-              pageIndex={historyPage}
-              pageSize={historyPageSize}
-              showExport={false}
-              showArchive={false}
-              singleProfile={true}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              isLoading={true}
-              showModeFilter={true}
-            />
-          }
-        >
-          <PracticeHistorySection
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historyProfileIds={historyProfileIds}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-            effectiveProfileId={
-              session?.effectiveProfileId || "guest-profile-id"
+      {/* History section moved out of Practice, fully server-driven - only show for non-guests */}
+      {!isGuest && (
+        <div className="mt-12">
+          <Suspense
+            key={historyKey}
+            fallback={
+              <SimulationHistory
+                data={[]}
+                totalCount={0}
+                archivedCount={0}
+                unarchivedCount={0}
+                pageIndex={historyPage}
+                pageSize={historyPageSize}
+                showExport={false}
+                showArchive={false}
+                singleProfile={true}
+                profileOptions={[]}
+                simulationOptions={[]}
+                scenarioOptions={[]}
+                isLoading={true}
+                showModeFilter={true}
+              />
             }
-            departmentIds={profileContext.departmentIds || []}
-          />
-        </Suspense>
-      </div>
+          >
+            <PracticeHistorySection
+              historyPage={historyPage}
+              historyPageSize={historyPageSize}
+              historySearch={historySearch}
+              historyProfileIds={historyProfileIds}
+              historySimulationIds={historySimulationIds}
+              historyScenarioIds={historyScenarioIds}
+              historyInfiniteMode={historyInfiniteMode}
+              historySortBy={historySortBy}
+              historySortOrder={historySortOrder}
+              effectiveProfileId={effectiveProfileId}
+              departmentIds={profileContext.departmentIds || []}
+            />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 }
@@ -305,8 +302,12 @@ async function PracticeHistorySection({
   const historyData = await getPracticeHistory(historyFilters);
 
   // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
-  const archivedCount = historyData.data.filter((item) => item.isArchived).length;
-  const unarchivedCount = historyData.data.filter((item) => !item.isArchived).length;
+  const archivedCount = historyData.data.filter(
+    (item) => item.isArchived
+  ).length;
+  const unarchivedCount = historyData.data.filter(
+    (item) => !item.isArchived
+  ).length;
 
   // Use server-provided data directly (no transformation needed)
   // Extract options from API response and cast to expected format

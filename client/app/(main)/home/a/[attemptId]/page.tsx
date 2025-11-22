@@ -5,9 +5,9 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
-import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -114,10 +114,7 @@ export default async function AttemptPage({
       error.status === 403
     ) {
       return (
-        <DepartmentAccessDenied
-          resourceType="scenario"
-          redirectPath="/home"
-        />
+        <DepartmentAccessDenied resourceType="scenario" redirectPath="/home" />
       );
     }
     // Re-throw other errors
