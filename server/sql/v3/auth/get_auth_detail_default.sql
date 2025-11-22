@@ -24,7 +24,26 @@ items_json AS (
     SELECT '[]'::jsonb as items
 ),
 key_mapping_data AS (
-    SELECT '{}'::jsonb as mapping
+    SELECT COALESCE(
+        jsonb_object_agg(
+            k.id::text,
+            jsonb_build_object(
+                'name', k.name,
+                'description', CASE 
+                    WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+                    ELSE '****'
+                END,
+                'key_masked', CASE 
+                    WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+                    ELSE '****'
+                END,
+                'active', k.active
+            )
+        ) FILTER (WHERE k.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM keys k
+    WHERE k.type = 'auth'
 )
 SELECT 
     ad.name,

@@ -20,6 +20,8 @@ type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 type DecryptKeyIn = InputOf<"/api/v3/keys/decrypt-key", "post">;
 type DecryptKeyOut = OutputOf<"/api/v3/keys/decrypt-key", "post">;
+type UpdateKeyIn = InputOf<"/api/v3/keys/update", "post">;
+type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -68,6 +70,12 @@ export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   return api.post("/keys/decrypt-key", input);
 }
 
+export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/keys/update", input);
+}
+
 export const metadata: Metadata = {
   title: "Authentication",
   description: `Manage authentication methods in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -102,4 +110,6 @@ export type {
   DeleteAuthOut,
   DuplicateAuthIn,
   DuplicateAuthOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 };

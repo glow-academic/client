@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { Check, ChevronsUpDown, Copy, Eye, Plus, X } from "lucide-react";
+import { Check, ChevronsUpDown, Copy, Eye, EyeOff, Pencil, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import type {
   CreateKeyOut,
   DecryptKeyIn,
   DecryptKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 } from "@/app/(main)/system/authentication/page";
 
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +78,8 @@ export interface KeyPickerProps<T extends KeyMappingItem = KeyMappingItem> {
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
   /** Server action for decrypting keys */
   decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
+  /** Server action for updating keys */
+  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
   /** Key type filter (default: 'auth') */
   keyType?: string;
 }
@@ -95,6 +99,7 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
   required = false,
   createKeyAction,
   decryptKeyAction,
+  updateKeyAction,
   keyType = "auth",
 }: KeyPickerProps<T>) {
   const [open, setOpen] = useState(false);
@@ -108,6 +113,13 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
   const [previewKeyFull, setPreviewKeyFull] = useState<string | null>(null);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
+  const [editingKeyName, setEditingKeyName] = useState("");
+  const [editingKeyValue, setEditingKeyValue] = useState("");
+  const [editingKeyActive, setEditingKeyActive] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Build keys from mapping
   const keys = useMemo(() => {
@@ -225,34 +237,122 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
     }
   };
 
-  const handlePreview = async (keyId: string, e?: React.MouseEvent) => {
+  const handleEdit = async (keyId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setShowPreviewDialog(true);
-    setPreviewKeyFull(null);
+    const key = mapping[keyId];
+    if (!key) return;
 
-    // Decrypt key using server action
-    if (!decryptKeyAction) {
+    setEditingKeyId(keyId);
+    setEditingKeyName(key.name);
+    setEditingKeyValue("");
+    setEditingKeyActive(key.active);
+    setIsPreviewVisible(false);
+    setIsEditMode(false);
+    setPreviewKeyFull(null); // Will show masked value from mapping initially
+    setShowPreviewDialog(true);
+  };
+
+  const handleTogglePreview = async () => {
+    if (!editingKeyId || !decryptKeyAction) {
       toast.error("Decrypt action is not available");
-      setShowPreviewDialog(false);
+      return;
+    }
+
+    if (isPreviewVisible) {
+      setIsPreviewVisible(false);
+      setPreviewKeyFull(null);
+    } else {
+      setIsLoadingPreview(true);
+      try {
+        const response = await decryptKeyAction({
+          body: { keyId: editingKeyId, profileId: "" },
+        });
+        setPreviewKeyFull(response.key);
+        setIsPreviewVisible(true);
+      } catch (error) {
+        toast.error("Failed to decrypt key", {
+          description: error instanceof Error ? error.message : "Unknown error",
+        });
+      } finally {
+        setIsLoadingPreview(false);
+      }
+    }
+  };
+
+  const handleEnterEditMode = async () => {
+    if (!editingKeyId || !decryptKeyAction) {
+      toast.error("Decrypt action is not available");
       return;
     }
 
     setIsLoadingPreview(true);
     try {
-      // Get profileId from session - we'll need to pass it from parent
-      // For now, use empty string and let server handle it
       const response = await decryptKeyAction({
-        body: { keyId, profileId: "" },
+        body: { keyId: editingKeyId, profileId: "" },
       });
-      setPreviewKeyFull(response.key);
+      setEditingKeyValue(response.key);
+      setIsEditMode(true);
+      setIsPreviewVisible(false);
+      setPreviewKeyFull(null);
     } catch (error) {
       toast.error("Failed to decrypt key", {
         description: error instanceof Error ? error.message : "Unknown error",
       });
-      setShowPreviewDialog(false);
     } finally {
       setIsLoadingPreview(false);
     }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingKeyId || !updateKeyAction) {
+      toast.error("Update action is not available");
+      return;
+    }
+
+    if (!editingKeyName.trim()) {
+      toast.error("Key name is required");
+      return;
+    }
+
+    if (!editingKeyValue.trim()) {
+      toast.error("Key value is required");
+      return;
+    }
+
+    try {
+      setIsUpdating(true);
+      await updateKeyAction({
+        body: {
+          keyId: editingKeyId,
+          name: editingKeyName.trim(),
+          key: editingKeyValue.trim(),
+          active: editingKeyActive,
+        },
+      });
+
+      toast.success("Key updated successfully");
+      setShowPreviewDialog(false);
+      setIsEditMode(false);
+      setIsPreviewVisible(false);
+      setEditingKeyId(null);
+      setPreviewKeyFull(null);
+      router.refresh();
+    } catch (error) {
+      toast.error("Failed to update key", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setIsPreviewVisible(false);
+    setEditingKeyId(null);
+    setEditingKeyValue("");
+    setPreviewKeyFull(null);
+    setShowPreviewDialog(false);
   };
 
   const handleCopyKey = () => {
@@ -260,6 +360,10 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
       navigator.clipboard.writeText(previewKeyFull);
       toast.success("Key copied to clipboard");
     }
+  };
+
+  const handleDialogClose = () => {
+    handleCancelEdit();
   };
 
   // Badge display for multi-select mode
@@ -274,18 +378,6 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
             variant="secondary"
             className="flex items-center gap-1"
           >
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePreview(id, e);
-              }}
-              className="inline-flex items-center hover:opacity-70"
-              disabled={disabled}
-              aria-label="Preview key"
-            >
-              <Eye className="h-3 w-3" />
-            </button>
             <span className="truncate max-w-[200px]">{key.name}</span>
             <button
               type="button"
@@ -330,20 +422,6 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
             disabled={disabled}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {selectedIds.length > 0 && !multiSelect && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePreview(selectedIds[0]!);
-                  }}
-                  className="inline-flex items-center hover:opacity-70 flex-shrink-0"
-                  disabled={disabled}
-                  aria-label="Preview key"
-                >
-                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              )}
               <span className="truncate">{getButtonText()}</span>
             </div>
             <ChevronsUpDown
@@ -399,17 +477,17 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handlePreview(key.id, e);
+                          handleEdit(key.id, e);
                         }}
                         className="inline-flex items-center hover:opacity-70 flex-shrink-0"
-                        aria-label="Preview key"
+                        aria-label="Edit key"
                       >
-                        <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{key.name}</div>
                         <div className="text-sm text-muted-foreground truncate">
-                          {key.description}
+                          {key.key_masked || "••••••••"}
                         </div>
                         {!key.active && (
                           <div className="text-xs text-muted-foreground">
@@ -517,54 +595,150 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
         </DialogContent>
       </Dialog>
 
-      {/* Preview key dialog */}
-      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+      {/* Preview/Edit key dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={handleDialogClose}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Key Preview</DialogTitle>
-            <DialogDescription>View and copy your API key</DialogDescription>
+            <DialogTitle>
+              {isEditMode ? "Edit Key" : "Key Details"}
+            </DialogTitle>
+            <DialogDescription>
+              {isEditMode
+                ? "Update key information"
+                : "View and edit your API key"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {isLoadingPreview ? (
               <div className="flex items-center justify-center py-8">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
               </div>
+            ) : isEditMode ? (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-key-name">Key Name</Label>
+                  <Input
+                    id="edit-key-name"
+                    value={editingKeyName}
+                    onChange={(e) => setEditingKeyName(e.target.value)}
+                    placeholder="Enter key name"
+                    disabled={isUpdating}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-key-value">Key Value</Label>
+                  <Textarea
+                    id="edit-key-value"
+                    value={editingKeyValue}
+                    onChange={(e) => setEditingKeyValue(e.target.value)}
+                    placeholder="Enter API key value"
+                    rows={3}
+                    className="font-mono text-sm"
+                    disabled={isUpdating}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="edit-key-active" className="text-sm">
+                    Active
+                  </Label>
+                  <Switch
+                    id="edit-key-active"
+                    checked={editingKeyActive}
+                    onCheckedChange={setEditingKeyActive}
+                    disabled={isUpdating}
+                  />
+                </div>
+              </>
             ) : (
               <>
+                <div className="grid gap-2">
+                  <Label>Key Name</Label>
+                  <Input
+                    value={editingKeyName || ""}
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                </div>
                 <div className="grid gap-2">
                   <Label>Key Value</Label>
                   <div className="flex items-center gap-2">
                     <Input
-                      value={previewKeyFull || ""}
+                      type={isPreviewVisible ? "text" : "password"}
+                      value={
+                        isPreviewVisible
+                          ? previewKeyFull || ""
+                          : mapping[editingKeyId || ""]?.key_masked || "••••••••"
+                      }
                       readOnly
                       className="font-mono text-sm flex-1"
                     />
                     <Button
                       type="button"
-                      variant="default"
+                      variant="outline"
                       size="icon"
-                      onClick={handleCopyKey}
-                      disabled={!previewKeyFull}
+                      onClick={handleTogglePreview}
+                      disabled={!decryptKeyAction}
                       className="h-9 w-9 flex-shrink-0"
-                      aria-label="Copy key"
+                      aria-label={isPreviewVisible ? "Hide key" : "Show key"}
                     >
-                      <Copy className="h-4 w-4" />
+                      {isPreviewVisible ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
+                    {isPreviewVisible && (
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="icon"
+                        onClick={handleCopyKey}
+                        disabled={!previewKeyFull}
+                        className="h-9 w-9 flex-shrink-0"
+                        aria-label="Copy key"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Active</Label>
+                  <Switch checked={editingKeyActive} disabled />
                 </div>
               </>
             )}
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowPreviewDialog(false);
-                setPreviewKeyFull(null);
-              }}
-            >
-              Close
-            </Button>
+            {isEditMode ? (
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={handleEnterEditMode}
+                  disabled={!updateKeyAction}
+                >
+                  Edit
+                </Button>
+              </>
+            )}
+            {isEditMode && (
+              <Button onClick={handleSaveEdit} disabled={isUpdating}>
+                {isUpdating ? "Saving..." : "Save"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

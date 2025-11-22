@@ -12,6 +12,8 @@ import type { Metadata } from "next";
 import type {
   CreateKeyIn,
   CreateKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 } from "@/app/(main)/system/authentication/page";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -63,6 +65,12 @@ async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   return api.post("/keys/create", input);
 }
 
+async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/keys/update", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthCreatePage() {
   const session = await getSession();
@@ -78,6 +86,7 @@ export default async function AuthCreatePage() {
         authDetailDefault={authDetailDefault}
         createAuthAction={createAuth}
         createKeyAction={createKey}
+        updateKeyAction={updateKey}
       />
     </div>
   );

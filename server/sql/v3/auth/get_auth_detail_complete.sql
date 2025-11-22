@@ -54,16 +54,16 @@ items_json AS (
     ) as items
     FROM auth_items_with_keys
 ),
-all_key_ids AS (
-    SELECT DISTINCT unnest(key_ids)::uuid as key_id
-    FROM auth_items_with_keys
-    WHERE key_ids IS NOT NULL
-),
 key_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             k.id::text,
             jsonb_build_object(
+                'name', k.name,
+                'description', CASE 
+                    WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+                    ELSE '****'
+                END,
                 'key_masked', CASE 
                     WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
                     ELSE '****'
@@ -73,8 +73,8 @@ key_mapping_data AS (
         ) FILTER (WHERE k.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM all_key_ids aki
-    LEFT JOIN keys k ON k.id = aki.key_id AND k.type = 'auth'
+    FROM keys k
+    WHERE k.type = 'auth'
 )
 SELECT 
     ad.*,

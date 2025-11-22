@@ -10,6 +10,8 @@ import type {
   CreateKeyOut,
   DecryptKeyIn,
   DecryptKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 } from "@/app/(main)/system/authentication/page";
 import Auth from "@/components/auth/Auth";
 import { api } from "@/lib/api/client";
@@ -94,6 +96,12 @@ async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   return api.post("/keys/decrypt-key", input);
 }
 
+async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/keys/update", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthEditPage({
   params,
@@ -118,6 +126,7 @@ export default async function AuthEditPage({
           updateAuthAction={updateAuth}
           createKeyAction={createKey}
           decryptKeyAction={decryptKey}
+          updateKeyAction={updateKey}
         />
       </div>
     );

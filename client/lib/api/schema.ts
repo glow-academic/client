@@ -2699,46 +2699,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Keys List
-         * @description Get keys list filtered by type.
-         */
-        post: operations["get_keys_list_api_v3_keys_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/keys/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Key Detail
-         * @description Get key details (with masking option).
-         */
-        post: operations["get_key_detail_api_v3_keys_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/keys/create": {
         parameters: {
             query?: never;
@@ -2773,6 +2733,26 @@ export interface paths {
          * @description Decrypt a key's encrypted value.
          */
         post: operations["decrypt_key_api_v3_keys_decrypt_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/keys/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Key
+         * @description Update an existing key.
+         */
+        post: operations["update_key_api_v3_keys_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6823,65 +6803,6 @@ export interface components {
             /** Cohortnames */
             cohortNames?: string | null;
         };
-        /** KeyDetailRequest */
-        KeyDetailRequest: {
-            /** Keyid */
-            keyId: string;
-            /**
-             * Show Full
-             * @default false
-             */
-            show_full: boolean;
-        };
-        /** KeyDetailResponse */
-        KeyDetailResponse: {
-            /** Key Id */
-            key_id: string;
-            /** Name */
-            name: string;
-            /** Key */
-            key: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Type */
-            type: string;
-            /** Active */
-            active: boolean;
-        };
-        /** KeyItem */
-        KeyItem: {
-            /** Key Id */
-            key_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Key Masked */
-            key_masked: string;
-            /** Type */
-            type: string;
-            /** Active */
-            active: boolean;
-        };
-        /** KeysFilters */
-        KeysFilters: {
-            /**
-             * Type
-             * @default auth
-             */
-            type: string;
-        };
-        /** KeysListResponse */
-        KeysListResponse: {
-            /** Keys */
-            keys: components["schemas"]["KeyItem"][];
-            /** Key Mapping */
-            key_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-        };
         /**
          * LeaderboardBundleFilters
          * @description Leaderboard bundle filter request schema - for general leaderboard (multi-cohort or all cohorts).
@@ -9861,6 +9782,34 @@ export interface components {
         UpdateDocumentResponse: {
             /** Success */
             success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * UpdateKeyRequest
+         * @description Request to update key.
+         */
+        UpdateKeyRequest: {
+            /** Keyid */
+            keyId: string;
+            /** Name */
+            name: string;
+            /** Key */
+            key: string;
+            /** Active */
+            active: boolean;
+        };
+        /**
+         * UpdateKeyResponse
+         * @description Response from update key.
+         */
+        UpdateKeyResponse: {
+            /** Success */
+            success: boolean;
+            /** Keyid */
+            keyId: string;
+            /** Key Masked */
+            key_masked: string;
             /** Message */
             message: string;
         };
@@ -16086,72 +16035,6 @@ export interface operations {
             };
         };
     };
-    get_keys_list_api_v3_keys_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["KeysFilters"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KeysListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_key_detail_api_v3_keys_detail_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["KeyDetailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KeyDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_key_api_v3_keys_create_post: {
         parameters: {
             query?: never;
@@ -16205,6 +16088,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecryptKeyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_key_api_v3_keys_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateKeyResponse"];
                 };
             };
             /** @description Validation Error */

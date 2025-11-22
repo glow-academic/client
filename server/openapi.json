@@ -5875,100 +5875,6 @@
         ]
       }
     },
-    "/api/v3/keys/list": {
-      "post": {
-        "tags": [
-          "v3",
-          "keys"
-        ],
-        "summary": "Get Keys List",
-        "description": "Get keys list filtered by type.",
-        "operationId": "get_keys_list_api_v3_keys_list_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/KeysFilters"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KeysListResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
-      }
-    },
-    "/api/v3/keys/detail": {
-      "post": {
-        "tags": [
-          "v3",
-          "keys"
-        ],
-        "summary": "Get Key Detail",
-        "description": "Get key details (with masking option).",
-        "operationId": "get_key_detail_api_v3_keys_detail_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/KeyDetailRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KeyDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "keys"
-        ]
-      }
-    },
     "/api/v3/keys/create": {
       "post": {
         "tags": [
@@ -6042,6 +5948,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DecryptKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
+    "/api/v3/keys/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Update Key",
+        "description": "Update an existing key.",
+        "operationId": "update_key_api_v3_keys_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateKeyResponse"
                 }
               }
             }
@@ -16159,136 +16112,6 @@
         "title": "HomeSimulationItem",
         "description": "Home simulation item."
       },
-      "KeyDetailRequest": {
-        "properties": {
-          "keyId": {
-            "type": "string",
-            "title": "Keyid"
-          },
-          "show_full": {
-            "type": "boolean",
-            "title": "Show Full",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "keyId"
-        ],
-        "title": "KeyDetailRequest"
-      },
-      "KeyDetailResponse": {
-        "properties": {
-          "key_id": {
-            "type": "string",
-            "title": "Key Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "key": {
-            "type": "string",
-            "title": "Key"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "key_id",
-          "name",
-          "key",
-          "key_masked",
-          "type",
-          "active"
-        ],
-        "title": "KeyDetailResponse"
-      },
-      "KeyItem": {
-        "properties": {
-          "key_id": {
-            "type": "string",
-            "title": "Key Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "key_masked": {
-            "type": "string",
-            "title": "Key Masked"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          }
-        },
-        "type": "object",
-        "required": [
-          "key_id",
-          "name",
-          "description",
-          "key_masked",
-          "type",
-          "active"
-        ],
-        "title": "KeyItem"
-      },
-      "KeysFilters": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type",
-            "default": "auth"
-          }
-        },
-        "type": "object",
-        "title": "KeysFilters"
-      },
-      "KeysListResponse": {
-        "properties": {
-          "keys": {
-            "items": {
-              "$ref": "#/components/schemas/KeyItem"
-            },
-            "type": "array",
-            "title": "Keys"
-          },
-          "key_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Key Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "keys",
-          "key_mapping"
-        ],
-        "title": "KeysListResponse"
-      },
       "LeaderboardBundleFilters": {
         "properties": {
           "startDate": {
@@ -24016,6 +23839,64 @@
         ],
         "title": "UpdateDocumentResponse",
         "description": "Response for updating a document."
+      },
+      "UpdateKeyRequest": {
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keyId",
+          "name",
+          "key",
+          "active"
+        ],
+        "title": "UpdateKeyRequest",
+        "description": "Request to update key."
+      },
+      "UpdateKeyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "key_masked": {
+            "type": "string",
+            "title": "Key Masked"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "keyId",
+          "key_masked",
+          "message"
+        ],
+        "title": "UpdateKeyResponse",
+        "description": "Response from update key."
       },
       "UpdateModelRequest": {
         "properties": {

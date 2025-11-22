@@ -38,8 +38,9 @@ import type {
   CreateKeyOut,
   DecryptKeyIn,
   DecryptKeyOut,
+  UpdateKeyIn,
+  UpdateKeyOut,
 } from "@/app/(main)/system/authentication/page";
-import { api } from "@/lib/api/client";
 
 type AuthItemFormData = {
   id?: string;
@@ -65,6 +66,7 @@ interface AuthProps {
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
   decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
+  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
 }
 
 export default function Auth({
@@ -76,6 +78,7 @@ export default function Auth({
   updateAuthAction,
   createKeyAction,
   decryptKeyAction,
+  updateKeyAction,
 }: AuthProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!authId;
@@ -94,18 +97,31 @@ export default function Auth({
   const [authItemsFormData, setAuthItemsFormData] = useState<
     AuthItemFormData[]
   >([]);
-  const [keyMapping, setKeyMapping] = useState<
-    Record<
-      string,
-      { name: string; description: string; key_masked: string; active: boolean }
-    >
-  >({});
-  const [validKeyIds, setValidKeyIds] = useState<string[]>([]);
 
   // Use server-provided data
   const authDetail = serverAuthDetail;
   const authDetailDefault = serverAuthDetailDefault;
   const authData = isEditMode ? authDetail : authDetailDefault;
+
+  // Extract key_mapping and validIds from server-provided data
+  const keyMapping = useMemo(() => {
+    if (authData?.key_mapping) {
+      return authData.key_mapping as Record<
+        string,
+        {
+          name: string;
+          description: string;
+          key_masked: string;
+          active: boolean;
+        }
+      >;
+    }
+    return {};
+  }, [authData]);
+
+  const validKeyIds = useMemo(() => {
+    return Object.keys(keyMapping);
+  }, [keyMapping]);
 
   // Extract body types from server action types for type safety
   type CreateAuthBody = CreateAuthIn extends { body: infer B } ? B : never;
@@ -125,33 +141,6 @@ export default function Auth({
     }
     await updateAuthAction({ body });
   };
-
-  // Load keys list
-  useEffect(() => {
-    const loadKeys = async () => {
-      try {
-        const response = await api.post("/keys/list", {
-          body: { type: "auth" },
-        });
-        // Type assertion needed because API response may have additional fields
-        setKeyMapping(
-          (response.key_mapping || {}) as Record<
-            string,
-            {
-              name: string;
-              description: string;
-              key_masked: string;
-              active: boolean;
-            }
-          >
-        );
-        setValidKeyIds(response.keys.map((k) => k.key_id));
-      } catch {
-        // Error handling - server handles logging
-      }
-    };
-    loadKeys();
-  }, []);
 
   // Set breadcrumb context when auth data is loaded
   // Note: "auth" is not in the breadcrumb entity types, so we skip breadcrumb for now
@@ -179,20 +168,6 @@ export default function Auth({
         description: authData.description,
         active: authData.active,
       });
-      // Update key mapping from auth detail
-      if (authData.key_mapping) {
-        setKeyMapping(
-          authData.key_mapping as Record<
-            string,
-            {
-              name: string;
-              description: string;
-              key_masked: string;
-              active: boolean;
-            }
-          >
-        );
-      }
     } else if (!isEditMode && authData) {
       setFormData({
         ...initialFormData,
@@ -543,6 +518,7 @@ export default function Auth({
                           disabled={isReadonly ?? false}
                           {...(createKeyAction && { createKeyAction })}
                           {...(decryptKeyAction && { decryptKeyAction })}
+                          {...(updateKeyAction && { updateKeyAction })}
                           keyType="auth"
                         />
                       </div>
