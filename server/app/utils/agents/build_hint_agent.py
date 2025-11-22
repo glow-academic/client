@@ -49,11 +49,10 @@ def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericA
         system_prompt=context["system_prompt"],
         temperature=context["temperature"],
         model_name=context["model_name"],
-        model_provider=context["provider_name"],
+        provider=context["provider"],
         base_url=context["base_url"],
         api_key=context["api_key"],
         reasoning=context["reasoning"],
-        custom_model=context["custom_model"],
         tools=hint_tools,
         parallel_tool_calls=True,  # Enable parallel execution
         tool_use_behavior=tool_use_behavior,

@@ -1,22 +1,20 @@
 INSERT INTO models (
-    provider_id,
+    provider,
     name,
     description,
     active,
-    custom_model,
     image_model,
     input_ppm,
     output_ppm
 )
 VALUES (
-    $1,
+    $1::provider,
     $2,
     $3,
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 )
 RETURNING id
 

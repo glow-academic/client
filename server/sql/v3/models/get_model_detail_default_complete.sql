@@ -1,26 +1,11 @@
 -- Get default model detail for creation with department and key mappings
 -- Parameters: $1 = profile_id (uuid)
--- Returns: provider_mapping, department_mapping, key_mapping, valid_*_ids
+-- Returns: valid_providers (enum array), department_mapping, key_mapping, valid_*_ids
 
 WITH user_departments AS (
     SELECT DISTINCT pd.department_id
     FROM profile_departments pd
     WHERE pd.profile_id = $1::uuid
-),
-valid_providers AS (
-    SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                p.id::text,
-                jsonb_build_object(
-                    'name', p.name,
-                    'description', COALESCE(p.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as provider_mapping,
-        array_agg(p.id::text ORDER BY p.name) as provider_ids
-    FROM providers p
 ),
 user_departments_data AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -108,8 +93,7 @@ primary_department_id AS (
     LIMIT 1
 )
 SELECT 
-    vp.provider_mapping,
-    vp.provider_ids as valid_provider_ids,
+    ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(
@@ -129,8 +113,7 @@ SELECT
     COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
     pr.user_role,
     pdi.department_id as primary_department_id
-FROM valid_providers vp
-CROSS JOIN valid_departments_data vdd
+FROM valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
 CROSS JOIN profile_data pr
 LEFT JOIN primary_department_id pdi ON true

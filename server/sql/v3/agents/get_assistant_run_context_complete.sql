@@ -101,12 +101,8 @@ SELECT
     -- Model data
     m.id::text as model_id,
     m.name as model_name,
-    m.custom_model,
-    
-    -- Provider data
-    pr.id::text as provider_id,
-    pr.name as provider_name,
-    COALESCE(pe.base_url, '') as base_url,
+    m.provider::text as provider,
+    COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
     -- Aggregated messages and tool_calls
@@ -123,8 +119,7 @@ INNER JOIN profiles p ON p.id = ac.profile_id
 CROSS JOIN best_agent ba
 INNER JOIN agents a ON a.id = ba.agent_id
 INNER JOIN models m ON m.id = a.model_id
-INNER JOIN providers pr ON pr.id = m.provider_id
-LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 -- Try department-specific prompt first, fall back to default prompt

@@ -1,12 +1,11 @@
 UPDATE models SET
-    provider_id = $2,
+    provider = $2::provider,
     name = $3,
     description = $4,
     active = $5,
-    custom_model = $6,
-    image_model = $7,
-    input_ppm = $8,
-    output_ppm = $9,
+    image_model = $6,
+    input_ppm = $7,
+    output_ppm = $8,
     updated_at = NOW()
 WHERE id = $1
 

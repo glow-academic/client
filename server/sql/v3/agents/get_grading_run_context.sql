@@ -160,12 +160,8 @@ SELECT
     -- Model data
     m.id::text as model_id,
     m.name as model_name,
-    m.custom_model,
-    
-    -- Provider data
-    pr.id::text as provider_id,
-    pr.name as provider_name,
-    COALESCE(pe.base_url, '') as base_url,
+    m.provider::text as provider,
+    COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
     -- Profile data (via attempt_profiles junction)
@@ -194,8 +190,7 @@ LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_
 -- Use department-specific prompt if available, otherwise use default
 LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
 INNER JOIN models m ON m.id = a.model_id
-INNER JOIN providers pr ON pr.id = m.provider_id
-LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true

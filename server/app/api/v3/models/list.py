@@ -24,26 +24,17 @@ class ModelItem(BaseModel):
     name: str
     description: str
     active: bool
-    custom_model: bool
     image_model: bool
     updated_at: str
-    provider_id: str
-    provider_name: str
-    provider_description: str
+    provider: str  # enum: 'openai', 'gemini', 'custom'
+    base_url: str  # empty string if not custom model
     can_edit: bool
     can_delete: bool
 
 
-class ProviderMappingItem(BaseModel):
-    name: str
-    description: str
-
-
 class ModelsListResponse(BaseModel):
     models: list[ModelItem]
-    provider_mapping: dict[str, ProviderMappingItem]
-    provider_options: list[dict[str, str]]  # Array of {value, label}
-    custom_model_options: list[dict[str, str]]  # Array of {value, label}
+    provider_options: list[dict[str, str]]  # Array of {value, label} for enum values
     status_options: list[dict[str, str]]  # Array of {value, label}
 
 
@@ -80,20 +71,6 @@ async def get_models_list(
         models_result = await conn.fetch(sql_query, filters.profileId)
 
         models = []
-        provider_mapping: dict[str, ProviderMappingItem] = {}
-
-        # Parse provider_mapping from first row (same for all rows)
-        if models_result:
-            provider_mapping_data = models_result[0].get("provider_mapping")
-            if isinstance(provider_mapping_data, str):
-                provider_mapping_data = json.loads(provider_mapping_data)
-            if provider_mapping_data and isinstance(provider_mapping_data, dict):
-                for provider_id, pdata in provider_mapping_data.items():
-                    if isinstance(pdata, dict):
-                        provider_mapping[provider_id] = ProviderMappingItem(
-                            name=pdata.get("name", ""),
-                            description=pdata.get("description", ""),
-                        )
 
         for row in models_result:
             updated_at = row.get("updated_at", "")
@@ -107,30 +84,23 @@ async def get_models_list(
                 name=row["name"],
                 description=row["description"],
                 active=row["active"],
-                custom_model=row["custom_model"],
                 image_model=row["image_model"],
                 updated_at=updated_at,
-                provider_id=str(row["provider_id"]),
-                provider_name=row["provider_name"],
-                provider_description=row["provider_description"],
+                provider=str(row["provider"]),
+                base_url=str(row.get("base_url", "")),
                 can_edit=row["can_edit"],
                 can_delete=row["can_delete"],
             )
             models.append(model_item)
 
         # Build facet options server-side
-        # Get unique providers from models
-        provider_set = {
-            (m.provider_id, m.provider_name) for m in models
-        }
+        # Provider options are enum values
         provider_options = [
-            {"value": pid, "label": pname} for pid, pname in sorted(provider_set, key=lambda x: x[1])
+            {"value": "openai", "label": "OpenAI"},
+            {"value": "gemini", "label": "Gemini"},
+            {"value": "custom", "label": "Custom"},
         ]
 
-        custom_model_options = [
-            {"value": "true", "label": "Custom Models"},
-            {"value": "false", "label": "Standard Models"},
-        ]
         status_options = [
             {"value": "true", "label": "Active"},
             {"value": "false", "label": "Inactive"},
@@ -138,9 +108,7 @@ async def get_models_list(
 
         response_data = ModelsListResponse(
             models=models,
-            provider_mapping=provider_mapping,
             provider_options=provider_options,
-            custom_model_options=custom_model_options,
             status_options=status_options,
         )
 

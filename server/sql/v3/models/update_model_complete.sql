@@ -1,16 +1,16 @@
--- Update model with department and key links in a single transaction
--- Parameters: $1=model_id, $2=provider_id, $3=name, $4=description, $5=active, $6=custom_model, 
---            $7=image_model, $8=input_ppm, $9=output_ppm, $10=department_ids (text array, nullable), $11=key_id (text, nullable)
+-- Update model with department, key, and endpoint links in a single transaction
+-- Parameters: $1=model_id, $2=provider (enum), $3=name, $4=description, $5=active, 
+--            $6=image_model, $7=input_ppm, $8=output_ppm, $9=department_ids (text array, nullable), 
+--            $10=key_id (text, nullable), $11=base_url (text, nullable)
 WITH update_model AS (
     UPDATE models SET
-        provider_id = $2::uuid,
+        provider = $2::provider,
         name = $3,
         description = $4,
         active = $5,
-        custom_model = $6,
-        image_model = $7,
-        input_ppm = $8,
-        output_ppm = $9,
+        image_model = $6,
+        input_ppm = $7,
+        output_ppm = $8,
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as model_id
@@ -30,8 +30,8 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($10::text[]) as dept_id
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
+    FROM UNNEST($9::text[]) as dept_id
+    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
     ON CONFLICT (model_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -47,14 +47,38 @@ link_key AS (
     INSERT INTO model_keys (model_id, key_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        $11::uuid,
+        $10::uuid,
         true,
         NOW(),
         NOW()
-    WHERE $11::text IS NOT NULL AND $11::text != ''
+    WHERE $10::text IS NOT NULL AND $10::text != ''
     ON CONFLICT (model_id, key_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+upsert_endpoint AS (
+    -- Upsert endpoint if base_url provided (indicates custom model)
+    -- If base_url is empty/null, deactivate existing endpoint
+    INSERT INTO model_endpoints (model_id, base_url, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        $11::text,
+        true,
+        NOW(),
+        NOW()
+    WHERE $11::text IS NOT NULL AND TRIM($11::text) != ''
+    ON CONFLICT (model_id) DO UPDATE SET
+        base_url = EXCLUDED.base_url,
+        active = true,
+        updated_at = NOW()
+),
+deactivate_endpoint AS (
+    -- Deactivate endpoint if base_url is null or empty
+    UPDATE model_endpoints
+    SET active = false, updated_at = NOW()
+    WHERE model_id = $1::uuid 
+    AND active = true
+    AND ($11::text IS NULL OR TRIM($11::text) = '')
 )
 SELECT model_id FROM update_model
 

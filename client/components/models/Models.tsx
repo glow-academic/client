@@ -5,14 +5,7 @@
  * 06/18/2025
  */
 "use client";
-import {
-  Copy,
-  Cpu,
-  Edit,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Copy, Cpu, Edit, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -91,10 +84,7 @@ export default function Models({
   const modelsData = serverListData;
 
   // Use server-provided data directly
-  const models = useMemo(
-    () => modelsData?.models || [],
-    [modelsData?.models]
-  );
+  const models = useMemo(() => modelsData?.models || [], [modelsData?.models]);
 
   // Use server-provided facet options directly (no client-side computation)
   const providerOptions = useMemo(
@@ -106,16 +96,6 @@ export default function Models({
         }))
         .filter((opt) => opt.value && opt.label),
     [modelsData?.provider_options]
-  );
-  const customModelOptions = useMemo(
-    () =>
-      (modelsData?.custom_model_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [modelsData?.custom_model_options]
   );
   const statusOptions = useMemo(
     () =>
@@ -151,27 +131,28 @@ export default function Models({
       },
       // Hidden faceting column for Provider
       {
-        id: "provider_id",
+        id: "provider",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row) => row.provider_id,
+        accessorFn: (row) => row.provider,
         filterFn: (row, _id, value: string[]) => {
-          const providerId = String(row.getValue("provider_id"));
-          return value.includes(providerId);
+          const provider = String(row.getValue("provider"));
+          return value.includes(provider);
         },
       },
-      // Hidden faceting column for Custom Model
+      // Hidden faceting column for Custom Model (based on base_url presence)
       {
-        id: "custom_model",
+        id: "is_custom",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorFn: (row) => (row.custom_model ? "true" : "false"),
+        accessorFn: (row) =>
+          row.base_url && row.base_url !== "" ? "true" : "false",
         filterFn: (row, _id, value: string[]) => {
-          const isCustom = String(row.getValue("custom_model"));
+          const isCustom = String(row.getValue("is_custom"));
           return value.includes(isCustom);
         },
       },
@@ -225,8 +206,8 @@ export default function Models({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const providerColumn = table.getColumn("provider_id");
-  const customModelColumn = table.getColumn("custom_model");
+  const providerColumn = table.getColumn("provider");
+  const customModelColumn = table.getColumn("is_custom");
   const activeColumn = table.getColumn("active");
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -275,7 +256,6 @@ export default function Models({
     router.push(`/engine/models/${modelId}`);
   };
 
-
   const renderModelCard = (model: (typeof models)[number]) => (
     <Card
       key={model.model_id}
@@ -297,17 +277,19 @@ export default function Models({
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-1 flex-shrink-0">
-            {model.custom_model && (
+            {model.base_url && model.base_url !== "" && (
               <Badge variant="default">Custom</Badge>
             )}
-            {!model.active && (
-              <Badge variant="secondary">Inactive</Badge>
-            )}
+            {!model.active && <Badge variant="secondary">Inactive</Badge>}
           </div>
         </div>
         <div className="mt-2">
           <Badge variant="outline" className="text-xs">
-            {model.provider_name}
+            {model.provider === "openai"
+              ? "OpenAI"
+              : model.provider === "gemini"
+                ? "Gemini"
+                : "Custom"}
           </Badge>
         </div>
       </CardHeader>
@@ -413,11 +395,14 @@ export default function Models({
                     />
                   )}
 
-                  {customModelColumn && customModelOptions.length > 0 && (
+                  {customModelColumn && (
                     <DataTableFacetedFilter
                       column={customModelColumn}
                       title="Type"
-                      options={customModelOptions}
+                      options={[
+                        { value: "true", label: "Custom Models" },
+                        { value: "false", label: "Standard Models" },
+                      ]}
                     />
                   )}
 
@@ -501,4 +486,3 @@ export default function Models({
     </TooltipProvider>
   );
 }
-

@@ -27,17 +27,19 @@ import { useRouter } from "next/navigation";
 interface FormErrors {
   name?: string;
   description?: string;
-  providerId?: string;
+  provider?: string;
   inputPpm?: string;
   outputPpm?: string;
+  baseUrl?: string;
 }
 
 interface FormData {
   name?: string;
   description?: string;
-  providerId?: string;
+  provider?: string;
   active?: boolean;
-  customModel?: boolean;
+  customModel?: boolean; // Determined by provider === 'custom' or baseUrl presence
+  baseUrl?: string;
   inputPpm?: string; // USD per 1M input tokens
   outputPpm?: string; // USD per 1M output tokens
   departmentIds?: string[] | null;
@@ -107,9 +109,10 @@ export default function Model({
     () => ({
       name: "",
       description: "",
-      providerId: "",
+      provider: "",
       active: true,
       customModel: false,
+      baseUrl: "",
       inputPpm: "0",
       outputPpm: "0",
       departmentIds: defaultDepartmentIds,
@@ -146,25 +149,15 @@ export default function Model({
   // Store image_model from modelDetail for mutations
   const imageModel = modelDetail?.image_model ?? false;
 
-  // Get provider mapping and valid IDs
-  const providerMapping = useMemo(() => {
+  // Get valid providers (enum values)
+  const validProviders = useMemo(() => {
     if (isEditMode && modelDetail) {
-      return modelDetail.provider_mapping || {};
+      return modelDetail.valid_providers || [];
     }
     if (!isEditMode && modelDetailDefault) {
-      return modelDetailDefault.provider_mapping || {};
+      return modelDetailDefault.valid_providers || [];
     }
-    return {};
-  }, [isEditMode, modelDetail, modelDetailDefault]);
-
-  const validProviderIds = useMemo(() => {
-    if (isEditMode && modelDetail) {
-      return modelDetail.valid_provider_ids || [];
-    }
-    if (!isEditMode && modelDetailDefault) {
-      return modelDetailDefault.valid_provider_ids || [];
-    }
-    return [];
+    return ["openai", "gemini", "custom"];
   }, [isEditMode, modelDetail, modelDetailDefault]);
 
   // Get department and key mappings
@@ -226,12 +219,14 @@ export default function Model({
   useEffect(() => {
     if (isEditMode && modelDetail) {
       // We are in EDIT mode and have the model's data, so populate the form
+      const isCustomModel = modelDetail.provider === "custom" || (modelDetail.base_url && modelDetail.base_url !== "");
       setFormData({
         name: modelDetail.name,
         description: modelDetail.description,
-        providerId: modelDetail.provider_id,
+        provider: modelDetail.provider,
         active: modelDetail.active,
-        customModel: modelDetail.custom_model,
+        customModel: isCustomModel,
+        baseUrl: modelDetail.base_url || "",
         inputPpm: modelDetail.input_ppm?.toString?.() ?? "0",
         outputPpm: modelDetail.output_ppm?.toString?.() ?? "0",
         departmentIds: currentDepartmentIds,
@@ -280,10 +275,19 @@ export default function Model({
       return;
     }
 
-    if (!formData.providerId) {
+    if (!formData.provider) {
       setErrors((prev) => ({
         ...prev,
-        providerId: "Provider is required",
+        provider: "Provider is required",
+      }));
+      return;
+    }
+
+    // Validate base_url if custom model
+    if (formData.customModel && (!formData.baseUrl || formData.baseUrl.trim() === "")) {
+      setErrors((prev) => ({
+        ...prev,
+        baseUrl: "Base URL is required for custom models",
       }));
       return;
     }
@@ -309,32 +313,32 @@ export default function Model({
       if (isEditMode && modelId) {
         await handleUpdateModel({
           modelId: modelId,
-          provider_id: formData.providerId!,
+          provider: formData.provider!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
-          custom_model: formData.customModel ?? false,
           image_model: imageModel,
           input_ppm: inputPpmNum,
           output_ppm: outputPpmNum,
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
+          base_url: formData.customModel ? formData.baseUrl || null : null,
         });
         resetFormAndState();
         toast.success("Model updated successfully!");
         router.push(`/engine/models`);
       } else {
         await handleCreateModel({
-          provider_id: formData.providerId!,
+          provider: formData.provider!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
-          custom_model: formData.customModel ?? false,
           image_model: false, // Default to false for new models
           input_ppm: inputPpmNum,
           output_ppm: outputPpmNum,
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
+          base_url: formData.customModel ? formData.baseUrl || null : null,
         });
         resetFormAndState();
         toast.success("Model created successfully!");
@@ -389,20 +393,27 @@ export default function Model({
 
         {/* Provider Selection */}
         <div className="space-y-2">
-          <Label htmlFor="providerId">Provider</Label>
+          <Label htmlFor="provider">Provider</Label>
           <div data-testid="picker-provider">
             <ProviderPicker
-              mapping={providerMapping}
-              validIds={validProviderIds}
-              selectedIds={formData.providerId ? [formData.providerId] : []}
-              onSelect={(ids) => handleInputChange("providerId", ids[0] || "")}
+              selectedProvider={formData.provider || ""}
+              onSelect={(provider) => {
+                handleInputChange("provider", provider);
+                // Auto-enable custom model if provider is 'custom'
+                if (provider === "custom") {
+                  handleInputChange("customModel", true);
+                } else if (formData.provider === "custom") {
+                  // If switching away from custom, disable custom model
+                  handleInputChange("customModel", false);
+                  handleInputChange("baseUrl", "");
+                }
+              }}
               placeholder="Select a provider..."
-              hideSelectedChips={true}
-              buttonClassName={errors.providerId ? "border-destructive" : ""}
+              buttonClassName={errors.provider ? "border-destructive" : ""}
             />
           </div>
-          {errors.providerId && (
-            <p className="text-sm text-destructive">{errors.providerId}</p>
+          {errors.provider && (
+            <p className="text-sm text-destructive">{errors.provider}</p>
           )}
         </div>
 
@@ -497,15 +508,35 @@ export default function Model({
                   id="customModel"
                   data-testid="switch-model-custom"
                   checked={formData.customModel}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("customModel", checked)
-                  }
+                  onCheckedChange={(checked) => {
+                    handleInputChange("customModel", checked);
+                    if (!checked) {
+                      handleInputChange("baseUrl", "");
+                    }
+                  }}
                 />
               ) : null}
             </div>
             <p className="text-xs text-muted-foreground pl-5">
-              Uses the base URL from the provider
+              Use a custom base URL for this model
             </p>
+            {formData.customModel && (
+              <div className="space-y-2 pt-2">
+                <Input
+                  id="baseUrl"
+                  type="url"
+                  value={formData.baseUrl || ""}
+                  onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+                  placeholder="e.g. https://api.example.com/v1"
+                  disabled={isSubmitting}
+                  className={errors.baseUrl ? "border-destructive" : ""}
+                  data-testid="input-model-base-url"
+                />
+                {errors.baseUrl && (
+                  <p className="text-sm text-destructive">{errors.baseUrl}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -73,11 +73,8 @@ scenario_full_data AS (
         -- Model data
         m.id as model_id,
         m.name as model_name,
-        m.custom_model,
-        -- Provider data
-        pr.id as provider_id,
-        pr.name as provider_name,
-        COALESCE(pe.base_url, '') as base_url,
+        m.provider::text as provider,
+        COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
         -- Documents (aggregated)
         COALESCE(
@@ -117,8 +114,7 @@ scenario_full_data AS (
     LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
     LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
     LEFT JOIN models m ON m.id = p.model_id
-    LEFT JOIN providers pr ON pr.id = m.provider_id
-    LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
     LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
@@ -129,8 +125,8 @@ scenario_full_data AS (
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, s.name, sps.problem_statement, s.active, 
              s.generated, p.id, p.name, pr_prompt.system_prompt, 
-             p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.custom_model,
-             pr.id, pr.name, k.key, pe.base_url
+             p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.provider,
+             k.key, me.base_url
 ),
 -- Create simulation chat (without attempt_id - uses junction table)
 new_chat AS (
@@ -185,9 +181,7 @@ SELECT
         'persona_icon', sfd.persona_icon,
         'model_id', sfd.model_id::text,
         'model_name', sfd.model_name,
-        'model_custom_model', sfd.custom_model,
-        'provider_id', sfd.provider_id::text,
-        'provider_name', sfd.provider_name,
+        'provider', sfd.provider,
         'provider_base_url', sfd.base_url,
         'provider_api_key', sfd.api_key,
         'documents', sfd.documents,

@@ -93,9 +93,7 @@ async def generate_scenario_problem_statement(
         "reasoning": context_row["reasoning"],
         "model_id": context_row["model_id"],
         "model_name": context_row["model_name"],
-        "custom_model": context_row["custom_model"],
-        "provider_id": context_row["provider_id"],
-        "provider_name": context_row["provider_name"],
+        "provider": context_row["provider"],
         "base_url": context_row["base_url"],
         "api_key": context_row["api_key"],
         "persona": {
@@ -167,14 +165,13 @@ async def generate_scenario_problem_statement(
         system_prompt=context["system_prompt"],
         temperature=context["temperature"],
         model_name=context["model_name"],
-        model_provider=context["provider_name"],
+        provider=context["provider"],
         base_url=context["base_url"],
         api_key=context["api_key"],
         reasoning=context["reasoning"],
         tools=scenario_tools,
         parallel_tool_calls=False,
         tool_use_behavior=tool_use_behavior,
-        custom_model=context["custom_model"],
     )
 
     agent_instance = scenario_agent_generic.agent()

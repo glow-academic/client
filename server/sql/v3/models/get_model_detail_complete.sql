@@ -1,19 +1,25 @@
--- Get model detail with department and key information
+-- Get model detail with department, key, and endpoint information
 -- Parameters: $1 = model_id (uuid), $2 = profile_id (uuid)
--- Returns: model fields + provider_mapping + department_mapping + key_mapping
+-- Returns: model fields + provider enum + department_mapping + key_mapping + base_url
 
 WITH model_data AS (
     SELECT 
         name,
         description,
         active,
-        custom_model,
         image_model,
         input_ppm,
         output_ppm,
-        provider_id
+        provider::text as provider
     FROM models
     WHERE id = $1::uuid
+),
+model_endpoint_data AS (
+    SELECT 
+        me.base_url
+    FROM model_endpoints me
+    WHERE me.model_id = $1::uuid AND me.active = true
+    LIMIT 1
 ),
 model_departments_data AS (
     SELECT 
@@ -29,21 +35,6 @@ model_default_key AS (
     FROM model_keys mk
     WHERE mk.model_id = $1::uuid AND mk.active = true
     LIMIT 1
-),
-valid_providers AS (
-    SELECT 
-        COALESCE(
-            jsonb_object_agg(
-                p.id::text,
-                jsonb_build_object(
-                    'name', p.name,
-                    'description', COALESCE(p.description, '')
-                )
-            ),
-            '{}'::jsonb
-        ) as provider_mapping,
-        array_agg(p.id::text ORDER BY p.name) as provider_ids
-    FROM providers p
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -110,8 +101,8 @@ key_mapping_data AS (
 )
 SELECT 
     m.*,
-    vp.provider_mapping,
-    vp.provider_ids as valid_provider_ids,
+    ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
+    COALESCE(med.base_url, '') as base_url,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
     COALESCE(mdd.department_ids, ARRAY[]::text[]) as department_ids,
@@ -119,9 +110,9 @@ SELECT
     COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
     mdk.key_id as default_key_id
 FROM model_data m
-CROSS JOIN valid_providers vp
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
+LEFT JOIN model_endpoint_data med ON true
 LEFT JOIN model_departments_data mdd ON mdd.model_id = $1::uuid
 LEFT JOIN model_default_key mdk ON true
 

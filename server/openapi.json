@@ -11208,9 +11208,9 @@
       },
       "CreateModelRequest": {
         "properties": {
-          "provider_id": {
+          "provider": {
             "type": "string",
-            "title": "Provider Id"
+            "title": "Provider"
           },
           "name": {
             "type": "string",
@@ -11223,10 +11223,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "custom_model": {
-            "type": "boolean",
-            "title": "Custom Model"
           },
           "image_model": {
             "type": "boolean",
@@ -11264,15 +11260,25 @@
               }
             ],
             "title": "Key Id"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
           }
         },
         "type": "object",
         "required": [
-          "provider_id",
+          "provider",
           "name",
           "description",
           "active",
-          "custom_model",
           "image_model",
           "input_ppm",
           "output_ppm"
@@ -16815,10 +16821,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "custom_model": {
-            "type": "boolean",
-            "title": "Custom Model"
-          },
           "image_model": {
             "type": "boolean",
             "title": "Image Model"
@@ -16831,23 +16833,20 @@
             "type": "integer",
             "title": "Output Ppm"
           },
-          "provider_id": {
+          "provider": {
             "type": "string",
-            "title": "Provider Id"
+            "title": "Provider"
           },
-          "valid_provider_ids": {
+          "base_url": {
+            "type": "string",
+            "title": "Base Url"
+          },
+          "valid_providers": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Provider Ids"
-          },
-          "provider_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProviderMappingItem"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
+            "title": "Valid Providers"
           },
           "valid_department_ids": {
             "items": {
@@ -16901,13 +16900,12 @@
           "name",
           "description",
           "active",
-          "custom_model",
           "image_model",
           "input_ppm",
           "output_ppm",
-          "provider_id",
-          "valid_provider_ids",
-          "provider_mapping",
+          "provider",
+          "base_url",
+          "valid_providers",
           "valid_department_ids",
           "department_mapping",
           "department_ids",
@@ -16935,10 +16933,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "custom_model": {
-            "type": "boolean",
-            "title": "Custom Model"
-          },
           "image_model": {
             "type": "boolean",
             "title": "Image Model"
@@ -16947,17 +16941,13 @@
             "type": "string",
             "title": "Updated At"
           },
-          "provider_id": {
+          "provider": {
             "type": "string",
-            "title": "Provider Id"
+            "title": "Provider"
           },
-          "provider_name": {
+          "base_url": {
             "type": "string",
-            "title": "Provider Name"
-          },
-          "provider_description": {
-            "type": "string",
-            "title": "Provider Description"
+            "title": "Base Url"
           },
           "can_edit": {
             "type": "boolean",
@@ -16974,12 +16964,10 @@
           "name",
           "description",
           "active",
-          "custom_model",
           "image_model",
           "updated_at",
-          "provider_id",
-          "provider_name",
-          "provider_description",
+          "provider",
+          "base_url",
           "can_edit",
           "can_delete"
         ],
@@ -17036,13 +17024,6 @@
             "type": "array",
             "title": "Models"
           },
-          "provider_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProviderMappingItem"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
-          },
           "provider_options": {
             "items": {
               "additionalProperties": {
@@ -17052,16 +17033,6 @@
             },
             "type": "array",
             "title": "Provider Options"
-          },
-          "custom_model_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Custom Model Options"
           },
           "status_options": {
             "items": {
@@ -17077,9 +17048,7 @@
         "type": "object",
         "required": [
           "models",
-          "provider_mapping",
           "provider_options",
-          "custom_model_options",
           "status_options"
         ],
         "title": "ModelsListResponse"
@@ -23962,9 +23931,9 @@
             "type": "string",
             "title": "Modelid"
           },
-          "provider_id": {
+          "provider": {
             "type": "string",
-            "title": "Provider Id"
+            "title": "Provider"
           },
           "name": {
             "type": "string",
@@ -23977,10 +23946,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "custom_model": {
-            "type": "boolean",
-            "title": "Custom Model"
           },
           "image_model": {
             "type": "boolean",
@@ -24018,16 +23983,26 @@
               }
             ],
             "title": "Key Id"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
           }
         },
         "type": "object",
         "required": [
           "modelId",
-          "provider_id",
+          "provider",
           "name",
           "description",
           "active",
-          "custom_model",
           "image_model",
           "input_ppm",
           "output_ppm"

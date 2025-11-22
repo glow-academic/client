@@ -90,12 +90,8 @@ SELECT
     -- Model data
     m.id::text as model_id,
     m.name as model_name,
-    m.custom_model,
-    
-    -- Provider data
-    pr.id::text as provider_id,
-    pr.name as provider_name,
-    COALESCE(pe.base_url, '') as base_url,
+    m.provider::text as provider,
+    COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
     -- Scenario settings (flags moved from simulations to scenarios)
@@ -141,8 +137,7 @@ LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = pdp_prompt.prompt_id
 LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = pp.prompt_id
 LEFT JOIN models m ON m.id = p.model_id
-LEFT JOIN providers pr ON pr.id = m.provider_id
-LEFT JOIN provider_endpoints pe ON pe.provider_id = pr.id AND pe.active = true
+LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
@@ -156,8 +151,8 @@ GROUP BY sc.id, sc.title, sc.trace_id,
          sa.id, sa.simulation_id,
          s.id, sps.problem_statement,
          p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, p.temperature, p.reasoning,
-         m.id, m.name, m.custom_model,
-         pr.id, pr.name, k.key, pe.base_url,
+         m.id, m.name, m.provider,
+         k.key, me.base_url,
          s.image_input_enabled, s.copy_paste_allowed, s.output_guardrail_enabled,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at

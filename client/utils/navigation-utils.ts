@@ -123,7 +123,7 @@ export const getSectionRoute = (
     case "models":
       return "/engine/models";
     case "providers":
-      return "/engine/providers";
+      return "/engine/models";
     case "evals":
       return "/engine/evals";
 

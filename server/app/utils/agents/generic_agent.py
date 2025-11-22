@@ -32,9 +32,8 @@ class GenericAgent:
         system_prompt: str,
         temperature: float,
         model_name: str,
-        model_provider: str,
+        provider: str,  # enum: 'openai', 'gemini', 'custom'
         api_key: str,
-        custom_model: bool,
         base_url: str | None,
         reasoning: str | None,
         tools: list[Tool] | None = None,
@@ -48,10 +47,11 @@ class GenericAgent:
         self.agent_name = agent_name
         self.system_prompt = system_prompt
         self.temperature = temperature
-        self.custom_model = custom_model
-        self.model_provider = model_provider
+        self.provider = provider
         self.model_name = model_name
-        self.model = f"{model_provider}/{model_name}"
+        # Determine if custom model based on provider and base_url (TODO: could be wrong logic)
+        self.custom_model = provider == "custom" or (base_url is not None and base_url != "")
+        self.model = f"{provider}/{model_name}" if self.custom_model else model_name
         self.tools = tools
         self.parallel_tool_calls = parallel_tool_calls
         self.tool_use_behavior = tool_use_behavior
@@ -59,7 +59,7 @@ class GenericAgent:
         self.output_guardrails: list[OutputGuardrail[DebugContext]] = (
             output_guardrails or []
         )
-        self.base_url = base_url
+        self.base_url = base_url if self.custom_model else None
         self.extra_body = None
         self.reasoning: Reasoning | None = None
 
@@ -79,11 +79,8 @@ class GenericAgent:
         self.api_key = decrypt_api_key(api_key)
 
     def agent(self) -> Agent[DebugContext]:
-        model = (
-            f"{self.model_provider}/{self.model}" if self.custom_model else self.model
-        )
-
-        base_url = self.base_url if self.custom_model else None
+        model = self.model
+        base_url = self.base_url
 
         self.model_settings = ModelSettings(
             temperature=self.temperature,

@@ -4926,16 +4926,14 @@ export interface components {
          * @description Request to create model.
          */
         CreateModelRequest: {
-            /** Provider Id */
-            provider_id: string;
+            /** Provider */
+            provider: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
             /** Image Model */
             image_model: boolean;
             /** Input Ppm */
@@ -4946,6 +4944,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Key Id */
             key_id?: string | null;
+            /** Base Url */
+            base_url?: string | null;
         };
         /**
          * CreateModelResponse
@@ -7092,22 +7092,18 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
             /** Image Model */
             image_model: boolean;
             /** Input Ppm */
             input_ppm: number;
             /** Output Ppm */
             output_ppm: number;
-            /** Provider Id */
-            provider_id: string;
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["ProviderMappingItem"];
-            };
+            /** Provider */
+            provider: string;
+            /** Base Url */
+            base_url: string;
+            /** Valid Providers */
+            valid_providers: string[];
             /** Valid Department Ids */
             valid_department_ids: string[];
             /** Department Mapping */
@@ -7135,18 +7131,14 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
             /** Image Model */
             image_model: boolean;
             /** Updated At */
             updated_at: string;
-            /** Provider Id */
-            provider_id: string;
-            /** Provider Name */
-            provider_name: string;
-            /** Provider Description */
-            provider_description: string;
+            /** Provider */
+            provider: string;
+            /** Base Url */
+            base_url: string;
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -7175,16 +7167,8 @@ export interface components {
         ModelsListResponse: {
             /** Models */
             models: components["schemas"]["ModelItem"][];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["ProviderMappingItem"];
-            };
             /** Provider Options */
             provider_options: {
-                [key: string]: string;
-            }[];
-            /** Custom Model Options */
-            custom_model_options: {
                 [key: string]: string;
             }[];
             /** Status Options */
@@ -9847,16 +9831,14 @@ export interface components {
         UpdateModelRequest: {
             /** Modelid */
             modelId: string;
-            /** Provider Id */
-            provider_id: string;
+            /** Provider */
+            provider: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
-            /** Custom Model */
-            custom_model: boolean;
             /** Image Model */
             image_model: boolean;
             /** Input Ppm */
@@ -9867,6 +9849,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Key Id */
             key_id?: string | null;
+            /** Base Url */
+            base_url?: string | null;
         };
         /**
          * UpdateModelResponse

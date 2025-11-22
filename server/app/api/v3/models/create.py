@@ -16,16 +16,16 @@ from app.utils.sql_helper import load_sql
 class CreateModelRequest(BaseModel):
     """Request to create model."""
 
-    provider_id: str
+    provider: str  # enum: 'openai', 'gemini', 'custom'
     name: str
     description: str
     active: bool
-    custom_model: bool
     image_model: bool
     input_ppm: float
     output_ppm: float
     department_ids: list[str] | None = None
     key_id: str | None = None
+    base_url: str | None = None  # Required if provider is 'custom'
 
 
 class CreateModelResponse(BaseModel):
@@ -58,29 +58,29 @@ async def create_model(
             # Ensure department_ids is always an array (empty if None)
             department_ids = request.department_ids if request.department_ids else []
             sql_params = (
-                request.provider_id,
+                request.provider,
                 request.name,
                 request.description,
                 request.active,
-                request.custom_model,
                 request.image_model,
                 request.input_ppm,
                 request.output_ppm,
                 department_ids,
                 request.key_id,
+                request.base_url,
             )
             result = await conn.fetchrow(
                 sql_query,
-                request.provider_id,
+                request.provider,
                 request.name,
                 request.description,
                 request.active,
-                request.custom_model,
                 request.image_model,
                 request.input_ppm,
                 request.output_ppm,
                 department_ids,
                 request.key_id,
+                request.base_url,
             )
 
             if not result:
