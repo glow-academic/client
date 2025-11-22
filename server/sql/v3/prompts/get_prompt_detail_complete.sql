@@ -3,7 +3,10 @@
 WITH prompt_data AS (
     SELECT 
         pr.id as prompt_id,
+        pr.name,
+        pr.description,
         pr.system_prompt,
+        pr.active,
         pr.created_at,
         pr.updated_at
     FROM prompts pr

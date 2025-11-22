@@ -24,23 +24,10 @@ CREATE TABLE auth_items (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   auth_id    UUID        NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
   name       TEXT        NOT NULL,
-  description TEXT        NOT NULL
+  description TEXT        NOT NULL,
+  value      TEXT        NOT NULL -- Encrypted value (similar to parameter_items.value)
 );
 
 CREATE INDEX ON auth_items (auth_id);
 CREATE INDEX ON auth_items (auth_id, name);
-
--- Auth Items ↔ Keys junction table (BCNF normalization)
-CREATE TABLE auth_item_keys (
-  auth_item_id UUID NOT NULL REFERENCES auth_items(id) ON DELETE CASCADE,
-  key_id       UUID NOT NULL REFERENCES keys(id)       ON DELETE CASCADE,
-  active       BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (auth_item_id, key_id)
-);
-
-CREATE INDEX ON auth_item_keys (auth_item_id);
-CREATE INDEX ON auth_item_keys (key_id);
-CREATE INDEX ON auth_item_keys (active);
 

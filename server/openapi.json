@@ -9193,14 +9193,6 @@
             "type": "array",
             "title": "Auth Items"
           },
-          "key_mapping": {
-            "additionalProperties": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Key Mapping"
-          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -9212,7 +9204,6 @@
           "description",
           "active",
           "auth_items",
-          "key_mapping",
           "can_edit"
         ],
         "title": "AuthDetailResponse"
@@ -9296,25 +9287,16 @@
             "type": "string",
             "title": "Description"
           },
-          "key_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Ids"
+          "value": {
+            "type": "string",
+            "title": "Value"
           }
         },
         "type": "object",
         "required": [
           "name",
-          "description"
+          "description",
+          "value"
         ],
         "title": "AuthItemCreate",
         "description": "Auth item creation schema."
@@ -9333,12 +9315,9 @@
             "type": "string",
             "title": "Description"
           },
-          "key_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Key Ids"
+          "value_masked": {
+            "type": "string",
+            "title": "Value Masked"
           }
         },
         "type": "object",
@@ -9346,7 +9325,7 @@
           "auth_item_id",
           "name",
           "description",
-          "key_ids"
+          "value_masked"
         ],
         "title": "AuthItemDetail"
       },
@@ -11530,9 +11509,9 @@
             "type": "string",
             "title": "Key"
           },
-          "type": {
+          "description": {
             "type": "string",
-            "title": "Type"
+            "title": "Description"
           },
           "active": {
             "type": "boolean",
@@ -11558,7 +11537,7 @@
         "required": [
           "name",
           "key",
-          "type"
+          "description"
         ],
         "title": "CreateKeyRequest",
         "description": "Request to create key."
@@ -12149,9 +12128,22 @@
       },
       "CreatePromptRequest": {
         "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "system_prompt": {
             "type": "string",
             "title": "System Prompt"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
           },
           "department_ids": {
             "anyOf": [
@@ -12170,6 +12162,8 @@
         },
         "type": "object",
         "required": [
+          "name",
+          "description",
           "system_prompt"
         ],
         "title": "CreatePromptRequest",
@@ -16756,9 +16750,9 @@
             "type": "string",
             "title": "Key Masked"
           },
-          "type": {
+          "description": {
             "type": "string",
-            "title": "Type"
+            "title": "Description"
           },
           "active": {
             "type": "boolean",
@@ -16811,7 +16805,7 @@
           "key_id",
           "name",
           "key_masked",
-          "type",
+          "description",
           "active",
           "created_at",
           "updated_at",
@@ -16857,16 +16851,6 @@
             "type": "array",
             "title": "Department Options"
           },
-          "type_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Type Options"
-          },
           "model_options": {
             "items": {
               "additionalProperties": {
@@ -16900,7 +16884,6 @@
         "required": [
           "keys",
           "department_options",
-          "type_options",
           "model_options",
           "department_mapping",
           "model_mapping"
@@ -20702,6 +20685,25 @@
             "type": "string",
             "title": "Prompt Id"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
           "system_prompt": {
             "type": "string",
             "title": "System Prompt"
@@ -20777,6 +20779,8 @@
         "type": "object",
         "required": [
           "prompt_id",
+          "name",
+          "active",
           "system_prompt",
           "created_at",
           "updated_at",
@@ -20797,6 +20801,25 @@
           "prompt_id": {
             "type": "string",
             "title": "Prompt Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
           },
           "system_prompt_preview": {
             "type": "string",
@@ -20854,6 +20877,8 @@
         "type": "object",
         "required": [
           "prompt_id",
+          "name",
+          "active",
           "system_prompt_preview",
           "system_prompt",
           "created_at",
@@ -25074,6 +25099,10 @@
             "type": "string",
             "title": "Key"
           },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -25098,6 +25127,7 @@
           "keyId",
           "name",
           "key",
+          "description",
           "active"
         ],
         "title": "UpdateKeyRequest",
@@ -25579,9 +25609,22 @@
             "type": "string",
             "title": "Promptid"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "system_prompt": {
             "type": "string",
             "title": "System Prompt"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
           },
           "department_ids": {
             "anyOf": [
@@ -25601,6 +25644,8 @@
         "type": "object",
         "required": [
           "promptId",
+          "name",
+          "description",
           "system_prompt"
         ],
         "title": "UpdatePromptRequest",

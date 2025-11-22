@@ -1,4 +1,4 @@
--- Delete auth entry (cascade will handle auth_items and auth_item_keys)
+-- Delete auth entry (cascade will handle auth_items)
 -- Parameters: $1=auth_id
 WITH auth_to_delete AS (
     SELECT id, name

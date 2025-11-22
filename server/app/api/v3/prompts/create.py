@@ -16,7 +16,10 @@ from app.utils.sql_helper import load_sql
 class CreatePromptRequest(BaseModel):
     """Request to create prompt."""
 
+    name: str
+    description: str
     system_prompt: str
+    active: bool = True
     department_ids: list[str] | None = None
 
 
@@ -55,7 +58,7 @@ async def create_prompt(
 
             # Create prompt with department links
             sql_query = load_sql("sql/v3/prompts/create_prompt.sql")
-            sql_params = (request.system_prompt, department_ids)
+            sql_params = (request.name, request.description, request.system_prompt, request.active, department_ids)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

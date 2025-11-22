@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.main import get_db, transaction
+from app.utils.auth.encrypt_api_key import encrypt_api_key
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
@@ -17,8 +18,8 @@ class CreateKeyRequest(BaseModel):
     """Request to create key."""
 
     name: str
-    key: str
-    type: str  # 'api' or 'auth'
+    key: str  # Plain text key that will be encrypted
+    description: str
     active: bool = True
     department_ids: list[str] | None = None
 
@@ -50,16 +51,15 @@ async def create_key(
 
     try:
         async with transaction(conn):
-            # Validate type
-            if request.type not in ("api", "auth"):
-                raise ValueError(f"Invalid key type: {request.type}. Must be 'api' or 'auth'")
+            # Encrypt the key before storing
+            encrypted_key = encrypt_api_key(request.key)
 
             # Ensure department_ids is always an array (empty if None)
             department_ids = request.department_ids if request.department_ids else []
 
             # Create key with department links
             sql_query = load_sql("sql/v3/keys/create_key.sql")
-            sql_params = (request.name, request.key, request.type, request.active, department_ids)
+            sql_params = (request.name, encrypted_key, request.description, request.active, department_ids)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

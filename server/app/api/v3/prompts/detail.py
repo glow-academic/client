@@ -28,6 +28,9 @@ class PromptDetailResponse(BaseModel):
     """Response for prompt detail endpoint."""
 
     prompt_id: str
+    name: str
+    description: str | None = None
+    active: bool
     system_prompt: str
     created_at: str
     updated_at: str
@@ -146,6 +149,9 @@ async def get_prompt_detail(
 
         response_data = PromptDetailResponse(
             prompt_id=str(row.get("prompt_id", "")),
+            name=row.get("name") or "",
+            description=row.get("description"),
+            active=row.get("active", False),
             system_prompt=row.get("system_prompt", ""),
             created_at=row.get("created_at").isoformat() if row.get("created_at") else "",
             updated_at=row.get("updated_at").isoformat() if row.get("updated_at") else "",

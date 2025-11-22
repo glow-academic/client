@@ -44,7 +44,10 @@ CREATE TABLE prompts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  system_prompt TEXT     NOT NULL
+  name       TEXT        NOT NULL,
+  description TEXT       NOT NULL,
+  system_prompt TEXT     NOT NULL,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX ON prompts (created_at);

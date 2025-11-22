@@ -4189,12 +4189,6 @@ export interface components {
             active: boolean;
             /** Auth Items */
             auth_items: components["schemas"]["AuthItemDetail"][];
-            /** Key Mapping */
-            key_mapping: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
             /** Can Edit */
             can_edit: boolean;
         };
@@ -4233,8 +4227,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Key Ids */
-            key_ids?: string[] | null;
+            /** Value */
+            value: string;
         };
         /** AuthItemDetail */
         AuthItemDetail: {
@@ -4244,8 +4238,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** Key Ids */
-            key_ids: string[];
+            /** Value Masked */
+            value_masked: string;
         };
         /** AuthListResponse */
         AuthListResponse: {
@@ -5078,8 +5072,8 @@ export interface components {
             name: string;
             /** Key */
             key: string;
-            /** Type */
-            type: string;
+            /** Description */
+            description: string;
             /**
              * Active
              * @default true
@@ -5312,8 +5306,17 @@ export interface components {
          * @description Request to create prompt.
          */
         CreatePromptRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** System Prompt */
             system_prompt: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
         };
@@ -7110,8 +7113,8 @@ export interface components {
             name: string;
             /** Key Masked */
             key_masked: string;
-            /** Type */
-            type: string;
+            /** Description */
+            description: string;
             /** Active */
             active: boolean;
             /** Created At */
@@ -7146,10 +7149,6 @@ export interface components {
             keys: components["schemas"]["KeyItem"][];
             /** Department Options */
             department_options: {
-                [key: string]: string;
-            }[];
-            /** Type Options */
-            type_options: {
                 [key: string]: string;
             }[];
             /** Model Options */
@@ -8591,6 +8590,12 @@ export interface components {
         PromptDetailResponse: {
             /** Prompt Id */
             prompt_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active: boolean;
             /** System Prompt */
             system_prompt: string;
             /** Created At */
@@ -8631,6 +8636,12 @@ export interface components {
         PromptItem: {
             /** Prompt Id */
             prompt_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active: boolean;
             /** System Prompt Preview */
             system_prompt_preview: string;
             /** System Prompt */
@@ -10323,6 +10334,8 @@ export interface components {
             name: string;
             /** Key */
             key: string;
+            /** Description */
+            description: string;
             /** Active */
             active: boolean;
             /** Department Ids */
@@ -10489,8 +10502,17 @@ export interface components {
         UpdatePromptRequest: {
             /** Promptid */
             promptId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** System Prompt */
             system_prompt: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
         };

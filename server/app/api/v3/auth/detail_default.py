@@ -74,25 +74,14 @@ async def get_auth_detail_default(
         if items_data and isinstance(items_data, list):
             for item_data in items_data:
                 if isinstance(item_data, dict):
-                    key_ids = []
-                    if item_data.get("key_ids"):
-                        key_ids = [str(kid) for kid in item_data["key_ids"]]
                     auth_items.append(
                         AuthItemDetail(
                             auth_item_id=item_data.get("auth_item_id", ""),
                             name=item_data.get("name", ""),
                             description=item_data.get("description", ""),
-                            key_ids=key_ids,
+                            value_masked=item_data.get("value_masked", "****"),
                         )
                     )
-
-        # Parse key_mapping from JSONB (should be empty for default)
-        key_mapping: dict[str, dict[str, Any]] = {}
-        key_mapping_data = result.get("key_mapping")
-        if isinstance(key_mapping_data, str):
-            key_mapping_data = json.loads(key_mapping_data)
-        if key_mapping_data and isinstance(key_mapping_data, dict):
-            key_mapping = key_mapping_data
 
         # Get user role for default behavior
         user_role = result.get("user_role", "trainee")
@@ -103,7 +92,6 @@ async def get_auth_detail_default(
             description=result["description"],
             active=result["active"],
             auth_items=auth_items,
-            key_mapping=key_mapping,
             can_edit=can_edit,
         )
 

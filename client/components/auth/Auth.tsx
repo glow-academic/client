@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +45,7 @@ type AuthItemFormData = {
   id?: string;
   name: string;
   description: string;
-  key_ids: string[];
+  value: string; // Plain text value (will be encrypted on server)
   isNew: boolean;
   isDeleted: boolean;
 };
@@ -64,9 +63,6 @@ interface AuthProps {
   authDetailDefault?: AuthDetailDefaultOut;
   createAuthAction?: (input: CreateAuthIn) => Promise<CreateAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
-  createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
-  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
-  updateKeyAction?: (input: UpdateKeyIn) => Promise<UpdateKeyOut>;
 }
 
 export default function Auth({
@@ -76,9 +72,6 @@ export default function Auth({
   authDetailDefault: serverAuthDetailDefault,
   createAuthAction,
   updateAuthAction,
-  createKeyAction,
-  decryptKeyAction,
-  updateKeyAction,
 }: AuthProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!authId;
@@ -103,25 +96,6 @@ export default function Auth({
   const authDetailDefault = serverAuthDetailDefault;
   const authData = isEditMode ? authDetail : authDetailDefault;
 
-  // Extract key_mapping and validIds from server-provided data
-  const keyMapping = useMemo(() => {
-    if (authData?.key_mapping) {
-      return authData.key_mapping as Record<
-        string,
-        {
-          name: string;
-          description: string;
-          key_masked: string;
-          active: boolean;
-        }
-      >;
-    }
-    return {};
-  }, [authData]);
-
-  const validKeyIds = useMemo(() => {
-    return Object.keys(keyMapping);
-  }, [keyMapping]);
 
   // Extract body types from server action types for type safety
   type CreateAuthBody = CreateAuthIn extends { body: infer B } ? B : never;
@@ -188,12 +162,12 @@ export default function Auth({
           auth_item_id: string;
           name: string;
           description: string;
-          key_ids?: string[];
+          value_masked?: string;
         }) => ({
           id: item.auth_item_id,
           name: item.name,
           description: item.description,
-          key_ids: item.key_ids || [],
+          value: "", // Values are encrypted, so we don't show them - user must re-enter
           isNew: false,
           isDeleted: false,
         })
@@ -220,12 +194,12 @@ export default function Auth({
           auth_item_id: string;
           name: string;
           description: string;
-          key_ids?: string[];
+          value_masked?: string;
         }) => ({
           id: item.auth_item_id,
           name: item.name,
           description: item.description,
-          key_ids: item.key_ids || [],
+          value: "", // Values are encrypted, so we don't show them - user must re-enter
           isNew: false,
           isDeleted: false,
         })
@@ -256,7 +230,7 @@ export default function Auth({
         .map((item) => ({
           name: item.name,
           description: item.description,
-          key_ids: item.key_ids.length > 0 ? item.key_ids : null,
+          value: item.value, // Plain text value (will be encrypted on server)
         }));
 
       if (isEditMode) {
@@ -316,6 +290,10 @@ export default function Auth({
         errors.push("All auth items must have a description");
         break;
       }
+      if (!item.value || item.value.trim() === "") {
+        errors.push("All auth items must have a value");
+        break;
+      }
     }
 
     return errors;
@@ -327,7 +305,7 @@ export default function Auth({
       {
         name: "",
         description: "",
-        key_ids: [],
+        value: "",
         isNew: true,
         isDeleted: false,
       },
@@ -506,20 +484,21 @@ export default function Auth({
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground mb-1 block">
-                          Keys
+                          Value *
                         </Label>
-                        <KeyPicker
-                          mapping={keyMapping}
-                          validIds={validKeyIds}
-                          selectedIds={item.key_ids}
-                          onSelect={(ids) =>
-                            handleAuthItemInputChange(itemIndex, "key_ids", ids)
+                        <Input
+                          type="password"
+                          value={item.value}
+                          onChange={(e) =>
+                            handleAuthItemInputChange(
+                              itemIndex,
+                              "value",
+                              e.target.value
+                            )
                           }
-                          disabled={isReadonly ?? false}
-                          {...(createKeyAction && { createKeyAction })}
-                          {...(decryptKeyAction && { decryptKeyAction })}
-                          {...(updateKeyAction && { updateKeyAction })}
-                          keyType="auth"
+                          className="text-sm w-full"
+                          placeholder="Enter encrypted value"
+                          disabled={isReadonly}
                         />
                       </div>
                     </div>
@@ -534,7 +513,7 @@ export default function Auth({
                     <TableRow>
                       <TableHead className="w-48">Name</TableHead>
                       <TableHead className="w-80">Description</TableHead>
-                      <TableHead className="w-64">Keys</TableHead>
+                      <TableHead className="w-64">Value</TableHead>
                       <TableHead className="w-20">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -574,21 +553,19 @@ export default function Auth({
                             />
                           </TableCell>
                           <TableCell className="w-64">
-                            <KeyPicker
-                              mapping={keyMapping}
-                              validIds={validKeyIds}
-                              selectedIds={item.key_ids}
-                              onSelect={(ids) =>
+                            <Input
+                              type="password"
+                              value={item.value}
+                              onChange={(e) =>
                                 handleAuthItemInputChange(
                                   itemIndex,
-                                  "key_ids",
-                                  ids
+                                  "value",
+                                  e.target.value
                                 )
                               }
-                              disabled={isReadonly ?? false}
-                              {...(createKeyAction && { createKeyAction })}
-                              {...(decryptKeyAction && { decryptKeyAction })}
-                              keyType="auth"
+                              className="text-sm w-full"
+                              placeholder="Enter encrypted value"
+                              disabled={isReadonly}
                             />
                           </TableCell>
                           <TableCell className="w-20">

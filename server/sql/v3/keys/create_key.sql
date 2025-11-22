@@ -1,13 +1,13 @@
 -- Create a new key with department links
--- Parameters: $1=name, $2=key (encrypted), $3=type, $4=active, $5=department_ids (text array, nullable)
+-- Parameters: $1=name, $2=key (encrypted), $3=description, $4=active, $5=department_ids (text array, nullable)
 WITH new_key AS (
     INSERT INTO keys (
         name,
         key,
-        type,
+        description,
         active
     )
-    VALUES ($1, $2, $3::key_type, $4)
+    VALUES ($1, $2, $3, $4)
     RETURNING id::text as key_id, key
 ),
 link_departments AS (

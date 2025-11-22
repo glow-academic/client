@@ -26,6 +26,9 @@ class PromptItem(BaseModel):
     """Prompt item for list view."""
 
     prompt_id: str
+    name: str
+    description: str | None = None
+    active: bool
     system_prompt_preview: str
     system_prompt: str
     created_at: str
@@ -101,6 +104,9 @@ async def get_prompts_list(
             prompts.append(
                 PromptItem(
                     prompt_id=str(row["prompt_id"]),
+                    name=row.get("name") or "",
+                    description=row.get("description"),
+                    active=row.get("active", False),
                     system_prompt_preview=row["system_prompt_preview"] or "",
                     system_prompt=row["system_prompt"] or "",
                     created_at=row["created_at"].isoformat() if row.get("created_at") else "",

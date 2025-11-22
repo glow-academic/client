@@ -92,16 +92,6 @@ export default function Keys({
         .filter((opt) => opt.value && opt.label),
     [keysData?.department_options]
   );
-  const typeOptions = useMemo(
-    () =>
-      (keysData?.type_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [keysData?.type_options]
-  );
   const modelOptions = useMemo(
     () =>
       (keysData?.model_options || [])
@@ -121,8 +111,8 @@ export default function Keys({
         header: "Name",
       },
       {
-        accessorKey: "type",
-        header: "Type",
+        accessorKey: "description",
+        header: "Description",
       },
       // Hidden faceting column for Departments (array of IDs)
       {
@@ -304,10 +294,6 @@ export default function Keys({
             <CardTitle className="text-lg">{key.name}</CardTitle>
             <div className="mt-1 space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant="outline">
-                  <Key className="h-3 w-3 mr-1" />
-                  {key.type.toUpperCase()}
-                </Badge>
                 {!key.active && <Badge variant="secondary">Inactive</Badge>}
               </div>
             </div>
@@ -383,7 +369,6 @@ export default function Keys({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const typeColumn = table.getColumn("type");
   const departmentsColumn = table.getColumn("departments");
   const modelsColumn = table.getColumn("models");
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -425,13 +410,6 @@ export default function Keys({
                 )}
 
                 {/* Type Filter */}
-                {typeColumn && typeOptions.length > 0 && (
-                  <DataTableFacetedFilter
-                    column={typeColumn}
-                    title="Type"
-                    options={typeOptions}
-                  />
-                )}
 
                 {/* Model Filter */}
                 {modelsColumn && modelOptions.length > 0 && (

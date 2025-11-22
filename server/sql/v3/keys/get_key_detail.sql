@@ -14,7 +14,7 @@ SELECT
         WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
         ELSE '****'
     END as key_masked,
-    k.type::text,
+    k.description,
     k.active
 FROM keys k
 WHERE k.id = $1::uuid

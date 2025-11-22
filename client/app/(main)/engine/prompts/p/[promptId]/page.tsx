@@ -73,10 +73,10 @@ export async function generateMetadata(
 
   try {
     const prompt = await getPrompt(promptId, profileId);
-    const preview = prompt?.system_prompt?.substring(0, 50) || "Prompt";
+    const title = prompt?.name || "Prompt";
     return {
-      title: `${preview}`,
-      description: `Prompt in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      title: `${title}`,
+      description: prompt?.description || `Prompt in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
     };
   } catch {
     return {

@@ -1,11 +1,12 @@
 -- Update a key with department links
--- Parameters: $1=key_id, $2=name, $3=key (encrypted), $4=active, $5=department_ids (text array, nullable)
+-- Parameters: $1=key_id, $2=name, $3=key (encrypted), $4=description, $5=active, $6=department_ids (text array, nullable)
 WITH update_key AS (
     UPDATE keys
     SET 
         name = $2,
         key = $3,
-        active = $4,
+        description = $4,
+        active = $5,
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as key_id, key
@@ -25,8 +26,8 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($5::text[]) as dept_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+    FROM UNNEST($6::text[]) as dept_id
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
     ON CONFLICT (key_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

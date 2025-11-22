@@ -5,24 +5,15 @@
  * 01/22/2025
  */
 "use client";
-import {
-  Copy,
-  Edit,
-  Eye,
-  FileText,
-  Plus,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Edit, Eye, FileText, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
-  PromptsListOut,
   DeletePromptIn,
   DeletePromptOut,
+  PromptsListOut,
 } from "@/app/(main)/engine/prompts/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -129,15 +120,27 @@ export default function Prompts({
   const columns: ColumnDef<(typeof prompts)[number]>[] = useMemo(
     () => [
       {
-        accessorKey: "system_prompt_preview",
-        header: "Prompt",
-        cell: ({ row }) => row.getValue("system_prompt_preview"),
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => row.getValue("name"),
         filterFn: (row, id, value) => {
-          const preview = String(row.getValue(id)).toLowerCase();
-          const fullPrompt = String(row.original.system_prompt).toLowerCase();
+          const name = String(row.getValue(id)).toLowerCase();
+          const description = String(
+            row.original.description || ""
+          ).toLowerCase();
           const query = String(value).toLowerCase();
-          return preview.includes(query) || fullPrompt.includes(query);
+          return name.includes(query) || description.includes(query);
         },
+      },
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => row.getValue("description") || "",
+      },
+      {
+        accessorKey: "active",
+        header: "Status",
+        cell: ({ row }) => (row.getValue("active") ? "Active" : "Inactive"),
       },
       {
         id: "departments",
@@ -303,8 +306,8 @@ export default function Prompts({
     }
   };
 
-  const handleDeleteClick = (id: string, preview: string) => {
-    setDeleteItem({ id, name: preview.substring(0, 50) });
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeleteItem({ id, name: name.substring(0, 50) });
     setShowDeleteDialog(true);
   };
 
@@ -322,13 +325,11 @@ export default function Prompts({
 
   const renderPromptCard = (prompt: (typeof prompts)[number]) => {
     const departmentMapping = promptsData?.department_mapping || {};
-    const agentMapping = promptsData?.agent_mapping || {};
-    const personaMapping = promptsData?.persona_mapping || {};
 
     return (
       <Card
         key={prompt.prompt_id}
-        aria-label={prompt.system_prompt_preview}
+        aria-label={prompt.name || "Untitled Prompt"}
         data-testid="prompt-card"
         data-prompt-id={prompt.prompt_id}
         className="relative flex flex-col h-full"
@@ -337,26 +338,36 @@ export default function Prompts({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <CardTitle className="text-lg line-clamp-2">
-                {prompt.system_prompt_preview || "Untitled Prompt"}
+                {prompt.name || "Untitled Prompt"}
               </CardTitle>
-              <div className="mt-1 space-y-2">
-                {prompt.department_ids && prompt.department_ids.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {prompt.department_ids.slice(0, 2).map((deptId) => (
-                      <Badge key={deptId} variant="outline">
-                        {departmentMapping[deptId]?.name || deptId}
-                      </Badge>
-                    ))}
-                    {prompt.department_ids.length > 2 && (
-                      <Badge variant="outline">
-                        +{prompt.department_ids.length - 2} more
-                      </Badge>
+              {prompt.description && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  {prompt.description}
+                </p>
+              )}
+              <div className="mt-2 space-y-2">
+                {!prompt.active && <Badge variant="secondary">Inactive</Badge>}
+                <div className="mt-1 space-y-2">
+                  {prompt.department_ids &&
+                    prompt.department_ids.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {prompt.department_ids.slice(0, 2).map((deptId) => (
+                          <Badge key={deptId} variant="outline">
+                            {departmentMapping[deptId]?.name || deptId}
+                          </Badge>
+                        ))}
+                        {prompt.department_ids.length > 2 && (
+                          <Badge variant="outline">
+                            +{prompt.department_ids.length - 2} more
+                          </Badge>
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-                {(!prompt.department_ids || prompt.department_ids.length === 0) && (
-                  <Badge variant="secondary">Default</Badge>
-                )}
+                  {(!prompt.department_ids ||
+                    prompt.department_ids.length === 0) && (
+                    <Badge variant="secondary">Default</Badge>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -389,7 +400,7 @@ export default function Prompts({
                   onClick={() =>
                     handleDeleteClick(
                       prompt.prompt_id,
-                      prompt.system_prompt_preview
+                      prompt.name || "Untitled Prompt"
                     )
                   }
                   aria-label={`Delete prompt`}
@@ -402,7 +413,7 @@ export default function Prompts({
         </CardHeader>
         <CardContent className="pt-0 flex-grow flex flex-col justify-end">
           <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-            {prompt.system_prompt_preview || "No preview available"}
+            {prompt.description || prompt.name || "No description available"}
           </p>
           {/* Compact info row: Agents • Personas */}
           <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
@@ -451,7 +462,7 @@ export default function Prompts({
   );
 
   // Get column references for toolbar
-  const nameColumn = table.getColumn("system_prompt_preview");
+  const nameColumn = table.getColumn("name");
   const departmentColumn = table.getColumn("departments");
   const agentColumn = table.getColumn("agents");
   const personaColumn = table.getColumn("personas");
@@ -584,4 +595,3 @@ export default function Prompts({
     </div>
   );
 }
-

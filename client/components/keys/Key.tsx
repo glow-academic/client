@@ -13,26 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
-import { Power, Key as KeyIcon } from "lucide-react";
+import { Power } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 // Type-only import from server pages
 import type {
@@ -46,118 +32,16 @@ import type {
   KeyDetailDefaultOut,
 } from "@/app/(main)/engine/keys/new/page";
 
-const KEY_TYPES = [
-  {
-    id: "api",
-    name: "API",
-    description: "API key for model access",
-  },
-  {
-    id: "auth",
-    name: "Auth",
-    description: "Authentication key",
-  },
-] as const;
-
-export type KeyType = (typeof KEY_TYPES)[number]["id"];
-
-interface TypePickerProps {
-  selectedType: string;
-  onSelect: (type: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  buttonClassName?: string;
-}
-
-function TypePicker({
-  selectedType,
-  onSelect,
-  placeholder = "Select type...",
-  disabled = false,
-  buttonClassName,
-}: TypePickerProps) {
-  const [open, setOpen] = React.useState(false);
-
-  const handleSelect = (typeId: string) => {
-    onSelect(typeId);
-    setOpen(false);
-  };
-
-  const getButtonText = () => {
-    if (!selectedType) {
-      return placeholder;
-    }
-    const type = KEY_TYPES.find((t) => t.id === selectedType);
-    return type?.name || placeholder;
-  };
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          aria-label="Select key type"
-          className={cn("w-full justify-between", buttonClassName)}
-          disabled={disabled}
-        >
-          <span className="truncate text-left">{getButtonText()}</span>
-          <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-[300px] p-0">
-        <Command loop>
-          <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
-            <CommandInput placeholder="Search types..." />
-            <CommandEmpty>No types found.</CommandEmpty>
-            <CommandGroup heading="Key Types">
-              {KEY_TYPES.map((type) => (
-                <CommandItem
-                  key={type.id}
-                  onSelect={() => handleSelect(type.id)}
-                  className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-                  data-testid="type-option"
-                  data-type-id={type.id}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate">{type.name}</div>
-                        {type.description && (
-                          <div className="text-xs text-muted-foreground mt-1 truncate">
-                            {type.description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Check
-                      className={cn(
-                        "ml-auto flex-shrink-0",
-                        selectedType === type.id ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 interface FormErrors {
   name?: string;
   key?: string;
-  type?: string;
+  description?: string;
 }
 
 interface FormData {
   name?: string;
   key?: string;
-  type?: string;
+  description?: string;
   active?: boolean;
   departmentIds?: string[] | null;
 }
@@ -200,7 +84,7 @@ export default function Key({
     () => ({
       name: "",
       key: "",
-      type: "api",
+      description: "",
       active: true,
       departmentIds: defaultDepartmentIds,
     }),
@@ -272,13 +156,7 @@ export default function Key({
         clearEntityMetadata(keyId);
       }
     };
-  }, [
-    keyDetail,
-    keyId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  }, [keyDetail, keyId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
@@ -287,7 +165,7 @@ export default function Key({
       setFormData({
         name: keyDetail.name,
         key: "", // Don't populate key value for security
-        type: keyDetail.type,
+        description: keyDetail.description || "",
         active: keyDetail.active,
         departmentIds: currentDepartmentIds,
       });
@@ -295,12 +173,7 @@ export default function Key({
       // We are in CREATE mode, so reset the form to its initial state
       setFormData(initialFormData);
     }
-  }, [
-    isEditMode,
-    keyDetail,
-    initialFormData,
-    currentDepartmentIds,
-  ]);
+  }, [isEditMode, keyDetail, initialFormData, currentDepartmentIds]);
 
   const handleInputChange = (
     field: keyof FormData,
@@ -330,14 +203,6 @@ export default function Key({
       return;
     }
 
-    if (!formData.type) {
-      setErrors((prev) => ({
-        ...prev,
-        type: "Type is required",
-      }));
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -346,6 +211,7 @@ export default function Key({
           keyId: keyId,
           name: formData.name!,
           key: formData.key || "", // Use existing key if not changed
+          description: formData.description || "",
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
         });
@@ -356,7 +222,7 @@ export default function Key({
         await handleCreateKey({
           name: formData.name!,
           key: formData.key!,
-          type: formData.type!,
+          description: formData.description || "",
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
         });
@@ -403,7 +269,11 @@ export default function Key({
               data-testid="input-key-value"
               value={formData.key}
               onChange={(e) => handleInputChange("key", e.target.value)}
-              placeholder={isEditMode ? "Leave blank to keep existing key" : "Enter key value"}
+              placeholder={
+                isEditMode
+                  ? "Leave blank to keep existing key"
+                  : "Enter key value"
+              }
               className={errors.key ? "border-destructive" : ""}
               disabled={isReadonly || isSubmitting}
             />
@@ -418,20 +288,23 @@ export default function Key({
           )}
         </div>
 
-        {/* Type Selection */}
+        {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor="type">Type</Label>
-          <div data-testid="picker-type">
-            <TypePicker
-              selectedType={formData.type || ""}
-              onSelect={(type) => handleInputChange("type", type)}
-              placeholder="Select a type..."
+          <Label htmlFor="description">Description</Label>
+          {formData.description !== undefined ? (
+            <Textarea
+              id="description"
+              data-testid="input-key-description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter key description"
+              className={errors.description ? "border-destructive" : ""}
               disabled={isReadonly || isSubmitting}
-              buttonClassName={errors.type ? "border-destructive" : ""}
+              rows={3}
             />
-          </div>
-          {errors.type && (
-            <p className="text-sm text-destructive">{errors.type}</p>
+          ) : null}
+          {errors.description && (
+            <p className="text-sm text-destructive">{errors.description}</p>
           )}
         </div>
 
@@ -522,4 +395,3 @@ export default function Key({
     </div>
   );
 }
-

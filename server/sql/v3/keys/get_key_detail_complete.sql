@@ -8,7 +8,7 @@ WITH key_data AS (
             WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
             ELSE '****'
         END as key_masked,
-        k.type::text as type,
+        k.description,
         k.active,
         k.created_at,
         k.updated_at

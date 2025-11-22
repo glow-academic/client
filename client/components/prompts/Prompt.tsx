@@ -16,7 +16,11 @@ import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Power } from "lucide-react";
 
 import type {
   CreatePromptIn,
@@ -30,7 +34,10 @@ import type {
 } from "@/app/(main)/engine/prompts/p/[promptId]/page";
 
 interface FormData {
+  name: string;
+  description: string;
   systemPrompt: string;
+  active: boolean;
   departmentIds: string[] | null;
 }
 
@@ -72,7 +79,10 @@ export default function Prompt({
 
   const initialFormData: FormData = useMemo(
     () => ({
+      name: "",
+      description: "",
       systemPrompt: "",
+      active: true,
       departmentIds: defaultDepartmentIds,
     }),
     [defaultDepartmentIds]
@@ -137,7 +147,10 @@ export default function Prompt({
   useEffect(() => {
     if (isEditMode && promptData) {
       setFormData({
+        name: promptData.name || "",
+        description: promptData.description || "",
         systemPrompt: promptData.system_prompt || "",
+        active: promptData.active ?? true,
         departmentIds: promptData.department_ids || null,
       });
     } else if (!isEditMode && promptData) {
@@ -152,11 +165,10 @@ export default function Prompt({
 
   // Set breadcrumb context when prompt data is loaded
   useEffect(() => {
-    if (promptDetail?.system_prompt && promptId && isEditMode) {
-      const preview = promptDetail.system_prompt.substring(0, 50);
+    if (promptDetail?.name && promptId && isEditMode) {
       setEntityMetadata({
         entityId: promptId,
-        entityName: preview,
+        entityName: promptDetail.name,
         entityType: "prompt",
       });
     }
@@ -172,6 +184,11 @@ export default function Prompt({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData?.name || !formData.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+
     if (!formData?.systemPrompt || !formData.systemPrompt.trim()) {
       toast.error("System prompt is required");
       return;
@@ -183,13 +200,19 @@ export default function Prompt({
       if (isEditMode) {
         await handleUpdatePrompt({
           promptId: promptId!,
+          name: formData.name,
+          description: formData.description || "",
           system_prompt: formData.systemPrompt,
+          active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
         });
         toast.success("Prompt updated successfully");
       } else {
         await handleCreatePrompt({
+          name: formData.name,
+          description: formData.description || "",
           system_prompt: formData.systemPrompt,
+          active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
         });
         toast.success("Prompt created successfully");
@@ -227,6 +250,62 @@ export default function Prompt({
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name *</Label>
+            <Input
+              id="name"
+              value={formData.name || ""}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter prompt name"
+              disabled={isReadonly}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description || ""}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter prompt description"
+              disabled={isReadonly}
+              className="mt-1 min-h-[80px]"
+              rows={3}
+            />
+          </div>
+
+          {/* Active Switch */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="active"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  Active
+                </Label>
+                {formData.active !== undefined ? (
+                  <Switch
+                    id="active"
+                    checked={formData.active}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("active", checked)
+                    }
+                    disabled={isReadonly}
+                  />
+                ) : null}
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Inactive prompts will not be available for selection
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* System Prompt Editor */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">

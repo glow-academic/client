@@ -1,12 +1,15 @@
 -- Update a prompt with department links
--- Parameters: $1=prompt_id, $2=system_prompt, $3=department_ids (text array, nullable)
+-- Parameters: $1=prompt_id, $2=name, $3=description, $4=system_prompt, $5=active, $6=department_ids (text array, nullable)
 WITH update_prompt AS (
     UPDATE prompts
     SET 
-        system_prompt = $2,
+        name = $2,
+        description = $3,
+        system_prompt = $4,
+        active = $5,
         updated_at = NOW()
     WHERE id = $1::uuid
-    RETURNING id::text as prompt_id, system_prompt, created_at, updated_at
+    RETURNING id::text as prompt_id, name, description, system_prompt, active, created_at, updated_at
 ),
 replace_departments AS (
     -- Deactivate all existing department links
@@ -23,15 +26,18 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($3::text[]) as dept_id
-    WHERE COALESCE(array_length($3::text[], 1), 0) > 0
+    FROM UNNEST($6::text[]) as dept_id
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
     ON CONFLICT (prompt_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )
 SELECT 
     prompt_id,
+    name,
+    description,
     system_prompt,
+    active,
     created_at,
     updated_at
 FROM update_prompt

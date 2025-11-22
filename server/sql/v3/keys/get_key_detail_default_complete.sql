@@ -37,7 +37,7 @@ SELECT
     '' as key_id,
     '' as name,
     '****' as key_masked,
-    'api' as type,
+    '' as description,
     true as active,
     NOW() as created_at,
     NOW() as updated_at,

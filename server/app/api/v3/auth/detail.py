@@ -5,15 +5,14 @@ import uuid
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -22,17 +21,11 @@ class AuthDetailRequest(BaseModel):
     profileId: str
 
 
-class AuthItemKeyDetail(BaseModel):
-    key_id: str
-    key_masked: str  # Masked key (first 4 chars + "****")
-    active: bool
-
-
 class AuthItemDetail(BaseModel):
     auth_item_id: str
     name: str
     description: str
-    key_ids: list[str]  # Array of key IDs associated with this auth item
+    value_masked: str  # Masked encrypted value (first 4 chars + "****")
 
 
 class AuthDetailResponse(BaseModel):
@@ -40,7 +33,6 @@ class AuthDetailResponse(BaseModel):
     description: str
     active: bool
     auth_items: list[AuthItemDetail]
-    key_mapping: dict[str, dict[str, Any]]  # Mapping of key_id to key details
     can_edit: bool
 
 
@@ -105,25 +97,14 @@ async def get_auth_detail(
         if items_data and isinstance(items_data, list):
             for item_data in items_data:
                 if isinstance(item_data, dict):
-                    key_ids = []
-                    if item_data.get("key_ids"):
-                        key_ids = [str(kid) for kid in item_data["key_ids"]]
                     auth_items.append(
                         AuthItemDetail(
                             auth_item_id=item_data.get("auth_item_id", ""),
                             name=item_data.get("name", ""),
                             description=item_data.get("description", ""),
-                            key_ids=key_ids,
+                            value_masked=item_data.get("value_masked", "****"),
                         )
                     )
-
-        # Parse key_mapping from JSONB
-        key_mapping: dict[str, dict[str, Any]] = {}
-        key_mapping_data = result.get("key_mapping")
-        if isinstance(key_mapping_data, str):
-            key_mapping_data = json.loads(key_mapping_data)
-        if key_mapping_data and isinstance(key_mapping_data, dict):
-            key_mapping = key_mapping_data
 
         # Get can_edit from SQL
         can_edit = result.get("can_edit", False)
@@ -133,7 +114,6 @@ async def get_auth_detail(
             description=result["description"],
             active=result["active"],
             auth_items=auth_items,
-            key_mapping=key_mapping,
             can_edit=can_edit,
         )
 

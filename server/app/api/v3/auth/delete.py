@@ -44,7 +44,7 @@ async def delete_auth(
 
     try:
         async with transaction(conn):
-            # Delete auth (cascade will handle auth_items and auth_item_keys)
+            # Delete auth (cascade will handle auth_items)
             sql_query = load_sql("sql/v3/auth/delete_auth_complete.sql")
             sql_params = (request.authId,)
             result = await conn.fetchrow(sql_query, request.authId)

@@ -27,7 +27,7 @@ class KeyItem(BaseModel):
     key_id: str
     name: str
     key_masked: str
-    type: str
+    description: str
     active: bool
     created_at: str
     updated_at: str
@@ -43,7 +43,6 @@ class KeysListResponse(BaseModel):
 
     keys: list[KeyItem]
     department_options: list[dict[str, str]]
-    type_options: list[dict[str, str]]
     model_options: list[dict[str, str]]
     department_mapping: dict[str, dict[str, str]]
     model_mapping: dict[str, dict[str, Any]]
@@ -85,7 +84,6 @@ async def get_keys_list(
         department_mapping: dict[str, dict[str, str]] = {}
         model_mapping: dict[str, dict[str, Any]] = {}
         department_options: list[dict[str, str]] = []
-        type_options: list[dict[str, str]] = []
         model_options: list[dict[str, str]] = []
 
         for row in rows:
@@ -101,7 +99,7 @@ async def get_keys_list(
                     key_id=str(row["key_id"]),
                     name=row["name"],
                     key_masked=row["key_masked"],
-                    type=row["type"],
+                    description=row.get("description", ""),
                     active=row["active"],
                     created_at=row["created_at"].isoformat() if row.get("created_at") else "",
                     updated_at=row["updated_at"].isoformat() if row.get("updated_at") else "",
@@ -136,13 +134,6 @@ async def get_keys_list(
                 if isinstance(dept_opts, list):
                     department_options = dept_opts
 
-            if not type_options and row.get("type_options"):
-                type_opts = row["type_options"]
-                if isinstance(type_opts, str):
-                    type_opts = json.loads(type_opts)
-                if isinstance(type_opts, list):
-                    type_options = type_opts
-
             if not model_options and row.get("model_options"):
                 model_opts = row["model_options"]
                 if isinstance(model_opts, str):
@@ -153,7 +144,6 @@ async def get_keys_list(
         response_data = KeysListResponse(
             keys=keys,
             department_options=department_options,
-            type_options=type_options,
             model_options=model_options,
             department_mapping=department_mapping,
             model_mapping=model_mapping,

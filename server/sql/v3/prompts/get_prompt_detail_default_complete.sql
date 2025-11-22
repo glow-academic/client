@@ -35,7 +35,10 @@ primary_department_id AS (
 )
 SELECT 
     '' as prompt_id,
+    '' as name,
+    '' as description,
     '' as system_prompt,
+    true as active,
     NOW() as created_at,
     NOW() as updated_at,
     -- Set default department_ids based on role

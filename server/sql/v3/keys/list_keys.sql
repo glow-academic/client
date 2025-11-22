@@ -33,7 +33,7 @@ key_data AS (
             WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
             ELSE '****'
         END as key_masked,
-        k.type::text as type,
+        k.description,
         k.active,
         k.created_at,
         k.updated_at,
@@ -65,7 +65,7 @@ key_data AS (
     LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
     LEFT JOIN key_models_data kmd ON kmd.key_id = k.id
     CROSS JOIN user_profile up
-    GROUP BY k.id, k.name, k.key, k.type, k.active, k.created_at, k.updated_at, kdd.department_ids, kmd.model_ids, up.role
+    GROUP BY k.id, k.name, k.key, k.description, k.active, k.created_at, k.updated_at, kdd.department_ids, kmd.model_ids, up.role
     HAVING 
         -- Include keys with matching department links OR default keys (no department links)
         COUNT(kd.key_id) FILTER (WHERE kd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -128,19 +128,6 @@ department_options_data AS (
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
         OR d.id IN (SELECT department_id FROM user_departments)
 ),
-type_options_data AS (
-    SELECT jsonb_agg(
-        jsonb_build_object(
-            'value', type_val,
-            'label', CASE 
-                WHEN type_val = 'api' THEN 'API'
-                WHEN type_val = 'auth' THEN 'Auth'
-                ELSE type_val
-            END
-        )
-    ) as options
-    FROM (SELECT DISTINCT type::text as type_val FROM keys) t
-),
 model_options_data AS (
     SELECT COALESCE(
         jsonb_agg(
@@ -159,12 +146,10 @@ SELECT
     dmd.mapping as department_mapping,
     mmd.mapping as model_mapping,
     dod.options as department_options,
-    tod.options as type_options,
     mod.options as model_options
 FROM key_data kd
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN model_mapping_data mmd
 CROSS JOIN department_options_data dod
-CROSS JOIN type_options_data tod
 CROSS JOIN model_options_data mod
 ORDER BY kd.created_at DESC

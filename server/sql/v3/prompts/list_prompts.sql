@@ -37,8 +37,11 @@ prompt_personas_data AS (
 prompt_data AS (
     SELECT 
         pr.id as prompt_id,
+        pr.name,
+        pr.description,
         LEFT(pr.system_prompt, 100) as system_prompt_preview,
         pr.system_prompt,
+        pr.active,
         pr.created_at,
         pr.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
@@ -70,7 +73,7 @@ prompt_data AS (
     LEFT JOIN prompt_agents_data pad ON pad.prompt_id = pr.id
     LEFT JOIN prompt_personas_data ppd ON ppd.prompt_id = pr.id
     CROSS JOIN user_profile up
-    GROUP BY pr.id, pr.system_prompt, pr.created_at, pr.updated_at, pdd.department_ids, pad.agent_ids, ppd.persona_ids, up.role
+    GROUP BY pr.id, pr.name, pr.description, pr.system_prompt, pr.active, pr.created_at, pr.updated_at, pdd.department_ids, pad.agent_ids, ppd.persona_ids, up.role
     HAVING 
         -- Include prompts with matching department links OR default prompts (no department links)
         COUNT(pd.prompt_id) FILTER (WHERE pd.department_id IN (SELECT department_id FROM user_departments)) > 0
