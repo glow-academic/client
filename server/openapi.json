@@ -25440,16 +25440,19 @@
             ],
             "title": "Prompt Id"
           },
-          "department_id": {
+          "department_ids_for_prompt": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Department Id"
+            "title": "Department Ids For Prompt"
           }
         },
         "type": "object",
@@ -25466,7 +25469,7 @@
           "temperature",
           "system_prompt",
           "prompt_id",
-          "department_id"
+          "department_ids_for_prompt"
         ],
         "title": "UpdatePersonaRequest",
         "description": "Request to update persona."
@@ -28517,6 +28520,14 @@
             "type": "string",
             "title": "System Prompt"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "created_at": {
             "type": "string",
             "title": "Created At"
@@ -28547,6 +28558,8 @@
         "type": "object",
         "required": [
           "system_prompt",
+          "name",
+          "description",
           "created_at",
           "updated_at",
           "department_ids",
@@ -28806,6 +28819,14 @@
             "type": "string",
             "title": "System Prompt"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
           "created_at": {
             "type": "string",
             "title": "Created At"
@@ -28836,6 +28857,8 @@
         "type": "object",
         "required": [
           "system_prompt",
+          "name",
+          "description",
           "created_at",
           "updated_at",
           "department_ids",

@@ -10456,8 +10456,8 @@ export interface components {
             system_prompt: string | null;
             /** Prompt Id */
             prompt_id: string | null;
-            /** Department Id */
-            department_id: string | null;
+            /** Department Ids For Prompt */
+            department_ids_for_prompt: string[] | null;
         };
         /**
          * UpdatePersonaResponse
@@ -11596,6 +11596,10 @@ export interface components {
         app__api__v3__personas__detail__PromptInfo: {
             /** System Prompt */
             system_prompt: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Created At */
             created_at: string;
             /** Updated At */
@@ -11698,6 +11702,10 @@ export interface components {
         app__api__v3__personas__detail_default__PromptInfo: {
             /** System Prompt */
             system_prompt: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Created At */
             created_at: string;
             /** Updated At */

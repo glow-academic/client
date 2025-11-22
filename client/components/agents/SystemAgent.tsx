@@ -785,6 +785,7 @@ export default function SystemAgent({
                       <PromptPicker
                         promptMapping={filteredPromptMapping}
                         selectedPromptId={formData?.promptId || null}
+                        defaultPromptId={agentDetail?.prompt_id || null}
                         onSelect={(promptId) => {
                           if (promptId && filteredPromptMapping[promptId]) {
                             const prompt = filteredPromptMapping[promptId];
@@ -800,17 +801,7 @@ export default function SystemAgent({
                             }));
                           }
                         }}
-                        onCreateNew={() => {
-                          setIsCreatingNewPrompt(true);
-                          // When creating new, always start with empty prompt
-                          // (Use "Branch from Default" button if you want to start with default content)
-                          setFormData((prev) => ({
-                            ...prev,
-                            promptId: null,
-                            systemPrompt: "",
-                          }));
-                        }}
-                        placeholder="Select prompt version..."
+                        placeholder="Select prompt..."
                         disabled={false}
                         buttonClassName="h-8"
                       />

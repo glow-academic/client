@@ -61,6 +61,8 @@ WITH         user_profile AS (
                 pp.persona_id,
                 pp.prompt_id::text as prompt_id,
                 pr.system_prompt,
+                pr.name as prompt_name,
+                pr.description as prompt_description,
                 pr.created_at as prompt_created_at,
                 pr.updated_at as prompt_updated_at
             FROM persona_prompts pp
@@ -72,6 +74,8 @@ WITH         user_profile AS (
                 pdp.persona_id,
                 pdp.prompt_id::text as prompt_id,
                 pr.system_prompt,
+                pr.name as prompt_name,
+                pr.description as prompt_description,
                 pr.created_at as prompt_created_at,
                 pr.updated_at as prompt_updated_at
             FROM persona_department_prompts pdp
@@ -100,6 +104,8 @@ WITH         user_profile AS (
                         pp.prompt_id,
                         jsonb_build_object(
                             'system_prompt', pp.system_prompt,
+                            'name', COALESCE(pp.prompt_name, ''),
+                            'description', COALESCE(pp.prompt_description, ''),
                             'created_at', pp.prompt_created_at::text,
                             'updated_at', pp.prompt_updated_at::text,
                             'department_ids', COALESCE(pdd.department_ids, NULL),

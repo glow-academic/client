@@ -1,5 +1,5 @@
 -- Update persona with prompt and department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=model_id, $8=reasoning, $9=temperature, $10=prompt_id (nullable), $11=system_prompt (nullable), $12=department_ids (nullable text array), $13=department_id (nullable)
+-- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=model_id, $8=reasoning, $9=temperature, $10=prompt_id (nullable), $11=system_prompt (nullable), $12=department_ids (nullable text array), $13=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides)
 WITH update_persona AS (
     UPDATE personas
     SET 
@@ -30,39 +30,47 @@ selected_prompt_id AS (
     ) as prompt_id
     WHERE $10::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
-deactivate_department_prompt AS (
-    -- Deactivate existing department-specific prompt if department_id provided
+deactivate_department_prompts AS (
+    -- Deactivate existing department-specific prompts for departments in the array
     UPDATE persona_department_prompts
     SET active = false, updated_at = NOW()
     WHERE persona_id = $1::uuid 
-    AND department_id = $13::uuid 
+    AND department_id = ANY(SELECT dept_id::uuid FROM UNNEST($13::text[]) as dept_id)
     AND active = true
 ),
-handle_department_prompt AS (
-    -- Handle department-specific prompt if department_id and prompt provided
+handle_department_prompts AS (
+    -- Handle department-specific prompts for all departments in array (never create default prompts)
     INSERT INTO persona_department_prompts (persona_id, department_id, prompt_id, active, created_at, updated_at)
-    SELECT $1::uuid, $13::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
+    SELECT $1::uuid, dept_id::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
     FROM selected_prompt_id sp
-    WHERE $13::uuid IS NOT NULL AND sp.prompt_id IS NOT NULL
+    CROSS JOIN UNNEST($13::text[]) as dept_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0 AND sp.prompt_id IS NOT NULL
     ON CONFLICT (persona_id, department_id, prompt_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
-deactivate_default_prompts AS (
-    -- Deactivate all existing default prompts
-    UPDATE persona_prompts
-    SET active = false, updated_at = NOW()
-    WHERE persona_id = $1::uuid AND active = true
+get_default_prompt_content AS (
+    -- Get the default prompt content for comparison (for pruning)
+    SELECT pr.system_prompt
+    FROM persona_prompts pp
+    JOIN prompts pr ON pr.id = pp.prompt_id
+    WHERE pp.persona_id = $1::uuid AND pp.active = true
+    LIMIT 1
 ),
-handle_default_prompt AS (
-    -- Handle default prompt if no department_id but prompt provided
-    INSERT INTO persona_prompts (persona_id, prompt_id, active, created_at, updated_at)
-    SELECT $1::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
-    FROM selected_prompt_id sp
-    WHERE $13::uuid IS NULL AND sp.prompt_id IS NOT NULL
-    ON CONFLICT (persona_id, prompt_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+prune_duplicate_prompts AS (
+    -- Prune department-specific prompts that match the default prompt content
+    -- Compare the newly created/updated prompt content to the default prompt content
+    -- If they match, delete the department-specific override (will fall back to default)
+    DELETE FROM persona_department_prompts pdp
+    WHERE pdp.persona_id = $1::uuid
+    AND pdp.department_id = ANY(SELECT dept_id::uuid FROM UNNEST($13::text[]) as dept_id)
+    AND EXISTS (
+        SELECT 1 
+        FROM get_default_prompt_content gdc
+        JOIN selected_prompt_id sp ON sp.prompt_id IS NOT NULL
+        JOIN prompts pr ON pr.id = sp.prompt_id::uuid
+        WHERE pr.system_prompt = gdc.system_prompt
+    )
 ),
 replace_departments AS (
     -- Delete all existing department links

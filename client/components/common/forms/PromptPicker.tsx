@@ -8,10 +8,11 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Command,
   CommandEmpty,
@@ -29,6 +30,8 @@ import { cn } from "@/lib/utils";
 
 export interface PromptInfo {
   system_prompt: string;
+  name: string;
+  description: string;
   created_at: string;
   updated_at: string;
   department_ids: string[] | null;
@@ -45,8 +48,8 @@ type TriggerButtonProps = Omit<
 export interface PromptPickerProps extends PopoverProps {
   promptMapping: Record<string, PromptInfo>;
   selectedPromptId: string | null;
+  defaultPromptId: string | null; // ID of the default prompt for this persona
   onSelect: (promptId: string | null) => void;
-  onCreateNew: () => void;
   placeholder?: string;
   disabled?: boolean;
   buttonClassName?: string;
@@ -56,9 +59,9 @@ export interface PromptPickerProps extends PopoverProps {
 export function PromptPicker({
   promptMapping,
   selectedPromptId,
+  defaultPromptId,
   onSelect,
-  onCreateNew,
-  placeholder = "Select prompt version...",
+  placeholder = "Select prompt...",
   disabled = false,
   buttonClassName,
   triggerProps,
@@ -87,22 +90,18 @@ export function PromptPicker({
     setOpen(false);
   };
 
-  const handleCreateNew = () => {
-    onCreateNew();
-    setOpen(false);
-  };
-
   const getButtonText = () => {
     if (!selectedPromptId) {
-      return "New Prompt";
+      return placeholder;
     }
     const prompt = promptMapping[selectedPromptId];
     if (!prompt) {
       return placeholder;
     }
-    const date = new Date(prompt.updated_at);
-    return `Version ${date.toLocaleDateString()}`;
+    return prompt.name || placeholder;
   };
+
+  const isSelectedDefault = selectedPromptId === defaultPromptId;
 
   const { className: triggerClassName, ...restTriggerProps } =
     triggerProps ?? {};
@@ -121,7 +120,14 @@ export function PromptPicker({
           disabled={disabled}
           {...restTriggerProps}
         >
-          <span className="truncate">{getButtonText()}</span>
+          <div className="flex items-center gap-2 truncate">
+            {isSelectedDefault && (
+              <Badge variant="secondary" className="text-xs h-5 px-1.5 flex-shrink-0">
+                Default
+              </Badge>
+            )}
+            <span className="truncate">{getButtonText()}</span>
+          </div>
           <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
         </Button>
       </PopoverTrigger>
@@ -130,50 +136,52 @@ export function PromptPicker({
           <CommandList className="max-h-[300px]">
             <CommandInput placeholder="Search prompts..." />
             <CommandEmpty>No prompts found.</CommandEmpty>
-            <CommandGroup heading="Actions">
-              <CommandItem onSelect={handleCreateNew}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create New Prompt
-              </CommandItem>
-            </CommandGroup>
             {sortedPrompts.length > 0 && (
-              <CommandGroup heading="Version History">
+              <CommandGroup heading="Prompts">
                 {sortedPrompts.map((prompt) => {
-                  const date = new Date(prompt.updated_at);
                   const isSelected = selectedPromptId === prompt.id;
+                  const isDefault = prompt.id === defaultPromptId || 
+                    (!prompt.department_ids || prompt.department_ids.length === 0);
                   return (
                     <CommandItem
                       key={prompt.id}
                       onSelect={() => handleSelect(prompt.id)}
-                      className="flex flex-col items-start py-3"
+                      className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
                       data-testid="prompt-option"
                       data-prompt-id={prompt.id}
                     >
-                      <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <Check
-                            className={cn(
-                              "h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0",
+                            {isDefault && (
+                              <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                                Default
+                              </Badge>
                             )}
-                          />
-                          <span className="font-medium">
-                            {date.toLocaleDateString()}{" "}
-                            {date.toLocaleTimeString()}
-                          </span>
+                            <div className="font-medium truncate">
+                              {prompt.name || "Unnamed Prompt"}
+                            </div>
                         </div>
+                          {prompt.description && (
+                            <div className="text-sm text-muted-foreground truncate">
+                              {prompt.description}
                       </div>
+                          )}
                       {prompt.department_ids &&
                         prompt.department_ids.length > 0 && (
-                          <span className="text-xs text-muted-foreground mt-1">
+                              <div className="text-xs text-muted-foreground mt-1">
                             {prompt.department_ids.length} department
                             {prompt.department_ids.length !== 1 ? "s" : ""}
-                          </span>
+                              </div>
                         )}
-                      <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {prompt.system_prompt.substring(0, 100)}
-                        {prompt.system_prompt.length > 100 ? "..." : ""}
-                      </span>
+                        </div>
+                        <Check
+                          className={cn(
+                            "ml-auto",
+                            isSelected ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </div>
                     </CommandItem>
                   );
                 })}

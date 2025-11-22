@@ -16,8 +16,6 @@ import { useProfile } from "@/contexts/profile-context";
 import type {
   CreatePersonaIn,
   CreatePersonaOut,
-  DeletePersonaPromptIn,
-  DeletePersonaPromptOut,
   PersonaDetailDefaultOut,
   PersonaDetailOut,
   UpdatePersonaIn,
@@ -32,16 +30,6 @@ import {
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,21 +59,20 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
-  getPersonaIconComponent,
-  PERSONA_ICON_MAP,
-} from "@/utils/persona-icons";
-import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import {
+  getPersonaIconComponent,
+  PERSONA_ICON_MAP,
+} from "@/utils/persona-icons";
+import {
   Bug,
   Check,
   ChevronsUpDown,
-  Copy,
   Eye,
   Power,
-  Trash2,
+  RotateCcw,
 } from "lucide-react";
 
 import {
@@ -298,9 +285,6 @@ export interface PersonaProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
-  deletePersonaPromptAction?: (
-    input: DeletePersonaPromptIn
-  ) => Promise<DeletePersonaPromptOut>;
 }
 
 export default function Persona({
@@ -310,7 +294,6 @@ export default function Persona({
   personaDetailDefault: serverPersonaDetailDefault,
   createPersonaAction,
   updatePersonaAction,
-  deletePersonaPromptAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
@@ -351,16 +334,7 @@ export default function Persona({
   const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
     "editor"
   );
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
-    string | null
-  >(null); // null = "All Departments"
-  const [isCreatingNewPrompt, setIsCreatingNewPrompt] = useState(false);
-  const prevDepartmentIdRef = React.useRef<string | null>(null);
-  const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
-  const [promptToDelete, setPromptToDelete] = useState<{
-    promptId: string;
-    isDepartmentSpecific: boolean;
-  } | null>(null);
+  const prevDepartmentIdsRef = React.useRef<string[]>([]);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -427,96 +401,130 @@ export default function Persona({
       });
   };
 
-  // Delete persona prompt handler using server action
-  const deletePersonaPrompt = (
-    body: {
-      personaId: string;
-      promptId: string;
-      departmentId: string | null;
-    },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    if (!deletePersonaPromptAction) {
-      const error = new Error("deletePersonaPromptAction is required");
-      options?.onError?.(error);
-      if (!options?.onError) {
-        toast.error(`Failed to delete prompt: ${error.message}`);
-      }
-      return;
-    }
-
-    deletePersonaPromptAction({
-      body: {
-        personaId: body.personaId,
-        promptId: body.promptId,
-        departmentId: body.departmentId,
-      },
-    })
-      .then(() => {
-        router.refresh(); // Refresh to get updated data
-        options?.onSuccess?.();
-      })
-      .catch((error) => {
-        const err = error instanceof Error ? error : new Error("Unknown error");
-        options?.onError?.(err);
-        if (!options?.onError) {
-          toast.error(`Failed to delete prompt: ${err.message}`);
-        }
-      });
-  };
-
   // Readonly logic using v2 permission flags
   const isReadonly = useMemo(() => {
     if (!isEditMode || !personaData) return false;
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-  // Filter prompt_mapping based on selected department
-  // When "All Departments" is selected, only show default prompts (null department_ids)
-  // When a department is selected, only show department-specific prompts for that department
+  // Filter prompt_mapping client-side based on selected departments from form
+  // API returns all prompts user has access to, then we filter by selected departments
+  // Show: default prompt + prompts for selected departments + cross-department prompts (no department_ids)
   const filteredPromptMapping = useMemo(() => {
     if (!isEditMode || !personaData?.prompt_mapping) {
       return personaData?.prompt_mapping || {};
     }
 
+    const selectedDeptIds = formData?.departmentIds || [];
     const filtered: Record<string, PromptInfo> = {};
-    for (const [promptId, promptInfo] of Object.entries(
+
+    for (const [promptId, promptInfoRaw] of Object.entries(
       personaData.prompt_mapping
     )) {
-      if (!selectedDepartmentId) {
-        // "All Departments" selected - only show default prompts (null/empty department_ids)
-        if (
-          !promptInfo.department_ids ||
-          promptInfo.department_ids.length === 0
-        ) {
-          filtered[promptId] = promptInfo;
-        }
+      // Add default values for name and description if missing (for backward compatibility)
+      // Type assertion needed because API schema may not be fully updated in TypeScript types
+      const rawInfo = promptInfoRaw as PromptInfo & {
+        name?: string;
+        description?: string;
+      };
+      const promptInfo: PromptInfo = {
+        ...promptInfoRaw,
+        name: rawInfo.name || "",
+        description: rawInfo.description || "",
+      };
+
+      // Always include default prompt (no department_ids)
+      if (
+        !promptInfo.department_ids ||
+        promptInfo.department_ids.length === 0
+      ) {
+        filtered[promptId] = promptInfo;
+      } else if (selectedDeptIds.length === 0) {
+        // "All Departments" selected - show ALL prompts including department-specific ones
+        filtered[promptId] = promptInfo;
       } else {
-        // Department selected - only show department-specific prompts for that department
+        // Specific departments selected - show prompts for those departments
         if (
-          promptInfo.department_ids &&
-          promptInfo.department_ids.includes(selectedDepartmentId)
+          promptInfo.department_ids.some((deptId) =>
+            selectedDeptIds.includes(deptId)
+          )
         ) {
           filtered[promptId] = promptInfo;
         }
       }
     }
     return filtered;
-  }, [selectedDepartmentId, personaData?.prompt_mapping, isEditMode]);
+  }, [formData?.departmentIds, personaData?.prompt_mapping, isEditMode]);
 
-  // Detect if using default prompt (no department-specific prompt exists)
-  const isUsingDefaultPrompt = useMemo(() => {
-    if (!isEditMode || !selectedDepartmentId || !personaData) return false;
-    return !personaData.department_prompt_links?.[selectedDepartmentId];
-  }, [selectedDepartmentId, personaData, isEditMode]);
-
-  // Get default prompt content
+  // Get default prompt content (from persona_prompts table)
   const defaultPromptContent = useMemo(() => {
     if (!isEditMode || !personaData?.prompt_id || !personaData?.prompt_mapping)
       return "";
     const defaultPrompt = personaData.prompt_mapping[personaData.prompt_id];
     return defaultPrompt?.system_prompt || "";
   }, [personaData, isEditMode]);
+
+  // Get resolved prompt (what's actually saved/configured for selected departments from form)
+  // This is what would be used in production for the selected department(s)
+  const resolvedPrompt = useMemo(() => {
+    if (!isEditMode || !personaData?.prompt_mapping) {
+      return { promptId: null, content: "" };
+    }
+
+    const selectedDeptIds = formData?.departmentIds || [];
+    if (selectedDeptIds.length === 0) {
+      // "All Departments" - use default prompt
+      return {
+        promptId: personaData.prompt_id || null,
+        content: defaultPromptContent,
+      };
+    }
+
+    // For multiple departments, check if all have the same prompt
+    const firstDeptId = selectedDeptIds[0]!;
+    const firstPromptId =
+      personaData.department_prompt_links?.[firstDeptId] ||
+      personaData.prompt_id ||
+      null;
+
+    // Check if all selected departments have the same prompt
+    const allSamePrompt = selectedDeptIds.every((deptId) => {
+      const promptId =
+        personaData.department_prompt_links?.[deptId] ||
+        personaData.prompt_id ||
+        null;
+      return promptId === firstPromptId;
+    });
+
+    if (allSamePrompt && firstPromptId) {
+      const promptInfo = personaData.prompt_mapping[firstPromptId];
+      return {
+        promptId: firstPromptId,
+        content: promptInfo?.system_prompt || defaultPromptContent,
+      };
+    }
+
+    // Mixed prompts - return default
+    return {
+      promptId: personaData.prompt_id || null,
+      content: defaultPromptContent,
+    };
+  }, [
+    formData?.departmentIds,
+    personaData?.prompt_mapping,
+    personaData?.department_prompt_links,
+    personaData?.prompt_id,
+    defaultPromptContent,
+    isEditMode,
+  ]);
+
+  const resolvedPromptContent = resolvedPrompt.content;
+
+  // Check if current prompt content differs from resolved prompt
+  const hasPromptChanges = useMemo(() => {
+    if (!formData?.systemPrompt) return false;
+    return formData.systemPrompt !== resolvedPromptContent;
+  }, [formData?.systemPrompt, resolvedPromptContent]);
 
   const personaDebugInfoRows = useMemo<PersonaDebugInfoRow[]>(() => {
     if (!personaData?.debug_info) return [];
@@ -550,6 +558,7 @@ export default function Persona({
 
   useEffect(() => {
     if (personaData && isEditMode) {
+      const deptIds = personaData.department_ids || [];
       setFormData({
         name: personaData.name,
         description: personaData.description || "",
@@ -567,8 +576,10 @@ export default function Persona({
         color: personaData.color || "#000000",
         icon: personaData.icon || "Zap",
         active: personaData.active ?? true,
-        departmentIds: personaData.department_ids,
+        departmentIds: deptIds,
       });
+      // Initialize the ref for department change tracking
+      prevDepartmentIdsRef.current = [...deptIds];
     } else if (!isEditMode && personaData) {
       // For create mode, use defaults from the API response
       setFormData({
@@ -585,91 +596,38 @@ export default function Persona({
     }
   }, [personaData, isEditMode, initialFormData]);
 
-  // Update prompt when department selection changes
+  // Update prompt when department selection changes in form
   useEffect(() => {
-    if (!isEditMode || !personaData) return;
+    if (!isEditMode || !personaData || !formData?.departmentIds) return;
 
-    // Track department changes FIRST and reset creating flag when department changes
+    // Track department changes - compare arrays
+    const prevIds = prevDepartmentIdsRef.current;
+    const currentIds = formData.departmentIds || [];
     const departmentChanged =
-      prevDepartmentIdRef.current !== selectedDepartmentId;
+      prevIds.length !== currentIds.length ||
+      !prevIds.every((id) => currentIds.includes(id));
+
     if (departmentChanged) {
-      setIsCreatingNewPrompt(false);
-      prevDepartmentIdRef.current = selectedDepartmentId;
+      prevDepartmentIdsRef.current = [...currentIds];
     }
 
-    // Don't override state if user is actively creating a new prompt (unless department changed)
-    if (isCreatingNewPrompt && !departmentChanged) return;
+    // Only auto-set if user hasn't made changes (compare content to resolved prompt)
+    if (hasPromptChanges && !departmentChanged) return;
 
-    // Determine which prompt should be selected for the current department
-    const getCurrentPromptId = () => {
-      if (!selectedDepartmentId) {
-        // "All Departments" selected - use default prompt
-        return personaData.prompt_id || null;
-      }
-      // Specific department selected - use department-specific prompt if it exists
-      if (personaData.department_prompt_links?.[selectedDepartmentId]) {
-        return personaData.department_prompt_links[selectedDepartmentId];
-      }
-      // No department-specific prompt - return null to indicate using default
-      return null;
-    };
-
-    const currentPromptId = getCurrentPromptId();
-    const promptInfo =
-      currentPromptId && personaData.prompt_mapping?.[currentPromptId];
-
-    // Check if current formData.promptId is valid for the selected department
-    const currentPromptIsValid = formData?.promptId
-      ? filteredPromptMapping[formData.promptId] !== undefined
-      : true; // null promptId is valid (means using default)
-
-    // Only auto-select when department changes, or if current prompt is invalid for department
+    // Only auto-set when department changes - use resolvedPrompt which is computed for current selection
     if (departmentChanged) {
-      // Department changed - always update to the correct prompt
-      if (promptInfo) {
-        // Prompt exists (default or department-specific) - select it and update system prompt
-        setFormData((prev) => ({
-          ...prev,
-          promptId: currentPromptId,
-          systemPrompt: promptInfo.system_prompt,
-        }));
-      } else if (selectedDepartmentId && !currentPromptId) {
-        // Department selected but no department-specific prompt - using default
-        setFormData((prev) => ({
-          ...prev,
-          promptId: null,
-          systemPrompt: "", // Clear to show default prompt UI
-        }));
-      } else {
-        // "All Departments" selected but no default prompt, or other edge case
-        setFormData((prev) => ({
-          ...prev,
-          promptId: null,
-        }));
-      }
-    } else if (!currentPromptIsValid && formData?.promptId) {
-      // Current prompt is invalid for selected department - reset to default
-      if (promptInfo) {
-        setFormData((prev) => ({
-          ...prev,
-          promptId: currentPromptId,
-          systemPrompt: promptInfo.system_prompt,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          promptId: null,
-          systemPrompt: "",
-        }));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        promptId: resolvedPrompt.promptId,
+        systemPrompt: resolvedPrompt.content,
+      }));
     }
   }, [
-    selectedDepartmentId,
+    formData?.departmentIds,
     personaData,
     isEditMode,
-    formData?.promptId,
-    isCreatingNewPrompt,
-    filteredPromptMapping,
+    resolvedPrompt,
+    hasPromptChanges,
   ]);
 
   // Set breadcrumb context when persona data is loaded
@@ -725,12 +683,25 @@ export default function Persona({
       );
 
       if (isEditMode) {
+        // Determine which departments to create overrides for
+        // If "All Departments" selected (empty array), create overrides for all valid departments
+        // Otherwise, create overrides for selected departments from form
+        const selectedDeptIds = formData.departmentIds || [];
+        const departmentsForPromptOverride =
+          selectedDeptIds.length === 0
+            ? personaData?.valid_department_ids || []
+            : selectedDeptIds;
+
+        // Always create new prompt version if content differs from resolved prompt
+        // Never create default prompts - always create department-specific overrides
+        const shouldCreateNewPrompt = hasPromptChanges;
+
         updatePersona(
           {
             personaId: personaId!,
             name: formData.name,
             description: formData.description || null,
-            prompt_id: formData.promptId || null,
+            prompt_id: shouldCreateNewPrompt ? null : formData.promptId || null,
             system_prompt: formData.systemPrompt,
             temperature: Number(formData.temperature),
             model_id: formData.modelId,
@@ -740,7 +711,7 @@ export default function Persona({
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
-            department_id: selectedDepartmentId || null,
+            department_ids_for_prompt: departmentsForPromptOverride,
           },
           {
             onSuccess: () => {
@@ -1224,36 +1195,16 @@ export default function Persona({
               <div className="flex items-center justify-between">
                 <Label htmlFor="systemPrompt">System Prompt *</Label>
                 <div className="flex gap-2">
-                  {isEditMode && personaData && (
-                    <DepartmentPicker
-                      mapping={personaData.department_mapping}
-                      validIds={personaData.valid_department_ids}
-                      selectedIds={
-                        selectedDepartmentId ? [selectedDepartmentId] : []
-                      }
-                      onSelect={(ids) => {
-                        setSelectedDepartmentId(
-                          ids.length > 0 ? ids[0]! : null
-                        );
-                      }}
-                      multiSelect={false}
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      compact={true}
-                      buttonClassName="h-8"
-                      triggerProps={{
-                        "data-testid": "picker-department-filter",
-                      }}
-                    />
-                  )}
                   {isEditMode &&
                     personaData &&
                     filteredPromptMapping &&
                     (Object.keys(filteredPromptMapping).length > 0 ||
-                      selectedDepartmentId) && (
+                      (formData?.departmentIds &&
+                        formData.departmentIds.length > 0)) && (
                       <PromptPicker
                         promptMapping={filteredPromptMapping}
                         selectedPromptId={formData?.promptId || null}
+                        defaultPromptId={personaData?.prompt_id || null}
                         onSelect={(promptId) => {
                           if (promptId && filteredPromptMapping[promptId]) {
                             const prompt = filteredPromptMapping[promptId];
@@ -1269,17 +1220,7 @@ export default function Persona({
                             }));
                           }
                         }}
-                        onCreateNew={() => {
-                          setIsCreatingNewPrompt(true);
-                          // When creating new, always start with empty prompt
-                          // (Use "Branch from Default" button if you want to start with default content)
-                          setFormData((prev) => ({
-                            ...prev,
-                            promptId: null,
-                            systemPrompt: "",
-                          }));
-                        }}
-                        placeholder="Select prompt version..."
+                        placeholder="Select prompt..."
                         disabled={isReadonly}
                         buttonClassName="h-8"
                         triggerProps={{ "data-testid": "picker-prompt" }}
@@ -1287,45 +1228,31 @@ export default function Persona({
                     )}
                   {formData?.systemPrompt !== undefined && (
                     <>
-                      {isEditMode &&
-                        !isReadonly &&
-                        (formData?.promptId || isUsingDefaultPrompt) && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  setIsCreatingNewPrompt(true);
-                                  // Duplicate current prompt - keep content but create new prompt
-                                  // If using default prompt, duplicate default content
-                                  // If All Departments selected, duplicate current prompt content
-                                  const contentToDuplicate =
-                                    isUsingDefaultPrompt
-                                      ? defaultPromptContent
-                                      : formData?.systemPrompt || "";
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    promptId: null,
-                                    systemPrompt: contentToDuplicate,
-                                  }));
-                                }}
-                                className="h-8 w-8 p-0"
-                                data-testid="btn-duplicate-prompt"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>
-                                {isUsingDefaultPrompt
-                                  ? "Branch from Default"
-                                  : "Duplicate"}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
+                      {hasPromptChanges && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  systemPrompt: resolvedPromptContent,
+                                  promptId: resolvedPrompt.promptId,
+                                }));
+                              }}
+                              className="h-8 w-8 p-0"
+                              data-testid="btn-reset-changes"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Reset to saved prompt</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -1375,152 +1302,34 @@ export default function Persona({
                             </TooltipContent>
                           </Tooltip>
                         )}
-                      {isEditMode &&
-                        formData?.promptId &&
-                        filteredPromptMapping[formData.promptId]
-                          ?.can_delete && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  const promptId = formData.promptId!;
-                                  const promptInfo =
-                                    filteredPromptMapping[promptId];
-                                  if (!promptInfo) return;
-                                  setPromptToDelete({
-                                    promptId,
-                                    isDepartmentSpecific:
-                                      !!promptInfo.department_ids &&
-                                      promptInfo.department_ids.length > 0,
-                                  });
-                                  setShowDeletePromptDialog(true);
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
                     </>
                   )}
                 </div>
               </div>
               {formData?.systemPrompt !== undefined ? (
-                <>
-                  {isUsingDefaultPrompt &&
-                  formData.systemPrompt === "" &&
-                  !isCreatingNewPrompt ? (
-                    <div className="space-y-4">
-                      <div className="border rounded-lg p-6 bg-muted/50">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-blue-500" />
-                            <p className="text-sm font-medium">
-                              Using Default Prompt
-                            </p>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedDepartmentId &&
-                            personaData?.department_mapping?.[
-                              selectedDepartmentId
-                            ]
-                              ? `No department-specific prompt exists for ${personaData.department_mapping[selectedDepartmentId].name}. The default prompt is being used.`
-                              : "No department-specific prompt exists. The default prompt is being used."}
-                          </p>
-                          <div className="border-t pt-4 mt-4">
-                            <p className="text-xs font-medium mb-2 text-muted-foreground">
-                              Default Prompt Preview:
-                            </p>
-                            <div className="bg-background border rounded p-4 max-h-[200px] overflow-y-auto">
-                              <pre className="text-xs whitespace-pre-wrap font-mono">
-                                {defaultPromptContent || "No default prompt"}
-                              </pre>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              type="button"
-                              variant="default"
-                              size="sm"
-                              onClick={() => {
-                                setIsCreatingNewPrompt(true);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  promptId: null,
-                                  systemPrompt: "",
-                                }));
-                              }}
-                              disabled={isReadonly}
-                              data-testid="btn-create-new-prompt"
-                            >
-                              Create New Prompt
-                              {selectedDepartmentId &&
-                              personaData?.department_mapping?.[
-                                selectedDepartmentId
-                              ]
-                                ? ` for ${personaData.department_mapping[selectedDepartmentId].name}`
-                                : ""}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setIsCreatingNewPrompt(true);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  promptId: null,
-                                  systemPrompt: defaultPromptContent,
-                                }));
-                              }}
-                              disabled={isReadonly}
-                              data-testid="btn-branch-prompt"
-                            >
-                              Branch from Default
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      className="h-[500px]"
-                      data-testid="editor-system-prompt"
-                    >
-                      <UnifiedPromptEditor
-                        value={formData?.systemPrompt || ""}
-                        onChange={(value) => {
-                          setIsCreatingNewPrompt(true); // User is actively editing
-                          setFormData((prev) => ({
-                            ...prev,
-                            systemPrompt: value,
-                            promptId: null, // Clear promptId when editing, indicating new prompt
-                          }));
-                        }}
-                        placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
-                        disabled={isReadonly}
-                        className="h-full"
-                        debugContent={
-                          isEditMode &&
-                          personaData &&
-                          effectiveProfile?.role === "superadmin" ? (
-                            <PersonaDebugInfoSection
-                              rows={personaDebugInfoRows}
-                            />
-                          ) : undefined
-                        }
-                        activeMode={editorMode}
-                      />
-                    </div>
-                  )}
-                </>
+                <div className="h-[500px]" data-testid="editor-system-prompt">
+                  <UnifiedPromptEditor
+                    value={formData?.systemPrompt || ""}
+                    onChange={(value) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        systemPrompt: value,
+                        promptId: null, // Clear promptId when editing, indicating new prompt version
+                      }));
+                    }}
+                    placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
+                    disabled={isReadonly}
+                    className="h-full"
+                    debugContent={
+                      isEditMode &&
+                      personaData &&
+                      effectiveProfile?.role === "superadmin" ? (
+                        <PersonaDebugInfoSection rows={personaDebugInfoRows} />
+                      ) : undefined
+                    }
+                    activeMode={editorMode}
+                  />
+                </div>
               ) : null}
               <p className="text-sm text-muted-foreground">
                 This prompt defines the persona's behavior and personality in
@@ -1554,73 +1363,6 @@ export default function Persona({
             </div>
           </form>
         </div>
-
-        {/* Delete Prompt Confirmation Dialog */}
-        <AlertDialog
-          open={showDeletePromptDialog}
-          onOpenChange={setShowDeletePromptDialog}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
-              <AlertDialogDescription>
-                {promptToDelete?.isDepartmentSpecific ? (
-                  <>
-                    Are you sure you want to delete this department-specific
-                    prompt? This will delete the prompt and fall back to the
-                    default prompt for this department.
-                  </>
-                ) : (
-                  <>
-                    Are you sure you want to delete this prompt? This will
-                    delete the prompt and set the latest prompt as active.
-                  </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setShowDeletePromptDialog(false);
-                  setPromptToDelete(null);
-                }}
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (!promptToDelete || !personaId) return;
-
-                  deletePersonaPrompt(
-                    {
-                      personaId,
-                      promptId: promptToDelete.promptId,
-                      departmentId: promptToDelete.isDepartmentSpecific
-                        ? selectedDepartmentId || null
-                        : null,
-                    },
-                    {
-                      onSuccess: () => {
-                        toast.success("Prompt deleted successfully");
-                        setShowDeletePromptDialog(false);
-                        setPromptToDelete(null);
-                        // Refresh persona detail - the query will automatically refetch
-                      },
-                      onError: (error) => {
-                        toast.error(
-                          `Failed to delete prompt: ${error.message}`
-                        );
-                      },
-                    }
-                  );
-                }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </TooltipProvider>
   );

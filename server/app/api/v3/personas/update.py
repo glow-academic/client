@@ -28,7 +28,7 @@ class UpdatePersonaRequest(BaseModel):
     temperature: float
     system_prompt: str | None
     prompt_id: str | None
-    department_id: str | None  # For department-specific prompts
+    department_ids_for_prompt: list[str] | None  # Array of department IDs for prompt overrides (never create default prompts)
 
 
 class UpdatePersonaResponse(BaseModel):
@@ -62,6 +62,9 @@ async def update_persona(
             # Convert description None to empty string
             description = request.description if request.description is not None else ""
 
+            # Ensure department_ids_for_prompt is always an array (empty array if None)
+            dept_ids_for_prompt = request.department_ids_for_prompt if request.department_ids_for_prompt else []
+
             # Update persona with prompt and departments in single SQL (DHH style)
             sql_query = load_sql("sql/v3/personas/update_persona_complete.sql")
             sql_params = (
@@ -77,7 +80,7 @@ async def update_persona(
                 request.prompt_id,
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
-                request.department_id,
+                dept_ids_for_prompt,  # Array of department IDs for prompt overrides
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

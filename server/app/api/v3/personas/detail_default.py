@@ -28,6 +28,8 @@ class PromptInfo(BaseModel):
     """Prompt information."""
 
     system_prompt: str
+    name: str
+    description: str
     created_at: str
     updated_at: str
     department_ids: list[str] | None
