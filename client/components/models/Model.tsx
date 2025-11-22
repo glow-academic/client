@@ -84,9 +84,9 @@ export default function Model({
   modelDetail: serverModelDetail,
   createModelAction,
   updateModelAction,
-  createKeyAction,
-  decryptKeyAction,
-  updateKeyAction,
+  createKeyAction: _createKeyAction,
+  decryptKeyAction: _decryptKeyAction,
+  updateKeyAction: _updateKeyAction,
 }: ModelProps) {
   const router = useRouter();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -149,16 +149,12 @@ export default function Model({
   // Store image_model from modelDetail for mutations
   const imageModel = modelDetail?.image_model ?? false;
 
-  // Get valid providers (enum values)
-  const validProviders = useMemo(() => {
-    if (isEditMode && modelDetail) {
-      return modelDetail.valid_providers || [];
-    }
-    if (!isEditMode && modelDetailDefault) {
-      return modelDetailDefault.valid_providers || [];
-    }
-    return ["openai", "gemini", "custom"];
-  }, [isEditMode, modelDetail, modelDetailDefault]);
+  // Readonly logic - models are always editable for now (no can_edit field in API)
+  const isReadonly = useMemo(() => {
+    // Models don't have can_edit field yet, so always allow editing
+    // TODO: Add can_edit field to ModelDetailResponse if needed
+    return false;
+  }, []);
 
   // Get department and key mappings
   const modelDataForMappings = isEditMode ? modelDetail : modelDetailDefault;
@@ -170,13 +166,72 @@ export default function Model({
     return modelDataForMappings?.valid_department_ids || [];
   }, [modelDataForMappings]);
 
-  const keyMapping = useMemo(() => {
-    return modelDataForMappings?.key_mapping || {};
-  }, [modelDataForMappings]);
+  // Get key mapping type for filteredKeyMapping
+  type KeyMappingType = typeof modelDataForMappings extends {
+    key_mapping?: infer K;
+  }
+    ? K
+    : Record<
+        string,
+        {
+          name: string;
+          description: string;
+          key_masked: string;
+          active: boolean;
+          department_ids: string[] | null;
+        }
+      >;
 
   const validKeyIds = useMemo(() => {
     return modelDataForMappings?.valid_key_ids || [];
   }, [modelDataForMappings]);
+
+  // Filter key_mapping client-side based on selected departments from form
+  // API returns all keys user has access to, then we filter by selected departments
+  // Show: default keys + keys for selected departments + cross-department keys (no department_ids)
+  const filteredKeyMapping = useMemo(() => {
+    if (!isEditMode || !modelDetail?.key_mapping) {
+      return modelDetail?.key_mapping || modelDetailDefault?.key_mapping || {};
+    }
+
+    const selectedDeptIds = formData?.departmentIds || [];
+    const filtered: Record<string, NonNullable<KeyMappingType>[string]> = {};
+
+    for (const [keyId, keyInfoRaw] of Object.entries(modelDetail.key_mapping)) {
+      // Add default values for department_ids if missing (for backward compatibility)
+      const rawInfo = keyInfoRaw as typeof keyInfoRaw & {
+        department_ids?: string[] | null;
+      };
+      const keyInfo = {
+        ...keyInfoRaw,
+        department_ids: rawInfo.department_ids || null,
+      };
+
+      if (selectedDeptIds.length === 0) {
+        // "All Departments" selected - show ALL keys (default and department-specific)
+        filtered[keyId] = keyInfo;
+      } else {
+        // Specific departments selected - show default keys, cross-department keys, and keys for selected departments
+        const isDefaultOrCrossDepartment =
+          !keyInfo.department_ids || keyInfo.department_ids.length === 0;
+        const isForSelectedDepartment =
+          keyInfo.department_ids &&
+          keyInfo.department_ids.some((deptId) =>
+            selectedDeptIds.includes(deptId)
+          );
+
+        if (isDefaultOrCrossDepartment || isForSelectedDepartment) {
+          filtered[keyId] = keyInfo;
+        }
+      }
+    }
+    return filtered;
+  }, [
+    formData?.departmentIds,
+    modelDetail?.key_mapping,
+    modelDetailDefault?.key_mapping,
+    isEditMode,
+  ]);
 
   // Get current department_ids and key_id for edit mode
   const currentDepartmentIds = useMemo(() => {
@@ -219,13 +274,12 @@ export default function Model({
   useEffect(() => {
     if (isEditMode && modelDetail) {
       // We are in EDIT mode and have the model's data, so populate the form
-      const isCustomModel = modelDetail.provider === "custom" || (modelDetail.base_url && modelDetail.base_url !== "");
       setFormData({
         name: modelDetail.name,
         description: modelDetail.description,
         provider: modelDetail.provider,
-        active: modelDetail.active,
-        customModel: isCustomModel,
+        active:
+          typeof modelDetail.active === "boolean" ? modelDetail.active : true,
         baseUrl: modelDetail.base_url || "",
         inputPpm: modelDetail.input_ppm?.toString?.() ?? "0",
         outputPpm: modelDetail.output_ppm?.toString?.() ?? "0",
@@ -284,7 +338,10 @@ export default function Model({
     }
 
     // Validate base_url if custom model
-    if (formData.customModel && (!formData.baseUrl || formData.baseUrl.trim() === "")) {
+    if (
+      formData.customModel &&
+      (!formData.baseUrl || formData.baseUrl.trim() === "")
+    ) {
       setErrors((prev) => ({
         ...prev,
         baseUrl: "Base URL is required for custom models",
@@ -446,9 +503,10 @@ export default function Model({
             <Label htmlFor="keyId">API Key</Label>
             {formData?.keyId !== undefined ? (
               <KeyPicker
-                mapping={keyMapping}
-                validIds={validKeyIds}
+                mapping={filteredKeyMapping}
+                validIds={validKeyIds.filter((id) => filteredKeyMapping[id])}
                 selectedIds={formData.keyId ? [formData.keyId] : []}
+                defaultKeyId={modelDetail?.default_key_id || null}
                 onSelect={(ids) =>
                   setFormData((prev) => ({
                     ...prev,
@@ -456,10 +514,8 @@ export default function Model({
                   }))
                 }
                 multiSelect={false}
-                keyType="api"
-                {...(createKeyAction && { createKeyAction })}
-                {...(decryptKeyAction && { decryptKeyAction })}
-                {...(updateKeyAction && { updateKeyAction })}
+                placeholder="Select key..."
+                disabled={isReadonly || isSubmitting}
               />
             ) : null}
           </div>

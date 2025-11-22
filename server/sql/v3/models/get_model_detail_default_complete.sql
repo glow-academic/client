@@ -47,17 +47,10 @@ valid_models AS (
     ORDER BY m.name
 ),
 valid_keys AS (
-    -- Get all API keys (default + department-specific for user's departments)
-    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
+    -- Get all active keys (no model-specific filtering for default view)
+    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.description, k.active
     FROM keys k
-    WHERE k.type = 'api' AND k.active = true
-    UNION
-    -- Also include department-specific keys for user's departments
-    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
-    FROM keys k
-    JOIN model_department_keys mdk ON mdk.key_id = k.id AND mdk.active = true
-    WHERE k.type = 'api' AND k.active = true
-    AND mdk.department_id IN (SELECT department_id FROM user_departments)
+    WHERE k.active = true
 ),
 key_mapping_data AS (
     SELECT COALESCE(
@@ -65,15 +58,13 @@ key_mapping_data AS (
             vk.key_id,
             jsonb_build_object(
                 'name', vk.name,
-                'description', CASE 
-                    WHEN LENGTH(vk.key) > 4 THEN LEFT(vk.key, 4) || '****'
-                    ELSE '****'
-                END,
+                'description', COALESCE(vk.description, ''),
                 'key_masked', CASE 
                     WHEN LENGTH(vk.key) > 4 THEN LEFT(vk.key, 4) || '****'
                     ELSE '****'
                 END,
-                'active', vk.active
+                'active', vk.active,
+                'department_ids', NULL::text[]
             )
         ) FILTER (WHERE vk.key_id IS NOT NULL),
         '{}'::jsonb

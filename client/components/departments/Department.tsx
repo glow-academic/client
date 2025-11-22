@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
 import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import {
@@ -547,103 +546,6 @@ export default function Department({
 
         {/* Models Management */}
         {departmentId && departmentData && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Models & API Keys</Label>
-              <p className="text-xs text-muted-foreground">
-                Manage API keys for models available to this department. Default
-                models are included.
-              </p>
-            </div>
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Model</TableHead>
-                    <TableHead className="text-right">API Key</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {departmentData &&
-                  "valid_model_ids" in departmentData &&
-                  departmentData.valid_model_ids &&
-                  departmentData.valid_model_ids.length > 0 ? (
-                    departmentData.valid_model_ids.map((modelId: string) => {
-                      const modelMapping =
-                        "model_mapping" in departmentData
-                          ? departmentData.model_mapping
-                          : {};
-                      const model = modelMapping?.[modelId] as
-                        | { name: string; description: string }
-                        | undefined;
-                      const modelKeyMapping =
-                        "model_key_mapping" in departmentData
-                          ? departmentData.model_key_mapping
-                          : {};
-                      const currentKeyId =
-                        (modelKeyMapping?.[modelId] as string | undefined) ||
-                        null;
-                      const keyMapping =
-                        "key_mapping" in departmentData
-                          ? departmentData.key_mapping
-                          : {};
-                      const validKeyIds =
-                        "valid_key_ids" in departmentData
-                          ? departmentData.valid_key_ids
-                          : [];
-                      return (
-                        <TableRow key={modelId}>
-                          <TableCell className="font-medium">
-                            {model?.name || modelId}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <KeyPicker
-                              mapping={
-                                keyMapping as Record<
-                                  string,
-                                  {
-                                    name: string;
-                                    description: string;
-                                    key_masked: string;
-                                    active: boolean;
-                                  }
-                                >
-                              }
-                              validIds={validKeyIds as string[]}
-                              selectedIds={currentKeyId ? [currentKeyId] : []}
-                              onSelect={(_ids) => {
-                                // TODO: Update model_key_mapping via API
-                                toast.info(
-                                  "Model key update functionality coming soon"
-                                );
-                              }}
-                              multiSelect={false}
-                              keyType="api"
-                              disabled={isReadonly}
-                              {...(createKeyAction && { createKeyAction })}
-                              {...(decryptKeyAction && { decryptKeyAction })}
-                              {...(updateKeyAction && { updateKeyAction })}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={2}
-                        className="text-center text-muted-foreground"
-                      >
-                        No models available
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-
         {/* Staff Management */}
         {departmentId && departmentData && (
           <div className="space-y-4">

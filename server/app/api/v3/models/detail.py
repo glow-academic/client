@@ -30,6 +30,7 @@ class KeyMappingItem(BaseModel):
     description: str
     key_masked: str
     active: bool
+    department_ids: list[str] | None
 
 
 class ModelDetailResponse(BaseModel):
@@ -112,11 +113,18 @@ async def get_model_detail(
                         description=ddata.get("description", ""),
                     )
 
-        # Parse department_ids from array
-        department_ids: list[str] = []
+        # Parse department_ids from array - always ensure it's a list
         department_ids_raw = model.get("department_ids")
-        if department_ids_raw and isinstance(department_ids_raw, (list, tuple)):
+        if department_ids_raw is None:
+            department_ids: list[str] = []
+        elif isinstance(department_ids_raw, (list, tuple)):
             department_ids = [str(did) for did in department_ids_raw if did]
+        elif hasattr(department_ids_raw, '__iter__') and not isinstance(department_ids_raw, str):
+            # Handle asyncpg array types
+            department_ids = [str(did) for did in department_ids_raw if did]
+        else:
+            # Fallback to empty list for any other type
+            department_ids = []
 
         # Parse valid_key_ids from array
         valid_key_ids: list[str] = []
@@ -132,14 +140,27 @@ async def get_model_detail(
         if key_mapping_data and isinstance(key_mapping_data, dict):
             for key_id, kdata in key_mapping_data.items():
                 if isinstance(kdata, dict):
+                    # Parse department_ids from array
+                    department_ids: list[str] | None = None
+                    dept_ids_raw = kdata.get("department_ids")
+                    if dept_ids_raw is not None:
+                        if isinstance(dept_ids_raw, (list, tuple)):
+                            dept_ids_list = [str(did) for did in dept_ids_raw if did]
+                            department_ids = dept_ids_list if dept_ids_list else None
+                        # If it's an empty array or None, keep as None
+                    
                     key_mapping[key_id] = KeyMappingItem(
                         name=kdata.get("name", ""),
                         description=kdata.get("description", ""),
                         key_masked=kdata.get("key_masked", ""),
                         active=kdata.get("active", True),
+                        department_ids=department_ids,
                     )
 
         default_key_id = str(model.get("default_key_id")) if model.get("default_key_id") else None
+
+        # Ensure department_ids is always a list, never None
+        final_department_ids = department_ids if isinstance(department_ids, list) else []
 
         response_data = ModelDetailResponse(
             name=model["name"],
@@ -153,7 +174,7 @@ async def get_model_detail(
             valid_providers=valid_providers,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
-            department_ids=department_ids,
+            department_ids=final_department_ids,
             valid_key_ids=valid_key_ids,
             key_mapping=key_mapping,
             default_key_id=default_key_id,

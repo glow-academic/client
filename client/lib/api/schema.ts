@@ -11437,6 +11437,8 @@ export interface components {
             key_masked: string;
             /** Active */
             active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
         };
         /** DepartmentMappingItem */
         app__api__v3__models__detail_default__DepartmentMappingItem: {
@@ -11455,6 +11457,8 @@ export interface components {
             key_masked: string;
             /** Active */
             active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
         };
         /** ModelMappingItem */
         app__api__v3__models__detail_default__ModelMappingItem: {

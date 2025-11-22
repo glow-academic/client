@@ -29,6 +29,10 @@ model_departments_data AS (
     WHERE md.model_id = $1::uuid AND md.active = true
     GROUP BY md.model_id
 ),
+model_departments_fallback AS (
+    SELECT ARRAY[]::text[] as department_ids
+    WHERE NOT EXISTS (SELECT 1 FROM model_departments_data WHERE model_id = $1::uuid)
+),
 model_default_key AS (
     SELECT 
         mk.key_id::text as key_id
@@ -64,40 +68,63 @@ valid_departments_data AS (
         array_agg(ud.id::text ORDER BY ud.name) as dept_ids
     FROM user_departments_data ud
 ),
-valid_keys AS (
-    -- Get all API keys (default + department-specific for user's departments)
-    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
-    FROM keys k
-    WHERE k.type = 'api' AND k.active = true
-    UNION
-    -- Also include department-specific keys for user's departments
-    SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
-    FROM keys k
-    JOIN model_department_keys mdk ON mdk.key_id = k.id AND mdk.active = true
-    WHERE k.type = 'api' AND k.active = true
-    AND mdk.department_id IN (SELECT department_id FROM user_departments)
+model_all_keys AS (
+    -- Default keys (no department-specific override)
+    SELECT 
+        mk.key_id::text as key_id,
+        k.name,
+        k.key,
+        k.description,
+        k.active,
+        ARRAY[]::text[] as department_ids
+    FROM model_keys mk
+    JOIN keys k ON k.id = mk.key_id
+    WHERE mk.model_id = $1::uuid AND mk.active = true AND k.active = true
+    
+    UNION ALL
+    
+    -- Department-specific keys
+    SELECT 
+        mdk.key_id::text as key_id,
+        k.name,
+        k.key,
+        k.description,
+        k.active,
+        ARRAY_AGG(mdk.department_id::text) as department_ids
+    FROM model_department_keys mdk
+    JOIN keys k ON k.id = mdk.key_id
+    WHERE mdk.model_id = $1::uuid AND mdk.active = true AND k.active = true
+    GROUP BY mdk.key_id, k.name, k.key, k.description, k.active
 ),
 key_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            vk.key_id,
+            mak.key_id,
             jsonb_build_object(
-                'name', vk.name,
-                'description', CASE 
-                    WHEN LENGTH(vk.key) > 4 THEN LEFT(vk.key, 4) || '****'
-                    ELSE '****'
-                END,
+                'name', mak.name,
+                'description', COALESCE(mak.description, ''),
                 'key_masked', CASE 
-                    WHEN LENGTH(vk.key) > 4 THEN LEFT(vk.key, 4) || '****'
+                    WHEN LENGTH(mak.key) > 4 THEN LEFT(mak.key, 4) || '****'
                     ELSE '****'
                 END,
-                'active', vk.active
+                'active', mak.active,
+                'department_ids', mak.department_ids
             )
-        ) FILTER (WHERE vk.key_id IS NOT NULL),
+        ) FILTER (WHERE mak.key_id IS NOT NULL),
         '{}'::jsonb
     ) as key_mapping,
-    array_agg(vk.key_id ORDER BY vk.name) as key_ids
-    FROM valid_keys vk
+    array_agg(mak.key_id ORDER BY mak.name) FILTER (WHERE mak.key_id IS NOT NULL) as key_ids
+    FROM (
+        SELECT DISTINCT ON (mak.key_id) 
+            mak.key_id,
+            mak.name,
+            mak.key,
+            mak.description,
+            mak.active,
+            mak.department_ids
+        FROM model_all_keys mak
+        ORDER BY mak.key_id, mak.name
+    ) mak
 )
 SELECT 
     m.*,
@@ -105,7 +132,7 @@ SELECT
     COALESCE(med.base_url, '') as base_url,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
     COALESCE(vdd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
-    COALESCE(mdd.department_ids, ARRAY[]::text[]) as department_ids,
+    COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::text[]) as department_ids,
     COALESCE(kmd.key_mapping, '{}'::jsonb) as key_mapping,
     COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
     mdk.key_id as default_key_id
@@ -113,6 +140,7 @@ FROM model_data m
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
 LEFT JOIN model_endpoint_data med ON true
-LEFT JOIN model_departments_data mdd ON mdd.model_id = $1::uuid
+LEFT JOIN model_departments_data mdd ON true
+LEFT JOIN model_departments_fallback mdf ON true
 LEFT JOIN model_default_key mdk ON true
 

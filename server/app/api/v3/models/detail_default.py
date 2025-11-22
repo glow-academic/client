@@ -35,6 +35,7 @@ class KeyMappingItem(BaseModel):
     description: str
     key_masked: str
     active: bool
+    department_ids: list[str] | None
 
 
 class ModelMappingItem(BaseModel):
@@ -163,11 +164,18 @@ async def get_model_detail_default(
         if key_mapping_data and isinstance(key_mapping_data, dict):
             for key_id, kdata in key_mapping_data.items():
                 if isinstance(kdata, dict):
+                    # Parse department_ids from array
+                    department_ids: list[str] | None = None
+                    dept_ids_raw = kdata.get("department_ids")
+                    if dept_ids_raw and isinstance(dept_ids_raw, (list, tuple)):
+                        department_ids = [str(did) for did in dept_ids_raw if did]
+                    
                     key_mapping[key_id] = KeyMappingItem(
                         name=kdata.get("name", ""),
                         description=kdata.get("description", ""),
                         key_masked=kdata.get("key_masked", ""),
                         active=kdata.get("active", True),
+                        department_ids=department_ids,
                     )
 
         response_data = ModelDetailDefaultResponse(

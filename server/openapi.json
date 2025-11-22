@@ -28067,6 +28067,20 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",
@@ -28074,7 +28088,8 @@
           "name",
           "description",
           "key_masked",
-          "active"
+          "active",
+          "department_ids"
         ],
         "title": "KeyMappingItem"
       },
@@ -28113,6 +28128,20 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",
@@ -28120,7 +28149,8 @@
           "name",
           "description",
           "key_masked",
-          "active"
+          "active",
+          "department_ids"
         ],
         "title": "KeyMappingItem"
       },
