@@ -2,6 +2,8 @@
 -- Parameters: $1=type (e.g., 'auth')
 SELECT 
     k.id::text as key_id,
+    k.name,
+    k.key as description, -- Full encrypted key for display
     CASE 
         WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
         ELSE '****'

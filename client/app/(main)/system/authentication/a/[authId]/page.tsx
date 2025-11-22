@@ -5,14 +5,16 @@
 
 import { getSession } from "@/auth";
 
+import type {
+  CreateKeyIn,
+  CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
+} from "@/app/(main)/system/authentication/page";
 import Auth from "@/components/auth/Auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import type {
-  CreateKeyIn,
-  CreateKeyOut,
-} from "@/app/(main)/system/authentication/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type AuthDetailIn = InputOf<"/api/v3/auth/detail", "post">;
@@ -23,6 +25,7 @@ type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
 
 type UpdateAuthIn = InputOf<"/api/v3/auth/update", "post">;
 type UpdateAuthOut = OutputOf<"/api/v3/auth/update", "post">;
+type AuthDetailDefaultOut = OutputOf<"/api/v3/auth/detail-default", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -85,6 +88,12 @@ async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   return api.post("/keys/create", input);
 }
 
+async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/keys/decrypt-key", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthEditPage({
   params,
@@ -100,11 +109,7 @@ export default async function AuthEditPage({
     const authDetail = await getAuth(authId, profileId);
 
     return (
-      <div
-        className="space-y-6"
-        data-page="auth-edit"
-        data-auth-id={authId}
-      >
+      <div className="space-y-6" data-page="auth-edit" data-auth-id={authId}>
         <Auth
           authId={authId}
           mode="edit"
@@ -112,6 +117,7 @@ export default async function AuthEditPage({
           createAuthAction={createAuth}
           updateAuthAction={updateAuth}
           createKeyAction={createKey}
+          decryptKeyAction={decryptKey}
         />
       </div>
     );
@@ -140,6 +146,7 @@ export default async function AuthEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  AuthDetailDefaultOut,
   AuthDetailIn,
   AuthDetailOut,
   CreateAuthIn,
@@ -147,4 +154,3 @@ export type {
   UpdateAuthIn,
   UpdateAuthOut,
 };
-

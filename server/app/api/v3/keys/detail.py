@@ -22,6 +22,7 @@ class KeyDetailRequest(BaseModel):
 
 class KeyDetailResponse(BaseModel):
     key_id: str
+    name: str
     key: str  # Full key if show_full=True, masked otherwise
     key_masked: str  # Always masked
     type: str
@@ -71,6 +72,7 @@ async def get_key_detail(
 
         response_data = KeyDetailResponse(
             key_id=str(result["key_id"]),
+            name=result["name"],
             key=key_value,
             key_masked=result["key_masked"],
             type=result["type"],

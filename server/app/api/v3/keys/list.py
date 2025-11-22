@@ -21,6 +21,8 @@ class KeysFilters(BaseModel):
 
 class KeyItem(BaseModel):
     key_id: str
+    name: str
+    description: str  # Full encrypted key
     key_masked: str  # Masked key (first 4 chars + "****")
     type: str
     active: bool
@@ -68,6 +70,8 @@ async def get_keys_list(
 
         for row in result:
             key_id = str(row["key_id"])
+            name = row["name"]
+            description = row["description"]  # Full encrypted key
             key_masked = row["key_masked"]
             key_type = row["type"]
             active = row["active"]
@@ -75,6 +79,8 @@ async def get_keys_list(
             keys.append(
                 KeyItem(
                     key_id=key_id,
+                    name=name,
+                    description=description,
                     key_masked=key_masked,
                     type=key_type,
                     active=active,
@@ -83,6 +89,8 @@ async def get_keys_list(
 
             # Build mapping for picker use
             key_mapping[key_id] = {
+                "name": name,
+                "description": description,
                 "key_masked": key_masked,
                 "active": active,
             }

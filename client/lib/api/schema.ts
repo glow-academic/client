@@ -2759,6 +2759,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/keys/decrypt-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decrypt Key
+         * @description Decrypt a key's encrypted value.
+         */
+        post: operations["decrypt_key_api_v3_keys_decrypt_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/models/list": {
         parameters: {
             query?: never;
@@ -4874,6 +4894,8 @@ export interface components {
          * @description Request to create key.
          */
         CreateKeyRequest: {
+            /** Name */
+            name: string;
             /** Key */
             key: string;
             /** Type */
@@ -5529,6 +5551,24 @@ export interface components {
             scenarioId?: string | null;
             /** Count */
             count?: number | null;
+        };
+        /**
+         * DecryptKeyRequest
+         * @description Request to decrypt key.
+         */
+        DecryptKeyRequest: {
+            /** Keyid */
+            keyId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DecryptKeyResponse
+         * @description Response from decrypt key.
+         */
+        DecryptKeyResponse: {
+            /** Key */
+            key: string;
         };
         /** DeleteAgentPromptRequest */
         DeleteAgentPromptRequest: {
@@ -6797,6 +6837,8 @@ export interface components {
         KeyDetailResponse: {
             /** Key Id */
             key_id: string;
+            /** Name */
+            name: string;
             /** Key */
             key: string;
             /** Key Masked */
@@ -6810,6 +6852,10 @@ export interface components {
         KeyItem: {
             /** Key Id */
             key_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
             /** Key Masked */
             key_masked: string;
             /** Type */
@@ -16126,6 +16172,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateKeyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decrypt_key_api_v3_keys_decrypt_key_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecryptKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecryptKeyResponse"];
                 };
             };
             /** @description Validation Error */

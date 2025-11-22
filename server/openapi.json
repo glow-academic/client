@@ -6016,6 +6016,53 @@
         ]
       }
     },
+    "/api/v3/keys/decrypt-key": {
+      "post": {
+        "tags": [
+          "v3",
+          "keys"
+        ],
+        "summary": "Decrypt Key",
+        "description": "Decrypt a key's encrypted value.",
+        "operationId": "decrypt_key_api_v3_keys_decrypt_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecryptKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecryptKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "keys"
+        ]
+      }
+    },
     "/api/v3/models/list": {
       "post": {
         "tags": [
@@ -11052,6 +11099,10 @@
       },
       "CreateKeyRequest": {
         "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
           "key": {
             "type": "string",
             "title": "Key"
@@ -11068,6 +11119,7 @@
         },
         "type": "object",
         "required": [
+          "name",
           "key",
           "type"
         ],
@@ -12832,6 +12884,39 @@
         ],
         "title": "DataPoint",
         "description": "Individual data point."
+      },
+      "DecryptKeyRequest": {
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "title": "Keyid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keyId",
+          "profileId"
+        ],
+        "title": "DecryptKeyRequest",
+        "description": "Request to decrypt key."
+      },
+      "DecryptKeyResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "title": "DecryptKeyResponse",
+        "description": "Response from decrypt key."
       },
       "DeleteAgentPromptRequest": {
         "properties": {
@@ -16098,6 +16183,10 @@
             "type": "string",
             "title": "Key Id"
           },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
           "key": {
             "type": "string",
             "title": "Key"
@@ -16118,6 +16207,7 @@
         "type": "object",
         "required": [
           "key_id",
+          "name",
           "key",
           "key_masked",
           "type",
@@ -16130,6 +16220,14 @@
           "key_id": {
             "type": "string",
             "title": "Key Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
           },
           "key_masked": {
             "type": "string",
@@ -16147,6 +16245,8 @@
         "type": "object",
         "required": [
           "key_id",
+          "name",
+          "description",
           "key_masked",
           "type",
           "active"

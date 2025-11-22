@@ -16,6 +16,7 @@ from app.utils.sql_helper import load_sql
 class CreateKeyRequest(BaseModel):
     """Request to create key."""
 
+    name: str
     key: str
     type: str  # 'api' or 'auth'
     active: bool = True
@@ -54,7 +55,7 @@ async def create_key(
 
             # Create key
             sql_query = load_sql("sql/v3/keys/create_key.sql")
-            sql_params = (request.key, request.type, request.active)
+            sql_params = (request.name, request.key, request.type, request.active)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

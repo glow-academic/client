@@ -1,12 +1,13 @@
 -- Create a new key
--- Parameters: $1=key, $2=type, $3=active
+-- Parameters: $1=name, $2=key, $3=type, $4=active
 WITH new_key AS (
     INSERT INTO keys (
+        name,
         key,
         type,
         active
     )
-    VALUES ($1, $2::key_type, $3)
+    VALUES ($1, $2, $3::key_type, $4)
     RETURNING id::text as key_id, key
 )
 SELECT 

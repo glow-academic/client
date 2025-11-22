@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { Check, ChevronsUpDown, Eye, Plus, X } from "lucide-react";
+import { Check, ChevronsUpDown, Copy, Eye, Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import type {
   CreateKeyIn,
   CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
 } from "@/app/(main)/system/authentication/page";
 
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +43,11 @@ import {
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 type KeyMappingItem = {
+  name: string;
+  description: string; // Full encrypted key
   key_masked: string;
   active: boolean;
 };
@@ -71,6 +74,8 @@ export interface KeyPickerProps<T extends KeyMappingItem = KeyMappingItem> {
   required?: boolean;
   /** Server action for creating keys */
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
+  /** Server action for decrypting keys */
+  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
   /** Key type filter (default: 'auth') */
   keyType?: string;
 }
@@ -89,11 +94,13 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
   buttonClassName,
   required = false,
   createKeyAction,
+  decryptKeyAction,
   keyType = "auth",
 }: KeyPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
   const [newKey, setNewKey] = useState("");
   const [newKeyActive, setNewKeyActive] = useState(true);
   const router = useRouter();
@@ -110,13 +117,13 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
     }));
   }, [validIds, mapping]);
 
-  // Filter keys by search
+  // Filter keys by search (search by name)
   const filteredKeys = useMemo(() => {
     if (!search.trim()) return keys;
     const searchLower = search.toLowerCase();
     return keys.filter((key) => {
-      const masked = key.key_masked?.toLowerCase() || "";
-      return masked.includes(searchLower);
+      const name = key.name?.toLowerCase() || "";
+      return name.includes(searchLower);
     });
   }, [keys, search]);
 
@@ -151,23 +158,27 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
     }
     if (multiSelect) {
       if (compact) {
-        const masked = selectedIds
-          .map((id) => mapping[id]?.key_masked)
+        const names = selectedIds
+          .map((id) => mapping[id]?.name)
           .filter(Boolean) as string[];
-        if (masked.length === 0) {
+        if (names.length === 0) {
           return `${selectedIds.length} keys selected${requiredIndicator}`;
         }
-        return masked.join(", ") + requiredIndicator;
+        return names.join(", ") + requiredIndicator;
       }
       return `${selectedIds.length} keys selected${requiredIndicator}`;
     }
     return (
-      (mapping[selectedIds[0]!]?.key_masked ||
-        `Select key${requiredIndicator}`) + requiredIndicator
+      (mapping[selectedIds[0]!]?.name || `Select key${requiredIndicator}`) +
+      requiredIndicator
     );
   };
 
   const handleCreate = async () => {
+    if (!newKeyName.trim()) {
+      toast.error("Key name is required");
+      return;
+    }
     if (!newKey.trim()) {
       toast.error("Key value is required");
       return;
@@ -182,6 +193,7 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
       setIsCreating(true);
       const created = await createKeyAction({
         body: {
+          name: newKeyName.trim(),
           key: newKey.trim(),
           type: keyType,
           active: newKeyActive,
@@ -190,6 +202,7 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
 
       toast.success("Key created successfully");
       setShowCreateDialog(false);
+      setNewKeyName("");
       setNewKey("");
       setNewKeyActive(true);
       if (!multiSelect) {
@@ -217,15 +230,26 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
     setShowPreviewDialog(true);
     setPreviewKeyFull(null);
 
-    // Fetch full key immediately
+    // Decrypt key using server action
+    if (!decryptKeyAction) {
+      toast.error("Decrypt action is not available");
+      setShowPreviewDialog(false);
+      return;
+    }
+
     setIsLoadingPreview(true);
     try {
-      const response = await api.post("/keys/detail", {
-        body: { keyId, show_full: true },
+      // Get profileId from session - we'll need to pass it from parent
+      // For now, use empty string and let server handle it
+      const response = await decryptKeyAction({
+        body: { keyId, profileId: "" },
       });
       setPreviewKeyFull(response.key);
-    } catch {
-      toast.error("Failed to load key details");
+    } catch (error) {
+      toast.error("Failed to decrypt key", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+      setShowPreviewDialog(false);
     } finally {
       setIsLoadingPreview(false);
     }
@@ -262,7 +286,7 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
             >
               <Eye className="h-3 w-3" />
             </button>
-            <span className="truncate max-w-[200px]">{key.key_masked}</span>
+            <span className="truncate max-w-[200px]">{key.name}</span>
             <button
               type="button"
               aria-label={`Remove ${key.key_masked}`}
@@ -333,6 +357,25 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
               placeholder="Search keys..."
               value={search}
               onValueChange={setSearch}
+              endAdornment={
+                createKeyAction ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Create new key"
+                    title="Create new key"
+                    className="relative hover:bg-accent overflow-visible h-8 w-8 p-0 text-muted-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowCreateDialog(true);
+                      setOpen(false);
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                ) : undefined
+              }
             />
             <CommandEmpty>No keys found.</CommandEmpty>
             <CommandList className="max-h-[400px]">
@@ -345,22 +388,11 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
                     Clear {multiSelect ? "All" : "Selection"}
                   </CommandItem>
                 )}
-                {createKeyAction && (
-                  <CommandItem
-                    onSelect={() => {
-                      setShowCreateDialog(true);
-                      setOpen(false);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Key
-                  </CommandItem>
-                )}
                 {filteredKeys.map((key) => (
                   <CommandItem
                     key={key.id}
                     onSelect={() => handleKeySelect(key.id)}
-                    value={key.key_masked || ""}
+                    value={key.name || ""}
                   >
                     <div className="flex items-center gap-3 w-full">
                       <button
@@ -375,7 +407,10 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
                         <Eye className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
                       <div className="flex-1 min-w-0">
-                        <div className="truncate">{key.key_masked}</div>
+                        <div className="font-medium truncate">{key.name}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {key.description}
+                        </div>
                         {!key.active && (
                           <div className="text-xs text-muted-foreground">
                             Inactive
@@ -432,6 +467,15 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid gap-2">
+              <Label htmlFor="new-key-name">Key Name</Label>
+              <Input
+                id="new-key-name"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="Enter key name"
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="new-key-value">Key Value</Label>
               <Textarea
                 id="new-key-value"
@@ -458,6 +502,7 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
               variant="outline"
               onClick={() => {
                 setShowCreateDialog(false);
+                setNewKeyName("");
                 setNewKey("");
                 setNewKeyActive(true);
               }}
@@ -488,21 +533,25 @@ export function KeyPicker<T extends KeyMappingItem = KeyMappingItem>({
               <>
                 <div className="grid gap-2">
                   <Label>Key Value</Label>
-                  <Input
-                    value={previewKeyFull || ""}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={previewKeyFull || ""}
+                      readOnly
+                      className="font-mono text-sm flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="icon"
+                      onClick={handleCopyKey}
+                      disabled={!previewKeyFull}
+                      className="h-9 w-9 flex-shrink-0"
+                      aria-label="Copy key"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCopyKey}
-                  className="w-full"
-                  disabled={!previewKeyFull}
-                >
-                  Copy Key
-                </Button>
               </>
             )}
           </div>

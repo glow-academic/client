@@ -22,21 +22,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { Power, Plus, Trash2 } from "lucide-react";
+import { Plus, Power, Trash2 } from "lucide-react";
 
 // Type-only import from server page
 import type {
-  CreateAuthIn,
-  CreateAuthOut,
   AuthDetailDefaultOut,
   AuthDetailOut,
+  CreateAuthIn,
+  CreateAuthOut,
   UpdateAuthIn,
   UpdateAuthOut,
 } from "@/app/(main)/system/authentication/a/[authId]/page";
 import type {
   CreateKeyIn,
   CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
 } from "@/app/(main)/system/authentication/page";
 import { api } from "@/lib/api/client";
 
@@ -63,6 +64,7 @@ interface AuthProps {
   createAuthAction?: (input: CreateAuthIn) => Promise<CreateAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
+  decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
 }
 
 export default function Auth({
@@ -73,10 +75,10 @@ export default function Auth({
   createAuthAction,
   updateAuthAction,
   createKeyAction,
+  decryptKeyAction,
 }: AuthProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!authId;
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
   const initialFormData: FormData = useMemo(
     () => ({
@@ -84,7 +86,7 @@ export default function Auth({
       description: "",
       active: false,
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,7 +95,10 @@ export default function Auth({
     AuthItemFormData[]
   >([]);
   const [keyMapping, setKeyMapping] = useState<
-    Record<string, { key_masked: string; active: boolean }>
+    Record<
+      string,
+      { name: string; description: string; key_masked: string; active: boolean }
+    >
   >({});
   const [validKeyIds, setValidKeyIds] = useState<string[]>([]);
 
@@ -128,38 +133,41 @@ export default function Auth({
         const response = await api.post("/keys/list", {
           body: { type: "auth" },
         });
-        setKeyMapping(response.key_mapping || {});
+        // Type assertion needed because API response may have additional fields
+        setKeyMapping(
+          (response.key_mapping || {}) as Record<
+            string,
+            {
+              name: string;
+              description: string;
+              key_masked: string;
+              active: boolean;
+            }
+          >
+        );
         setValidKeyIds(response.keys.map((k) => k.key_id));
-      } catch (error) {
-        console.error("Failed to load keys:", error);
+      } catch {
+        // Error handling - server handles logging
       }
     };
     loadKeys();
   }, []);
 
   // Set breadcrumb context when auth data is loaded
-  useEffect(() => {
-    if (authDetail?.name && authId && isEditMode) {
-      setEntityMetadata({
-        entityId: authId,
-        entityName: authDetail.name,
-        entityType: "auth",
-      });
-    }
-    return () => clearEntityMetadata();
-  }, [
-    authDetail,
-    authId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  // Note: "auth" is not in the breadcrumb entity types, so we skip breadcrumb for now
+  // useEffect(() => {
+  //   if (authDetail?.name && authId && isEditMode) {
+  //     setEntityMetadata({
+  //       entityId: authId,
+  //       entityName: authDetail.name,
+  //       entityType: "auth",
+  //     });
+  //   }
+  //   return () => clearEntityMetadata();
+  // }, [authDetail, authId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Auth items come nested in response
-  const authItems = useMemo(
-    () => authData?.auth_items || [],
-    [authData],
-  );
+  const authItems = useMemo(() => authData?.auth_items || [], [authData]);
 
   const [initiallySorted, setInitiallySorted] = useState(false);
 
@@ -173,7 +181,17 @@ export default function Auth({
       });
       // Update key mapping from auth detail
       if (authData.key_mapping) {
-        setKeyMapping(authData.key_mapping);
+        setKeyMapping(
+          authData.key_mapping as Record<
+            string,
+            {
+              name: string;
+              description: string;
+              key_masked: string;
+              active: boolean;
+            }
+          >
+        );
       }
     } else if (!isEditMode && authData) {
       setFormData({
@@ -187,15 +205,24 @@ export default function Auth({
     if (!initiallySorted && authItems && authItems.length > 0) {
       const sorted = authItems
         .slice()
-        .sort((a, b) => a.name.localeCompare(b.name));
-      const formData = sorted.map((item) => ({
-        id: item.auth_item_id,
-        name: item.name,
-        description: item.description,
-        key_ids: item.key_ids || [],
-        isNew: false,
-        isDeleted: false,
-      }));
+        .sort((a: { name: string }, b: { name: string }) =>
+          a.name.localeCompare(b.name)
+        );
+      const formData = sorted.map(
+        (item: {
+          auth_item_id: string;
+          name: string;
+          description: string;
+          key_ids?: string[];
+        }) => ({
+          id: item.auth_item_id,
+          name: item.name,
+          description: item.description,
+          key_ids: item.key_ids || [],
+          isNew: false,
+          isDeleted: false,
+        })
+      );
       setAuthItemsFormData(formData);
       setInitiallySorted(true);
     }
@@ -210,15 +237,24 @@ export default function Auth({
     if (!initiallySorted) return;
 
     const mapped = authItems
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((item) => ({
-        id: item.auth_item_id,
-        name: item.name,
-        description: item.description,
-        key_ids: item.key_ids || [],
-        isNew: false,
-        isDeleted: false,
-      }));
+      .sort((a: { name: string }, b: { name: string }) =>
+        a.name.localeCompare(b.name)
+      )
+      .map(
+        (item: {
+          auth_item_id: string;
+          name: string;
+          description: string;
+          key_ids?: string[];
+        }) => ({
+          id: item.auth_item_id,
+          name: item.name,
+          description: item.description,
+          key_ids: item.key_ids || [],
+          isNew: false,
+          isDeleted: false,
+        })
+      );
     setAuthItemsFormData(mapped);
   }, [authItems, mode, initiallySorted]);
 
@@ -272,7 +308,7 @@ export default function Auth({
       router.push("/system/authentication");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} auth: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -338,7 +374,7 @@ export default function Auth({
   const handleAuthItemInputChange = (
     index: number,
     field: keyof AuthItemFormData,
-    value: string | string[],
+    value: string | string[]
   ) => {
     setAuthItemsFormData((prev) => {
       const newItems = [...prev];
@@ -347,8 +383,7 @@ export default function Auth({
     });
   };
 
-  const isReadonly =
-    isEditMode && authDetail && !authDetail.can_edit;
+  const isReadonly = isEditMode && authDetail && !authDetail.can_edit;
 
   return (
     <div className="space-y-6">
@@ -456,7 +491,7 @@ export default function Auth({
                               handleAuthItemInputChange(
                                 itemIndex,
                                 "name",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             className="text-sm font-medium w-full"
@@ -485,7 +520,7 @@ export default function Auth({
                             handleAuthItemInputChange(
                               itemIndex,
                               "description",
-                              e.target.value,
+                              e.target.value
                             )
                           }
                           className="text-sm min-h-[80px] w-full"
@@ -503,20 +538,16 @@ export default function Auth({
                           validIds={validKeyIds}
                           selectedIds={item.key_ids}
                           onSelect={(ids) =>
-                            handleAuthItemInputChange(
-                              itemIndex,
-                              "key_ids",
-                              ids,
-                            )
+                            handleAuthItemInputChange(itemIndex, "key_ids", ids)
                           }
-                          multiSelect={true}
-                          disabled={isReadonly}
-                          createKeyAction={createKeyAction}
+                          disabled={isReadonly ?? false}
+                          {...(createKeyAction && { createKeyAction })}
+                          {...(decryptKeyAction && { decryptKeyAction })}
                           keyType="auth"
                         />
                       </div>
                     </div>
-                  ),
+                  )
                 )}
               </div>
 
@@ -542,7 +573,7 @@ export default function Auth({
                                 handleAuthItemInputChange(
                                   itemIndex,
                                   "name",
-                                  e.target.value,
+                                  e.target.value
                                 )
                               }
                               className="text-sm w-full"
@@ -557,7 +588,7 @@ export default function Auth({
                                 handleAuthItemInputChange(
                                   itemIndex,
                                   "description",
-                                  e.target.value,
+                                  e.target.value
                                 )
                               }
                               className="text-sm min-h-[60px] w-full"
@@ -575,14 +606,13 @@ export default function Auth({
                                 handleAuthItemInputChange(
                                   itemIndex,
                                   "key_ids",
-                                  ids,
+                                  ids
                                 )
                               }
-                              multiSelect={true}
-                              disabled={isReadonly}
-                              createKeyAction={createKeyAction}
+                              disabled={isReadonly ?? false}
+                              {...(createKeyAction && { createKeyAction })}
+                              {...(decryptKeyAction && { decryptKeyAction })}
                               keyType="auth"
-                              compact={true}
                             />
                           </TableCell>
                           <TableCell className="w-20">
@@ -601,7 +631,7 @@ export default function Auth({
                             )}
                           </TableCell>
                         </TableRow>
-                      ),
+                      )
                     )}
                   </TableBody>
                 </Table>
@@ -638,4 +668,3 @@ export default function Auth({
     </div>
   );
 }
-

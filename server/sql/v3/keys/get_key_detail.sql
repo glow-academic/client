@@ -2,6 +2,7 @@
 -- Parameters: $1=key_id, $2=show_full (boolean)
 SELECT 
     k.id::text as key_id,
+    k.name,
     CASE 
         WHEN $2 = true THEN k.key
         ELSE CASE 
