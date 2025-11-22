@@ -48,9 +48,11 @@ import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   AlertCircle,
   Brain,
+  Building2,
   ChartBar,
   ChevronRight,
   ChevronsUpDown,
+  Cog,
   Home,
   LogOut,
   Search,
@@ -179,6 +181,16 @@ export function UnifiedSidebar({
       });
     }
 
+    // Departments - root level (instructional+)
+    if (availableSections.includes("departments")) {
+      menu.push({
+        title: "Departments",
+        url: "#",
+        icon: Building2,
+        section: "departments",
+      });
+    }
+
     // Cohorts sections based on role
     if (availableSections.includes("cohorts")) {
       if (["ta"].includes(effectiveProfile.role)) {
@@ -241,7 +253,7 @@ export function UnifiedSidebar({
     // Create - Available from instructor level and up
     if (
       availableSections.includes("personas") ||
-      availableSections.includes("documents") ||
+      availableSections.includes("videos") ||
       availableSections.includes("scenarios") ||
       availableSections.includes("simulations")
     ) {
@@ -261,25 +273,25 @@ export function UnifiedSidebar({
             section: "scenarios",
           },
           {
+            title: "Videos",
+            url: "#",
+            section: "videos",
+          },
+          {
             title: "Personas",
             url: "#",
             section: "personas",
-          },
-          {
-            title: "Documents",
-            url: "#",
-            section: "documents",
           },
         ],
       });
     }
 
-    // Management - Available from admin level only
+    // Management - Available from admin level and up
     if (
-      availableSections.includes("departments") ||
-      availableSections.includes("parameters") ||
+      availableSections.includes("policies") ||
+      availableSections.includes("documents") ||
       availableSections.includes("rubrics") ||
-      availableSections.includes("agents")
+      availableSections.includes("parameters")
     ) {
       const managementItems: MenuItem[] = [];
 
@@ -290,19 +302,19 @@ export function UnifiedSidebar({
         items: managementItems,
       });
 
-      if (availableSections.includes("departments")) {
+      if (availableSections.includes("policies")) {
         managementItems.push({
-          title: "Departments",
+          title: "Policies",
           url: "#",
-          section: "departments",
+          section: "policies",
         });
       }
 
-      if (availableSections.includes("agents")) {
+      if (availableSections.includes("documents")) {
         managementItems.push({
-          title: "Agents",
+          title: "Documents",
           url: "#",
-          section: "agents",
+          section: "documents",
         });
       }
 
@@ -323,16 +335,59 @@ export function UnifiedSidebar({
       }
     }
 
-    // System  - Available for admin and superadmin
-    if (effectiveProfile.role === "admin" || effectiveProfile.role === "superadmin") {
-      const systemItems: MenuItem[] = [];
+    // Engine - Available for superadmin only
+    if (
+      effectiveProfile.role === "superadmin" &&
+      (availableSections.includes("agents") ||
+        availableSections.includes("models") ||
+        availableSections.includes("providers") ||
+        availableSections.includes("evals"))
+    ) {
+      const engineItems: MenuItem[] = [];
 
       menu.push({
-        title: "System",
+        title: "Engine",
         url: "#",
-        icon: Settings,
-        items: systemItems,
+        icon: Cog,
+        items: engineItems,
       });
+
+      if (availableSections.includes("agents")) {
+        engineItems.push({
+          title: "Agents",
+          url: "#",
+          section: "agents",
+        });
+      }
+
+      if (availableSections.includes("models")) {
+        engineItems.push({
+          title: "Models",
+          url: "#",
+          section: "models",
+        });
+      }
+
+      if (availableSections.includes("providers")) {
+        engineItems.push({
+          title: "Providers",
+          url: "#",
+          section: "providers",
+        });
+      }
+
+      if (availableSections.includes("evals")) {
+        engineItems.push({
+          title: "Evals",
+          url: "#",
+          section: "evals",
+        });
+      }
+    }
+
+    // System - Available for superadmin only
+    if (effectiveProfile.role === "superadmin") {
+      const systemItems: MenuItem[] = [];
 
       if (availableSections.includes("staff")) {
         systemItems.push({
@@ -342,24 +397,14 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("models")) {
+      if (availableSections.includes("authentication")) {
         systemItems.push({
-          title: "Models",
+          title: "Authentication",
           url: "#",
-          section: "models",
+          section: "authentication",
         });
       }
 
-      // Feedback - moved from management
-      if (availableSections.includes("feedback")) {
-        systemItems.push({
-          title: "Feedback",
-          url: "#",
-          section: "feedback",
-        });
-      }
-
-      // Logs - available for admin
       if (availableSections.includes("logs")) {
         systemItems.push({
           title: "Logs",
@@ -367,21 +412,62 @@ export function UnifiedSidebar({
           section: "logs",
         });
       }
+
+      if (availableSections.includes("health")) {
+        systemItems.push({
+          title: "Health",
+          url: "#",
+          section: "health",
+        });
+      }
+
+      // Only add System section if it has items
+      if (systemItems.length > 0) {
+        menu.push({
+          title: "System",
+          url: "#",
+          icon: Settings,
+          items: systemItems,
+        });
+      }
     }
 
     // Apply search filter if search term exists
     if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
       const filteredMenu = menu
-        .map((section) => ({
-          ...section,
-          items:
+        .map((section) => {
+          // Check if this is a root-level item (has section but no items)
+          if (section.section && !section.items) {
+            // Root-level item - check if it matches search
+            const matchesSearch =
+              section.title.toLowerCase().includes(searchLower) ||
+              section.section.toLowerCase().includes(searchLower);
+            return matchesSearch ? section : null;
+          }
+          
+          // Section with sub-items - filter items
+          const filteredItems =
             section.items?.filter(
               (item) =>
-                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.section?.toLowerCase().includes(searchTerm.toLowerCase())
-            ) || [],
-        }))
-        .filter((section) => section.items.length > 0);
+                item.title.toLowerCase().includes(searchLower) ||
+                item.section?.toLowerCase().includes(searchLower)
+            ) || [];
+          
+          // Also check if the section title itself matches
+          const sectionMatches = section.title.toLowerCase().includes(searchLower);
+          
+          // Return section if it has matching items or if section title matches
+          if (filteredItems.length > 0 || sectionMatches) {
+            return {
+              ...section,
+              items: filteredItems,
+            };
+          }
+          
+          return null;
+        })
+        .filter((section): section is NavSection => section !== null);
 
       return filteredMenu;
     }

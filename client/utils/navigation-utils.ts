@@ -77,6 +77,9 @@ export const getSectionRoute = (
     case "leaderboard":
       return "/analytics/leaderboard";
 
+    case "departments":
+      return "/departments";
+
     case "cohorts":
       // For TA users, redirect to their first cohort sub-item page
       // For other roles, go to the main cohorts page
@@ -95,34 +98,46 @@ export const getSectionRoute = (
       return "/create/scenarios";
     case "simulations":
       return "/create/simulations";
+    case "videos":
+      return "/create/videos";
     case "personas":
       return "/create/personas";
-    case "documents":
-      return "/create/documents";
 
     // Management routes
     case "management":
       return "/management";
-    case "agents":
-      return "/management/agents";
-    case "departments":
-      return "/management/departments";
+    case "policies":
+      return "/management/policies";
+    case "documents":
+      return "/management/documents";
     case "rubrics":
       return "/management/rubrics";
     case "parameters":
       return "/management/parameters";
+
+    // Engine routes
+    case "engine":
+      return "/engine";
+    case "agents":
+      return "/engine/agents";
+    case "models":
+      return "/engine/models";
+    case "providers":
+      return "/engine/providers";
+    case "evals":
+      return "/engine/evals";
 
     // System routes
     case "system":
       return "/system";
     case "staff":
       return "/system/staff";
-    case "models":
-      return "/system/models";
-    case "feedback":
-      return "/system/feedback";
+    case "authentication":
+      return "/system/authentication";
     case "logs":
       return "/system/logs";
+    case "health":
+      return "/system/health";
 
     // Profile route
     case "profile":
@@ -159,7 +174,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("document-")) {
         const documentId = section.replace("document-", "");
-        return `/create/documents/d/${documentId}`;
+        return `/management/documents/d/${documentId}`;
       }
 
       if (section.startsWith("chat-")) {
@@ -182,7 +197,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("model-")) {
         const modelId = section.replace("model-", "");
-        return `/system/models/${modelId}`;
+        return `/engine/models/${modelId}`;
       }
       if (section.startsWith("profile-")) {
         const profileId = section.replace("profile-", "");
@@ -195,17 +210,17 @@ export const getSectionRoute = (
       }
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");
-        return `/management/departments/d/${departmentId}`;
+        return `/departments/d/${departmentId}`;
       }
       if (section.startsWith("persona-")) {
         const personaId = section.replace("persona-", "");
         return `/create/personas/p/${personaId}`;
       }
 
-      // Management dynamic routes
+      // Engine dynamic routes
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/management/agents/a/${agentId}`;
+        return `/engine/agents/a/${agentId}`;
       }
 
       return "/home"; // Default fallback to home

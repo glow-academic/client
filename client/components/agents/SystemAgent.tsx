@@ -60,7 +60,7 @@ import type {
   DeleteAgentPromptOut,
   UpdateAgentIn,
   UpdateAgentOut,
-} from "@/app/(main)/management/agents/a/[agentId]/page";
+} from "@/app/(main)/engine/agents/a/[agentId]/page";
 
 interface SystemAgentFormData {
   name?: string;
@@ -482,7 +482,7 @@ export default function SystemAgent({
         });
         toast.success("Agent updated successfully!");
         resetFormAndState();
-        router.push("/management/agents");
+        router.push("/engine/agents");
         setIsSubmitting(false);
       } else {
         // Create new agent using v3 API
@@ -503,7 +503,7 @@ export default function SystemAgent({
         });
         toast.success("Agent created successfully!");
         resetFormAndState();
-        router.push(`/management/agents`);
+        router.push(`/engine/agents`);
         setIsSubmitting(false);
       }
     } catch (error) {

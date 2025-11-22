@@ -9,7 +9,6 @@ import {
   Copy,
   Cpu,
   Edit,
-  Plus,
   Sparkles,
   Trash2,
   X,
@@ -59,7 +58,7 @@ import type {
   DuplicateModelIn,
   DuplicateModelOut,
   ModelsListOut,
-} from "@/app/(main)/system/models/page";
+} from "@/app/(main)/engine/models/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -273,7 +272,7 @@ export default function Models({
   };
 
   const handleEdit = (modelId: string) => {
-    router.push(`/system/models/${modelId}`);
+    router.push(`/engine/models/${modelId}`);
   };
 
 

@@ -9,7 +9,7 @@
 import type {
   FinalizeDocumentUploadIn,
   FinalizeDocumentUploadOut,
-} from "@/app/(main)/create/documents/page";
+} from "@/app/(main)/management/documents/page";
 import UploadClassificationDialog from "@/components/documents/UploadClassificationDialog";
 import { useProfile } from "@/contexts/profile-context";
 import { inferMimeFromName } from "@/utils/mime-map";

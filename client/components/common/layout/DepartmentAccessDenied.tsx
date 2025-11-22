@@ -67,9 +67,9 @@ export function DepartmentAccessDenied({
       case "persona":
         return "/create/personas";
       case "department":
-        return "/management/departments";
+        return "/departments";
       case "agent":
-        return "/management/agents";
+        return "/engine/agents";
       case "rubric":
         return "/management/rubrics";
       case "parameter":

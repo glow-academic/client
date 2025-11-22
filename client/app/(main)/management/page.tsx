@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function ManagementPage() {
-  return redirect("/management/departments");
+  return redirect("/management/policies");
 }

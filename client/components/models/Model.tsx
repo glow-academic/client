@@ -43,12 +43,12 @@ import type {
   ModelDetailOut,
   UpdateModelIn,
   UpdateModelOut,
-} from "@/app/(main)/system/models/[modelId]/page";
+} from "@/app/(main)/engine/models/[modelId]/page";
 import type {
   CreateModelIn,
   CreateModelOut,
   ModelDetailDefaultOut,
-} from "@/app/(main)/system/models/new/page";
+} from "@/app/(main)/engine/models/new/page";
 
 export interface ModelProps {
   modelId?: string;
@@ -247,7 +247,7 @@ export default function Model({
         });
         resetFormAndState();
         toast.success("Model updated successfully!");
-        router.push(`/system/models`);
+        router.push(`/engine/models`);
       } else {
         await handleCreateModel({
           provider_id: formData.providerId!,
@@ -261,7 +261,7 @@ export default function Model({
         });
         resetFormAndState();
         toast.success("Model created successfully!");
-        router.push(`/system/models`);
+        router.push(`/engine/models`);
       }
     } catch (error) {
       toast.error(

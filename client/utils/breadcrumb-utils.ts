@@ -53,6 +53,12 @@ const getSectionFromSegments = (segments: string[]): string => {
       }
       return "analytics";
 
+    case "departments":
+      if (second === "d" && third) {
+        return `department-${third}`;
+      }
+      return "departments";
+
     case "cohorts":
       if (second === "c" && third) {
         return `cohort-${third}`;
@@ -81,26 +87,20 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "simulations";
       }
+      if (second === "videos") {
+        return "videos";
+      }
+      return "create";
+
+    case "management":
+      if (second === "policies") {
+        return "policies";
+      }
       if (second === "documents") {
         if (third === "d" && fourth) {
           return `document-${fourth}`;
         }
         return "documents";
-      }
-      return "create";
-
-    case "management":
-      if (second === "departments") {
-        if (third === "d" && fourth) {
-          return `department-${fourth}`;
-        }
-        return "departments";
-      }
-      if (second === "parameters") {
-        if (third === "p" && fourth) {
-          return `parameter-${fourth}`;
-        }
-        return "parameters";
       }
       if (second === "rubrics") {
         if (third === "r" && fourth) {
@@ -108,16 +108,37 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "rubrics";
       }
+      if (second === "parameters") {
+        if (third === "p" && fourth) {
+          return `parameter-${fourth}`;
+        }
+        return "parameters";
+      }
+      if (second) {
+        return second;
+      }
+      return "management";
+
+    case "engine":
       if (second === "agents") {
         if (third === "a" && fourth) {
           return `agent-${fourth}`;
         }
         return "agents";
       }
-      if (second) {
-        return second; // departments, context, logs, models, rubrics
+      if (second === "models") {
+        if (third) {
+          return `model-${third}`;
+        }
+        return "models";
       }
-      return "management";
+      if (second === "providers") {
+        return "providers";
+      }
+      if (second === "evals") {
+        return "evals";
+      }
+      return "engine";
 
     case "system":
       if (second === "staff") {
@@ -126,14 +147,8 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "staff";
       }
-      if (second === "models") {
-        if (third) {
-          return `model-${third}`;
-        }
-        return "models";
-      }
-      if (second === "feedback") {
-        return "feedback";
+      if (second === "authentication") {
+        return "authentication";
       }
       if (second === "logs") {
         return "logs";
@@ -242,6 +257,18 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "parameters":
         title = "Parameters";
         break;
+      case "videos":
+        title = "Videos";
+        break;
+      case "policies":
+        title = "Policies";
+        break;
+      case "authentication":
+        title = "Authentication";
+        break;
+      case "providers":
+        title = "Providers";
+        break;
       case "documents":
         title = "Documents";
         break;
@@ -250,6 +277,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "health":
         title = "Health";
+        break;
+      case "engine":
+        title = "Engine";
         break;
       case "new":
         title = "New";

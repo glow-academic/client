@@ -40,7 +40,7 @@ import type {
   CreateDepartmentIn,
   CreateDepartmentOut,
   DepartmentDetailDefaultOut,
-} from "@/app/(main)/management/departments/new/page";
+} from "@/app/(main)/departments/new/page";
 // Import types from edit page (update action)
 import type {
   DepartmentDetailOut,
@@ -48,14 +48,14 @@ import type {
   RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
-} from "@/app/(main)/management/departments/d/[departmentId]/page";
+} from "@/app/(main)/departments/d/[departmentId]/page";
 // Import types from list page (delete/duplicate actions)
 import type {
   DeleteDepartmentIn,
   DeleteDepartmentOut,
   DuplicateDepartmentIn,
   DuplicateDepartmentOut,
-} from "@/app/(main)/management/departments/page";
+} from "@/app/(main)/departments/page";
 import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,
@@ -63,8 +63,8 @@ import type {
   UpdateStaffAction,
 } from "@/components/staff/Staff";
 // Import staff item types from API responses
-import type { DepartmentStaffItem } from "@/app/(main)/management/departments/d/[departmentId]/page";
-import type { DepartmentDefaultStaffItem } from "@/app/(main)/management/departments/new/page";
+import type { DepartmentStaffItem } from "@/app/(main)/departments/d/[departmentId]/page";
+import type { DepartmentDefaultStaffItem } from "@/app/(main)/departments/new/page";
 
 // Helper to normalize department staff item to ProfileListItem format
 // Note: ProfileListItem doesn't have can_remove, so we extend it
@@ -351,7 +351,7 @@ export default function Department({
         });
         resetFormAndState();
         toast.success("Department updated successfully!");
-        router.push("/management/departments");
+        router.push("/departments");
       } else {
         // CREATE mode
         await handleCreateDepartment({
@@ -362,7 +362,7 @@ export default function Department({
         });
         resetFormAndState();
         toast.success("Department created successfully!");
-        router.push("/management/departments");
+        router.push("/departments");
       }
     } catch (error) {
       toast.error(
@@ -382,7 +382,7 @@ export default function Department({
         body: { departmentId },
       });
       toast.success("Department duplicated successfully");
-      router.push("/management/departments");
+        router.push("/departments");
     } catch (error) {
       toast.error(
         `Failed to duplicate department: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -401,7 +401,7 @@ export default function Department({
         body: { departmentId },
       });
       toast.success("Department deleted successfully");
-      router.push("/management/departments");
+        router.push("/departments");
     } catch (error) {
       toast.error(
         `Failed to delete department: ${error instanceof Error ? error.message : "Unknown error"}`

@@ -267,7 +267,7 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/create/documents") {
+    if (pathname === "/management/documents") {
       return <DocumentUploadButton />;
     }
 
@@ -309,9 +309,9 @@ function MainLayoutContent({
       return null;
     }
 
-    if (pathname === "/system/models") {
+    if (pathname === "/engine/models") {
       return (
-        <Button onClick={() => router.push("/system/models/new")} size="sm">
+        <Button onClick={() => router.push("/engine/models/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Model
         </Button>
@@ -330,21 +330,18 @@ function MainLayoutContent({
       );
     }
 
-    if (pathname === "/management/agents") {
+    if (pathname === "/engine/agents") {
       return (
-        <Button onClick={() => router.push("/management/agents/new")} size="sm">
+        <Button onClick={() => router.push("/engine/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
       );
     }
 
-    if (pathname === "/management/departments") {
+    if (pathname === "/departments") {
       return (
-        <Button
-          onClick={() => router.push("/management/departments/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/departments/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Department
         </Button>

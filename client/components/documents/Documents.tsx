@@ -83,7 +83,7 @@ import type {
   FinalizeDocumentUploadOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
-} from "@/app/(main)/create/documents/page";
+} from "@/app/(main)/management/documents/page";
 import type {
   CreateParameterItemIn,
   CreateParameterItemOut,
