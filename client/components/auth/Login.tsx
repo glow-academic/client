@@ -269,8 +269,13 @@ export default function Login({ providers = [] }: LoginProps) {
       localStorage.removeItem("simulatedProfileId");
       localStorage.setItem("guestMode", "true");
 
+      const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
+
+      // ✨ DIRECT REDIRECT: Send guests straight to practice
+      const guestRedirect = `${appPrefix}/practice`;
+
       toast.success("Accessing as guest!");
-      router.push("/practice");
+      router.push(guestRedirect);
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (!errorMessage.toLowerCase().includes("load failed")) {
