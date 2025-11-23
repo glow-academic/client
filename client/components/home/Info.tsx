@@ -17,12 +17,14 @@ import {
 import { BarChart3, FilePlus, Layers, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Info() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const licensingRef = useRef<HTMLDivElement>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isOverBlueSection, setIsOverBlueSection] = useState(false);
   const carouselItems = 4;
 
   const nextCarousel = () => {
@@ -40,6 +42,33 @@ export default function Info() {
 
   const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const y = useTransform(scrollYProgress, [0, 0.3], [0, -50]);
+
+  // Track scroll position to detect when logo/button are over blue sections
+  useEffect(() => {
+    const handleScroll = () => {
+      const logoTop = 24; // top-6 = 24px from top of viewport
+      const logoBottom = logoTop + 60; // Approximate logo height
+
+      // Check if logo is over carousel section (blue)
+      const carouselRect = carouselRef.current?.getBoundingClientRect();
+      const isOverCarousel = carouselRect
+        ? logoBottom >= carouselRect.top && logoTop <= carouselRect.bottom
+        : false;
+
+      // Check if logo is over licensing section (blue)
+      const licensingRect = licensingRef.current?.getBoundingClientRect();
+      const isOverLicensing = licensingRect
+        ? logoBottom >= licensingRect.top && logoTop <= licensingRect.bottom
+        : false;
+
+      setIsOverBlueSection(isOverCarousel || isOverLicensing);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Check initial position
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Animation variants
   const fadeInUp = {
@@ -92,6 +121,7 @@ export default function Info() {
             // Stay on same page, no navigation
           }}
           size="md"
+          invertColors={isOverBlueSection}
         />
       </motion.div>
 
@@ -106,7 +136,7 @@ export default function Info() {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               href="/login"
-              className="px-6 py-2 rounded-lg font-semibold transition-all shadow-lg bg-yellow-400 text-white hover:bg-yellow-500"
+              className="px-6 py-2 rounded-lg font-semibold transition-all shadow-lg bg-blue-500 text-white"
             >
               Login
             </Link>
@@ -115,7 +145,7 @@ export default function Info() {
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-yellow-50 via-white to-yellow-50 min-h-screen flex items-center justify-center py-16">
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 min-h-screen flex items-center justify-center py-16">
         {/* Animated geometric background */}
         <div className="absolute inset-0 overflow-hidden">
           <svg
@@ -131,9 +161,9 @@ export default function Info() {
                 x2="100%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#facc15" stopOpacity="0.1" />
-                <stop offset="50%" stopColor="#facc15" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#facc15" stopOpacity="0.1" />
+                <stop offset="0%" stopColor="#9ca3af" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#9ca3af" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#9ca3af" stopOpacity="0.1" />
               </linearGradient>
             </defs>
             <motion.path
@@ -180,8 +210,8 @@ export default function Info() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: `linear-gradient(to right, #facc15 1px, transparent 1px),
-                                linear-gradient(to bottom, #facc15 1px, transparent 1px)`,
+                backgroundImage: `linear-gradient(to right, #9ca3af 1px, transparent 1px),
+                                linear-gradient(to bottom, #9ca3af 1px, transparent 1px)`,
                 backgroundSize: "60px 60px",
               }}
             >
@@ -201,9 +231,9 @@ export default function Info() {
           {/* Floating geometric shapes */}
           {[...Array(6)].map((_, i) => {
             const colorMap = {
-              0: "rgb(250 204 21)", // yellow-400
-              1: "rgb(250 204 21)", // yellow-400
-              2: "rgb(250 204 21)", // yellow-400 (golden glow)
+              0: "rgb(156 163 175)", // gray-400
+              1: "rgb(156 163 175)", // gray-400
+              2: "rgb(156 163 175)", // gray-400
             };
             const backgroundColor = colorMap[(i % 3) as keyof typeof colorMap];
             return (
@@ -250,7 +280,7 @@ export default function Info() {
               className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight"
             >
               <span className="block mb-2">Master Office Hours</span>
-              <span className="bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
                 Through AI-Powered Practice
               </span>
             </motion.h1>
@@ -296,10 +326,10 @@ export default function Info() {
                     }}
                     className={`text-5xl font-bold bg-gradient-to-r ${
                       stat.color === "yellow"
-                        ? "from-yellow-300 to-yellow-400"
+                        ? "from-blue-300 to-blue-400"
                         : stat.color === "gold"
-                          ? "from-yellow-400 to-yellow-500"
-                          : "from-yellow-400 to-yellow-300"
+                          ? "from-blue-400 to-blue-500"
+                          : "from-blue-400 to-blue-300"
                     } bg-clip-text text-transparent mb-3`}
                   >
                     {stat.number}
@@ -317,7 +347,10 @@ export default function Info() {
       </section>
 
       {/* Comprehensive Training Features - Carousel Section */}
-      <section className="pb-28 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-[180px] -mt-16 pt-32 relative z-10">
+      <section
+        ref={carouselRef}
+        className="pb-28 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-[180px] -mt-16 pt-32 relative z-10"
+      >
         {/* Decorative star shapes */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           {/* Top area star - above images */}
@@ -516,8 +549,8 @@ export default function Info() {
                 height: "200%",
                 left: `${10 + i * 12}%`,
                 top: "-50%",
-                background: `linear-gradient(to bottom, transparent, rgba(250, 204, 21, 0.5), transparent)`,
-                boxShadow: "0 0 6px rgba(250, 204, 21, 0.4)",
+                background: `linear-gradient(to bottom, transparent, rgba(156, 163, 175, 0.5), transparent)`,
+                boxShadow: "0 0 6px rgba(156, 163, 175, 0.4)",
               }}
               animate={{
                 y: [0, -200, 0],
@@ -598,7 +631,7 @@ export default function Info() {
                       }}
                       className="flex-shrink-0"
                     >
-                      <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-yellow-500 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-20 h-20 bg-gradient-to-br from-blue-300 to-blue-500 text-white rounded-2xl flex items-center justify-center shadow-lg">
                         <IconComponent className="w-10 h-10" />
                       </div>
                     </motion.div>

@@ -71,10 +71,10 @@ export function GlowLogo({
       <div
         className={`${containerSize} rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden transition-all duration-300 ${
           lightBackground
-            ? "bg-white/60 backdrop-blur-sm border border-yellow-300/40"
+            ? "bg-white/60 backdrop-blur-sm border border-blue-300/40"
             : invertColors
               ? "bg-white/20 backdrop-blur-sm border border-white/30"
-              : "bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500"
+              : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500"
         }`}
       >
         {/* Logo sparkles */}
@@ -106,7 +106,7 @@ export function GlowLogo({
             ? "text-black"
             : invertColors
               ? "text-white drop-shadow-lg"
-              : "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent"
+              : "bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 bg-clip-text text-transparent"
         } ${mobileIconOnly ? "hidden md:block" : ""}`}
       >
         GLOW

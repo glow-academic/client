@@ -206,6 +206,7 @@ const AnimatedSparkles = () => {
   );
 };
 
+
 // Define the shape of data coming from API
 interface ProviderOption {
   id: string; // The slug (microsoft, google, purdue)
@@ -323,57 +324,70 @@ export default function Login({ providers = [] }: LoginProps) {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50 px-4">
-      {/* Animated Sparkles Background */}
+    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 px-4">
+      {/* Animated Yellow Sparkles Background */}
       <AnimatedSparkles />
 
       <motion.div
         initial="initial"
         animate="animate"
         variants={fadeInUp}
-        className="relative z-10 w-full max-w-md p-8 space-y-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-xl border border-blue-500/30"
+        className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+        }}
       >
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <Link
-            href="/"
-            className="text-center space-y-3 block cursor-pointer hover:opacity-90 transition-opacity"
+        {/* Liquid glass shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-2xl" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+        
+        {/* Content Container */}
+        <div className="relative z-10">
+          {/* Header - Stacked Logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col items-center space-y-3"
           >
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-              {/* Logo sparkles */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
-                <div
-                  className="absolute top-2 right-2 animate-ping"
-                  style={{ animationDelay: "0.5s" }}
-                >
-                  <SparkleIcon className="w-3 h-3 text-white/70" />
-                </div>
-                <div
-                  className="absolute bottom-2 left-2 animate-pulse"
-                  style={{ animationDelay: "1s" }}
-                >
-                  <SparkleIcon className="w-2 h-2 text-white/50" />
+            <Link
+              href="/"
+              className="cursor-pointer hover:opacity-90 transition-opacity flex flex-col items-center space-y-3"
+            >
+              {/* Logo Icon */}
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                {/* Logo sparkles */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
+                  <div
+                    className="absolute top-2 right-2 animate-ping"
+                    style={{ animationDelay: "0.5s" }}
+                  >
+                    <SparkleIcon className="w-3 h-3 text-white/70" />
+                  </div>
+                  <div
+                    className="absolute bottom-2 left-2 animate-pulse"
+                    style={{ animationDelay: "1s" }}
+                  >
+                    <SparkleIcon className="w-2 h-2 text-white/50" />
+                  </div>
                 </div>
               </div>
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent">
-              GLOW
-            </h1>
-          </Link>
-        </motion.div>
+              {/* GLOW Text */}
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
+                GLOW
+              </h1>
+            </Link>
+          </motion.div>
 
-        {/* Form */}
-        <motion.div
-          initial="initial"
-          animate="animate"
-          variants={staggerContainer}
-          className="space-y-6"
-        >
+          {/* Form */}
+          <motion.div
+            initial="initial"
+            animate="animate"
+            variants={staggerContainer}
+            className="space-y-6 mt-8"
+          >
           <div className="space-y-4">
             {/* 🚀 DYNAMIC PROVIDER LIST - Renders buttons for all providers from API */}
             {providers.map((provider) => (
@@ -387,11 +401,11 @@ export default function Login({ providers = [] }: LoginProps) {
                   onClick={() => handleSSOLogin(provider)}
                   disabled={loading[provider.id]}
                   data-testid={`${provider.id}-login-button`}
-                  className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-12 bg-blue-500/80 hover:bg-blue-500/90 backdrop-blur-sm text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center justify-center space-x-3">
                     {loading[provider.id] ? (
-                      <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                       <ProviderIcon icon={provider.icon} name={provider.name} />
                     )}
@@ -414,10 +428,10 @@ export default function Login({ providers = [] }: LoginProps) {
                 className="relative py-2"
               >
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/30" />
+                  <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-blue-500 px-4 text-white/90 font-medium tracking-wider">
+                  <span className="bg-white/95 px-4 text-gray-600 font-medium tracking-wider">
                     Or
                   </span>
                 </div>
@@ -434,7 +448,7 @@ export default function Login({ providers = [] }: LoginProps) {
                 onClick={handleGuestAccess}
                 disabled={loadingGuest}
                 data-testid="guest-login-button"
-                className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 bg-white/95 hover:bg-white backdrop-blur-sm text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center justify-center space-x-3">
                   {loadingGuest ? (
@@ -449,7 +463,8 @@ export default function Login({ providers = [] }: LoginProps) {
               </Button>
             </motion.div>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </motion.div>
     </div>
   );
