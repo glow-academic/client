@@ -3776,10 +3776,12 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Health Check
-         * @description Simple health check endpoint.
+         * Health Services
+         * @description Rich health endpoint for dashboard.
+         *
+         *     Returns per-service status + latencies.
          */
-        get: operations["health_check_health_get"];
+        get: operations["health_services_health_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -18335,7 +18337,7 @@ export interface operations {
             };
         };
     };
-    health_check_health_get: {
+    health_services_health_get: {
         parameters: {
             query?: never;
             header?: never;

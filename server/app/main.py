@@ -1089,11 +1089,35 @@ async def root_info() -> JSONResponse:
 
 
 @fastapi_app.get("/health")
-async def health_check() -> JSONResponse:
+async def health_services() -> JSONResponse:
+    """Rich health endpoint for dashboard.
+
+    Returns per-service status + latencies.
     """
-    Simple health check endpoint.
-    """
-    return JSONResponse(content={"status": "ok"})
+    from app.utils.health import run_service_checks
+
+    checks = await run_service_checks()
+
+    # Convert ServiceCheckResult dataclasses to dicts
+    services = {
+        service: {
+            "ok": result.ok,
+            "latency_ms": result.latency_ms,
+            "error": result.error,
+        }
+        for service, result in checks.items()
+    }
+
+    # Determine overall status
+    overall_ok = all(result.ok for result in checks.values())
+    status = "ok" if overall_ok else "degraded"
+
+    return JSONResponse(
+        content={
+            "status": status,
+            "services": services,
+        }
+    )
 
 
 # ============================================================================

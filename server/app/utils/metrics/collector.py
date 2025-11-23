@@ -184,35 +184,64 @@ async def snapshot_metrics() -> None:
         
         # Write to database
         async with _db_pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO app_metrics (
+            async with conn.transaction():
+                await conn.execute(
+                    """
+                    INSERT INTO app_metrics (
+                        ts,
+                        requests_total,
+                        errors_total,
+                        avg_latency_ms,
+                        cpu_percent,
+                        memory_bytes
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (ts) DO UPDATE
+                    SET requests_total = EXCLUDED.requests_total,
+                        errors_total = EXCLUDED.errors_total,
+                        avg_latency_ms = EXCLUDED.avg_latency_ms,
+                        cpu_percent = EXCLUDED.cpu_percent,
+                        memory_bytes = EXCLUDED.memory_bytes
+                    """,
                     ts,
                     requests_total,
                     errors_total,
                     avg_latency_ms,
                     cpu_percent,
-                    memory_bytes
+                    memory_bytes,
                 )
-                VALUES ($1, $2, $3, $4, $5, $6)
-                ON CONFLICT (ts) DO UPDATE
-                SET requests_total = EXCLUDED.requests_total,
-                    errors_total = EXCLUDED.errors_total,
-                    avg_latency_ms = EXCLUDED.avg_latency_ms,
-                    cpu_percent = EXCLUDED.cpu_percent,
-                    memory_bytes = EXCLUDED.memory_bytes
-                """,
-                ts,
-                requests_total,
-                errors_total,
-                avg_latency_ms,
-                cpu_percent,
-                memory_bytes,
-            )
+
+                # Run service health checks and write to service_health table
+                try:
+                    from app.utils.health import run_service_checks
+
+                    checks = await run_service_checks()
+                    for service, result in checks.items():
+                        await conn.execute(
+                            """
+                            INSERT INTO service_health (ts, service, ok, latency_ms, error)
+                            VALUES ($1, $2, $3, $4, $5)
+                            ON CONFLICT (ts, service) DO UPDATE
+                            SET ok = EXCLUDED.ok,
+                                latency_ms = EXCLUDED.latency_ms,
+                                error = EXCLUDED.error
+                            """,
+                            ts,
+                            service,
+                            result.ok,
+                            result.latency_ms,
+                            result.error,
+                        )
+                except Exception as health_error:
+                    # Log health check errors but don't break metrics collection
+                    from app.utils.logging.db_logger import get_logger
+
+                    logger = get_logger("app.utils.metrics.collector")
+                    logger.warning(f"Error running health checks: {health_error}")
     except Exception as e:
         # Log error but don't break metrics collection
         from app.utils.logging.db_logger import get_logger
-        
+
         logger = get_logger("app.utils.metrics.collector")
         logger.error(f"Error snapshotting metrics: {e}")
 

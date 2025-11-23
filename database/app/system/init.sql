@@ -26,6 +26,19 @@ CREATE TABLE app_metrics (
 
 CREATE INDEX ON app_metrics (ts);
 
+-- Service health table (Chris Date: No Nulls, BCNF)
+-- Tracks health check results for system services
+CREATE TABLE service_health (
+  ts          timestamptz NOT NULL,              -- snapshot time rounded to minute
+  service     text        NOT NULL,              -- service name ('database', 'redis', 'keycloak', 'websocket', 'tus')
+  ok          boolean     NOT NULL,              -- check passed
+  latency_ms  double precision NOT NULL,        -- latency in milliseconds
+  error       text        NOT NULL DEFAULT '',   -- error message (empty string = no error)
+  PRIMARY KEY (ts, service)
+);
+
+CREATE INDEX ON service_health (service, ts);
+
 CREATE TABLE app_feedback (
   id           SERIAL PRIMARY KEY,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
