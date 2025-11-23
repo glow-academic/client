@@ -1,28 +1,35 @@
 /**
  * Logs.tsx
- * Used to display the logs page with table-based filtering and card layout.
+ * Interactive dashboard for logs with health KPIs, metrics graph, feedback, and logs table.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { BulkDeleteLogsDialog } from "./BulkDeleteLogsDialog";
+import AuthenticationKPI from "./kpis/AuthenticationKPI";
+import DatabaseKPI from "./kpis/DatabaseKPI";
+import DocumentKPI from "./kpis/DocumentKPI";
+import RedisKPI from "./kpis/RedisKPI";
+import WebSocketKPI from "./kpis/WebSocketKPI";
 
 import type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
-  GetHealthCheckOut,
-  LogsListOut,
+  LogsBundleOut,
+  LogsRunsIn,
+  LogsRunsOut,
 } from "@/app/(main)/system/logs/page";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
-import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -34,285 +41,100 @@ import {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
-  VisibilityState,
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Activity, FileText, RefreshCw, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { HealthModal } from "./HealthModal";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { FileText, RefreshCw, Trash2, X } from "lucide-react";
 
 export interface LogsProps {
   // Server-provided data (for server-side rendering)
-  listData: LogsListOut;
-  // Server actions (replaces useMutation)
+  bundleData: LogsBundleOut;
+  // Server actions
+  getLogsRunsAction: (input: LogsRunsIn) => Promise<LogsRunsOut>;
   bulkDeleteLogsAction: (input: BulkDeleteLogsIn) => Promise<BulkDeleteLogsOut>;
-  getHealthCheckAction: () => Promise<GetHealthCheckOut>;
 }
 
 export default function Logs({
-  listData: serverListData,
+  bundleData: serverBundleData,
+  getLogsRunsAction,
   bulkDeleteLogsAction,
-  getHealthCheckAction,
 }: LogsProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
-  const [showHealthModal, setShowHealthModal] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<LogsRunsOut["data"][number] | null>(null);
 
-  // Table state
-  const [rowSelection, setRowSelection] = useState({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    log_id: false,
-    event: false, // Keep event hidden (logger_name is the new primary)
-    context_provider: false,
-    context_model: false,
-    context_function: false,
-    created_time: false,
-    extra: false,
-  });
+  // Logs table state
+  const [logsData, setLogsData] = useState<LogsRunsOut | null>(null);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created_at", desc: true },
   ]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
 
-  // Use server-provided data directly
-  const logsData = serverListData;
-
-  // Extract data from V3 response (new simplified structure)
-  const logs = useMemo(() => {
-    if (!logsData?.logs) return [];
-
-    return logsData.logs.map((log) => {
-      // Extract context fields from extra jsonb
-      const extra = (log.extra as Record<string, unknown>) || {};
-      const context = (extra["context"] as Record<string, unknown>) || {};
-
-      // Helper to safely extract nested values
-      const getExtraValue = (path: string): string | null => {
-        const parts = path.split(".");
-        let value: unknown = extra;
-        for (const part of parts) {
-          if (value && typeof value === "object" && value !== null) {
-            value = (value as Record<string, unknown>)[part];
-          } else {
-            return null;
-          }
-        }
-        return typeof value === "string" ? value : null;
-      };
-
-      // Safely extract values from extra/jsonb
-      const getStringValue = (
-        obj: Record<string, unknown>,
-        key: string
-      ): string | null => {
-        const val = obj[key];
-        return typeof val === "string" ? val : null;
-      };
-
-      return {
-        log_id: log.log_id,
-        logger_name: log.logger_name || "",
-        level: log.level || "",
-        message: log.message || "",
-        profile_id: log.profile_id || "",
-        extra: log.extra || null,
-        created_at: log.created_at || "",
-        actor_name: log.actor_name || "",
-        // Extract context fields from extra for backward compatibility with filters
-        context: {
-          route:
-            getStringValue(extra, "route") ||
-            getStringValue(context, "route") ||
-            getExtraValue("context.route") ||
-            null,
-          function:
-            getStringValue(extra, "function") ||
-            getStringValue(context, "function") ||
-            getExtraValue("context.function") ||
-            null,
-          component:
-            getStringValue(extra, "component") ||
-            getStringValue(context, "component") ||
-            getExtraValue("context.component") ||
-            null,
-          provider:
-            getStringValue(extra, "provider") ||
-            getStringValue(context, "provider") ||
-            getExtraValue("context.provider") ||
-            null,
-          model:
-            getStringValue(extra, "model") ||
-            getStringValue(context, "model") ||
-            getExtraValue("context.model") ||
-            null,
-        },
-        // For backward compatibility - map logger_name to event
-        event: log.logger_name || "",
-        // Extract correlation_id from extra if present
-        correlation_id:
-          getStringValue(extra, "correlation_id") ||
-          getStringValue(extra, "correlationId") ||
-          null,
-      };
-    });
-  }, [logsData?.logs]);
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
+  // Fetch logs data
+  const fetchLogs = useCallback(async () => {
+    setIsLoadingLogs(true);
     try {
-      router.refresh();
-      toast.success("Logs refreshed successfully");
-    } catch {
-      toast.error("Failed to refresh logs");
+      const result = await getLogsRunsAction({
+        body: {
+          profileId: "",
+          page,
+          pageSize,
+          search: searchQuery || undefined,
+          levels: columnFilters
+            .find((f) => f.id === "level")
+            ?.value as string[] | undefined,
+        },
+      });
+      setLogsData(result);
+    } catch (error) {
+      toast.error("Failed to fetch logs");
+      console.error(error);
     } finally {
-      setIsRefreshing(false);
+      setIsLoadingLogs(false);
     }
-  };
+  }, [getLogsRunsAction, page, pageSize, searchQuery, columnFilters]);
 
-  const handleViewLog = useCallback((logItem: (typeof logs)[number]) => {
-    setSelectedLog(logItem);
-  }, []);
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
-  const handleBulkDelete = () => {
-    setShowBulkDeleteDialog(true);
-  };
+  // Extract data from bundle
+  const healthKPIs = useMemo(() => serverBundleData?.health_kpis, [serverBundleData]);
+  const metrics = useMemo(() => serverBundleData?.metrics || [], [serverBundleData]);
+  const feedback = useMemo(() => serverBundleData?.feedback || [], [serverBundleData]);
 
-  const handleBulkDeleteSuccess = () => {
-    // The query will be invalidated by the mutation hook
-    // Dialog will close automatically after successful deletion
-  };
+  // Prepare metrics chart data
+  const metricsChartData = useMemo(() => {
+    return metrics.map((m) => ({
+      date: m.date,
+      cpu: m.cpu_percent,
+      latency: m.latency_ms,
+      memory: m.memory_bytes / 1024 / 1024, // Convert to MB
+      requests: m.requests_total,
+      errors: m.errors_total,
+    }));
+  }, [metrics]);
 
-  // Filter options using V2 typed JSONB fields
-  const levelOptions = useMemo(
-    () => [
-      { value: "error", label: "Error" },
-      { value: "warn", label: "Warn" },
-      { value: "info", label: "Info" },
-      { value: "debug", label: "Debug" },
-    ],
-    []
-  );
-
-  const {
-    loggerNameOptions,
-    providerOptions,
-    modelOptions,
-    actorOptions,
-    componentOptions,
-    functionOptions,
-    dateOptions,
-    timeOptions,
-  } = useMemo(() => {
-    // Extract logger names (replaces event)
-    const loggerNames = new Set<string>(
-      logs
-        .map((l) => l.logger_name)
-        .filter((v): v is string => typeof v === "string" && v !== "")
-    );
-
-    // Extract context fields from extra jsonb
-    const providers = new Set<string>();
-    const models = new Set<string>();
-    const components = new Set<string>();
-    const functions = new Set<string>();
-
-    logs.forEach((l) => {
-      const extra = (l.extra as Record<string, unknown>) || {};
-      const context = (extra["context"] as Record<string, unknown>) || {};
-
-      const getStringVal = (
-        obj: Record<string, unknown>,
-        key: string
-      ): string | null => {
-        const val = obj[key];
-        return typeof val === "string" ? val : null;
-      };
-
-      const providerVal =
-        getStringVal(extra, "provider") || getStringVal(context, "provider");
-      if (providerVal) providers.add(providerVal);
-
-      const modelVal =
-        getStringVal(extra, "model") || getStringVal(context, "model");
-      if (modelVal) models.add(modelVal);
-
-      const componentVal =
-        getStringVal(extra, "component") || getStringVal(context, "component");
-      if (componentVal) components.add(componentVal);
-
-      const functionVal =
-        getStringVal(extra, "function") || getStringVal(context, "function");
-      if (functionVal) functions.add(functionVal);
-
-      // Also check legacy context structure for backward compatibility
-      if (l.context?.provider) providers.add(l.context.provider);
-      if (l.context?.model) models.add(l.context.model);
-      if (l.context?.component) components.add(l.context.component);
-      if (l.context?.function) functions.add(l.context.function);
-    });
-
-    const actors = new Set<string>(
-      logs
-        .map((l) => l.actor_name)
-        .filter((v): v is string => typeof v === "string" && v !== "")
-    );
-
-    const dates = new Set<string>();
-    const hours = new Set<number>();
-
-    logs.forEach((logItem) => {
-      if (logItem.created_at) {
-        const date = new Date(logItem.created_at);
-        // Format as MM/DD for date options
-        const dateStr = `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
-        dates.add(dateStr);
-        hours.add(date.getHours());
-      }
-    });
-
-    return {
-      loggerNameOptions: Array.from(loggerNames)
-        .sort()
-        .map((v) => ({ value: v, label: v })),
-      providerOptions: Array.from(providers)
-        .sort()
-        .map((v) => ({ value: v, label: v })),
-      modelOptions: Array.from(models)
-        .sort()
-        .map((v) => ({ value: v, label: v })),
-      actorOptions: Array.from(actors)
-        .sort()
-        .map((v) => ({ value: v, label: v })),
-      componentOptions: Array.from(components)
-        .sort()
-        .map((v) => ({ value: v, label: v })),
-      functionOptions: Array.from(functions)
-        .sort()
-        .map((v) => ({ value: v, label: v })),
-      dateOptions: Array.from(dates)
-        .sort()
-        .map((d) => ({ value: d, label: d })),
-      timeOptions: Array.from(hours)
-        .sort((a, b) => a - b)
-        .map((h) => ({
-          value: String(h),
-          label: `${String(h).padStart(2, "0")}:00`,
-        })),
-    };
-  }, [logs]);
-
-  const [selectedLog, setSelectedLog] = useState<(typeof logs)[number] | null>(
-    null
-  );
-
-  // Define columns with rich visual styling
+  // Logs table columns (simplified)
+  const logs = useMemo(() => logsData?.data || [], [logsData]);
   const columns = useMemo<ColumnDef<(typeof logs)[number]>[]>(
     () => [
       {
@@ -326,43 +148,14 @@ export default function Logs({
           </div>
         ),
         enableSorting: true,
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const created = row.getValue(id) as string | null;
-          if (!created) return false;
-          const date = new Date(created);
-          const dateStr = `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
-          return value.includes(dateStr);
-        },
       },
       {
-        id: "created_time",
-        accessorFn: (row) => {
-          if (!row.created_at) return null;
-          return String(new Date(row.created_at).getHours());
-        },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Time (Hour)" />
-        ),
-        cell: ({ row }) => {
-          const hour = row.getValue("created_time") as string | null;
-          if (!hour) return <span className="text-muted-foreground">N/A</span>;
-          return <div className="text-sm">{`${hour.padStart(2, "0")}:00`}</div>;
-        },
-        enableSorting: true,
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const hour = row.getValue(id) as string | null;
-          return hour ? value.includes(hour) : false;
-        },
-      },
-      {
-        accessorKey: "log_id",
+        accessorKey: "id",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="ID" />
         ),
         cell: ({ row }) => (
-          <div className="font-medium">{row.getValue("log_id")}</div>
+          <div className="font-medium font-mono text-xs">{row.getValue("id")}</div>
         ),
         enableSorting: true,
       },
@@ -390,24 +183,6 @@ export default function Logs({
         enableSorting: true,
       },
       {
-        accessorKey: "event",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Event" />
-        ),
-        cell: ({ row }) => {
-          const event = row.getValue("event") as string;
-          return (
-            <span className="truncate max-w-xs inline-block">{event}</span>
-          );
-        },
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const event = (row.getValue(id) as string) ?? "";
-          return value.includes(event);
-        },
-        enableSorting: true,
-      },
-      {
         accessorKey: "level",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Level" />
@@ -421,6 +196,7 @@ export default function Logs({
           );
         },
         filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
           return value.includes(row.getValue(id));
         },
         enableSorting: true,
@@ -440,349 +216,301 @@ export default function Logs({
         },
         filterFn: (row, id, value) => {
           if (!value || value.length === 0) return true;
-          const v = (row.getValue(id) as string | null) ?? "";
-          return value.includes(v);
+          const actorName = (row.getValue(id) as string | null) ?? "";
+          return value.includes(actorName);
         },
         enableSorting: true,
       },
       {
-        id: "context_component",
-        accessorFn: (row) => {
-          // Extract from extra jsonb or legacy context
-          const extra = (row.extra as Record<string, unknown>) || {};
-          const context = (extra["context"] as Record<string, unknown>) || {};
-          const extraComponent =
-            typeof extra["component"] === "string" ? extra["component"] : null;
-          const contextComponent =
-            typeof context["component"] === "string"
-              ? context["component"]
-              : null;
-          return (
-            extraComponent || contextComponent || row.context?.component || null
-          );
-        },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Component" />
-        ),
-        cell: ({ row }) => {
-          const v =
-            (row.getValue("context_component") as string | null) ?? null;
-          return v ? v : <span className="text-muted-foreground">N/A</span>;
-        },
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const v = (row.getValue(id) as string | null) ?? "";
-          return value.includes(v);
-        },
-        enableSorting: true,
-      },
-      {
-        id: "context_function",
-        accessorFn: (row) => {
-          // Extract from extra jsonb or legacy context
-          const extra = (row.extra as Record<string, unknown>) || {};
-          const context = (extra["context"] as Record<string, unknown>) || {};
-          const extraFunction =
-            typeof extra["function"] === "string" ? extra["function"] : null;
-          const contextFunction =
-            typeof context["function"] === "string"
-              ? context["function"]
-              : null;
-          return (
-            extraFunction || contextFunction || row.context?.function || null
-          );
-        },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Function" />
-        ),
-        cell: ({ row }) => {
-          const v = (row.getValue("context_function") as string | null) ?? null;
-          return v ? v : <span className="text-muted-foreground">N/A</span>;
-        },
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const v = (row.getValue(id) as string | null) ?? "";
-          return value.includes(v);
-        },
-        enableSorting: true,
-      },
-      {
-        id: "context_provider",
-        accessorFn: (row) => {
-          // Extract from extra jsonb or legacy context
-          const extra = (row.extra as Record<string, unknown>) || {};
-          const context = (extra["context"] as Record<string, unknown>) || {};
-          const extraProvider =
-            typeof extra["provider"] === "string" ? extra["provider"] : null;
-          const contextProvider =
-            typeof context["provider"] === "string"
-              ? context["provider"]
-              : null;
-          return (
-            extraProvider || contextProvider || row.context?.provider || null
-          );
-        },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Provider" />
-        ),
-        cell: ({ row }) => {
-          const provider =
-            (row.getValue("context_provider") as string | null) ?? null;
-          return provider ? (
-            provider
-          ) : (
-            <span className="text-muted-foreground">N/A</span>
-          );
-        },
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const v = (row.getValue(id) as string | null) ?? "";
-          return value.includes(v);
-        },
-        enableSorting: true,
-      },
-      {
-        id: "context_model",
-        accessorFn: (row) => {
-          // Extract from extra jsonb or legacy context
-          const extra = (row.extra as Record<string, unknown>) || {};
-          const context = (extra["context"] as Record<string, unknown>) || {};
-          const extraModel =
-            typeof extra["model"] === "string" ? extra["model"] : null;
-          const contextModel =
-            typeof context["model"] === "string" ? context["model"] : null;
-          return extraModel || contextModel || row.context?.model || null;
-        },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Model" />
-        ),
-        cell: ({ row }) => {
-          const model =
-            (row.getValue("context_model") as string | null) ?? null;
-          return model ? (
-            model
-          ) : (
-            <span className="text-muted-foreground">N/A</span>
-          );
-        },
-        filterFn: (row, id, value) => {
-          if (!value || value.length === 0) return true;
-          const v = (row.getValue(id) as string | null) ?? "";
-          return value.includes(v);
-        },
-        enableSorting: true,
-      },
-      {
-        id: "extra",
         accessorKey: "extra",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Extra" />
         ),
         cell: ({ row }) => {
-          const extra = row.getValue("extra");
-          return extra ? (
+          const extra = row.getValue("extra") as Record<string, unknown> | null;
+          return (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleViewLog(row.original)}
+              onClick={() => setSelectedLog(row.original)}
               className="h-8 px-2"
             >
               <FileText className="h-3 w-3 mr-1" />
               View JSON
             </Button>
-          ) : (
-            <span className="text-muted-foreground">None</span>
           );
         },
-        enableSorting: false,
       },
     ],
-    [handleViewLog]
+    []
   );
 
-  // Create table instance
   const table = useReactTable({
     data: logs,
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: {
-        pageSize: 20,
-      },
-      columnVisibility: {
-        log_id: false,
-        event: false,
-        context_provider: false,
-        context_model: false,
-        context_function: false,
-        created_time: false,
-        extra: false,
-      } as VisibilityState,
+    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
+    onPaginationChange: (updater) => {
+      const newPagination = typeof updater === "function" 
+        ? updater({ pageIndex: page, pageSize })
+        : updater;
+      if (newPagination.pageIndex !== undefined) {
+        setPage(newPagination.pageIndex);
+      }
+      if (newPagination.pageSize !== undefined) {
+        setPageSize(newPagination.pageSize);
+        setPage(0); // Reset to first page when page size changes
+      }
     },
+    state: {
+      columnFilters,
+      sorting,
+      pagination: {
+        pageIndex: page,
+        pageSize,
+      },
+    },
+    manualPagination: true,
+    pageCount: logsData?.totalPages || 0,
   });
 
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
-  const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
-  const tableRows = useMemo(() => {
-    return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    logs.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      router.refresh();
+      await fetchLogs();
+      toast.success("Logs refreshed successfully");
+    } catch {
+      toast.error("Failed to refresh logs");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
-  // Get column references for toolbar
-  const loggerNameColumn = table.getColumn("logger_name");
+  const handleBulkDelete = () => {
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleBulkDeleteSuccess = () => {
+    fetchLogs();
+  };
+
   const levelColumn = table.getColumn("level");
+  const loggerNameColumn = table.getColumn("logger_name");
   const actorColumn = table.getColumn("actor_name");
-  const componentColumn = table.getColumn("context_component");
-  const functionColumn = table.getColumn("context_function");
-  const providerColumn = table.getColumn("context_provider");
-  const modelColumn = table.getColumn("context_model");
-  const createdAtColumn = table.getColumn("created_at");
-  const createdTimeColumn = table.getColumn("created_time");
-  const isFiltered = table.getState().columnFilters.length > 0;
+  
+  const levelOptions = useMemo(
+    () =>
+      logsData?.levelOptions?.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+      })) || [],
+    [logsData]
+  );
+
+  const loggerOptions = useMemo(
+    () =>
+      logsData?.loggerOptions?.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+      })) || [],
+    [logsData]
+  );
+
+  // Extract actor options from logs data
+  const actorOptions = useMemo(() => {
+    const actors = new Set<string>();
+    logs.forEach((log) => {
+      if (log.actor_name) {
+        actors.add(log.actor_name);
+      }
+    });
+    return Array.from(actors)
+      .sort()
+      .map((v) => ({ value: v, label: v }));
+  }, [logs]);
+
+  const isFiltered = columnFilters.length > 0 || searchQuery.length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2 flex-wrap">
-            <div className="w-full md:w-auto mb-2 md:mb-0">
-              <Input
-                placeholder="Search by logger..."
-                value={(loggerNameColumn?.getFilterValue() as string) ?? ""}
-                onChange={(event) =>
-                  loggerNameColumn?.setFilterValue(event.target.value)
-                }
-                className="h-8 w-full md:w-[150px] lg:w-[250px]"
-              />
-            </div>
+    <div className="space-y-6" data-page="logs-dashboard">
+      {/* Top Section - 5 KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {healthKPIs && (
+          <>
+            <WebSocketKPI
+              ok={healthKPIs.websocket.ok}
+              latency_ms={healthKPIs.websocket.latency_ms}
+              error={healthKPIs.websocket.error}
+              trend={healthKPIs.websocket.trend || []}
+            />
+            <RedisKPI
+              ok={healthKPIs.redis.ok}
+              latency_ms={healthKPIs.redis.latency_ms}
+              error={healthKPIs.redis.error}
+              trend={healthKPIs.redis.trend || []}
+            />
+            <DocumentKPI
+              ok={healthKPIs.document.ok}
+              latency_ms={healthKPIs.document.latency_ms}
+              error={healthKPIs.document.error}
+              trend={healthKPIs.document.trend || []}
+            />
+            <DatabaseKPI
+              ok={healthKPIs.database.ok}
+              latency_ms={healthKPIs.database.latency_ms}
+              error={healthKPIs.database.error}
+              trend={healthKPIs.database.trend || []}
+            />
+            <AuthenticationKPI
+              ok={healthKPIs.authentication.ok}
+              latency_ms={healthKPIs.authentication.latency_ms}
+              error={healthKPIs.authentication.error}
+              trend={healthKPIs.authentication.trend || []}
+            />
+          </>
+        )}
+      </div>
 
-            <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {/* Level Filter */}
-              {levelColumn && levelOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={levelColumn}
-                  title="Level"
-                  options={levelOptions}
-                />
-              )}
+      {/* Middle Section - Metrics Graph + Feedback */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Metrics Graph - 2/3 width */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Application Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={metricsChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(dateStr) => {
+                        const date = new Date(dateStr);
+                        return date.toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        });
+                      }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip
+                      formatter={(value: number, name: string) => {
+                        if (name === "cpu") return [`${value.toFixed(1)}%`, "CPU"];
+                        if (name === "latency") return [`${value.toFixed(1)}ms`, "Latency"];
+                        if (name === "memory") return [`${value.toFixed(1)}MB`, "Memory"];
+                        if (name === "requests") return [value.toLocaleString(), "Requests"];
+                        if (name === "errors") return [value.toLocaleString(), "Errors"];
+                        return [value, name];
+                      }}
+                      labelFormatter={(dateStr) => {
+                        const date = new Date(dateStr);
+                        return date.toLocaleString();
+                      }}
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="cpu"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      name="cpu"
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="latency"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      name="latency"
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="memory"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      name="memory"
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="requests"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      name="requests"
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="errors"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      name="errors"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              {/* Logger Name Filter */}
-              {loggerNameColumn && loggerNameOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={loggerNameColumn}
-                  title="Logger"
-                  options={loggerNameOptions}
-                />
-              )}
-
-              {/* Provider Filter */}
-              {providerColumn && providerOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={providerColumn}
-                  title="Provider"
-                  options={providerOptions}
-                />
-              )}
-
-              {/* Model Filter */}
-              {modelColumn && modelOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={modelColumn}
-                  title="Model"
-                  options={modelOptions}
-                />
-              )}
-
-              {/* Actor Filter */}
-              {actorColumn && actorOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={actorColumn}
-                  title="Actor"
-                  options={actorOptions}
-                />
-              )}
-
-              {/* Component Filter */}
-              {componentColumn && componentOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={componentColumn}
-                  title="Component"
-                  options={componentOptions}
-                />
-              )}
-
-              {/* Function Filter */}
-              {functionColumn && functionOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={functionColumn}
-                  title="Function"
-                  options={functionOptions}
-                />
-              )}
-
-              {/* Date Filter */}
-              {createdAtColumn && dateOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={createdAtColumn}
-                  title="Date"
-                  options={dateOptions}
-                />
-              )}
-
-              {/* Time Filter */}
-              {createdTimeColumn && timeOptions.length > 0 && (
-                <DataTableFacetedFilter
-                  column={createdTimeColumn}
-                  title="Hour"
-                  options={timeOptions}
-                />
-              )}
-
-              {isFiltered && (
-                <Button
-                  variant="ghost"
-                  onClick={() => table.resetColumnFilters()}
-                  className="h-8 px-2 lg:px-3 hidden md:flex"
-                >
-                  Reset
-                  <X className="ml-2 h-4 w-4" />
-                </Button>
-              )}
+        {/* Feedback Cards - 1/3 width */}
+        <div className="lg:col-span-1">
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle>Recent Feedback</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-y-auto" style={{ maxHeight: '320px' }}>
+              <div className="space-y-3">
+                {feedback.length === 0 ? (
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    No feedback yet
+                  </div>
+                ) : (
+                  feedback.map((item) => (
+                    <Card key={item.feedback_id} className="p-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <Badge variant="outline">{item.type}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTimestamp(item.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-sm mb-1">{item.message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        by {item.author_name}
+                      </p>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {/* Bulk Delete Button */}
+      {/* Bottom Section - Logs Table */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-end">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -791,31 +519,69 @@ export default function Logs({
             >
               <Trash2 className="h-4 w-4" />
             </Button>
-            {/* Refresh Button */}
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              disabled={isRefreshing}
+              disabled={isRefreshing || isLoadingLogs}
               className="h-8 px-2"
             >
               <RefreshCw
                 className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
               />
             </Button>
+          </div>
+        </div>
 
-            {/* Health Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowHealthModal(true)}
-              className="h-8 px-2"
-            >
-              <Activity className="h-4 w-4" />
-            </Button>
-
-            {/* Column Visibility */}
-            <DataTableViewOptions table={table} />
+        {/* Filters */}
+        <div className="flex items-center space-x-2 flex-wrap">
+          <div className="w-full md:w-auto mb-2 md:mb-0">
+            <Input
+              placeholder="Search logs..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(0);
+              }}
+              className="h-8 w-full md:w-[200px]"
+            />
+          </div>
+          <div className="flex items-center space-x-2 flex-wrap mb-2">
+            {levelColumn && levelOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={levelColumn}
+                title="Level"
+                options={levelOptions}
+              />
+            )}
+            {loggerNameColumn && loggerOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={loggerNameColumn}
+                title="Logger"
+                options={loggerOptions}
+              />
+            )}
+            {actorColumn && actorOptions.length > 0 && (
+              <DataTableFacetedFilter
+                column={actorColumn}
+                title="Actor"
+                options={actorOptions}
+              />
+            )}
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setColumnFilters([]);
+                  setSearchQuery("");
+                  setPage(0);
+                }}
+                className="h-8 px-2 lg:px-3"
+              >
+                Reset
+                <X className="ml-2 h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -843,8 +609,17 @@ export default function Logs({
               ))}
             </thead>
             <tbody>
-              {tableRows.length ? (
-                tableRows.map((row) => (
+              {isLoadingLogs ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    Loading logs...
+                  </td>
+                </tr>
+              ) : table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
                     className="border-b hover:bg-muted/50 transition-colors"
@@ -864,22 +639,17 @@ export default function Logs({
                     colSpan={columns.length}
                     className="h-24 text-center text-muted-foreground"
                   >
-                    No logs match the current filters.
+                    No logs found.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <DataTablePagination table={table} />
-      </div>
 
-      {/* Health Modal */}
-      <HealthModal
-        open={showHealthModal}
-        onOpenChange={setShowHealthModal}
-        getHealthCheckAction={getHealthCheckAction}
-      />
+        {/* Pagination */}
+        {logsData && <DataTablePagination table={table} />}
+      </div>
 
       {/* Detail Dialog */}
       <Dialog
@@ -898,7 +668,7 @@ export default function Logs({
                   <div>
                     <span className="text-muted-foreground">Logger:</span>{" "}
                     <span className="font-mono text-xs">
-                      {selectedLog.logger_name || selectedLog.event}
+                      {selectedLog.logger_name}
                     </span>
                   </div>
                   <div>
@@ -909,7 +679,7 @@ export default function Logs({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Created:</span>{" "}
-                    {selectedLog.created_at ?? ""}
+                    {formatTimestamp(selectedLog.created_at)}
                   </div>
                   <div>
                     <span className="text-muted-foreground">Profile ID:</span>{" "}
@@ -923,22 +693,28 @@ export default function Logs({
                       {selectedLog.actor_name}
                     </div>
                   )}
-                  {selectedLog.correlation_id && (
+                  {(() => {
+                    const extra = selectedLog.extra as Record<string, unknown> | null;
+                    const correlationId = extra?.correlation_id || extra?.correlationId;
+                    return correlationId && typeof correlationId === "string" ? (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">
+                          Correlation:
+                        </span>{" "}
+                        <span className="font-mono text-xs">
+                          {correlationId}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {selectedLog.message && (
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">
-                        Correlation:
-                      </span>{" "}
-                      <span className="font-mono text-xs">
-                        {selectedLog.correlation_id}
-                      </span>
+                      <span className="text-muted-foreground">Message:</span>{" "}
+                      <div className="mt-1 p-2 bg-muted rounded text-xs">
+                        {selectedLog.message}
+                      </div>
                     </div>
                   )}
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Message:</span>{" "}
-                    <div className="mt-1 p-2 bg-muted rounded text-xs">
-                      {selectedLog.message}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Extra JSONB data */}
@@ -974,7 +750,16 @@ export default function Logs({
       <BulkDeleteLogsDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        logs={logs}
+        logs={logs.map((l) => ({
+          log_id: l.id,
+          logger_name: l.logger_name,
+          level: l.level,
+          message: "",
+          profile_id: "",
+          extra: l.extra || null,
+          created_at: l.created_at,
+          actor_name: l.actor_name,
+        }))}
         onSuccess={handleBulkDeleteSuccess}
         bulkDeleteLogsAction={bulkDeleteLogsAction}
       />

@@ -3438,6 +3438,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/logs/bundle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Logs Bundle
+         * @description Get logs bundle with health KPIs, metrics, and feedback.
+         */
+        post: operations["get_logs_bundle_api_v3_logs_bundle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/logs/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Logs Runs
+         * @description Get paginated, filtered, searched logs for table.
+         */
+        post: operations["get_logs_runs_api_v3_logs_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/attempts/bulk-archive": {
         parameters: {
             query?: never;
@@ -6577,23 +6617,6 @@ export interface components {
              */
             brightspaceFormat: boolean;
         };
-        /** FeedbackItem */
-        FeedbackItem: {
-            /** Feedback Id */
-            feedback_id: number;
-            /** Type */
-            type: string;
-            /** Message */
-            message: string;
-            /** Created At */
-            created_at: string;
-            /** Author Name */
-            author_name: string;
-            /** Author Alias */
-            author_alias: string;
-            /** Author Profile Id */
-            author_profile_id: string;
-        };
         /** FeedbackListRequest */
         FeedbackListRequest: {
             /** Profileid */
@@ -6602,7 +6625,7 @@ export interface components {
         /** FeedbackListResponse */
         FeedbackListResponse: {
             /** Feedback */
-            feedback: components["schemas"]["FeedbackItem"][];
+            feedback: components["schemas"]["app__api__v3__feedback__list__FeedbackItem"][];
         };
         /**
          * FilterOption
@@ -6847,6 +6870,33 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HealthKPI
+         * @description Health KPI data for a service.
+         */
+        HealthKPI: {
+            /** Ok */
+            ok: boolean;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Error */
+            error: string;
+            /** Trend */
+            trend: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * HealthKPIs
+         * @description All health KPIs.
+         */
+        HealthKPIs: {
+            websocket: components["schemas"]["HealthKPI"];
+            redis: components["schemas"]["HealthKPI"];
+            document: components["schemas"]["HealthKPI"];
+            database: components["schemas"]["HealthKPI"];
+            authentication: components["schemas"]["HealthKPI"];
         };
         /** HintItem */
         HintItem: {
@@ -7322,36 +7372,31 @@ export interface components {
             created_at: string;
         };
         /**
-         * LogItem
-         * @description Log item with new simplified structure.
-         */
-        LogItem: {
-            /** Log Id */
-            log_id: string;
-            /** Level */
-            level: string;
-            /** Logger Name */
-            logger_name: string;
-            /** Message */
-            message: string;
-            /** Profile Id */
-            profile_id: string;
-            /** Extra */
-            extra: {
-                [key: string]: unknown;
-            } | null;
-            /** Created At */
-            created_at: string;
-            /** Actor Name */
-            actor_name: string;
-        };
-        /**
          * LoginProvidersResponse
          * @description Response with list of active provider options.
          */
         LoginProvidersResponse: {
             /** Providers */
             providers: components["schemas"]["ProviderOption"][];
+        };
+        /**
+         * LogsBundleRequest
+         * @description Logs bundle request schema.
+         */
+        LogsBundleRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * LogsBundleResponse
+         * @description Logs bundle response.
+         */
+        LogsBundleResponse: {
+            health_kpis: components["schemas"]["HealthKPIs"];
+            /** Metrics */
+            metrics: components["schemas"]["MetricsDataPoint"][];
+            /** Feedback */
+            feedback: components["schemas"]["app__api__v3__logs__bundle__FeedbackItem"][];
         };
         /** LogsListRequest */
         LogsListRequest: {
@@ -7361,7 +7406,55 @@ export interface components {
         /** LogsListResponse */
         LogsListResponse: {
             /** Logs */
-            logs: components["schemas"]["LogItem"][];
+            logs: components["schemas"]["app__api__v3__logs__list__LogItem"][];
+        };
+        /**
+         * LogsRunsFilters
+         * @description Logs runs filter request schema.
+         */
+        LogsRunsFilters: {
+            /** Profileid */
+            profileId: string;
+            /** Startdate */
+            startDate?: string | null;
+            /** Enddate */
+            endDate?: string | null;
+            /** Levels */
+            levels?: string[] | null;
+            /** Loggername */
+            loggerName?: string | null;
+            /** Search */
+            search?: string | null;
+            /** Page */
+            page?: number | null;
+            /** Pagesize */
+            pageSize?: number | null;
+        };
+        /**
+         * LogsRunsResponse
+         * @description Response for logs runs table.
+         */
+        LogsRunsResponse: {
+            /** Data */
+            data: components["schemas"]["app__api__v3__logs__runs__LogItem"][];
+            /** Totalcount */
+            totalCount: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Totalpages */
+            totalPages: number;
+            /**
+             * Leveloptions
+             * @default []
+             */
+            levelOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Loggeroptions
+             * @default []
+             */
+            loggerOptions: components["schemas"]["FilterOption"][];
         };
         /**
          * MarkChatCompleteRequest
@@ -7436,6 +7529,26 @@ export interface components {
             hover?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * MetricsDataPoint
+         * @description App metrics data point.
+         */
+        MetricsDataPoint: {
+            /** Date */
+            date: string;
+            /** Cpu Percent */
+            cpu_percent: number;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Memory Bytes */
+            memory_bytes: number;
+            /** Requests Total */
+            requests_total: number;
+            /** Errors Total */
+            errors_total: number;
+            /** Sample Count */
+            sample_count: number;
         };
         /** ModelDetailDefaultRequest */
         ModelDetailDefaultRequest: {
@@ -11386,6 +11499,23 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean;
         };
+        /** FeedbackItem */
+        app__api__v3__feedback__list__FeedbackItem: {
+            /** Feedback Id */
+            feedback_id: number;
+            /** Type */
+            type: string;
+            /** Message */
+            message: string;
+            /** Created At */
+            created_at: string;
+            /** Author Name */
+            author_name: string;
+            /** Author Alias */
+            author_alias: string;
+            /** Author Profile Id */
+            author_profile_id: string;
+        };
         /**
          * AttemptHistoryRow
          * @description Attempt history row.
@@ -11437,6 +11567,72 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
+        };
+        /**
+         * FeedbackItem
+         * @description Feedback item.
+         */
+        app__api__v3__logs__bundle__FeedbackItem: {
+            /** Feedback Id */
+            feedback_id: number;
+            /** Type */
+            type: string;
+            /** Message */
+            message: string;
+            /** Created At */
+            created_at: string;
+            /** Author Name */
+            author_name: string;
+            /** Author Profile Id */
+            author_profile_id: string;
+        };
+        /**
+         * LogItem
+         * @description Log item with new simplified structure.
+         */
+        app__api__v3__logs__list__LogItem: {
+            /** Log Id */
+            log_id: string;
+            /** Level */
+            level: string;
+            /** Logger Name */
+            logger_name: string;
+            /** Message */
+            message: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Extra */
+            extra: {
+                [key: string]: unknown;
+            } | null;
+            /** Created At */
+            created_at: string;
+            /** Actor Name */
+            actor_name: string;
+        };
+        /**
+         * LogItem
+         * @description Log item.
+         */
+        app__api__v3__logs__runs__LogItem: {
+            /** Id */
+            id: string;
+            /** Created At */
+            created_at: string;
+            /** Logger Name */
+            logger_name: string;
+            /** Level */
+            level: string;
+            /** Actor Name */
+            actor_name: string;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Extra */
+            extra?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** DepartmentMappingItem */
         app__api__v3__models__detail__DepartmentMappingItem: {
@@ -17855,6 +18051,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssistantUsageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logs_bundle_api_v3_logs_bundle_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogsBundleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsBundleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logs_runs_api_v3_logs_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogsRunsFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogsRunsResponse"];
                 };
             };
             /** @description Validation Error */

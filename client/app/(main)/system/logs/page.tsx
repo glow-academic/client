@@ -14,19 +14,36 @@ import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LogsListIn = InputOf<"/api/v3/logs/list", "post">;
-type LogsListOut = OutputOf<"/api/v3/logs/list", "post">;
+type LogsBundleIn = InputOf<"/api/v3/logs/bundle", "post">;
+type LogsBundleOut = OutputOf<"/api/v3/logs/bundle", "post">;
+type LogsRunsIn = InputOf<"/api/v3/logs/runs", "post">;
+type LogsRunsOut = OutputOf<"/api/v3/logs/runs", "post">;
 type BulkDeleteLogsIn = InputOf<"/api/v3/logs/bulk-delete", "post">;
 type BulkDeleteLogsOut = OutputOf<"/api/v3/logs/bulk-delete", "post">;
-type GetHealthCheckIn = InputOf<"/api/v3/logs/health", "get">;
-type GetHealthCheckOut = OutputOf<"/api/v3/logs/health", "get">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
-const getLogsList = cache(async (input: LogsListIn): Promise<LogsListOut> => {
-  return api.post("/logs/list", input);
+const getLogsBundle = cache(async (input: LogsBundleIn): Promise<LogsBundleOut> => {
+  return api.post("/logs/bundle", input);
 });
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
+async function getLogsRuns(
+  input: LogsRunsIn,
+): Promise<LogsRunsOut> {
+  "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Override profileId from session (security)
+  const out = await api.post("/logs/runs", {
+    body: {
+      ...input.body,
+      profileId,
+    },
+  });
+  return out;
+}
+
 async function bulkDeleteLogs(
   input: BulkDeleteLogsIn,
 ): Promise<BulkDeleteLogsOut> {
@@ -45,11 +62,6 @@ async function bulkDeleteLogs(
   return out;
 }
 
-async function getHealthCheck(): Promise<GetHealthCheckOut> {
-  "use server";
-  return api.get("/logs/health", undefined);
-}
-
 export const metadata: Metadata = {
   title: "System",
   description: `Manage system in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -59,17 +71,17 @@ export default async function SystemPage() {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch list data server-side
-  const listData = await getLogsList({
+  // Fetch bundle data server-side
+  const bundleData = await getLogsBundle({
     body: { profileId },
   });
 
   return (
     <div className="space-y-6">
       <Logs
-        listData={listData}
+        bundleData={bundleData}
+        getLogsRunsAction={getLogsRuns}
         bulkDeleteLogsAction={bulkDeleteLogs}
-        getHealthCheckAction={getHealthCheck}
       />
     </div>
   );
@@ -79,7 +91,8 @@ export default async function SystemPage() {
 export type {
   BulkDeleteLogsIn,
   BulkDeleteLogsOut,
-  GetHealthCheckIn,
-  GetHealthCheckOut,
-  LogsListOut,
+  LogsBundleIn,
+  LogsBundleOut,
+  LogsRunsIn,
+  LogsRunsOut,
 };

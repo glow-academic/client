@@ -7447,6 +7447,100 @@
         ]
       }
     },
+    "/api/v3/logs/bundle": {
+      "post": {
+        "tags": [
+          "v3",
+          "logs"
+        ],
+        "summary": "Get Logs Bundle",
+        "description": "Get logs bundle with health KPIs, metrics, and feedback.",
+        "operationId": "get_logs_bundle_api_v3_logs_bundle_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogsBundleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogsBundleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
+      }
+    },
+    "/api/v3/logs/runs": {
+      "post": {
+        "tags": [
+          "v3",
+          "logs"
+        ],
+        "summary": "Get Logs Runs",
+        "description": "Get paginated, filtered, searched logs for table.",
+        "operationId": "get_logs_runs_api_v3_logs_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogsRunsFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogsRunsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "logs"
+        ]
+      }
+    },
     "/api/v3/attempts/bulk-archive": {
       "post": {
         "tags": [
@@ -15040,49 +15134,6 @@
         "title": "ExportRequest",
         "description": "Request to export reports data."
       },
-      "FeedbackItem": {
-        "properties": {
-          "feedback_id": {
-            "type": "integer",
-            "title": "Feedback Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "author_name": {
-            "type": "string",
-            "title": "Author Name"
-          },
-          "author_alias": {
-            "type": "string",
-            "title": "Author Alias"
-          },
-          "author_profile_id": {
-            "type": "string",
-            "title": "Author Profile Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "feedback_id",
-          "type",
-          "message",
-          "created_at",
-          "author_name",
-          "author_alias",
-          "author_profile_id"
-        ],
-        "title": "FeedbackItem"
-      },
       "FeedbackListRequest": {
         "properties": {
           "profileId": {
@@ -15100,7 +15151,7 @@
         "properties": {
           "feedback": {
             "items": {
-              "$ref": "#/components/schemas/FeedbackItem"
+              "$ref": "#/components/schemas/app__api__v3__feedback__list__FeedbackItem"
             },
             "type": "array",
             "title": "Feedback"
@@ -15737,6 +15788,68 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HealthKPI": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "trend": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Trend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "latency_ms",
+          "error",
+          "trend"
+        ],
+        "title": "HealthKPI",
+        "description": "Health KPI data for a service."
+      },
+      "HealthKPIs": {
+        "properties": {
+          "websocket": {
+            "$ref": "#/components/schemas/HealthKPI"
+          },
+          "redis": {
+            "$ref": "#/components/schemas/HealthKPI"
+          },
+          "document": {
+            "$ref": "#/components/schemas/HealthKPI"
+          },
+          "database": {
+            "$ref": "#/components/schemas/HealthKPI"
+          },
+          "authentication": {
+            "$ref": "#/components/schemas/HealthKPI"
+          }
+        },
+        "type": "object",
+        "required": [
+          "websocket",
+          "redis",
+          "document",
+          "database",
+          "authentication"
+        ],
+        "title": "HealthKPIs",
+        "description": "All health KPIs."
       },
       "HintItem": {
         "properties": {
@@ -17052,63 +17165,6 @@
         "title": "LogEntry",
         "description": "Log entry."
       },
-      "LogItem": {
-        "properties": {
-          "log_id": {
-            "type": "string",
-            "title": "Log Id"
-          },
-          "level": {
-            "type": "string",
-            "title": "Level"
-          },
-          "logger_name": {
-            "type": "string",
-            "title": "Logger Name"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
-          },
-          "extra": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Extra"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "actor_name": {
-            "type": "string",
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "log_id",
-          "level",
-          "logger_name",
-          "message",
-          "profile_id",
-          "extra",
-          "created_at",
-          "actor_name"
-        ],
-        "title": "LogItem",
-        "description": "Log item with new simplified structure."
-      },
       "LoginProvidersResponse": {
         "properties": {
           "providers": {
@@ -17125,6 +17181,49 @@
         ],
         "title": "LoginProvidersResponse",
         "description": "Response with list of active provider options."
+      },
+      "LogsBundleRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "LogsBundleRequest",
+        "description": "Logs bundle request schema."
+      },
+      "LogsBundleResponse": {
+        "properties": {
+          "health_kpis": {
+            "$ref": "#/components/schemas/HealthKPIs"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricsDataPoint"
+            },
+            "type": "array",
+            "title": "Metrics"
+          },
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__logs__bundle__FeedbackItem"
+            },
+            "type": "array",
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "health_kpis",
+          "metrics",
+          "feedback"
+        ],
+        "title": "LogsBundleResponse",
+        "description": "Logs bundle response."
       },
       "LogsListRequest": {
         "properties": {
@@ -17143,7 +17242,7 @@
         "properties": {
           "logs": {
             "items": {
-              "$ref": "#/components/schemas/LogItem"
+              "$ref": "#/components/schemas/app__api__v3__logs__list__LogItem"
             },
             "type": "array",
             "title": "Logs"
@@ -17154,6 +17253,153 @@
           "logs"
         ],
         "title": "LogsListResponse"
+      },
+      "LogsRunsFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Levels"
+          },
+          "loggerName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loggername"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagesize"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "LogsRunsFilters",
+        "description": "Logs runs filter request schema."
+      },
+      "LogsRunsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__logs__runs__LogItem"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pageSize": {
+            "type": "integer",
+            "title": "Pagesize"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages"
+          },
+          "levelOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Leveloptions",
+            "default": []
+          },
+          "loggerOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Loggeroptions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "totalCount",
+          "page",
+          "pageSize",
+          "totalPages"
+        ],
+        "title": "LogsRunsResponse",
+        "description": "Response for logs runs table."
       },
       "MarkChatCompleteRequest": {
         "properties": {
@@ -17342,6 +17588,50 @@
         ],
         "title": "MetricResponse",
         "description": "Standard metric response."
+      },
+      "MetricsDataPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "cpu_percent": {
+            "type": "number",
+            "title": "Cpu Percent"
+          },
+          "latency_ms": {
+            "type": "number",
+            "title": "Latency Ms"
+          },
+          "memory_bytes": {
+            "type": "number",
+            "title": "Memory Bytes"
+          },
+          "requests_total": {
+            "type": "integer",
+            "title": "Requests Total"
+          },
+          "errors_total": {
+            "type": "integer",
+            "title": "Errors Total"
+          },
+          "sample_count": {
+            "type": "integer",
+            "title": "Sample Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "cpu_percent",
+          "latency_ms",
+          "memory_bytes",
+          "requests_total",
+          "errors_total",
+          "sample_count"
+        ],
+        "title": "MetricsDataPoint",
+        "description": "App metrics data point."
       },
       "ModelDetailDefaultRequest": {
         "properties": {
@@ -27640,6 +27930,49 @@
         "title": "DepartmentItem",
         "description": "Department item for list view."
       },
+      "app__api__v3__feedback__list__FeedbackItem": {
+        "properties": {
+          "feedback_id": {
+            "type": "integer",
+            "title": "Feedback Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "author_name": {
+            "type": "string",
+            "title": "Author Name"
+          },
+          "author_alias": {
+            "type": "string",
+            "title": "Author Alias"
+          },
+          "author_profile_id": {
+            "type": "string",
+            "title": "Author Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback_id",
+          "type",
+          "message",
+          "created_at",
+          "author_name",
+          "author_alias",
+          "author_profile_id"
+        ],
+        "title": "FeedbackItem"
+      },
       "app__api__v3__home__overview__AttemptHistoryRow": {
         "properties": {
           "attemptId": {
@@ -27817,6 +28150,170 @@
         ],
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
+      },
+      "app__api__v3__logs__bundle__FeedbackItem": {
+        "properties": {
+          "feedback_id": {
+            "type": "integer",
+            "title": "Feedback Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "author_name": {
+            "type": "string",
+            "title": "Author Name"
+          },
+          "author_profile_id": {
+            "type": "string",
+            "title": "Author Profile Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback_id",
+          "type",
+          "message",
+          "created_at",
+          "author_name",
+          "author_profile_id"
+        ],
+        "title": "FeedbackItem",
+        "description": "Feedback item."
+      },
+      "app__api__v3__logs__list__LogItem": {
+        "properties": {
+          "log_id": {
+            "type": "string",
+            "title": "Log Id"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "logger_name": {
+            "type": "string",
+            "title": "Logger Name"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          },
+          "extra": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_id",
+          "level",
+          "logger_name",
+          "message",
+          "profile_id",
+          "extra",
+          "created_at",
+          "actor_name"
+        ],
+        "title": "LogItem",
+        "description": "Log item with new simplified structure."
+      },
+      "app__api__v3__logs__runs__LogItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "logger_name": {
+            "type": "string",
+            "title": "Logger Name"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "actor_name": {
+            "type": "string",
+            "title": "Actor Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "extra": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "logger_name",
+          "level",
+          "actor_name"
+        ],
+        "title": "LogItem",
+        "description": "Log item."
       },
       "app__api__v3__models__detail__DepartmentMappingItem": {
         "properties": {
