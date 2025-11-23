@@ -176,6 +176,50 @@ get_latest_backup() {
   fi
 }
 
+# Function to get backup for a specific migration number
+# Finds the most recent backup file matching restore_{migration_num}_*.sql.gz
+get_backup_for_migration() {
+  local migration_num="$1"
+  if [[ -z "$migration_num" ]]; then
+    echo ""
+    return
+  fi
+  
+  # Check if history directory exists and has restore files for this migration
+  if [[ -d "$HISTORY_DIR" ]] && ls "$HISTORY_DIR"/restore_${migration_num}_*.sql.gz 1> /dev/null 2>&1; then
+    # Get the most recent backup by modification time for this migration number
+    ls -t "$HISTORY_DIR"/restore_${migration_num}_*.sql.gz 2>/dev/null | head -1
+  else
+    # Return empty string if no backup found for this migration
+    echo ""
+  fi
+}
+
+# Function to get backup for the previous migration
+# Takes current migration number and finds backup for (current - 1)
+# Falls back to get_latest_backup() if no previous migration backup found
+get_previous_migration_backup() {
+  local current_migration_num="$1"
+  if [[ -z "$current_migration_num" ]] || [[ "$current_migration_num" -le 0 ]]; then
+    # If no valid migration number, fall back to latest backup
+    get_latest_backup
+    return
+  fi
+  
+  # Calculate previous migration number
+  local previous_migration_num=$((current_migration_num - 1))
+  
+  # Try to find backup for previous migration
+  local previous_backup=$(get_backup_for_migration "$previous_migration_num")
+  
+  if [[ -n "$previous_backup" ]]; then
+    echo "$previous_backup"
+  else
+    # Fall back to latest backup if no previous migration backup found
+    get_latest_backup
+  fi
+}
+
 setup_database() {
   echo "🔧 Setting up database and user..."
   
@@ -357,10 +401,15 @@ if [[ "$MIGRATE_DB" == true ]]; then
           echo "   Migration number: $migration_num"
         fi
         
-        # Step 1: Restore from latest backup first
-        LATEST_BACKUP=$(get_latest_backup)
+        # Step 1: Restore from previous migration's backup (or latest if no previous found)
+        if [[ -n "$migration_num" ]] && [[ "$migration_num" -gt 0 ]]; then
+          LATEST_BACKUP=$(get_previous_migration_backup "$migration_num")
+        else
+          LATEST_BACKUP=$(get_latest_backup)
+        fi
+        
         if [[ -n "$LATEST_BACKUP" ]]; then
-          echo "📁 Found latest backup: $(basename "$LATEST_BACKUP")"
+          echo "📁 Found backup: $(basename "$LATEST_BACKUP")"
           echo "🔄 Restoring from backup before applying migration..."
           setup_database
           restore_from_backup "$LATEST_BACKUP"
