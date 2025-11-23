@@ -225,14 +225,14 @@ export default function Login({ providers = [] }: LoginProps) {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const router = useRouter();
 
-  // Check if providers are available (case-sensitive matching with DB names)
-  const hasMicrosoft = providers.includes("Microsoft");
-  const hasGoogle = providers.includes("Google");
+  // Check if providers are available (using slugs from database)
+  const hasMicrosoft = providers.includes("microsoft");
+  const hasGoogle = providers.includes("google");
 
   // Generic handler for ANY SSO provider (Microsoft, Google, etc.)
-  const handleSSOLogin = async (providerId: string) => {
+  const handleSSOLogin = async (providerSlug: string) => {
     try {
-      setLoading({ ...loading, [providerId]: true });
+      setLoading({ ...loading, [providerSlug]: true });
 
       // Clear guest mode and simulated profile from localStorage
       localStorage.removeItem("guestMode");
@@ -245,14 +245,14 @@ export default function Login({ providers = [] }: LoginProps) {
 
       // Use NextAuth's signIn with "keycloak" provider (our only provider in auth.ts)
       // Pass kc_idp_hint to force Keycloak to skip login page and redirect to the specified provider
-      // The providerId must be lowercase to match Keycloak provider alias (e.g., "microsoft", "google")
+      // The providerSlug is already lowercase (from database slug field)
       await signIn(
         "keycloak",
         {
           callbackUrl: redirectTo,
         },
         {
-          kc_idp_hint: providerId.toLowerCase(),
+          kc_idp_hint: providerSlug,
         }
       );
 
@@ -263,7 +263,7 @@ export default function Login({ providers = [] }: LoginProps) {
       if (!errorMessage.toLowerCase().includes("load failed")) {
         toast.error("An error occurred during login: " + errorMessage);
       }
-      setLoading({ ...loading, [providerId]: false });
+      setLoading({ ...loading, [providerSlug]: false });
     }
   };
 
@@ -328,24 +328,24 @@ export default function Login({ providers = [] }: LoginProps) {
         {/* Form */}
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
           <div className="space-y-4">
-            {/* Microsoft Login Button - only show if Microsoft is in providers */}
+            {/* Microsoft Login Button - only show if microsoft is in providers */}
             {hasMicrosoft && (
               <>
                 <Button
                   type="button"
-                  onClick={() => handleSSOLogin("Microsoft")}
-                  disabled={loading["Microsoft"]}
+                  onClick={() => handleSSOLogin("microsoft")}
+                  disabled={loading["microsoft"]}
                   data-testid="microsoft-login-button"
                   className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
                 >
                   <div className="flex items-center justify-center space-x-3">
-                    {loading["Microsoft"] ? (
+                    {loading["microsoft"] ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                       <MicrosoftIcon />
                     )}
                     <span className="text-base">
-                      {loading["Microsoft"]
+                      {loading["microsoft"]
                         ? "Signing in..."
                         : "Continue with Microsoft"}
                     </span>
@@ -354,24 +354,24 @@ export default function Login({ providers = [] }: LoginProps) {
               </>
             )}
 
-            {/* Google Login Button - only show if Google is in providers */}
+            {/* Google Login Button - only show if google is in providers */}
             {hasGoogle && (
               <>
                 <Button
                   type="button"
-                  onClick={() => handleSSOLogin("Google")}
-                  disabled={loading["Google"]}
+                  onClick={() => handleSSOLogin("google")}
+                  disabled={loading["google"]}
                   data-testid="google-login-button"
                   className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-gray-300"
                 >
                   <div className="flex items-center justify-center space-x-3">
-                    {loading["Google"] ? (
+                    {loading["google"] ? (
                       <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
                     ) : (
                       <GoogleIcon />
                     )}
                     <span className="text-base">
-                      {loading["Google"]
+                      {loading["google"]
                         ? "Signing in..."
                         : "Continue with Google"}
                     </span>
