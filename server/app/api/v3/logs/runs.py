@@ -26,10 +26,13 @@ class LogsRunsFilters(BaseModel):
     startDate: str | None = None
     endDate: str | None = None
     levels: list[str] | None = None
-    loggerName: str | None = None
+    loggerNames: list[str] | None = None
+    actorNames: list[str] | None = None
     search: str | None = None
-    page: int | None = None
-    pageSize: int | None = None
+    sortBy: str | None = None
+    sortOrder: str | None = None
+    page: int = 0
+    pageSize: int = 10
 
 
 # Inline schemas
@@ -64,6 +67,7 @@ class LogsRunsResponse(BaseModel):
     totalPages: int
     levelOptions: list[FilterOption] = []
     loggerOptions: list[FilterOption] = []
+    actorOptions: list[FilterOption] = []
 
 
 def _parse_json_strings_recursive(obj: Any) -> Any:
@@ -120,24 +124,49 @@ async def get_logs_runs(
             end_dt = datetime.fromisoformat(filters.endDate.replace("Z", "+00:00"))
 
         levels = filters.levels or None
-        logger_name = filters.loggerName or None
+        logger_names = filters.loggerNames or None
+        actor_names = filters.actorNames or None
         search = filters.search or None
 
+        # Build ORDER BY clause
+        sort_by = filters.sortBy or "createdAt"
+        sort_order = (filters.sortOrder or "desc").upper()
+
+        # Map sortBy to actual column names
+        sort_column_map = {
+            "createdAt": "created_at",
+            "level": "level",
+            "loggerName": "logger_name",
+            "actorName": "actor_name",
+        }
+
+        sort_column = sort_column_map.get(sort_by, "created_at")
+        # Add NULLS LAST to ensure NULL values are sorted to the end
+        order_by_clause = f"ORDER BY {sort_column} {sort_order} NULLS LAST"
+        # Also need ORDER BY in json_agg to preserve sort order
+        json_agg_order_by = f"ORDER BY {sort_column} {sort_order} NULLS LAST"
+
         # Pagination parameters
-        page = filters.page or 0
-        page_size = filters.pageSize or 50
+        page = filters.page
+        page_size = filters.pageSize
+        offset = page * page_size
+        limit_offset_clause = f"LIMIT {page_size} OFFSET {offset}"
 
         # Load SQL template
-        sql_query = load_sql("sql/v3/logs/runs.sql")
+        sql_template = load_sql("sql/v3/logs/runs.sql")
+
+        # Replace placeholders in SQL template
+        sql_query = sql_template.replace("{ORDER_BY_CLAUSE}", order_by_clause)
+        sql_query = sql_query.replace("{LIMIT_OFFSET_CLAUSE}", limit_offset_clause)
+        sql_query = sql_query.replace("{JSON_AGG_ORDER_BY}", json_agg_order_by)
 
         sql_params = (
             start_dt,
             end_dt,
             levels,
-            logger_name,
+            logger_names,
             search,
-            page,
-            page_size,
+            actor_names,
         )
 
         # Execute query
@@ -153,9 +182,7 @@ async def get_logs_runs(
         # Extract data array and pagination metadata
         bundle_data = parsed_result.get("data", []) if parsed_result else []
         total_count = parsed_result.get("totalCount", 0) if parsed_result else 0
-        page = filters.page or 0
-        page_size = filters.pageSize or 50
-        total_pages = parsed_result.get("totalPages", 0) if parsed_result else 0
+        total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
         # Parse log items
         log_items = []
@@ -205,6 +232,18 @@ async def get_logs_runs(
             for opt in (logger_options_data if isinstance(logger_options_data, list) else [])
         ]
 
+        actor_options_data = parsed_result.get("actorOptions", [])
+        if isinstance(actor_options_data, str):
+            actor_options_data = json.loads(actor_options_data)
+        actor_options = [
+            FilterOption(
+                value=opt.get("value", ""),
+                label=opt.get("label", ""),
+                count=opt.get("count", 0),
+            )
+            for opt in (actor_options_data if isinstance(actor_options_data, list) else [])
+        ]
+
         # Build response
         response_data = LogsRunsResponse(
             data=log_items,
@@ -214,6 +253,7 @@ async def get_logs_runs(
             totalPages=total_pages,
             levelOptions=level_options,
             loggerOptions=logger_options,
+            actorOptions=actor_options,
         )
 
         # Cache response

@@ -24,13 +24,22 @@ class LogsBundleRequest(BaseModel):
     profileId: str
 
 
+class TrendData(BaseModel):
+    """Trend data point for health KPIs."""
+
+    date: str
+    value: float
+    latency: float
+    count: int
+
+
 class HealthKPI(BaseModel):
     """Health KPI data for a service."""
 
     ok: bool
     latency_ms: float
     error: str
-    trend: list[dict[str, Any]]
+    trend: list[TrendData]
 
 
 class HealthKPIs(BaseModel):
@@ -133,12 +142,29 @@ async def get_logs_bundle(
 
         # Parse health KPIs
         health_kpis_data = parsed_result.get("health_kpis", {})
+        
+        def parse_health_kpi(kpi_data: dict[str, Any]) -> HealthKPI:
+            """Parse a single health KPI with proper trend data."""
+            trend_data = kpi_data.get("trend", [])
+            if isinstance(trend_data, str):
+                trend_data = json.loads(trend_data)
+            if not isinstance(trend_data, list):
+                trend_data = []
+            trend = [TrendData(**item) for item in trend_data if isinstance(item, dict)]
+            
+            return HealthKPI(
+                ok=kpi_data.get("ok", False),
+                latency_ms=kpi_data.get("latency_ms", 0.0),
+                error=kpi_data.get("error", ""),
+                trend=trend,
+            )
+        
         health_kpis = HealthKPIs(
-            websocket=HealthKPI(**health_kpis_data.get("websocket", {})),
-            redis=HealthKPI(**health_kpis_data.get("redis", {})),
-            document=HealthKPI(**health_kpis_data.get("document", {})),
-            database=HealthKPI(**health_kpis_data.get("database", {})),
-            authentication=HealthKPI(**health_kpis_data.get("authentication", {})),
+            websocket=parse_health_kpi(health_kpis_data.get("websocket", {})),
+            redis=parse_health_kpi(health_kpis_data.get("redis", {})),
+            document=parse_health_kpi(health_kpis_data.get("document", {})),
+            database=parse_health_kpi(health_kpis_data.get("database", {})),
+            authentication=parse_health_kpi(health_kpis_data.get("authentication", {})),
         )
 
         # Parse metrics

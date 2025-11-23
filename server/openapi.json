@@ -15805,8 +15805,7 @@
           },
           "trend": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/app__api__v3__logs__bundle__TrendData"
             },
             "type": "array",
             "title": "Trend"
@@ -17296,16 +17295,33 @@
             ],
             "title": "Levels"
           },
-          "loggerName": {
+          "loggerNames": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Loggername"
+            "title": "Loggernames"
+          },
+          "actorNames": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actornames"
           },
           "search": {
             "anyOf": [
@@ -17318,27 +17334,37 @@
             ],
             "title": "Search"
           },
-          "page": {
+          "sortBy": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Page"
+            "title": "Sortby"
+          },
+          "sortOrder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortorder"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 0
           },
           "pageSize": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pagesize"
+            "type": "integer",
+            "title": "Pagesize",
+            "default": 10
           }
         },
         "type": "object",
@@ -17387,6 +17413,14 @@
             },
             "type": "array",
             "title": "Loggeroptions",
+            "default": []
+          },
+          "actorOptions": {
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            },
+            "type": "array",
+            "title": "Actoroptions",
             "default": []
           }
         },
@@ -17553,7 +17587,7 @@
           },
           "trendData": {
             "items": {
-              "$ref": "#/components/schemas/TrendData"
+              "$ref": "#/components/schemas/app__utils__schema__TrendData"
             },
             "type": "array",
             "title": "Trenddata"
@@ -24453,7 +24487,7 @@
           "trend_data": {
             "additionalProperties": {
               "items": {
-                "$ref": "#/components/schemas/TrendData"
+                "$ref": "#/components/schemas/app__utils__schema__TrendData"
               },
               "type": "array"
             },
@@ -24692,30 +24726,6 @@
           "formatted"
         ],
         "title": "TimerItem"
-      },
-      "TrendData": {
-        "properties": {
-          "date": {
-            "type": "string",
-            "title": "Date"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          },
-          "count": {
-            "type": "integer",
-            "title": "Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "date",
-          "value",
-          "count"
-        ],
-        "title": "TrendData",
-        "description": "Trend data point."
       },
       "UpdateAgentRequest": {
         "properties": {
@@ -28189,6 +28199,35 @@
         ],
         "title": "FeedbackItem",
         "description": "Feedback item."
+      },
+      "app__api__v3__logs__bundle__TrendData": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "latency": {
+            "type": "number",
+            "title": "Latency"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "latency",
+          "count"
+        ],
+        "title": "TrendData",
+        "description": "Trend data point for health KPIs."
       },
       "app__api__v3__logs__list__LogItem": {
         "properties": {
@@ -31928,6 +31967,30 @@
         ],
         "title": "StandardGroupMappingItem",
         "description": "Standard group mapping item with rubric context"
+      },
+      "app__utils__schema__TrendData": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "count"
+        ],
+        "title": "TrendData",
+        "description": "Trend data point."
       }
     }
   }

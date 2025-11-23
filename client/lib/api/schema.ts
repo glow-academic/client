@@ -6883,9 +6883,7 @@ export interface components {
             /** Error */
             error: string;
             /** Trend */
-            trend: {
-                [key: string]: unknown;
-            }[];
+            trend: components["schemas"]["app__api__v3__logs__bundle__TrendData"][];
         };
         /**
          * HealthKPIs
@@ -7421,14 +7419,26 @@ export interface components {
             endDate?: string | null;
             /** Levels */
             levels?: string[] | null;
-            /** Loggername */
-            loggerName?: string | null;
+            /** Loggernames */
+            loggerNames?: string[] | null;
+            /** Actornames */
+            actorNames?: string[] | null;
             /** Search */
             search?: string | null;
-            /** Page */
-            page?: number | null;
-            /** Pagesize */
-            pageSize?: number | null;
+            /** Sortby */
+            sortBy?: string | null;
+            /** Sortorder */
+            sortOrder?: string | null;
+            /**
+             * Page
+             * @default 0
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 10
+             */
+            pageSize: number;
         };
         /**
          * LogsRunsResponse
@@ -7455,6 +7465,11 @@ export interface components {
              * @default []
              */
             loggerOptions: components["schemas"]["FilterOption"][];
+            /**
+             * Actoroptions
+             * @default []
+             */
+            actorOptions: components["schemas"]["FilterOption"][];
         };
         /**
          * MarkChatCompleteRequest
@@ -7522,7 +7537,7 @@ export interface components {
             /** Keyfield */
             keyField?: string | null;
             /** Trenddata */
-            trendData: components["schemas"]["TrendData"][];
+            trendData: components["schemas"]["app__utils__schema__TrendData"][];
             /** Datapoints */
             dataPoints: components["schemas"]["DataPoint"][];
             /** Hover */
@@ -10154,7 +10169,7 @@ export interface components {
             valid_department_ids: string[];
             /** Trend Data */
             trend_data: {
-                [key: string]: components["schemas"]["TrendData"][];
+                [key: string]: components["schemas"]["app__utils__schema__TrendData"][];
             };
             /** Role Options */
             role_options: {
@@ -10256,18 +10271,6 @@ export interface components {
             exceeded: boolean;
             /** Formatted */
             formatted: string;
-        };
-        /**
-         * TrendData
-         * @description Trend data point.
-         */
-        TrendData: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number;
-            /** Count */
-            count: number;
         };
         /** UpdateAgentRequest */
         UpdateAgentRequest: {
@@ -11587,6 +11590,20 @@ export interface components {
             author_profile_id: string;
         };
         /**
+         * TrendData
+         * @description Trend data point for health KPIs.
+         */
+        app__api__v3__logs__bundle__TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Latency */
+            latency: number;
+            /** Count */
+            count: number;
+        };
+        /**
          * LogItem
          * @description Log item with new simplified structure.
          */
@@ -12866,6 +12883,18 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
+        };
+        /**
+         * TrendData
+         * @description Trend data point.
+         */
+        app__utils__schema__TrendData: {
+            /** Date */
+            date: string;
+            /** Value */
+            value: number;
+            /** Count */
+            count: number;
         };
     };
     responses: never;
