@@ -91,8 +91,42 @@ as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
 role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
 db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
 
-# Function to create backup (only called in clean mode)
+# Function to extract migration number from filename
+# Example: "10_cleanup_prompt_agent_names.sql" -> "10"
+extract_migration_number() {
+  local filename=$(basename "$1")
+  # Extract number from start of filename (e.g., "10_" -> "10")
+  if [[ "$filename" =~ ^([0-9]+)_ ]]; then
+    echo "${BASH_REMATCH[1]}"
+  else
+    echo ""
+  fi
+}
+
+# Function to delete old backups with same migration number prefix
+delete_old_migration_backups() {
+  local migration_num="$1"
+  if [[ -z "$migration_num" ]]; then
+    return 0
+  fi
+  
+  # Find and delete old backups with this migration number
+  local old_backups=$(ls "$HISTORY_DIR"/restore_${migration_num}_*.sql.gz 2>/dev/null || true)
+  if [[ -n "$old_backups" ]]; then
+    echo "🗑️  Deleting old backups for migration $migration_num..."
+    for old_backup in $old_backups; do
+      echo "   Removing: $(basename "$old_backup")"
+      rm -f "$old_backup"
+    done
+  fi
+}
+
+# Function to create backup
+# Usage: create_backup [migration_number]
+# If migration_number is provided, backup will be prefixed with it (e.g., restore_10_YYYYMMDD_HHMMSS.sql.gz)
 create_backup() {
+  local migration_num="${1:-}"
+  
   # Only create backup if database exists and has data
   if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; then
     # Check if there are any tables with data
@@ -103,7 +137,15 @@ create_backup() {
     
     if [[ "$table_count" -gt 0 ]]; then
       local timestamp=$(date +"%Y%m%d_%H%M%S")
-      local backup_file="$HISTORY_DIR/restore_${timestamp}.sql.gz"
+      local backup_file
+      
+      # Delete old backups with same migration number if provided
+      if [[ -n "$migration_num" ]]; then
+        delete_old_migration_backups "$migration_num"
+        backup_file="$HISTORY_DIR/restore_${migration_num}_${timestamp}.sql.gz"
+      else
+        backup_file="$HISTORY_DIR/restore_${timestamp}.sql.gz"
+      fi
       
       echo "📦 Backup saved → $(basename "$backup_file")"
       
@@ -122,10 +164,11 @@ create_backup() {
 }
 
 # Function to get latest backup
+# Handles both old format (restore_TIMESTAMP.sql.gz) and new format (restore_MIGRATIONNUM_TIMESTAMP.sql.gz)
 get_latest_backup() {
   # Check if history directory exists and has restore files
   if [[ -d "$HISTORY_DIR" ]] && ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
-    # Simply get the most recent backup by modification time
+    # Get the most recent backup by modification time (works for both formats)
     ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1
   else
     # Return empty string if no backups found
@@ -267,7 +310,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
   if [[ "$MIGRATE_ALL" == true ]]; then
     echo "🔄 Migration mode: Applying all migrations from migrate/ folder..."
   else
-    echo "🔄 Migration mode: Applying most recent migration from migrate/ folder..."
+    echo "🔄 Migration mode: Restoring from backup, then applying most recent migration..."
   fi
   echo ""
   
@@ -276,6 +319,19 @@ if [[ "$MIGRATE_DB" == true ]]; then
   # Check if migration files exist in migrate/ folder
   if ls migrate/*.sql 1> /dev/null 2>&1; then
     if [[ "$MIGRATE_ALL" == true ]]; then
+      # For migrate-all, restore from backup first
+      LATEST_BACKUP=$(get_latest_backup)
+      if [[ -n "$LATEST_BACKUP" ]]; then
+        echo "📁 Found latest backup: $(basename "$LATEST_BACKUP")"
+        echo "🔄 Restoring from backup before applying migrations..."
+        setup_database
+        restore_from_backup "$LATEST_BACKUP"
+      else
+        echo "📝 No backups found, starting fresh..."
+        setup_database
+        start_fresh_from_init
+      fi
+      
       # Apply all migration files in order (sorted by filename)
       echo "📁 Found migration files, applying all of them..."
       for migration_file in migrate/*.sql; do
@@ -288,20 +344,39 @@ if [[ "$MIGRATE_DB" == true ]]; then
         fi
       done
       echo "✅ All migrations applied successfully"
-      # Create backup after all migrations succeed
+      # Create backup after all migrations succeed (no migration number prefix for migrate-all)
       create_backup
     else
       # Get the most recent migration file (sorted by modification time, newest first)
       migration_file=$(ls -t migrate/*.sql 2>/dev/null | head -1)
       
       if [[ -n "$migration_file" ]]; then
+        migration_num=$(extract_migration_number "$migration_file")
         echo "📁 Found migration file: $(basename "$migration_file")"
-        echo "🔄 Applying migration: $(basename "$migration_file")"
+        if [[ -n "$migration_num" ]]; then
+          echo "   Migration number: $migration_num"
+        fi
         
+        # Step 1: Restore from latest backup first
+        LATEST_BACKUP=$(get_latest_backup)
+        if [[ -n "$LATEST_BACKUP" ]]; then
+          echo "📁 Found latest backup: $(basename "$LATEST_BACKUP")"
+          echo "🔄 Restoring from backup before applying migration..."
+          setup_database
+          restore_from_backup "$LATEST_BACKUP"
+        else
+          echo "📝 No backups found, starting fresh..."
+          setup_database
+          start_fresh_from_init
+        fi
+        
+        # Step 2: Apply migration
+        echo "🔄 Applying migration: $(basename "$migration_file")"
         if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
           echo "✅ Migration applied successfully: $(basename "$migration_file")"
-          # Create backup after successful migration
-          create_backup
+          
+          # Step 3: Create backup with migration number prefix
+          create_backup "$migration_num"
         else
           echo "⚠️  Migration had issues: $(basename "$migration_file")"
           exit 1

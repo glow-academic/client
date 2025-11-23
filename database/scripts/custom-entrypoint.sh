@@ -132,18 +132,42 @@ EOF
 # Create a SQL script to restore from backup if available (only if not cleaning)
 if [ "$CLEAN_DB" != "true" ]; then
   # Look for restore_*.sql.gz files in history volume
+  # Handles both old format (restore_TIMESTAMP.sql.gz) and new format (restore_MIGRATIONNUM_TIMESTAMP.sql.gz)
   if ls "$HISTORY_DIR"/restore_*.sql.gz 1> /dev/null 2>&1; then
+    # Get the most recent backup by modification time (works for both formats)
     latest_backup=$(ls -t "$HISTORY_DIR"/restore_*.sql.gz 2>/dev/null | head -1)
   if [[ -n "$latest_backup" && -f "$latest_backup" ]]; then
     log_info "📁 Found latest backup: $(basename "$latest_backup")"
     log_info "🔄 Setting up backup restoration..."
     
-      # Decompress the backup file and copy to initdb.d
-      # Handle both custom format (pg_restore) and plain SQL (gunzip)
-      if gunzip -c "$latest_backup" > /docker-entrypoint-initdb.d/50-restore-backup.sql 2>/dev/null; then
-        log_success "Backup decompressed and prepared for restoration"
+      # Handle both custom format (pg_dump -F c) and plain SQL (gzipped)
+      # Try custom format first (pg_restore), then fall back to plain SQL (gunzip)
+      if pg_restore -l "$latest_backup" > /dev/null 2>&1; then
+        # Custom format backup - create a restore script that uses pg_restore
+        log_info "Detected custom format backup, creating restore script..."
+        backup_basename=$(basename "$latest_backup")
+        cat > /docker-entrypoint-initdb.d/50-restore-backup.sh << EOF
+#!/bin/bash
+set -e
+log_info() { echo -e "\${CYAN}[DOCKER-DB]\${NC} \$1"; }
+log_warning() { echo -e "\${YELLOW}[DOCKER-DB]\${NC} \$1"; }
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+log_info "🔄 Restoring from custom format backup: $backup_basename"
+pg_restore -d $DB_NAME "$latest_backup" || {
+  log_warning "⚠️  Some restore warnings occurred, but continuing..."
+}
+log_info "✅ Backup restoration completed"
+EOF
+        chmod +x /docker-entrypoint-initdb.d/50-restore-backup.sh
+        log_success "Custom format restore script prepared"
+      elif gunzip -c "$latest_backup" > /docker-entrypoint-initdb.d/50-restore-backup.sql 2>/dev/null; then
+        # Plain SQL backup (gzipped)
+        log_success "Plain SQL backup decompressed and prepared for restoration"
       else
-        log_error "Failed to decompress backup file: $latest_backup"
+        log_error "Failed to process backup file: $latest_backup"
+        log_error "Backup file may be corrupted or in an unsupported format"
         exit 1
   fi
 else
