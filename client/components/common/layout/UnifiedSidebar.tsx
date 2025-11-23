@@ -445,7 +445,7 @@ export function UnifiedSidebar({
               section.section.toLowerCase().includes(searchLower);
             return matchesSearch ? section : null;
           }
-          
+
           // Section with sub-items - filter items
           const filteredItems =
             section.items?.filter(
@@ -453,10 +453,12 @@ export function UnifiedSidebar({
                 item.title.toLowerCase().includes(searchLower) ||
                 item.section?.toLowerCase().includes(searchLower)
             ) || [];
-          
+
           // Also check if the section title itself matches
-          const sectionMatches = section.title.toLowerCase().includes(searchLower);
-          
+          const sectionMatches = section.title
+            .toLowerCase()
+            .includes(searchLower);
+
           // Return section if it has matching items or if section title matches
           if (filteredItems.length > 0 || sectionMatches) {
             return {
@@ -464,7 +466,7 @@ export function UnifiedSidebar({
               items: filteredItems,
             };
           }
-          
+
           return null;
         })
         .filter((section): section is NavSection => section !== null);
@@ -580,13 +582,8 @@ export function UnifiedSidebar({
 
   const handleLoginOrLogout = async () => {
     const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (activeProfile?.role === "guest") {
-      // Navigate to login page for guests or when no user
-      router.push("/login");
-      return;
-    }
 
-    // Handle logout for logged-in users
+    // Handle logout for all users including guests
     setIsLoggingOut(true);
 
     toast.promise(
@@ -658,8 +655,8 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Profile - Hidden from guests */}
-                  {activeProfile && activeProfile.role !== "guest" && (
+                  {/* Profile - Available for all users including guests */}
+                  {activeProfile && (
                     <>
                       <DropdownMenuItem
                         onClick={() => handleSectionChangeWithClose("profile")}
@@ -702,11 +699,7 @@ export function UnifiedSidebar({
                     }
                   >
                     <LogOut className="h-4 w-4 mr-2" />
-                    {isLoggingOut
-                      ? "Logging out..."
-                      : activeProfile?.role === "guest" || !activeProfile
-                        ? "Log in"
-                        : "Logout"}
+                    {isLoggingOut ? "Logging out..." : "Logout"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

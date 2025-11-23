@@ -14,6 +14,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { searchParamsToFilters } from "@/utils/analytics-filters";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -164,6 +165,11 @@ interface HomePageProps {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await getSession();
+
+  // Redirect guests to practice page - they don't have access to home
+  if (session?.user?.role === "guest") {
+    redirect("/practice");
+  }
 
   // Parse search params
   const paramsObj = await searchParams;

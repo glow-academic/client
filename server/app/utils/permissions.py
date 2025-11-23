@@ -434,13 +434,13 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
     ),
     SectionPermission(
         section="profile",
-        roles=["ta", "instructional", "admin", "superadmin"],
+        roles=["guest", "ta", "instructional", "admin", "superadmin"],
         title="Profile",
         description="User profile management",
         routes=[
             RoutePermission(
                 path="/profile",
-                roles=["ta", "instructional", "admin", "superadmin"],
+                roles=["guest", "ta", "instructional", "admin", "superadmin"],
                 title="User Profile",
                 redirectTo="/profile",
             ),
@@ -492,10 +492,10 @@ def get_redirect_path_for_role(role: ProfileRole) -> str:
         Redirect path for the role
     """
     redirect_map = {
-        "guest": "/home",  # Guest users start at home
+        "guest": "/practice",  # Guest users start at practice
         "ta": "/home",  # TA users start at home
-        "instructional": "/home",  # Instructional staff starts at home
-        "admin": "/home",  # Admins start at home
-        "superadmin": "/home",  # Superadmins start at home
+        "instructional": "/analytics/dashboard",  # Instructional staff starts at analytics dashboard
+        "admin": "/analytics/dashboard",  # Admins start at analytics dashboard
+        "superadmin": "/analytics/dashboard",  # Superadmins start at analytics dashboard
     }
     return redirect_map.get(role, "/home")  # Default fallback to home

@@ -232,7 +232,8 @@ export default function Login({ providers = [] }: LoginProps) {
 
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
 
-      // Redirect to home for authenticated users
+      // Redirect to home after login - home page will handle role-based redirects
+      // (guests will be redirected to /practice by the home page)
       const redirectTo = `${appPrefix}/home`;
 
       // Use NextAuth's signIn with "keycloak" provider (our only provider in auth.ts)

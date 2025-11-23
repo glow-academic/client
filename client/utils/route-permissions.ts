@@ -435,13 +435,13 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
   },
   {
     section: "profile",
-    roles: ["ta", "instructional", "admin", "superadmin"],
+    roles: ["guest", "ta", "instructional", "admin", "superadmin"],
     title: "Profile",
     description: "User profile management",
     routes: [
       {
         path: "/profile",
-        roles: ["ta", "instructional", "admin", "superadmin"],
+        roles: ["guest", "ta", "instructional", "admin", "superadmin"],
         title: "User Profile",
         redirectTo: "/profile",
       },
