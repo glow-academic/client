@@ -4,12 +4,12 @@ import json
 import time
 from typing import Any
 
+from app.utils.logging.db_logger import (get_logger, resolve_profile_id,
+                                         set_profile_id)
+from app.utils.metrics.collector import record_error, record_request
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-
-from app.utils.logging.db_logger import get_logger, resolve_profile_id, set_profile_id
-from app.utils.metrics.collector import record_error, record_request
 
 logger = get_logger(__name__)
 
@@ -98,21 +98,11 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                 
                 # Use logger with extra data
                 import logging
-                log_level_num = logging.INFO if status_code < 500 else logging.ERROR
+                log_level = logging.INFO if status_code < 500 else logging.ERROR
                 log_message = f"{request.method} {request.url.path} -> {status_code} ({duration_ms:.2f}ms)"
                 
-                # Create a log record with extra data
-                log_record = logger.makeRecord(
-                    logger.name,
-                    int(log_level_num),  # Ensure it's an int
-                    __file__,
-                    0,
-                    log_message,
-                    (),
-                    None,
-                    extra={"extra_data": extra_data},
-                )
-                logger.handle(log_record)
+                # Log directly with extra data
+                logger.log(log_level, log_message, extra={"extra_data": extra_data})
             except Exception:
                 # Never break the request because logging failed
                 pass

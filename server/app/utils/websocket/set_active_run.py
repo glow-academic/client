@@ -1,10 +1,10 @@
 """Set the active run ID for a chat in Redis."""
 
-import logging
 
+from app.utils.logging.db_logger import get_logger
 from app.main import get_redis_client
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def set_active_run(chat_id: str, run_id: str) -> None:

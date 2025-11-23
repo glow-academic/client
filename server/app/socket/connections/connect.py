@@ -1,19 +1,19 @@
 """Handler for connect WebSocket event."""
 
-import logging
 import time
 from urllib.parse import parse_qs
 
 from pydantic import BaseModel
 
 from app.main import sio
+from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.add_guest_socket import add_guest_socket
 from app.utils.websocket.cleanup_profile_connection import cleanup_profile_connection
 from app.utils.websocket.get_socket_owner import get_socket_owner
 from app.utils.websocket.increment_guest_count import increment_guest_count
 from app.utils.websocket.set_socket_owner import set_socket_owner
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events

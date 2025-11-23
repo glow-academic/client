@@ -2,7 +2,6 @@
 
 import io
 import json
-import logging
 import os
 import subprocess
 import tempfile
@@ -11,12 +10,13 @@ from typing import Annotated, Any
 
 import asyncpg  # type: ignore
 from app.main import get_db
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Inline request/response schemas

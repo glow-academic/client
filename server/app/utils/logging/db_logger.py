@@ -55,7 +55,7 @@ async def resolve_profile_id(profile_id: str | None) -> str:
                     """
                 )
                 if result:
-                    return result
+                    return str(result)
                 # If no guest profile found, return placeholder
                 # This should not happen in normal operation
                 return "00000000-0000-0000-0000-000000000000"

@@ -1,6 +1,5 @@
 """Create all grading function tools for the standard groups."""
 
-import logging
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any
@@ -8,9 +7,10 @@ from typing import Any
 from agents import Tool
 
 from app.utils.agents.tools.create_grading_function import create_grading_function
+from app.utils.logging.db_logger import get_logger
 from app.utils.agents.tools.create_summary_function import create_summary_function
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_grading_tools(

@@ -5,7 +5,6 @@ and the randomize endpoint. Can be used internally or via API endpoint.
 """
 
 import json
-import logging
 import random
 import uuid
 from collections.abc import Sequence
@@ -17,9 +16,10 @@ from pydantic import BaseModel
 
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter()
 

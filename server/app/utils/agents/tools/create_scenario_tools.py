@@ -1,15 +1,15 @@
 """Create all scenario generation function tools."""
 
-import logging
 import uuid
 from typing import Any
 
 from app.utils.agents.tools.create_objectives_function import create_objectives_function
+from app.utils.logging.db_logger import get_logger
 from app.utils.agents.tools.create_title_description_function import (
     create_title_description_function,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_scenario_tools(

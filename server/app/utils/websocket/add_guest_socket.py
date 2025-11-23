@@ -1,10 +1,9 @@
 """Add a guest socket to Redis."""
 
-import logging
-
 from app.main import get_redis_client
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def add_guest_socket(socket_id: str) -> None:

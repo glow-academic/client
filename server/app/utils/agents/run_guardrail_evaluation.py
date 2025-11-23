@@ -1,6 +1,5 @@
 """Shared logic for running guardrail evaluation."""
 
-import logging
 import uuid
 from typing import Any
 
@@ -10,11 +9,12 @@ from agents.items import TResponseInputItem
 
 from app.main import guardrail_progress, guardrail_results
 from app.utils.agents.build_guardrail_agent import build_guardrail_agent
+from app.utils.logging.db_logger import get_logger
 from app.utils.agents.tools.create_guardrail_tools import create_guardrail_tools
 from app.utils.debug_info import DebugContext
 from app.utils.sql_helper import load_sql
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def run_guardrail_evaluation(

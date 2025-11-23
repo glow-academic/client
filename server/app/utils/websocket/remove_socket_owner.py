@@ -1,10 +1,10 @@
 """Remove the socket ownership for a profile from Redis."""
 
-import logging
 
+from app.utils.logging.db_logger import get_logger
 from app.main import get_redis_client, get_socket_owner_dict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def remove_socket_owner(profile_id: str) -> None:

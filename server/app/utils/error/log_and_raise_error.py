@@ -1,12 +1,13 @@
 """Log error with full context and raise HTTPException."""
 
-import logging
 from typing import Any
 
 import asyncpg  # type: ignore
 from fastapi import HTTPException, Request
 
-logger = logging.getLogger(__name__)
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def log_and_raise_error(

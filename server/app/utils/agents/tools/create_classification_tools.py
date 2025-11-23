@@ -1,13 +1,13 @@
 """Create all document classification function tools."""
 
-import logging
 from typing import Any
 
 from app.utils.agents.tools.create_classification_function import (
     create_classification_function,
 )
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_classification_tools() -> list[Any]:

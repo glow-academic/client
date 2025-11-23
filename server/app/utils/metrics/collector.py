@@ -30,8 +30,8 @@ async def initialize_metrics(db_pool: asyncpg.Pool, redis_client: Any | None = N
     
     # Initialize Redis counters if Redis available
     if _redis_client:
-        import logging
-        logger = logging.getLogger("app.utils.metrics.collector")
+        from app.utils.logging.db_logger import get_logger
+        logger = get_logger("app.utils.metrics.collector")
         try:
             # Initialize counters to 0 if they don't exist (async Redis client)
             await _redis_client.set("metrics:requests_total", 0, nx=True)
@@ -41,8 +41,8 @@ async def initialize_metrics(db_pool: asyncpg.Pool, redis_client: Any | None = N
             logger.warning(f"Failed to initialize Redis metrics: {e}, using in-memory fallback")
             _redis_client = None
     else:
-        import logging
-        logger = logging.getLogger("app.utils.metrics.collector")
+        from app.utils.logging.db_logger import get_logger
+        logger = get_logger("app.utils.metrics.collector")
         logger.info("Metrics collector initialized with in-memory backend (Redis unavailable)")
 
 
@@ -155,8 +155,8 @@ async def snapshot_metrics() -> None:
                 # For per-minute: reset counters
                 # We'll keep cumulative for now, but could reset if needed
             except Exception as e:
-                import logging
-                logger = logging.getLogger("app.utils.metrics.collector")
+                from app.utils.logging.db_logger import get_logger
+                logger = get_logger("app.utils.metrics.collector")
                 logger.warning(f"Error reading from Redis, using in-memory fallback: {e}")
                 # Fallback to in-memory
                 requests_total = _requests_count
@@ -211,9 +211,9 @@ async def snapshot_metrics() -> None:
             )
     except Exception as e:
         # Log error but don't break metrics collection
-        import logging
+        from app.utils.logging.db_logger import get_logger
         
-        logger = logging.getLogger("app.utils.metrics.collector")
+        logger = get_logger("app.utils.metrics.collector")
         logger.error(f"Error snapshotting metrics: {e}")
 
 

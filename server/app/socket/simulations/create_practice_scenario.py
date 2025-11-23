@@ -1,16 +1,16 @@
 """Handler for create_practice_scenario WebSocket event."""
 
-import logging
 import uuid
 from typing import Any
 
 from app.main import get_pool, sio
 from app.socket.simulations.start import (StartSimulationPayload,
                                           _start_simulation_impl)
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events

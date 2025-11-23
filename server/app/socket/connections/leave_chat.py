@@ -1,14 +1,14 @@
 """Handler for leave_chat WebSocket event."""
 
-import logging
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
 from app.main import sio
+from app.utils.logging.db_logger import get_logger
 from app.utils.websocket.remove_active_connection import remove_active_connection
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events

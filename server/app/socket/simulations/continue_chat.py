@@ -1,7 +1,6 @@
 """Handler for continue_simulation WebSocket event."""
 
 import json
-import logging
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -21,11 +20,12 @@ from app.utils.chat.get_simulation_conversation_history import \
     get_simulation_conversation_history
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
+from app.utils.logging.db_logger import get_logger
 from app.utils.rubric import get_dynamic_rubric
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events

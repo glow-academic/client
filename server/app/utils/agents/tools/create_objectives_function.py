@@ -1,14 +1,14 @@
 """Create a function tool for setting scenario learning objectives."""
 
-import logging
 import uuid
 
 from agents import Tool, function_tool
 from pydantic import Field
 
+from app.utils.logging.db_logger import get_logger
 from app.main import scenario_progress, scenario_results
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_objectives_function(group_id: uuid.UUID | None) -> Tool:

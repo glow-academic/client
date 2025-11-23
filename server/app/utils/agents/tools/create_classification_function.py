@@ -1,13 +1,13 @@
 """Create a function tool for classifying documents into a specific category."""
 
-import logging
 
 from agents import Tool, function_tool
 from pydantic import Field
 
+from app.utils.logging.db_logger import get_logger
 from app.main import classification_progress, classification_results
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_classification_function(category: str, category_description: str) -> Tool:

@@ -1,7 +1,6 @@
 """Document upload finalize endpoint - v3 API following DHH principles."""
 
 import json
-import logging
 import os
 import shutil
 import uuid
@@ -14,10 +13,11 @@ from pydantic import BaseModel
 
 from app.main import UPLOAD_FOLDER, get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Directory for storing tus uploads in progress
 TUS_UPLOADS_DIR = os.path.join(UPLOAD_FOLDER, "tus_uploads")

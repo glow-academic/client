@@ -1,10 +1,10 @@
 """Check if a socket is a guest socket."""
 
-import logging
 
+from app.utils.logging.db_logger import get_logger
 from app.main import get_redis_client
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def is_guest_socket(socket_id: str) -> bool:

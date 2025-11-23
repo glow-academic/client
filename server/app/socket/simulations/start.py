@@ -1,7 +1,6 @@
 """Handler for start_simulation WebSocket event."""
 
 import json
-import logging
 import uuid
 from typing import Any
 
@@ -15,12 +14,13 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
+from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
 from pydantic import BaseModel, ValidationError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events

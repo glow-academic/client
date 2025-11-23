@@ -1,7 +1,6 @@
 """Scenario randomize endpoint - v3 API following DHH principles."""
 
 import json
-import logging
 import random
 import uuid
 from typing import Annotated, Any
@@ -9,13 +8,14 @@ from typing import Annotated, Any
 import asyncpg  # type: ignore
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.logging.db_logger import get_logger
 from app.utils.scenario.generate_problem_statement import \
     generate_scenario_problem_statement
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Inline request/response schemas

@@ -1,6 +1,5 @@
 """Create a function tool for grading a specific standard group."""
 
-import logging
 import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import Any
@@ -10,8 +9,9 @@ from pydantic import Field
 
 from app.main import grading_progress, grading_results
 from app.utils.agents.tools.create_safe_field_name import create_safe_field_name
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_grading_function(

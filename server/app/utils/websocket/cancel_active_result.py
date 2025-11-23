@@ -1,11 +1,11 @@
 """Call cancel() on the local Runner result if present."""
 
 import asyncio
-import logging
 
+from app.utils.logging.db_logger import get_logger
 from app.main import get_active_results_dict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def cancel_active_result(chat_id: str) -> bool:

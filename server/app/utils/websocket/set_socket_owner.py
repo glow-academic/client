@@ -1,10 +1,9 @@
 """Set the socket ID that owns a profile in Redis."""
 
-import logging
-
 from app.main import get_redis_client, get_socket_owner_dict
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def set_socket_owner(profile_id: str, socket_id: str) -> None:

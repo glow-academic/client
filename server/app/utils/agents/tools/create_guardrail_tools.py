@@ -1,14 +1,14 @@
 """Create all tools needed for guardrail evaluation."""
 
-import logging
 from typing import Any
 
 from app.utils.agents.tools.create_evaluation_function import (
     create_evaluation_function,
 )
 from app.utils.debug_info import debug_info
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_guardrail_tools() -> list[Any]:

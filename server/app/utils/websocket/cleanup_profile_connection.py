@@ -1,12 +1,12 @@
 """Clean up all connections for a profile."""
 
-import logging
 
+from app.utils.logging.db_logger import get_logger
 from app.main import get_pool
 from app.utils.sql_helper import load_sql
 from app.utils.websocket.remove_socket_owner import remove_socket_owner
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -> None:

@@ -1,13 +1,13 @@
 """Create all tools needed for hint generation."""
 
-import logging
 
 from agents import Tool
 
 from app.utils.agents.tools.create_hint_function import create_hint_function
+from app.utils.logging.db_logger import get_logger
 from app.utils.debug_info import debug_info
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_hint_tools() -> list[Tool]:

@@ -1,7 +1,6 @@
 """Helper function to generate scenario problem statement using scenario agent."""
 
 import json
-import logging
 import uuid
 from typing import Any
 
@@ -14,11 +13,12 @@ from app.utils.agents.tools.create_scenario_tools import create_scenario_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.document.format_document_info import format_document_info
+from app.utils.logging.db_logger import get_logger
 from app.utils.personas import format_persona_info
 from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def generate_scenario_problem_statement(

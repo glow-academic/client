@@ -1,14 +1,14 @@
 """Create the hint generation agent from context data."""
 
-import logging
 from typing import Any
 
 from agents import (FunctionToolResult, RunContextWrapper,
                     ToolsToFinalOutputResult)
 from app.main import hint_progress
 from app.utils.agents.generic_agent import GenericAgent
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def build_hint_agent(context: dict[str, Any], hint_tools: list[Any]) -> GenericAgent:

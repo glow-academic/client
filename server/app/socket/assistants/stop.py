@@ -1,15 +1,15 @@
 """Handler for stop_assistant WebSocket event."""
 
-import logging
 from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
 from app.main import get_pool, sio
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 from app.utils.websocket.cancel_active_run import cancel_active_run
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events

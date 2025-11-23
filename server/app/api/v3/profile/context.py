@@ -105,9 +105,9 @@ async def get_profile_context(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        import logging
+        from app.utils.logging.db_logger import get_logger
 
-        logger = logging.getLogger(__name__)
+        logger = get_logger(__name__)
         logger.info(f"Request: {request}")
         
         # Normalize empty strings to "guest-profile-id" for SQL compatibility

@@ -1,6 +1,5 @@
 """Create a function tool for recording the overall summary."""
 
-import logging
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -8,9 +7,10 @@ from typing import Any
 from agents import Tool, function_tool
 from pydantic import Field
 
+from app.utils.logging.db_logger import get_logger
 from app.main import grading_progress, grading_results
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def create_summary_function(

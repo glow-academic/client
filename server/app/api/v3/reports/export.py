@@ -3,7 +3,6 @@
 import csv
 import io
 import json
-import logging
 import zipfile
 from datetime import datetime
 from typing import Annotated, Any
@@ -13,12 +12,13 @@ from app.main import get_db
 from app.utils.analytics_query_builder import \
     build_profile_and_analytics_filters
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.logging.db_logger import get_logger
 from app.utils.schema import SimulationFilter
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter(tags=["reports"])
 
@@ -202,8 +202,6 @@ async def export_reports(
     """Export reports data as CSV or ZIP file."""
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
-    import logging
-    logger = logging.getLogger(__name__)
     logger.info(f"Request: {request}")
 
     try:

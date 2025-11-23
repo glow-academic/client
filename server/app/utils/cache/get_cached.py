@@ -1,12 +1,12 @@
 """Get cached HTTP response from Redis."""
 
 import json
-import logging
 from typing import Any
 
 from app.main import get_redis_client
+from app.utils.logging.db_logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def get_cached(key: str) -> dict[str, Any] | None:

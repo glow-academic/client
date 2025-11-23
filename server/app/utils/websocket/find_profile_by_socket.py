@@ -1,10 +1,10 @@
 """Find the profile ID owned by a socket ID."""
 
-import logging
 
+from app.utils.logging.db_logger import get_logger
 from app.main import get_redis_client, get_socket_owner_dict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def find_profile_by_socket(socket_id: str) -> str | None:

@@ -69,11 +69,12 @@ export default function Logs({
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     log_id: false,
-    correlation_id: false,
+    event: false, // Keep event hidden (logger_name is the new primary)
     context_provider: false,
     context_model: false,
     context_function: false,
     created_time: false,
+    extra: false,
   });
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([
@@ -83,90 +84,82 @@ export default function Logs({
   // Use server-provided data directly
   const logsData = serverListData;
 
-  // Extract data from V3 response
+  // Extract data from V3 response (new simplified structure)
   const logs = useMemo(() => {
     if (!logsData?.logs) return [];
 
-    return logsData.logs.map((log): LogsListOut["logs"][number] => {
-      // V3 API returns log_id as string, convert to number
-      const logId =
-        typeof log.log_id === "string"
-          ? Number.parseInt(log.log_id, 10) || 0
-          : log.log_id;
+    return logsData.logs.map((log) => {
+      // Extract context fields from extra jsonb
+      const extra = (log.extra as Record<string, unknown>) || {};
+      const context = (extra["context"] as Record<string, unknown>) || {};
 
-      // Normalize optional properties to avoid undefined
-      const normalizeActor = (actor: typeof log.actor): LogsListOut["logs"][number]["actor"] => {
-        if (!actor) return {
-          userId: null,
-          profileId: null,
-          profileName: null,
-        };
-        return {
-          userId: actor.userId ?? null,
-          profileId: actor.profileId ?? null,
-          profileName: actor.profileName ?? null,
-        };
+      // Helper to safely extract nested values
+      const getExtraValue = (path: string): string | null => {
+        const parts = path.split(".");
+        let value: unknown = extra;
+        for (const part of parts) {
+          if (value && typeof value === "object" && value !== null) {
+            value = (value as Record<string, unknown>)[part];
+          } else {
+            return null;
+          }
+        }
+        return typeof value === "string" ? value : null;
       };
 
-      const normalizeSubject = (
-        subject: typeof log.subject,
-      ): LogsListOut["logs"][number]["subject"] => {
-        if (!subject) return {
-          entityId: null,
-          entityType: null,
-        };
-        return {
-          entityId: subject.entityId ?? null,
-          entityType: subject.entityType ?? null,
-        };
-      };
-
-      const normalizeContext = (
-        context: typeof log.context,
-      ): LogsListOut["logs"][number]["context"] => {
-        if (!context) return {
-          route: null,
-          function: null,
-          component: null,
-          provider: null,
-          model: null,
-        };
-        return {
-          route: context.route ?? null,
-          function: context.function ?? null,
-          component: context.component ?? null,
-          provider: context.provider ?? null,
-          model: context.model ?? null,
-        };
-      };
-
-      const normalizeError = (error: typeof log.error): LogsListOut["logs"][number]["error"] => {
-        if (!error) return {
-          code: null,
-          name: null,
-          stack: null,
-          message: null,
-        };
-        return {
-          code: error.code ?? null,
-          name: error.name ?? null,
-          stack: error.stack ?? null,
-          message: error.message ?? null,
-        };
+      // Safely extract values from extra/jsonb
+      const getStringValue = (
+        obj: Record<string, unknown>,
+        key: string
+      ): string | null => {
+        const val = obj[key];
+        return typeof val === "string" ? val : null;
       };
 
       return {
-        log_id: logId.toString(),
-        event: log.event,
-        level: log.level,
-        message: log.message ?? "",
-        correlation_id: log.correlation_id ?? "",
-        actor: normalizeActor(log.actor),
-        subject: normalizeSubject(log.subject),
-        context: normalizeContext(log.context),
-        error: normalizeError(log.error),
-        created_at: log.created_at ?? "",
-        actor_name: log.actor_name ?? null,
+        log_id: log.log_id,
+        logger_name: log.logger_name || "",
+        level: log.level || "",
+        message: log.message || "",
+        profile_id: log.profile_id || "",
+        extra: log.extra || null,
+        created_at: log.created_at || "",
+        actor_name: log.actor_name || "",
+        // Extract context fields from extra for backward compatibility with filters
+        context: {
+          route:
+            getStringValue(extra, "route") ||
+            getStringValue(context, "route") ||
+            getExtraValue("context.route") ||
+            null,
+          function:
+            getStringValue(extra, "function") ||
+            getStringValue(context, "function") ||
+            getExtraValue("context.function") ||
+            null,
+          component:
+            getStringValue(extra, "component") ||
+            getStringValue(context, "component") ||
+            getExtraValue("context.component") ||
+            null,
+          provider:
+            getStringValue(extra, "provider") ||
+            getStringValue(context, "provider") ||
+            getExtraValue("context.provider") ||
+            null,
+          model:
+            getStringValue(extra, "model") ||
+            getStringValue(context, "model") ||
+            getExtraValue("context.model") ||
+            null,
+        },
+        // For backward compatibility - map logger_name to event
+        event: log.logger_name || "",
+        // Extract correlation_id from extra if present
+        correlation_id:
+          getStringValue(extra, "correlation_id") ||
+          getStringValue(extra, "correlationId") ||
+          null,
       };
     });
   }, [logsData?.logs]);
@@ -204,11 +197,11 @@ export default function Logs({
       { value: "info", label: "Info" },
       { value: "debug", label: "Debug" },
     ],
-    [],
+    []
   );
 
   const {
-    eventOptions,
+    loggerNameOptions,
     providerOptions,
     modelOptions,
     actorOptions,
@@ -217,36 +210,64 @@ export default function Logs({
     dateOptions,
     timeOptions,
   } = useMemo(() => {
-    const events = new Set<string>(logs.map((l: LogsListOut["logs"][number]) => l.event));
-    const providers = new Set<string>(
+    // Extract logger names (replaces event)
+    const loggerNames = new Set<string>(
       logs
-        .map((l: LogsListOut["logs"][number]) => l.context?.provider)
-        .filter((v): v is string => typeof v === "string" && v !== ""),
+        .map((l) => l.logger_name)
+        .filter((v): v is string => typeof v === "string" && v !== "")
     );
-    const models = new Set<string>(
-      logs
-        .map((l: LogsListOut["logs"][number]) => l.context?.model)
-        .filter((v): v is string => typeof v === "string" && v !== ""),
-    );
+
+    // Extract context fields from extra jsonb
+    const providers = new Set<string>();
+    const models = new Set<string>();
+    const components = new Set<string>();
+    const functions = new Set<string>();
+
+    logs.forEach((l) => {
+      const extra = (l.extra as Record<string, unknown>) || {};
+      const context = (extra["context"] as Record<string, unknown>) || {};
+
+      const getStringVal = (
+        obj: Record<string, unknown>,
+        key: string
+      ): string | null => {
+        const val = obj[key];
+        return typeof val === "string" ? val : null;
+      };
+
+      const providerVal =
+        getStringVal(extra, "provider") || getStringVal(context, "provider");
+      if (providerVal) providers.add(providerVal);
+
+      const modelVal =
+        getStringVal(extra, "model") || getStringVal(context, "model");
+      if (modelVal) models.add(modelVal);
+
+      const componentVal =
+        getStringVal(extra, "component") || getStringVal(context, "component");
+      if (componentVal) components.add(componentVal);
+
+      const functionVal =
+        getStringVal(extra, "function") || getStringVal(context, "function");
+      if (functionVal) functions.add(functionVal);
+
+      // Also check legacy context structure for backward compatibility
+      if (l.context?.provider) providers.add(l.context.provider);
+      if (l.context?.model) models.add(l.context.model);
+      if (l.context?.component) components.add(l.context.component);
+      if (l.context?.function) functions.add(l.context.function);
+    });
+
     const actors = new Set<string>(
       logs
-        .map((l: LogsListOut["logs"][number]) => l.actor_name)
-        .filter((v): v is string => typeof v === "string" && v !== ""),
+        .map((l) => l.actor_name)
+        .filter((v): v is string => typeof v === "string" && v !== "")
     );
-    const components = new Set<string>(
-      logs
-        .map((l: LogsListOut["logs"][number]) => l.context?.component)
-        .filter((v): v is string => typeof v === "string" && v !== ""),
-    );
-    const functions = new Set<string>(
-      logs
-        .map((l: LogsListOut["logs"][number]) => l.context?.function)
-        .filter((v): v is string => typeof v === "string" && v !== ""),
-    );
+
     const dates = new Set<string>();
     const hours = new Set<number>();
 
-    logs.forEach((logItem: LogsListOut["logs"][number]) => {
+    logs.forEach((logItem) => {
       if (logItem.created_at) {
         const date = new Date(logItem.created_at);
         // Format as MM/DD for date options
@@ -257,7 +278,7 @@ export default function Logs({
     });
 
     return {
-      eventOptions: Array.from(events)
+      loggerNameOptions: Array.from(loggerNames)
         .sort()
         .map((v) => ({ value: v, label: v })),
       providerOptions: Array.from(providers)
@@ -288,7 +309,7 @@ export default function Logs({
   }, [logs]);
 
   const [selectedLog, setSelectedLog] = useState<(typeof logs)[number] | null>(
-    null,
+    null
   );
 
   // Define columns with rich visual styling
@@ -343,6 +364,29 @@ export default function Logs({
         cell: ({ row }) => (
           <div className="font-medium">{row.getValue("log_id")}</div>
         ),
+        enableSorting: true,
+      },
+      {
+        accessorKey: "logger_name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Logger" />
+        ),
+        cell: ({ row }) => {
+          const loggerName = row.getValue("logger_name") as string;
+          return (
+            <span
+              className="truncate max-w-xs inline-block font-mono text-xs"
+              title={loggerName}
+            >
+              {loggerName}
+            </span>
+          );
+        },
+        filterFn: (row, id, value) => {
+          if (!value || value.length === 0) return true;
+          const loggerName = (row.getValue(id) as string) ?? "";
+          return value.includes(loggerName);
+        },
         enableSorting: true,
       },
       {
@@ -403,7 +447,20 @@ export default function Logs({
       },
       {
         id: "context_component",
-        accessorFn: (row) => row.context?.component || null,
+        accessorFn: (row) => {
+          // Extract from extra jsonb or legacy context
+          const extra = (row.extra as Record<string, unknown>) || {};
+          const context = (extra["context"] as Record<string, unknown>) || {};
+          const extraComponent =
+            typeof extra["component"] === "string" ? extra["component"] : null;
+          const contextComponent =
+            typeof context["component"] === "string"
+              ? context["component"]
+              : null;
+          return (
+            extraComponent || contextComponent || row.context?.component || null
+          );
+        },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Component" />
         ),
@@ -421,7 +478,20 @@ export default function Logs({
       },
       {
         id: "context_function",
-        accessorFn: (row) => row.context?.function || null,
+        accessorFn: (row) => {
+          // Extract from extra jsonb or legacy context
+          const extra = (row.extra as Record<string, unknown>) || {};
+          const context = (extra["context"] as Record<string, unknown>) || {};
+          const extraFunction =
+            typeof extra["function"] === "string" ? extra["function"] : null;
+          const contextFunction =
+            typeof context["function"] === "string"
+              ? context["function"]
+              : null;
+          return (
+            extraFunction || contextFunction || row.context?.function || null
+          );
+        },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Function" />
         ),
@@ -438,7 +508,20 @@ export default function Logs({
       },
       {
         id: "context_provider",
-        accessorFn: (row) => row.context?.provider || null,
+        accessorFn: (row) => {
+          // Extract from extra jsonb or legacy context
+          const extra = (row.extra as Record<string, unknown>) || {};
+          const context = (extra["context"] as Record<string, unknown>) || {};
+          const extraProvider =
+            typeof extra["provider"] === "string" ? extra["provider"] : null;
+          const contextProvider =
+            typeof context["provider"] === "string"
+              ? context["provider"]
+              : null;
+          return (
+            extraProvider || contextProvider || row.context?.provider || null
+          );
+        },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Provider" />
         ),
@@ -460,7 +543,16 @@ export default function Logs({
       },
       {
         id: "context_model",
-        accessorFn: (row) => row.context?.model || null,
+        accessorFn: (row) => {
+          // Extract from extra jsonb or legacy context
+          const extra = (row.extra as Record<string, unknown>) || {};
+          const context = (extra["context"] as Record<string, unknown>) || {};
+          const extraModel =
+            typeof extra["model"] === "string" ? extra["model"] : null;
+          const contextModel =
+            typeof context["model"] === "string" ? context["model"] : null;
+          return extraModel || contextModel || row.context?.model || null;
+        },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Model" />
         ),
@@ -481,29 +573,14 @@ export default function Logs({
         enableSorting: true,
       },
       {
-        accessorKey: "correlation_id",
+        id: "extra",
+        accessorKey: "extra",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Correlation" />
+          <DataTableColumnHeader column={column} title="Extra" />
         ),
         cell: ({ row }) => {
-          const corr = (row.getValue("correlation_id") as string | null) ?? "";
-          return (
-            <span className="font-mono text-xs truncate inline-block max-w-[160px]">
-              {corr}
-            </span>
-          );
-        },
-        enableSorting: true,
-      },
-      {
-        id: "context",
-        accessorKey: "context",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Context" />
-        ),
-        cell: ({ row }) => {
-          const context = row.getValue("context");
-          return context ? (
+          const extra = row.getValue("extra");
+          return extra ? (
             <Button
               variant="ghost"
               size="sm"
@@ -520,7 +597,7 @@ export default function Logs({
         enableSorting: false,
       },
     ],
-    [handleViewLog],
+    [handleViewLog]
   );
 
   // Create table instance
@@ -550,11 +627,12 @@ export default function Logs({
       },
       columnVisibility: {
         log_id: false,
-        correlation_id: false,
+        event: false,
         context_provider: false,
         context_model: false,
         context_function: false,
         created_time: false,
+        extra: false,
       } as VisibilityState,
     },
   });
@@ -580,7 +658,7 @@ export default function Logs({
   ]);
 
   // Get column references for toolbar
-  const eventColumn = table.getColumn("event");
+  const loggerNameColumn = table.getColumn("logger_name");
   const levelColumn = table.getColumn("level");
   const actorColumn = table.getColumn("actor_name");
   const componentColumn = table.getColumn("context_component");
@@ -599,10 +677,10 @@ export default function Logs({
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="w-full md:w-auto mb-2 md:mb-0">
               <Input
-                placeholder="Search by event..."
-                value={(eventColumn?.getFilterValue() as string) ?? ""}
+                placeholder="Search by logger..."
+                value={(loggerNameColumn?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
-                  eventColumn?.setFilterValue(event.target.value)
+                  loggerNameColumn?.setFilterValue(event.target.value)
                 }
                 className="h-8 w-full md:w-[150px] lg:w-[250px]"
               />
@@ -618,12 +696,12 @@ export default function Logs({
                 />
               )}
 
-              {/* Event Filter */}
-              {eventColumn && eventOptions.length > 0 && (
+              {/* Logger Name Filter */}
+              {loggerNameColumn && loggerNameOptions.length > 0 && (
                 <DataTableFacetedFilter
-                  column={eventColumn}
-                  title="Event"
-                  options={eventOptions}
+                  column={loggerNameColumn}
+                  title="Logger"
+                  options={loggerNameOptions}
                 />
               )}
 
@@ -757,7 +835,7 @@ export default function Logs({
                         : typeof header.column.columnDef.header === "string"
                           ? header.column.columnDef.header
                           : header.column.columnDef.header?.(
-                              header.getContext(),
+                              header.getContext()
                             )}
                     </th>
                   ))}
@@ -818,35 +896,74 @@ export default function Logs({
                 {/* Render a compact overview */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Event:</span>{" "}
-                    {selectedLog.event}
+                    <span className="text-muted-foreground">Logger:</span>{" "}
+                    <span className="font-mono text-xs">
+                      {selectedLog.logger_name || selectedLog.event}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Level:</span>{" "}
-                    {selectedLog.level}
+                    <Badge variant={getLogLevelVariant(selectedLog.level)}>
+                      {selectedLog.level.toUpperCase()}
+                    </Badge>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Created:</span>{" "}
                     {selectedLog.created_at ?? ""}
                   </div>
+                  <div>
+                    <span className="text-muted-foreground">Profile ID:</span>{" "}
+                    <span className="font-mono text-xs">
+                      {selectedLog.profile_id || "N/A"}
+                    </span>
+                  </div>
+                  {selectedLog.actor_name && (
+                    <div>
+                      <span className="text-muted-foreground">Actor:</span>{" "}
+                      {selectedLog.actor_name}
+                    </div>
+                  )}
                   {selectedLog.correlation_id && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">
                         Correlation:
                       </span>{" "}
-                      <span className="font-mono">
+                      <span className="font-mono text-xs">
                         {selectedLog.correlation_id}
                       </span>
                     </div>
                   )}
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Message:</span>{" "}
+                    <div className="mt-1 p-2 bg-muted rounded text-xs">
+                      {selectedLog.message}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Full JSON */}
-                <div className="bg-muted p-4 rounded-lg">
-                  <pre className="whitespace-pre-wrap text-xs font-mono">
-                    {JSON.stringify(selectedLog, null, 2)}
-                  </pre>
-                </div>
+                {/* Extra JSONB data */}
+                {selectedLog.extra && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Extra Data:</div>
+                    <div className="bg-muted p-4 rounded-lg">
+                      <pre className="whitespace-pre-wrap text-xs font-mono">
+                        {JSON.stringify(selectedLog.extra, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {/* Full JSON (for debugging) */}
+                <details className="mt-4">
+                  <summary className="text-sm font-medium cursor-pointer">
+                    Full JSON (Debug)
+                  </summary>
+                  <div className="bg-muted p-4 rounded-lg mt-2">
+                    <pre className="whitespace-pre-wrap text-xs font-mono">
+                      {JSON.stringify(selectedLog, null, 2)}
+                    </pre>
+                  </div>
+                </details>
               </div>
             )}
           </div>

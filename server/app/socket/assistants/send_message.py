@@ -1,7 +1,6 @@
 """Handler for send_assistant_message WebSocket event."""
 
 import json
-import logging
 import os
 import uuid
 import warnings
@@ -25,6 +24,7 @@ from pydantic import BaseModel, ValidationError
 from app.main import get_pool, sio
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.debug_info import DebugContext
+from app.utils.logging.db_logger import get_logger
 from app.utils.sql_helper import load_sql
 
 load_dotenv()
@@ -33,7 +33,7 @@ load_dotenv()
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for server-to-client events
