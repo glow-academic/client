@@ -15,7 +15,7 @@ import zipfile
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from app.main import UPLOAD_FOLDER, get_db
+from app.main import TUS_UPLOADS_DIR, UPLOAD_FOLDER, get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
@@ -24,9 +24,6 @@ from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
-
-# Directory for storing tus uploads in progress
-TUS_UPLOADS_DIR = os.path.join(UPLOAD_FOLDER, "tus_uploads")
 
 
 # Inline request/response schemas
@@ -81,13 +78,13 @@ async def upload_finalize(
 
         # Find the upload directory
         upload_dir = None
-        for dir_name in os.listdir(TUS_UPLOADS_DIR):
-            metadata_path = os.path.join(TUS_UPLOADS_DIR, dir_name, "metadata.json")
-            if os.path.exists(metadata_path):
+        for dir_name in os.listdir(str(TUS_UPLOADS_DIR)):
+            metadata_path = TUS_UPLOADS_DIR / dir_name / "metadata.json"
+            if metadata_path.exists():
                 with open(metadata_path) as f:
                     metadata = json.load(f)
                     if metadata.get("fileId") == request.fileId:
-                        upload_dir = os.path.join(TUS_UPLOADS_DIR, dir_name)
+                        upload_dir = TUS_UPLOADS_DIR / dir_name
                         break
 
         if not upload_dir:
@@ -98,10 +95,10 @@ async def upload_finalize(
             )
 
         # Get the uploaded file path
-        file_path = os.path.join(upload_dir, "file")
+        file_path = upload_dir / "file"
 
         # Check if file exists and has content
-        if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        if not file_path.exists() or file_path.stat().st_size == 0:
             return UploadFinalizeResponse(
                 success=False,
                 message="Upload file is missing or empty",
@@ -115,12 +112,12 @@ async def upload_finalize(
             logger.info(f"Processing CSV upload: fileId={request.fileId}")
 
             # Parse the CSV file
-            parse_result = parse_csv_file(file_path)
+            parse_result = parse_csv_file(str(file_path))
 
             if not parse_result["success"]:
                 # Clean up upload directory
                 try:
-                    shutil.rmtree(upload_dir)
+                    shutil.rmtree(str(upload_dir))
                 except Exception as e:
                     logger.warning(f"Failed to clean up upload directory: {str(e)}")
 
@@ -181,7 +178,7 @@ async def upload_finalize(
 
                 # Clean up upload directory
                 try:
-                    shutil.rmtree(upload_dir)
+                    shutil.rmtree(str(upload_dir))
                 except Exception as e:
                     logger.warning(f"Failed to clean up upload directory: {str(e)}")
 
@@ -217,7 +214,7 @@ async def upload_finalize(
 
                 # Clean up upload directory
                 try:
-                    shutil.rmtree(upload_dir)
+                    shutil.rmtree(str(upload_dir))
                 except Exception as cleanup_error:
                     logger.warning(
                         f"Failed to clean up upload directory: {str(cleanup_error)}"
@@ -234,10 +231,10 @@ async def upload_finalize(
         if request.zip:
             extracted_documents = []
 
-            with zipfile.ZipFile(file_path, "r") as zip_ref:
-                extract_dir = os.path.join(TUS_UPLOADS_DIR, f"extract_{request.fileId}")
-                os.makedirs(extract_dir, exist_ok=True)
-                zip_ref.extractall(extract_dir)
+            with zipfile.ZipFile(str(file_path), "r") as zip_ref:
+                extract_dir = TUS_UPLOADS_DIR / f"extract_{request.fileId}"
+                extract_dir.mkdir(parents=True, exist_ok=True)
+                zip_ref.extractall(str(extract_dir))
 
                 for root, _dirs, files in os.walk(extract_dir):
                     for filename in files:
@@ -251,8 +248,8 @@ async def upload_finalize(
                             ext = ".bin"
 
                         final_file_path = f"{document_id}{ext}"
-                        final_full_path = os.path.join(UPLOAD_FOLDER, final_file_path)
-                        shutil.copy2(extracted_file_path, final_full_path)
+                        final_full_path = UPLOAD_FOLDER / final_file_path
+                        shutil.copy2(extracted_file_path, str(final_full_path))
 
                         content_type = get_content_type(filename)
 
@@ -283,8 +280,8 @@ async def upload_finalize(
 
                 # Clean up
                 try:
-                    shutil.rmtree(extract_dir)
-                    shutil.rmtree(upload_dir)
+                    shutil.rmtree(str(extract_dir))
+                    shutil.rmtree(str(upload_dir))
                 except Exception as e:
                     logger.warning(f"Failed to clean up directories: {str(e)}")
 
@@ -304,7 +301,7 @@ async def upload_finalize(
         # Handle regular document upload
         document_id = uuid.uuid4()
 
-        metadata_path = os.path.join(upload_dir, "metadata.json")
+        metadata_path = upload_dir / "metadata.json"
         with open(metadata_path) as f:
             metadata = json.load(f)
 
@@ -314,8 +311,8 @@ async def upload_finalize(
             ext = ".bin"
 
         final_file_path = f"{document_id}{ext}"
-        final_full_path = os.path.join(UPLOAD_FOLDER, final_file_path)
-        shutil.copy2(file_path, final_full_path)
+        final_full_path = UPLOAD_FOLDER / final_file_path
+        shutil.copy2(str(file_path), str(final_full_path))
 
         content_type = metadata.get("filetype") or get_content_type(filename)
 
@@ -340,7 +337,7 @@ async def upload_finalize(
 
         # Clean up
         try:
-            shutil.rmtree(upload_dir)
+            shutil.rmtree(str(upload_dir))
         except Exception as e:
             logger.warning(f"Failed to clean up upload directory: {str(e)}")
 

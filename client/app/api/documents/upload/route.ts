@@ -5,7 +5,7 @@ export async function OPTIONS(request: NextRequest) {
   // Proxy TUS OPTIONS request to backend
   try {
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v3/documents/upload`,
+      `${INTERNAL_HTTP_BASE}/upload`,
       {
         method: "OPTIONS",
         headers: {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         : null;
 
     const response = await fetch(
-      `${INTERNAL_HTTP_BASE}/api/v3/documents/upload`,
+      `${INTERNAL_HTTP_BASE}/upload`,
       {
         method: "POST",
         headers: tusHeaders,
@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
     const headers = new Headers();
     response.headers.forEach((value, key) => {
       if (key.toLowerCase() === "location") {
-        // Rewrite v3 location to BFF location
-        // Handle both with and without app prefix: /api/v3/... or /prefix/api/v3/...
+        // Rewrite backend location to BFF location
+        // Handle both with and without app prefix: /upload/... or /prefix/upload/...
         const location = value.replace(
-          /\/api\/v3\/documents\/upload\//,
+          /\/upload\//,
           "/api/documents/upload/"
         );
         headers.set(key, location);

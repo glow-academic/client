@@ -1,11 +1,14 @@
 # server/app/main.py
 import asyncio
+import base64
 import contextlib
 import json
 import logging
 import os
 import platform
 import sys
+import time
+import uuid
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -14,11 +17,12 @@ from typing import TYPE_CHECKING, Any
 import asyncpg  # type: ignore
 import socketio  # type: ignore
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
+from starlette.middleware.base import BaseHTTPMiddleware
 
 if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
     from redis.asyncio import Redis as RedisClientType
@@ -49,6 +53,10 @@ UPLOAD_FOLDER = BASE_FOLDER / "uploads"
 UPLOAD_FOLDER.mkdir(
     parents=True, exist_ok=True
 )  # saving each document as uploads/document_id.ext
+
+# Directory for storing tus uploads in progress
+TUS_UPLOADS_DIR = UPLOAD_FOLDER / "tus_uploads"
+TUS_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # MCP server instance for tool registration
 server = FastMCP("Domain-API", stateless_http=True)
@@ -940,8 +948,109 @@ fastapi_app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add database logging middleware (after CORS)
-from app.middleware.db_logging import DBLoggingMiddleware  # noqa: E402
+# Database logging middleware (after CORS)
+# Inlined from middleware/db_logging.py to follow DHH principles - minimal abstractions
+class DBLoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware that automatically logs all requests/responses to database."""
+
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
+        """Process request and log to database."""
+        from app.utils.logging.db_logger import (get_logger,
+                                                 resolve_profile_id,
+                                                 set_profile_id)
+        from app.utils.metrics.collector import record_error, record_request
+
+        logger = get_logger(__name__)
+        start_time = time.perf_counter()
+        
+        # Extract profile_id from request
+        profile_id: str | None = None
+        
+        # Try to get from request body if JSON
+        if request.method in ("POST", "PUT", "PATCH"):
+            try:
+                body = await request.body()
+                if body:
+                    body_json = json.loads(body)
+                    # Common patterns: profileId, profile_id, actualProfileId, effectiveProfileId
+                    profile_id = (
+                        body_json.get("profileId")
+                        or body_json.get("profile_id")
+                        or body_json.get("actualProfileId")
+                        or body_json.get("effectiveProfileId")
+                    )
+            except (json.JSONDecodeError, KeyError, AttributeError):
+                pass
+        
+        # Try to get from headers
+        if not profile_id:
+            profile_id = request.headers.get("X-Profile-Id")
+        
+        # Resolve guest profile if needed
+        if profile_id:
+            try:
+                resolved_id = await resolve_profile_id(profile_id)
+                set_profile_id(resolved_id)
+            except Exception as e:
+                logger.warning(f"Error resolving profile_id: {e}")
+                set_profile_id(None)
+        else:
+            # If no profile_id found, resolve to guest profile
+            try:
+                resolved_id = await resolve_profile_id("guest-profile-id")
+                set_profile_id(resolved_id)
+            except Exception:
+                set_profile_id(None)
+        
+        # Process request
+        status_code = 500
+        error_msg: str | None = None
+        try:
+            response: Response = await call_next(request)
+            status_code = response.status_code
+            return response
+        except Exception as exc:
+            status_code = 500
+            error_msg = str(exc)
+            raise
+        finally:
+            # Calculate duration
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            
+            # Record metrics (async, fire and forget)
+            try:
+                import asyncio
+                if status_code >= 500:
+                    asyncio.create_task(record_error())
+                asyncio.create_task(record_request(duration_ms))
+            except Exception:
+                pass  # Don't break request if metrics fail
+            
+            # Log to database (fire and forget - don't block response)
+            try:
+                extra_data: dict[str, Any] = {
+                    "method": request.method,
+                    "path": str(request.url.path),
+                    "status_code": status_code,
+                    "duration_ms": round(duration_ms, 2),
+                    "client": request.client.host if request.client else None,
+                }
+                if error_msg:
+                    extra_data["error"] = error_msg
+                
+                # Use logger with extra data
+                import logging
+                log_level = logging.INFO if status_code < 500 else logging.ERROR
+                log_message = f"{request.method} {request.url.path} -> {status_code} ({duration_ms:.2f}ms)"
+                
+                # Log directly with extra data
+                logger.log(log_level, log_message, extra={"extra_data": extra_data})
+            except Exception:
+                # Never break the request because logging failed
+                pass
+            finally:
+                # Clear profile_id from context
+                set_profile_id(None)
 
 fastapi_app.add_middleware(DBLoggingMiddleware)
 
@@ -985,6 +1094,217 @@ async def health_check() -> JSONResponse:
     Simple health check endpoint.
     """
     return JSONResponse(content={"status": "ok"})
+
+
+# ============================================================================
+# TUS Protocol Upload Endpoints
+# ============================================================================
+# Generic file upload endpoints using TUS protocol (resumable uploads)
+# These endpoints are database-agnostic and operate purely on the filesystem
+
+
+@fastapi_app.options("/upload")
+async def tus_options(request: Request) -> Response:
+    """Handle OPTIONS request for tus protocol discovery."""
+    return Response(
+        headers={
+            "Tus-Resumable": "1.0.0",
+            "Tus-Version": "1.0.0",
+            "Tus-Extension": "creation,termination,creation-with-upload",
+            "Tus-Max-Size": "1073741824",  # 1GB max file size
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, HEAD, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Tus-Resumable, Upload-Length, Upload-Metadata, Upload-Offset, Content-Type",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
+
+
+@fastapi_app.post("/upload")
+async def tus_creation(request: Request) -> Response:
+    """Handle POST request for tus protocol - create upload."""
+    # Check tus version
+    if request.headers.get("Tus-Resumable") != "1.0.0":
+        return Response(status_code=412, headers={"Tus-Version": "1.0.0"})
+
+    # Get upload length
+    upload_length = request.headers.get("Upload-Length")
+    if not upload_length:
+        return Response(status_code=400, content="Missing Upload-Length header")
+
+    # Parse metadata
+    metadata = {}
+    if "Upload-Metadata" in request.headers:
+        for kv in request.headers["Upload-Metadata"].split(","):
+            if " " in kv:
+                k, v = kv.strip().split(" ", 1)
+                metadata[k] = base64.b64decode(v).decode("utf-8")
+
+    # Get app prefix from environment
+    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
+
+    # Create upload directory and files
+    upload_id = str(uuid.uuid4())
+    upload_dir = TUS_UPLOADS_DIR / upload_id
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save metadata
+    with open(upload_dir / "metadata.json", "w") as f:
+        json.dump(metadata, f)
+
+    # Create empty file
+    with open(upload_dir / "file", "wb") as f:
+        pass
+
+    # Save upload info
+    with open(upload_dir / "info", "w") as f:
+        f.write(f"length:{upload_length}\noffset:0")
+
+    # Generate location path
+    if app_prefix:
+        location = f"/{app_prefix}/upload/{upload_id}"
+    else:
+        location = f"/upload/{upload_id}"
+
+    # Handle creation-with-upload if Content-Length > 0
+    if request.headers.get("Content-Length", "0") != "0":
+        chunk = await request.body()
+
+        # Read current info
+        info = {}
+        with open(upload_dir / "info") as f:
+            for line in f:
+                k, v = line.strip().split(":", 1)
+                info[k] = v
+
+        # Append chunk to file
+        with open(upload_dir / "file", "ab") as f:
+            f.write(chunk)
+
+        # Update offset
+        new_offset = int(info.get("offset", "0")) + len(chunk)
+        with open(upload_dir / "info", "w") as f:
+            f.write(f"length:{info.get('length', '0')}\noffset:{new_offset}")
+
+        return Response(
+            status_code=201,
+            headers={
+                "Location": location,
+                "Tus-Resumable": "1.0.0",
+                "Upload-Offset": str(new_offset),
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+            },
+        )
+
+    return Response(
+        status_code=201,
+        headers={
+            "Location": location,
+            "Tus-Resumable": "1.0.0",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+        },
+    )
+
+
+@fastapi_app.head("/upload/{upload_id}")
+async def tus_head(upload_id: str, request: Request) -> Response:
+    """Handle HEAD request for tus protocol - get upload info."""
+    upload_dir = TUS_UPLOADS_DIR / upload_id
+
+    if not upload_dir.exists():
+        return Response(status_code=404)
+
+    # Read info file
+    info = {}
+    with open(upload_dir / "info") as f:
+        for line in f:
+            k, v = line.strip().split(":", 1)
+            info[k] = v
+
+    headers = {
+        "Tus-Resumable": "1.0.0",
+        "Upload-Offset": info.get("offset", "0"),
+        "Upload-Length": info.get("length", "0"),
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+    }
+
+    return Response(headers=headers)
+
+
+@fastapi_app.patch("/upload/{upload_id}")
+async def tus_patch(upload_id: str, request: Request) -> Response:
+    """Handle PATCH request for tus protocol - upload chunk."""
+    # Check tus version
+    if request.headers.get("Tus-Resumable") != "1.0.0":
+        return Response(status_code=412, headers={"Tus-Version": "1.0.0"})
+
+    # Check content type
+    if request.headers.get("Content-Type") != "application/offset+octet-stream":
+        return Response(status_code=415)
+
+    # Get expected offset
+    expected_offset = request.headers.get("Upload-Offset")
+    if not expected_offset:
+        return Response(status_code=400, content="Missing Upload-Offset header")
+
+    # Read chunk
+    chunk = await request.body()
+
+    upload_dir = TUS_UPLOADS_DIR / upload_id
+
+    if not upload_dir.exists():
+        return Response(status_code=404)
+
+    # Read info file
+    info = {}
+    with open(upload_dir / "info") as f:
+        for line in f:
+            k, v = line.strip().split(":", 1)
+            info[k] = v
+
+    # Check offset
+    if expected_offset != info.get("offset"):
+        return Response(status_code=409)
+
+    # Append to file
+    with open(upload_dir / "file", "ab") as f:
+        f.write(chunk)
+
+    # Update offset
+    new_offset = int(info.get("offset", "0")) + len(chunk)
+    with open(upload_dir / "info", "w") as f:
+        f.write(f"length:{info.get('length', '0')}\noffset:{new_offset}")
+
+    return Response(
+        headers={
+            "Tus-Resumable": "1.0.0",
+            "Upload-Offset": str(new_offset),
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+        }
+    )
+
+
+@fastapi_app.options("/upload/{upload_id}")
+async def tus_options_upload_id(upload_id: str, request: Request) -> Response:
+    """Handle OPTIONS request for specific upload."""
+    return Response(
+        headers={
+            "Tus-Resumable": "1.0.0",
+            "Tus-Version": "1.0.0",
+            "Tus-Extension": "creation,termination,creation-with-upload",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "HEAD, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Tus-Resumable, Upload-Length, Upload-Metadata, Upload-Offset, Content-Type",
+            "Access-Control-Expose-Headers": "Tus-Resumable, Upload-Offset, Upload-Length, Location",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
 
 
 if __name__ == "__main__":

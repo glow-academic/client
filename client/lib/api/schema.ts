@@ -2127,58 +2127,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/documents/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tus Creation
-         * @description Handle POST request for tus protocol - create upload.
-         */
-        post: operations["tus_creation_api_v3_documents_upload_post"];
-        delete?: never;
-        /**
-         * Tus Options
-         * @description Handle OPTIONS request for tus protocol discovery.
-         */
-        options: operations["tus_options_api_v3_documents_upload_options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/documents/upload/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Options Upload Id
-         * @description Handle OPTIONS request for specific upload.
-         */
-        options: operations["tus_options_upload_id_api_v3_documents_upload__upload_id__options"];
-        /**
-         * Tus Head
-         * @description Handle HEAD request for tus protocol - get upload info.
-         */
-        head: operations["tus_head_api_v3_documents_upload__upload_id__head"];
-        /**
-         * Tus Patch
-         * @description Handle PATCH request for tus protocol - upload chunk.
-         */
-        patch: operations["tus_patch_api_v3_documents_upload__upload_id__patch"];
-        trace?: never;
-    };
     "/api/v3/documents/upload/finalize": {
         parameters: {
             query?: never;
@@ -3838,6 +3786,58 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tus Creation
+         * @description Handle POST request for tus protocol - create upload.
+         */
+        post: operations["tus_creation_upload_post"];
+        delete?: never;
+        /**
+         * Tus Options
+         * @description Handle OPTIONS request for tus protocol discovery.
+         */
+        options: operations["tus_options_upload_options"];
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/upload/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        /**
+         * Tus Options Upload Id
+         * @description Handle OPTIONS request for specific upload.
+         */
+        options: operations["tus_options_upload_id_upload__upload_id__options"];
+        /**
+         * Tus Head
+         * @description Handle HEAD request for tus protocol - get upload info.
+         */
+        head: operations["tus_head_upload__upload_id__head"];
+        /**
+         * Tus Patch
+         * @description Handle PATCH request for tus protocol - upload chunk.
+         */
+        patch: operations["tus_patch_upload__upload_id__patch"];
         trace?: never;
     };
 }
@@ -15767,139 +15767,6 @@ export interface operations {
             };
         };
     };
-    tus_creation_api_v3_documents_upload_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_options_api_v3_documents_upload_options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_options_upload_id_api_v3_documents_upload__upload_id__options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_head_api_v3_documents_upload__upload_id__head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_patch_api_v3_documents_upload__upload_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     upload_finalize_api_v3_documents_upload_finalize_post: {
         parameters: {
             query?: never;
@@ -18484,6 +18351,139 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_creation_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_options_upload_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_options_upload_id_upload__upload_id__options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_head_upload__upload_id__head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_patch_upload__upload_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

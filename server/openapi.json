@@ -4454,188 +4454,6 @@
         ]
       }
     },
-    "/api/v3/documents/upload": {
-      "post": {
-        "tags": [
-          "v3",
-          "documents"
-        ],
-        "summary": "Tus Creation",
-        "description": "Handle POST request for tus protocol - create upload.",
-        "operationId": "tus_creation_api_v3_documents_upload_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
-      },
-      "options": {
-        "tags": [
-          "v3",
-          "documents"
-        ],
-        "summary": "Tus Options",
-        "description": "Handle OPTIONS request for tus protocol discovery.",
-        "operationId": "tus_options_api_v3_documents_upload_options",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
-      }
-    },
-    "/api/v3/documents/upload/{upload_id}": {
-      "head": {
-        "tags": [
-          "v3",
-          "documents"
-        ],
-        "summary": "Tus Head",
-        "description": "Handle HEAD request for tus protocol - get upload info.",
-        "operationId": "tus_head_api_v3_documents_upload__upload_id__head",
-        "parameters": [
-          {
-            "name": "upload_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Upload Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
-      },
-      "patch": {
-        "tags": [
-          "v3",
-          "documents"
-        ],
-        "summary": "Tus Patch",
-        "description": "Handle PATCH request for tus protocol - upload chunk.",
-        "operationId": "tus_patch_api_v3_documents_upload__upload_id__patch",
-        "parameters": [
-          {
-            "name": "upload_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Upload Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
-      },
-      "options": {
-        "tags": [
-          "v3",
-          "documents"
-        ],
-        "summary": "Tus Options Upload Id",
-        "description": "Handle OPTIONS request for specific upload.",
-        "operationId": "tus_options_upload_id_api_v3_documents_upload__upload_id__options",
-        "parameters": [
-          {
-            "name": "upload_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Upload Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "documents"
-        ]
-      }
-    },
     "/api/v3/documents/upload/finalize": {
       "post": {
         "tags": [
@@ -8297,6 +8115,148 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload": {
+      "post": {
+        "summary": "Tus Creation",
+        "description": "Handle POST request for tus protocol - create upload.",
+        "operationId": "tus_creation_upload_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "summary": "Tus Options",
+        "description": "Handle OPTIONS request for tus protocol discovery.",
+        "operationId": "tus_options_upload_options",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/{upload_id}": {
+      "head": {
+        "summary": "Tus Head",
+        "description": "Handle HEAD request for tus protocol - get upload info.",
+        "operationId": "tus_head_upload__upload_id__head",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Tus Patch",
+        "description": "Handle PATCH request for tus protocol - upload chunk.",
+        "operationId": "tus_patch_upload__upload_id__patch",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "summary": "Tus Options Upload Id",
+        "description": "Handle OPTIONS request for specific upload.",
+        "operationId": "tus_options_upload_id_upload__upload_id__options",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }

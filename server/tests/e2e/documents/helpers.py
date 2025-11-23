@@ -195,26 +195,47 @@ def create_document_api(
         # In real E2E, you'd upload an actual file
         file_path = f"test_{file_id}.pdf"
 
-    # Initialize upload
-    init_response = _post_json(
-        request,
-        "/api/v3/documents/upload/init",
-        {
-            "filename": name,
-            "contentType": mime_type,
-            "uploadLength": 100,  # Minimal size for test
-        },
+    # Create upload using TUS protocol
+    import base64
+
+    metadata = {
+        "filename": name,
+        "filetype": mime_type,
+        "fileId": file_id,
+    }
+    metadata_str = ",".join(
+        f"{k} {base64.b64encode(v.encode()).decode()}" for k, v in metadata.items()
+    )
+
+    # Use TUS POST to create upload
+    headers = _build_test_headers(
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,
         bypass_cache=False,
     )
+    headers.update(
+        {
+            "Tus-Resumable": "1.0.0",
+            "Upload-Length": "100",  # Minimal size for test
+            "Upload-Metadata": metadata_str,
+        }
+    )
 
-    upload_id = init_response.get("uploadId")
+    init_response = request.post(
+        f"{API_BASE}/upload",
+        headers=headers,
+    )
+
+    if init_response.status != 201:
+        raise ValueError(f"TUS upload creation failed: {init_response.status}")
+
+    location = init_response.headers.get("location", "")
+    upload_id = location.split("/")[-1] if location else None
     if not upload_id:
-        raise ValueError("Upload init response missing uploadId")
+        raise ValueError("TUS upload response missing Location header")
 
     # Note: In a real implementation, you would upload the file content here
-    # using the TUS protocol. For E2E tests, we'll try to finalize with
+    # using TUS PATCH requests. For E2E tests, we'll try to finalize with
     # the test flag, but this may require the file to actually exist.
     # For now, this is a placeholder that structures the API calls correctly.
 
