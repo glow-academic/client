@@ -3,6 +3,7 @@
 
 history/*.sql
 .venv/
+keycloak-data/
 
 # Server cache and coverage files
 server/.mypy_cache/
