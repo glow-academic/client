@@ -1,4 +1,5 @@
 # server/app/main.py
+import asyncio
 import contextlib
 import json
 import logging
@@ -396,6 +397,47 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         # Initialize asyncpg database pool
         await init_db_pool()
 
+        # Initialize database logger
+        from app.utils.logging.db_logger import setup_db_logger  # noqa: E402
+
+        pool = get_pool()
+        if pool:
+            setup_db_logger(pool)
+            logger.info("Database logger initialized")
+
+        # Initialize metrics collector
+        from app.utils.metrics.collector import (  # noqa: E402
+            initialize_metrics, snapshot_metrics)
+
+        if pool:
+            await initialize_metrics(pool, redis_client)
+            logger.info("Metrics collector initialized")
+
+            # Start periodic metrics snapshot task (every 60 seconds)
+            async def metrics_task() -> None:
+                """Periodic task to snapshot metrics."""
+                while True:
+                    try:
+                        await asyncio.sleep(60)  # Wait 60 seconds
+                        await snapshot_metrics()
+                    except asyncio.CancelledError:
+                        break
+                    except Exception as e:
+                        logger.error(f"Error in metrics task: {e}")
+
+            metrics_task_handle = asyncio.create_task(metrics_task())
+            
+            # Register cleanup callback
+            async def cleanup_metrics_task() -> None:
+                metrics_task_handle.cancel()
+                try:
+                    await metrics_task_handle
+                except asyncio.CancelledError:
+                    pass
+            
+            stack.push_async_callback(cleanup_metrics_task)
+            logger.info("Metrics snapshot task started (60s interval)")
+
         await stack.enter_async_context(server.session_manager.run())
 
         # Generate OpenAPI schema and write to disk
@@ -543,6 +585,11 @@ fastapi_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add database logging middleware (after CORS)
+from app.middleware.db_logging import DBLoggingMiddleware  # noqa: E402
+
+fastapi_app.add_middleware(DBLoggingMiddleware)
 
 # Include routers
 

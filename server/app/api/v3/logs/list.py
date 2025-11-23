@@ -1,18 +1,16 @@
 """Logs list endpoint."""
 
-from collections.abc import Mapping
-from typing import Annotated, Any, TypeVar, cast
+from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -20,51 +18,15 @@ class LogsListRequest(BaseModel):
     profileId: str
 
 
-# Inline schemas
-class ActorData(BaseModel):
-    """Actor JSONB data."""
-
-    userId: str | None = None
-    profileId: str | None = None
-    profileName: str | None = None
-
-
-class SubjectData(BaseModel):
-    """Subject JSONB data."""
-
-    entityId: str | None = None
-    entityType: str | None = None
-
-
-class ContextData(BaseModel):
-    """Context JSONB data."""
-
-    route: str | None = None
-    function: str | None = None
-    component: str | None = None
-    provider: str | None = None
-    model: str | None = None
-
-
-class ErrorData(BaseModel):
-    """Error JSONB data."""
-
-    code: str | None = None
-    name: str | None = None
-    stack: str | None = None
-    message: str | None = None
-
-
 class LogItem(BaseModel):
+    """Log item with new simplified structure."""
+
     log_id: str
-    event: str
     level: str
+    logger_name: str
     message: str
-    correlation_id: str | None
-    actor: ActorData
-    subject: SubjectData
-    context: ContextData
-    error: ErrorData
+    profile_id: str
+    extra: dict[str, Any] | None
     created_at: str
     actor_name: str
 
@@ -74,25 +36,6 @@ class LogsListResponse(BaseModel):
 
 
 router = APIRouter()
-
-
-TJSONModel = TypeVar(
-    "TJSONModel",
-    ActorData,
-    SubjectData,
-    ContextData,
-    ErrorData,
-)
-
-
-def _parse_jsonb_to_model(
-    data: Mapping[str, object] | None,
-    model_class: type[TJSONModel],
-) -> TJSONModel:
-    """Parse JSONB data to Pydantic model."""
-    if isinstance(data, dict):
-        return model_class(**data)
-    return model_class()
 
 
 @router.post("/list", response_model=LogsListResponse)
@@ -126,17 +69,23 @@ async def list_logs(
 
         log_items: list[LogItem] = []
         for row in rows:
+            # Parse extra JSONB if present
+            extra = row.get("extra")
+            if isinstance(extra, str):
+                import json
+                try:
+                    extra = json.loads(extra)
+                except Exception:
+                    extra = None
+            
             log_items.append(
                 LogItem(
                     log_id=row["log_id"],
-                    event=row["event"],
                     level=row["level"],
+                    logger_name=row["logger_name"],
                     message=row["message"],
-                    correlation_id=row["correlation_id"],
-                    actor=_parse_jsonb_to_model(row["actor"], ActorData),
-                    subject=_parse_jsonb_to_model(row["subject"], SubjectData),
-                    context=_parse_jsonb_to_model(row["context"], ContextData),
-                    error=_parse_jsonb_to_model(row["error"], ErrorData),
+                    profile_id=row["profile_id"],
+                    extra=extra if isinstance(extra, dict) else None,
                     created_at=row["created_at"].isoformat()
                     if row["created_at"]
                     else "",

@@ -1,18 +1,32 @@
 CREATE TYPE feedback_type AS ENUM ('feature', 'bug', 'question', 'other');
 
+-- Application logs table (Chris Date: No Nulls, BCNF)
+-- Simplified structure with direct profile_id reference
 CREATE TABLE app_logs (
-  id               SERIAL PRIMARY KEY,
-  event            TEXT NOT NULL DEFAULT 'default.event',         -- e.g., "simulation.start", "mutation.update.failed"
-  level            TEXT NOT NULL DEFAULT 'info',                  -- "debug" | "info" | "warn" | "error"
-  message          TEXT NOT NULL DEFAULT 'Default Message',       -- human-readable message (NOT NULL)
-  correlation_id   TEXT NOT NULL DEFAULT 'default.correlation',   -- request/session/flow correlation (NOT NULL)
-  actor            JSONB NOT NULL DEFAULT '{"userId":null,"profileId":null}'::jsonb,        -- { userId?, profileId? } (NOT NULL)
-  subject          JSONB NOT NULL DEFAULT '{"entityType":null,"entityId":null}'::jsonb,     -- { entityType?, entityId? } (NOT NULL)
-  context          JSONB NOT NULL DEFAULT '{"route":null,"component":null,"function":null}'::jsonb, -- { route?, component?, function?, ... } (NOT NULL)
-  error            JSONB NOT NULL DEFAULT '{"name":null,"message":null,"stack":null,"code":null}'::jsonb, -- { name?, message?, stack?, code? } (NOT NULL)
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
-  -- metrics column removed (was 100% NULL, never used)
+  id          bigserial PRIMARY KEY,
+  ts          timestamptz NOT NULL DEFAULT now(),
+  level       text NOT NULL,                    -- 'debug' | 'info' | 'warn' | 'error'
+  logger_name text NOT NULL,                    -- logger/component name (e.g., "app.api.v3.profile.detail")
+  message     text NOT NULL,                    -- log message
+  profile_id  UUID NOT NULL REFERENCES profiles(id),  -- always resolved from "guest-profile-id" to actual UUID
+  extra       jsonb                             -- additional context data (can be NULL)
 );
+
+CREATE INDEX ON app_logs (ts);
+CREATE INDEX ON app_logs (level);
+CREATE INDEX ON app_logs (profile_id);
+
+-- Application metrics table (snapshot-based metrics tracking)
+CREATE TABLE app_metrics (
+  ts              timestamptz PRIMARY KEY,     -- snapshot time rounded to minute
+  requests_total  bigint NOT NULL,             -- cumulative requests so far
+  errors_total    bigint NOT NULL,             -- cumulative errors
+  avg_latency_ms  double precision NOT NULL,  -- average latency in milliseconds
+  cpu_percent     double precision NOT NULL,  -- CPU usage percentage
+  memory_bytes    bigint NOT NULL              -- memory usage in bytes
+);
+
+CREATE INDEX ON app_metrics (ts);
 
 CREATE TABLE app_feedback (
   id           SERIAL PRIMARY KEY,

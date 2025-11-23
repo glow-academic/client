@@ -3824,25 +3824,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ActorData */
-        "ActorData-Input": {
-            /** Userid */
-            userId?: string | null;
-            /** Profileid */
-            profileId?: string | null;
-        };
-        /**
-         * ActorData
-         * @description Actor JSONB data.
-         */
-        "ActorData-Output": {
-            /** Userid */
-            userId?: string | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Profilename */
-            profileName?: string | null;
-        };
         /**
          * AddProfilesToCohortRequest
          * @description Request for adding profiles to cohort.
@@ -4889,36 +4870,6 @@ export interface components {
                 [key: string]: string;
             }[];
         };
-        /** ContextData */
-        "ContextData-Input": {
-            /** Route */
-            route?: string | null;
-            /** Function */
-            function?: string | null;
-            /** Component */
-            component?: string | null;
-        };
-        /**
-         * ContextData
-         * @description Context JSONB data.
-         */
-        "ContextData-Output": {
-            /** Route */
-            route?: string | null;
-            /** Function */
-            function?: string | null;
-            /** Component */
-            component?: string | null;
-            /** Provider */
-            provider?: string | null;
-            /** Model */
-            model?: string | null;
-        };
-        /** CorrelationData */
-        CorrelationData: {
-            /** Correlationid */
-            correlationId?: string | null;
-        };
         /** CreateAgentRequest */
         CreateAgentRequest: {
             /** Name */
@@ -5096,21 +5047,28 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** CreateLogRequest */
+        /**
+         * CreateLogRequest
+         * @description Request to create a log entry.
+         */
         CreateLogRequest: {
-            /** Event */
-            event: string;
             /** Level */
             level: string;
+            /** Logger Name */
+            logger_name: string;
             /** Message */
             message: string;
-            correlation?: components["schemas"]["CorrelationData"] | null;
-            actor?: components["schemas"]["ActorData-Input"] | null;
-            subject?: components["schemas"]["SubjectData-Input"] | null;
-            context?: components["schemas"]["ContextData-Input"] | null;
-            error?: components["schemas"]["ErrorData-Input"] | null;
+            /** Profile Id */
+            profile_id: string;
+            /** Extra */
+            extra?: {
+                [key: string]: unknown;
+            } | null;
         };
-        /** CreateLogResponse */
+        /**
+         * CreateLogResponse
+         * @description Response from creating a log entry.
+         */
         CreateLogResponse: {
             /** Success */
             success: boolean;
@@ -6536,31 +6494,6 @@ export interface components {
             /** Totalpossiblepoints */
             totalPossiblePoints: number;
         };
-        /** ErrorData */
-        "ErrorData-Input": {
-            /** Code */
-            code?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Stack */
-            stack?: string | null;
-            /** Message */
-            message?: string | null;
-        };
-        /**
-         * ErrorData
-         * @description Error JSONB data.
-         */
-        "ErrorData-Output": {
-            /** Code */
-            code?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Stack */
-            stack?: string | null;
-            /** Message */
-            message?: string | null;
-        };
         /**
          * ExportRequest
          * @description Request to export reports data.
@@ -7314,31 +7247,36 @@ export interface components {
             id: number;
             /** Level */
             level: string;
+            /** Logger Name */
+            logger_name: string;
             /** Message */
             message: string;
-            /** Context */
-            context: {
+            /** Extra */
+            extra: {
                 [key: string]: unknown;
             } | null;
             /** Created At */
             created_at: string;
         };
-        /** LogItem */
+        /**
+         * LogItem
+         * @description Log item with new simplified structure.
+         */
         LogItem: {
             /** Log Id */
             log_id: string;
-            /** Event */
-            event: string;
             /** Level */
             level: string;
+            /** Logger Name */
+            logger_name: string;
             /** Message */
             message: string;
-            /** Correlation Id */
-            correlation_id: string | null;
-            actor: components["schemas"]["ActorData-Output"];
-            subject: components["schemas"]["SubjectData-Output"];
-            context: components["schemas"]["ContextData-Output"];
-            error: components["schemas"]["ErrorData-Output"];
+            /** Profile Id */
+            profile_id: string;
+            /** Extra */
+            extra: {
+                [key: string]: unknown;
+            } | null;
             /** Created At */
             created_at: string;
             /** Actor Name */
@@ -10099,23 +10037,6 @@ export interface components {
             attempts: {
                 [key: string]: unknown;
             }[];
-        };
-        /** SubjectData */
-        "SubjectData-Input": {
-            /** Entityid */
-            entityId?: string | null;
-            /** Entitytype */
-            entityType?: string | null;
-        };
-        /**
-         * SubjectData
-         * @description Subject JSONB data.
-         */
-        "SubjectData-Output": {
-            /** Entityid */
-            entityId?: string | null;
-            /** Entitytype */
-            entityType?: string | null;
         };
         /**
          * Thresholds

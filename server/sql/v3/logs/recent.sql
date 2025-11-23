@@ -3,11 +3,11 @@
 SELECT 
     id,
     level,
+    logger_name,
     message,
-    context,
-    created_at
+    extra,
+    ts as created_at
 FROM app_logs
 WHERE ($1 = 'all' OR level = $1)
-ORDER BY created_at DESC
+ORDER BY ts DESC
 LIMIT $2;
-

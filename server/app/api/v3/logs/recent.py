@@ -23,8 +23,9 @@ class LogEntry(BaseModel):
 
     id: int
     level: str
+    logger_name: str
     message: str
-    context: dict[str, Any] | None
+    extra: dict[str, Any] | None
     created_at: str
 
 
@@ -64,21 +65,22 @@ async def recent_app_logs(
 
             results = []
             for row in rows:
-                context = row["context"]
-                if isinstance(context, str):
+                extra = row.get("extra")
+                if isinstance(extra, str):
                     import json
 
                     try:
-                        context = json.loads(context)
+                        extra = json.loads(extra)
                     except Exception:
-                        context = None
+                        extra = None
 
                 results.append(
                     LogEntry(
                         id=row["id"],
                         level=row["level"],
+                        logger_name=row["logger_name"],
                         message=row["message"],
-                        context=context,
+                        extra=extra if isinstance(extra, dict) else None,
                         created_at=row["created_at"].isoformat()
                         if row["created_at"]
                         else "",

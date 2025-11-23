@@ -8279,74 +8279,6 @@
   },
   "components": {
     "schemas": {
-      "ActorData-Input": {
-        "properties": {
-          "userId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Userid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "title": "ActorData"
-      },
-      "ActorData-Output": {
-        "properties": {
-          "userId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Userid"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "profileName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profilename"
-          }
-        },
-        "type": "object",
-        "title": "ActorData",
-        "description": "Actor JSONB data."
-      },
       "AddProfilesToCohortRequest": {
         "properties": {
           "cohortId": {
@@ -11043,124 +10975,6 @@
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
       },
-      "ContextData-Input": {
-        "properties": {
-          "route": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Route"
-          },
-          "function": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Function"
-          },
-          "component": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Component"
-          }
-        },
-        "type": "object",
-        "title": "ContextData"
-      },
-      "ContextData-Output": {
-        "properties": {
-          "route": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Route"
-          },
-          "function": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Function"
-          },
-          "component": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Component"
-          },
-          "provider": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          }
-        },
-        "type": "object",
-        "title": "ContextData",
-        "description": "Context JSONB data."
-      },
-      "CorrelationData": {
-        "properties": {
-          "correlationId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Correlationid"
-          }
-        },
-        "type": "object",
-        "title": "CorrelationData"
-      },
       "CreateAgentRequest": {
         "properties": {
           "name": {
@@ -11573,76 +11387,44 @@
       },
       "CreateLogRequest": {
         "properties": {
-          "event": {
-            "type": "string",
-            "title": "Event"
-          },
           "level": {
             "type": "string",
             "title": "Level"
+          },
+          "logger_name": {
+            "type": "string",
+            "title": "Logger Name"
           },
           "message": {
             "type": "string",
             "title": "Message"
           },
-          "correlation": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/CorrelationData"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
           },
-          "actor": {
+          "extra": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ActorData-Input"
+                "additionalProperties": true,
+                "type": "object"
               },
               {
                 "type": "null"
               }
-            ]
-          },
-          "subject": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SubjectData-Input"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "context": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ContextData-Input"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ErrorData-Input"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            ],
+            "title": "Extra"
           }
         },
         "type": "object",
         "required": [
-          "event",
           "level",
-          "message"
+          "logger_name",
+          "message",
+          "profile_id"
         ],
-        "title": "CreateLogRequest"
+        "title": "CreateLogRequest",
+        "description": "Request to create a log entry."
       },
       "CreateLogResponse": {
         "properties": {
@@ -11667,7 +11449,8 @@
           "success",
           "log_id"
         ],
-        "title": "CreateLogResponse"
+        "title": "CreateLogResponse",
+        "description": "Response from creating a log entry."
       },
       "CreateModelRequest": {
         "properties": {
@@ -15101,107 +14884,6 @@
         ],
         "title": "DynamicRubric"
       },
-      "ErrorData-Input": {
-        "properties": {
-          "code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Code"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "stack": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stack"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "title": "ErrorData"
-      },
-      "ErrorData-Output": {
-        "properties": {
-          "code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Code"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "stack": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Stack"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "title": "ErrorData",
-        "description": "Error JSONB data."
-      },
       "ExportRequest": {
         "properties": {
           "filters": {
@@ -17251,11 +16933,15 @@
             "type": "string",
             "title": "Level"
           },
+          "logger_name": {
+            "type": "string",
+            "title": "Logger Name"
+          },
           "message": {
             "type": "string",
             "title": "Message"
           },
-          "context": {
+          "extra": {
             "anyOf": [
               {
                 "additionalProperties": true,
@@ -17265,7 +16951,7 @@
                 "type": "null"
               }
             ],
-            "title": "Context"
+            "title": "Extra"
           },
           "created_at": {
             "type": "string",
@@ -17276,8 +16962,9 @@
         "required": [
           "id",
           "level",
+          "logger_name",
           "message",
-          "context",
+          "extra",
           "created_at"
         ],
         "title": "LogEntry",
@@ -17289,40 +16976,33 @@
             "type": "string",
             "title": "Log Id"
           },
-          "event": {
-            "type": "string",
-            "title": "Event"
-          },
           "level": {
             "type": "string",
             "title": "Level"
+          },
+          "logger_name": {
+            "type": "string",
+            "title": "Logger Name"
           },
           "message": {
             "type": "string",
             "title": "Message"
           },
-          "correlation_id": {
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          },
+          "extra": {
             "anyOf": [
               {
-                "type": "string"
+                "additionalProperties": true,
+                "type": "object"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Correlation Id"
-          },
-          "actor": {
-            "$ref": "#/components/schemas/ActorData-Output"
-          },
-          "subject": {
-            "$ref": "#/components/schemas/SubjectData-Output"
-          },
-          "context": {
-            "$ref": "#/components/schemas/ContextData-Output"
-          },
-          "error": {
-            "$ref": "#/components/schemas/ErrorData-Output"
+            "title": "Extra"
           },
           "created_at": {
             "type": "string",
@@ -17336,18 +17016,16 @@
         "type": "object",
         "required": [
           "log_id",
-          "event",
           "level",
+          "logger_name",
           "message",
-          "correlation_id",
-          "actor",
-          "subject",
-          "context",
-          "error",
+          "profile_id",
+          "extra",
           "created_at",
           "actor_name"
         ],
-        "title": "LogItem"
+        "title": "LogItem",
+        "description": "Log item with new simplified structure."
       },
       "LogsListRequest": {
         "properties": {
@@ -24535,63 +24213,6 @@
         ],
         "title": "StudentSimReportResponse",
         "description": "Response with student simulation report."
-      },
-      "SubjectData-Input": {
-        "properties": {
-          "entityId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Entityid"
-          },
-          "entityType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Entitytype"
-          }
-        },
-        "type": "object",
-        "title": "SubjectData"
-      },
-      "SubjectData-Output": {
-        "properties": {
-          "entityId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Entityid"
-          },
-          "entityType": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Entitytype"
-          }
-        },
-        "type": "object",
-        "title": "SubjectData",
-        "description": "Subject JSONB data."
       },
       "Thresholds": {
         "properties": {
