@@ -334,7 +334,7 @@ export default function Login({ providers = [] }: LoginProps) {
                 onClick={() => handleSSOLogin(provider)}
                 disabled={loading[provider.id]}
                 data-testid={`${provider.id}-login-button`}
-                className="w-full h-12 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-white/30 backdrop-blur-sm"
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
               >
                 <div className="flex items-center justify-center space-x-3">
                   {loading[provider.id] ? (
