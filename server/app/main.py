@@ -405,6 +405,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             setup_db_logger(pool)
             logger.info("Database logger initialized")
 
+            # Sync Keycloak identity providers from database
+            from app.core.keycloak_sync import sync_identity_providers  # noqa: E402
+
+            try:
+                await sync_identity_providers(pool)
+                logger.info("Keycloak sync completed")
+            except Exception as e:
+                logger.warning(f"Keycloak sync failed (non-blocking): {e}")
+
         # Initialize metrics collector
         from app.utils.metrics.collector import (  # noqa: E402
             initialize_metrics, snapshot_metrics)

@@ -2,13 +2,19 @@
 import { api } from "@/lib/api/client";
 import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
 import NextAuth from "next-auth";
-import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
+import Keycloak from "next-auth/providers/keycloak";
 import { headers } from "next/headers";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
-const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
-const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
+
+// Keycloak configuration - read from environment (pre-shared secret strategy)
+const keycloakPublicUrl =
+  process.env["KEYCLOAK_PUBLIC_URL"] || "http://localhost:8080";
+const keycloakRealm = process.env["KEYCLOAK_REALM"] || "glow";
+const keycloakClientId = process.env["AUTH_KEYCLOAK_ID"] || "glow-client";
+const keycloakClientSecret = process.env["AUTH_KEYCLOAK_SECRET"] || "";
+const issuer = `${keycloakPublicUrl}/realms/${keycloakRealm}`;
 
 // NOTE: also export `unstable_update` as `update` for server-side session mutation
 export const {
@@ -20,9 +26,27 @@ export const {
 } = NextAuth({
   basePath: `${appPrefix}/api/auth`,
   providers: [
-    MicrosoftEntraID({
-      clientId,
-      clientSecret,
+    // 1. Generic Keycloak Provider (for admin/fallback)
+    Keycloak({
+      clientId: keycloakClientId,
+      clientSecret: keycloakClientSecret,
+      issuer: issuer,
+    }),
+    // 2. Microsoft "Shadow" Provider (Direct to Microsoft login)
+    // This looks like a separate provider to NextAuth, but uses Keycloak credentials.
+    // The kc_idp_hint forces Keycloak to redirect to Microsoft immediately, bypassing the login page.
+    Keycloak({
+      id: "microsoft", // Named 'microsoft' so we can call signIn('microsoft')
+      name: "Microsoft",
+      clientId: keycloakClientId,
+      clientSecret: keycloakClientSecret,
+      issuer: issuer,
+      authorization: {
+        params: {
+          scope: "openid email profile",
+          kc_idp_hint: "microsoft", // Forces Keycloak to redirect to MS immediately
+        },
+      },
     }),
   ],
   secret,
@@ -65,7 +89,7 @@ export const {
             body: {
               firstName,
               lastName,
-              email: user.email || "",
+              emails: [user.email || ""],
               role: "guest",
             },
           });

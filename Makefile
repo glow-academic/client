@@ -221,7 +221,7 @@ run: check-venv
 	@echo "----------------------------------------"
 	@trap 'echo ""; echo "🛑 Stopping all services..."; docker stop glow-keycloak 2>/dev/null || true; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*ws.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
 	exec 2>/dev/null; \
-	(docker run --rm --name glow-keycloak -p $(KEYCLOAK_PORT):8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin -v $(PWD)/keycloak-data:/opt/keycloak/data/h2 quay.io/keycloak/keycloak:24.0 start-dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
+	(docker run --rm --name glow-keycloak -p $(KEYCLOAK_PORT):8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin -v $(PWD)/keycloak:/opt/keycloak/data/h2 quay.io/keycloak/keycloak:24.0 start-dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
 	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude server/ws.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \

@@ -3060,6 +3060,33 @@
         ]
       }
     },
+    "/api/v3/auth/login": {
+      "get": {
+        "tags": [
+          "v3",
+          "auth"
+        ],
+        "summary": "Get Login Providers",
+        "description": "Get list of active auth provider names for login page.",
+        "operationId": "get_login_providers_api_v3_auth_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginProvidersResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "auth"
+        ]
+      }
+    },
     "/api/v3/departments/list": {
       "post": {
         "tags": [
@@ -17026,6 +17053,23 @@
         ],
         "title": "LogItem",
         "description": "Log item with new simplified structure."
+      },
+      "LoginProvidersResponse": {
+        "properties": {
+          "providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Providers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "providers"
+        ],
+        "title": "LoginProvidersResponse",
+        "description": "Response with list of active provider names."
       },
       "LogsListRequest": {
         "properties": {

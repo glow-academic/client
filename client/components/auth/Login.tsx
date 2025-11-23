@@ -189,10 +189,17 @@ const AnimatedSparkles = () => {
   );
 };
 
-export default function Login() {
+interface LoginProps {
+  providers?: string[];
+}
+
+export default function Login({ providers = [] }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
+
+  // Check if Microsoft provider is available (case-insensitive)
+  const hasMicrosoft = providers.some((p) => p.toLowerCase() === "microsoft");
 
   const handleMicrosoftLogin = async () => {
     try {
@@ -207,16 +214,20 @@ export default function Login() {
       // Redirect to home for authenticated users (TA level and above)
       const redirectTo = `${appPrefix}/home`;
 
-      await signIn("microsoft-entra-id", { redirectTo: redirectTo });
+      // Use NextAuth's native signIn function with the "microsoft" provider
+      // This properly handles state generation, CSRF protection, and redirect handling
+      // The "microsoft" provider is defined in auth.ts with kc_idp_hint to bypass Keycloak login page
+      await signIn("microsoft", {
+        callbackUrl: redirectTo,
+      });
 
-      toast.success("Signing in with Microsoft...");
+      // Note: signIn redirects immediately on success, so we don't need toast.success here
     } catch (error) {
       const errorMessage = (error as Error).message;
 
       if (!errorMessage.toLowerCase().includes("load failed")) {
         toast.error("An error occurred during login: " + errorMessage);
       }
-    } finally {
       setLoadingMicrosoft(false);
     }
   };
@@ -282,39 +293,43 @@ export default function Login() {
         {/* Form */}
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
           <div className="space-y-4">
-            {/* Microsoft Login Button */}
-            <Button
-              type="button"
-              onClick={handleMicrosoftLogin}
-              disabled={loadingMicrosoft}
-              data-testid="microsoft-login-button"
-              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
-            >
-              <div className="flex items-center justify-center space-x-3">
-                {loadingMicrosoft ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <MicrosoftIcon />
-                )}
-                <span className="text-base">
-                  {loadingMicrosoft
-                    ? "Signing in..."
-                    : "Continue with Microsoft"}
-                </span>
-              </div>
-            </Button>
+            {/* Microsoft Login Button - only show if microsoft is in providers */}
+            {hasMicrosoft && (
+              <>
+                <Button
+                  type="button"
+                  onClick={handleMicrosoftLogin}
+                  disabled={loadingMicrosoft}
+                  data-testid="microsoft-login-button"
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
+                >
+                  <div className="flex items-center justify-center space-x-3">
+                    {loadingMicrosoft ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <MicrosoftIcon />
+                    )}
+                    <span className="text-base">
+                      {loadingMicrosoft
+                        ? "Signing in..."
+                        : "Continue with Microsoft"}
+                    </span>
+                  </div>
+                </Button>
 
-            {/* Divider */}
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-900/50 backdrop-blur-sm px-4 text-blue-200/80 font-medium tracking-wider">
-                  Or
-                </span>
-              </div>
-            </div>
+                {/* Divider */}
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/20" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-slate-900/50 backdrop-blur-sm px-4 text-blue-200/80 font-medium tracking-wider">
+                      Or
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Guest Access Button */}
             <Button

@@ -5,6 +5,7 @@
  * 05/14/2025
  */
 import Login from "@/components/auth/Login";
+import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,6 +13,17 @@ export const metadata: Metadata = {
   description: `Login to GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}`,
 };
 
-export default function LoginPage() {
-  return <Login />;
+async function getLoginProviders(): Promise<string[]> {
+  try {
+    const response = await api.get("/auth/login");
+    return response.providers || [];
+  } catch {
+    // Return empty array if endpoint fails
+    return [];
+  }
+}
+
+export default async function LoginPage() {
+  const providers = await getLoginProviders();
+  return <Login providers={providers} />;
 }

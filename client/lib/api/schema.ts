@@ -1475,6 +1475,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Login Providers
+         * @description Get list of active auth provider names for login page.
+         */
+        get: operations["get_login_providers_api_v3_auth_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/departments/list": {
         parameters: {
             query?: never;
@@ -7281,6 +7301,14 @@ export interface components {
             created_at: string;
             /** Actor Name */
             actor_name: string;
+        };
+        /**
+         * LoginProvidersResponse
+         * @description Response with list of active provider names.
+         */
+        LoginProvidersResponse: {
+            /** Providers */
+            providers: string[];
         };
         /** LogsListRequest */
         LogsListRequest: {
@@ -14691,6 +14719,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_login_providers_api_v3_auth_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginProvidersResponse"];
                 };
             };
         };
