@@ -9,6 +9,7 @@ const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
 // Keycloak configuration - read from environment (pre-shared secret strategy)
+// Use localhost (Node.js will resolve to IPv4 via NODE_OPTIONS in Makefile)
 const keycloakPublicUrl =
   process.env["KEYCLOAK_PUBLIC_URL"] || "http://localhost:8080";
 const keycloakRealm = process.env["KEYCLOAK_REALM"] || "glow";

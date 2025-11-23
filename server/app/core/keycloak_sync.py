@@ -79,6 +79,7 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
 
     try:
         # Get Keycloak configuration from environment
+        # Use localhost (Node.js will resolve to IPv4 via NODE_OPTIONS in Makefile)
         keycloak_url = os.getenv("KEYCLOAK_URL", "http://localhost:8080")
         keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
         keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
@@ -117,6 +118,34 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
 
         # Switch to target realm
         kc_admin.change_current_realm(realm_name=keycloak_realm)
+
+        # Fix realm frontend URL to prevent double /realms/glow in issuer
+        # If frontend URL is set incorrectly, Keycloak will append /realms/<realm> again
+        # Setting it to empty ensures issuer is http://127.0.0.1:8080/realms/glow
+        try:
+            realm_details = kc_admin.get_realm(keycloak_realm)
+            attributes = realm_details.get("attributes", {})
+            current_frontend_url = attributes.get("frontendUrl", "")
+            
+            # If frontend URL contains /realms/, it will cause double appending
+            # Set it to empty so Keycloak uses the request hostname
+            if current_frontend_url and "/realms/" in current_frontend_url:
+                logger.info(f"Fixing realm frontend URL (was: {current_frontend_url})")
+                # Create minimal update payload with just the attributes we need to change
+                kc_admin.update_realm(
+                    realm_name=keycloak_realm,
+                    payload={
+                        "attributes": {
+                            **attributes,  # Preserve existing attributes
+                            "frontendUrl": "",  # Empty = use request hostname
+                        }
+                    },
+                )
+                logger.info("✅ Realm frontend URL fixed (set to empty)")
+            elif not current_frontend_url:
+                logger.info("✅ Realm frontend URL is already correct (empty)")
+        except Exception as e:
+            logger.warning(f"Could not update realm frontend URL: {e}. Continuing...")
 
         # Setup Next.js client with pre-shared secret (DHH-style)
         target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
