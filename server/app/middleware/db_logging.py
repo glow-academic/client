@@ -1,4 +1,14 @@
-"""Database logging middleware for FastAPI requests/responses."""
+"""Database logging middleware for FastAPI requests/responses.
+
+Note: This middleware must remain separate as FastAPI requires middleware to be a class
+inheriting from BaseHTTPMiddleware. The logic is minimal and focused on:
+1. Extracting profile_id from request (body/headers)
+2. Setting profile context for logging
+3. Logging request/response to database
+4. Recording metrics
+
+This follows DHH principles - minimal abstraction, focused responsibility.
+"""
 
 import json
 import time

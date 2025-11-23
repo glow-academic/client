@@ -119,6 +119,9 @@ hint_progress: dict[str, bool] = {}
 guardrail_results: dict[str, Any] = {}
 guardrail_progress: dict[str, bool] = {}
 
+# Cached guest profile UUID (initialized at startup)
+_guest_profile_id: str | None = None
+
 
 # ----------  Socket.IO with Redis message queue  ----------
 redis_url = os.getenv("REDIS_URL")  # don't default when unset
@@ -186,6 +189,40 @@ def get_sio_instance() -> socketio.AsyncServer:
 def get_pool() -> asyncpg.Pool | None:
     """Get the global connection pool (for WebSocket handlers)."""
     return _db_pool
+
+
+def get_guest_profile_id() -> str:
+    """Get the cached guest profile UUID.
+    
+    Returns:
+        Guest profile UUID string (never null, may be placeholder if not initialized)
+        
+    Raises:
+        RuntimeError: If guest profile has not been initialized
+    """
+    if _guest_profile_id is None:
+        raise RuntimeError(
+            "Guest profile UUID not initialized. Call initialize_guest_profile() at startup."
+        )
+    return _guest_profile_id
+
+
+def resolve_profile_id(profile_id: str | None) -> str:
+    """Resolve 'guest-profile-id' to actual guest UUID using cached value.
+    
+    Args:
+        profile_id: Profile ID string, may be "guest-profile-id", None, or actual UUID
+        
+    Returns:
+        Resolved UUID string (never null)
+        
+    Raises:
+        RuntimeError: If guest profile has not been initialized
+    """
+    if not profile_id or profile_id == "guest-profile-id":
+        return get_guest_profile_id()
+    
+    return profile_id
 
 
 async def init_db_pool() -> None:
@@ -403,22 +440,321 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Initialize cached guest profile UUID
-            from app.core.guest_profile import initialize_guest_profile  # noqa: E402
-
+            global _guest_profile_id
             try:
-                await initialize_guest_profile(pool)
-                logger.info("Guest profile UUID cached")
+                async with pool.acquire() as conn:
+                    result = await conn.fetchval(
+                        """
+                        SELECT id::text
+                        FROM profiles
+                        WHERE role = 'guest' AND default_profile = true
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                        """
+                    )
+                    
+                    if result:
+                        _guest_profile_id = str(result)
+                        logger.info(f"✅ Cached guest profile UUID: {_guest_profile_id}")
+                    else:
+                        # Fallback to placeholder if no guest profile found
+                        _guest_profile_id = "00000000-0000-0000-0000-000000000000"
+                        logger.warning(
+                            "⚠️  No default guest profile found in database; using placeholder UUID"
+                        )
             except Exception as e:
-                logger.warning(f"Guest profile initialization failed (non-blocking): {e}")
+                logger.error(f"Error initializing guest profile: {e}", exc_info=True)
+                # Fallback to placeholder on error
+                _guest_profile_id = "00000000-0000-0000-0000-000000000000"
 
             setup_db_logger(pool)
             logger.info("Database logger initialized")
 
             # Sync Keycloak identity providers from database
-            from app.core.keycloak_sync import sync_identity_providers  # noqa: E402
-
             try:
-                await sync_identity_providers(pool)
+                # Keycloak sync configuration
+                keycloak_url = os.getenv("KEYCLOAK_URL", "http://localhost:8080")
+                keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
+                keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
+                keycloak_realm = os.getenv("KEYCLOAK_REALM", "glow")
+
+                # Retry configuration
+                MAX_RETRIES = 10
+                INITIAL_RETRY_DELAY = 2.0  # seconds
+                MAX_RETRY_DELAY = 30.0  # seconds
+
+                # Helper function to wait for Keycloak
+                async def wait_for_keycloak(
+                    url: str,
+                    admin: str,
+                    password: str,
+                    max_retries: int = MAX_RETRIES,
+                ) -> Any | None:
+                    """Wait for Keycloak to be ready and return a connected KeycloakAdmin instance."""
+                    try:
+                        from keycloak import KeycloakAdmin  # type: ignore
+                    except ImportError:
+                        logger.warning("keycloak package not installed, skipping Keycloak sync")
+                        return None
+
+                    retry_delay = INITIAL_RETRY_DELAY
+                    
+                    for attempt in range(1, max_retries + 1):
+                        try:
+                            logger.info(
+                                f"Attempting to connect to Keycloak (attempt {attempt}/{max_retries})..."
+                            )
+                            kc_admin = KeycloakAdmin(
+                                server_url=f"{url}/",
+                                username=admin,
+                                password=password,
+                                realm_name="master",
+                                verify=True,
+                            )
+                            # Test the connection by getting realms
+                            kc_admin.get_realms()
+                            logger.info("✅ Successfully connected to Keycloak")
+                            return kc_admin
+                        except Exception as e:
+                            if attempt < max_retries:
+                                logger.warning(
+                                    f"Keycloak not ready yet (attempt {attempt}/{max_retries}): {e}. "
+                                    f"Retrying in {retry_delay:.1f}s..."
+                                )
+                                await asyncio.sleep(retry_delay)
+                                # Exponential backoff with cap
+                                retry_delay = min(retry_delay * 1.5, MAX_RETRY_DELAY)
+                            else:
+                                logger.error(
+                                    f"Failed to connect to Keycloak after {max_retries} attempts: {e}"
+                                )
+                                return None
+                    
+                    return None
+
+                # Connect to Keycloak Admin API with retry logic
+                kc_admin = await wait_for_keycloak(
+                    keycloak_url, keycloak_admin, keycloak_admin_password
+                )
+                if not kc_admin:
+                    logger.warning(
+                        "Keycloak is not available. Skipping sync. "
+                        "The server will continue to run, but authentication may not work until Keycloak is ready."
+                    )
+                else:
+                    # Ensure the target realm exists (create if it doesn't)
+                    try:
+                        realms = kc_admin.get_realms()
+                        realm_exists = any(r["realm"] == keycloak_realm for r in realms)
+                        if not realm_exists:
+                            logger.info(f"Creating Keycloak realm: {keycloak_realm}")
+                            kc_admin.create_realm(
+                                payload={
+                                    "realm": keycloak_realm,
+                                    "enabled": True,
+                                },
+                                skip_exists=True,
+                            )
+                            logger.info(f"✅ Realm '{keycloak_realm}' created")
+                        else:
+                            logger.info(f"✅ Realm '{keycloak_realm}' already exists")
+                    except Exception as e:
+                        logger.error(f"Failed to ensure realm exists: {e}", exc_info=True)
+                        kc_admin = None
+
+                    if kc_admin:
+                        # Switch to target realm
+                        kc_admin.change_current_realm(realm_name=keycloak_realm)
+
+                        # Fix realm frontend URL to prevent double /realms/glow in issuer
+                        try:
+                            realm_details = kc_admin.get_realm(keycloak_realm)
+                            attributes = realm_details.get("attributes", {})
+                            current_frontend_url = attributes.get("frontendUrl", "")
+                            
+                            if current_frontend_url and "/realms/" in current_frontend_url:
+                                logger.info(f"Fixing realm frontend URL (was: {current_frontend_url})")
+                                kc_admin.update_realm(
+                                    realm_name=keycloak_realm,
+                                    payload={
+                                        "attributes": {
+                                            **attributes,
+                                            "frontendUrl": "",
+                                        }
+                                    },
+                                )
+                                logger.info("✅ Realm frontend URL fixed (set to empty)")
+                            elif not current_frontend_url:
+                                logger.info("✅ Realm frontend URL is already correct (empty)")
+                        except Exception as e:
+                            logger.warning(f"Could not update realm frontend URL: {e}. Continuing...")
+
+                        # Setup Next.js client with pre-shared secret
+                        target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
+                        target_secret: str | None = os.getenv("AUTH_KEYCLOAK_SECRET")
+                        client_port = os.getenv("CLIENT_PORT", "3000")
+                        app_prefix = os.getenv("APP_PREFIX", "")
+
+                        if not target_secret:
+                            logger.warning(
+                                "⚠️  AUTH_KEYCLOAK_SECRET is missing. Cannot enforce DHH-style auth."
+                            )
+                        else:
+                            try:
+                                # Build redirect URIs
+                                base_url = f"http://localhost:{client_port}"
+                                redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
+                                redirect_uris = [
+                                    redirect_uri,
+                                    f"{base_url}{app_prefix}/*",
+                                ]
+
+                                # Check if client exists
+                                clients = kc_admin.get_clients()
+                                existing_client = next(
+                                    (c for c in clients if c.get("clientId") == target_client_id), None
+                                )
+
+                                # Client payload with pre-shared secret
+                                client_payload: dict[str, Any] = {
+                                    "clientId": target_client_id,
+                                    "name": "Glow App",
+                                    "rootUrl": base_url,
+                                    "baseUrl": base_url,
+                                    "redirectUris": redirect_uris,
+                                    "webOrigins": ["+"],
+                                    "enabled": True,
+                                    "publicClient": False,
+                                    "protocol": "openid-connect",
+                                    "standardFlowEnabled": True,
+                                    "directAccessGrantsEnabled": True,
+                                    "serviceAccountsEnabled": True,
+                                    "clientAuthenticatorType": "client-secret",
+                                    "secret": target_secret,
+                                }
+
+                                if existing_client:
+                                    client_uuid = existing_client.get("id")
+                                    if client_uuid:
+                                        kc_admin.update_client(
+                                            client_id=client_uuid, payload=client_payload
+                                        )
+                                        logger.info(f"✅ Client '{target_client_id}' updated")
+                                    else:
+                                        logger.warning(
+                                            f"⚠️  Client '{target_client_id}' exists but has no ID"
+                                        )
+                                else:
+                                    new_client_uuid = kc_admin.create_client(
+                                        payload=client_payload, skip_exists=True
+                                    )
+                                    logger.info(f"✅ Client '{target_client_id}' created")
+
+                                    if new_client_uuid:
+                                        kc_admin.update_client(
+                                            client_id=new_client_uuid, payload={"secret": target_secret}
+                                        )
+                                        logger.info(
+                                            f"✅ Client Secret enforced for '{target_client_id}'"
+                                        )
+
+                            except Exception as e:
+                                logger.error(f"❌ Client sync failed: {e}", exc_info=True)
+
+                        # Sync all active identity providers from database
+                        async with pool.acquire() as conn:
+                            from app.utils.auth.decrypt_api_key import \
+                                decrypt_api_key
+
+                            providers_query = """
+                                SELECT id, slug, provider_id, name 
+                                FROM auth 
+                                WHERE active = true
+                            """
+                            providers = await conn.fetch(providers_query)
+
+                            if not providers:
+                                logger.info("No active providers found in database, skipping sync")
+                            else:
+                                # Loop through each active provider
+                                for p in providers:
+                                    auth_id = p["id"]
+                                    slug = p["slug"]
+                                    provider_id = p["provider_id"]
+                                    display_name = p["name"]
+
+                                    items_query = """
+                                        SELECT name, value, encrypted 
+                                        FROM auth_items 
+                                        WHERE auth_id = $1
+                                    """
+                                    items = await conn.fetch(items_query, auth_id)
+
+                                    # Decrypt or use plain text based on encrypted flag
+                                    config_map: dict[str, str] = {}
+                                    for item in items:
+                                        item_name = item["name"]
+                                        raw_value = item["value"]
+                                        is_encrypted = item.get("encrypted", True)
+                                        
+                                        if is_encrypted:
+                                            try:
+                                                decrypted_value = decrypt_api_key(raw_value)
+                                                config_map[item_name] = decrypted_value
+                                            except Exception as e:
+                                                logger.warning(
+                                                    f"Failed to decrypt auth_item '{item_name}' for provider '{slug}': {e}. "
+                                                    f"Using as plain text."
+                                                )
+                                                config_map[item_name] = raw_value
+                                        else:
+                                            config_map[item_name] = raw_value
+
+                                    # Construct Payload
+                                    payload: dict[str, Any] = {
+                                        "alias": slug,
+                                        "providerId": provider_id,
+                                        "displayName": display_name,
+                                        "enabled": True,
+                                        "trustEmail": True,
+                                        "config": {}
+                                    }
+
+                                    # SAML Provider Configuration
+                                    if provider_id == "saml":
+                                        if "ssoUrl" in config_map:
+                                            payload["config"]["singleSignOnServiceUrl"] = config_map["ssoUrl"]
+                                        if "entityId" in config_map:
+                                            payload["config"]["entityId"] = config_map["entityId"]
+                                        if "metadataUrl" in config_map:
+                                            payload["config"]["importFromIdpUrl"] = config_map["metadataUrl"]
+                                        if "certificate" in config_map:
+                                            payload["config"]["signingCertificate"] = config_map["certificate"]
+                                        if "nameIDPolicyFormat" not in payload["config"]:
+                                            payload["config"]["nameIDPolicyFormat"] = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+                                        if "syncMode" not in payload["config"]:
+                                            payload["config"]["syncMode"] = "FORCE"
+                                        if "allowCreate" not in payload["config"]:
+                                            payload["config"]["allowCreate"] = "true"
+                                    else:
+                                        # OIDC/Google Provider Configuration
+                                        payload["config"] = config_map
+                                        if "syncMode" not in payload["config"]:
+                                            payload["config"]["syncMode"] = "FORCE"
+                                        if "useJwksUrl" not in payload["config"]:
+                                            payload["config"]["useJwksUrl"] = "true"
+
+                                    logger.info(f"🔍 Payload for {slug}: {payload['config']}")
+
+                                    # Upsert the provider in Keycloak
+                                    try:
+                                        kc_admin.get_idp(idp_alias=slug)
+                                        kc_admin.update_idp(idp_alias=slug, payload=payload)
+                                        logger.info(f"✅ Synced Keycloak provider: {slug}")
+                                    except Exception:
+                                        kc_admin.create_idp(payload=payload)
+                                        logger.info(f"✅ Created Keycloak provider: {slug}")
+
                 logger.info("Keycloak sync completed")
             except Exception as e:
                 logger.warning(f"Keycloak sync failed (non-blocking): {e}")

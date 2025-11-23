@@ -1,4 +1,13 @@
-"""Scenario generate AI endpoint - v3 API following DHH principles."""
+"""Scenario generate AI endpoint - v3 API following DHH principles.
+
+Note: This route uses 3 SQL queries, which is an exception to the "one query per route" principle:
+1. get_scenario_run_context.sql - Gets context data (needed before agent run)
+2. create_model_run_complete.sql - Creates model run (needed before agent execution)
+3. update_model_run_tokens.sql - Updates tokens after agent run (needed after agent execution)
+
+The queries are separated by agent execution logic, so they cannot be combined into a single query.
+This is an acceptable exception per DHH principles - business logic separates the queries.
+"""
 
 import json
 import uuid

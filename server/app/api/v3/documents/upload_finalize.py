@@ -1,4 +1,11 @@
-"""Document upload finalize endpoint - v3 API following DHH principles."""
+"""Document upload finalize endpoint - v3 API following DHH principles.
+
+Note: This route executes SQL queries in loops for bulk operations (CSV uploads, ZIP extraction).
+This is an acceptable exception to the "one query per route" principle:
+- Each iteration uses a single SQL query (insert_profile_if_not_exists, insert_document_complete)
+- Bulk operations require iteration over input data
+- Per DHH principles, bulk operations are an exception where loops are acceptable
+"""
 
 import json
 import os
@@ -8,14 +15,13 @@ import zipfile
 from typing import Annotated
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, Response
-from pydantic import BaseModel
-
 from app.main import UPLOAD_FOLDER, get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, Response
+from pydantic import BaseModel
 
 logger = get_logger(__name__)
 

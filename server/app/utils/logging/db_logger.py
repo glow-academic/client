@@ -40,7 +40,7 @@ async def resolve_profile_id(profile_id: str | None) -> str:
     if not profile_id or profile_id == "guest-profile-id":
         # Use cached guest profile UUID (no DB call needed)
         try:
-            from app.core.guest_profile import get_guest_profile_id
+            from app.main import get_guest_profile_id
             
             return get_guest_profile_id()
         except RuntimeError:
