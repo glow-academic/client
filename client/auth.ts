@@ -179,7 +179,12 @@ export const {
   },
   callbacks: {
     // 🔑 Put identity & emulation into the JWT
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // Save the ID Token to the JWT on initial sign-in
+      if (account && account["id_token"]) {
+        token["id_token"] = account["id_token"];
+      }
+
       // On initial sign in, attach canonical profileId/role from email lookup
       if (user?.email) {
         // V3 API - fetch profile by email
@@ -276,6 +281,11 @@ export const {
         null;
       session.emulationTTL = (token["emulationTTL"] as number | null) ?? null;
       session.fullEmulation = !!(token["fullEmulation"] as boolean);
+
+      // Pass the ID Token to the client for silent logout
+      if (token["id_token"]) {
+        session.id_token = token["id_token"] as string;
+      }
 
       return session;
     },

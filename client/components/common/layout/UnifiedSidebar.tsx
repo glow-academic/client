@@ -44,6 +44,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
+import { useFederatedLogout } from "@/hooks/useFederatedLogout";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import {
   AlertCircle,
@@ -62,7 +63,6 @@ import {
   UserCogIcon,
   Users,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -129,6 +129,7 @@ export function UnifiedSidebar({
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isEmulateModalOpen, setIsEmulateModalOpen] = useState(false);
+  const federatedLogout = useFederatedLogout();
 
   // Get sidebar context to close mobile sidebar on navigation
   const { isMobile, setOpenMobile } = useSidebar();
@@ -581,15 +582,13 @@ export function UnifiedSidebar({
   };
 
   const handleLoginOrLogout = async () => {
-    const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-
     // Handle logout for all users including guests
     setIsLoggingOut(true);
 
     toast.promise(
       async () => {
         try {
-          await signOut({ redirectTo: `${appPrefix}/login` });
+          await federatedLogout();
           return "Logged out successfully";
         } catch (error) {
           throw new Error(

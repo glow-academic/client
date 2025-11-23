@@ -164,7 +164,11 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
                 
                 # Single callback URL - all providers use the same Keycloak callback
                 redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
-                redirect_uris = [redirect_uri]
+                # Allow redirecting to any page on the frontend (e.g., /login after logout)
+                redirect_uris = [
+                    redirect_uri,  # Existing (Login callback)
+                    f"{base_url}{app_prefix}/*",  # Allow redirecting to any page on the frontend
+                ]
 
                 # Check if client exists
                 clients = kc_admin.get_clients()

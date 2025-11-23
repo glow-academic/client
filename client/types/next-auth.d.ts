@@ -7,6 +7,7 @@ declare module "next-auth" {
     effectiveProfileId?: string | null;
     fullEmulation?: boolean;
     emulationTTL?: number | null;
+    id_token?: string | undefined;
     user: DefaultSession["user"] & {
       profileId?: string;
       role?: string;
@@ -26,5 +27,6 @@ declare module "next-auth/jwt" {
     effectiveProfileId?: string | null;
     fullEmulation?: boolean;
     emulationTTL?: number | null;
+    id_token?: string;
   }
 }
