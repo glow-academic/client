@@ -26,27 +26,12 @@ export const {
 } = NextAuth({
   basePath: `${appPrefix}/api/auth`,
   providers: [
-    // 1. Generic Keycloak Provider (for admin/fallback)
+    // Single Keycloak provider - frontend controls which identity provider via kc_idp_hint
     Keycloak({
       clientId: keycloakClientId,
       clientSecret: keycloakClientSecret,
       issuer: issuer,
-    }),
-    // 2. Microsoft "Shadow" Provider (Direct to Microsoft login)
-    // This looks like a separate provider to NextAuth, but uses Keycloak credentials.
-    // The kc_idp_hint forces Keycloak to redirect to Microsoft immediately, bypassing the login page.
-    Keycloak({
-      id: "microsoft", // Named 'microsoft' so we can call signIn('microsoft')
-      name: "Microsoft",
-      clientId: keycloakClientId,
-      clientSecret: keycloakClientSecret,
-      issuer: issuer,
-      authorization: {
-        params: {
-          scope: "openid email profile",
-          kc_idp_hint: "microsoft", // Forces Keycloak to redirect to MS immediately
-        },
-      },
+      allowDangerousEmailAccountLinking: true, // Allow merging Google/MS accounts with same email
     }),
   ],
   secret,

@@ -70,8 +70,8 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
     """
     Sync identity providers from database auth/auth_items tables to Keycloak.
     
-    Reads Microsoft provider configuration from database, decrypts values,
-    and creates/updates the provider in Keycloak.
+    Loops through all active providers in the database, decrypts values,
+    and creates/updates each provider in Keycloak.
     """
     if not pool:
         logger.warning("Database pool not available, skipping Keycloak sync")
@@ -133,11 +133,9 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
                 # Build redirect URIs
                 base_url = f"http://localhost:{client_port}"
                 
-                # Allow both the main Keycloak callback AND the Microsoft shadow callback
-                redirect_uris = [
-                    f"{base_url}{app_prefix}/api/auth/callback/keycloak",
-                    f"{base_url}{app_prefix}/api/auth/callback/microsoft",
-                ]
+                # Single callback URL - all providers use the same Keycloak callback
+                redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
+                redirect_uris = [redirect_uri]
 
                 # Check if client exists
                 clients = kc_admin.get_clients()
@@ -195,105 +193,140 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
             except Exception as e:
                 logger.error(f"❌ Client sync failed: {e}", exc_info=True)
 
-        # Query database for Microsoft provider
+        # Sync all active identity providers from database
         async with pool.acquire() as conn:
-            # Get Microsoft auth entry (case-insensitive)
-            microsoft_auth_query = """
-                SELECT id, name, active
+            # Get all active providers (case-insensitive name matching)
+            providers_query = """
+                SELECT id, LOWER(name) as name
                 FROM auth
-                WHERE LOWER(name) = 'microsoft' AND active = true
-                LIMIT 1
+                WHERE active = true
             """
-            microsoft_auth = await conn.fetchrow(microsoft_auth_query)
+            provider_rows = await conn.fetch(providers_query)
 
-            if not microsoft_auth:
-                logger.info("No active Microsoft provider found in database, skipping sync")
+            if not provider_rows:
+                logger.info("No active providers found in database, skipping sync")
                 return
 
-            auth_id = microsoft_auth["id"]
+            # Loop through each active provider
+            for row in provider_rows:
+                provider_name = row["name"]  # e.g., 'microsoft', 'google'
+                auth_id = row["id"]
 
-            # Get auth_items for Microsoft provider
-            items_query = """
-                SELECT name, value
-                FROM auth_items
-                WHERE auth_id = $1
-            """
-            items = await conn.fetch(items_query, auth_id)
+                # Get auth_items for this provider
+                items_query = """
+                    SELECT name, value
+                    FROM auth_items
+                    WHERE auth_id = $1
+                """
+                items = await conn.fetch(items_query, auth_id)
 
-            # Build config dictionary from items
-            config: dict[str, str] = {}
-            for item in items:
-                item_name = item["name"]
-                encrypted_value = item["value"]
-                try:
-                    decrypted_value = decrypt_api_key(encrypted_value)
-                    config[item_name] = decrypted_value
-                except Exception as e:
-                    logger.warning(f"Failed to decrypt auth_item '{item_name}': {e}")
+                # Build config dictionary from items
+                config: dict[str, str] = {}
+                for item in items:
+                    item_name = item["name"]
+                    encrypted_value = item["value"]
+                    try:
+                        decrypted_value = decrypt_api_key(encrypted_value)
+                        config[item_name] = decrypted_value
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to decrypt auth_item '{item_name}' for provider '{provider_name}': {e}"
+                        )
+                        continue
+
+                # Build provider-specific configuration
+                payload: dict[str, Any] | None = None
+                alias = provider_name.lower()
+
+                if provider_name == "google":
+                    # Google provider configuration
+                    client_id = config.get("client_id") or config.get("clientId")
+                    client_secret = config.get("client_secret") or config.get("clientSecret")
+
+                    if not client_id or not client_secret:
+                        logger.warning(
+                            f"Google provider missing required credentials (client_id, client_secret)"
+                        )
+                        continue
+
+                    payload = {
+                        "alias": alias,
+                        "providerId": "google",
+                        "displayName": "Google Workspace",
+                        "enabled": True,
+                        "trustEmail": True,
+                        "config": {
+                            "clientId": client_id,
+                            "clientSecret": client_secret,
+                            "useJwksUrl": "true",
+                            "syncMode": "FORCE",
+                        },
+                    }
+
+                    # Add hosted domain if configured
+                    if config.get("hosted_domain"):
+                        payload["config"]["hostedDomain"] = config.get("hosted_domain")
+
+                elif provider_name == "microsoft":
+                    # Microsoft provider configuration (OIDC)
+                    client_id = config.get("client_id") or config.get("clientId")
+                    client_secret = config.get("client_secret") or config.get("clientSecret")
+                    tenant_id = config.get("tenant_id") or config.get("tenantId") or "common"
+
+                    if not client_id or not client_secret:
+                        logger.warning(
+                            f"Microsoft provider missing required credentials (client_id, client_secret)"
+                        )
+                        continue
+
+                    discovery_url = (
+                        f"https://login.microsoftonline.com/{tenant_id}/v2.0/.well-known/openid-configuration"
+                    )
+
+                    payload = {
+                        "alias": alias,
+                        "providerId": "oidc",  # Use OIDC for Microsoft Entra
+                        "displayName": "Microsoft",
+                        "enabled": True,
+                        "trustEmail": True,
+                        "updateProfileFirstLoginMode": "on",
+                        "config": {
+                            "clientId": client_id,
+                            "clientSecret": client_secret,
+                            "discoveryUrl": discovery_url,
+                            "useJwksUrl": "true",
+                            "clientAuthMethod": "client_secret_post",
+                            "syncMode": "FORCE",
+                            # Explicitly set OAuth endpoints to avoid null param errors
+                            # Microsoft Entra ID v2.0 endpoints
+                            "authorizationUrl": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize",
+                            "tokenUrl": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
+                            "userInfoUrl": "https://graph.microsoft.com/oidc/userinfo",
+                            "jwksUrl": f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys",
+                            "validateSignature": "true",
+                            "backchannelSupported": "false",
+                        },
+                    }
+
+                else:
+                    logger.warning(
+                        f"Unknown provider type '{provider_name}'. Skipping sync. "
+                        f"Add support for this provider in keycloak_sync.py"
+                    )
                     continue
 
-            # Check if we have required Microsoft credentials
-            ms_client_id: str | None = config.get("client_id") or config.get("clientId")
-            ms_client_secret: str | None = (
-                config.get("client_secret") or config.get("clientSecret")
-            )
-            tenant_id: str | None = config.get("tenant_id") or config.get("tenantId")
-            
-            # Default to "common" if tenant_id is not provided (allows both personal and work accounts)
-            if not tenant_id:
-                tenant_id = "common"
-                logger.info("Microsoft tenant_id not provided, using 'common' (supports both personal and work accounts)")
-
-            if not ms_client_id or not ms_client_secret:
-                logger.warning(
-                    "Microsoft provider missing required credentials (client_id, client_secret)"
-                )
-                return
-
-            # Construct Microsoft OIDC provider configuration
-            alias = "microsoft"
-            discovery_url = (
-                f"https://login.microsoftonline.com/{tenant_id}/v2.0/.well-known/openid-configuration"
-            )
-
-            payload: dict[str, Any] = {
-                "alias": alias,
-                "providerId": "oidc",  # Use OIDC for Microsoft Entra
-                "displayName": "Microsoft",
-                "enabled": True,
-                "authenticateByDefault": True,  # Automatically redirect to Microsoft login
-                "trustEmail": True,  # Trust email from Microsoft
-                "updateProfileFirstLoginMode": "on",  # Update profile on first login
-                "config": {
-                    "clientId": ms_client_id,
-                    "clientSecret": ms_client_secret,
-                    "discoveryUrl": discovery_url,
-                    "useJwksUrl": "true",
-                    "clientAuthMethod": "client_secret_post",
-                    "syncMode": "FORCE",
-                    # Explicitly set OAuth endpoints to avoid null param errors
-                    # Microsoft Entra ID v2.0 endpoints
-                    "authorizationUrl": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize",
-                    "tokenUrl": f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
-                    "userInfoUrl": "https://graph.microsoft.com/oidc/userinfo",  # Microsoft Graph endpoint
-                    "jwksUrl": f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys",
-                    # Required for OIDC provider
-                    "validateSignature": "true",
-                    "backchannelSupported": "false",
-                },
-            }
-
-            # Upsert (Create or Update) the provider
-            try:
-                # Try to fetch existing provider
-                existing_provider = kc_admin.get_idp(idp_alias=alias)
-                # If successful, update it
-                kc_admin.update_idp(idp_alias=alias, payload=payload)
-                logger.info(f"✅ Updated existing Keycloak provider: {alias}")
-            except Exception:
-                # If not found, create it
-                kc_admin.create_idp(payload=payload)
-                logger.info(f"✅ Created new Keycloak provider: {alias}")
+                # Upsert (Create or Update) the provider in Keycloak
+                if payload:
+                    try:
+                        # Try to fetch existing provider
+                        kc_admin.get_idp(idp_alias=alias)
+                        # If successful, update it
+                        kc_admin.update_idp(idp_alias=alias, payload=payload)
+                        logger.info(f"✅ Updated Keycloak provider: {alias}")
+                    except Exception:
+                        # If not found, create it
+                        kc_admin.create_idp(payload=payload)
+                        logger.info(f"✅ Created Keycloak provider: {alias}")
 
     except Exception as e:
         logger.error(f"❌ Failed to sync Keycloak providers: {e}", exc_info=True)
