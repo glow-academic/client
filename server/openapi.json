@@ -3067,7 +3067,7 @@
           "auth"
         ],
         "summary": "Get Login Providers",
-        "description": "Get list of active auth provider names for login page.",
+        "description": "Get list of active auth provider options for login page.",
         "operationId": "get_login_providers_api_v3_auth_login_get",
         "responses": {
           "200": {
@@ -17058,7 +17058,7 @@
         "properties": {
           "providers": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ProviderOption"
             },
             "type": "array",
             "title": "Providers"
@@ -17069,7 +17069,7 @@
           "providers"
         ],
         "title": "LoginProvidersResponse",
-        "description": "Response with list of active provider names."
+        "description": "Response with list of active provider options."
       },
       "LogsListRequest": {
         "properties": {
@@ -20724,6 +20724,37 @@
           "description"
         ],
         "title": "ProviderMappingItem"
+      },
+      "ProviderOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "icon"
+        ],
+        "title": "ProviderOption",
+        "description": "Provider option with id (slug), name, and icon URL."
       },
       "QueryDataRequest": {
         "properties": {

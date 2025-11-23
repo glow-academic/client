@@ -6,6 +6,7 @@
  */
 import Login from "@/components/auth/Login";
 import { api } from "@/lib/api/client";
+import type { OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -13,10 +14,13 @@ export const metadata: Metadata = {
   description: `Login to GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}`,
 };
 
-async function getLoginProviders(): Promise<string[]> {
+/** ---- Strong types from OpenAPI ---- */
+type LoginProvidersOut = OutputOf<"/api/v3/auth/login", "get">;
+
+async function getLoginProviders(): Promise<LoginProvidersOut["providers"]> {
   try {
     const response = await api.get("/auth/login");
-    return response.providers || [];
+    return response.providers;
   } catch {
     // Return empty array if endpoint fails
     return [];

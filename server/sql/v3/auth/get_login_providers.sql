@@ -1,7 +1,7 @@
--- Get active auth provider slugs for login page
--- Returns slug field (used as kc_idp_hint in Keycloak authentication)
-SELECT slug as id
+-- Get active auth providers for login page
+-- Returns slug (id), name, and icon_url for dynamic frontend rendering
+SELECT slug as id, name, icon_url as icon
 FROM auth
 WHERE active = true
-ORDER BY slug;
+ORDER BY name;
 

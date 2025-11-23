@@ -13,6 +13,7 @@ CREATE TABLE auth (
   description TEXT        NOT NULL,
   provider_id TEXT       NOT NULL,
   slug        TEXT       NOT NULL,
+  icon_url   TEXT,
   active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 

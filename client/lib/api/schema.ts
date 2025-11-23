@@ -1484,7 +1484,7 @@ export interface paths {
         };
         /**
          * Get Login Providers
-         * @description Get list of active auth provider names for login page.
+         * @description Get list of active auth provider options for login page.
          */
         get: operations["get_login_providers_api_v3_auth_login_get"];
         put?: never;
@@ -7304,11 +7304,11 @@ export interface components {
         };
         /**
          * LoginProvidersResponse
-         * @description Response with list of active provider names.
+         * @description Response with list of active provider options.
          */
         LoginProvidersResponse: {
             /** Providers */
-            providers: string[];
+            providers: components["schemas"]["ProviderOption"][];
         };
         /** LogsListRequest */
         LogsListRequest: {
@@ -8677,6 +8677,18 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * ProviderOption
+         * @description Provider option with id (slug), name, and icon URL.
+         */
+        ProviderOption: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Icon */
+            icon: string | null;
         };
         /**
          * QueryDataRequest
