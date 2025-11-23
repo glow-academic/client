@@ -2691,7 +2691,7 @@ export default function AttemptChat({
                               100
                             );
                           })()}
-                          className="w-full bg-transparent rounded-full [&>div]:rounded-l-full [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+                          className="w-full bg-transparent rounded-full [&>div]:rounded-l-full [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-blue-500"
                         />
                       </div>
                     )}

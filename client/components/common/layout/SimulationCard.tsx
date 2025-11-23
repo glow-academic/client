@@ -122,8 +122,8 @@ export default function SimulationCard({
       return gradientStyle;
     }
     return type === "default"
-      ? color || "from-blue-500 to-purple-600"
-      : "from-blue-500 to-purple-600";
+      ? color || "from-blue-500 to-blue-600"
+      : "from-blue-500 to-blue-600";
   };
 
   const gradientClass = getGradientClass();
@@ -146,6 +146,9 @@ export default function SimulationCard({
       : hasPassed
         ? "from-green-900 to-green-600"
         : "from-blue-900 to-purple-600";
+
+  // Determine if we should use persona color for icons (only for default type with color prop)
+  const shouldUsePersonaColor = type === "default" && color;
 
   // Make the card fill available height and stretch the header to create space
   return (
@@ -208,10 +211,17 @@ export default function SimulationCard({
                           variant="outline"
                           size="icon"
                           className="relative z-20"
-                          style={{
+                          style={
+                            shouldUsePersonaColor
+                              ? {
                             borderColor: iconColor,
                             color: iconColor,
-                          }}
+                                }
+                              : {
+                            borderColor: "#3b82f6", // blue-500
+                            color: "#3b82f6", // blue-500
+                                }
+                          }
                         >
                           <Table className="h-4 w-4" />
                         </Button>
@@ -380,20 +390,24 @@ export default function SimulationCard({
                 }}
                 disabled={loadingSimulation !== null}
                 data-testid={`start-simulation-${id}`}
-                className={`flex-1 text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+                className={`flex-1 text-center py-2 rounded-lg font-medium text-sm hover:shadow-lg transition-all duration-300 ${
                   loadingSimulation === id
                     ? "animate-pulse cursor-not-allowed"
                     : "hover:scale-105 cursor-pointer"
                 } disabled:opacity-70 ${
                   typeof gradientClass === "string" &&
+                  gradientClass === "bg-primary"
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                    : typeof gradientClass === "string" &&
                   !gradientClass.startsWith("linear-gradient")
-                    ? `bg-gradient-to-r ${gradientClass}`
-                    : ""
+                      ? `bg-gradient-to-r ${gradientClass} text-white`
+                      : "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
                 }`}
                 style={{
                   ...(typeof gradientClass === "string" &&
                     gradientClass.startsWith("linear-gradient") && {
                       background: gradientClass,
+                      color: "white",
                     }),
                 }}
               >
@@ -412,12 +426,21 @@ export default function SimulationCard({
                     size="icon"
                     className="flex-shrink-0 hover:scale-105 cursor-pointer transition-all duration-300"
                     data-testid={`start-infinite-${id}`}
-                    style={{
+                    style={
+                      shouldUsePersonaColor
+                        ? {
                       backgroundColor: iconColor,
                       borderColor: iconColor,
-                    }}
+                          }
+                        : {
+                      backgroundColor: "#3b82f6", // blue-500
+                      borderColor: "#3b82f6", // blue-500
+                          }
+                    }
                   >
-                    <Infinity className="h-4 w-4 text-white" />
+                    <Infinity
+                      className={`h-4 w-4 text-white`}
+                    />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -437,20 +460,24 @@ export default function SimulationCard({
               }}
               disabled={loadingSimulation !== null}
               data-testid={`start-simulation-${id}`}
-              className={`w-full text-center py-2 rounded-lg text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+              className={`w-full text-center py-2 rounded-lg font-medium text-sm hover:shadow-lg transition-all duration-300 ${
                 loadingSimulation === id
                   ? "animate-pulse cursor-not-allowed"
                   : "hover:scale-105 cursor-pointer"
               } disabled:opacity-70 ${
                 typeof gradientClass === "string" &&
+                gradientClass === "bg-primary"
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                  : typeof gradientClass === "string" &&
                 !gradientClass.startsWith("linear-gradient")
-                  ? `bg-gradient-to-r ${gradientClass}`
-                  : ""
+                    ? `bg-gradient-to-r ${gradientClass} text-white`
+                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
               }`}
               style={{
                 ...(typeof gradientClass === "string" &&
                   gradientClass.startsWith("linear-gradient") && {
                     background: gradientClass,
+                    color: "white",
                   }),
               }}
             >

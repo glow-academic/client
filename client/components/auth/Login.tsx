@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 // Provider icon component - renders icon from URL or fallback
 const ProviderIcon = ({
@@ -35,8 +36,8 @@ const ProviderIcon = ({
   }
   // Fallback: simple circle icon if no icon URL provided
   return (
-    <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-      <span className="text-xs text-white font-bold">
+    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+      <span className="text-xs text-gray-700 font-bold">
         {name.charAt(0).toUpperCase()}
       </span>
     </div>
@@ -46,7 +47,7 @@ const ProviderIcon = ({
 // User Icon Component
 const UserIcon = () => (
   <svg
-    className="w-5 h-5"
+    className="w-5 h-5 text-gray-700"
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -111,7 +112,7 @@ const AnimatedSparkles = () => {
   // Generate sparkles only on client side after mount
   useEffect(() => {
     setSparkles(
-      Array.from({ length: 50 }, (_, i) => ({
+      Array.from({ length: 80 }, (_, i) => ({
         id: i,
         size: Math.random() * 3 + 1,
         left: Math.random() * 100,
@@ -122,7 +123,7 @@ const AnimatedSparkles = () => {
     );
 
     setMovingSparkles(
-      Array.from({ length: 8 }, (_, i) => ({
+      Array.from({ length: 12 }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
         top: Math.random() * 100,
@@ -132,7 +133,7 @@ const AnimatedSparkles = () => {
     );
 
     setFloatingSparkles(
-      Array.from({ length: 6 }, (_, i) => ({
+      Array.from({ length: 10 }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
         top: Math.random() * 100,
@@ -156,7 +157,7 @@ const AnimatedSparkles = () => {
       {sparkles.map((sparkle) => (
         <div
           key={sparkle.id}
-          className="absolute text-white/20 animate-pulse"
+          className="absolute text-yellow-300/40 animate-pulse"
           style={{
             left: `${sparkle.left}%`,
             top: `${sparkle.top}%`,
@@ -174,7 +175,7 @@ const AnimatedSparkles = () => {
       {movingSparkles.map((sparkle) => (
         <div
           key={`moving-${sparkle.id}`}
-          className="absolute text-blue-300/30 animate-bounce"
+          className="absolute text-yellow-400/35 animate-bounce"
           style={{
             left: `${sparkle.left}%`,
             top: `${sparkle.top}%`,
@@ -190,7 +191,7 @@ const AnimatedSparkles = () => {
       {floatingSparkles.map((sparkle) => (
         <div
           key={`floating-${sparkle.id}`}
-          className="absolute text-purple-300/25 animate-ping"
+          className="absolute text-yellow-400/30 animate-ping"
           style={{
             left: `${sparkle.left}%`,
             top: `${sparkle.top}%`,
@@ -220,6 +221,41 @@ export default function Login({ providers = [] }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const router = useRouter();
+
+  // Animation variants matching Info.tsx
+  const fadeInUp = {
+    initial: { opacity: 0, y: 60 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.8, ease: [0.6, -0.05, 0.01, 0.99] },
+  };
+
+  const staggerContainer = {
+    initial: {},
+    animate: {
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const cardVariants = {
+    initial: { opacity: 0, y: 40, scale: 0.95 },
+    animate: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut" as const,
+      },
+    },
+    hover: {
+      y: -4,
+      scale: 1.02,
+      transition: { duration: 0.3 },
+    },
+  };
 
   // Generic handler for ANY SSO provider (data-agnostic)
   const handleSSOLogin = async (provider: ProviderOption) => {
@@ -287,106 +323,134 @@ export default function Login({ providers = [] }: LoginProps) {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 px-4 animate-in fade-in duration-1000">
+    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50 px-4">
       {/* Animated Sparkles Background */}
       <AnimatedSparkles />
 
-      <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in slide-in-from-bottom-4 duration-700 delay-200">
+      <motion.div
+        initial="initial"
+        animate="animate"
+        variants={fadeInUp}
+        className="relative z-10 w-full max-w-md p-8 space-y-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-xl border border-blue-500/30"
+      >
         {/* Header */}
-        <Link
-          href="/"
-          className="text-center space-y-3 animate-in slide-in-from-top-4 duration-700 delay-300 block cursor-pointer hover:opacity-90 transition-opacity"
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg animate-in zoom-in duration-700 delay-400 relative overflow-hidden">
-            {/* Logo sparkles */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
-              <div
-                className="absolute top-2 right-2 animate-ping"
-                style={{ animationDelay: "0.5s" }}
-              >
-                <SparkleIcon className="w-3 h-3 text-white/70" />
-              </div>
-              <div
-                className="absolute bottom-2 left-2 animate-pulse"
-                style={{ animationDelay: "1s" }}
-              >
-                <SparkleIcon className="w-2 h-2 text-white/50" />
+          <Link
+            href="/"
+            className="text-center space-y-3 block cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+              {/* Logo sparkles */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
+                <div
+                  className="absolute top-2 right-2 animate-ping"
+                  style={{ animationDelay: "0.5s" }}
+                >
+                  <SparkleIcon className="w-3 h-3 text-white/70" />
+                </div>
+                <div
+                  className="absolute bottom-2 left-2 animate-pulse"
+                  style={{ animationDelay: "1s" }}
+                >
+                  <SparkleIcon className="w-2 h-2 text-white/50" />
+                </div>
               </div>
             </div>
-          </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
-            GLOW
-          </h1>
-          {/* <p className="text-blue-100/80 text-sm">
-            Graduate Learning Orientation Workshop
-          </p> */}
-        </Link>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent">
+              GLOW
+            </h1>
+          </Link>
+        </motion.div>
 
         {/* Form */}
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
+        <motion.div
+          initial="initial"
+          animate="animate"
+          variants={staggerContainer}
+          className="space-y-6"
+        >
           <div className="space-y-4">
             {/* 🚀 DYNAMIC PROVIDER LIST - Renders buttons for all providers from API */}
             {providers.map((provider) => (
-              <Button
+              <motion.div
                 key={provider.id}
-                type="button"
-                onClick={() => handleSSOLogin(provider)}
-                disabled={loading[provider.id]}
-                data-testid={`${provider.id}-login-button`}
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
+                variants={cardVariants}
+                whileHover="hover"
               >
-                <div className="flex items-center justify-center space-x-3">
-                  {loading[provider.id] ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <ProviderIcon icon={provider.icon} name={provider.name} />
-                  )}
-                  <span className="text-base">
-                    {loading[provider.id]
-                      ? "Signing in..."
-                      : `Continue with ${provider.name}`}
-                  </span>
-                </div>
-              </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleSSOLogin(provider)}
+                  disabled={loading[provider.id]}
+                  data-testid={`${provider.id}-login-button`}
+                  className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center justify-center space-x-3">
+                    {loading[provider.id] ? (
+                      <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                    ) : (
+                      <ProviderIcon icon={provider.icon} name={provider.name} />
+                    )}
+                    <span className="text-base">
+                      {loading[provider.id]
+                        ? "Signing in..."
+                        : `Continue with ${provider.name}`}
+                    </span>
+                  </div>
+                </Button>
+              </motion.div>
             ))}
 
             {/* Divider - only show if there are SSO providers */}
             {providers.length > 0 && (
-              <div className="relative py-2">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="relative py-2"
+              >
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/20" />
+                  <div className="w-full border-t border-white/30" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-slate-900/50 backdrop-blur-sm px-4 text-blue-200/80 font-medium tracking-wider">
+                  <span className="bg-blue-500 px-4 text-white/90 font-medium tracking-wider">
                     Or
                   </span>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Guest Access Button */}
-            <Button
-              type="button"
-              onClick={handleGuestAccess}
-              disabled={loadingGuest}
-              data-testid="guest-login-button"
-              className="w-full h-12 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-white/30 backdrop-blur-sm"
+            <motion.div
+              variants={cardVariants}
+              whileHover="hover"
             >
-              <div className="flex items-center justify-center space-x-3">
-                {loadingGuest ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <UserIcon />
-                )}
-                <span className="text-base">
-                  {loadingGuest ? "Accessing..." : "Continue as Guest"}
-                </span>
-              </div>
-            </Button>
+              <Button
+                type="button"
+                onClick={handleGuestAccess}
+                disabled={loadingGuest}
+                data-testid="guest-login-button"
+                className="w-full h-12 bg-white hover:bg-gray-50 text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-center justify-center space-x-3">
+                  {loadingGuest ? (
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+                  ) : (
+                    <UserIcon />
+                  )}
+                  <span className="text-base">
+                    {loadingGuest ? "Accessing..." : "Continue as Guest"}
+                  </span>
+                </div>
+              </Button>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

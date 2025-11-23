@@ -165,7 +165,7 @@ const ToolCallCard = ({
   return (
     // MODIFIED: Conditional margin
     <Card
-      className={`border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/5 dark:to-indigo-900/5 hover:shadow-sm transition-all duration-200 p-0`}
+      className={`border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/30 to-blue-50/30 dark:from-blue-900/5 dark:to-blue-900/5 hover:shadow-sm transition-all duration-200 p-0`}
     >
       {/* MODIFIED: Conditional padding */}
       <CardContent className={isMinimized ? "p-2" : "p-4"}>
@@ -176,7 +176,7 @@ const ToolCallCard = ({
           >
             {/* MODIFIED: Conditional icon container size */}
             <div
-              className={`bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0 ${
+              className={`bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shrink-0 ${
                 isMinimized ? "w-6 h-6" : "w-8 h-8"
               }`}
             >
@@ -458,7 +458,7 @@ export default function ChatMessages({
                         : "rounded-xl p-4"
                     } ${
                       message.role === "user"
-                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
                         : message.role === "assistant" &&
                           message.completed &&
                           message.content.startsWith("Error:")
@@ -584,7 +584,7 @@ export default function ChatMessages({
         <button
           aria-label="Scroll to latest"
           onClick={handleScrollDown}
-          className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 bg-blue-500 dark:bg-blue-600 border border-blue-700 dark:border-blue-400 shadow-lg rounded-full p-2 hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
+          className="absolute z-20 left-1/2 -translate-x-1/2 bottom-4 bg-blue-500 dark:bg-blue-500 border border-blue-500 dark:border-blue-400 shadow-lg rounded-full p-2 hover:bg-blue-600 dark:hover:bg-blue-600 transition-colors"
           style={{ boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)" }}
         >
           <ArrowDown className="h-4 w-4 text-white" />

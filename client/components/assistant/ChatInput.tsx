@@ -157,7 +157,7 @@ export default function ChatInput({
               disabled={isDisabled}
               title={buttonTitle}
               size="icon"
-              className="shrink-0 h-7 w-7 p-0 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600"
+              className="shrink-0 h-7 w-7 p-0 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600"
               data-testid="assistant-send-button"
             >
               <Send className="h-4 w-4" />

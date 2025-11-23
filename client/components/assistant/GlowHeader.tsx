@@ -9,10 +9,10 @@ export default function GlowHeader() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center relative">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center relative">
           <span className="text-white font-bold text-lg z-10">G</span>
         </div>
-        <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-500 bg-clip-text text-transparent">
           GLOW Assistant
         </h3>
       </div>

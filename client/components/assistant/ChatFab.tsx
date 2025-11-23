@@ -43,7 +43,7 @@ export default function ChatFab({ up = false, uiState, onOpenWidget, onExpand }:
     return (
       <Button
         onClick={handleClick}
-        className="shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 group"
+        className="shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-600 border-0 group"
         size="sm"
         data-testid="assistant-chat-fab"
       >
@@ -56,7 +56,7 @@ export default function ChatFab({ up = false, uiState, onOpenWidget, onExpand }:
   return (
     <Button
       onClick={handleClick}
-      className="fixed bottom-2 right-2 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 group"
+      className="fixed bottom-2 right-2 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-600 border-0 group"
       size="lg"
       data-testid="assistant-chat-fab"
     >

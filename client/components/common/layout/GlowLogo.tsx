@@ -39,6 +39,10 @@ interface GlowLogoProps {
    * Whether to invert colors (white text instead of gradient) - for dark backgrounds
    */
   invertColors?: boolean;
+  /**
+   * Whether to use black text (for light backgrounds) - overrides invertColors text color
+   */
+  lightBackground?: boolean;
 }
 
 export function GlowLogo({
@@ -47,6 +51,7 @@ export function GlowLogo({
   onClick,
   size = "sm",
   invertColors = false,
+  lightBackground = false,
 }: GlowLogoProps) {
   const iconSize = size === "sm" ? "w-5 h-5" : "w-5 h-5";
   const containerSize = size === "sm" ? "w-8 h-8" : "w-10 h-10";
@@ -64,30 +69,44 @@ export function GlowLogo({
       onClick={handleClick}
     >
       <div
-        className={`${containerSize} bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden`}
+        className={`${containerSize} rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden transition-all duration-300 ${
+          lightBackground
+            ? "bg-white/60 backdrop-blur-sm border border-yellow-300/40"
+            : invertColors
+              ? "bg-white/20 backdrop-blur-sm border border-white/30"
+              : "bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500"
+        }`}
       >
         {/* Logo sparkles */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <SparkleIcon className={`${iconSize} text-white animate-pulse`} />
+          <SparkleIcon
+            className={`${iconSize} ${lightBackground ? "text-black" : "text-white"} animate-pulse`}
+          />
           <div
             className="absolute top-1 right-1 animate-ping"
             style={{ animationDelay: "0.5s" }}
           >
-            <SparkleIcon className="w-2 h-2 text-white/70" />
+            <SparkleIcon
+              className={`w-2 h-2 ${lightBackground ? "text-black/70" : "text-white/70"}`}
+            />
           </div>
           <div
             className="absolute bottom-1 left-1 animate-pulse"
             style={{ animationDelay: "1s" }}
           >
-            <SparkleIcon className="w-1.5 h-1.5 text-white/50" />
+            <SparkleIcon
+              className={`w-1.5 h-1.5 ${lightBackground ? "text-black/50" : "text-white/50"}`}
+            />
           </div>
         </div>
       </div>
       <h1
         className={`${textSize} font-bold transition-colors duration-300 ${
-          invertColors
-            ? "text-white drop-shadow-lg"
-            : "bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+          lightBackground
+            ? "text-black"
+            : invertColors
+              ? "text-white drop-shadow-lg"
+              : "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent"
         } ${mobileIconOnly ? "hidden md:block" : ""}`}
       >
         GLOW

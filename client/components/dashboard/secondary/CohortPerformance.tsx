@@ -237,7 +237,7 @@ export default function CohortPerformance({
               } else if (passRatePct >= 85) {
                 bgColor = "#22c55e"; // Green for success
               } else if (passRatePct >= 75) {
-                bgColor = "#eab308"; // Yellow for warning
+                bgColor = "#3b82f6"; // Blue for warning
               } else {
                 bgColor = "#ef4444"; // Red for danger
               }

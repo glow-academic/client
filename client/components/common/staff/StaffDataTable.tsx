@@ -314,7 +314,7 @@ export function StaffDataTable({
                       .isStaged && (
                       <Badge
                         variant="outline"
-                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                        className="text-xs bg-blue-50 text-blue-500 border-blue-200"
                       >
                         New
                       </Badge>

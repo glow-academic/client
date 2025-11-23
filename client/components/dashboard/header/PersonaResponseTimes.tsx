@@ -67,7 +67,7 @@ const COLOR_CONFIGS = {
     text: "text-yellow-700",
     icon: "text-yellow-600",
     accent: "text-yellow-600",
-    primary: "#eab308",
+    primary: "#3b82f6",
   },
   success: {
     gradient:

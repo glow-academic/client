@@ -107,7 +107,7 @@ export default function ChatDialog({
           This dialog shows the chat history and allows you to add new messages.
         </DialogDescription>
         <DialogHeader
-          className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-t-2xl"
+          className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 rounded-t-2xl"
           data-testid="assistant-chat-header"
         >
           <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">

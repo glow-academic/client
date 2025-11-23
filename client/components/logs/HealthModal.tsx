@@ -328,7 +328,7 @@ export function HealthModal({
                   <CardHeader className="pb-2 pt-3 px-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
-                        <IconComponent className="h-4 w-4 text-blue-600" />
+                        <IconComponent className="h-4 w-4 text-blue-500" />
                         <div>
                           <CardTitle className="text-sm">
                             {check.name}

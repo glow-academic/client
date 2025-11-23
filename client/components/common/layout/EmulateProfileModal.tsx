@@ -333,7 +333,7 @@ export function EmulateProfileModal({
             <Button
               onClick={handleEmulate}
               disabled={!selectedProfileId || isEmulating}
-              className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-600"
             >
               {isEmulating ? "Emulating..." : "Emulate"}
             </Button>

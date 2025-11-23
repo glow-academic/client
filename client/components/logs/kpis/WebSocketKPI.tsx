@@ -42,8 +42,8 @@ export interface WebSocketKPIProps {
 const COLOR_CONFIG = {
   gradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900",
   border: "border-blue-200",
-  text: "text-blue-700",
-  icon: "text-blue-600",
+  text: "text-blue-500",
+  icon: "text-blue-500",
   primary: "#3b82f6",
 };
 

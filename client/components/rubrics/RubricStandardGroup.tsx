@@ -222,7 +222,7 @@ const getPointColorClass = (points: number, maxPoints: number): string => {
 // Helper function to get background and text colors for icons
 const getColorClasses = (color: string) => {
   const colorMap = {
-    blue: { bg: "bg-blue-100", text: "text-blue-600" },
+    blue: { bg: "bg-blue-100", text: "text-blue-500" },
     amber: { bg: "bg-amber-100", text: "text-amber-600" },
     purple: { bg: "bg-purple-100", text: "text-purple-600" },
     green: { bg: "bg-green-100", text: "text-green-600" },

@@ -84,7 +84,7 @@ export default function ChatStarterPrompts({
       role="button"
       aria-label={prompt}
     >
-      <div className="w-full h-full flex items-center justify-start text-left text-sm whitespace-normal leading-relaxed group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors px-4 py-6 relative z-10">
+      <div className="w-full h-full flex items-center justify-start text-left text-sm whitespace-normal leading-relaxed group-hover:text-blue-500 dark:group-hover:text-blue-300 transition-colors px-4 py-6 relative z-10">
         {prompt}
       </div>
     </Card>

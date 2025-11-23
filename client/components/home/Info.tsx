@@ -17,12 +17,11 @@ import {
 import { BarChart3, FilePlus, Layers, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export default function Info() {
   const containerRef = useRef<HTMLDivElement>(null);
   const licensingRef = useRef<HTMLDivElement>(null);
-  const [isInLicensing, setIsInLicensing] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselItems = 4;
 
@@ -41,20 +40,6 @@ export default function Info() {
 
   const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const y = useTransform(scrollYProgress, [0, 0.3], [0, -50]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (licensingRef.current) {
-        const rect = licensingRef.current.getBoundingClientRect();
-        const isVisible = rect.top <= 100 && rect.bottom >= 100;
-        setIsInLicensing(isVisible);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Check initial position
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Animation variants
   const fadeInUp = {
@@ -92,7 +77,7 @@ export default function Info() {
   };
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-white overflow-hidden">
+    <div ref={containerRef} className="min-h-screen bg-white overflow-x-hidden">
       {/* Logo */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -107,7 +92,6 @@ export default function Info() {
             // Stay on same page, no navigation
           }}
           size="md"
-          invertColors={isInLicensing}
         />
       </motion.div>
 
@@ -122,7 +106,7 @@ export default function Info() {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               href="/login"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+              className="px-6 py-2 rounded-lg font-semibold transition-all shadow-lg bg-yellow-400 text-white hover:bg-yellow-500"
             >
               Login
             </Link>
@@ -131,7 +115,7 @@ export default function Info() {
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen flex items-center justify-center py-16">
+      <section className="relative overflow-hidden bg-gradient-to-br from-yellow-50 via-white to-yellow-50 min-h-screen flex items-center justify-center py-16">
         {/* Animated geometric background */}
         <div className="absolute inset-0 overflow-hidden">
           <svg
@@ -147,9 +131,9 @@ export default function Info() {
                 x2="100%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.1" />
-                <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#ec4899" stopOpacity="0.1" />
+                <stop offset="0%" stopColor="#facc15" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#facc15" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#facc15" stopOpacity="0.1" />
               </linearGradient>
             </defs>
             <motion.path
@@ -196,8 +180,8 @@ export default function Info() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: `linear-gradient(to right, #3b82f6 1px, transparent 1px),
-                                linear-gradient(to bottom, #3b82f6 1px, transparent 1px)`,
+                backgroundImage: `linear-gradient(to right, #facc15 1px, transparent 1px),
+                                linear-gradient(to bottom, #facc15 1px, transparent 1px)`,
                 backgroundSize: "60px 60px",
               }}
             >
@@ -217,9 +201,9 @@ export default function Info() {
           {/* Floating geometric shapes */}
           {[...Array(6)].map((_, i) => {
             const colorMap = {
-              0: "rgb(96 165 250)", // blue-400
-              1: "rgb(196 181 253)", // purple-400
-              2: "rgb(244 114 182)", // pink-400
+              0: "rgb(250 204 21)", // yellow-400
+              1: "rgb(250 204 21)", // yellow-400
+              2: "rgb(250 204 21)", // yellow-400 (golden glow)
             };
             const backgroundColor = colorMap[(i % 3) as keyof typeof colorMap];
             return (
@@ -266,7 +250,7 @@ export default function Info() {
               className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight"
             >
               <span className="block mb-2">Master Office Hours</span>
-              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 bg-clip-text text-transparent">
                 Through AI-Powered Practice
               </span>
             </motion.h1>
@@ -288,13 +272,13 @@ export default function Info() {
               className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-12"
             >
               {[
-                { number: "200+", label: "Active Students", color: "blue" },
+                { number: "200+", label: "Active Students", color: "yellow" },
                 {
                   number: "25,000+",
                   label: "Minutes Practiced",
-                  color: "purple",
+                  color: "gold",
                 },
-                { number: "Purdue", label: "University", color: "green" },
+                { number: "Purdue", label: "University", color: "sun" },
               ].map((stat, index) => (
                 <motion.div
                   key={index}
@@ -311,11 +295,11 @@ export default function Info() {
                       stiffness: 200,
                     }}
                     className={`text-5xl font-bold bg-gradient-to-r ${
-                      stat.color === "blue"
-                        ? "from-blue-600 to-blue-400"
-                        : stat.color === "purple"
-                          ? "from-purple-600 to-purple-400"
-                          : "from-green-600 to-green-400"
+                      stat.color === "yellow"
+                        ? "from-yellow-300 to-yellow-400"
+                        : stat.color === "gold"
+                          ? "from-yellow-400 to-yellow-500"
+                          : "from-yellow-400 to-yellow-300"
                     } bg-clip-text text-transparent mb-3`}
                   >
                     {stat.number}
@@ -333,8 +317,43 @@ export default function Info() {
       </section>
 
       {/* Comprehensive Training Features - Carousel Section */}
-      <section className="py-28 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pb-28 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-[180px] -mt-16 pt-32 relative z-10">
+        {/* Decorative star shapes */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          {/* Top area star - above images */}
+          <svg
+            className="absolute top-16 left-16 w-12 h-12 text-white"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          {/* Left side star - avoiding center image area */}
+          <svg
+            className="absolute top-1/3 left-4 w-14 h-14 text-white"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          {/* Right side star - avoiding center image area */}
+          <svg
+            className="absolute top-1/3 right-4 w-12 h-12 text-white"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          {/* Bottom area star - below images */}
+          <svg
+            className="absolute bottom-16 left-1/3 w-11 h-11 text-white"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -349,7 +368,7 @@ export default function Info() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3 }}
-                  className="text-5xl font-bold text-gray-900 mb-3"
+                  className="text-5xl font-bold text-white mb-3"
                 >
                   {carouselIndex === 0 && "Monitor TA performance"}
                   {carouselIndex === 1 && "Create Custom Scenarios"}
@@ -362,7 +381,7 @@ export default function Info() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
-                  className="text-lg text-gray-600 max-w-2xl mx-auto mb-4"
+                  className="text-lg text-white/90 max-w-2xl mx-auto mb-4"
                 >
                   {carouselIndex === 0 &&
                     "View comprehensive statistics and analytics to track TA performance across all training sessions."}
@@ -378,80 +397,83 @@ export default function Info() {
           </motion.div>
 
           {/* Image Carousel */}
-          <div className="relative max-w-5xl mx-auto">
-            {/* Left Chevron */}
-            <motion.button
-              onClick={prevCarousel}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 transition-all"
-              aria-label="Previous image"
-            >
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-center gap-4">
+              {/* Left Chevron */}
+              <motion.button
+                onClick={prevCarousel}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full border border-white/40 transition-all"
+                aria-label="Previous image"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </motion.button>
-
-            {/* Right Chevron */}
-            <motion.button
-              onClick={nextCarousel}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 transition-all"
-              aria-label="Next image"
-            >
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </motion.button>
-
-            <div className="overflow-hidden rounded-2xl">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={carouselIndex}
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.5 }}
-                  className="aspect-video relative w-full"
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <Image
-                    src={`/Image${carouselIndex + 1}.png`}
-                    alt={
-                      carouselIndex === 0
-                        ? "Faculty Dashboard - TA Statistics"
-                        : carouselIndex === 1
-                          ? "Faculty Scenario Setup Page"
-                          : carouselIndex === 2
-                            ? "TA Conversation Simulation Area"
-                            : "TA Specialized Feedback & Rubric"
-                    }
-                    fill
-                    className="object-cover object-[center_5%]"
-                    priority={carouselIndex === 0}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
                   />
-                </motion.div>
-              </AnimatePresence>
+                </svg>
+              </motion.button>
+
+              {/* Image Container */}
+              <div className="flex-1 overflow-hidden rounded-2xl">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={carouselIndex}
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.5 }}
+                    className="aspect-video relative w-full"
+                  >
+                    <Image
+                      src={`/Image${carouselIndex + 1}.png`}
+                      alt={
+                        carouselIndex === 0
+                          ? "Faculty Dashboard - TA Statistics"
+                          : carouselIndex === 1
+                            ? "Faculty Scenario Setup Page"
+                            : carouselIndex === 2
+                              ? "TA Conversation Simulation Area"
+                              : "TA Specialized Feedback & Rubric"
+                      }
+                      fill
+                      className="object-cover object-[center_5%]"
+                      priority={carouselIndex === 0}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Right Chevron */}
+              <motion.button
+                onClick={nextCarousel}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full border border-white/40 transition-all"
+                aria-label="Next image"
+              >
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </motion.button>
             </div>
 
             {/* Carousel Navigation Dots */}
@@ -461,7 +483,7 @@ export default function Info() {
                   key={index}
                   onClick={() => setCarouselIndex(index)}
                   className={`w-3 h-3 rounded-full transition-all ${
-                    carouselIndex === index ? "bg-blue-600 w-8" : "bg-gray-300"
+                    carouselIndex === index ? "bg-white w-8" : "bg-white/40"
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
@@ -472,8 +494,46 @@ export default function Info() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-28 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-28 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
+        {/* Animated diagonal lines background */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            transform: "rotate(-45deg)",
+            transformOrigin: "center",
+            width: "200%",
+            height: "200%",
+            left: "-50%",
+            top: "-50%",
+          }}
+        >
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute"
+              style={{
+                width: "3px",
+                height: "200%",
+                left: `${10 + i * 12}%`,
+                top: "-50%",
+                background: `linear-gradient(to bottom, transparent, rgba(250, 204, 21, 0.5), transparent)`,
+                boxShadow: "0 0 6px rgba(250, 204, 21, 0.4)",
+              }}
+              animate={{
+                y: [0, -200, 0],
+                opacity: [0.3, 0.7, 0.3],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 7 + i * 0.6,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.5,
+              }}
+            />
+          ))}
+        </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -484,9 +544,6 @@ export default function Info() {
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
               How It Works
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              A streamlined process powered by advanced AI technology
-            </p>
           </motion.div>
 
           <div className="max-w-5xl mx-auto">
@@ -541,7 +598,7 @@ export default function Info() {
                       }}
                       className="flex-shrink-0"
                     >
-                      <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-yellow-500 text-white rounded-2xl flex items-center justify-center shadow-lg">
                         <IconComponent className="w-10 h-10" />
                       </div>
                     </motion.div>
@@ -685,9 +742,9 @@ export default function Info() {
       {/* Licensing Section */}
       <section
         ref={licensingRef}
-        className="py-16 md:py-24 lg:py-32 xl:py-42 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden"
+        className="py-16 md:py-24 lg:py-32 xl:py-42 bg-gradient-to-r from-blue-500 to-blue-600 relative overflow-hidden"
       >
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -ml-48 -mt-48"></div>
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full -mr-48 -mb-48"></div>
         </div>
@@ -723,7 +780,7 @@ export default function Info() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6">
               Bring GLOW to Your Institution
             </h2>
-            <p className="text-lg md:text-xl text-blue-100 mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed px-4">
+            <p className="text-lg md:text-xl text-white mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed px-4">
               We&apos;re working on licensing options for colleges and
               universities. Reach out to learn more.
             </p>
@@ -732,18 +789,23 @@ export default function Info() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="bg-white/10 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-white/20 max-w-xl mx-auto"
+              className="bg-white/20 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-white/30 max-w-xl mx-auto"
             >
               <p className="text-base md:text-lg text-white mb-2 md:mb-3 font-semibold">
                 Get in touch:
               </p>
               <a
                 href="mailto:redacted@purdue.edu"
-                className="text-lg md:text-xl text-blue-100 hover:text-white underline transition-colors break-all"
+                className="text-lg md:text-xl text-white hover:text-blue-100 underline transition-colors break-all"
               >
                 redacted@purdue.edu
               </a>
             </motion.div>
+            <div className="mt-8 pt-8 border-t border-white/20">
+              <p className="text-sm text-white/90">
+                &copy; {new Date().getFullYear()} GLOW. All rights reserved.
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -788,17 +850,6 @@ export default function Info() {
         </div>
       </section>
       */}
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-sm">
-              &copy; {new Date().getFullYear()} GLOW. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

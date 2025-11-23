@@ -55,7 +55,7 @@ export default function SimulationProgress({
       } else if (status === "in-progress") {
         return {
           text: "In Progress",
-          color: "text-blue-600 dark:text-blue-400",
+          color: "text-blue-500 dark:text-blue-400",
           bgColor: "bg-blue-100 dark:bg-blue-900/20",
           borderColor: "border-blue-200 dark:border-blue-800",
         };
@@ -79,7 +79,7 @@ export default function SimulationProgress({
       } else if (status === "in-progress") {
         return {
           text: "In Progress",
-          color: "text-blue-600 dark:text-blue-400",
+          color: "text-blue-500 dark:text-blue-400",
           bgColor: "bg-blue-100 dark:bg-blue-900/20",
           borderColor: "border-blue-200 dark:border-blue-800",
         };
