@@ -39,6 +39,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Note: Parameters table is created here and needed by department seed data
 \i app/scenarios/init.sql
 
+-- 4a. Videos (depends on scenarios for simulation_videos junction)
+\i app/videos/init.sql
+
 -- 5. Seed base data for junction table dependencies
 -- Import shared models and keys (generated at seed/ level)
 \i seed/models.sql
@@ -117,6 +120,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 6. Tables that depend on multiple previous tables
 -- Note: simulation_scenarios, simulation_tags, and tag junction tables defined here
 \i app/simulations/init.sql
+
+-- 6a. Quizzes (depends on videos and simulation_attempts)
+\i app/quizzes/init.sql
 
 -- 7. Tables that depend on multiple previous tables
 -- Note: cohort_profiles, cohort_simulations junction tables defined here
