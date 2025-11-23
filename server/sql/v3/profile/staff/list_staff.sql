@@ -319,7 +319,7 @@ SELECT DISTINCT ON (p.id)
     up.role as current_user_role,
     COALESCE(vdid.valid_department_ids, ARRAY[]::text[]) as valid_department_ids
 FROM profiles p
-JOIN profile_departments pd ON pd.profile_id = p.id
+LEFT JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
 LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
 LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
 LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
@@ -341,7 +341,12 @@ CROSS JOIN cohort_mapping_data cmd
 CROSS JOIN department_mapping_data dmd
 CROSS JOIN trend_data_combined tdc
 CROSS JOIN valid_department_ids_data vdid
-WHERE pd.department_id IN (SELECT department_id FROM user_departments)
+WHERE (
+    -- Superadmins see all profiles (bypass department filter)
+    up.role = 'superadmin' 
+    -- Non-superadmins only see profiles that share departments with them
+    OR pd.department_id IN (SELECT department_id FROM user_departments)
+)
 AND (
     up.role = 'superadmin' OR
     (up.role = 'admin' AND p.role IN ('admin', 'instructional', 'ta', 'guest')) OR

@@ -282,8 +282,8 @@ export default function StaffEditModal({
             <DialogTitle>Edit Staff</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Editable fields: Name and Alias */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Editable fields: Name */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
                 {!isLoading ? (
@@ -318,71 +318,73 @@ export default function StaffEditModal({
                   <Skeleton className="h-10 w-full" />
                 )}
               </div>
-              <div className="space-y-2">
-                <Label>Emails</Label>
-                {!isLoading ? (
-                  <div className="space-y-2">
-                    {formData.emails.map((email, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="flex-1 relative">
-                          <Input
-                            type="email"
-                            value={email}
-                            onChange={(e) => updateEmail(index, e.target.value)}
-                            placeholder="redacted@purdue.edu"
-                            disabled={isSubmitting}
-                            data-testid={`input-staff-email-${index}`}
-                            className={formData.primaryEmailIndex === index ? "border-primary" : ""}
-                          />
-                          {formData.primaryEmailIndex === index && (
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
-                              Primary
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
+            </div>
+
+            {/* Emails Section */}
+            <div className="space-y-2">
+              <Label>Emails</Label>
+              {!isLoading ? (
+                <div className="space-y-2">
+                  {formData.emails.map((email, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="flex-1 relative">
+                        <Input
+                          type="email"
+                          value={email}
+                          onChange={(e) => updateEmail(index, e.target.value)}
+                          placeholder="redacted@purdue.edu"
+                          disabled={isSubmitting}
+                          data-testid={`input-staff-email-${index}`}
+                          className={formData.primaryEmailIndex === index ? "border-primary" : ""}
+                        />
+                        {formData.primaryEmailIndex === index && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary font-medium">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant={formData.primaryEmailIndex === index ? "default" : "outline"}
+                          size="icon"
+                          onClick={() => setPrimaryEmail(index)}
+                          disabled={isSubmitting || formData.primaryEmailIndex === index}
+                          className="h-8 w-8 shrink-0"
+                          title="Set as primary"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </Button>
+                        {formData.emails.length > 1 && (
                           <Button
                             type="button"
-                            variant={formData.primaryEmailIndex === index ? "default" : "outline"}
+                            variant="outline"
                             size="icon"
-                            onClick={() => setPrimaryEmail(index)}
-                            disabled={isSubmitting || formData.primaryEmailIndex === index}
+                            onClick={() => removeEmail(index)}
+                            disabled={isSubmitting}
                             className="h-8 w-8 shrink-0"
-                            title="Set as primary"
+                            title="Remove email"
                           >
-                            <CheckCircle2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                          {formData.emails.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => removeEmail(index)}
-                              disabled={isSubmitting}
-                              className="h-8 w-8 shrink-0"
-                              title="Remove email"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={addEmail}
-                      disabled={isSubmitting}
-                      size="sm"
-                      className="w-full"
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" /> Add email
-                    </Button>
-                  </div>
-                ) : (
-                  <Skeleton className="h-10 w-full" />
-                )}
-              </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addEmail}
+                    disabled={isSubmitting}
+                    size="sm"
+                    className="w-full"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add email
+                  </Button>
+                </div>
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
             </div>
 
             {/* Editable fields - simple vertical layout */}
