@@ -9249,6 +9249,11 @@
           "value": {
             "type": "string",
             "title": "Value"
+          },
+          "encrypted": {
+            "type": "boolean",
+            "title": "Encrypted",
+            "default": true
           }
         },
         "type": "object",

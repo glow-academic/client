@@ -1,6 +1,6 @@
 -- Update auth with items and values in a single transaction
 -- Parameters: $1=auth_id, $2=name, $3=description, $4=active, $5=items_json (jsonb array)
--- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "encrypted_value"}, ...]
+-- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "value", "encrypted": true}, ...]
 WITH auth_id_resolved AS (
     SELECT $1::uuid as auth_id
 ),
@@ -27,23 +27,26 @@ items_expanded AS (
         (item->>'name')::text as item_name,
         (item->>'description')::text as item_description,
         (item->>'value')::text as item_value,
+        COALESCE((item->>'encrypted')::boolean, true) as item_encrypted,
         ordinality as item_order
     FROM jsonb_array_elements(COALESCE($5::jsonb, '[]'::jsonb)) WITH ORDINALITY AS t(item, ordinality)
     WHERE COALESCE(jsonb_array_length(COALESCE($5::jsonb, '[]'::jsonb)), 0) > 0
 ),
 new_items AS (
-    -- Create all auth items with encrypted values
+    -- Create all auth items with values and encrypted flag
     INSERT INTO auth_items (
         auth_id,
         name,
         description,
-        value
+        value,
+        encrypted
     )
     SELECT 
         ua.auth_id::uuid,
         ie.item_name,
         ie.item_description,
-        COALESCE(ie.item_value, '')
+        COALESCE(ie.item_value, ''),
+        ie.item_encrypted
     FROM update_auth ua
     CROSS JOIN items_expanded ie
     RETURNING id::text as item_id

@@ -19,7 +19,8 @@ class AuthItemCreate(BaseModel):
 
     name: str
     description: str
-    value: str  # Plain text value that will be encrypted
+    value: str  # Plain text value (will be encrypted if encrypted=true)
+    encrypted: bool = True  # Default to encrypted for backward compatibility
 
 
 class CreateAuthRequest(BaseModel):
@@ -62,12 +63,17 @@ async def create_auth(
 
             items_data = []
             for item in request.auth_items:
-                # Encrypt the value before storing
-                encrypted_value = encrypt_api_key(item.value)
+                # Encrypt the value only if encrypted flag is True
+                if item.encrypted:
+                    stored_value = encrypt_api_key(item.value)
+                else:
+                    stored_value = item.value  # Store as plain text
+                
                 item_dict = {
                     "name": item.name,
                     "description": item.description,
-                    "value": encrypted_value,
+                    "value": stored_value,
+                    "encrypted": item.encrypted,
                 }
                 items_data.append(item_dict)
 

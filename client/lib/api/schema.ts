@@ -4230,6 +4230,11 @@ export interface components {
             description: string;
             /** Value */
             value: string;
+            /**
+             * Encrypted
+             * @default true
+             */
+            encrypted: boolean;
         };
         /** AuthItemDetail */
         AuthItemDetail: {

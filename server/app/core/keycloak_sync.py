@@ -216,42 +216,87 @@ async def sync_identity_providers(pool: asyncpg.Pool | None) -> None:
 
                 # 2. Fetch config map (No transformation needed - DB keys are already camelCase)
                 items_query = """
-                    SELECT name, value 
+                    SELECT name, value, encrypted 
                     FROM auth_items 
                     WHERE auth_id = $1
                 """
                 items = await conn.fetch(items_query, auth_id)
 
-                # Decrypt and build the dictionary
+                # Decrypt or use plain text based on encrypted flag (with fallback)
                 config_map: dict[str, str] = {}
                 for item in items:
                     item_name = item["name"]
-                    encrypted_value = item["value"]
-                    try:
-                        # We assume DB keys are ALREADY "clientId", "clientSecret", etc.
-                        decrypted_value = decrypt_api_key(encrypted_value)
-                        config_map[item_name] = decrypted_value
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to decrypt auth_item '{item_name}' for provider '{slug}': {e}"
-                        )
-                        continue
+                    raw_value = item["value"]
+                    is_encrypted = item.get("encrypted", True)  # Default to True if flag missing
+                    
+                    if is_encrypted:
+                        # Decrypt encrypted values (secrets)
+                        try:
+                            decrypted_value = decrypt_api_key(raw_value)
+                            config_map[item_name] = decrypted_value
+                        except Exception as e:
+                            # Fallback: If decryption fails, assume it's plain text (extra safety)
+                            logger.warning(
+                                f"Failed to decrypt auth_item '{item_name}' for provider '{slug}': {e}. "
+                                f"Using as plain text."
+                            )
+                            config_map[item_name] = raw_value
+                    else:
+                        # Use plain text values as-is (public config like URLs, identifiers)
+                        config_map[item_name] = raw_value
 
-                # 3. Construct Payload (The 1-to-1 Mapping)
+                # 3. Construct Payload (Provider-Specific Configuration)
                 payload: dict[str, Any] = {
                     "alias": slug,              # e.g., "microsoft"
-                    "providerId": provider_id,   # e.g., "oidc"
+                    "providerId": provider_id,   # e.g., "oidc" or "saml"
                     "displayName": display_name, # e.g., "Microsoft Entra"
                     "enabled": True,
                     "trustEmail": True,
-                    "config": config_map        # Pass the dict straight through!
+                    "config": {}                # Will be populated below
                 }
 
-                # Force specific defaults if missing in DB
-                if "syncMode" not in payload["config"]:
-                    payload["config"]["syncMode"] = "FORCE"
-                if "useJwksUrl" not in payload["config"]:
-                    payload["config"]["useJwksUrl"] = "true"
+                # --- SAML Provider Configuration ---
+                if provider_id == "saml":
+                    # Map database keys to Keycloak SAML config keys
+                    if "ssoUrl" in config_map:
+                        payload["config"]["singleSignOnServiceUrl"] = config_map["ssoUrl"]
+                    
+                    if "entityId" in config_map:
+                        payload["config"]["entityId"] = config_map["entityId"]
+                    
+                    # Metadata URL - Keycloak can import config from metadata
+                    if "metadataUrl" in config_map:
+                        # Keycloak supports importing from metadata URL
+                        # Note: Some Keycloak versions may require this to be set during creation
+                        payload["config"]["importFromIdpUrl"] = config_map["metadataUrl"]
+                    
+                    # Certificate (if provided and not using metadata)
+                    if "certificate" in config_map:
+                        payload["config"]["signingCertificate"] = config_map["certificate"]
+                    
+                    # SAML-specific defaults
+                    if "nameIDPolicyFormat" not in payload["config"]:
+                        payload["config"]["nameIDPolicyFormat"] = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+                    
+                    if "syncMode" not in payload["config"]:
+                        payload["config"]["syncMode"] = "FORCE"
+                    
+                    if "allowCreate" not in payload["config"]:
+                        payload["config"]["allowCreate"] = "true"
+                
+                # --- OIDC/Google Provider Configuration (Default) ---
+                else:
+                    # Pass config_map straight through for OIDC/Google
+                    payload["config"] = config_map
+                    
+                    # Force specific defaults if missing in DB
+                    if "syncMode" not in payload["config"]:
+                        payload["config"]["syncMode"] = "FORCE"
+                    if "useJwksUrl" not in payload["config"]:
+                        payload["config"]["useJwksUrl"] = "true"
+
+                # 🔍 DEBUG: Print the config we are about to send
+                logger.info(f"🔍 Payload for {slug}: {payload['config']}")
 
                 # 4. Upsert (Create or Update) the provider in Keycloak
                 try:

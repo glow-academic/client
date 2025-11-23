@@ -30,7 +30,8 @@ CREATE TABLE auth_items (
   auth_id    UUID        NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
-  value      TEXT        NOT NULL -- Encrypted value (similar to parameter_items.value)
+  value      TEXT        NOT NULL, -- Encrypted or plain text value
+  encrypted  BOOLEAN     NOT NULL DEFAULT TRUE -- TRUE for encrypted secrets, FALSE for plain text config
 );
 
 CREATE INDEX ON auth_items (auth_id);
