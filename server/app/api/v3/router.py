@@ -42,6 +42,7 @@ from app.api.v3.rubrics import router as rubrics_router
 from app.api.v3.scenarios import router as scenarios_router
 from app.api.v3.schema import router as schema_router
 from app.api.v3.simulations import router as simulations_router
+from app.api.v3.videos import router as videos_router
 # ============================================================================
 # Batch F: Supporting Resources
 # ============================================================================
@@ -59,6 +60,7 @@ router.include_router(profile_router)
 router.include_router(scenarios_router)
 router.include_router(simulations_router)
 router.include_router(personas_router)
+router.include_router(videos_router)
 
 # Batch C: Secondary Resources (Complete CRUD)
 router.include_router(auth_router)

@@ -1,0 +1,123 @@
+"""Video update endpoint - v3 API following DHH principles."""
+
+import json
+from typing import Annotated, Any
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.sql_helper import load_sql
+
+
+# Inline request/response schemas
+class QuestionOption(BaseModel):
+    """Option for a question."""
+
+    option_text: str
+    type: str  # 'discrete' or 'freeform'
+    is_correct: bool
+
+
+class QuestionItem(BaseModel):
+    """Question item in update request."""
+
+    question_text: str
+    type: str  # 'choice' or 'frq'
+    allow_multiple: bool = False
+    times: list[int]  # Array of seconds when question appears
+    options: list[QuestionOption]  # Only used for choice questions
+
+
+class UpdateVideoRequest(BaseModel):
+    """Request to update a video."""
+
+    videoId: str
+    name: str
+    description: str
+    length_seconds: int
+    department_ids: list[str] | None
+    active: bool
+    questions: list[QuestionItem] = []  # Questions with times and options
+
+
+class UpdateVideoResponse(BaseModel):
+    """Response from update operation."""
+
+    success: bool
+    message: str
+
+
+router = APIRouter()
+
+
+@router.post("/update", response_model=UpdateVideoResponse)
+async def update_video(
+    request: UpdateVideoRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> UpdateVideoResponse:
+    """Update an existing video."""
+    tags = ["videos"]  # From router tags
+
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        # Validate length_seconds
+        if request.length_seconds <= 0:
+            raise ValueError("length_seconds must be greater than 0")
+
+        # Ensure arrays are not None (use empty arrays)
+        department_ids = request.department_ids or []
+        questions = request.questions or []
+
+        # Prepare questions JSON for SQL
+        questions_json = json.dumps([q.model_dump() for q in questions])
+
+        # Update video with all relationships in a single SQL file
+        sql_query = load_sql("sql/v3/videos/update_video_complete.sql")
+        sql_params = (
+            request.videoId,
+            request.name,
+            request.description,
+            request.length_seconds,
+            request.active,
+            department_ids if department_ids else None,
+            questions_json,
+        )
+        result = await conn.fetchrow(sql_query, *sql_params)
+
+        if not result:
+            raise HTTPException(
+                status_code=404, detail=f"Video not found: {request.videoId}"
+            )
+
+        result_data = UpdateVideoResponse(
+            success=True,
+            message=f"Video '{result['name']}' updated successfully",
+        )
+
+        # Invalidate cache after mutation
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        return result_data
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="update_video",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=http_request,
+        )
+

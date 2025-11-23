@@ -1335,6 +1335,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/videos/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Videos List
+         * @description Get videos list with all relationships.
+         */
+        post: operations["get_videos_list_api_v3_videos_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Video Detail
+         * @description Get detailed video information.
+         */
+        post: operations["get_video_detail_api_v3_videos_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/detail-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Video Detail Default
+         * @description Get default video structure for creation mode.
+         */
+        post: operations["get_video_detail_default_api_v3_videos_detail_default_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Video
+         * @description Create a new video.
+         */
+        post: operations["create_video_api_v3_videos_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Video
+         * @description Update an existing video.
+         */
+        post: operations["update_video_api_v3_videos_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Video
+         * @description Duplicate a video.
+         */
+        post: operations["duplicate_video_api_v3_videos_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Video
+         * @description Delete a video.
+         */
+        post: operations["delete_video_api_v3_videos_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -5573,6 +5713,42 @@ export interface components {
             message: string;
         };
         /**
+         * CreateVideoRequest
+         * @description Request to create a video.
+         */
+        CreateVideoRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Questions
+             * @default []
+             */
+            questions: components["schemas"]["app__api__v3__videos__create__QuestionItem"][];
+        };
+        /**
+         * CreateVideoResponse
+         * @description Response from create operation.
+         */
+        CreateVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Videoid */
+            videoId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * DailyData
          * @description Daily data point.
          */
@@ -6123,6 +6299,24 @@ export interface components {
             message: string;
         };
         /**
+         * DeleteVideoRequest
+         * @description Request to delete a video.
+         */
+        DeleteVideoRequest: {
+            /** Videoid */
+            videoId: string;
+        };
+        /**
+         * DeleteVideoResponse
+         * @description Response from delete operation.
+         */
+        DeleteVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * DepartmentDetailDefaultRequest
          * @description Request for default department detail.
          */
@@ -6573,6 +6767,26 @@ export interface components {
             success: boolean;
             /** Simulationid */
             simulationId: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DuplicateVideoRequest
+         * @description Request to duplicate a video.
+         */
+        DuplicateVideoRequest: {
+            /** Videoid */
+            videoId: string;
+        };
+        /**
+         * DuplicateVideoResponse
+         * @description Response from duplicate operation.
+         */
+        DuplicateVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Videoid */
+            videoId: string;
             /** Message */
             message: string;
         };
@@ -8870,6 +9084,50 @@ export interface components {
             sql: string;
         };
         /**
+         * QuestionOption
+         * @description Option for a question.
+         */
+        QuestionOption: {
+            /** Option Text */
+            option_text: string;
+            /** Type */
+            type: string;
+            /** Is Correct */
+            is_correct: boolean;
+        };
+        /**
+         * QuestionOptionResponse
+         * @description Option in question response.
+         */
+        QuestionOptionResponse: {
+            /** Option Id */
+            option_id: string;
+            /** Option Text */
+            option_text: string;
+            /** Type */
+            type: string;
+            /** Is Correct */
+            is_correct: boolean;
+        };
+        /**
+         * QuestionResponse
+         * @description Question in video detail response.
+         */
+        QuestionResponse: {
+            /** Question Id */
+            question_id: string;
+            /** Question Text */
+            question_text: string;
+            /** Type */
+            type: string;
+            /** Allow Multiple */
+            allow_multiple: boolean;
+            /** Times */
+            times: number[];
+            /** Options */
+            options: components["schemas"]["QuestionOptionResponse"][];
+        };
+        /**
          * RandomizeScenarioRequest
          * @description Request to randomize scenario sections.
          */
@@ -10841,6 +11099,39 @@ export interface components {
             message: string;
         };
         /**
+         * UpdateVideoRequest
+         * @description Request to update a video.
+         */
+        UpdateVideoRequest: {
+            /** Videoid */
+            videoId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Active */
+            active: boolean;
+            /**
+             * Questions
+             * @default []
+             */
+            questions: components["schemas"]["app__api__v3__videos__update__QuestionItem"][];
+        };
+        /**
+         * UpdateVideoResponse
+         * @description Response from update operation.
+         */
+        UpdateVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * UploadFinalizeRequest
          * @description Request to finalize upload.
          */
@@ -10908,6 +11199,74 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VideoDetailDefaultRequest
+         * @description Request to get default video details.
+         */
+        VideoDetailDefaultRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * VideoDetailRequest
+         * @description Request to get video detail.
+         */
+        VideoDetailRequest: {
+            /** Videoid */
+            videoId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * VideoItem
+         * @description Individual video item in the response.
+         */
+        VideoItem: {
+            /** Video Id */
+            video_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Updated At */
+            updated_at: string;
+        };
+        /**
+         * VideosFilters
+         * @description Filters for videos list request.
+         */
+        VideosFilters: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * VideosListResponse
+         * @description Response for videos list endpoint.
+         */
+        VideosListResponse: {
+            /** Videos */
+            videos: components["schemas"]["VideoItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Department Options */
+            department_options: {
+                [key: string]: string;
+            }[];
         };
         /** AgentDetailResponse */
         app__api__v3__agents__detail__AgentDetailResponse: {
@@ -12777,6 +13136,104 @@ export interface components {
             num_cohorts: number;
             /** Cohort Ids */
             cohort_ids: string[];
+        };
+        /**
+         * QuestionItem
+         * @description Question item in create request.
+         */
+        app__api__v3__videos__create__QuestionItem: {
+            /** Question Text */
+            question_text: string;
+            /** Type */
+            type: string;
+            /**
+             * Allow Multiple
+             * @default false
+             */
+            allow_multiple: boolean;
+            /** Times */
+            times: number[];
+            /** Options */
+            options: components["schemas"]["QuestionOption"][];
+        };
+        /**
+         * VideoDetailResponse
+         * @description Response for video detail.
+         */
+        app__api__v3__videos__detail__VideoDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Questions */
+            questions: components["schemas"]["QuestionResponse"][];
+        };
+        /**
+         * VideoDetailResponse
+         * @description Response for video detail.
+         */
+        app__api__v3__videos__detail_default__VideoDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+            /** Questions */
+            questions: components["schemas"]["QuestionResponse"][];
+        };
+        /**
+         * QuestionItem
+         * @description Question item in update request.
+         */
+        app__api__v3__videos__update__QuestionItem: {
+            /** Question Text */
+            question_text: string;
+            /** Type */
+            type: string;
+            /**
+             * Allow Multiple
+             * @default false
+             */
+            allow_multiple: boolean;
+            /** Times */
+            times: number[];
+            /** Options */
+            options: components["schemas"]["QuestionOption"][];
         };
         /**
          * AttemptHistoryRow
@@ -14773,6 +15230,237 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PersonaResponseTimesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_videos_list_api_v3_videos_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideosFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideosListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_video_detail_api_v3_videos_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__videos__detail__VideoDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_video_detail_default_api_v3_videos_detail_default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoDetailDefaultRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__videos__detail_default__VideoDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_video_api_v3_videos_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateVideoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_video_api_v3_videos_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateVideoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_video_api_v3_videos_duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateVideoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_video_api_v3_videos_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteVideoResponse"];
                 };
             };
             /** @description Validation Error */

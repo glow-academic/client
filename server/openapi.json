@@ -2731,6 +2731,335 @@
         ]
       }
     },
+    "/api/v3/videos/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Get Videos List",
+        "description": "Get videos list with all relationships.",
+        "operationId": "get_videos_list_api_v3_videos_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideosFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideosListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Get Video Detail",
+        "description": "Get detailed video information.",
+        "operationId": "get_video_detail_api_v3_videos_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__videos__detail__VideoDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/detail-default": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Get Video Detail Default",
+        "description": "Get default video structure for creation mode.",
+        "operationId": "get_video_detail_default_api_v3_videos_detail_default_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoDetailDefaultRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__videos__detail_default__VideoDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Create Video",
+        "description": "Create a new video.",
+        "operationId": "create_video_api_v3_videos_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Update Video",
+        "description": "Update an existing video.",
+        "operationId": "update_video_api_v3_videos_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/duplicate": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Duplicate Video",
+        "description": "Duplicate a video.",
+        "operationId": "duplicate_video_api_v3_videos_duplicate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Delete Video",
+        "description": "Delete a video.",
+        "operationId": "delete_video_api_v3_videos_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
     "/api/v3/auth/list": {
       "post": {
         "tags": [
@@ -12570,6 +12899,82 @@
         "title": "CreateStaffResponse",
         "description": "Response from create staff."
       },
+      "CreateVideoRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__videos__create__QuestionItem"
+            },
+            "type": "array",
+            "title": "Questions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "length_seconds",
+          "department_ids"
+        ],
+        "title": "CreateVideoRequest",
+        "description": "Request to create a video."
+      },
+      "CreateVideoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "videoId",
+          "message"
+        ],
+        "title": "CreateVideoResponse",
+        "description": "Response from create operation."
+      },
       "DailyData": {
         "properties": {
           "date": {
@@ -13955,6 +14360,39 @@
         "title": "DeleteStaffResponse",
         "description": "Response from delete staff."
       },
+      "DeleteVideoRequest": {
+        "properties": {
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "videoId"
+        ],
+        "title": "DeleteVideoRequest",
+        "description": "Request to delete a video."
+      },
+      "DeleteVideoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeleteVideoResponse",
+        "description": "Response from delete operation."
+      },
       "DepartmentDetailDefaultRequest": {
         "properties": {
           "profileId": {
@@ -15010,6 +15448,44 @@
         ],
         "title": "DuplicateSimulationResponse",
         "description": "Response from duplicate simulation."
+      },
+      "DuplicateVideoRequest": {
+        "properties": {
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "videoId"
+        ],
+        "title": "DuplicateVideoRequest",
+        "description": "Request to duplicate a video."
+      },
+      "DuplicateVideoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "videoId",
+          "message"
+        ],
+        "title": "DuplicateVideoResponse",
+        "description": "Response from duplicate operation."
       },
       "DynamicRubric": {
         "properties": {
@@ -21149,6 +21625,104 @@
         "title": "QueryDataRequest",
         "description": "Request to execute a SQL query."
       },
+      "QuestionOption": {
+        "properties": {
+          "option_text": {
+            "type": "string",
+            "title": "Option Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_text",
+          "type",
+          "is_correct"
+        ],
+        "title": "QuestionOption",
+        "description": "Option for a question."
+      },
+      "QuestionOptionResponse": {
+        "properties": {
+          "option_id": {
+            "type": "string",
+            "title": "Option Id"
+          },
+          "option_text": {
+            "type": "string",
+            "title": "Option Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_id",
+          "option_text",
+          "type",
+          "is_correct"
+        ],
+        "title": "QuestionOptionResponse",
+        "description": "Option in question response."
+      },
+      "QuestionResponse": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple"
+          },
+          "times": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Times"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOptionResponse"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "question_text",
+          "type",
+          "allow_multiple",
+          "times",
+          "options"
+        ],
+        "title": "QuestionResponse",
+        "description": "Question in video detail response."
+      },
       "RandomizeScenarioRequest": {
         "properties": {
           "name": {
@@ -26201,6 +26775,82 @@
         "title": "UpdateStaffResponse",
         "description": "Response from update staff."
       },
+      "UpdateVideoRequest": {
+        "properties": {
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__videos__update__QuestionItem"
+            },
+            "type": "array",
+            "title": "Questions",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "videoId",
+          "name",
+          "description",
+          "length_seconds",
+          "department_ids",
+          "active"
+        ],
+        "title": "UpdateVideoRequest",
+        "description": "Request to update a video."
+      },
+      "UpdateVideoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "UpdateVideoResponse",
+        "description": "Response from update operation."
+      },
       "UploadFinalizeRequest": {
         "properties": {
           "uploadId": {
@@ -26427,6 +27077,158 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VideoDetailDefaultRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "VideoDetailDefaultRequest",
+        "description": "Request to get default video details."
+      },
+      "VideoDetailRequest": {
+        "properties": {
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "videoId",
+          "profileId"
+        ],
+        "title": "VideoDetailRequest",
+        "description": "Request to get video detail."
+      },
+      "VideoItem": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id",
+          "name",
+          "description",
+          "length_seconds",
+          "active",
+          "department_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "updated_at"
+        ],
+        "title": "VideoItem",
+        "description": "Individual video item in the response."
+      },
+      "VideosFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "VideosFilters",
+        "description": "Filters for videos list request."
+      },
+      "VideosListResponse": {
+        "properties": {
+          "videos": {
+            "items": {
+              "$ref": "#/components/schemas/VideoItem"
+            },
+            "type": "array",
+            "title": "Videos"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "videos",
+          "department_mapping",
+          "department_options"
+        ],
+        "title": "VideosListResponse",
+        "description": "Response for videos list endpoint."
       },
       "app__api__v3__agents__detail__AgentDetailResponse": {
         "properties": {
@@ -31582,6 +32384,252 @@
         ],
         "title": "SimulationItem",
         "description": "Simulation item in list response."
+      },
+      "app__api__v3__videos__create__QuestionItem": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple",
+            "default": false
+          },
+          "times": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Times"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "type",
+          "times",
+          "options"
+        ],
+        "title": "QuestionItem",
+        "description": "Question item in create request."
+      },
+      "app__api__v3__videos__detail__VideoDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionResponse"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "length_seconds",
+          "active",
+          "department_ids",
+          "valid_department_ids",
+          "can_edit",
+          "can_duplicate",
+          "can_delete",
+          "department_mapping",
+          "questions"
+        ],
+        "title": "VideoDetailResponse",
+        "description": "Response for video detail."
+      },
+      "app__api__v3__videos__detail_default__VideoDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionResponse"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "length_seconds",
+          "active",
+          "department_ids",
+          "valid_department_ids",
+          "can_edit",
+          "can_duplicate",
+          "can_delete",
+          "department_mapping",
+          "questions"
+        ],
+        "title": "VideoDetailResponse",
+        "description": "Response for video detail."
+      },
+      "app__api__v3__videos__update__QuestionItem": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple",
+            "default": false
+          },
+          "times": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Times"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "type",
+          "times",
+          "options"
+        ],
+        "title": "QuestionItem",
+        "description": "Question item in update request."
       },
       "app__utils__schema__AttemptHistoryRow": {
         "properties": {

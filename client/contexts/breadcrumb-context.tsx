@@ -22,7 +22,8 @@ interface EntityMetadata {
     | "provider"
     | "model"
     | "chat"
-    | "attempt";
+    | "attempt"
+    | "video";
 }
 
 /**

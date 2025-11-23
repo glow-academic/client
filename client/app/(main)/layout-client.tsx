@@ -316,6 +316,15 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/create/videos") {
+      return (
+        <Button onClick={() => router.push("/create/videos/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Video
+        </Button>
+      );
+    }
+
     if (pathname === "/system/staff") {
       // CreateStaffButton is now handled directly in Staff.tsx component
       return null;
