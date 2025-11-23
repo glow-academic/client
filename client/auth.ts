@@ -17,6 +17,47 @@ const keycloakClientId = process.env["AUTH_KEYCLOAK_ID"] || "glow-client";
 const keycloakClientSecret = process.env["AUTH_KEYCLOAK_SECRET"] || "";
 const issuer = `${keycloakPublicUrl}/realms/${keycloakRealm}`;
 
+// Helper function to parse name into firstName and lastName
+function parseName(name: string | null | undefined): {
+  firstName: string;
+  lastName: string;
+} {
+  const nameParts = name?.split(" ") || [];
+  const firstName = nameParts[0] || "Unknown";
+  const lastName = nameParts[nameParts.length - 1] || "User";
+  return { firstName, lastName };
+}
+
+// Helper function to create a profile with guest role
+async function createGuestProfile(
+  email: string,
+  name: string | null | undefined
+): Promise<void> {
+  const { firstName, lastName } = parseName(name);
+  try {
+    await api.post("/profile/staff/create", {
+      body: {
+        firstName,
+        lastName,
+        emails: [email],
+        role: "guest",
+      },
+    });
+  } catch (error) {
+    // Log error but don't throw - profile creation might fail if email already exists
+    // (race condition with createUser event), which is acceptable
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Only log if it's not an "already exists" error (which is expected in race conditions)
+    if (!errorMessage.toLowerCase().includes("already exists")) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `Failed to create guest profile for ${email}:`,
+        errorMessage
+      );
+    }
+  }
+}
+
 // NOTE: also export `unstable_update` as `update` for server-side session mutation
 export const {
   handlers,
@@ -59,29 +100,31 @@ export const {
 
         if (existingProfile) {
           // V3 API - update existing profile lastLogin
-          await api.post("/profile/update", {
-            body: {
-              profileId: existingProfile.id,
-              lastLogin: new Date().toISOString(),
-            },
-          });
+          try {
+            await api.post("/profile/update", {
+              body: {
+                profileId: existingProfile.id,
+                lastLogin: new Date().toISOString(),
+              },
+            });
+          } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error(
+              `Failed to update lastLogin for profile ${existingProfile.id}:`,
+              error instanceof Error ? error.message : String(error)
+            );
+          }
         } else {
-          const nameParts = user.name?.split(" ") || [];
-          const firstName = nameParts[0] || "Unknown";
-          const lastName = nameParts[nameParts.length - 1] || "User";
-
-          // V3 API - create new profile via staff endpoint
-          await api.post("/profile/staff/create", {
-            body: {
-              firstName,
-              lastName,
-              emails: [user.email || ""],
-              role: "guest",
-            },
-          });
+          // Create new profile with guest role
+          await createGuestProfile(user.email, user.name);
         }
-      } catch {
-        // Server handles logging - no client-side logging needed
+      } catch (error) {
+        // Log critical errors but don't break auth flow
+        // eslint-disable-next-line no-console
+        console.error(
+          `Error in createUser event for ${user.email}:`,
+          error instanceof Error ? error.message : String(error)
+        );
       }
     },
     async signIn({ user, profile, isNewUser }) {
@@ -91,13 +134,11 @@ export const {
         }
 
         if (!isNewUser) {
-          const nameParts =
-            profile?.name?.split(" ") || user.name?.split(" ") || [];
-          const firstName = nameParts[0] || "Unknown";
-          const lastName = nameParts[nameParts.length - 1] || "User";
           if (!user.email) {
             return;
           }
+
+          const { firstName, lastName } = parseName(profile?.name || user.name);
 
           // V3 API - fetch profile by email
           let existingProfile = null;
@@ -113,14 +154,22 @@ export const {
 
           if (existingProfile) {
             // V3 API - update profile
-            await api.post("/profile/update", {
-              body: {
-                profileId: existingProfile.id,
-                firstName,
-                lastName,
-                lastLogin: new Date().toISOString(),
-              },
-            });
+            try {
+              await api.post("/profile/update", {
+                body: {
+                  profileId: existingProfile.id,
+                  firstName,
+                  lastName,
+                  lastLogin: new Date().toISOString(),
+                },
+              });
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error(
+                `Failed to update profile ${existingProfile.id}:`,
+                error instanceof Error ? error.message : String(error)
+              );
+            }
           }
         }
       } catch {
@@ -134,21 +183,55 @@ export const {
       // On initial sign in, attach canonical profileId/role from email lookup
       if (user?.email) {
         // V3 API - fetch profile by email
+        let profile = null;
         try {
           const profileResponse = await api.post("/profile/by-email", {
             body: { email: user.email },
           });
-          const profile = profileResponse.profile;
-
-          if (profile) {
-            token["profileId"] = profile.id;
-            token["role"] = profile.role;
-            // initialize effectiveProfileId to self
-            token["effectiveProfileId"] =
-              token["effectiveProfileId"] ?? profile.id;
-          }
+          profile = profileResponse.profile;
         } catch {
-          // Profile not found - will be created in createUser event
+          // Profile not found - create it synchronously as fallback
+          // This handles race conditions where createUser event hasn't completed yet
+          try {
+            await createGuestProfile(user.email, user.name);
+            // Retry fetching the profile after creation
+            try {
+              const profileResponse = await api.post("/profile/by-email", {
+                body: { email: user.email },
+              });
+              profile = profileResponse.profile;
+            } catch (retryError) {
+              // eslint-disable-next-line no-console
+              console.error(
+                `Failed to fetch profile after creation for ${user.email}:`,
+                retryError instanceof Error
+                  ? retryError.message
+                  : String(retryError)
+              );
+            }
+          } catch (createError) {
+            // Log error but don't block authentication
+            // createGuestProfile already logs errors internally
+            // eslint-disable-next-line no-console
+            console.error(
+              `Failed to create profile in jwt callback for ${user.email}:`,
+              createError instanceof Error
+                ? createError.message
+                : String(createError)
+            );
+          }
+        }
+
+        if (profile) {
+          token["profileId"] = profile.id;
+          token["role"] = profile.role || "guest"; // Ensure role defaults to guest
+          // initialize effectiveProfileId to self
+          token["effectiveProfileId"] =
+            token["effectiveProfileId"] ?? profile.id;
+        } else {
+          // If profile still doesn't exist after creation attempt, set default role
+          // This ensures the user can still authenticate even if profile creation failed
+          token["role"] = token["role"] || "guest";
         }
       }
 
