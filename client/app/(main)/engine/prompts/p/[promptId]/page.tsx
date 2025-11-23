@@ -146,8 +146,13 @@ async function updatePrompt(
   input: UpdatePromptIn,
 ): Promise<UpdatePromptOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/prompts/update", input);
+  return api.post("/prompts/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

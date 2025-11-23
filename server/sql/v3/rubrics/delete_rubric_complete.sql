@@ -1,9 +1,18 @@
 -- Delete rubric with existence and usage checks in a single transaction
--- Parameters: $1=rubricId
+-- Parameters: $1=rubricId, $2=profile_id (uuid or "guest-profile-id")
 -- Returns: rubric_id, name, usage_count (or no rows if rubric doesn't exist)
 -- If usage_count > 0, rubric is not deleted (caller should raise 400 error)
 -- If no rows returned, rubric doesn't exist (caller should raise 404 error)
-WITH rubric_info AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+rubric_info AS (
     -- Check if rubric exists and get usage count
     SELECT 
         r.id,

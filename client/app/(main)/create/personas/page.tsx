@@ -46,16 +46,26 @@ async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/duplicate", input);
+  return api.post("/personas/duplicate", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/delete", input);
+  return api.post("/personas/delete", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export const metadata: Metadata = {

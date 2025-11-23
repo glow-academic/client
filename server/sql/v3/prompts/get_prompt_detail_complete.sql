@@ -1,6 +1,15 @@
 -- Get prompt detail with department relationships, agent relationships, persona relationships, and permissions
--- Parameters: $1=promptId, $2=profileId
-WITH prompt_data AS (
+-- Parameters: $1=promptId (uuid), $2=profileId (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+prompt_data AS (
     SELECT 
         pr.id as prompt_id,
         pr.name,
@@ -46,23 +55,27 @@ valid_depts AS (
         ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
     FROM departments d
+    JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = $2::uuid AND d.active = true AND pd.active = true
+    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true AND pd.active = true
 ),
 profile_data AS (
     SELECT role as user_role 
-    FROM profiles 
-    WHERE id = $2::uuid
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 user_has_prompt_access AS (
     -- Check if user has access to prompt via department links
     SELECT EXISTS(
         SELECT 1 FROM prompt_departments pd
+        JOIN resolve_profile_id rpi ON true
         JOIN profile_departments pdp ON pdp.department_id = pd.department_id
         WHERE pd.prompt_id = $1::uuid AND pd.active = true
-        AND pdp.profile_id = $2::uuid AND pdp.active = true
+        AND pdp.profile_id = rpi.resolved_profile_id AND pdp.active = true
     ) OR EXISTS(
-        SELECT 1 FROM profiles p WHERE p.id = $2::uuid AND p.role = 'superadmin'
+        SELECT 1 FROM resolve_profile_id rpi
+        JOIN profiles p ON p.id = rpi.resolved_profile_id
+        WHERE p.role = 'superadmin'
     ) OR (
         -- Default prompts (no department links) are accessible to all admins
         SELECT COUNT(*) FROM prompt_departments pd

@@ -1,6 +1,15 @@
 -- Update a prompt with department links
--- Parameters: $1=prompt_id, $2=name, $3=description, $4=system_prompt, $5=active, $6=department_ids (text array, nullable)
-WITH update_prompt AS (
+-- Parameters: $1=prompt_id, $2=name, $3=description, $4=system_prompt, $5=active, $6=department_ids (text array, nullable), $7=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $7::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $7::text IS NULL OR $7::text = '' THEN NULL::uuid
+            ELSE $7::uuid
+        END as resolved_profile_id
+),
+update_prompt AS (
     UPDATE prompts
     SET 
         name = $2,

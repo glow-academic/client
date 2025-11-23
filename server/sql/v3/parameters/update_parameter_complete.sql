@@ -1,8 +1,17 @@
 -- Update parameter with items and department links in a single transaction
--- Parameters: $1=parameterId, $2=name, $3=description, $4=numerical, $5=active, $6=document_parameter, $7=practice_parameter, $8=parameter_level_department_ids (text array, nullable), $9=items_json (jsonb array)
+-- Parameters: $1=parameterId, $2=name, $3=description, $4=numerical, $5=active, $6=document_parameter, $7=practice_parameter, $8=parameter_level_department_ids (text array, nullable), $9=items_json (jsonb array), $10=profile_id (uuid or "guest-profile-id")
 -- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "val1", "department_ids": ["dept1", "dept2"]}, ...]
 -- If item.department_ids is null, use parameter_level_department_ids
-WITH update_parameter AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $10::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $10::text IS NULL OR $10::text = '' THEN NULL::uuid
+            ELSE $10::uuid
+        END as resolved_profile_id
+),
+update_parameter AS (
     UPDATE parameters SET
         name = $2,
         description = $3,

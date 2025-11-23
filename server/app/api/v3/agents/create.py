@@ -25,6 +25,7 @@ class CreateAgentRequest(BaseModel):
     active: bool
     role: str
     department_ids: list[str] | None
+    profileId: str  # Required for auditing/access control
 
 
 class CreateAgentResponse(BaseModel):
@@ -82,6 +83,7 @@ async def create_agent(
                 request.prompt_id,
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
+                request.profileId,
             )
             agent_row = await conn.fetchrow(sql_query, *sql_params)
 

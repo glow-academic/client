@@ -34,6 +34,7 @@ class UpdateParameterRequest(BaseModel):
     practice_parameter: bool
     department_ids: list[str] | None  # None = cross-department (superadmin only)
     parameter_items: list[ParameterItemCreate]
+    profileId: str  # Required for auditing/access control
 
 
 class UpdateParameterResponse(BaseModel):
@@ -97,6 +98,7 @@ async def update_parameter(
                 request.practice_parameter,
                 request.department_ids,  # Parameter-level department_ids (fallback)
                 items_json,  # JSONB array of items
+                request.profileId,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

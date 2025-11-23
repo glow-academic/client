@@ -72,13 +72,23 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/update", input);
+  return api.post("/models/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
-  return api.post("/keys/create", input);
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  return api.post("/keys/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
@@ -88,7 +98,12 @@ export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
 
 export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
-  return api.post("/keys/update", input);
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  return api.post("/keys/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -120,14 +135,14 @@ export default async function ModelEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  ModelDetailIn,
-  ModelDetailOut,
-  UpdateModelIn,
-  UpdateModelOut,
   CreateKeyIn,
   CreateKeyOut,
   DecryptKeyIn,
   DecryptKeyOut,
+  ModelDetailIn,
+  ModelDetailOut,
   UpdateKeyIn,
   UpdateKeyOut,
+  UpdateModelIn,
+  UpdateModelOut,
 };

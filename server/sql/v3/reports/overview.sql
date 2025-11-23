@@ -1,9 +1,19 @@
 -- =====================================================
 -- REPORTS OVERVIEW QUERY - PROFILE-SPECIFIC METRICS
--- Assumes profile_id ($6) is always non-null
--- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required), $7: department_ids
+-- Assumes profile_id ($6) may be "guest-profile-id" which needs resolution
+-- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required, may be "guest-profile-id"), $7: department_ids
 -- =====================================================
 WITH
+-- Resolve guest-profile-id to actual profile ID
+resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $6::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $6::text IS NULL OR $6::text = '' THEN NULL::uuid
+            ELSE $6::uuid
+        END as resolved_profile_id
+),
 -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
 -- Gets simulations linked to cohorts + practice simulations without cohorts
 filtered_simulation_ids AS (
@@ -50,7 +60,7 @@ filt AS (
             'archived' = ANY($5::text[]) OR a.is_archived = FALSE
         )
         -- Profile_id is always non-null for reports - always filter by it
-        AND a.profile_id = $6::uuid
+        AND a.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
         -- Filter by simulation_ids from cohorts (new filtering order)
         AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Department filtering removed - now handled via profile_departments join at profile level
@@ -1015,7 +1025,7 @@ filt_for_skills AS (
         -- Filter by simulation_ids from cohorts (new filtering order)
         AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Profile_id is always non-null for reports - always filter by it
-        AND a.profile_id = $6::uuid
+        AND a.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
         AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
         AND (
             $5::text[] IS NULL OR (

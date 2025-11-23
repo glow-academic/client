@@ -16,6 +16,7 @@ class DuplicateRubricRequest(BaseModel):
     """Request for duplicating a rubric."""
 
     rubricId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DuplicateRubricResponse(BaseModel):
@@ -45,8 +46,8 @@ async def duplicate_rubric(
     try:
         # Duplicate rubric with departments, standard groups, and standards in a single SQL file
         sql_query = load_sql("sql/v3/rubrics/duplicate_rubric_complete.sql")
-        sql_params = (request.rubricId,)
-        row = await conn.fetchrow(sql_query, request.rubricId)
+        sql_params = (request.rubricId, request.profileId)
+        row = await conn.fetchrow(sql_query, request.rubricId, request.profileId)
 
         if not row:
             raise HTTPException(status_code=404, detail="Rubric not found")

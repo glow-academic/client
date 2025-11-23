@@ -16,6 +16,7 @@ class DeleteRubricRequest(BaseModel):
     """Request for deleting a rubric."""
 
     rubricId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeleteRubricResponse(BaseModel):
@@ -44,8 +45,8 @@ async def delete_rubric(
     try:
         # Delete rubric with existence and usage checks in a single SQL file
         sql_query = load_sql("sql/v3/rubrics/delete_rubric_complete.sql")
-        sql_params = (request.rubricId,)
-        result = await conn.fetchrow(sql_query, request.rubricId)
+        sql_params = (request.rubricId, request.profileId)
+        result = await conn.fetchrow(sql_query, request.rubricId, request.profileId)
 
         if not result:
             # Rubric doesn't exist

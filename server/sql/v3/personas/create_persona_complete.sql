@@ -1,6 +1,15 @@
 -- Create persona with prompt and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=model_id, $7=reasoning, $8=temperature, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array)
-WITH new_persona AS (
+-- Parameters: $1=name, $2=description, $3=active, $4=color, $5=icon, $6=model_id, $7=reasoning, $8=temperature, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array), $12=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $12::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
+            ELSE $12::uuid
+        END as resolved_profile_id
+),
+new_persona AS (
     INSERT INTO personas (name, description, active, color, icon, model_id, reasoning, temperature, created_at, updated_at)
     VALUES ($1, COALESCE($2, ''), $3, $4, $5, $6::uuid, COALESCE($7::reasoning_effort, 'none'::reasoning_effort), $8, NOW(), NOW())
     RETURNING id::text as persona_id

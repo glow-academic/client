@@ -1,8 +1,17 @@
 -- Create parameter with items and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=numerical, $4=active, $5=document_parameter, $6=practice_parameter, $7=parameter_level_department_ids (text array, nullable), $8=items_json (jsonb array)
+-- Parameters: $1=name, $2=description, $3=numerical, $4=active, $5=document_parameter, $6=practice_parameter, $7=parameter_level_department_ids (text array, nullable), $8=items_json (jsonb array), $9=profile_id (uuid or "guest-profile-id")
 -- items_json format: [{"name": "Item 1", "description": "Desc 1", "value": "val1", "department_ids": ["dept1", "dept2"]}, ...]
 -- If item.department_ids is null, use parameter_level_department_ids
-WITH new_parameter AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $9::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $9::text IS NULL OR $9::text = '' THEN NULL::uuid
+            ELSE $9::uuid
+        END as resolved_profile_id
+),
+new_parameter AS (
     INSERT INTO parameters (
         name,
         description,

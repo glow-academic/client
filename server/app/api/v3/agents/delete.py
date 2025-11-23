@@ -15,6 +15,7 @@ from app.utils.sql_helper import load_sql
 # Inline request/response schemas
 class DeleteAgentRequest(BaseModel):
     agentId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeleteAgentResponse(BaseModel):
@@ -41,8 +42,8 @@ async def delete_agent(
     try:
         # Delete agent with usage check (single query)
         sql_query = load_sql("sql/v3/agents/delete_agent_complete.sql")
-        sql_params = (request.agentId,)
-        result = await conn.fetchrow(sql_query, request.agentId)
+        sql_params = (request.agentId, request.profileId)
+        result = await conn.fetchrow(sql_query, request.agentId, request.profileId)
 
         if result and result["usage_count"] > 0:
             raise HTTPException(

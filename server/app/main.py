@@ -402,6 +402,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         pool = get_pool()
         if pool:
+            # Initialize cached guest profile UUID
+            from app.core.guest_profile import initialize_guest_profile  # noqa: E402
+
+            try:
+                await initialize_guest_profile(pool)
+                logger.info("Guest profile UUID cached")
+            except Exception as e:
+                logger.warning(f"Guest profile initialization failed (non-blocking): {e}")
+
             setup_db_logger(pool)
             logger.info("Database logger initialized")
 

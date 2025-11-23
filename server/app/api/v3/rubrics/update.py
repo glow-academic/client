@@ -43,6 +43,7 @@ class UpdateRubricRequest(BaseModel):
     passPoints: int
     department_ids: list[str] = []
     standard_groups: list[StandardGroupItem] = []
+    profileId: str  # Required for auditing/access control
 
 
 class UpdateRubricResponse(BaseModel):
@@ -105,6 +106,7 @@ async def update_rubric(
             request.passPoints,
             department_ids,
             standard_groups_json,
+            request.profileId,
         )
         row = await conn.fetchrow(sql_query, *sql_params)
 

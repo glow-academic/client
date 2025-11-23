@@ -16,6 +16,7 @@ class DuplicateModelRequest(BaseModel):
     """Request to duplicate model."""
 
     modelId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DuplicateModelResponse(BaseModel):
@@ -65,8 +66,8 @@ async def duplicate_model(
 
             # Duplicate model (SQL adds ' Copy' to description) - track primary operation
             sql_query = load_sql("sql/v3/models/duplicate.sql")
-            sql_params = (request.modelId,)
-            new_model = await conn.fetchrow(sql_query, request.modelId)
+            sql_params = (request.modelId, request.profileId)
+            new_model = await conn.fetchrow(sql_query, request.modelId, request.profileId)
 
             if not new_model:
                 raise ValueError("Failed to create duplicate model")

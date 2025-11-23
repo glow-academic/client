@@ -4,13 +4,12 @@ import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 class StandardItem(BaseModel):
@@ -42,6 +41,7 @@ class CreateRubricRequest(BaseModel):
     passPoints: int
     department_ids: list[str] = []
     standard_groups: list[StandardGroupItem] = []
+    profileId: str  # Required for auditing/access control
 
 
 class CreateRubricResponse(BaseModel):
@@ -104,6 +104,7 @@ async def create_rubric(
             request.passPoints,
             department_ids,
             standard_groups_json,
+            request.profileId,
         )
         row = await conn.fetchrow(sql_query, *sql_params)
 

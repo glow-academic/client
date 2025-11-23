@@ -22,6 +22,7 @@ class CreateKeyRequest(BaseModel):
     description: str
     active: bool = True
     department_ids: list[str] | None = None
+    profileId: str  # Required for auditing/access control
 
 
 class CreateKeyResponse(BaseModel):
@@ -59,7 +60,7 @@ async def create_key(
 
             # Create key with department links
             sql_query = load_sql("sql/v3/keys/create_key.sql")
-            sql_params = (request.name, encrypted_key, request.description, request.active, department_ids)
+            sql_params = (request.name, encrypted_key, request.description, request.active, department_ids, request.profileId)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

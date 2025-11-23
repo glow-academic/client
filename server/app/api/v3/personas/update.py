@@ -29,6 +29,7 @@ class UpdatePersonaRequest(BaseModel):
     system_prompt: str | None
     prompt_id: str | None
     department_ids_for_prompt: list[str] | None  # Array of department IDs for prompt overrides (never create default prompts)
+    profileId: str  # Required for auditing/access control
 
 
 class UpdatePersonaResponse(BaseModel):
@@ -81,6 +82,7 @@ async def update_persona(
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
                 dept_ids_for_prompt,  # Array of department IDs for prompt overrides
+                request.profileId,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

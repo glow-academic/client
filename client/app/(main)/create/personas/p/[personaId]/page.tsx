@@ -80,16 +80,26 @@ async function createPersona(
   input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/create", input);
+  return api.post("/personas/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function updatePersona(
   input: UpdatePersonaIn
 ): Promise<UpdatePersonaOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/update", input);
+  return api.post("/personas/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function deletePersonaPrompt(

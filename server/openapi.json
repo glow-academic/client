@@ -11072,6 +11072,10 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -11085,7 +11089,8 @@
           "reasoning",
           "active",
           "role",
-          "department_ids"
+          "department_ids",
+          "profileId"
         ],
         "title": "CreateAgentRequest"
       },
@@ -11377,13 +11382,18 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "key",
-          "description"
+          "description",
+          "profileId"
         ],
         "title": "CreateKeyRequest",
         "description": "Request to create key."
@@ -11549,6 +11559,10 @@
               }
             ],
             "title": "Base Url"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -11559,7 +11573,8 @@
           "active",
           "image_model",
           "input_ppm",
-          "output_ppm"
+          "output_ppm",
+          "profileId"
         ],
         "title": "CreateModelRequest",
         "description": "Request to create model."
@@ -11777,6 +11792,10 @@
             },
             "type": "array",
             "title": "Parameter Items"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -11786,7 +11805,8 @@
           "numerical",
           "active",
           "department_ids",
-          "parameter_items"
+          "parameter_items",
+          "profileId"
         ],
         "title": "CreateParameterRequest",
         "description": "Request to create parameter with nested items."
@@ -11898,6 +11918,10 @@
               }
             ],
             "title": "Prompt Id"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -11912,7 +11936,8 @@
           "reasoning",
           "temperature",
           "system_prompt",
-          "prompt_id"
+          "prompt_id",
+          "profileId"
         ],
         "title": "CreatePersonaRequest",
         "description": "Request to create a persona."
@@ -11973,13 +11998,18 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "description",
-          "system_prompt"
+          "system_prompt",
+          "profileId"
         ],
         "title": "CreatePromptRequest",
         "description": "Request to create prompt."
@@ -12053,13 +12083,18 @@
             "type": "array",
             "title": "Standard Groups",
             "default": []
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
           "name",
           "points",
-          "passPoints"
+          "passPoints",
+          "profileId"
         ],
         "title": "CreateRubricRequest",
         "description": "Request for creating a rubric."
@@ -13327,11 +13362,16 @@
           "agentId": {
             "type": "string",
             "title": "Agentid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "agentId"
+          "agentId",
+          "profileId"
         ],
         "title": "DeleteAgentRequest"
       },
@@ -13528,11 +13568,16 @@
           "modelId": {
             "type": "string",
             "title": "Modelid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "modelId"
+          "modelId",
+          "profileId"
         ],
         "title": "DeleteModelRequest",
         "description": "Request to delete model."
@@ -13561,11 +13606,16 @@
           "parameterId": {
             "type": "string",
             "title": "Parameterid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "parameterId"
+          "parameterId",
+          "profileId"
         ],
         "title": "DeleteParameterRequest",
         "description": "Request to delete parameter."
@@ -13643,11 +13693,16 @@
           "personaId": {
             "type": "string",
             "title": "Personaid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "personaId"
+          "personaId",
+          "profileId"
         ],
         "title": "DeletePersonaRequest",
         "description": "Request to delete persona."
@@ -13676,11 +13731,16 @@
           "promptId": {
             "type": "string",
             "title": "Promptid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "promptId"
+          "promptId",
+          "profileId"
         ],
         "title": "DeletePromptRequest",
         "description": "Request to delete prompt."
@@ -13709,11 +13769,16 @@
           "rubricId": {
             "type": "string",
             "title": "Rubricid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "rubricId"
+          "rubricId",
+          "profileId"
         ],
         "title": "DeleteRubricRequest",
         "description": "Request for deleting a rubric."
@@ -14494,11 +14559,16 @@
           "agentId": {
             "type": "string",
             "title": "Agentid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "agentId"
+          "agentId",
+          "profileId"
         ],
         "title": "DuplicateAgentRequest"
       },
@@ -14644,11 +14714,16 @@
           "modelId": {
             "type": "string",
             "title": "Modelid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "modelId"
+          "modelId",
+          "profileId"
         ],
         "title": "DuplicateModelRequest",
         "description": "Request to duplicate model."
@@ -14682,11 +14757,16 @@
           "parameterId": {
             "type": "string",
             "title": "Parameterid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "parameterId"
+          "parameterId",
+          "profileId"
         ],
         "title": "DuplicateParameterRequest",
         "description": "Request to duplicate parameter."
@@ -14720,11 +14800,16 @@
           "personaId": {
             "type": "string",
             "title": "Personaid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "personaId"
+          "personaId",
+          "profileId"
         ],
         "title": "DuplicatePersonaRequest",
         "description": "Request to duplicate persona."
@@ -14758,11 +14843,16 @@
           "rubricId": {
             "type": "string",
             "title": "Rubricid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
         "required": [
-          "rubricId"
+          "rubricId",
+          "profileId"
         ],
         "title": "DuplicateRubricRequest",
         "description": "Request for duplicating a rubric."
@@ -24460,6 +24550,10 @@
               }
             ],
             "title": "Department Ids For Prompt"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -24474,7 +24568,8 @@
           "reasoning",
           "active",
           "role",
-          "department_ids"
+          "department_ids",
+          "profileId"
         ],
         "title": "UpdateAgentRequest"
       },
@@ -24824,6 +24919,10 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -24832,7 +24931,8 @@
           "name",
           "key",
           "description",
-          "active"
+          "active",
+          "profileId"
         ],
         "title": "UpdateKeyRequest",
         "description": "Request to update key."
@@ -24935,6 +25035,10 @@
               }
             ],
             "title": "Base Url"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -24946,7 +25050,8 @@
           "active",
           "image_model",
           "input_ppm",
-          "output_ppm"
+          "output_ppm",
+          "profileId"
         ],
         "title": "UpdateModelRequest",
         "description": "Request to update model."
@@ -25020,6 +25125,10 @@
             },
             "type": "array",
             "title": "Parameter Items"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -25032,7 +25141,8 @@
           "document_parameter",
           "practice_parameter",
           "department_ids",
-          "parameter_items"
+          "parameter_items",
+          "profileId"
         ],
         "title": "UpdateParameterRequest",
         "description": "Request to update parameter with nested items."
@@ -25157,6 +25267,10 @@
               }
             ],
             "title": "Department Ids For Prompt"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -25173,7 +25287,8 @@
           "temperature",
           "system_prompt",
           "prompt_id",
-          "department_ids_for_prompt"
+          "department_ids_for_prompt",
+          "profileId"
         ],
         "title": "UpdatePersonaRequest",
         "description": "Request to update persona."
@@ -25346,6 +25461,10 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -25353,7 +25472,8 @@
           "promptId",
           "name",
           "description",
-          "system_prompt"
+          "system_prompt",
+          "profileId"
         ],
         "title": "UpdatePromptRequest",
         "description": "Request to update prompt."
@@ -25430,6 +25550,10 @@
             "type": "array",
             "title": "Standard Groups",
             "default": []
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
           }
         },
         "type": "object",
@@ -25438,7 +25562,8 @@
           "name",
           "active",
           "points",
-          "passPoints"
+          "passPoints",
+          "profileId"
         ],
         "title": "UpdateRubricRequest",
         "description": "Request for updating a rubric."

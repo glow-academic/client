@@ -16,6 +16,8 @@ import { useProfile } from "@/contexts/profile-context";
 import type {
   CreatePersonaIn,
   CreatePersonaOut,
+  DeletePersonaPromptIn,
+  DeletePersonaPromptOut,
   PersonaDetailDefaultOut,
   PersonaDetailOut,
   UpdatePersonaIn,
@@ -285,6 +287,9 @@ export interface PersonaProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
+  deletePersonaPromptAction?: (
+    input: DeletePersonaPromptIn
+  ) => Promise<DeletePersonaPromptOut>;
 }
 
 export default function Persona({
@@ -752,6 +757,7 @@ export default function Persona({
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
             department_ids_for_prompt: departmentsForPromptOverride,
+            profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {
             onSuccess: () => {
@@ -779,6 +785,7 @@ export default function Persona({
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
+            profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {
             onSuccess: () => {

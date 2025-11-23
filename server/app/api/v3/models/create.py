@@ -3,13 +3,12 @@
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db, transaction
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -26,6 +25,7 @@ class CreateModelRequest(BaseModel):
     department_ids: list[str] | None = None
     key_id: str | None = None
     base_url: str | None = None  # Required if provider is 'custom'
+    profileId: str  # Required for auditing/access control
 
 
 class CreateModelResponse(BaseModel):
@@ -68,6 +68,7 @@ async def create_model(
                 department_ids,
                 request.key_id,
                 request.base_url,
+                request.profileId,
             )
             result = await conn.fetchrow(
                 sql_query,
@@ -81,6 +82,7 @@ async def create_model(
                 department_ids,
                 request.key_id,
                 request.base_url,
+                request.profileId,
             )
 
             if not result:

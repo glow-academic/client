@@ -1,6 +1,15 @@
 -- Create agent with prompt and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=temperature, $4=model_id, $5=reasoning, $6=active, $7=role, $8=prompt_id (nullable), $9=system_prompt (nullable), $10=department_ids (nullable text array)
-WITH new_agent AS (
+-- Parameters: $1=name, $2=description, $3=temperature, $4=model_id, $5=reasoning, $6=active, $7=role, $8=prompt_id (nullable), $9=system_prompt (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $11::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $11::text IS NULL OR $11::text = '' THEN NULL::uuid
+            ELSE $11::uuid
+        END as resolved_profile_id
+),
+new_agent AS (
     INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, created_at, updated_at)
     VALUES ($1, $2, $3, $4, COALESCE($5::reasoning_effort, 'none'::reasoning_effort), $6, $7, NOW(), NOW())
     RETURNING id::text as agent_id

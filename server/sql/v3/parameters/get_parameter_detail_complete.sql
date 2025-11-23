@@ -5,13 +5,12 @@ WITH parameter_id_resolved AS (
 resolve_profile_id AS (
     -- Resolve "guest-profile-id" to actual default guest profile ID
     SELECT 
-        (
-            CASE 
-                WHEN $2::text = 'guest-profile-id' THEN
-                    (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-                ELSE $2::uuid
-            END
-        )::uuid as resolved_profile_id
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
 ),
 user_profile AS (
     SELECT 

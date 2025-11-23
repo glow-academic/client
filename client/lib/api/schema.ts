@@ -4917,6 +4917,8 @@ export interface components {
             role: string;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /** CreateAgentResponse */
         CreateAgentResponse: {
@@ -5057,6 +5059,8 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateKeyResponse
@@ -5125,6 +5129,8 @@ export interface components {
             key_id?: string | null;
             /** Base Url */
             base_url?: string | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateModelResponse
@@ -5231,6 +5237,8 @@ export interface components {
             department_ids: string[] | null;
             /** Parameter Items */
             parameter_items: components["schemas"]["ParameterItemCreate"][];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateParameterResponse
@@ -5271,6 +5279,8 @@ export interface components {
             system_prompt: string | null;
             /** Prompt Id */
             prompt_id: string | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreatePersonaResponse
@@ -5302,6 +5312,8 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreatePromptResponse
@@ -5343,6 +5355,8 @@ export interface components {
              * @default []
              */
             standard_groups: components["schemas"]["app__api__v3__rubrics__create__StandardGroupItem"][];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CreateRubricResponse
@@ -5788,6 +5802,8 @@ export interface components {
         DeleteAgentRequest: {
             /** Agentid */
             agentId: string;
+            /** Profileid */
+            profileId: string;
         };
         /** DeleteAgentResponse */
         DeleteAgentResponse: {
@@ -5895,6 +5911,8 @@ export interface components {
         DeleteModelRequest: {
             /** Modelid */
             modelId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeleteModelResponse
@@ -5913,6 +5931,8 @@ export interface components {
         DeleteParameterRequest: {
             /** Parameterid */
             parameterId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeleteParameterResponse
@@ -5953,6 +5973,8 @@ export interface components {
         DeletePersonaRequest: {
             /** Personaid */
             personaId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeletePersonaResponse
@@ -5971,6 +5993,8 @@ export interface components {
         DeletePromptRequest: {
             /** Promptid */
             promptId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeletePromptResponse
@@ -5989,6 +6013,8 @@ export interface components {
         DeleteRubricRequest: {
             /** Rubricid */
             rubricId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DeleteRubricResponse
@@ -6308,6 +6334,8 @@ export interface components {
         DuplicateAgentRequest: {
             /** Agentid */
             agentId: string;
+            /** Profileid */
+            profileId: string;
         };
         /** DuplicateAgentResponse */
         DuplicateAgentResponse: {
@@ -6385,6 +6413,8 @@ export interface components {
         DuplicateModelRequest: {
             /** Modelid */
             modelId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DuplicateModelResponse
@@ -6405,6 +6435,8 @@ export interface components {
         DuplicateParameterRequest: {
             /** Parameterid */
             parameterId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DuplicateParameterResponse
@@ -6425,6 +6457,8 @@ export interface components {
         DuplicatePersonaRequest: {
             /** Personaid */
             personaId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DuplicatePersonaResponse
@@ -6445,6 +6479,8 @@ export interface components {
         DuplicateRubricRequest: {
             /** Rubricid */
             rubricId: string;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * DuplicateRubricResponse
@@ -10144,6 +10180,8 @@ export interface components {
             department_ids: string[] | null;
             /** Department Ids For Prompt */
             department_ids_for_prompt?: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /** UpdateAgentResponse */
         UpdateAgentResponse: {
@@ -10306,6 +10344,8 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdateKeyResponse
@@ -10348,6 +10388,8 @@ export interface components {
             key_id?: string | null;
             /** Base Url */
             base_url?: string | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdateModelResponse
@@ -10382,6 +10424,8 @@ export interface components {
             department_ids: string[] | null;
             /** Parameter Items */
             parameter_items: components["schemas"]["ParameterItemCreate"][];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdateParameterResponse
@@ -10424,6 +10468,8 @@ export interface components {
             prompt_id: string | null;
             /** Department Ids For Prompt */
             department_ids_for_prompt: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdatePersonaResponse
@@ -10481,6 +10527,8 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdatePromptResponse
@@ -10521,6 +10569,8 @@ export interface components {
              * @default []
              */
             standard_groups: components["schemas"]["app__api__v3__rubrics__update__StandardGroupItem"][];
+            /** Profileid */
+            profileId: string;
         };
         /**
          * UpdateRubricResponse

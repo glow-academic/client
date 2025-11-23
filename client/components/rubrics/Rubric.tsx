@@ -281,7 +281,7 @@ export default function Rubric({
         validDepartmentIds={rubricData?.valid_department_ids || []}
         isCreateMode={!isEditMode}
         isReadonly={isReadonly}
-        profileId={effectiveProfile?.id || ""}
+        profileId={effectiveProfile?.id || "guest-profile-id"}
         {...(createRubricAction && { createRubricAction })}
         {...(updateRubricAction && { updateRubricAction })}
       />
@@ -304,7 +304,7 @@ export default function Rubric({
               rubricDescription={currentRubric.description}
               rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
               rubricActive={currentRubric.active}
-              profileId={effectiveProfile?.id || ""}
+              profileId={effectiveProfile?.id || "guest-profile-id"}
               isReadonly={isReadonly}
               {...(updateRubricAction && { updateRubricAction })}
             />
@@ -322,7 +322,7 @@ export default function Rubric({
             rubricDescription={currentRubric.description}
             rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
             rubricActive={currentRubric.active}
-            profileId={effectiveProfile?.id || ""}
+            profileId={effectiveProfile?.id || "guest-profile-id"}
             isReadonly={isReadonly}
             {...(updateRubricAction && { updateRubricAction })}
           />
@@ -346,7 +346,7 @@ export default function Rubric({
               rubricDescription={currentRubric.description}
               rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
               rubricActive={currentRubric.active}
-              profileId={effectiveProfile?.id || ""}
+              profileId={effectiveProfile?.id || "guest-profile-id"}
               isReadonly={isReadonly}
               {...(updateRubricAction && { updateRubricAction })}
             />

@@ -22,6 +22,7 @@ class UpdatePromptRequest(BaseModel):
     system_prompt: str
     active: bool = True
     department_ids: list[str] | None = None
+    profileId: str  # Required for auditing/access control
 
 
 class UpdatePromptResponse(BaseModel):
@@ -70,7 +71,7 @@ async def update_prompt(
 
             # Update prompt with department links
             sql_query = load_sql("sql/v3/prompts/update_prompt.sql")
-            sql_params = (request.promptId, request.name, request.description, request.system_prompt, request.active, department_ids)
+            sql_params = (request.promptId, request.name, request.description, request.system_prompt, request.active, department_ids, request.profileId)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

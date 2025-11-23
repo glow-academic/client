@@ -1,8 +1,17 @@
 -- Update model with department, key, and endpoint links in a single transaction
 -- Parameters: $1=model_id, $2=provider (enum), $3=name, $4=description, $5=active, 
 --            $6=image_model, $7=input_ppm, $8=output_ppm, $9=department_ids (text array, nullable), 
---            $10=key_id (text, nullable), $11=base_url (text, nullable)
-WITH update_model AS (
+--            $10=key_id (text, nullable), $11=base_url (text, nullable), $12=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $12::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
+            ELSE $12::uuid
+        END as resolved_profile_id
+),
+update_model AS (
     UPDATE models SET
         provider = $2::provider,
         name = $3,

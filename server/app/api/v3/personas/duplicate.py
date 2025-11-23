@@ -17,6 +17,7 @@ class DuplicatePersonaRequest(BaseModel):
     """Request to duplicate persona."""
 
     personaId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DuplicatePersonaResponse(BaseModel):
@@ -47,8 +48,8 @@ async def duplicate_persona(
         async with transaction(conn):
             # Duplicate persona (fetch and duplicate in single query)
             sql_query = load_sql("sql/v3/personas/duplicate_persona_complete_v2.sql")
-            sql_params = (request.personaId,)
-            result = await conn.fetchrow(sql_query, request.personaId)
+            sql_params = (request.personaId, request.profileId)
+            result = await conn.fetchrow(sql_query, request.personaId, request.profileId)
 
             if not result or not result.get("new_persona_id"):
                 raise ValueError(f"Persona not found: {request.personaId}")

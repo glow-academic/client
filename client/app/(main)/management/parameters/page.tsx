@@ -51,16 +51,26 @@ async function duplicateParameter(
   input: DuplicateParameterIn
 ): Promise<DuplicateParameterOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/duplicate", input);
+  return api.post("/parameters/duplicate", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function deleteParameter(
   input: DeleteParameterIn
 ): Promise<DeleteParameterOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/parameters/delete", input);
+  return api.post("/parameters/delete", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export async function createParameterItem(

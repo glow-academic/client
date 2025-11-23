@@ -1,8 +1,17 @@
 -- Get model detail with department, key, and endpoint information
--- Parameters: $1 = model_id (uuid), $2 = profile_id (uuid)
+-- Parameters: $1 = model_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
 -- Returns: model fields + provider enum + department_mapping + key_mapping + base_url
 
-WITH model_data AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+model_data AS (
     SELECT 
         name,
         description,
@@ -42,15 +51,16 @@ model_default_key AS (
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
-    FROM profile_departments pd
-    WHERE pd.profile_id = $2::uuid
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
 ),
 user_departments_data AS (
     SELECT DISTINCT d.id, d.title as name, d.description
     FROM departments d
+    JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE d.active = true
-    AND pd.profile_id = $2::uuid
+    AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
 valid_departments_data AS (

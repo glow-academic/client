@@ -23,6 +23,7 @@ class UpdateKeyRequest(BaseModel):
     description: str
     active: bool
     department_ids: list[str] | None = None
+    profileId: str  # Required for auditing/access control
 
 
 class UpdateKeyResponse(BaseModel):
@@ -60,7 +61,7 @@ async def update_key(
 
             # Update key with department links
             sql_query = load_sql("sql/v3/keys/update_key.sql")
-            sql_params = (request.keyId, request.name, encrypted_key, request.description, request.active, department_ids)
+            sql_params = (request.keyId, request.name, encrypted_key, request.description, request.active, department_ids, request.profileId)
             result = await conn.fetchrow(sql_query, *sql_params)
 
             if not result:

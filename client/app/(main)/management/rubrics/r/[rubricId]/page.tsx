@@ -142,8 +142,13 @@ async function updateRubric(
   input: UpdateRubricIn,
 ): Promise<UpdateRubricOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/update", input);
+  return api.post("/rubrics/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

@@ -12,14 +12,24 @@
 --   $10 = actor_ids (uuid[] | NULL) - filter by agent/persona IDs (combined)
 -- Returns: JSONB object with data (paginated runs), totalCount, page, pageSize, totalPages, filter options, mappings
 
-WITH profile_role_check AS (
+WITH resolve_profile_id AS (
+    -- Resolve guest-profile-id to actual profile ID
+    SELECT 
+        CASE 
+            WHEN $4::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $4::text IS NULL OR $4::text = '' THEN NULL::uuid
+            ELSE $4::uuid
+        END as resolved_profile_id
+),
+profile_role_check AS (
     -- Resolve profile_id and check role to determine effective filtering
     SELECT 
-        $4::uuid as raw_profile_id,
+        (SELECT resolved_profile_id FROM resolve_profile_id) as raw_profile_id,
         CASE 
-            WHEN $4::uuid IS NULL THEN NULL::uuid
-            WHEN (SELECT role FROM profiles WHERE id = $4::uuid) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
-            ELSE $4::uuid
+            WHEN (SELECT resolved_profile_id FROM resolve_profile_id) IS NULL THEN NULL::uuid
+            WHEN (SELECT role FROM profiles WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            ELSE (SELECT resolved_profile_id FROM resolve_profile_id)
         END as effective_profile_id
 ),
 model_runs_base AS (

@@ -42,8 +42,13 @@ async function deleteKey(
   input: DeleteKeyIn,
 ): Promise<DeleteKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/delete", input);
+  return api.post("/keys/delete", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export const metadata: Metadata = {

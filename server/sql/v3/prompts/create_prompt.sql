@@ -1,6 +1,15 @@
 -- Create a new prompt with department links
--- Parameters: $1=name, $2=description, $3=system_prompt, $4=active, $5=department_ids (text array, nullable)
-WITH new_prompt AS (
+-- Parameters: $1=name, $2=description, $3=system_prompt, $4=active, $5=department_ids (text array, nullable), $6=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $6::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $6::text IS NULL OR $6::text = '' THEN NULL::uuid
+            ELSE $6::uuid
+        END as resolved_profile_id
+),
+new_prompt AS (
     INSERT INTO prompts (
         name,
         description,

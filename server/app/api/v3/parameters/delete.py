@@ -17,6 +17,7 @@ class DeleteParameterRequest(BaseModel):
     """Request to delete parameter."""
 
     parameterId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeleteParameterResponse(BaseModel):
@@ -46,8 +47,8 @@ async def delete_parameter(
         async with transaction(conn):
             # Delete parameter with usage check in single SQL (DHH style)
             sql_query = load_sql("sql/v3/parameters/delete_parameter_complete.sql")
-            sql_params = (request.parameterId,)
-            result = await conn.fetchrow(sql_query, request.parameterId)
+            sql_params = (request.parameterId, request.profileId)
+            result = await conn.fetchrow(sql_query, request.parameterId, request.profileId)
 
             if not result:
                 raise ValueError(f"Parameter not found: {request.parameterId}")

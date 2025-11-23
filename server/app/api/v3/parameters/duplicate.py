@@ -17,6 +17,7 @@ class DuplicateParameterRequest(BaseModel):
     """Request to duplicate parameter."""
 
     parameterId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DuplicateParameterResponse(BaseModel):
@@ -47,8 +48,8 @@ async def duplicate_parameter(
         async with transaction(conn):
             # Duplicate parameter with items and department links in single SQL (DHH style)
             sql_query = load_sql("sql/v3/parameters/duplicate_parameter_complete.sql")
-            sql_params = (request.parameterId,)
-            new_parameter = await conn.fetchrow(sql_query, request.parameterId)
+            sql_params = (request.parameterId, request.profileId)
+            new_parameter = await conn.fetchrow(sql_query, request.parameterId, request.profileId)
 
             if not new_parameter:
                 raise ValueError(f"Parameter not found: {request.parameterId}")

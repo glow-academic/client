@@ -1,6 +1,15 @@
 -- Update agent with prompt and department links in a single transaction
--- Parameters: $1=agentId, $2=name, $3=description, $4=temperature, $5=model_id, $6=reasoning, $7=active, $8=role, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array), $12=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides)
-WITH update_agent AS (
+-- Parameters: $1=agentId, $2=name, $3=description, $4=temperature, $5=model_id, $6=reasoning, $7=active, $8=role, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array), $12=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides), $13=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $13::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $13::text IS NULL OR $13::text = '' THEN NULL::uuid
+            ELSE $13::uuid
+        END as resolved_profile_id
+),
+update_agent AS (
     UPDATE agents
     SET 
         name = $2,

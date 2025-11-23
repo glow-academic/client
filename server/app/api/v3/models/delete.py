@@ -17,6 +17,7 @@ class DeleteModelRequest(BaseModel):
     """Request to delete model."""
 
     modelId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeleteModelResponse(BaseModel):
@@ -46,8 +47,8 @@ async def delete_model(
         async with transaction(conn):
             # Delete model with usage checks and name fetch (single query)
             sql_query = load_sql("sql/v3/models/delete.sql")
-            sql_params = (request.modelId,)
-            result = await conn.fetchrow(sql_query, request.modelId)
+            sql_params = (request.modelId, request.profileId)
+            result = await conn.fetchrow(sql_query, request.modelId, request.profileId)
 
             if not result:
                 raise ValueError("Failed to check model usage")

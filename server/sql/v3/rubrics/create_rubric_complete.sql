@@ -1,7 +1,16 @@
 -- Create rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=name, $2=description (nullable), $3=active, $4=points, $5=passPoints, $6=department_ids (nullable text array), $7=standard_groups (JSONB array)
+-- Parameters: $1=name, $2=description (nullable), $3=active, $4=points, $5=passPoints, $6=department_ids (nullable text array), $7=standard_groups (JSONB array), $8=profile_id (uuid or "guest-profile-id")
 -- Returns: rubric_id
-WITH new_rubric AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $8::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $8::text IS NULL OR $8::text = '' THEN NULL::uuid
+            ELSE $8::uuid
+        END as resolved_profile_id
+),
+new_rubric AS (
     INSERT INTO rubrics (
         name,
         description,

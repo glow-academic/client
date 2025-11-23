@@ -1,4 +1,16 @@
-WITH         agent_info AS (
+-- Get agent detail with prompts, departments, and access control
+-- Parameters: $1 = agent_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
+
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+agent_info AS (
     SELECT 
         id::text as agent_id,
         name,
@@ -137,14 +149,16 @@ all_models AS (
     FROM models
 ),
 user_profile AS (
-    SELECT role FROM profiles WHERE id = $2::uuid
+    SELECT role FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
     FROM departments d
+    JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON pd.department_id = d.id
     WHERE d.active = true
-    AND pd.profile_id = $2::uuid
+    AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
 user_has_agent_access AS (
@@ -154,7 +168,9 @@ user_has_agent_access AS (
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
         WHERE ad.agent_id = $1::uuid AND ad.active = true
     ) OR EXISTS(
-        SELECT 1 FROM profiles p WHERE p.id = $2::uuid AND p.role = 'superadmin'
+        SELECT 1 FROM resolve_profile_id rpi
+        JOIN profiles p ON p.id = rpi.resolved_profile_id
+        WHERE p.role = 'superadmin'
     ) OR (
         -- Default agents (no department links) are accessible to all
         SELECT COUNT(*) FROM agent_departments ad

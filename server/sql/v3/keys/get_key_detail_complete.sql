@@ -1,6 +1,15 @@
 -- Get key detail with department relationships, model relationships, and permissions
--- Parameters: $1=keyId, $2=profileId
-WITH key_data AS (
+-- Parameters: $1=keyId (uuid), $2=profileId (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+key_data AS (
     SELECT 
         k.id as key_id,
         k.name,
@@ -42,23 +51,27 @@ valid_depts AS (
         ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
     FROM departments d
+    JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = $2::uuid AND d.active = true AND pd.active = true
+    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true AND pd.active = true
 ),
 profile_data AS (
     SELECT role as user_role 
-    FROM profiles 
-    WHERE id = $2::uuid
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 user_has_key_access AS (
     -- Check if user has access to key via department links
     SELECT EXISTS(
         SELECT 1 FROM key_departments kd
+        JOIN resolve_profile_id rpi ON true
         JOIN profile_departments pd ON pd.department_id = kd.department_id
         WHERE kd.key_id = $1::uuid AND kd.active = true
-        AND pd.profile_id = $2::uuid AND pd.active = true
+        AND pd.profile_id = rpi.resolved_profile_id AND pd.active = true
     ) OR EXISTS(
-        SELECT 1 FROM profiles p WHERE p.id = $2::uuid AND p.role = 'superadmin'
+        SELECT 1 FROM resolve_profile_id rpi
+        JOIN profiles p ON p.id = rpi.resolved_profile_id
+        WHERE p.role = 'superadmin'
     ) OR (
         -- Default keys (no department links) are accessible to all admins
         SELECT COUNT(*) FROM key_departments kd

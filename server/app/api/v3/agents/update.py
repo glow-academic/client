@@ -28,6 +28,7 @@ class UpdateAgentRequest(BaseModel):
     department_ids: list[str] | None
     department_ids_for_prompt: list[str] | None = None
     # Array of department IDs for prompt overrides (never create default prompts, always department-specific overrides)
+    profileId: str  # Required for auditing/access control
 
 
 class UpdateAgentResponse(BaseModel):
@@ -87,6 +88,7 @@ async def update_agent(
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
                 dept_ids_for_prompt,  # Array of department IDs for prompt overrides
+                request.profileId,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

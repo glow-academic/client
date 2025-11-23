@@ -116,8 +116,13 @@ async function updateKey(
   input: UpdateKeyIn,
 ): Promise<UpdateKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", input);
+  return api.post("/keys/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

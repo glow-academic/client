@@ -74,32 +74,52 @@ export async function generateMetadata(
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/create", input);
+  return api.post("/auth/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/update", input);
+  return api.post("/auth/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", input);
+  return api.post("/keys/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
+  // decrypt-key doesn't need profileId
   return api.post("/keys/decrypt-key", input);
 }
 
 async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", input);
+  return api.post("/keys/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 /** ---- Server renders client with typed data and actions ---- */

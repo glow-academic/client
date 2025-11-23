@@ -230,6 +230,7 @@ export default function RubricDetails({
         passPoints: totalPassPoints,
         department_ids: params.department_ids || [],
         standard_groups: allGroups,
+        profileId: profileId || effectiveProfile?.id || "guest-profile-id",
       },
     });
 
@@ -298,6 +299,7 @@ export default function RubricDetails({
             points: 0, // Will be calculated when standard groups are added
             passPoints: 0,
             standard_groups: [], // Start with no standard groups
+            profileId: effectiveProfile?.id || "guest-profile-id",
           },
         });
 

@@ -1,6 +1,15 @@
 -- Update persona with prompt and department links in a single transaction
--- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=model_id, $8=reasoning, $9=temperature, $10=prompt_id (nullable), $11=system_prompt (nullable), $12=department_ids (nullable text array), $13=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides)
-WITH update_persona AS (
+-- Parameters: $1=personaId, $2=name, $3=description, $4=active, $5=color, $6=icon, $7=model_id, $8=reasoning, $9=temperature, $10=prompt_id (nullable), $11=system_prompt (nullable), $12=department_ids (nullable text array), $13=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides), $14=profile_id (uuid or "guest-profile-id")
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $14::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $14::text IS NULL OR $14::text = '' THEN NULL::uuid
+            ELSE $14::uuid
+        END as resolved_profile_id
+),
+update_persona AS (
     UPDATE personas
     SET 
         name = $2,

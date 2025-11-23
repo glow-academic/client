@@ -4,6 +4,7 @@ WITH resolve_profile_id AS (
         CASE 
             WHEN $1::text = 'guest-profile-id' THEN
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
             ELSE $1::uuid
         END as resolved_profile_id
 ),

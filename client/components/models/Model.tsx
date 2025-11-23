@@ -380,6 +380,7 @@ export default function Model({
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
           base_url: formData.customModel ? formData.baseUrl || null : null,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
         toast.success("Model updated successfully!");
@@ -396,6 +397,7 @@ export default function Model({
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
           base_url: formData.customModel ? formData.baseUrl || null : null,
+          profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
         toast.success("Model created successfully!");

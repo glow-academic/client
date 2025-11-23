@@ -17,6 +17,7 @@ class DeletePromptRequest(BaseModel):
     """Request to delete prompt."""
 
     promptId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeletePromptResponse(BaseModel):
@@ -64,8 +65,8 @@ async def delete_prompt(
 
             # Delete prompt (CASCADE will handle prompt_departments)
             sql_query = "DELETE FROM prompts WHERE id = $1::uuid RETURNING id"
-            sql_params = (request.promptId,)
-            result = await conn.fetchrow(sql_query, request.promptId)
+            sql_params = (request.promptId, request.profileId)
+            result = await conn.fetchrow(sql_query, request.promptId, request.profileId)
 
             if not result:
                 raise HTTPException(

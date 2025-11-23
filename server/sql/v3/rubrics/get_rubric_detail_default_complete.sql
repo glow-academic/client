@@ -1,7 +1,20 @@
-WITH user_departments AS (
+-- Get default rubric detail for creation
+-- Parameters: $1 = profile_id (uuid or "guest-profile-id")
+
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $1::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $1::text IS NULL OR $1::text = '' THEN NULL::uuid
+            ELSE $1::uuid
+        END as resolved_profile_id
+),
+user_departments AS (
     SELECT DISTINCT pd.department_id
-    FROM profile_departments pd
-    WHERE pd.profile_id = $1 AND pd.active = true
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
 ),
 default_rubric AS (
     SELECT r.id
@@ -49,18 +62,20 @@ valid_depts AS (
         ) as dept_mapping,
         array_agg(d.id::text ORDER BY d.title) as dept_ids
     FROM departments d
+    JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = $1 AND d.active = true
+    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
 ),
 profile_data AS (
     SELECT role as user_role 
-    FROM profiles 
-    WHERE id = $1
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 primary_department_id AS (
     SELECT department_id::text
-    FROM profile_departments
-    WHERE profile_id = $1 AND is_primary = TRUE
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.is_primary = TRUE
     LIMIT 1
 ),
 standard_groups_with_standards AS (

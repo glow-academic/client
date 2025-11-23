@@ -16,6 +16,7 @@ class DeletePersonaRequest(BaseModel):
     """Request to delete persona."""
 
     personaId: str
+    profileId: str  # Required for auditing/access control
 
 
 class DeletePersonaResponse(BaseModel):
@@ -45,8 +46,8 @@ async def delete_persona(
         async with transaction(conn):
             # Delete persona with usage check and name fetch (single query)
             sql_query = load_sql("sql/v3/personas/delete_persona_complete.sql")
-            sql_params = (request.personaId,)
-            result = await conn.fetchrow(sql_query, request.personaId)
+            sql_params = (request.personaId, request.profileId)
+            result = await conn.fetchrow(sql_query, request.personaId, request.profileId)
 
             if not result:
                 raise ValueError("Failed to check persona usage")

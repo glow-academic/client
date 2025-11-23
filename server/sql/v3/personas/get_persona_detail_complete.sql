@@ -1,6 +1,19 @@
-WITH         user_profile AS (
-            SELECT role FROM profiles WHERE id = $2
-        ),
+-- Get persona detail with prompts, departments, and access control
+-- Parameters: $1 = persona_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
+
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+user_profile AS (
+    SELECT role FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
         persona_departments_data AS (
             SELECT 
                 pd.persona_id,
@@ -16,9 +29,10 @@ WITH         user_profile AS (
                     WHEN up.role = 'superadmin' THEN true
                     WHEN EXISTS (
                         SELECT 1 FROM persona_departments pd 
+                        JOIN resolve_profile_id rpi ON true
                         WHERE pd.persona_id = p.id 
                         AND pd.active = true 
-                        AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = $2 AND pd2.active = true)
+                        AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = rpi.resolved_profile_id AND pd2.active = true)
                     ) THEN true
                     WHEN NOT EXISTS (
                         SELECT 1 FROM persona_departments pd3 
@@ -158,8 +172,9 @@ WITH         user_profile AS (
                 ) as dept_mapping,
                 array_agg(d.id::text ORDER BY d.title) as dept_ids
             FROM departments d
+            JOIN resolve_profile_id rpi ON true
             JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = $2 AND d.active = true
+            WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
         ),
         valid_models AS (
             SELECT 
@@ -184,8 +199,8 @@ WITH         user_profile AS (
         ),
         profile_data AS (
             SELECT role as user_role 
-            FROM profiles 
-            WHERE id = $2
+            FROM resolve_profile_id rpi
+            JOIN profiles p ON p.id = rpi.resolved_profile_id
         )
         SELECT 
             p.*,

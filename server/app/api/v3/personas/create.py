@@ -27,6 +27,7 @@ class CreatePersonaRequest(BaseModel):
     temperature: float
     system_prompt: str | None
     prompt_id: str | None
+    profileId: str  # Required for auditing/access control
 
 
 class CreatePersonaResponse(BaseModel):
@@ -75,6 +76,7 @@ async def create_persona(
                 request.prompt_id,
                 request.system_prompt if not request.prompt_id else None,
                 dept_ids,  # Always pass array (empty array if no departments)
+                request.profileId,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

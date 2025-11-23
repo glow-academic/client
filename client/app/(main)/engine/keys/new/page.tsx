@@ -37,8 +37,13 @@ const getKeyDefault = async (
 /** ---- Strongly-typed server action ---- */
 async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", input);
+  return api.post("/keys/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export const metadata: Metadata = {

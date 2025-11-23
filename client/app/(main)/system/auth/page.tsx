@@ -48,32 +48,52 @@ async function duplicateAuth(
   input: DuplicateAuthIn
 ): Promise<DuplicateAuthOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/duplicate", input);
+  return api.post("/auth/duplicate", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/delete", input);
+  return api.post("/auth/delete", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export async function createKey(input: CreateKeyIn): Promise<CreateKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/create", input);
+  return api.post("/keys/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export async function decryptKey(input: DecryptKeyIn): Promise<DecryptKeyOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
+  // decrypt-key doesn't need profileId
   return api.post("/keys/decrypt-key", input);
 }
 
 export async function updateKey(input: UpdateKeyIn): Promise<UpdateKeyOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/keys/update", input);
+  return api.post("/keys/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export const metadata: Metadata = {

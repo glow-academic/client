@@ -27,6 +27,7 @@ class UpdateModelRequest(BaseModel):
     department_ids: list[str] | None = None
     key_id: str | None = None
     base_url: str | None = None  # Required if provider is 'custom'
+    profileId: str  # Required for auditing/access control
 
 
 class UpdateModelResponse(BaseModel):
@@ -77,6 +78,7 @@ async def update_model(
                 department_ids,
                 request.key_id,
                 request.base_url,
+                request.profileId,
             )
             await conn.execute(
                 sql_query,
@@ -91,6 +93,7 @@ async def update_model(
                 department_ids,
                 request.key_id,
                 request.base_url,
+                request.profileId,
             )
 
             result_data = UpdateModelResponse(

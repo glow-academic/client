@@ -43,8 +43,13 @@ async function createPersona(
   input: CreatePersonaIn
 ): Promise<CreatePersonaOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/create", input);
+  return api.post("/personas/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export const metadata: Metadata = {

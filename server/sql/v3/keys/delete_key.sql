@@ -1,8 +1,18 @@
 -- Delete a key (cascade deletes key_departments)
--- Parameters: $1=keyId, $2=profileId
+-- Parameters: $1=keyId (uuid), $2=profileId (uuid or "guest-profile-id")
 -- Returns: key_id if deletion successful
-WITH user_profile AS (
-    SELECT role FROM profiles WHERE id = $2::uuid
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+user_profile AS (
+    SELECT role FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
 key_departments_data AS (
     SELECT 
@@ -12,8 +22,9 @@ key_departments_data AS (
 ),
 user_departments AS (
     SELECT department_id
-    FROM profile_departments
-    WHERE profile_id = $2::uuid AND active = true
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
 ),
 check_permissions AS (
     SELECT 

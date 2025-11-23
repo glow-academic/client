@@ -44,14 +44,24 @@ export async function createPrompt(
   input: CreatePromptIn
 ): Promise<CreatePromptOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/prompts/create", input);
+  return api.post("/prompts/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function deletePrompt(input: DeletePromptIn): Promise<DeletePromptOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/prompts/delete", input);
+  return api.post("/prompts/delete", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 export const metadata: Metadata = {

@@ -1,6 +1,19 @@
-WITH         user_context AS (
-            SELECT role FROM profiles WHERE id = $2
-        ),
+-- Get simulation detail with departments, scenarios, and access control
+-- Parameters: $1 = simulation_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
+
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $2::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
+            ELSE $2::uuid
+        END as resolved_profile_id
+),
+user_context AS (
+    SELECT role FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+),
         simulation_departments_data AS (
             SELECT 
                 sd.simulation_id,
@@ -18,7 +31,7 @@ WITH         user_context AS (
                         SELECT 1 FROM simulation_departments sd 
                         WHERE sd.simulation_id = s.id 
                         AND sd.active = true 
-                        AND sd.department_id IN (SELECT department_id FROM profile_departments pd WHERE pd.profile_id = $2 AND pd.active = true)
+                        AND sd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id WHERE pd.active = true)
                     ) THEN true
                     WHEN NOT EXISTS (
                         SELECT 1 FROM simulation_departments sd2 
@@ -57,8 +70,9 @@ WITH         user_context AS (
         user_departments AS (
             SELECT DISTINCT d.id, d.title as name, d.description
             FROM departments d
+            JOIN resolve_profile_id rpi ON true
             JOIN profile_departments pd ON pd.department_id = d.id
-            WHERE pd.profile_id = $2 AND d.active = true
+            WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
         ),
         user_department_ids AS (
             SELECT ARRAY_AGG(id) as ids

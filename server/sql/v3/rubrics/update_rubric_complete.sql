@@ -1,7 +1,16 @@
 -- Update rubric with departments, standard groups, and standards in a single transaction
--- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array)
+-- Parameters: $1=rubricId, $2=name, $3=description (nullable), $4=active, $5=points, $6=passPoints, $7=department_ids (nullable text array), $8=standard_groups (JSONB array), $9=profile_id (uuid or "guest-profile-id")
 -- Returns: rubric_id
-WITH update_rubric AS (
+WITH resolve_profile_id AS (
+    SELECT 
+        CASE 
+            WHEN $9::text = 'guest-profile-id' THEN
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+            WHEN $9::text IS NULL OR $9::text = '' THEN NULL::uuid
+            ELSE $9::uuid
+        END as resolved_profile_id
+),
+update_rubric AS (
     UPDATE rubrics SET
         name = $2,
         description = COALESCE($3, ''),

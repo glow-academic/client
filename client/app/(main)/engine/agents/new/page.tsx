@@ -44,16 +44,26 @@ async function createAgent(
   input: CreateAgentIn
 ): Promise<CreateAgentOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/create", input);
+  return api.post("/agents/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function updateAgent(
   input: UpdateAgentIn
 ): Promise<UpdateAgentOut> {
   "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/update", input);
+  return api.post("/agents/update", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
 }
 
 async function deleteAgentPrompt(

@@ -29,7 +29,7 @@ def setup_db_logger(db_pool: asyncpg.Pool) -> None:
 
 
 async def resolve_profile_id(profile_id: str | None) -> str:
-    """Resolve 'guest-profile-id' to actual guest UUID (Chris Date: No Nulls).
+    """Resolve 'guest-profile-id' to actual guest UUID using cached value (Chris Date: No Nulls).
     
     Args:
         profile_id: Profile ID string, may be "guest-profile-id" or None
@@ -38,30 +38,16 @@ async def resolve_profile_id(profile_id: str | None) -> str:
         Resolved UUID string (never null)
     """
     if not profile_id or profile_id == "guest-profile-id":
-        if _db_pool is None:
-            # Fallback: return a placeholder if DB not available
-            # This should not happen in normal operation
-            return "00000000-0000-0000-0000-000000000000"
-        
+        # Use cached guest profile UUID (no DB call needed)
         try:
-            async with _db_pool.acquire() as conn:
-                result = await conn.fetchval(
-                    """
-                    SELECT id::text
-                    FROM profiles
-                    WHERE role = 'guest' AND default_profile = true
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                    """
-                )
-                if result:
-                    return str(result)
-                # If no guest profile found, return placeholder
-                # This should not happen in normal operation
-                return "00000000-0000-0000-0000-000000000000"
-        except Exception as e:
+            from app.core.guest_profile import get_guest_profile_id
+            
+            return get_guest_profile_id()
+        except RuntimeError:
+            # Fallback: return a placeholder if not initialized
+            # This should not happen in normal operation
             logger = logging.getLogger("app.utils.logging.db_logger")
-            logger.error(f"Error resolving guest profile: {e}")
+            logger.warning("Guest profile UUID not initialized; using placeholder")
             return "00000000-0000-0000-0000-000000000000"
     
     return profile_id
