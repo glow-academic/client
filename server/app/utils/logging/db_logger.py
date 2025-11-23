@@ -109,6 +109,7 @@ class DBLogHandler(logging.Handler):
                 extra_data["exception"] = traceback.format_exception(*record.exc_info)
             
             # Write to database (SQL will resolve guest-profile-id)
+            # Inserts into both app_logs and app_logs_profiles junction table
             async with _db_pool.acquire() as conn:
                 await conn.execute(
                     """
@@ -119,16 +120,26 @@ class DBLogHandler(logging.Handler):
                                     (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
                                 ELSE $4::uuid
                             END as resolved_profile_id
+                    ),
+                    insert_log AS (
+                        INSERT INTO app_logs (level, logger_name, message, extra, ts)
+                        SELECT 
+                            $1::text,
+                            $2::text,
+                            $3::text,
+                            $5::jsonb,
+                            now()
+                        RETURNING id
                     )
-                    INSERT INTO app_logs (level, logger_name, message, profile_id, extra, ts)
+                    INSERT INTO app_logs_profiles (app_log_id, profile_id, created_at, updated_at)
                     SELECT 
-                        $1::text,
-                        $2::text,
-                        $3::text,
-                        resolved_profile_id,
-                        $5::jsonb,
+                        il.id,
+                        rpi.resolved_profile_id,
+                        now(),
                         now()
-                    FROM resolve_profile_id
+                    FROM insert_log il
+                    CROSS JOIN resolve_profile_id rpi
+                    WHERE rpi.resolved_profile_id IS NOT NULL
                     """,
                     record.levelname.lower(),
                     record.name,

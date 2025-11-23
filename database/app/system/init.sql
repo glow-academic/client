@@ -1,20 +1,18 @@
 CREATE TYPE feedback_type AS ENUM ('feature', 'bug', 'question', 'other');
 
 -- Application logs table (Chris Date: No Nulls, BCNF)
--- Simplified structure with direct profile_id reference
+-- Profile relationship moved to app_logs_profiles junction table
 CREATE TABLE app_logs (
   id          bigserial PRIMARY KEY,
   ts          timestamptz NOT NULL DEFAULT now(),
   level       text NOT NULL,                    -- 'debug' | 'info' | 'warn' | 'error'
   logger_name text NOT NULL,                    -- logger/component name (e.g., "app.api.v3.profile.detail")
   message     text NOT NULL,                    -- log message
-  profile_id  UUID NOT NULL REFERENCES profiles(id),  -- always resolved from "guest-profile-id" to actual UUID
   extra       jsonb                             -- additional context data (can be NULL)
 );
 
 CREATE INDEX ON app_logs (ts);
 CREATE INDEX ON app_logs (level);
-CREATE INDEX ON app_logs (profile_id);
 
 -- Application metrics table (snapshot-based metrics tracking)
 CREATE TABLE app_metrics (
@@ -48,6 +46,18 @@ CREATE TABLE app_feedback_profiles (
 
 CREATE INDEX ON app_feedback_profiles (profile_id);
 CREATE INDEX ON app_feedback_profiles (app_feedback_id);
+
+-- App logs ↔ Profiles junction table (BCNF normalization - replaces app_logs.profile_id)
+CREATE TABLE app_logs_profiles (
+  app_log_id  bigint NOT NULL REFERENCES app_logs(id) ON DELETE CASCADE,
+  profile_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (app_log_id, profile_id)
+);
+
+CREATE INDEX ON app_logs_profiles (profile_id);
+CREATE INDEX ON app_logs_profiles (app_log_id);
 
 -- ============================================================================
 -- PROMPTS INFRASTRUCTURE

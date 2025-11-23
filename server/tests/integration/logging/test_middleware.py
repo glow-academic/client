@@ -64,11 +64,12 @@ async def test_middleware_logs_request(
     # Verify log has correct structure
     log_row = await db.fetchrow(
         """
-        SELECT level, logger_name, message, profile_id, extra
-        FROM app_logs
-        WHERE logger_name = 'app.middleware.db_logging'
-        AND message LIKE 'GET /api/v3/nonexistent%'
-        ORDER BY ts DESC
+        SELECT al.level, al.logger_name, al.message, alp.profile_id, al.extra
+        FROM app_logs al
+        LEFT JOIN app_logs_profiles alp ON alp.app_log_id = al.id
+        WHERE al.logger_name = 'app.middleware.db_logging'
+        AND al.message LIKE 'GET /api/v3/nonexistent%'
+        ORDER BY al.ts DESC
         LIMIT 1
         """
     )
@@ -132,10 +133,12 @@ async def test_middleware_logs_with_profile_id(
     # Verify log was written with correct profile_id
     log_row = await db.fetchrow(
         """
-        SELECT profile_id FROM app_logs
-        WHERE logger_name = 'app.middleware.db_logging'
-        AND message LIKE 'GET /api/v3/nonexistent%'
-        ORDER BY ts DESC
+        SELECT alp.profile_id
+        FROM app_logs al
+        LEFT JOIN app_logs_profiles alp ON alp.app_log_id = al.id
+        WHERE al.logger_name = 'app.middleware.db_logging'
+        AND al.message LIKE 'GET /api/v3/nonexistent%'
+        ORDER BY al.ts DESC
         LIMIT 1
         """
     )
@@ -190,10 +193,12 @@ async def test_middleware_logs_post_with_body_profile_id(
     # Verify log was written with correct profile_id
     log_row = await db.fetchrow(
         """
-        SELECT profile_id FROM app_logs
-        WHERE logger_name = 'app.middleware.db_logging'
-        AND message LIKE 'POST /api/v3/nonexistent%'
-        ORDER BY ts DESC
+        SELECT alp.profile_id
+        FROM app_logs al
+        LEFT JOIN app_logs_profiles alp ON alp.app_log_id = al.id
+        WHERE al.logger_name = 'app.middleware.db_logging'
+        AND al.message LIKE 'POST /api/v3/nonexistent%'
+        ORDER BY al.ts DESC
         LIMIT 1
         """
     )
