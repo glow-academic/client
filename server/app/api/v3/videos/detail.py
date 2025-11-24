@@ -43,6 +43,14 @@ class QuestionResponse(BaseModel):
     options: list[QuestionOptionResponse]  # Only for choice questions
 
 
+class ProblemStatementInfo(BaseModel):
+    """Problem statement info for mapping."""
+
+    problem_statement: str
+    created_at: str
+    updated_at: str
+
+
 class VideoDetailResponse(BaseModel):
     """Response for video detail."""
 
@@ -52,9 +60,14 @@ class VideoDetailResponse(BaseModel):
     department_ids: list[str] | None
     valid_department_ids: list[str]
     problem_statement_ids: list[str]
+    problem_statement_mapping: dict[str, ProblemStatementInfo]
     objective_ids: list[str]
     objective_mapping: dict[str, dict[str, str]]
     policy_ids: list[str]
+    policy_mapping: dict[str, dict[str, str]]
+    valid_policy_ids: list[str]
+    video_images: list[dict[str, Any]]
+    objectives_history: list[str]
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
@@ -185,6 +198,18 @@ async def get_video_detail(
         if not isinstance(valid_dept_ids, list):
             valid_dept_ids = []
 
+        # Parse problem_statement_mapping from JSONB
+        problem_statement_mapping_data = parse_jsonb(video.get("problem_statement_mapping"))
+        problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
+        if isinstance(problem_statement_mapping_data, dict):
+            for k, v in problem_statement_mapping_data.items():
+                if isinstance(v, dict):
+                    problem_statement_mapping[k] = ProblemStatementInfo(
+                        problem_statement=v.get("problem_statement", ""),
+                        created_at=v.get("created_at", ""),
+                        updated_at=v.get("updated_at", ""),
+                    )
+
         # Parse objective_mapping from JSONB
         objective_mapping_data = parse_jsonb(video.get("objective_mapping"))
         objective_mapping: dict[str, dict[str, str]] = {}
@@ -193,6 +218,36 @@ async def get_video_detail(
                 k: {"name": v.get("name", ""), "description": v.get("description", "")}
                 for k, v in objective_mapping_data.items()
             }
+
+        # Parse policy_mapping from JSONB
+        policy_mapping_data = parse_jsonb(video.get("policy_mapping"))
+        policy_mapping: dict[str, dict[str, str]] = {}
+        if isinstance(policy_mapping_data, dict):
+            policy_mapping = {
+                k: {
+                    "name": v.get("name", ""),
+                    "description": v.get("description", ""),
+                    "extension": v.get("extension", ""),
+                    "filePath": v.get("filePath", ""),
+                    "mimeType": v.get("mimeType", ""),
+                }
+                for k, v in policy_mapping_data.items()
+            }
+
+        # Parse video_images from JSONB
+        video_images_data = parse_jsonb(video.get("video_images"))
+        video_images: list[dict[str, Any]] = []
+        if isinstance(video_images_data, list):
+            video_images = [
+                {
+                    "id": img.get("id", ""),
+                    "file_path": img.get("file_path", ""),
+                    "mime_type": img.get("mime_type", ""),
+                    "active": img.get("active", True),
+                }
+                for img in video_images_data
+                if isinstance(img, dict)
+            ]
 
         problem_statement_ids = video.get("problem_statement_ids") or []
         if not isinstance(problem_statement_ids, list):
@@ -206,6 +261,15 @@ async def get_video_detail(
         if not isinstance(policy_ids, list):
             policy_ids = []
 
+        valid_policy_ids = video.get("valid_policy_ids") or []
+        if not isinstance(valid_policy_ids, list):
+            valid_policy_ids = []
+
+        # Parse objectives_history
+        objectives_history = video.get("objectives_history") or []
+        if not isinstance(objectives_history, list):
+            objectives_history = []
+
         response_data = VideoDetailResponse(
             name=video["name"],
             length_seconds=video["length_seconds"],
@@ -213,9 +277,14 @@ async def get_video_detail(
             department_ids=dept_ids,
             valid_department_ids=[str(did) for did in valid_dept_ids],
             problem_statement_ids=[str(psid) for psid in problem_statement_ids],
+            problem_statement_mapping=problem_statement_mapping,
             objective_ids=[str(oid) for oid in objective_ids],
             objective_mapping=objective_mapping,
             policy_ids=[str(pid) for pid in policy_ids],
+            policy_mapping=policy_mapping,
+            valid_policy_ids=[str(pid) for pid in valid_policy_ids],
+            video_images=video_images,
+            objectives_history=[str(obj) for obj in objectives_history],
             can_edit=video["can_edit"],
             can_duplicate=video["can_duplicate"],
             can_delete=video["can_delete"],

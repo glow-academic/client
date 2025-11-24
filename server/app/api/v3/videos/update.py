@@ -42,6 +42,7 @@ class UpdateVideoRequest(BaseModel):
     problem_statement_ids: list[str] | None = None
     objective_ids: list[str] | None = None
     policy_ids: list[str] | None = None
+    video_image_ids: list[str] | None = None
     active: bool
     questions: list[QuestionItem] = []  # Questions with times and options
 
@@ -79,6 +80,7 @@ async def update_video(
         problem_statement_ids = request.problem_statement_ids or []
         objective_ids = request.objective_ids or []
         policy_ids = request.policy_ids or []
+        video_image_ids = request.video_image_ids or []
         questions = request.questions or []
 
         # Prepare questions JSON for SQL
@@ -95,6 +97,7 @@ async def update_video(
             problem_statement_ids if problem_statement_ids else None,
             objective_ids if objective_ids else None,
             policy_ids if policy_ids else None,
+            video_image_ids if video_image_ids else None,
             questions_json,
         )
         result = await conn.fetchrow(sql_query, *sql_params)

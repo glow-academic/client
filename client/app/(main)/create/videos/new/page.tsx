@@ -19,6 +19,8 @@ type CreateVideoIn = InputOf<"/api/v3/videos/create", "post">;
 type CreateVideoOut = OutputOf<"/api/v3/videos/create", "post">;
 type UpdateVideoIn = InputOf<"/api/v3/videos/update", "post">;
 type UpdateVideoOut = OutputOf<"/api/v3/videos/update", "post">;
+type RandomizeVideoIn = InputOf<"/api/v3/videos/randomize", "post">;
+type RandomizeVideoOut = OutputOf<"/api/v3/videos/randomize", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -47,6 +49,14 @@ async function updateVideo(input: UpdateVideoIn): Promise<UpdateVideoOut> {
   return api.post("/videos/update", input);
 }
 
+async function randomizeVideo(
+  input: RandomizeVideoIn
+): Promise<RandomizeVideoOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/videos/randomize", input);
+}
+
 export const metadata: Metadata = {
   title: "New Video",
   description: `New video creation in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -72,6 +82,7 @@ export default async function NewVideoPage() {
         videoDetailDefault={videoDetailDefault}
         createVideoAction={createVideo}
         updateVideoAction={updateVideo}
+        randomizeVideoAction={randomizeVideo}
       />
     </div>
   );
@@ -81,6 +92,8 @@ export default async function NewVideoPage() {
 export type {
   CreateVideoIn,
   CreateVideoOut,
+  RandomizeVideoIn,
+  RandomizeVideoOut,
   UpdateVideoIn,
   UpdateVideoOut,
   VideoDetailDefaultIn,

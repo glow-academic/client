@@ -5,7 +5,7 @@
  * 01/21/2025
  */
 "use client";
-import { Check, Plus, Power, Trash2, Upload, X } from "lucide-react";
+import { Check, Plus, Power, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,12 +44,18 @@ import { cn } from "@/lib/utils";
 
 // Custom Components
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import {
+  PolicyMappingItem,
+  PolicyPicker,
+} from "@/components/common/forms/PolicyPicker";
+import { ProblemStatementAndObjectivesPicker } from "@/components/common/forms/ProblemStatementAndObjectivesPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
+import { getObjectivesFromMapping } from "@/utils/scenario-helpers";
 
 // Types and API functions
 import type {
@@ -84,7 +91,30 @@ export interface VideoProps {
   videoDetailDefault?: VideoDetailDefaultOut;
   createVideoAction?: (input: CreateVideoIn) => Promise<CreateVideoOut>;
   updateVideoAction?: (input: UpdateVideoIn) => Promise<UpdateVideoOut>;
+  randomizeVideoAction?: (
+    input: RandomizeVideoIn
+  ) => Promise<RandomizeVideoOut>;
 }
+
+type RandomizeVideoIn = {
+  body: {
+    videoId?: string;
+    profileId: string;
+    departmentIds?: string[];
+    problemStatementIds?: string[];
+    objectiveIds?: string[];
+    policyIds?: string[];
+    targets: string[];
+  };
+};
+
+type RandomizeVideoOut = {
+  success: boolean;
+  message: string;
+  problemStatementIds: string[];
+  objectiveIds: string[];
+  policyIds: string[];
+};
 
 export default function Video({
   mode = "create",
@@ -93,6 +123,7 @@ export default function Video({
   videoDetailDefault: serverVideoDetailDefault,
   createVideoAction,
   updateVideoAction,
+  randomizeVideoAction,
 }: VideoProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -144,6 +175,95 @@ export default function Video({
     return await updateVideoAction({ body });
   };
 
+  const handleRandomizeVideo = async (targets: string[], section: string) => {
+    if (!randomizeVideoAction || !effectiveProfile?.id) {
+      toast.error("Randomization not available");
+      return;
+    }
+
+    setIsRandomizing(true);
+    try {
+      const body: RandomizeVideoIn["body"] = {
+        profileId: effectiveProfile.id,
+        targets,
+      };
+
+      if (isEditMode && videoId) {
+        body.videoId = videoId;
+      }
+
+      if (formData.departmentIds && formData.departmentIds.length > 0) {
+        body.departmentIds = formData.departmentIds;
+      }
+
+      if (section === "problem_statement" && selectedProblemStatementId) {
+        body.problemStatementIds = [selectedProblemStatementId];
+      }
+
+      if (section === "objectives" && currentObjectives.length > 0) {
+        body.objectiveIds = currentObjectives;
+      }
+
+      if (section === "policies" && selectedPolicyIds.length > 0) {
+        body.policyIds = selectedPolicyIds;
+      }
+
+      const result = await randomizeVideoAction({ body });
+
+      if (result.success) {
+        if (
+          targets.includes("problem_statement") &&
+          result.problemStatementIds.length > 0
+        ) {
+          const newProblemStatementId = result.problemStatementIds[0]!;
+          setSelectedProblemStatementId(newProblemStatementId);
+          if (problemStatementMapping[newProblemStatementId]) {
+            handleInputChange(
+              "problemStatement",
+              problemStatementMapping[newProblemStatementId].problem_statement
+            );
+          }
+        }
+
+        if (targets.includes("objectives") && result.objectiveIds.length > 0) {
+          // Map objective IDs to text using mapping
+          const objectiveTexts = result.objectiveIds
+            .map((id) => {
+              const mapping = videoData?.objective_mapping || {};
+              return mapping[id]?.["name"] || "";
+            })
+            .filter((text) => text.trim());
+          setCurrentObjectives(objectiveTexts);
+        }
+
+        if (targets.includes("policies") && result.policyIds.length > 0) {
+          setSelectedPolicyIds(result.policyIds);
+        }
+
+        toast.success("Randomization completed successfully!");
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to randomize: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsRandomizing(false);
+    }
+  };
+
+  const handleResetSection = (section: string) => {
+    if (section === "problem_statement") {
+      setSelectedProblemStatementId(null);
+      handleInputChange("problemStatement", "");
+    } else if (section === "objectives") {
+      setCurrentObjectives([]);
+    } else if (section === "policies") {
+      setSelectedPolicyIds([]);
+    } else if (section === "video_images") {
+      setVideoImages([]);
+    }
+  };
+
   // Form data state
   const defaultDepartmentIds = useMemo(
     () =>
@@ -158,14 +278,31 @@ export default function Video({
     name: string;
     length_seconds: number;
     departmentIds: string[];
+    problemStatement: string;
     active: boolean;
   };
+
+  // Problem statement and objectives state
+  const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
+    string | null
+  >(null);
+  const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
+  const [videoImages, setVideoImages] = useState<
+    Array<{ id: string; file_path: string; mime_type: string; active: boolean }>
+  >([]);
+
+  // Policies state
+  const [selectedPolicyIds, setSelectedPolicyIds] = useState<string[]>([]);
+
+  // Randomization state
+  const [isRandomizing, setIsRandomizing] = useState(false);
 
   const initialFormData: FormData = useMemo(
     () => ({
       name: "",
       length_seconds: 0,
       departmentIds: defaultDepartmentIds,
+      problemStatement: "",
       active: true,
     }),
     [defaultDepartmentIds]
@@ -183,17 +320,96 @@ export default function Video({
     [videoData?.department_mapping]
   );
 
+  // Problem statement mapping
+  const problemStatementMapping = useMemo(() => {
+    return videoData?.problem_statement_mapping || {};
+  }, [videoData?.problem_statement_mapping]);
+
+  // Policy mapping
+  const policyMapping = useMemo(() => {
+    // Server returns dict[str, dict[str, str]] which matches PolicyMappingItem structure
+    // Use double assertion to handle index signature compatibility
+    return (videoData?.policy_mapping || {}) as unknown as Record<
+      string,
+      PolicyMappingItem
+    >;
+  }, [videoData?.policy_mapping]);
+
+  // Objectives history
+  const objectivesHistory = useMemo(() => {
+    const rawHistory = videoData?.objectives_history || [];
+    return Array.isArray(rawHistory) ? rawHistory : [];
+  }, [videoData?.objectives_history]);
+
   // Load video data from server response
   useEffect(() => {
     if (videoData && isEditMode && !formDataInitializedRef.current) {
       // Edit mode: load existing video data (only once)
       const deptIds = videoData.department_ids || [];
+
+      // Get problem statement text from mapping or empty string
+      const problemStatementText =
+        videoData.problem_statement_ids &&
+        videoData.problem_statement_ids.length > 0 &&
+        videoData.problem_statement_ids[0] &&
+        problemStatementMapping[videoData.problem_statement_ids[0]]
+          ? problemStatementMapping[videoData.problem_statement_ids[0]]!
+              .problem_statement
+          : "";
+
       setFormData({
         name: videoData.name,
         length_seconds: videoData.length_seconds,
         departmentIds: deptIds,
+        problemStatement: problemStatementText,
         active: videoData.active ?? true,
       });
+
+      // Load problem statement ID
+      if (
+        videoData.problem_statement_ids &&
+        videoData.problem_statement_ids.length > 0
+      ) {
+        setSelectedProblemStatementId(videoData.problem_statement_ids[0]!);
+      }
+
+      // Load objectives
+      if (videoData.objective_ids && videoData.objective_mapping) {
+        // Type assert objective_mapping to match getObjectivesFromMapping expected type
+        const objectiveMapping = videoData.objective_mapping as Record<
+          string,
+          { name: string }
+        >;
+        const objectives = getObjectivesFromMapping(
+          videoData.objective_ids,
+          objectiveMapping
+        );
+        setCurrentObjectives(objectives);
+      }
+
+      // Load policies
+      if (videoData.policy_ids) {
+        setSelectedPolicyIds(videoData.policy_ids);
+      }
+
+      // Load video images
+      if (videoData.video_images && Array.isArray(videoData.video_images)) {
+        setVideoImages(
+          videoData.video_images.map(
+            (img: {
+              id?: string;
+              file_path?: string;
+              mime_type?: string;
+              active?: boolean;
+            }) => ({
+              id: img.id || "",
+              file_path: img.file_path || "",
+              mime_type: img.mime_type || "",
+              active: img.active !== false,
+            })
+          )
+        );
+      }
 
       // Load questions from server data (already strongly typed from API)
       if (videoData.questions && Array.isArray(videoData.questions)) {
@@ -215,7 +431,7 @@ export default function Video({
 
       formDataInitializedRef.current = true;
     }
-  }, [videoData, isEditMode]);
+  }, [videoData, isEditMode, problemStatementMapping]);
 
   const handleInputChange = <K extends keyof FormData>(
     field: K,
@@ -273,34 +489,72 @@ export default function Video({
         })),
       }));
 
+      // Get problem statement IDs (create new if needed)
+      let problemStatementIds: string[] = [];
+      if (selectedProblemStatementId) {
+        problemStatementIds = [selectedProblemStatementId];
+      } else if (formData.problemStatement.trim()) {
+        // TODO: Create new problem statement and get ID
+        // For now, we'll need to create it via API or handle it differently
+        // This is a placeholder - the actual implementation would create a new problem statement
+        toast.warning("Problem statement creation not yet implemented");
+      }
+
+      // Get objective IDs (create new if needed)
+      // TODO: Create objectives and get IDs - for now using empty array
+      const objectiveIds: string[] = [];
+
+      // Get video image IDs
+      const videoImageIds = videoImages.map((img) => img.id).filter(Boolean);
+
       if (isEditMode && videoId) {
         // UPDATE mode
-        const updatePayload = {
+        const updatePayload: UpdateVideoBody = {
           videoId,
           name: formData.name,
           length_seconds: formData.length_seconds,
           department_ids: finalDepartmentIds,
-          problem_statement_ids: [], // TODO: Add problem statement picker
-          objective_ids: [], // TODO: Add objective picker
-          policy_ids: [], // TODO: Add policy picker
           active: formData.active,
           questions: questionsForApi,
         };
+
+        if (problemStatementIds.length > 0) {
+          updatePayload.problem_statement_ids = problemStatementIds;
+        }
+        if (objectiveIds.length > 0) {
+          updatePayload.objective_ids = objectiveIds;
+        }
+        if (selectedPolicyIds.length > 0) {
+          updatePayload.policy_ids = selectedPolicyIds;
+        }
+        if (videoImageIds.length > 0) {
+          updatePayload.video_image_ids = videoImageIds;
+        }
 
         await handleUpdateVideo(updatePayload);
         toast.success("Video updated successfully!");
       } else {
         // CREATE mode
-        const createPayload = {
+        const createPayload: CreateVideoBody = {
           name: formData.name,
           length_seconds: formData.length_seconds,
           department_ids: finalDepartmentIds,
-          problem_statement_ids: [], // TODO: Add problem statement picker
-          objective_ids: [], // TODO: Add objective picker
-          policy_ids: [], // TODO: Add policy picker
           active: formData.active,
           questions: questionsForApi,
         };
+
+        if (problemStatementIds.length > 0) {
+          createPayload.problem_statement_ids = problemStatementIds;
+        }
+        if (objectiveIds.length > 0) {
+          createPayload.objective_ids = objectiveIds;
+        }
+        if (selectedPolicyIds.length > 0) {
+          createPayload.policy_ids = selectedPolicyIds;
+        }
+        if (videoImageIds.length > 0) {
+          createPayload.video_image_ids = videoImageIds;
+        }
 
         await handleCreateVideo(createPayload);
         toast.success("Video created successfully!");
@@ -601,91 +855,328 @@ export default function Video({
         </div>
       </div>
 
-      {/* Video Upload Section */}
-      <div className="space-y-2">
-        <Label>Video Upload</Label>
-        {uploadedVideoFile && videoObjectUrl ? (
-          <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
-            <video
-              ref={videoRef}
-              src={videoObjectUrl}
-              controls
-              className="w-full h-full rounded-lg"
-              onLoadedMetadata={handleVideoLoadedMetadata}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRemoveVideo}
-              className="absolute top-2 right-2"
-              disabled={isReadonly}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative aspect-video flex items-center justify-center",
-              isDragActive
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-primary/50"
-            )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => {
-              if (!isReadonly) {
-                document.getElementById("video-upload-input")?.click();
-              }
-            }}
-          >
-            <input
-              id="video-upload-input"
-              type="file"
-              accept="video/*"
-              onChange={handleFileSelect}
-              disabled={isReadonly}
-              className="hidden"
-            />
-            <div className="space-y-3">
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
-              <div>
-                <p className="text-lg font-medium">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Video files only
-                </p>
-              </div>
+      {/* Problem Statement & Objectives Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">
+              Problem Statement & Objectives
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleRandomizeVideo(
+                    ["problem_statement", "objectives"],
+                    "problem_statement"
+                  )
+                }
+                disabled={isRandomizing || isReadonly}
+              >
+                {isRandomizing ? "Randomizing..." : "Randomize"}
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleResetSection("problem_statement")}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Length Field - Only show if no video is uploaded */}
-      {!uploadedVideoFile && (
-        <div className="space-y-2">
-          <Label htmlFor="length_seconds">Length (seconds) *</Label>
-          <Input
-            id="length_seconds"
-            type="number"
-            min="1"
-            value={formData["length_seconds"]}
-            onChange={(e) =>
-              handleInputChange("length_seconds", parseInt(e.target.value) || 0)
+        </CardHeader>
+        <CardContent>
+          <ProblemStatementAndObjectivesPicker
+            problemStatementMapping={problemStatementMapping}
+            selectedProblemStatementId={selectedProblemStatementId}
+            onProblemStatementSelect={setSelectedProblemStatementId}
+            onProblemStatementCreateNew={() => {
+              setSelectedProblemStatementId(null);
+              handleInputChange("problemStatement", "");
+            }}
+            problemStatement={formData.problemStatement}
+            onProblemStatementChange={(value) =>
+              handleInputChange("problemStatement", value)
             }
-            placeholder="Enter video length in seconds"
-            disabled={isReadonly}
-            data-testid="input-video-length"
+            objectives={currentObjectives}
+            onObjectivesChange={setCurrentObjectives}
+            objectivesHistory={objectivesHistory}
+            enableVideoImages={true}
+            videoImages={videoImages}
+            onVideoImagesChange={setVideoImages}
+            disabled={isSubmitting}
+            readonly={isReadonly}
+            entityType="video"
           />
-          {errors["length_seconds"] && (
-            <p className="text-sm text-destructive">
-              {errors["length_seconds"]}
-            </p>
+        </CardContent>
+      </Card>
+
+      {/* Policies Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Policies</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRandomizeVideo(["policies"], "policies")}
+                disabled={isRandomizing || isReadonly}
+              >
+                {isRandomizing ? "Randomizing..." : "Randomize"}
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleResetSection("policies")}
+                    disabled={isReadonly}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PolicyPicker
+            mapping={policyMapping}
+            validIds={videoData?.valid_policy_ids || []}
+            selectedIds={selectedPolicyIds}
+            onSelect={setSelectedPolicyIds}
+            multiSelect={true}
+            label="Policies"
+            placeholder="Select policies..."
+            description="Choose policies that will be available for this video."
+            disabled={isSubmitting}
+            readonly={isReadonly}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Questions Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Questions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {questions.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No questions added yet. Click on the timeline to add
+                  questions.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {questions.map((question, index) => (
+                    <div
+                      key={question.question_id || index}
+                      className="border rounded-lg p-4 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">
+                              {question.type.toUpperCase()}
+                            </Badge>
+                            {question.allow_multiple && (
+                              <Badge variant="secondary">Multiple</Badge>
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              Times: {question.times.map(formatTime).join(", ")}
+                            </span>
+                          </div>
+                          <p className="font-medium">
+                            {question.question_text}
+                          </p>
+                          {question.type === "choice" &&
+                            question.options.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {question.options.map((opt, optIdx) => (
+                                  <div
+                                    key={optIdx}
+                                    className="flex items-center gap-2 text-sm"
+                                  >
+                                    {opt.is_correct && (
+                                      <Check className="h-4 w-4 text-green-600" />
+                                    )}
+                                    <span
+                                      className={
+                                        opt.is_correct ? "font-semibold" : ""
+                                      }
+                                    >
+                                      {opt.option_text}
+                                    </span>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {opt.type}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              openQuestionModal(undefined, question)
+                            }
+                            disabled={isReadonly}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteQuestion(question.question_id)}
+                            disabled={isReadonly}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Video Generation/Upload Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Video Generation/Upload</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Video Upload */}
+          <div className="space-y-2">
+            <Label>Video Upload</Label>
+            {uploadedVideoFile && videoObjectUrl ? (
+              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
+                <video
+                  ref={videoRef}
+                  src={videoObjectUrl}
+                  controls
+                  className="w-full h-full rounded-lg"
+                  onLoadedMetadata={handleVideoLoadedMetadata}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveVideo}
+                  className="absolute top-2 right-2"
+                  disabled={isReadonly}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative aspect-video flex items-center justify-center",
+                  isDragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => {
+                  if (!isReadonly) {
+                    document.getElementById("video-upload-input")?.click();
+                  }
+                }}
+              >
+                <input
+                  id="video-upload-input"
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileSelect}
+                  disabled={isReadonly}
+                  className="hidden"
+                />
+                <div className="space-y-3">
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <div>
+                    <p className="text-lg font-medium">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Video files only
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Length Field - Only show if no video is uploaded */}
+          {!uploadedVideoFile && (
+            <div className="space-y-2">
+              <Label htmlFor="length_seconds">Length (seconds) *</Label>
+              <Input
+                id="length_seconds"
+                type="number"
+                min="1"
+                value={formData["length_seconds"]}
+                onChange={(e) =>
+                  handleInputChange(
+                    "length_seconds",
+                    parseInt(e.target.value) || 0
+                  )
+                }
+                placeholder="Enter video length in seconds"
+                disabled={isReadonly}
+                data-testid="input-video-length"
+              />
+              {errors["length_seconds"] && (
+                <p className="text-sm text-destructive">
+                  {errors["length_seconds"]}
+                </p>
+              )}
+            </div>
           )}
-        </div>
-      )}
+
+          {/* Video Generation (TODO placeholder) */}
+          <div className="space-y-2">
+            <Label>Video Generation</Label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                // TODO: Implement video generation
+                toast.info(
+                  "Video generation coming soon! For now, please upload a video."
+                );
+              }}
+              disabled={isReadonly}
+            >
+              Generate Video (TODO)
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              AI-powered video generation will be available soon. For now,
+              please upload a video file.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Timeline (only show if length > 0) */}
       {formData.length_seconds > 0 && (
@@ -742,87 +1233,6 @@ export default function Video({
           </div>
         </div>
       )}
-
-      {/* Questions List */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Questions</Label>
-          {questions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No questions added yet. Click on the timeline to add questions.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {questions.map((question, index) => (
-                <div
-                  key={question.question_id || index}
-                  className="border rounded-lg p-4 space-y-2"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline">
-                          {question.type.toUpperCase()}
-                        </Badge>
-                        {question.allow_multiple && (
-                          <Badge variant="secondary">Multiple</Badge>
-                        )}
-                        <span className="text-sm text-muted-foreground">
-                          Times: {question.times.map(formatTime).join(", ")}
-                        </span>
-                      </div>
-                      <p className="font-medium">{question.question_text}</p>
-                      {question.type === "choice" &&
-                        question.options.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {question.options.map((opt, optIdx) => (
-                              <div
-                                key={optIdx}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                {opt.is_correct && (
-                                  <Check className="h-4 w-4 text-green-600" />
-                                )}
-                                <span
-                                  className={
-                                    opt.is_correct ? "font-semibold" : ""
-                                  }
-                                >
-                                  {opt.option_text}
-                                </span>
-                                <Badge variant="outline" className="text-xs">
-                                  {opt.type}
-                                </Badge>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openQuestionModal(undefined, question)}
-                        disabled={isReadonly}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteQuestion(question.question_id)}
-                        disabled={isReadonly}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Action Buttons */}
       <div className="flex gap-2 justify-end">

@@ -3111,6 +3111,53 @@
         ]
       }
     },
+    "/api/v3/videos/randomize": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Randomize Video Sections",
+        "description": "Randomize video attributes (problem statements, objectives, policies).",
+        "operationId": "randomize_video_sections_api_v3_videos_randomize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RandomizeVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RandomizeVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
     "/api/v3/auth/list": {
       "post": {
         "tags": [
@@ -13558,6 +13605,20 @@
             ],
             "title": "Policy Ids"
           },
+          "video_image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Image Ids"
+          },
           "active": {
             "type": "boolean",
             "title": "Active",
@@ -22850,6 +22911,142 @@
         "title": "RandomizeScenarioResponse",
         "description": "Response from scenario randomization."
       },
+      "RandomizeVideoRequest": {
+        "properties": {
+          "videoId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videoid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "problemStatementIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problemstatementids"
+          },
+          "objectiveIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectiveids"
+          },
+          "policyIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policyids"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Targets",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "RandomizeVideoRequest",
+        "description": "Request to randomize video sections."
+      },
+      "RandomizeVideoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "problemStatementIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Problemstatementids",
+            "default": []
+          },
+          "objectiveIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objectiveids",
+            "default": []
+          },
+          "policyIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Policyids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "RandomizeVideoResponse",
+        "description": "Response for video randomization."
+      },
       "ReasoningMappingItem": {
         "properties": {
           "name": {
@@ -27954,6 +28151,20 @@
               }
             ],
             "title": "Policy Ids"
+          },
+          "video_image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Image Ids"
           },
           "active": {
             "type": "boolean",
@@ -33901,6 +34112,30 @@
         "title": "QuestionItem",
         "description": "Question item in create request."
       },
+      "app__api__v3__videos__detail__ProblemStatementInfo": {
+        "properties": {
+          "problem_statement": {
+            "type": "string",
+            "title": "Problem Statement"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem_statement",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProblemStatementInfo",
+        "description": "Problem statement info for mapping."
+      },
       "app__api__v3__videos__detail__VideoDetailResponse": {
         "properties": {
           "name": {
@@ -33943,6 +34178,13 @@
             "type": "array",
             "title": "Problem Statement Ids"
           },
+          "problem_statement_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__videos__detail__ProblemStatementInfo"
+            },
+            "type": "object",
+            "title": "Problem Statement Mapping"
+          },
           "objective_ids": {
             "items": {
               "type": "string"
@@ -33966,6 +34208,38 @@
             },
             "type": "array",
             "title": "Policy Ids"
+          },
+          "policy_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Policy Mapping"
+          },
+          "valid_policy_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Policy Ids"
+          },
+          "video_images": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Video Images"
+          },
+          "objectives_history": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objectives History"
           },
           "can_edit": {
             "type": "boolean",
@@ -34002,9 +34276,14 @@
           "department_ids",
           "valid_department_ids",
           "problem_statement_ids",
+          "problem_statement_mapping",
           "objective_ids",
           "objective_mapping",
           "policy_ids",
+          "policy_mapping",
+          "valid_policy_ids",
+          "video_images",
+          "objectives_history",
           "can_edit",
           "can_duplicate",
           "can_delete",
@@ -34014,15 +34293,35 @@
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
       },
+      "app__api__v3__videos__detail_default__ProblemStatementInfo": {
+        "properties": {
+          "problem_statement": {
+            "type": "string",
+            "title": "Problem Statement"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem_statement",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProblemStatementInfo",
+        "description": "Problem statement info for mapping."
+      },
       "app__api__v3__videos__detail_default__VideoDetailResponse": {
         "properties": {
           "name": {
             "type": "string",
             "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
           },
           "length_seconds": {
             "type": "integer",
@@ -34052,6 +34351,76 @@
             },
             "type": "array",
             "title": "Valid Department Ids"
+          },
+          "problem_statement_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Problem Statement Ids"
+          },
+          "problem_statement_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__videos__detail_default__ProblemStatementInfo"
+            },
+            "type": "object",
+            "title": "Problem Statement Mapping"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "objective_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Objective Mapping"
+          },
+          "policy_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Policy Ids"
+          },
+          "policy_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Policy Mapping"
+          },
+          "valid_policy_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Policy Ids"
+          },
+          "video_images": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Video Images"
+          },
+          "objectives_history": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objectives History"
           },
           "can_edit": {
             "type": "boolean",
@@ -34083,11 +34452,19 @@
         "type": "object",
         "required": [
           "name",
-          "description",
           "length_seconds",
           "active",
           "department_ids",
           "valid_department_ids",
+          "problem_statement_ids",
+          "problem_statement_mapping",
+          "objective_ids",
+          "objective_mapping",
+          "policy_ids",
+          "policy_mapping",
+          "valid_policy_ids",
+          "video_images",
+          "objectives_history",
           "can_edit",
           "can_duplicate",
           "can_delete",

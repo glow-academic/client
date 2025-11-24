@@ -4,7 +4,8 @@
 --            $5=problem_statement_ids (text array, nullable),
 --            $6=objective_ids (text array, nullable),
 --            $7=policy_ids (text array, nullable),
---            $8=questions_json (JSONB string with questions array)
+--            $8=video_image_ids (text array, nullable),
+--            $9=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 
 WITH new_video AS (
@@ -78,6 +79,19 @@ link_policies AS (
         active = true,
         updated_at = NOW()
 ),
+link_video_images AS (
+    -- Link video images if provided (update existing images to link to this video)
+    -- Note: video_images must be created via upload finalize endpoint first
+    UPDATE video_images
+    SET 
+        video_id = nv.video_id,
+        active = true,
+        updated_at = NOW()
+    FROM new_video nv
+    WHERE video_images.id = ANY($8::uuid[])
+        AND COALESCE(array_length($8::text[], 1), 0) > 0
+        AND video_images.video_id IS NOT NULL  -- Only update if already linked (safety check)
+),
 link_tree_edge AS (
     -- Insert self-referencing edge in video_tree (marks as root)
     INSERT INTO video_tree (parent_id, child_id, active, created_at, updated_at)
@@ -93,7 +107,7 @@ questions_data AS (
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
     FROM new_video nv
-    CROSS JOIN jsonb_array_elements($8::jsonb) as q
+    CROSS JOIN jsonb_array_elements($9::jsonb) as q
 ),
 create_questions AS (
     -- Create questions

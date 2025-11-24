@@ -19,6 +19,8 @@ type CreateVideoIn = InputOf<"/api/v3/videos/create", "post">;
 type CreateVideoOut = OutputOf<"/api/v3/videos/create", "post">;
 type UpdateVideoIn = InputOf<"/api/v3/videos/update", "post">;
 type UpdateVideoOut = OutputOf<"/api/v3/videos/update", "post">;
+type RandomizeVideoIn = InputOf<"/api/v3/videos/randomize", "post">;
+type RandomizeVideoOut = OutputOf<"/api/v3/videos/randomize", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -45,6 +47,12 @@ async function updateVideo(input: UpdateVideoIn): Promise<UpdateVideoOut> {
   return api.post("/videos/update", input);
 }
 
+async function randomizeVideo(input: RandomizeVideoIn): Promise<RandomizeVideoOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/videos/randomize", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditVideoPage({
   params,
@@ -69,6 +77,7 @@ export default async function EditVideoPage({
           videoDetail={videoDetail}
           createVideoAction={createVideo}
           updateVideoAction={updateVideo}
+          randomizeVideoAction={randomizeVideo}
         />
       </div>
     );
@@ -98,6 +107,8 @@ export type {
   CreateVideoOut,
   UpdateVideoIn,
   UpdateVideoOut,
+  RandomizeVideoIn,
+  RandomizeVideoOut,
   VideoDetailIn,
   VideoDetailOut,
 };

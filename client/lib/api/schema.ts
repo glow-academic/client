@@ -1516,6 +1516,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/videos/randomize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Randomize Video Sections
+         * @description Randomize video attributes (problem statements, objectives, policies).
+         */
+        post: operations["randomize_video_sections_api_v3_videos_randomize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -5976,6 +5996,8 @@ export interface components {
             objective_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
+            /** Video Image Ids */
+            video_image_ids?: string[] | null;
             /**
              * Active
              * @default true
@@ -9600,6 +9622,54 @@ export interface components {
             childScenarioId?: string | null;
         };
         /**
+         * RandomizeVideoRequest
+         * @description Request to randomize video sections.
+         */
+        RandomizeVideoRequest: {
+            /** Videoid */
+            videoId?: string | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Problemstatementids */
+            problemStatementIds?: string[] | null;
+            /** Objectiveids */
+            objectiveIds?: string[] | null;
+            /** Policyids */
+            policyIds?: string[] | null;
+            /**
+             * Targets
+             * @default []
+             */
+            targets: string[];
+        };
+        /**
+         * RandomizeVideoResponse
+         * @description Response for video randomization.
+         */
+        RandomizeVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /**
+             * Problemstatementids
+             * @default []
+             */
+            problemStatementIds: string[];
+            /**
+             * Objectiveids
+             * @default []
+             */
+            objectiveIds: string[];
+            /**
+             * Policyids
+             * @default []
+             */
+            policyIds: string[];
+        };
+        /**
          * ReasoningMappingItem
          * @description Reasoning mapping item - extends MappingItem
          */
@@ -11579,6 +11649,8 @@ export interface components {
             objective_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
+            /** Video Image Ids */
+            video_image_ids?: string[] | null;
             /** Active */
             active: boolean;
             /**
@@ -13751,6 +13823,18 @@ export interface components {
             options: components["schemas"]["QuestionOption"][];
         };
         /**
+         * ProblemStatementInfo
+         * @description Problem statement info for mapping.
+         */
+        app__api__v3__videos__detail__ProblemStatementInfo: {
+            /** Problem Statement */
+            problem_statement: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /**
          * VideoDetailResponse
          * @description Response for video detail.
          */
@@ -13767,6 +13851,10 @@ export interface components {
             valid_department_ids: string[];
             /** Problem Statement Ids */
             problem_statement_ids: string[];
+            /** Problem Statement Mapping */
+            problem_statement_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__videos__detail__ProblemStatementInfo"];
+            };
             /** Objective Ids */
             objective_ids: string[];
             /** Objective Mapping */
@@ -13777,6 +13865,20 @@ export interface components {
             };
             /** Policy Ids */
             policy_ids: string[];
+            /** Policy Mapping */
+            policy_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Valid Policy Ids */
+            valid_policy_ids: string[];
+            /** Video Images */
+            video_images: {
+                [key: string]: unknown;
+            }[];
+            /** Objectives History */
+            objectives_history: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -13791,14 +13893,24 @@ export interface components {
             questions: components["schemas"]["QuestionResponse"][];
         };
         /**
+         * ProblemStatementInfo
+         * @description Problem statement info for mapping.
+         */
+        app__api__v3__videos__detail_default__ProblemStatementInfo: {
+            /** Problem Statement */
+            problem_statement: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /**
          * VideoDetailResponse
          * @description Response for video detail.
          */
         app__api__v3__videos__detail_default__VideoDetailResponse: {
             /** Name */
             name: string;
-            /** Description */
-            description: string;
             /** Length Seconds */
             length_seconds: number;
             /** Active */
@@ -13807,6 +13919,36 @@ export interface components {
             department_ids: string[] | null;
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Problem Statement Ids */
+            problem_statement_ids: string[];
+            /** Problem Statement Mapping */
+            problem_statement_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__videos__detail_default__ProblemStatementInfo"];
+            };
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Objective Mapping */
+            objective_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Policy Ids */
+            policy_ids: string[];
+            /** Policy Mapping */
+            policy_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Valid Policy Ids */
+            valid_policy_ids: string[];
+            /** Video Images */
+            video_images: {
+                [key: string]: unknown;
+            }[];
+            /** Objectives History */
+            objectives_history: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -16098,6 +16240,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VideoSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    randomize_video_sections_api_v3_videos_randomize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RandomizeVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RandomizeVideoResponse"];
                 };
             };
             /** @description Validation Error */

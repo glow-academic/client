@@ -44,15 +44,31 @@ class QuestionResponse(BaseModel):
     options: list[QuestionOptionResponse]  # Only for choice questions
 
 
+class ProblemStatementInfo(BaseModel):
+    """Problem statement info for mapping."""
+
+    problem_statement: str
+    created_at: str
+    updated_at: str
+
+
 class VideoDetailResponse(BaseModel):
     """Response for video detail."""
 
     name: str
-    description: str
     length_seconds: int
     active: bool
     department_ids: list[str] | None
     valid_department_ids: list[str]
+    problem_statement_ids: list[str]
+    problem_statement_mapping: dict[str, ProblemStatementInfo]
+    objective_ids: list[str]
+    objective_mapping: dict[str, dict[str, str]]
+    policy_ids: list[str]
+    policy_mapping: dict[str, dict[str, str]]
+    valid_policy_ids: list[str]
+    video_images: list[dict[str, Any]]
+    objectives_history: list[str]
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
@@ -126,6 +142,43 @@ async def get_video_detail_default(
                         description=ddata.get("description", ""),
                     )
 
+        # Parse problem_statement_mapping from JSONB
+        problem_statement_mapping_data = parse_jsonb(result.get("problem_statement_mapping"))
+        problem_statement_mapping: dict[str, ProblemStatementInfo] = {}
+        if isinstance(problem_statement_mapping_data, dict):
+            for k, v in problem_statement_mapping_data.items():
+                if isinstance(v, dict):
+                    problem_statement_mapping[k] = ProblemStatementInfo(
+                        problem_statement=v.get("problem_statement", ""),
+                        created_at=v.get("created_at", ""),
+                        updated_at=v.get("updated_at", ""),
+                    )
+
+        # Parse policy_mapping from JSONB
+        policy_mapping_data = parse_jsonb(result.get("policy_mapping"))
+        policy_mapping: dict[str, dict[str, str]] = {}
+        if isinstance(policy_mapping_data, dict):
+            policy_mapping = {
+                k: {
+                    "name": v.get("name", ""),
+                    "description": v.get("description", ""),
+                    "extension": v.get("extension", ""),
+                    "filePath": v.get("filePath", ""),
+                    "mimeType": v.get("mimeType", ""),
+                }
+                for k, v in policy_mapping_data.items()
+            }
+
+        # Parse valid_policy_ids
+        valid_policy_ids = result.get("valid_policy_ids") or []
+        if not isinstance(valid_policy_ids, list):
+            valid_policy_ids = []
+
+        # Parse objectives_history
+        objectives_history = result.get("objectives_history") or []
+        if not isinstance(objectives_history, list):
+            objectives_history = []
+
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
@@ -149,12 +202,24 @@ async def get_video_detail_default(
         response_data = VideoDetailResponse(
             # Basic fields (empty defaults)
             name="",
-            description="",
             length_seconds=0,
             active=True,
             # Department
             department_ids=default_department_ids,
             valid_department_ids=dept_ids,
+            # Problem statement and objectives (empty for default)
+            problem_statement_ids=[],
+            problem_statement_mapping=problem_statement_mapping,
+            objective_ids=[],
+            objective_mapping={},
+            # Policies (empty for default)
+            policy_ids=[],
+            policy_mapping=policy_mapping,
+            valid_policy_ids=[str(pid) for pid in valid_policy_ids],
+            # Video images (empty for default)
+            video_images=[],
+            # Objectives history
+            objectives_history=[str(obj) for obj in objectives_history],
             # Permissions (check if default video and user role)
             can_edit=can_edit_default,
             can_duplicate=False,  # Can't duplicate non-existent video

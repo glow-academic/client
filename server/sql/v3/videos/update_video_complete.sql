@@ -4,7 +4,8 @@
 --            $6=problem_statement_ids (text array, nullable),
 --            $7=objective_ids (text array, nullable),
 --            $8=policy_ids (text array, nullable),
---            $9=questions_json (JSONB string with questions array)
+--            $9=video_image_ids (text array, nullable),
+--            $10=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
 
@@ -100,6 +101,23 @@ link_policies AS (
     CROSS JOIN UNNEST($8::text[]) as policy_id
     WHERE COALESCE(array_length($8::text[], 1), 0) > 0
 ),
+delete_old_video_images AS (
+    -- Deactivate old video images (don't delete, just deactivate)
+    UPDATE video_images
+    SET active = false, updated_at = NOW()
+    WHERE video_id = $1::uuid
+),
+link_video_images AS (
+    -- Link video images if provided (activate and link to this video)
+    UPDATE video_images
+    SET 
+        video_id = uv.video_id,
+        active = true,
+        updated_at = NOW()
+    FROM updated_video uv
+    WHERE video_images.id = ANY($9::uuid[])
+        AND COALESCE(array_length($9::text[], 1), 0) > 0
+),
 questions_data AS (
     -- Parse questions from JSON
     SELECT 
@@ -109,7 +127,7 @@ questions_data AS (
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
     FROM updated_video uv
-    CROSS JOIN jsonb_array_elements($9::jsonb) as q
+    CROSS JOIN jsonb_array_elements($10::jsonb) as q
 ),
 create_questions AS (
     -- Create questions (or get existing if they match)
