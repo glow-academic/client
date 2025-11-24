@@ -5,7 +5,13 @@
  * 05/20/2025
  */
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -20,7 +26,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 // Replaced standard select with RubricPicker
@@ -28,25 +33,21 @@ import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { Switch } from "@/components/ui/switch";
-import { SimulationContentTable, type ContentItem } from "@/components/common/simulations/SimulationContentTable";
 import { AddContentButton } from "@/components/common/simulations/AddContentButton";
 import SearchExistingScenarioModal from "@/components/common/simulations/SearchExistingScenarioModal";
 import SearchExistingVideoModal from "@/components/common/simulations/SearchExistingVideoModal";
+import {
+  SimulationContentTable,
+  type ContentItem,
+} from "@/components/common/simulations/SimulationContentTable";
+import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import {
-  BarChart3,
-  CheckCircle2,
-  Clock,
-  GraduationCap,
-  Loader2,
-  Power,
-} from "lucide-react";
+import { GraduationCap, Loader2, Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Type-only import from server page
@@ -70,12 +71,30 @@ export interface SimulationProps {
   updateSimulationAction?: (
     input: UpdateSimulationIn
   ) => Promise<UpdateSimulationOut>;
-  searchScenarioAction?: (
-    input: { body: { query: string; limit: number } }
-  ) => Promise<Array<{ id: string; name: string | null; problem_statement: string | null; persona_id: string | null; default_scenario: boolean; score: number }>>;
-  searchVideoAction?: (
-    input: { body: { query: string; limit: number; department_ids?: string[] | null } }
-  ) => Promise<Array<{ id: string; name: string | null; description: string | null; length_seconds: number; department_ids: string[] | null; score: number }>>;
+  searchScenarioAction?: (input: {
+    body: { query: string; limit: number };
+  }) => Promise<
+    Array<{
+      id: string;
+      name: string | null;
+      problem_statement: string | null;
+      persona_id: string | null;
+      default_scenario: boolean;
+      score: number;
+    }>
+  >;
+  searchVideoAction?: (input: {
+    body: { query: string; limit: number; department_ids?: string[] | null };
+  }) => Promise<
+    Array<{
+      id: string;
+      name: string | null;
+      description: string | null;
+      length_seconds: number;
+      department_ids: string[] | null;
+      score: number;
+    }>
+  >;
 }
 
 interface FormData {
@@ -171,9 +190,9 @@ export default function Simulation({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = useMemo(
@@ -187,7 +206,7 @@ export default function Simulation({
       practiceSimulation: false,
       departmentIds: defaultDepartmentIds,
     }),
-    [defaultDepartmentIds],
+    [defaultDepartmentIds]
   );
 
   const [formData, setFormData] = useState<FormData>();
@@ -207,11 +226,47 @@ export default function Simulation({
   );
 
   // State for managing unified content (scenarios + videos)
-  const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>([]);
-  const [stagedContentItems, setStagedContentItems] = useState<ContentItem[]>([]); // New items not yet saved
-  const [contentActiveStates, setContentActiveStates] = useState<Record<string, boolean>>({});
-  const [originalContentActiveStates, setOriginalContentActiveStates] = useState<Record<string, boolean>>({});
-  
+  const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>(
+    []
+  );
+  const [stagedContentItems, setStagedContentItems] = useState<ContentItem[]>(
+    []
+  ); // New items not yet saved
+  const [contentActiveStates, setContentActiveStates] = useState<
+    Record<string, boolean>
+  >({});
+  const [originalContentActiveStates, setOriginalContentActiveStates] =
+    useState<Record<string, boolean>>({});
+
+  // Switch field states
+  const [contentSwitchStates, setContentSwitchStates] = useState<
+    Record<
+      string,
+      {
+        hints_enabled?: boolean;
+        objectives_enabled?: boolean;
+        input_guardrail_enabled?: boolean;
+        output_guardrail_enabled?: boolean;
+        image_input_enabled?: boolean;
+        rubric_id?: string | null;
+      }
+    >
+  >({});
+  const [originalContentSwitchStates, setOriginalContentSwitchStates] =
+    useState<
+      Record<
+        string,
+        {
+          hints_enabled?: boolean;
+          objectives_enabled?: boolean;
+          input_guardrail_enabled?: boolean;
+          output_guardrail_enabled?: boolean;
+          image_input_enabled?: boolean;
+          rubric_id?: string | null;
+        }
+      >
+    >({});
+
   // Legacy state for backward compatibility during migration
   const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
 
@@ -405,11 +460,12 @@ export default function Simulation({
   // Convert server data to unified ContentItem format
   const unifiedContentItems = useMemo(() => {
     const items: ContentItem[] = [];
-    
+
     // Add scenarios from server data
     if (simulationData?.scenarios) {
       simulationData.scenarios.forEach((scenario) => {
         const key = `scenario:${scenario.scenario_id}`;
+        const switchState = contentSwitchStates[key];
         items.push({
           type: "scenario",
           id: scenario.scenario_id,
@@ -422,14 +478,34 @@ export default function Simulation({
           last_used: scenario.last_used,
           can_remove: scenario.can_remove,
           isNew: false,
+          hints_enabled:
+            switchState?.hints_enabled ?? scenario.hints_enabled ?? false,
+          objectives_enabled:
+            switchState?.objectives_enabled ??
+            scenario.objectives_enabled ??
+            true,
+          input_guardrail_enabled:
+            switchState?.input_guardrail_enabled ??
+            scenario.input_guardrail_enabled ??
+            false,
+          output_guardrail_enabled:
+            switchState?.output_guardrail_enabled ??
+            scenario.output_guardrail_enabled ??
+            false,
+          image_input_enabled:
+            switchState?.image_input_enabled ??
+            scenario.image_input_enabled ??
+            false,
+          rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
         });
       });
     }
-    
+
     // Add videos from server data
     if (simulationData?.videos) {
       simulationData.videos.forEach((video) => {
         const key = `video:${video.video_id}`;
+        const switchState = contentSwitchStates[key];
         items.push({
           type: "video",
           id: video.video_id,
@@ -443,10 +519,12 @@ export default function Simulation({
           can_remove: video.can_remove,
           length_seconds: video.length_seconds,
           isNew: false,
+          objectives_enabled:
+            switchState?.objectives_enabled ?? video.objectives_enabled ?? true,
         });
       });
     }
-    
+
     // Add staged items (newly added, not yet saved)
     stagedContentItems.forEach((item) => {
       const key = `${item.type}:${item.id}`;
@@ -455,44 +533,104 @@ export default function Simulation({
         active: contentActiveStates[key] ?? item.active,
       });
     });
-    
+
     // Sort by position
     return items.sort((a, b) => a.position - b.position);
-  }, [simulationData?.scenarios, simulationData?.videos, stagedContentItems, contentActiveStates]);
+  }, [
+    simulationData?.scenarios,
+    simulationData?.videos,
+    stagedContentItems,
+    contentActiveStates,
+    contentSwitchStates,
+  ]);
 
-  // Initialize content active states from server data
+  // Initialize content active states and switch states from server data
   useEffect(() => {
     if (isEditMode && simulationData) {
       const newActiveStates: Record<string, boolean> = {};
       const newOriginalActiveStates: Record<string, boolean> = {};
-      
-      // Initialize active states from scenarios
+      const newSwitchStates: Record<
+        string,
+        {
+          hints_enabled?: boolean;
+          objectives_enabled?: boolean;
+          input_guardrail_enabled?: boolean;
+          output_guardrail_enabled?: boolean;
+          image_input_enabled?: boolean;
+          rubric_id?: string | null;
+        }
+      > = {};
+      const newOriginalSwitchStates: Record<
+        string,
+        {
+          hints_enabled?: boolean;
+          objectives_enabled?: boolean;
+          input_guardrail_enabled?: boolean;
+          output_guardrail_enabled?: boolean;
+          image_input_enabled?: boolean;
+          rubric_id?: string | null;
+        }
+      > = {};
+
+      // Initialize active states and switch states from scenarios
       if (simulationData.scenarios) {
         simulationData.scenarios.forEach((scenario) => {
           const key = `scenario:${scenario.scenario_id}`;
           newActiveStates[key] = scenario.active;
           newOriginalActiveStates[key] = scenario.active;
+          newSwitchStates[key] = {
+            hints_enabled: scenario.hints_enabled ?? false,
+            objectives_enabled: scenario.objectives_enabled ?? true,
+            input_guardrail_enabled: scenario.input_guardrail_enabled ?? false,
+            output_guardrail_enabled:
+              scenario.output_guardrail_enabled ?? false,
+            image_input_enabled: scenario.image_input_enabled ?? false,
+            rubric_id: scenario.rubric_id ?? null,
+          };
+          newOriginalSwitchStates[key] = {
+            hints_enabled: scenario.hints_enabled ?? false,
+            objectives_enabled: scenario.objectives_enabled ?? true,
+            input_guardrail_enabled: scenario.input_guardrail_enabled ?? false,
+            output_guardrail_enabled:
+              scenario.output_guardrail_enabled ?? false,
+            image_input_enabled: scenario.image_input_enabled ?? false,
+            rubric_id: scenario.rubric_id ?? null,
+          };
         });
       }
-      
-      // Initialize active states from videos
+
+      // Initialize active states and switch states from videos
       if (simulationData.videos) {
         simulationData.videos.forEach((video) => {
           const key = `video:${video.video_id}`;
           newActiveStates[key] = video.active;
           newOriginalActiveStates[key] = video.active;
+          const videoObjectivesEnabled = video.objectives_enabled ?? true;
+          newSwitchStates[key] = {
+            objectives_enabled: videoObjectivesEnabled,
+          };
+          newOriginalSwitchStates[key] = {
+            objectives_enabled: videoObjectivesEnabled,
+          };
         });
       }
-      
+
       setContentActiveStates((prev) => {
         // Merge with existing states to preserve user changes
         return { ...newActiveStates, ...prev };
       });
       setOriginalContentActiveStates(newOriginalActiveStates);
+      setContentSwitchStates((prev) => {
+        // Merge with existing states to preserve user changes
+        return { ...newSwitchStates, ...prev };
+      });
+      setOriginalContentSwitchStates(newOriginalSwitchStates);
     } else if (!isEditMode) {
       // Reset for create mode
       setContentActiveStates({});
       setOriginalContentActiveStates({});
+      setContentSwitchStates({});
+      setOriginalContentSwitchStates({});
     }
   }, [isEditMode, simulationData]);
 
@@ -501,8 +639,8 @@ export default function Simulation({
     setCurrentContentItems(unifiedContentItems);
     // Sync legacy currentScenarioIds for backward compatibility
     const scenarioIds = unifiedContentItems
-      .filter(item => item.type === "scenario")
-      .map(item => item.id);
+      .filter((item) => item.type === "scenario")
+      .map((item) => item.id);
     setCurrentScenarioIds(scenarioIds);
   }, [unifiedContentItems]);
 
@@ -711,18 +849,47 @@ export default function Simulation({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData?.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds,
+        validDepartmentIds
       );
 
       const targetSimulationId = simulationId || editingSimulationId;
 
       // Convert unified content items to API format
       // Separate scenarios and videos while preserving order
-      const contentItems = currentContentItems.map((item) => ({
-        type: item.type,
-        id: item.id,
-        active: contentActiveStates[`${item.type}:${item.id}`] ?? item.active,
-      }));
+      const contentItems = currentContentItems.map((item) => {
+        const key = `${item.type}:${item.id}`;
+        const switchState = contentSwitchStates[key];
+        const baseItem: any = {
+          type: item.type,
+          id: item.id,
+          active: contentActiveStates[key] ?? item.active,
+        };
+
+        if (item.type === "scenario") {
+          baseItem.hints_enabled =
+            switchState?.hints_enabled ?? item.hints_enabled ?? false;
+          baseItem.objectives_enabled =
+            switchState?.objectives_enabled ?? item.objectives_enabled ?? true;
+          baseItem.input_guardrail_enabled =
+            switchState?.input_guardrail_enabled ??
+            item.input_guardrail_enabled ??
+            false;
+          baseItem.output_guardrail_enabled =
+            switchState?.output_guardrail_enabled ??
+            item.output_guardrail_enabled ??
+            false;
+          baseItem.image_input_enabled =
+            switchState?.image_input_enabled ??
+            item.image_input_enabled ??
+            false;
+          baseItem.rubric_id = switchState?.rubric_id ?? item.rubric_id ?? null;
+        } else if (item.type === "video") {
+          baseItem.objectives_enabled =
+            switchState?.objectives_enabled ?? item.objectives_enabled ?? true;
+        }
+
+        return baseItem;
+      });
 
       if (targetSimulationId) {
         // UPDATE mode - unified content items
@@ -804,11 +971,11 @@ export default function Simulation({
     const originalScenarioIds = simulationData.scenario_ids || [];
     const originalVideoIds = simulationData.video_ids || [];
     const currentScenarioIdsFromContent = currentContentItems
-      .filter(item => item.type === "scenario")
-      .map(item => item.id);
+      .filter((item) => item.type === "scenario")
+      .map((item) => item.id);
     const currentVideoIdsFromContent = currentContentItems
-      .filter(item => item.type === "video")
-      .map(item => item.id);
+      .filter((item) => item.type === "video")
+      .map((item) => item.id);
 
     return (
       current.title !== original.title ||
@@ -859,27 +1026,120 @@ export default function Simulation({
   };
 
   // Unified content handlers
-  const handleContentSelect = useCallback((contentId: string, checked: boolean) => {
-    // Selection logic for bulk operations - TODO: implement selection state
-  }, []);
+  const handleContentSelect = useCallback(
+    (contentId: string, checked: boolean) => {
+      // Selection logic for bulk operations - TODO: implement selection state
+    },
+    []
+  );
 
-  const handleContentSelectAll = useCallback((checked: boolean, visibleRowIds?: string[]) => {
-    // Select all logic - TODO: implement selection state
-  }, []);
+  const handleContentSelectAll = useCallback(
+    (checked: boolean, visibleRowIds?: string[]) => {
+      // Select all logic - TODO: implement selection state
+    },
+    []
+  );
 
-  const handleContentActiveToggle = useCallback((contentId: string, active: boolean) => {
-    setContentActiveStates((prev) => ({
-      ...prev,
-      [contentId]: active,
-    }));
-  }, []);
+  const handleContentActiveToggle = useCallback(
+    (contentId: string, active: boolean) => {
+      setContentActiveStates((prev) => ({
+        ...prev,
+        [contentId]: active,
+      }));
+    },
+    []
+  );
+
+  // Switch toggle handlers
+  const handleHintsToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          hints_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleObjectivesToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          objectives_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleInputGuardrailToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          input_guardrail_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleOutputGuardrailToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          output_guardrail_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleImageInputToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          image_input_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleRubricChange = useCallback(
+    (contentId: string, rubricId: string | null) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          rubric_id: rubricId,
+        },
+      }));
+    },
+    []
+  );
 
   const handleContentMoveUp = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
-      const index = prev.findIndex((item) => `${item.type}:${item.id}` === contentId);
+      const index = prev.findIndex(
+        (item) => `${item.type}:${item.id}` === contentId
+      );
       if (index <= 0) return prev;
       const newItems = [...prev];
-      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+      [newItems[index - 1], newItems[index]] = [
+        newItems[index],
+        newItems[index - 1],
+      ];
       // Recalculate positions sequentially
       return newItems.map((item, idx) => ({ ...item, position: idx + 1 }));
     });
@@ -887,10 +1147,15 @@ export default function Simulation({
 
   const handleContentMoveDown = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
-      const index = prev.findIndex((item) => `${item.type}:${item.id}` === contentId);
+      const index = prev.findIndex(
+        (item) => `${item.type}:${item.id}` === contentId
+      );
       if (index < 0 || index >= prev.length - 1) return prev;
       const newItems = [...prev];
-      [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+      [newItems[index], newItems[index + 1]] = [
+        newItems[index + 1],
+        newItems[index],
+      ];
       // Recalculate positions sequentially
       return newItems.map((item, idx) => ({ ...item, position: idx + 1 }));
     });
@@ -901,8 +1166,12 @@ export default function Simulation({
     if (type === "scenario") {
       setCurrentScenarioIds((prev) => prev.filter((sid) => sid !== id));
     }
-    setCurrentContentItems((prev) => prev.filter((item) => `${item.type}:${item.id}` !== contentId));
-    setStagedContentItems((prev) => prev.filter((item) => `${item.type}:${item.id}` !== contentId));
+    setCurrentContentItems((prev) =>
+      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
+    );
+    setStagedContentItems((prev) =>
+      prev.filter((item) => `${item.type}:${item.id}` !== contentId)
+    );
     setContentActiveStates((prev) => {
       const newStates = { ...prev };
       delete newStates[contentId];
@@ -918,43 +1187,71 @@ export default function Simulation({
     toast.info("Bulk delete functionality coming soon");
   }, []);
 
-  const handleStagedScenarios = useCallback((scenarios: Array<{scenarioId: string; name?: string; description?: string}>) => {
-    const maxPosition = Math.max(...currentContentItems.map(item => item.position), 0);
-    const newItems: ContentItem[] = scenarios.map((scenario, idx) => ({
-      type: "scenario" as const,
-      id: scenario.scenarioId,
-      title: scenario.name || "Unnamed Scenario",
-      description: scenario.description || "",
-      active: true,
-      position: maxPosition + idx + 1,
-      usage_count: 0,
-      success_rate: 0,
-      last_used: null,
-      can_remove: true,
-      isNew: true,
-    }));
-    setStagedContentItems((prev) => [...prev, ...newItems]);
-    setCurrentScenarioIds((prev) => [...prev, ...scenarios.map(s => s.scenarioId)]);
-  }, [currentContentItems]);
+  const handleStagedScenarios = useCallback(
+    (
+      scenarios: Array<{
+        scenarioId: string;
+        name?: string;
+        description?: string;
+      }>
+    ) => {
+      const maxPosition = Math.max(
+        ...currentContentItems.map((item) => item.position),
+        0
+      );
+      const newItems: ContentItem[] = scenarios.map((scenario, idx) => ({
+        type: "scenario" as const,
+        id: scenario.scenarioId,
+        title: scenario.name || "Unnamed Scenario",
+        description: scenario.description || "",
+        active: true,
+        position: maxPosition + idx + 1,
+        usage_count: 0,
+        success_rate: 0,
+        last_used: null,
+        can_remove: true,
+        isNew: true,
+      }));
+      setStagedContentItems((prev) => [...prev, ...newItems]);
+      setCurrentScenarioIds((prev) => [
+        ...prev,
+        ...scenarios.map((s) => s.scenarioId),
+      ]);
+    },
+    [currentContentItems]
+  );
 
-  const handleStagedVideos = useCallback((videos: Array<{videoId: string; name?: string; description?: string; length_seconds?: number}>) => {
-    const maxPosition = Math.max(...currentContentItems.map(item => item.position), 0);
-    const newItems: ContentItem[] = videos.map((video, idx) => ({
-      type: "video" as const,
-      id: video.videoId,
-      title: video.name || "Unnamed Video",
-      description: video.description || "",
-      active: true,
-      position: maxPosition + idx + 1,
-      usage_count: 0,
-      success_rate: 0,
-      last_used: null,
-      can_remove: true,
-      length_seconds: video.length_seconds || 0,
-      isNew: true,
-    }));
-    setStagedContentItems((prev) => [...prev, ...newItems]);
-  }, [currentContentItems]);
+  const handleStagedVideos = useCallback(
+    (
+      videos: Array<{
+        videoId: string;
+        name?: string;
+        description?: string;
+        length_seconds?: number;
+      }>
+    ) => {
+      const maxPosition = Math.max(
+        ...currentContentItems.map((item) => item.position),
+        0
+      );
+      const newItems: ContentItem[] = videos.map((video, idx) => ({
+        type: "video" as const,
+        id: video.videoId,
+        title: video.name || "Unnamed Video",
+        description: video.description || "",
+        active: true,
+        position: maxPosition + idx + 1,
+        usage_count: 0,
+        success_rate: 0,
+        last_used: null,
+        can_remove: true,
+        length_seconds: video.length_seconds || 0,
+        isNew: true,
+      }));
+      setStagedContentItems((prev) => [...prev, ...newItems]);
+    },
+    [currentContentItems]
+  );
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
 
@@ -1048,7 +1345,9 @@ export default function Simulation({
                 />
               ) : null}
               {errors.departmentIds && (
-                <p className="text-sm text-destructive">{errors.departmentIds}</p>
+                <p className="text-sm text-destructive">
+                  {errors.departmentIds}
+                </p>
               )}
             </div>
           )}
@@ -1206,6 +1505,12 @@ export default function Simulation({
             onRemove={handleContentRemove}
             onBulkEdit={handleBulkContentEdit}
             onBulkDelete={handleBulkContentDelete}
+            onHintsToggle={handleHintsToggle}
+            onObjectivesToggle={handleObjectivesToggle}
+            onInputGuardrailToggle={handleInputGuardrailToggle}
+            onOutputGuardrailToggle={handleOutputGuardrailToggle}
+            onImageInputToggle={handleImageInputToggle}
+            onRubricChange={handleRubricChange}
             readonly={isReadonly}
           />
         </div>
@@ -1222,7 +1527,9 @@ export default function Simulation({
           open={showSearchVideoModal}
           onOpenChange={setShowSearchVideoModal}
           onStagedVideos={handleStagedVideos}
-          existingVideoIds={currentContentItems.filter(item => item.type === "video").map(item => item.id)}
+          existingVideoIds={currentContentItems
+            .filter((item) => item.type === "video")
+            .map((item) => item.id)}
           departmentIds={formData?.departmentIds}
           searchVideoAction={searchVideoAction}
         />

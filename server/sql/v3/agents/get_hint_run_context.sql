@@ -18,9 +18,10 @@ attempt_info AS (
     JOIN chat_info ci ON ci.attempt_id = sa.id
 ),
 scenario_info AS (
-    SELECT s.id, sps.problem_statement
+    SELECT s.id, ps.problem_statement
     FROM scenarios s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     JOIN chat_info ci ON ci.scenario_id = s.id
 ),
 profile_info AS (

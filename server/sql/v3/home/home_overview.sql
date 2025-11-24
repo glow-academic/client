@@ -137,8 +137,12 @@ user_sim_status AS (
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
             (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
-             FROM simulations s JOIN rubrics r ON r.id = s.rubric_id
-             WHERE s.id = aa.simulation_id), 0
+             FROM simulations s
+             LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
+             LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+             WHERE s.id = aa.simulation_id
+             ORDER BY ss_rubric.position
+             LIMIT 1), 0
         )) AS passed,
         COUNT(*) AS chats_completed
     FROM attempt_avg aa
@@ -175,14 +179,20 @@ sim_meta AS (
         s.id AS simulation_id,
         s.title,
         s.description,
-        stl.time_limit_seconds as time_limit,
-        s.rubric_id,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
+        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
         COALESCE(r.points, 0) AS rubric_points,
         COALESCE(r.pass_points, 0) AS rubric_pass_points
     FROM simulations s
-    LEFT JOIN rubrics r ON r.id = s.rubric_id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+    LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
+    LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
     WHERE s.id IN (SELECT simulation_id FROM cohort_sim)
 ),
 -- Simulation persona metadata
@@ -313,7 +323,7 @@ ta_rows AS (
                     )
                 )
                 FROM standard_groups sg
-                WHERE sg.rubric_id = s.rubric_id
+                WHERE sg.rubric_id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.simulation_id AND ss.active = true ORDER BY ss.position LIMIT 1)
             )
         ) AS item
     FROM sim_meta s
@@ -395,7 +405,7 @@ inst_rows AS (
                     )
                 )
                 FROM standard_groups sg
-                WHERE sg.rubric_id = s.rubric_id
+                WHERE sg.rubric_id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.simulation_id AND ss.active = true ORDER BY ss.position LIMIT 1)
             )
         ) AS item,
         CASE
@@ -455,7 +465,13 @@ simulation_mapping_data AS (
             jsonb_build_object(
                 'name', sim.title, 
                 'description', COALESCE(sim.description, ''),
-                'time_limit', stl.time_limit_seconds,
+                'time_limit', COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = sim.id AND stl.active = true AND ss.active = true),
+                    0
+                ),
                 'department_ids', CASE 
                     WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
                     ELSE NULL::jsonb
@@ -465,7 +481,6 @@ simulation_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM simulations sim
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = sim.id AND stl.active = true
     LEFT JOIN (
         SELECT 
             sd.simulation_id,

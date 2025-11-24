@@ -50,17 +50,17 @@ import {
   AlertCircle,
   Brain,
   Building2,
-  ChartBar,
   ChevronRight,
   ChevronsUpDown,
-  Cog,
+  ClipboardList,
   Home,
   LogOut,
+  PieChart,
   Search,
   Settings,
   Sparkles,
+  Target,
   User,
-  UserCogIcon,
   Users,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -177,7 +177,7 @@ export function UnifiedSidebar({
       menu.push({
         title: "Practice",
         url: "#",
-        icon: Brain,
+        icon: Target,
         section: "practice",
       });
     }
@@ -246,7 +246,7 @@ export function UnifiedSidebar({
       menu.push({
         title: "Analytics",
         url: "#",
-        icon: ChartBar,
+        icon: PieChart,
         items: analyticsItems,
       });
     }
@@ -299,7 +299,7 @@ export function UnifiedSidebar({
       menu.push({
         title: "Management",
         url: "#",
-        icon: UserCogIcon,
+        icon: ClipboardList,
         items: managementItems,
       });
 
@@ -349,7 +349,7 @@ export function UnifiedSidebar({
       menu.push({
         title: "Engine",
         url: "#",
-        icon: Cog,
+        icon: Brain,
         items: engineItems,
       });
 

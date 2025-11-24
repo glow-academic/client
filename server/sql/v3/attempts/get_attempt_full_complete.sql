@@ -12,13 +12,18 @@
             (SELECT department_id FROM simulation_departments sd WHERE sd.simulation_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1) as sim_department_id,
             s.active as sim_active,
             s.practice_simulation as sim_practice_simulation,
-            stl.time_limit_seconds as sim_time_limit,
-            s.rubric_id as sim_rubric_id,
+            COALESCE(
+                (SELECT SUM(stl.time_limit_seconds)
+                 FROM scenario_time_limits stl
+                 JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                 WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                0
+            ) as sim_time_limit,
+            (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as sim_rubric_id,
             s.created_at as sim_created_at,
             s.updated_at as sim_updated_at
         FROM simulation_attempts sa
         JOIN simulations s ON s.id = sa.simulation_id
-        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         WHERE sa.id = $1
         ),
         attempt_profiles_data AS (
@@ -246,7 +251,8 @@
                 COALESCE(r.points, 0)::integer as total_points
             FROM simulation_attempts sa
             JOIN simulations s ON s.id = sa.simulation_id
-            LEFT JOIN rubrics r ON r.id = s.rubric_id
+            LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
+            LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
             WHERE sa.id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
             ORDER BY sa.simulation_id
         ),
@@ -287,7 +293,7 @@
                 jsonb_build_object(
                     'id', s.id::text,
                     'name', s.name,
-                    'problemStatement', COALESCE(sps.problem_statement, ''),
+                    'problemStatement', COALESCE(ps.problem_statement, ''),
                     'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), ''),
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
@@ -310,6 +316,7 @@
             FROM simulation_scenarios_list ssl
             LEFT JOIN scenarios s ON s.id = ssl.scenario_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
             LEFT JOIN previous_chats_for_scenarios pcf ON pcf.scenario_id = ssl.scenario_id
@@ -329,7 +336,7 @@
                 jsonb_build_object(
                     'id', s.id::text,
                     'name', s.name,
-                    'problemStatement', COALESCE(sps.problem_statement, ''),
+                    'problemStatement', COALESCE(ps.problem_statement, ''),
                     'departmentId', COALESCE((SELECT department_id::text FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true ORDER BY sd.created_at LIMIT 1), NULL),
                     'active', s.active,
                     'personaId', CASE WHEN sp.persona_id IS NOT NULL THEN sp.persona_id::text ELSE NULL END,
@@ -356,6 +363,7 @@
                 s.output_guardrail_enabled
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             CROSS JOIN scenario_ids_list sil
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id

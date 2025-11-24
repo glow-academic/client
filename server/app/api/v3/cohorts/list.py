@@ -117,7 +117,7 @@ async def get_cohorts_list(
     try:
         sql_query = load_sql("sql/v3/cohorts/list_cohorts.sql")
         sql_params = (filters.profileId,)
-        rows = await conn.fetch(sql_query, filters.profileId, campus_domain)
+        rows = await conn.fetch(sql_query, filters.profileId)
 
         cohorts = []
         profile_mapping: dict[str, ProfileMappingItem] = {}

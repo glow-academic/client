@@ -1372,11 +1372,16 @@
                     jsonb_build_object(
                         'name', s.title, 
                         'description', COALESCE(s.description, ''),
-                        'time_limit', stl.time_limit_seconds
+                        'time_limit', COALESCE(
+                            (SELECT SUM(stl.time_limit_seconds)
+                             FROM scenario_time_limits stl
+                             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                            0
+                        )
                     )
                 ), '{}'::jsonb) AS mapping
                 FROM simulations s
-                LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
                   AND s.active = true

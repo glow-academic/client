@@ -339,24 +339,42 @@ attempt_cohort_ids AS (
     FROM history_attempt_cohorts
     WHERE attempt_id IN (SELECT attempt_id FROM history_attempts_final)
 ),
+-- Get rubric data per simulation (one row per simulation)
+simulation_rubrics AS (
+    SELECT DISTINCT ON (ss.simulation_id)
+        ss.simulation_id,
+        r.id AS rubric_id,
+        r.points AS rubric_points,
+        r.pass_points AS rubric_pass_points
+    FROM simulation_scenarios ss
+    LEFT JOIN rubrics r ON r.id = ss.rubric_id
+    WHERE ss.active = true
+      AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)
+    ORDER BY ss.simulation_id, ss.position
+),
 attempt_joined AS (
     SELECT
         ar.*,
         hsi.scenario_ids_assigned,
-        r.id AS rubric_id,
-        r.points AS rubric_points,
-        r.pass_points AS rubric_pass_points,
+        sr.rubric_id,
+        sr.rubric_points,
+        sr.rubric_pass_points,
         CASE
-            WHEN r.points IS NULL OR r.points = 0 THEN NULL
-            ELSE ROUND((r.pass_points::numeric / r.points::numeric) * 100.0)::int
+            WHEN sr.rubric_points IS NULL OR sr.rubric_points = 0 THEN NULL
+            ELSE ROUND((sr.rubric_pass_points::numeric / sr.rubric_points::numeric) * 100.0)::int
         END AS pass_pct,
         (p.first_name || ' ' || p.last_name) AS profile_name,
-        stl.time_limit_seconds
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit_seconds
     FROM attempt_rollup ar
     JOIN simulations s ON s.id = ar.simulation_id
     LEFT JOIN history_scenario_ids hsi ON hsi.simulation_id = ar.simulation_id
-    LEFT JOIN rubrics r ON r.id = s.rubric_id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
+    LEFT JOIN simulation_rubrics sr ON sr.simulation_id = s.id
     JOIN profiles p ON p.id = ar.profile_id
 ),
 attempt_cohort_names AS (
@@ -531,7 +549,13 @@ SELECT json_build_object(
                 'numScenarios', pr.num_scenarios,
                 'numScenariosCompleted', pr.num_scenarios_completed,
                 'infiniteMode', pr.infinite_mode,
-                'timeLimit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = pr.simulation_id AND stl.active = true LIMIT 1),
+                'timeLimit', COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = pr.simulation_id AND stl.active = true AND ss.active = true),
+                    0
+                ),
                 'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
                 'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
                 'score', pr.score_percent,

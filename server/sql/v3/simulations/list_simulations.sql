@@ -58,10 +58,16 @@ simulation_data AS (
         s.id as simulation_id,
         s.title as name,
         s.description,
-        stl.time_limit_seconds as time_limit,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
         s.active,
         s.practice_simulation,
-        s.rubric_id,
+        (SELECT ss_rubric.rubric_id FROM simulation_scenarios ss_rubric WHERE ss_rubric.simulation_id = s.id AND ss_rubric.active = true ORDER BY ss_rubric.position LIMIT 1) as rubric_id,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(ss.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -74,14 +80,13 @@ simulation_data AS (
     FROM simulations s
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
     LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
     LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
     LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
-    GROUP BY s.id, s.title, s.description, stl.time_limit_seconds, s.active, s.practice_simulation, 
-             s.rubric_id, s.updated_at, sdd.department_ids, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
+    GROUP BY s.id, s.title, s.description, s.active, s.practice_simulation, 
+             s.updated_at, sdd.department_ids, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
              sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts, scd.cohort_ids
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
@@ -133,7 +138,7 @@ scenario_mapping_data AS (
             s.id::text,
             jsonb_build_object(
                 'name', s.name,
-                'description', COALESCE(sps.problem_statement, ''),
+                'description', COALESCE(ps.problem_statement, ''),
                 'active', s.active,
                 'persona_ids', COALESCE(spa.persona_ids, ARRAY[]::text[]),
                 'persona_mapping', pm.mapping,
@@ -148,6 +153,7 @@ scenario_mapping_data AS (
     FROM all_scenario_ids asi
     LEFT JOIN scenarios s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     -- Only include root scenarios (parent_id = child_id in scenario_tree)
     LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id

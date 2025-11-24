@@ -26,7 +26,7 @@ attempt_chats AS (
         sc.created_at as chat_created_at,
         scn.id as scenario_id,
         scn.name as scenario_name,
-        sps.problem_statement as scenario_description,
+        ps.problem_statement as scenario_description,
         scg.id as grade_id,
         scg.score,
         scg.passed,
@@ -39,6 +39,7 @@ attempt_chats AS (
     LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
     LEFT JOIN scenarios scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = scn.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
     WHERE ap.profile_id = $1 AND ap.active = true
     ORDER BY sa.created_at, sc.created_at

@@ -235,7 +235,13 @@ cohort_simulation_stats AS (
         cs.active,
         s.title as name,
         COALESCE(s.description, '') as description,
-        stl.time_limit_seconds as time_limit,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
         COUNT(DISTINCT sa.id) as usage_count,
         COALESCE(
             ROUND(
@@ -247,7 +253,6 @@ cohort_simulation_stats AS (
         MAX(sa.created_at) as last_used
     FROM cohort_simulation_ids cs
     JOIN simulations s ON s.id = cs.simulation_id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
@@ -388,7 +393,13 @@ SELECT
         jsonb_build_object(
             'name', s.title,
             'description', COALESCE(s.description, ''),
-            'time_limit', stl.time_limit_seconds,
+            'time_limit', COALESCE(
+                (SELECT SUM(stl.time_limit_seconds)
+                 FROM scenario_time_limits stl
+                 JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                 WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                0
+            ),
             'department_ids', CASE 
                 WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
                 ELSE NULL::jsonb
@@ -396,7 +407,6 @@ SELECT
         )
      ), '{}'::jsonb)
      FROM simulations s
-     LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
      LEFT JOIN (
          SELECT 
              sd.simulation_id,

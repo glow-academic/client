@@ -179,7 +179,13 @@ simulation_mapping_data AS (
             jsonb_build_object(
                 'name', s.title,
                 'description', COALESCE(s.description, ''),
-                'time_limit', (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = s.id AND stl.active = true LIMIT 1),
+                'time_limit', COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                    0
+                ),
                 'department_ids', CASE 
                     WHEN (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
                           FROM simulation_departments sd
@@ -209,7 +215,7 @@ scenario_mapping_data AS (
             sc.id::text,
             jsonb_build_object(
                 'name', sc.name,
-                'description', COALESCE((SELECT sps.problem_statement FROM scenario_problem_statements sps WHERE sps.scenario_id = sc.id AND sps.active = true LIMIT 1), '')
+                'description', COALESCE((SELECT ps.problem_statement FROM scenario_problem_statements sps JOIN problem_statements ps ON ps.id = sps.problem_statement_id WHERE sps.scenario_id = sc.id AND sps.active = true ORDER BY sps.created_at DESC, sps.updated_at DESC LIMIT 1), '')
             )
         ) FILTER (WHERE sc.id IS NOT NULL),
         '{}'::jsonb

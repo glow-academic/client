@@ -33,6 +33,13 @@ class ContentItemInRequest(BaseModel):
     type: str  # "scenario" or "video"
     id: str  # scenario_id or video_id
     active: bool = True
+    # Switch fields (scenarios only, except objectives_enabled which applies to both)
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    input_guardrail_enabled: bool | None = None
+    output_guardrail_enabled: bool | None = None
+    image_input_enabled: bool | None = None
+    rubric_id: str | None = None
 
 
 class CreateSimulationRequest(BaseModel):
@@ -79,8 +86,15 @@ async def create_simulation(
             # Extract content items (scenarios and videos) with unified positions
             scenario_ids: list[str] = []
             scenario_active_flags: list[bool] = []
+            scenario_hints_enabled: list[bool] = []
+            scenario_objectives_enabled: list[bool] = []
+            scenario_input_guardrail_enabled: list[bool] = []
+            scenario_output_guardrail_enabled: list[bool] = []
+            scenario_image_input_enabled: list[bool] = []
+            scenario_rubric_ids: list[str] = []
             video_ids: list[str] = []
             video_active_flags: list[bool] = []
+            video_objectives_enabled: list[bool] = []
 
             # Use unified content_items if provided, otherwise fall back to separate arrays
             if request.content_items:
@@ -88,9 +102,16 @@ async def create_simulation(
                     if item.type == "scenario":
                         scenario_ids.append(item.id)
                         scenario_active_flags.append(item.active)
+                        scenario_hints_enabled.append(item.hints_enabled if item.hints_enabled is not None else False)
+                        scenario_objectives_enabled.append(item.objectives_enabled if item.objectives_enabled is not None else True)
+                        scenario_input_guardrail_enabled.append(item.input_guardrail_enabled if item.input_guardrail_enabled is not None else False)
+                        scenario_output_guardrail_enabled.append(item.output_guardrail_enabled if item.output_guardrail_enabled is not None else False)
+                        scenario_image_input_enabled.append(item.image_input_enabled if item.image_input_enabled is not None else False)
+                        scenario_rubric_ids.append(item.rubric_id if item.rubric_id else "")
                     elif item.type == "video":
                         video_ids.append(item.id)
                         video_active_flags.append(item.active)
+                        video_objectives_enabled.append(item.objectives_enabled if item.objectives_enabled is not None else True)
             else:
                 # Legacy support: extract from separate arrays
                 if request.scenario_ids:
@@ -117,8 +138,15 @@ async def create_simulation(
             scenario_flags_array = (
                 scenario_active_flags if scenario_active_flags else []
             )
+            scenario_hints_array = scenario_hints_enabled if scenario_hints_enabled else []
+            scenario_objectives_array = scenario_objectives_enabled if scenario_objectives_enabled else []
+            scenario_input_guardrail_array = scenario_input_guardrail_enabled if scenario_input_guardrail_enabled else []
+            scenario_output_guardrail_array = scenario_output_guardrail_enabled if scenario_output_guardrail_enabled else []
+            scenario_image_input_array = scenario_image_input_enabled if scenario_image_input_enabled else []
+            scenario_rubric_ids_array = scenario_rubric_ids if scenario_rubric_ids else []
             video_ids_array = video_ids if video_ids else []
             video_flags_array = video_active_flags if video_active_flags else []
+            video_objectives_array = video_objectives_enabled if video_objectives_enabled else []
 
             # Create simulation with departments, time limit, scenarios, and videos in single SQL (DHH style)
             sql_query = load_sql("sql/v3/simulations/create_simulation_complete.sql")
@@ -134,6 +162,13 @@ async def create_simulation(
                 scenario_flags_array,
                 video_ids_array,
                 video_flags_array,
+                scenario_hints_array,
+                scenario_objectives_array,
+                scenario_input_guardrail_array,
+                scenario_output_guardrail_array,
+                scenario_image_input_array,
+                scenario_rubric_ids_array,
+                video_objectives_array,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

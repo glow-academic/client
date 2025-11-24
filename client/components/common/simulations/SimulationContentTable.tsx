@@ -33,7 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ArrowDown, ArrowUp, Trash2, Video, FileText } from "lucide-react";
+import { ArrowDown, ArrowUp, Trash2, Video, FileText, Lightbulb, Target, Shield, ShieldCheck, Image } from "lucide-react";
 
 export interface ContentItem {
   type: "scenario" | "video";
@@ -49,6 +49,13 @@ export interface ContentItem {
   isNew?: boolean; // For staged items
   // Scenario-specific
   length_seconds?: number; // Video-specific
+  // Switch fields (scenarios only, except objectives_enabled which applies to both)
+  hints_enabled?: boolean;
+  objectives_enabled?: boolean;
+  input_guardrail_enabled?: boolean;
+  output_guardrail_enabled?: boolean;
+  image_input_enabled?: boolean;
+  rubric_id?: string | null;
 }
 
 export interface SimulationContentTableProps {
@@ -62,6 +69,13 @@ export interface SimulationContentTableProps {
   onRemove: (contentId: string) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
+  // Switch toggle handlers
+  onHintsToggle?: (contentId: string, enabled: boolean) => void;
+  onObjectivesToggle?: (contentId: string, enabled: boolean) => void;
+  onInputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
+  onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
+  onImageInputToggle?: (contentId: string, enabled: boolean) => void;
+  onRubricChange?: (contentId: string, rubricId: string | null) => void;
   readonly?: boolean;
 }
 
@@ -76,6 +90,12 @@ export function SimulationContentTable({
   onRemove,
   onBulkEdit,
   onBulkDelete,
+  onHintsToggle,
+  onObjectivesToggle,
+  onInputGuardrailToggle,
+  onOutputGuardrailToggle,
+  onImageInputToggle,
+  onRubricChange,
   readonly = false,
 }: SimulationContentTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -243,6 +263,219 @@ export function SimulationContentTable({
         },
       },
       {
+        id: "hints_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                <span>Hints</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Provide hints to help students progress through the scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.hints_enabled ?? false}
+                onCheckedChange={(checked) =>
+                  onHintsToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onHintsToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "objectives_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span>Objectives</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Display learning objectives to students during the scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.objectives_enabled ?? false}
+                onCheckedChange={(checked) =>
+                  onObjectivesToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onObjectivesToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "input_guardrail_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span>Input Guardrail</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Monitor and filter inappropriate input from students</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.input_guardrail_enabled ?? false}
+                onCheckedChange={(checked) =>
+                  onInputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onInputGuardrailToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "output_guardrail_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                <span>Output Guardrail</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Monitor and filter inappropriate output from the persona</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.output_guardrail_enabled ?? false}
+                onCheckedChange={(checked) =>
+                  onOutputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onOutputGuardrailToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "image_input_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <Image className="h-4 w-4 text-muted-foreground" />
+                <span>Image Input</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enable AI vision to analyze visual content in documents</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.image_input_enabled ?? false}
+                onCheckedChange={(checked) =>
+                  onImageInputToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onImageInputToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "rubric_id",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <span>Rubric</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Rubric for grading this scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              {item.rubric_id ? (
+                <Badge variant="secondary">{item.rubric_id}</Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">None</span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => {
@@ -313,7 +546,7 @@ export function SimulationContentTable({
         enableSorting: false,
       },
     ],
-    [data, selectedContentIds, readonly, onContentSelect, onSelectAll, onActiveToggle, onMoveUp, onMoveDown, onRemove]
+    [data, selectedContentIds, readonly, onContentSelect, onSelectAll, onActiveToggle, onMoveUp, onMoveDown, onRemove, onHintsToggle, onObjectivesToggle, onInputGuardrailToggle, onOutputGuardrailToggle, onImageInputToggle]
   );
 
   const table = useReactTable({

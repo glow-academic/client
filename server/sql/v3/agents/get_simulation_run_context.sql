@@ -75,7 +75,7 @@ SELECT
     -- Scenario data
     s.id::text as scenario_id,
     (SELECT department_id::text FROM resolved_dept) as department_id,
-    sps.problem_statement,
+    ps.problem_statement,
     
     -- Persona data (via scenario_personas junction)
     p.id::text as persona_id,
@@ -126,6 +126,7 @@ JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios s ON s.id = sc.scenario_id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
 LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
 LEFT JOIN personas p ON p.id = sp.persona_id
@@ -149,7 +150,7 @@ CROSS JOIN resolved_dept
 WHERE sc.id = $1::uuid
 GROUP BY sc.id, sc.title, sc.trace_id,
          sa.id, sa.simulation_id,
-         s.id, sps.problem_statement,
+         s.id, ps.problem_statement,
          p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, p.temperature, p.reasoning,
          m.id, m.name, m.provider,
          k.key, me.base_url,

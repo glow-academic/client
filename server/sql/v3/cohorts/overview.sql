@@ -20,7 +20,13 @@ SELECT
             'id', s.id,
             'title', s.title,
             'active', s.active,
-            'time_limit', stl.time_limit_seconds
+            'time_limit', COALESCE(
+                (SELECT SUM(stl.time_limit_seconds)
+                 FROM scenario_time_limits stl
+                 JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                 WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                0
+            )
         )) FILTER (WHERE s.id IS NOT NULL),
         '[]'::jsonb
     ) as simulations
@@ -29,7 +35,6 @@ LEFT JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.active = true
 LEFT JOIN profiles p ON p.id = cp.profile_id
 LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.active = true
 LEFT JOIN simulations s ON s.id = cs.simulation_id AND s.active = true
-LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
 WHERE c.id = $1
 GROUP BY c.id, c.title, c.description, c.active, c.created_at;
 

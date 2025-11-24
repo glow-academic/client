@@ -24,11 +24,16 @@ WITH user_departments AS (
                 s.description,
                 s.active,
                 s.practice_simulation,
-                s.rubric_id,
-                stl.time_limit_seconds as time_limit
+                (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
+                COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                    0
+                ) as time_limit
             FROM simulations s
             JOIN default_simulation ds ON s.id = ds.id
-            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         ),
         user_context AS (
             SELECT role FROM profiles WHERE id = $1
@@ -56,10 +61,16 @@ WITH user_departments AS (
             SELECT 
                 s.id as scenario_id,
                 s.name,
-                sps.problem_statement,
+                ps.problem_statement,
                 ss.active,
                 (ss.position = 1) as default_scenario,
                 ss.position,
+                ss.hints_enabled,
+                ss.objectives_enabled,
+                ss.input_guardrail_enabled,
+                ss.output_guardrail_enabled,
+                ss.image_input_enabled,
+                ss.rubric_id,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
                      FROM scenario_parameter_items spi
@@ -69,6 +80,7 @@ WITH user_departments AS (
             FROM scenarios s
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             JOIN default_simulation ds ON ss.simulation_id = ds.id
             ORDER BY ss.position
         ),
@@ -122,6 +134,12 @@ WITH user_departments AS (
                         'active', sb.active,
                         'default_scenario', COALESCE(sb.default_scenario, false),
                         'position', sb.position,
+                        'hints_enabled', sb.hints_enabled,
+                        'objectives_enabled', sb.objectives_enabled,
+                        'input_guardrail_enabled', sb.input_guardrail_enabled,
+                        'output_guardrail_enabled', sb.output_guardrail_enabled,
+                        'image_input_enabled', sb.image_input_enabled,
+                        'rubric_id', sb.rubric_id::text,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
                             FROM unnest(sb.parameter_item_ids) as pid
@@ -145,6 +163,7 @@ WITH user_departments AS (
                 sps.problem_statement
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id

@@ -121,7 +121,7 @@ scenario_mapping_data AS (
             s.id::text,
             jsonb_build_object(
                 'name', s.name,
-                'description', COALESCE(sps.problem_statement, ''),
+                'description', COALESCE(ps.problem_statement, ''),
                 'active', s.active,
                 'persona_ids', COALESCE(spa.persona_ids, ARRAY[]::text[]),
                 'persona_mapping', pm.mapping
@@ -132,6 +132,7 @@ scenario_mapping_data AS (
     FROM all_scenario_ids asi
     LEFT JOIN scenarios s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     -- Only include root scenarios (parent_id = child_id in scenario_tree)
     LEFT JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
@@ -200,7 +201,13 @@ SELECT
             jsonb_build_object(
                 'name', s.title,
                 'description', COALESCE(s.description, ''),
-                'time_limit', stl.time_limit_seconds,
+                'time_limit', COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                    0
+                ),
                 'department_ids', CASE 
                     WHEN sdd.department_ids IS NOT NULL THEN to_jsonb(sdd.department_ids)
                     ELSE NULL::jsonb
@@ -209,7 +216,6 @@ SELECT
             )
         ), '{}'::jsonb)
         FROM simulations s
-        LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
         LEFT JOIN (
             SELECT 
                 sd.simulation_id,

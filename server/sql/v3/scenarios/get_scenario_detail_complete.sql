@@ -362,7 +362,13 @@ simulation_mapping_data AS (
             jsonb_build_object(
                 'name', s.title, 
                 'description', COALESCE(s.description, ''),
-                'time_limit', stl.time_limit_seconds,
+                'time_limit', COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                    0
+                ),
                 'department_ids', COALESCE(
                     (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)
                      FROM simulation_departments sd
@@ -372,7 +378,6 @@ simulation_mapping_data AS (
             )
     ), '{}'::jsonb) as simulation_mapping
     FROM simulations s
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     WHERE s.id = ANY(
         COALESCE((SELECT simulation_ids::uuid[] FROM scenario_simulations_agg), ARRAY[]::uuid[])
     )

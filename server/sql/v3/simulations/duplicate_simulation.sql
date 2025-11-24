@@ -2,8 +2,7 @@ WITH source_simulation AS (
     SELECT 
         s.id as source_id,
         s.title,
-        s.description,
-        s.rubric_id
+        s.description
     FROM simulations s
     WHERE s.id = $1::uuid
 ),
@@ -13,7 +12,6 @@ new_simulation AS (
         description,
         active,
         practice_simulation,
-        rubric_id,
         created_at,
         updated_at
     )
@@ -22,19 +20,19 @@ new_simulation AS (
         ss.description,
         false,
         false,
-        ss.rubric_id,
         NOW(),
         NOW()
     FROM source_simulation ss
     RETURNING id::text as simulation_id
 ),
 copy_scenarios AS (
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, rubric_id, created_at, updated_at)
     SELECT 
         ns.simulation_id::uuid,
         ss.scenario_id,
         ss.active,
         ss.position,
+        ss.rubric_id,
         NOW(),
         NOW()
     FROM source_simulation ssim

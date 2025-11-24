@@ -174,13 +174,18 @@ sim_data AS (
         s.title,
         s.description,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        COALESCE(stl.time_limit_seconds, 0) as time_limit,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
         s.active,
         s.practice_simulation
     FROM simulations s
     JOIN cohort_simulations cs ON cs.simulation_id = s.id
     JOIN cohort_data cd ON cd.id = cs.cohort_id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     LEFT JOIN (
         SELECT 
             sd.simulation_id,

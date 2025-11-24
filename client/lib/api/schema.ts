@@ -5218,6 +5218,33 @@ export interface components {
                 [key: string]: string;
             }[];
         };
+        /**
+         * ContentItemInRequest
+         * @description Unified content item (scenario or video) in request format.
+         */
+        ContentItemInRequest: {
+            /** Type */
+            type: string;
+            /** Id */
+            id: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled?: boolean | null;
+            /** Input Guardrail Enabled */
+            input_guardrail_enabled?: boolean | null;
+            /** Output Guardrail Enabled */
+            output_guardrail_enabled?: boolean | null;
+            /** Image Input Enabled */
+            image_input_enabled?: boolean | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+        };
         /** CreateAgentRequest */
         CreateAgentRequest: {
             /** Name */
@@ -5809,7 +5836,11 @@ export interface components {
             /** Rubric Id */
             rubric_id: string;
             /** Scenario Ids */
-            scenario_ids: string[] | components["schemas"]["ScenarioInRequest"][];
+            scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
+            /** Video Ids */
+            video_ids?: string[] | components["schemas"]["VideoInRequest"][] | null;
+            /** Content Items */
+            content_items?: components["schemas"]["ContentItemInRequest"][] | null;
         };
         /**
          * CreateSimulationResponse
@@ -9060,8 +9091,6 @@ export interface components {
             firstName: string;
             /** Lastname */
             lastName: string;
-            /** Email */
-            email: string | null;
             /**
              * Emails
              * @default []
@@ -10067,6 +10096,18 @@ export interface components {
             position: number;
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+            /** Hints Enabled */
+            hints_enabled: boolean;
+            /** Objectives Enabled */
+            objectives_enabled: boolean;
+            /** Input Guardrail Enabled */
+            input_guardrail_enabled: boolean;
+            /** Output Guardrail Enabled */
+            output_guardrail_enabled: boolean;
+            /** Image Input Enabled */
+            image_input_enabled: boolean;
+            /** Rubric Id */
+            rubric_id: string | null;
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -11366,7 +11407,11 @@ export interface components {
             /** Rubric Id */
             rubric_id: string;
             /** Scenario Ids */
-            scenario_ids: string[] | components["schemas"]["ScenarioInRequest"][];
+            scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
+            /** Video Ids */
+            video_ids?: string[] | components["schemas"]["VideoInRequest"][] | null;
+            /** Content Items */
+            content_items?: components["schemas"]["ContentItemInRequest"][] | null;
         };
         /**
          * UpdateSimulationResponse
@@ -11543,6 +11588,19 @@ export interface components {
             profileId: string;
         };
         /**
+         * VideoInRequest
+         * @description Video in request format.
+         */
+        VideoInRequest: {
+            /** Video Id */
+            video_id: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /**
          * VideoInSimulation
          * @description Video with position in simulation.
          */
@@ -11559,6 +11617,8 @@ export interface components {
             position: number;
             /** Length Seconds */
             length_seconds: number;
+            /** Objectives Enabled */
+            objectives_enabled: boolean;
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -13440,6 +13500,10 @@ export interface components {
             scenario_ids: string[];
             /** Valid Scenario Ids */
             valid_scenario_ids: string[];
+            /** Video Ids */
+            video_ids: string[];
+            /** Valid Video Ids */
+            valid_video_ids: string[];
             /** Active */
             active: boolean;
             /** Practice Simulation */
@@ -13456,6 +13520,10 @@ export interface components {
             cohort_count: number;
             /** Scenarios */
             scenarios: components["schemas"]["ScenarioInSimulation"][];
+            /** Videos */
+            videos: {
+                [key: string]: unknown;
+            }[];
             /** Parameters */
             parameters: components["schemas"]["app__api__v3__simulations__detail_default__ParameterItem"][];
             /** Parameter Items */
@@ -13467,6 +13535,12 @@ export interface components {
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Video Mapping */
+            video_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
             };
             /** Rubric Mapping */
             rubric_mapping: {

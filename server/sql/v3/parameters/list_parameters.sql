@@ -121,7 +121,7 @@ scenario_mapping_data AS (
             s.id::text,
             jsonb_build_object(
                 'name', s.name,
-                'description', COALESCE(sps.problem_statement, ''),
+                'description', COALESCE(ps.problem_statement, ''),
                 'active', s.active,
                 'persona_id', NULL,
                 'persona_mapping', '{}'::jsonb,
@@ -136,6 +136,7 @@ scenario_mapping_data AS (
     FROM all_scenario_ids asi
     LEFT JOIN scenarios s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 ),
 department_mapping_data AS (
     SELECT COALESCE(

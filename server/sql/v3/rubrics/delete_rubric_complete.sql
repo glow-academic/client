@@ -17,7 +17,7 @@ rubric_info AS (
     SELECT 
         r.id,
         r.name,
-        (SELECT COUNT(*) FROM simulations WHERE rubric_id = r.id) as usage_count
+        (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios ss WHERE ss.rubric_id = r.id AND ss.active = true) as usage_count
     FROM rubrics r
     WHERE r.id = $1::uuid
 ),

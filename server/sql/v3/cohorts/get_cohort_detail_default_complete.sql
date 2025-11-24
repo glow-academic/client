@@ -50,7 +50,13 @@ cohort_simulation_stats AS (
         cs.active,
         s.title as name,
         COALESCE(s.description, '') as description,
-        stl.time_limit_seconds as time_limit,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
         COUNT(DISTINCT sa.id) as usage_count,
         COALESCE(
             ROUND(
@@ -62,14 +68,13 @@ cohort_simulation_stats AS (
         MAX(sa.created_at) as last_used
     FROM cohort_simulation_ids cs
     JOIN simulations s ON s.id = cs.simulation_id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     LEFT JOIN simulation_attempts sa ON sa.simulation_id = cs.simulation_id 
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
     LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
     LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
-    GROUP BY cs.simulation_id, cs.active, s.title, s.description, stl.time_limit_seconds
+    GROUP BY cs.simulation_id, cs.active, s.id, s.title, s.description
 ),
 valid_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -385,11 +390,16 @@ SELECT
         jsonb_build_object(
             'name', s.title,
             'description', COALESCE(s.description, ''),
-            'time_limit', stl.time_limit_seconds
+            'time_limit', COALESCE(
+                (SELECT SUM(stl.time_limit_seconds)
+                 FROM scenario_time_limits stl
+                 JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                 WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                0
+            )
         )
      ), '{}'::jsonb)
      FROM simulations s
-     LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
      CROSS JOIN cohort_is_default cid
      WHERE 
          -- For default cohorts, include all simulations in the cohort
@@ -413,10 +423,10 @@ SELECT
             'profile_id', cs.profile_id::text,
             'first_name', cs.first_name,
             'last_name', cs.last_name,
-            'email', cs.email,
+            'emails', cs.emails,
+            'primaryEmail', cs.primary_email,
             'name', cs.name,
             'role', cs.role,
-            'email', cs.email,
             'initials', cs.initials,
             'active', cs.active,
             'lastActive', cs.lastActive,

@@ -11676,6 +11676,96 @@
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
       },
+      "ContentItemInRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Enabled"
+          },
+          "image_input_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Input Enabled"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ContentItemInRequest",
+        "description": "Unified content item (scenario or video) in request format."
+      },
       "CreateAgentRequest": {
         "properties": {
           "name": {
@@ -13065,9 +13155,46 @@
                   "$ref": "#/components/schemas/ScenarioInRequest"
                 },
                 "type": "array"
+              },
+              {
+                "type": "null"
               }
             ],
             "title": "Scenario Ids"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "items": {
+                  "$ref": "#/components/schemas/VideoInRequest"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "content_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContentItemInRequest"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Items"
           }
         },
         "type": "object",
@@ -13078,8 +13205,7 @@
           "active",
           "practice_simulation",
           "time_limit",
-          "rubric_id",
-          "scenario_ids"
+          "rubric_id"
         ],
         "title": "CreateSimulationRequest",
         "description": "Request to create a simulation."
@@ -21448,17 +21574,6 @@
             "type": "string",
             "title": "Lastname"
           },
-          "email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email"
-          },
           "emails": {
             "items": {
               "type": "string"
@@ -21507,7 +21622,6 @@
           "profileId",
           "firstName",
           "lastName",
-          "email",
           "primaryEmail",
           "role",
           "metrics"
@@ -24118,6 +24232,37 @@
             "type": "array",
             "title": "Parameter Item Ids"
           },
+          "hints_enabled": {
+            "type": "boolean",
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Output Guardrail Enabled"
+          },
+          "image_input_enabled": {
+            "type": "boolean",
+            "title": "Image Input Enabled"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
           "usage_count": {
             "type": "integer",
             "title": "Usage Count"
@@ -24150,6 +24295,12 @@
           "active",
           "position",
           "parameter_item_ids",
+          "hints_enabled",
+          "objectives_enabled",
+          "input_guardrail_enabled",
+          "output_guardrail_enabled",
+          "image_input_enabled",
+          "rubric_id",
           "usage_count",
           "success_rate",
           "last_used",
@@ -27321,9 +27472,46 @@
                   "$ref": "#/components/schemas/ScenarioInRequest"
                 },
                 "type": "array"
+              },
+              {
+                "type": "null"
               }
             ],
             "title": "Scenario Ids"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "items": {
+                  "$ref": "#/components/schemas/VideoInRequest"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "content_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContentItemInRequest"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Items"
           }
         },
         "type": "object",
@@ -27335,8 +27523,7 @@
           "active",
           "practice_simulation",
           "time_limit",
-          "rubric_id",
-          "scenario_ids"
+          "rubric_id"
         ],
         "title": "UpdateSimulationRequest",
         "description": "Request to update simulation."
@@ -27849,6 +28036,25 @@
         "title": "VideoDetailRequest",
         "description": "Request to get video detail."
       },
+      "VideoInRequest": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id"
+        ],
+        "title": "VideoInRequest",
+        "description": "Video in request format."
+      },
       "VideoInSimulation": {
         "properties": {
           "video_id": {
@@ -27874,6 +28080,10 @@
           "length_seconds": {
             "type": "integer",
             "title": "Length Seconds"
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled"
           },
           "usage_count": {
             "type": "integer",
@@ -27907,6 +28117,7 @@
           "active",
           "position",
           "length_seconds",
+          "objectives_enabled",
           "usage_count",
           "success_rate",
           "last_used",
@@ -33063,6 +33274,20 @@
             "type": "array",
             "title": "Valid Scenario Ids"
           },
+          "video_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Ids"
+          },
+          "valid_video_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Video Ids"
+          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -33098,6 +33323,14 @@
             "type": "array",
             "title": "Scenarios"
           },
+          "videos": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Videos"
+          },
           "parameters": {
             "items": {
               "$ref": "#/components/schemas/app__api__v3__simulations__detail_default__ParameterItem"
@@ -33125,6 +33358,14 @@
             },
             "type": "object",
             "title": "Scenario Mapping"
+          },
+          "video_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Video Mapping"
           },
           "rubric_mapping": {
             "additionalProperties": {
@@ -33159,6 +33400,8 @@
           "valid_rubric_ids",
           "scenario_ids",
           "valid_scenario_ids",
+          "video_ids",
+          "valid_video_ids",
           "active",
           "practice_simulation",
           "can_edit",
@@ -33167,10 +33410,12 @@
           "in_use",
           "cohort_count",
           "scenarios",
+          "videos",
           "parameters",
           "parameter_items",
           "parameter_mapping",
           "scenario_mapping",
+          "video_mapping",
           "rubric_mapping",
           "department_mapping",
           "parameter_item_mapping"

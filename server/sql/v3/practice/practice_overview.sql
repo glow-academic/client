@@ -19,19 +19,25 @@ sim_meta AS (
         s.id AS simulation_id,
         s.title AS simulation_title,
         s.description AS simulation_description,
-        stl.time_limit_seconds AS time_limit,
-        s.rubric_id,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) AS time_limit,
+        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
         r.points AS rubric_points,
         r.pass_points AS rubric_pass_points,
         s.updated_at
     FROM simulations s
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
-    JOIN rubrics r ON r.id = s.rubric_id
+    LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
+    LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE s.active = TRUE
       AND s.practice_simulation = TRUE
-    GROUP BY s.id, s.title, s.description, stl.time_limit_seconds, s.rubric_id, r.points, r.pass_points, s.updated_at
+    GROUP BY s.id, s.title, s.description, r.points, r.pass_points, s.updated_at, ss_rubric.rubric_id
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
@@ -108,7 +114,8 @@ sim_pass_pct AS (
                 THEN (r.pass_points::numeric / r.points::numeric) * 100.0
                 ELSE 70 END AS pass_pct
     FROM simulations s
-    JOIN rubrics r ON r.id = s.rubric_id
+    LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
+    LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE s.practice_simulation = TRUE
       AND s.active = TRUE
@@ -246,7 +253,13 @@ simulation_data AS (
         sim.id,
         sim.title,
         sim.description,
-        (SELECT stl.time_limit_seconds FROM simulation_time_limits stl WHERE stl.simulation_id = sim.id AND stl.active = true LIMIT 1) as time_limit,
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = sim.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit,
         sdd.department_ids
     FROM simulations sim
     LEFT JOIN (
@@ -331,15 +344,22 @@ scenario_data AS (
     SELECT
         s.id,
         s.name,
-        COALESCE(sps.problem_statement, '') as description,
+        COALESCE(
+            (SELECT ps.problem_statement 
+             FROM scenario_problem_statements sps
+             JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+             WHERE sps.scenario_id = s.id AND sps.active = true
+             ORDER BY sps.created_at DESC, sps.updated_at DESC
+             LIMIT 1), 
+            ''
+        ) as description,
         COALESCE(spi.persona_ids, ARRAY[]::text[]) as persona_ids
     FROM scenarios s
     JOIN practice_scenario_ids psi ON psi.scenario_id = s.id
-    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_persona_ids spi ON spi.scenario_id = s.id
     WHERE s.active = true
-    GROUP BY s.id, s.name, sps.problem_statement, spi.persona_ids
+    GROUP BY s.id, s.name, spi.persona_ids
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))

@@ -18,10 +18,15 @@ cohort_sims AS (
         s.id,
         s.title,
         s.active,
-        stl.time_limit_seconds as time_limit
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit
     FROM simulations s
     JOIN cohort_simulations cs ON s.id = cs.simulation_id
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     WHERE cs.cohort_id = $1 AND cs.active = true
 ),
 student_simulation_results AS (

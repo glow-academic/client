@@ -51,11 +51,16 @@ user_context AS (
                 s.description,
                 s.active,
                 s.practice_simulation,
-                s.rubric_id,
-                stl.time_limit_seconds as time_limit,
+                (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
+                COALESCE(
+                    (SELECT SUM(stl.time_limit_seconds)
+                     FROM scenario_time_limits stl
+                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+                     WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                    0
+                ) as time_limit,
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM simulations s
-            LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
             LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
             INNER JOIN simulation_department_access_check sdac ON sdac.simulation_id = s.id AND sdac.has_access = true
             WHERE s.id = $1
@@ -82,10 +87,16 @@ user_context AS (
             SELECT 
                 s.id as scenario_id,
                 s.name,
-                sps.problem_statement,
+                ps.problem_statement,
                 ss.active,
                 (ss.position = 1) as default_scenario,
                 ss.position,
+                ss.hints_enabled,
+                ss.objectives_enabled,
+                ss.input_guardrail_enabled,
+                ss.output_guardrail_enabled,
+                ss.image_input_enabled,
+                ss.rubric_id,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
                      FROM scenario_parameter_items spi
@@ -95,6 +106,7 @@ user_context AS (
             FROM scenarios s
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             WHERE ss.simulation_id = $1
             ORDER BY ss.position
         ),
@@ -153,6 +165,12 @@ user_context AS (
                         'active', sb.active,
                         'default_scenario', COALESCE(sb.default_scenario, false),
                         'position', sb.position,
+                        'hints_enabled', sb.hints_enabled,
+                        'objectives_enabled', sb.objectives_enabled,
+                        'input_guardrail_enabled', sb.input_guardrail_enabled,
+                        'output_guardrail_enabled', sb.output_guardrail_enabled,
+                        'image_input_enabled', sb.image_input_enabled,
+                        'rubric_id', sb.rubric_id::text,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
                             FROM unnest(sb.parameter_item_ids) as pid
@@ -178,6 +196,7 @@ user_context AS (
                 sps.problem_statement
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
             CROSS JOIN user_department_ids udi
             JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
             LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
@@ -209,6 +228,7 @@ user_context AS (
                 ssb.scenario_id
             )
             LEFT JOIN scenario_problem_statements sps2 ON sps2.scenario_id = s2.id AND sps2.active = true
+            LEFT JOIN problem_statements ps2 ON ps2.id = sps2.problem_statement_id
             WHERE s2.active = true
         ),
         valid_scenarios AS (
@@ -222,6 +242,7 @@ user_context AS (
                 v.description,
                 sv.active,
                 sv.position,
+                sv.objectives_enabled,
                 v.length_seconds
             FROM videos v
             JOIN simulation_videos sv ON sv.video_id = v.id
@@ -268,6 +289,7 @@ user_context AS (
                         'description', COALESCE(vb.description, ''),
                         'active', vb.active,
                         'position', vb.position,
+                        'objectives_enabled', vb.objectives_enabled,
                         'length_seconds', vb.length_seconds,
                         'usage_count', COALESCE(stats.usage_count, 0),
                         'success_rate', COALESCE(stats.success_rate, 0),

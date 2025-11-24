@@ -9,16 +9,11 @@ import {
   Check,
   Copy,
   GripVertical,
-  Image,
-  Lightbulb,
   Loader2,
   PlusCircle,
   Power,
   RotateCcw,
-  Shield,
-  ShieldCheck,
   Shuffle,
-  Target,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -80,14 +75,14 @@ import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
+import {
   getObjectivesFromMapping,
   getParameterItemIdsFromStructure,
   groupParameterItemsByParameterId,
 } from "@/utils/scenario-helpers";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
 
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
@@ -360,12 +355,7 @@ export default function Scenario({
       problemStatement: "",
       departmentIds: defaultDepartmentIds,
       active: true,
-      hintsEnabled: false,
-      objectivesEnabled: false,
-      imageInputEnabled: false,
       copyPasteAllowed: false,
-      inputGuardrailEnabled: false,
-      outputGuardrailEnabled: false,
     }),
     [defaultDepartmentIds]
   );
@@ -867,12 +857,7 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: deptIds,
         active: scenarioData.active ?? true,
-        hintsEnabled: scenarioData.hints_enabled ?? false,
-        objectivesEnabled: scenarioData.objectives_enabled ?? false,
-        imageInputEnabled: scenarioData.image_input_enabled ?? false,
         copyPasteAllowed: scenarioData.copy_paste_allowed ?? false,
-        inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
-        outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
       });
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
@@ -901,12 +886,7 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: scenarioData.department_ids || [],
         active: scenarioData.active ?? true,
-        hintsEnabled: scenarioData.hints_enabled ?? false,
-        objectivesEnabled: scenarioData.objectives_enabled ?? false,
-        imageInputEnabled: scenarioData.image_input_enabled ?? false,
         copyPasteAllowed: scenarioData.copy_paste_allowed ?? false,
-        inputGuardrailEnabled: scenarioData.input_guardrail_enabled ?? false,
-        outputGuardrailEnabled: scenarioData.output_guardrail_enabled ?? false,
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
@@ -968,12 +948,7 @@ export default function Scenario({
       current.name !== original.name ||
       current.problemStatement !== original.problemStatement ||
       current.active !== original.active ||
-      current.hintsEnabled !== original.hintsEnabled ||
-      current.objectivesEnabled !== original.objectivesEnabled ||
-      current.imageInputEnabled !== original.imageInputEnabled ||
       current.copyPasteAllowed !== original.copyPasteAllowed ||
-      current.inputGuardrailEnabled !== original.inputGuardrailEnabled ||
-      current.outputGuardrailEnabled !== original.outputGuardrailEnabled ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
@@ -1279,7 +1254,7 @@ export default function Scenario({
           currentParameterItemIds.length > 0 ? currentParameterItemIds : null,
         profileId: effectiveProfile?.id || null,
         userInstructions: userInstructions || null,
-        objectivesEnabled: formData.objectivesEnabled,
+        objectivesEnabled: true, // Always enabled - controlled by simulation page
       });
 
       if (!result.success) {
@@ -1340,13 +1315,12 @@ export default function Scenario({
                 currentParameterItemIds,
                 parameterItemMapping
               ),
-              hints_enabled: formData.hintsEnabled ?? false,
-              objectives_enabled: formData.objectivesEnabled ?? false,
-              image_input_enabled: formData.imageInputEnabled ?? false,
               copy_paste_allowed: formData.copyPasteAllowed ?? false,
-              input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
-              output_guardrail_enabled:
-                formData.outputGuardrailEnabled ?? false,
+              hints_enabled: false, // Controlled by simulation page
+              objectives_enabled: true, // Controlled by simulation page
+              image_input_enabled: false, // Controlled by simulation page
+              input_guardrail_enabled: false, // Controlled by simulation page
+              output_guardrail_enabled: false, // Controlled by simulation page
             });
             // Query will refetch automatically via mutation's onSuccess invalidation
             // The useEffect watching problem_statement_id will update selectedProblemStatementId
@@ -1360,14 +1334,10 @@ export default function Scenario({
         // Update objectives only if regenerateObjectives is true and objectives are enabled
         if (
           shouldRegenerateObjectives &&
-          formData.objectivesEnabled &&
           result.objectives &&
           result.objectives.length > 0
         ) {
           setCurrentObjectives(result.objectives);
-        } else if (!formData.objectivesEnabled) {
-          // Clear objectives if disabled
-          setCurrentObjectives([]);
         }
         // Only show success toast if not in edit mode (edit mode shows its own toast after save)
         if (!isEditMode) {
@@ -1407,12 +1377,7 @@ export default function Scenario({
         document_ids: string[];
         objective_ids: string[];
         parameters: Record<string, string[]>;
-        hints_enabled: boolean;
-        objectives_enabled: boolean;
-        image_input_enabled: boolean;
         copy_paste_allowed: boolean;
-        input_guardrail_enabled: boolean;
-        output_guardrail_enabled: boolean;
       } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
@@ -1425,12 +1390,7 @@ export default function Scenario({
           currentParameterItemIds,
           parameterItemMapping
         ),
-        hints_enabled: formData.hintsEnabled ?? false,
-        objectives_enabled: formData.objectivesEnabled ?? false,
-        image_input_enabled: formData.imageInputEnabled ?? false,
         copy_paste_allowed: formData.copyPasteAllowed ?? false,
-        input_guardrail_enabled: formData.inputGuardrailEnabled ?? false,
-        output_guardrail_enabled: formData.outputGuardrailEnabled ?? false,
       };
 
       // Include problem_statement_versions if in create mode and we have local versions
@@ -1455,6 +1415,11 @@ export default function Scenario({
           await updateScenario({
             scenarioId: scenarioId!,
             ...payload,
+            hints_enabled: false, // Controlled by simulation page
+            objectives_enabled: true, // Controlled by simulation page
+            image_input_enabled: false, // Controlled by simulation page
+            input_guardrail_enabled: false, // Controlled by simulation page
+            output_guardrail_enabled: false, // Controlled by simulation page
           });
           toast.success("Scenario updated successfully!");
           router.push("/create/scenarios");
@@ -1467,7 +1432,14 @@ export default function Scenario({
       } else {
         // CREATE mode - V2 handles all junction tables automatically
         try {
-          await createScenario(payload);
+          await createScenario({
+            ...payload,
+            hints_enabled: false, // Controlled by simulation page
+            objectives_enabled: true, // Controlled by simulation page
+            image_input_enabled: false, // Controlled by simulation page
+            input_guardrail_enabled: false, // Controlled by simulation page
+            output_guardrail_enabled: false, // Controlled by simulation page
+          });
           // Clear local versions after successful creation
           setLocalProblemStatementVersions([]);
           toast.success("Scenario created successfully!");
@@ -1528,8 +1500,8 @@ export default function Scenario({
                 {scenarioData?.generated
                   ? "Generated scenario cannot be edited"
                   : scenarioData?.department_ids?.length === 0
-                  ? "Default scenario cannot be edited"
-                  : "Scenario is in use by active simulations"}
+                    ? "Default scenario cannot be edited"
+                    : "Scenario is in use by active simulations"}
               </h3>
               <div className="mt-2 text-sm text-yellow-700">
                 {scenarioData?.generated ? (
@@ -1540,7 +1512,8 @@ export default function Scenario({
                   </p>
                 ) : scenarioData?.department_ids?.length === 0 ? (
                   <p>
-                    This is a default scenario that cannot be edited. You can view the details but cannot make changes.
+                    This is a default scenario that cannot be edited. You can
+                    view the details but cannot make changes.
                   </p>
                 ) : (
                   <p>
@@ -1751,54 +1724,6 @@ export default function Scenario({
                     Allow students to copy and paste text during the scenario
                   </p>
                 </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="inputGuardrailEnabled"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                      Input Guardrail
-                    </Label>
-                    <Switch
-                      id="inputGuardrailEnabled"
-                      data-testid="switch-scenario-input-guardrail"
-                      checked={formData.inputGuardrailEnabled ?? false}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("inputGuardrailEnabled", checked)
-                      }
-                      disabled={isReadonly}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Monitor and filter inappropriate input from students
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="outputGuardrailEnabled"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                      Output Guardrail
-                    </Label>
-                    <Switch
-                      id="outputGuardrailEnabled"
-                      data-testid="switch-scenario-output-guardrail"
-                      checked={formData.outputGuardrailEnabled ?? false}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("outputGuardrailEnabled", checked)
-                      }
-                      disabled={isReadonly}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Monitor and filter inappropriate output from the persona
-                  </p>
-                </div>
               </div>
             )}
           </CardContent>
@@ -1908,36 +1833,6 @@ export default function Scenario({
                 setCurrentDocumentIds(limitedIds);
               }}
             />
-
-            {/* Image Input Enabled Switch - Only visible to superadmin */}
-            {useDocuments && isSuperadmin && (
-              <div className="space-y-2 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="imageInputEnabled"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      {/* eslint-disable-next-line */}
-                      <Image className="h-3.5 w-3.5 text-muted-foreground" />
-                      Image Vision
-                    </Label>
-                    <Switch
-                      id="imageInputEnabled"
-                      data-testid="switch-scenario-image-input"
-                      checked={formData.imageInputEnabled ?? false}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("imageInputEnabled", checked)
-                      }
-                      disabled={isReadonly}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Enable AI vision to analyze visual content in documents
-                  </p>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -2137,84 +2032,41 @@ export default function Scenario({
             </div>
 
             {/* Hints Enabled and Objectives Enabled Switches */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="hintsEnabled"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Lightbulb className="h-3.5 w-3.5 text-muted-foreground" />
-                    Hints
-                  </Label>
-                  <Switch
-                    id="hintsEnabled"
-                    data-testid="switch-scenario-hints"
-                    checked={formData.hintsEnabled ?? false}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("hintsEnabled", checked)
-                    }
+            {/* Objectives List - Always visible */}
+            <div className="space-y-2">
+              {currentObjectives.length === 0 && (
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addObjective}
                     disabled={isReadonly}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Provide hints to help students progress through the scenario
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="objectivesEnabled"
-                    className="text-sm flex items-center gap-1.5"
+                    size="sm"
                   >
-                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                    Objectives
-                  </Label>
-                  <Switch
-                    id="objectivesEnabled"
-                    data-testid="switch-scenario-objectives"
-                    checked={formData.objectivesEnabled ?? false}
-                    onCheckedChange={(checked) => {
-                      handleInputChange("objectivesEnabled", checked);
-                      // Auto-create first objective when enabling
-                      if (checked && currentObjectives.length === 0) {
-                        setCurrentObjectives([""]);
-                      }
-                    }}
-                    disabled={isReadonly}
-                  />
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                  </Button>
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Display learning objectives to students during the scenario
-                </p>
-              </div>
+              )}
+              {currentObjectives.map((objective, index) => (
+                <ObjectiveInputWithAutocomplete
+                  key={`objective-${index}`}
+                  index={index}
+                  value={objective || ""}
+                  onChange={(value) => updateObjective(index, value)}
+                  placeholder={`Learning objective ${index + 1}`}
+                  suggestions={objectivesHistory}
+                  disabled={isReadonly}
+                  draggedObjectiveIndex={draggedObjectiveIndex}
+                  onDragStart={(e) => handleDragStartObjective(e, index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDropObjective(e, index)}
+                  onRemove={() => removeObjective(index)}
+                  totalObjectives={currentObjectives.length}
+                />
+              ))}
             </div>
 
-            {/* Objectives List */}
-            {formData.objectivesEnabled && (
-              <div className="space-y-2">
-                {currentObjectives.map((objective, index) => (
-                  <ObjectiveInputWithAutocomplete
-                    key={`objective-${index}`}
-                    index={index}
-                    value={objective || ""}
-                    onChange={(value) => updateObjective(index, value)}
-                    placeholder={`Learning objective ${index + 1}`}
-                    suggestions={objectivesHistory}
-                    disabled={isReadonly}
-                    draggedObjectiveIndex={draggedObjectiveIndex}
-                    onDragStart={(e) => handleDragStartObjective(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDropObjective(e, index)}
-                    onRemove={() => removeObjective(index)}
-                    totalObjectives={currentObjectives.length}
-                  />
-                ))}
-              </div>
-            )}
-
-            {formData.objectivesEnabled && currentObjectives.length < 3 && (
+            {currentObjectives.length < 3 && currentObjectives.length > 0 && (
               <div>
                 <Button
                   type="button"
@@ -2288,7 +2140,7 @@ export default function Scenario({
                 disabled={isGeneratingScenario}
               />
             </div>
-            {formData.objectivesEnabled && (
+            {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Label
@@ -2310,7 +2162,7 @@ export default function Scenario({
                   history
                 </p>
               </div>
-            )}
+            }
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel

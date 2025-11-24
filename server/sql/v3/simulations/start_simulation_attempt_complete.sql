@@ -24,7 +24,7 @@ simulation_data AS (
         s.description,
         s.active,
         s.practice_simulation,
-        s.rubric_id
+        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id
     FROM simulations s
     WHERE s.id = $1::uuid
 ),
@@ -58,7 +58,7 @@ scenario_full_data AS (
     SELECT 
         s.id as scenario_id,
         s.name as scenario_name,
-        sps.problem_statement,
+        ps.problem_statement,
         s.active,
         s.generated,
         false as default_scenario,
@@ -103,11 +103,12 @@ scenario_full_data AS (
         ) as parameter_items,
         -- Check if scenario needs generation
         CASE 
-            WHEN sps.problem_statement IS NULL OR sps.problem_statement = '' THEN true
+            WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true
             ELSE false
         END as needs_generation
     FROM scenarios s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     LEFT JOIN personas p ON p.id = sp.persona_id
@@ -123,7 +124,7 @@ scenario_full_data AS (
     LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
     LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
     WHERE s.id = csi.scenario_id
-    GROUP BY s.id, s.name, sps.problem_statement, s.active, 
+    GROUP BY s.id, s.name, ps.problem_statement, s.active, 
              s.generated, p.id, p.name, pr_prompt.system_prompt, 
              p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.provider,
              k.key, me.base_url

@@ -26,7 +26,7 @@ cohort_sims AS (
         pc.cohort_title,
         s.id AS simulation_id,
         s.title AS simulation_title,
-        s.rubric_id
+        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id
     FROM profile_cohorts pc
     JOIN cohort_simulations cs ON cs.cohort_id = pc.cohort_id
     JOIN simulations s ON s.id = cs.simulation_id
@@ -84,8 +84,12 @@ user_sim_status AS (
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
             (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
-             FROM simulations s JOIN rubrics r ON r.id = s.rubric_id
-             WHERE s.id = aa.simulation_id), 70
+             FROM simulations s
+             LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
+             LEFT JOIN rubrics r ON r.id = ss_rubric.rubric_id
+             WHERE s.id = aa.simulation_id
+             ORDER BY ss_rubric.position
+             LIMIT 1), 70
         )) AS passed
     FROM attempt_avg aa
     GROUP BY aa.profile_id, aa.simulation_id

@@ -451,7 +451,7 @@
                 FROM paginated_metrics pm
             )
             SELECT json_build_object(
-                'data', COALESCE((SELECT json_agg(json_build_object(
+                'data', COALESCE((                SELECT json_agg(json_build_object(
                     'profileId', profile_id::text,
                     'firstName', first_name,
                     'lastName', last_name,
@@ -624,13 +624,20 @@
                         s.id::text,
                         jsonb_build_object(
                             'name', s.name,
-                            'description', COALESCE(sps.problem_statement, '')
+                            'description', COALESCE(
+                                (SELECT ps.problem_statement 
+                                 FROM scenario_problem_statements sps
+                                 JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+                                 WHERE sps.scenario_id = s.id AND sps.active = true
+                                 ORDER BY sps.created_at DESC, sps.updated_at DESC
+                                 LIMIT 1), 
+                                ''
+                            )
                         )
                     )
                     FROM scenarios s
                     -- Only include parent scenarios (where parent_id = child_id in scenario_tree)
                     JOIN scenario_tree st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
-                    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
                     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
                     WHERE s.active = true
                       -- Only include parent scenarios that have child scenarios appearing in the filtered data

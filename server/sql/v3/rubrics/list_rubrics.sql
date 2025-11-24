@@ -35,12 +35,12 @@ simulation_department_access_for_rubrics AS (
 ),
 rubric_simulations_data AS (
     SELECT 
-        s.rubric_id,
+        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
         ARRAY_AGG(s.id::text ORDER BY s.title) as simulation_ids
     FROM simulations s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     WHERE s.active = true
-    GROUP BY s.rubric_id
+    GROUP BY (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1)
 ),
 rubric_departments_data AS (
     SELECT 

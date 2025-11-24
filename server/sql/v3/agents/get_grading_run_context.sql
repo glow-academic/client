@@ -25,12 +25,17 @@ attempt_info AS (
 simulation_info AS (
     SELECT 
         s.id,
-        s.rubric_id,
+        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
         (SELECT sd.department_id::text FROM simulation_departments sd 
          WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as department_id,
-        stl.time_limit_seconds as time_limit
+        COALESCE(
+            (SELECT SUM(stl.time_limit_seconds)
+             FROM scenario_time_limits stl
+             JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
+             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+            0
+        ) as time_limit
     FROM simulations s
-    LEFT JOIN simulation_time_limits stl ON stl.simulation_id = s.id AND stl.active = true
     WHERE s.id = (SELECT simulation_id FROM attempt_info)
 ),
 best_agent AS (
@@ -84,7 +89,7 @@ SELECT
     ci.completed,
     
     -- Scenario data
-    sps.problem_statement,
+    ps.problem_statement,
     
     -- Attempt data
     ai.id::text as attempt_id,
@@ -178,6 +183,7 @@ CROSS JOIN simulation_info si
 CROSS JOIN best_agent ba
 INNER JOIN scenarios sc ON sc.id = ci.scenario_id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
+LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 INNER JOIN rubrics r ON r.id = si.rubric_id
 LEFT JOIN standard_groups sg ON sg.rubric_id = r.id
 LEFT JOIN standards std ON std.standard_group_id = sg.id
@@ -197,7 +203,7 @@ LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created_at, ci.completed,
-         sps.problem_statement,
+         ps.problem_statement,
          ai.id, ai.simulation_id, ai.total_chats,
          si.id, si.rubric_id, si.department_id, si.time_limit,
          r.id, r.name, r.description, r.points, r.pass_points,
