@@ -50,6 +50,7 @@ CREATE TABLE simulation_videos (
   video_id      UUID NOT NULL REFERENCES videos(id)   ON DELETE CASCADE,
   position      INT  NOT NULL DEFAULT 1,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
+  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, video_id)

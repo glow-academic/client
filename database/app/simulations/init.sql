@@ -13,11 +13,11 @@ CREATE TABLE simulations (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
   description TEXT        NOT NULL DEFAULT 'No description provided',
-  -- time_limit moved to simulation_time_limits junction table (absence = infinite)
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
-  rubric_id   UUID        NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
   practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE
-  -- Flags moved to scenarios table: hints_enabled, objectives_enabled, image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
+  -- rubric_id moved to simulation_scenarios junction table
+  -- time_limit moved to scenario_time_limits junction table (absence = infinite)
+  -- Flags moved to simulation_scenarios junction table: hints_enabled, objectives_enabled, image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
 );
 
 -- Simulation → Departments junction table (BCNF normalization)
@@ -34,12 +34,18 @@ CREATE TABLE simulation_departments (
 CREATE INDEX ON simulation_departments (simulation_id);
 CREATE INDEX ON simulation_departments (department_id);
 
--- Simulation → Scenarios junction table with ordering
+-- Simulation → Scenarios junction table with ordering and scenario-specific settings
 CREATE TABLE simulation_scenarios (
   simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
   scenario_id   UUID NOT NULL REFERENCES scenarios(id)   ON DELETE CASCADE,
   position      INT  NOT NULL DEFAULT 1,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
+  hints_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  input_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  image_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  rubric_id UUID REFERENCES rubrics(id) ON DELETE CASCADE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, scenario_id)
@@ -47,24 +53,28 @@ CREATE TABLE simulation_scenarios (
 
 CREATE INDEX ON simulation_scenarios (simulation_id);
 CREATE INDEX ON simulation_scenarios (scenario_id);
+CREATE INDEX ON simulation_scenarios (rubric_id);
 
 -- Enforce unique ordering within each simulation
 CREATE UNIQUE INDEX simulation_scenarios_position_uniq
   ON simulation_scenarios(simulation_id, position);
 
--- Simulation time limits junction table (BCNF normalization)
+-- Scenario time limits junction table (BCNF normalization)
 -- Logic: If record exists -> use time limit, if no record -> infinite/no time limit
 -- For attempts: simulation_attempts.infinite_mode flag determines if time limits apply
-CREATE TABLE simulation_time_limits (
-  simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
+CREATE TABLE scenario_time_limits (
+  simulation_id UUID NOT NULL,
+  scenario_id UUID NOT NULL,
   time_limit_seconds INTEGER NOT NULL CHECK (time_limit_seconds > 0),
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (simulation_id)
+  PRIMARY KEY (simulation_id, scenario_id),
+  FOREIGN KEY (simulation_id, scenario_id) REFERENCES simulation_scenarios(simulation_id, scenario_id) ON DELETE CASCADE
 );
 
-CREATE INDEX ON simulation_time_limits (simulation_id);
+CREATE INDEX ON scenario_time_limits (simulation_id);
+CREATE INDEX ON scenario_time_limits (scenario_id);
 
 -- Note: Simulation tags and tag-related tables (simulation_tags, simulation_tag_documents, 
 -- simulation_tag_parameter_items, v_tagged_documents, v_tagged_parameter_items) 
