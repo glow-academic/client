@@ -302,7 +302,7 @@ export default function Info() {
               className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-12"
             >
               {[
-                { number: "200+", label: "Active Students", color: "yellow" },
+                { number: "200+", label: "Students", color: "yellow" },
                 {
                   number: "25,000+",
                   label: "Minutes Practiced",

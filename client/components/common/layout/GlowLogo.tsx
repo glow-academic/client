@@ -73,21 +73,33 @@ export function GlowLogo({
           lightBackground
             ? "bg-white/60 backdrop-blur-sm border border-blue-300/40"
             : invertColors
-              ? "bg-white/20 backdrop-blur-sm border border-white/30"
+              ? "bg-white/95 border border-gray-300/50"
               : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500"
         }`}
       >
         {/* Logo sparkles */}
         <div className="absolute inset-0 flex items-center justify-center">
           <SparkleIcon
-            className={`${iconSize} ${lightBackground ? "text-black" : "text-white"} animate-pulse`}
+            className={`${iconSize} ${
+              lightBackground
+                ? "text-black"
+                : invertColors
+                  ? "text-gray-900"
+                  : "text-white"
+            } animate-pulse`}
           />
           <div
             className="absolute top-1 right-1 animate-ping"
             style={{ animationDelay: "0.5s" }}
           >
             <SparkleIcon
-              className={`w-2 h-2 ${lightBackground ? "text-black/70" : "text-white/70"}`}
+              className={`w-2 h-2 ${
+                lightBackground
+                  ? "text-black/70"
+                  : invertColors
+                    ? "text-gray-700"
+                    : "text-white/70"
+              }`}
             />
           </div>
           <div
@@ -95,7 +107,13 @@ export function GlowLogo({
             style={{ animationDelay: "1s" }}
           >
             <SparkleIcon
-              className={`w-1.5 h-1.5 ${lightBackground ? "text-black/50" : "text-white/50"}`}
+              className={`w-1.5 h-1.5 ${
+                lightBackground
+                  ? "text-black/50"
+                  : invertColors
+                    ? "text-gray-600"
+                    : "text-white/50"
+              }`}
             />
           </div>
         </div>
@@ -106,7 +124,7 @@ export function GlowLogo({
             ? "text-black"
             : invertColors
               ? "text-white drop-shadow-lg"
-              : "bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 bg-clip-text text-transparent"
+              : "bg-gradient-to-br from-blue-300 to-blue-400 bg-clip-text text-transparent"
         } ${mobileIconOnly ? "hidden md:block" : ""}`}
       >
         GLOW

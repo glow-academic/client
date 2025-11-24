@@ -6,13 +6,13 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
 // Provider icon component - renders icon from URL or fallback
 const ProviderIcon = ({
@@ -24,19 +24,21 @@ const ProviderIcon = ({
 }) => {
   if (icon) {
     return (
-      <Image
-        src={icon}
-        alt={name}
-        width={20}
-        height={20}
-        className="w-5 h-5"
-        unoptimized={true} // External URLs, no optimization needed for small icons
-      />
+      <div className="w-7 h-7 rounded bg-white/90 p-1 shadow-sm flex items-center justify-center">
+        <Image
+          src={icon}
+          alt={name}
+          width={20}
+          height={20}
+          className="w-full h-full object-contain"
+          unoptimized={true} // External URLs, no optimization needed for small icons
+        />
+      </div>
     );
   }
   // Fallback: simple circle icon if no icon URL provided
   return (
-    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+    <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm">
       <span className="text-xs text-gray-700 font-bold">
         {name.charAt(0).toUpperCase()}
       </span>
@@ -45,9 +47,13 @@ const ProviderIcon = ({
 };
 
 // User Icon Component
-const UserIcon = () => (
+const UserIcon = ({
+  className = "w-5 h-5 text-white",
+}: {
+  className?: string;
+}) => (
   <svg
-    className="w-5 h-5 text-gray-700"
+    className={className}
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -206,7 +212,6 @@ const AnimatedSparkles = () => {
   );
 };
 
-
 // Define the shape of data coming from API
 interface ProviderOption {
   id: string; // The slug (microsoft, google, purdue)
@@ -334,14 +339,16 @@ export default function Login({ providers = [] }: LoginProps) {
         variants={fadeInUp}
         className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+          boxShadow:
+            "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
         }}
       >
         {/* Liquid glass shine effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-2xl" />
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        
+
         {/* Content Container */}
         <div className="relative z-10">
           {/* Header - Stacked Logo */}
@@ -375,7 +382,7 @@ export default function Login({ providers = [] }: LoginProps) {
                 </div>
               </div>
               {/* GLOW Text */}
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold bg-gradient-to-br from-blue-300 to-blue-400 bg-clip-text text-transparent">
                 GLOW
               </h1>
             </Link>
@@ -388,81 +395,102 @@ export default function Login({ providers = [] }: LoginProps) {
             variants={staggerContainer}
             className="space-y-6 mt-8"
           >
-          <div className="space-y-4">
-            {/* 🚀 DYNAMIC PROVIDER LIST - Renders buttons for all providers from API */}
-            {providers.map((provider) => (
-              <motion.div
-                key={provider.id}
-                variants={cardVariants}
-                whileHover="hover"
-              >
+            <div className="space-y-4">
+              {/* 🚀 DYNAMIC PROVIDER LIST - Renders buttons for all providers from API */}
+              {providers.map((provider) => (
+                <motion.div
+                  key={provider.id}
+                  variants={cardVariants}
+                  whileHover="hover"
+                >
+                  <Button
+                    type="button"
+                    onClick={() => handleSSOLogin(provider)}
+                    disabled={loading[provider.id]}
+                    data-testid={`${provider.id}-login-button`}
+                    className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                      boxShadow:
+                        "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
+                    }}
+                  >
+                    {/* Liquid glass shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                    <div className="relative flex items-center justify-center space-x-3">
+                      {loading[provider.id] ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <ProviderIcon
+                          icon={provider.icon}
+                          name={provider.name}
+                        />
+                      )}
+                      <span className="text-base">
+                        {loading[provider.id]
+                          ? "Signing in..."
+                          : `Continue with ${provider.name}`}
+                      </span>
+                    </div>
+                  </Button>
+                </motion.div>
+              ))}
+
+              {/* Divider - only show if there are SSO providers */}
+              {providers.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="relative py-2"
+                >
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/30" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase z-10">
+                    <span className="bg-blue-400 px-4 py-1 text-white font-medium tracking-wider rounded backdrop-blur-sm">
+                      Or
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Guest Access Button */}
+              <motion.div variants={cardVariants} whileHover="hover">
                 <Button
                   type="button"
-                  onClick={() => handleSSOLogin(provider)}
-                  disabled={loading[provider.id]}
-                  data-testid={`${provider.id}-login-button`}
+                  onClick={handleGuestAccess}
+                  disabled={loadingGuest}
+                  data-testid="guest-login-button"
                   className="w-full h-12 bg-blue-500/80 hover:bg-blue-500/90 backdrop-blur-sm text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center justify-center space-x-3">
-                    {loading[provider.id] ? (
+                    {loadingGuest ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
-                      <ProviderIcon icon={provider.icon} name={provider.name} />
+                      <UserIcon />
                     )}
                     <span className="text-base">
-                      {loading[provider.id]
-                        ? "Signing in..."
-                        : `Continue with ${provider.name}`}
+                      {loadingGuest ? "Accessing..." : "Continue as Guest"}
                     </span>
                   </div>
                 </Button>
               </motion.div>
-            ))}
-
-            {/* Divider - only show if there are SSO providers */}
-            {providers.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="relative py-2"
-              >
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white/95 px-4 text-gray-600 font-medium tracking-wider">
-                    Or
-                  </span>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Guest Access Button */}
-            <motion.div
-              variants={cardVariants}
-              whileHover="hover"
-            >
-              <Button
-                type="button"
-                onClick={handleGuestAccess}
-                disabled={loadingGuest}
-                data-testid="guest-login-button"
-                className="w-full h-12 bg-white/95 hover:bg-white backdrop-blur-sm text-gray-900 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-center justify-center space-x-3">
-                  {loadingGuest ? (
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
-                  ) : (
-                    <UserIcon />
-                  )}
-                  <span className="text-base">
-                    {loadingGuest ? "Accessing..." : "Continue as Guest"}
-                  </span>
-                </div>
-              </Button>
-            </motion.div>
-          </div>
+            </div>
           </motion.div>
         </div>
       </motion.div>
