@@ -4,7 +4,6 @@ WITH source_video AS (
     SELECT 
         v.id as source_id,
         v.name,
-        v.description,
         v.length_seconds,
         v.active
     FROM videos v
@@ -13,7 +12,6 @@ WITH source_video AS (
 new_video AS (
     INSERT INTO videos (
         name,
-        description,
         length_seconds,
         active,
         created_at,
@@ -21,7 +19,6 @@ new_video AS (
     )
     SELECT 
         sv.name || ' Copy',
-        sv.description,
         sv.length_seconds,
         false,  -- Duplicated videos start inactive
         NOW(),

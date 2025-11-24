@@ -3,7 +3,7 @@
 SELECT 
     s.id,
     s.name,
-    sps.problem_statement,
+    ps.problem_statement,
     COALESCE((
         SELECT persona_id::text
         FROM scenario_personas 
@@ -14,14 +14,15 @@ SELECT
     CASE 
         WHEN LOWER(s.name) = LOWER($1) THEN 100
         WHEN LOWER(s.name) LIKE LOWER($1) || '%' THEN 80
-        WHEN LOWER(s.name) LIKE '%' || LOWER($1) || '%' OR LOWER(sps.problem_statement) LIKE '%' || LOWER($1) || '%' THEN 50
+        WHEN LOWER(s.name) LIKE '%' || LOWER($1) || '%' OR LOWER(ps.problem_statement) LIKE '%' || LOWER($1) || '%' THEN 50
         ELSE 10
     END as score
 FROM scenarios s
-LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+LEFT JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
+LEFT JOIN problem_statements ps ON ps.id = sps_j.problem_statement_id
 WHERE 
     LOWER(s.name) LIKE '%' || LOWER($1) || '%'
-    OR LOWER(sps.problem_statement) LIKE '%' || LOWER($1) || '%'
+    OR LOWER(ps.problem_statement) LIKE '%' || LOWER($1) || '%'
 ORDER BY score DESC, s.name
 LIMIT $2;
 

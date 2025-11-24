@@ -19,6 +19,7 @@ class UpdateScenarioRequest(BaseModel):
     scenarioId: str
     name: str
     problem_statement: str
+    problem_statement_name: str | None = None  # Optional, defaults to scenario name
     department_ids: list[str] | None
     active: bool
     persona_ids: list[str] | None
@@ -92,6 +93,7 @@ async def update_scenario(
             request.input_guardrail_enabled,
             request.output_guardrail_enabled,
             request.problem_statement,
+            request.problem_statement_name,  # Optional problem statement name
             department_ids if department_ids else None,
             persona_ids if persona_ids else None,
             document_ids,

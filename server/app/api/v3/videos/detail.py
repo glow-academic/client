@@ -47,11 +47,14 @@ class VideoDetailResponse(BaseModel):
     """Response for video detail."""
 
     name: str
-    description: str
     length_seconds: int
     active: bool
     department_ids: list[str] | None
     valid_department_ids: list[str]
+    problem_statement_ids: list[str]
+    objective_ids: list[str]
+    objective_mapping: dict[str, dict[str, str]]
+    policy_ids: list[str]
     can_edit: bool
     can_duplicate: bool
     can_delete: bool
@@ -182,13 +185,37 @@ async def get_video_detail(
         if not isinstance(valid_dept_ids, list):
             valid_dept_ids = []
 
+        # Parse objective_mapping from JSONB
+        objective_mapping_data = parse_jsonb(video.get("objective_mapping"))
+        objective_mapping: dict[str, dict[str, str]] = {}
+        if isinstance(objective_mapping_data, dict):
+            objective_mapping = {
+                k: {"name": v.get("name", ""), "description": v.get("description", "")}
+                for k, v in objective_mapping_data.items()
+            }
+
+        problem_statement_ids = video.get("problem_statement_ids") or []
+        if not isinstance(problem_statement_ids, list):
+            problem_statement_ids = []
+        
+        objective_ids = video.get("objective_ids") or []
+        if not isinstance(objective_ids, list):
+            objective_ids = []
+        
+        policy_ids = video.get("policy_ids") or []
+        if not isinstance(policy_ids, list):
+            policy_ids = []
+
         response_data = VideoDetailResponse(
             name=video["name"],
-            description=video["description"],
             length_seconds=video["length_seconds"],
             active=video["active"],
             department_ids=dept_ids,
             valid_department_ids=[str(did) for did in valid_dept_ids],
+            problem_statement_ids=[str(psid) for psid in problem_statement_ids],
+            objective_ids=[str(oid) for oid in objective_ids],
+            objective_mapping=objective_mapping,
+            policy_ids=[str(pid) for pid in policy_ids],
             can_edit=video["can_edit"],
             can_duplicate=video["can_duplicate"],
             can_delete=video["can_delete"],

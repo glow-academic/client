@@ -25,7 +25,6 @@ video_data AS (
     SELECT 
         v.id as video_id,
         v.name,
-        v.description,
         v.length_seconds,
         v.active,
         v.updated_at,
@@ -54,7 +53,7 @@ video_data AS (
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
     LEFT JOIN video_all_simulation_links vasl ON vasl.video_id = v.id
     CROSS JOIN user_profile up
-    GROUP BY v.id, v.name, v.description, v.length_seconds, v.active, v.updated_at, 
+    GROUP BY v.id, v.name, v.length_seconds, v.active, v.updated_at, 
              vdd.department_ids, vasl.total_links, up.role
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)

@@ -120,20 +120,8 @@ export function Videos({
         },
         filterFn: (row, id, value) => {
           const name = String(row.getValue(id)).toLowerCase();
-          const desc = String(row.original.description).toLowerCase();
           const query = String(value).toLowerCase();
-          return name.includes(query) || desc.includes(query);
-        },
-      },
-      {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => {
-          return (
-            <div className="text-sm text-muted-foreground line-clamp-2">
-              {row.original.description || "No description"}
-            </div>
-          );
+          return name.includes(query);
         },
       },
       {
@@ -331,9 +319,6 @@ export function Videos({
         </div>
       </CardHeader>
       <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {video.description || "No description provided."}
-        </p>
         <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground flex-wrap">
           <span className="flex items-center gap-1">
             {formatDuration(video.length_seconds)}

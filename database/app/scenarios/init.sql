@@ -76,22 +76,19 @@ CREATE TABLE scenario_departments (
 CREATE INDEX ON scenario_departments (scenario_id);
 CREATE INDEX ON scenario_departments (department_id);
 
--- Scenario problem statements table (supports historical tracking)
+-- Scenario → Problem Statements junction table (BCNF normalization)
 CREATE TABLE scenario_problem_statements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
-  problem_statement TEXT NOT NULL,
-  active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  scenario_id         UUID NOT NULL REFERENCES scenarios(id)         ON DELETE CASCADE,
+  problem_statement_id UUID NOT NULL REFERENCES problem_statements(id) ON DELETE CASCADE,
+  active              BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, problem_statement_id)
 );
 
--- Only one active problem statement per scenario
-CREATE UNIQUE INDEX scenario_problem_statements_one_active_per_scenario
-  ON scenario_problem_statements(scenario_id) WHERE active;
-
-CREATE INDEX ON scenario_problem_statements(scenario_id);
-CREATE INDEX ON scenario_problem_statements(scenario_id, active);
+CREATE INDEX ON scenario_problem_statements (scenario_id);
+CREATE INDEX ON scenario_problem_statements (problem_statement_id);
+CREATE INDEX ON scenario_problem_statements (scenario_id, active);
 
 -- Scenario ↔ Persona junction table (BCNF normalization - replaces scenarios.persona_id)
 CREATE TABLE scenario_personas (
@@ -111,17 +108,17 @@ CREATE UNIQUE INDEX scenario_personas_one_active_per_scenario
 CREATE INDEX ON scenario_personas (persona_id);
 CREATE INDEX ON scenario_personas (scenario_id, active);
 
--- Scenario objectives collection table (BCNF normalization)
--- Normalized text collection pattern: composite PK with idx, created_at only
+-- Scenario → Objectives junction table (BCNF normalization)
 CREATE TABLE scenario_objectives (
   scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  objective_id UUID NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
   idx         INT  NOT NULL,
-  objective   TEXT NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (scenario_id, idx)
+  PRIMARY KEY (scenario_id, objective_id)
 );
 
 CREATE INDEX ON scenario_objectives (scenario_id);
+CREATE INDEX ON scenario_objectives (objective_id);
 
 -- Scenario → Parameter Items junction table
 CREATE TABLE scenario_parameter_items (

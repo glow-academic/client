@@ -1,7 +1,10 @@
 -- Update video with all relationships in a single transaction
--- Parameters: $1=video_id, $2=name, $3=description, $4=length_seconds, $5=active,
---            $6=department_ids (text array, nullable),
---            $7=questions_json (JSONB string with questions array)
+-- Parameters: $1=video_id, $2=name, $3=length_seconds, $4=active,
+--            $5=department_ids (text array, nullable),
+--            $6=problem_statement_ids (text array, nullable),
+--            $7=objective_ids (text array, nullable),
+--            $8=policy_ids (text array, nullable),
+--            $9=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
 
@@ -10,9 +13,8 @@ WITH updated_video AS (
     UPDATE videos
     SET 
         name = $2,
-        description = $3,
-        length_seconds = $4,
-        active = $5,
+        length_seconds = $3,
+        active = $4,
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::uuid as video_id, name
@@ -42,8 +44,61 @@ link_departments AS (
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST($6::text[]) as dept_id
+    CROSS JOIN UNNEST($5::text[]) as dept_id
+    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+),
+delete_old_problem_statements AS (
+    -- Delete old problem statement links
+    DELETE FROM video_problem_statements
+    WHERE video_id = $1::uuid
+),
+link_problem_statements AS (
+    -- Link problem statements if provided
+    INSERT INTO video_problem_statements (video_id, problem_statement_id, active, created_at, updated_at)
+    SELECT 
+        uv.video_id,
+        ps_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM updated_video uv
+    CROSS JOIN UNNEST($6::text[]) as ps_id
     WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+),
+delete_old_objectives AS (
+    -- Delete old objective links
+    DELETE FROM video_objectives
+    WHERE video_id = $1::uuid
+),
+link_objectives AS (
+    -- Link objectives if provided (with idx for ordering)
+    INSERT INTO video_objectives (video_id, objective_id, idx, created_at)
+    SELECT 
+        uv.video_id,
+        obj_id::uuid,
+        ROW_NUMBER() OVER () - 1 as idx,
+        NOW()
+    FROM updated_video uv
+    CROSS JOIN UNNEST($7::text[]) as obj_id
+    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+),
+delete_old_policies AS (
+    -- Delete old policy links
+    DELETE FROM video_policies
+    WHERE video_id = $1::uuid
+),
+link_policies AS (
+    -- Link policies if provided
+    INSERT INTO video_policies (video_id, policy_id, active, created_at, updated_at)
+    SELECT 
+        uv.video_id,
+        policy_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM updated_video uv
+    CROSS JOIN UNNEST($8::text[]) as policy_id
+    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
 ),
 questions_data AS (
     -- Parse questions from JSON
@@ -54,7 +109,7 @@ questions_data AS (
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
     FROM updated_video uv
-    CROSS JOIN jsonb_array_elements($7::jsonb) as q
+    CROSS JOIN jsonb_array_elements($9::jsonb) as q
 ),
 create_questions AS (
     -- Create questions (or get existing if they match)

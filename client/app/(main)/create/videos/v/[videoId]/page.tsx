@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 
-import { DepartmentAccessDenied } from "@/components/common/DepartmentAccessDenied";
+import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import Video from "@/components/videos/Video";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";

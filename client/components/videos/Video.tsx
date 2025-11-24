@@ -5,7 +5,7 @@
  * 01/21/2025
  */
 "use client";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { Check, Plus, Power, Trash2, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,13 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +39,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 // Custom Components
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
@@ -162,7 +156,6 @@ export default function Video({
 
   type FormData = {
     name: string;
-    description: string;
     length_seconds: number;
     departmentIds: string[];
     active: boolean;
@@ -171,7 +164,6 @@ export default function Video({
   const initialFormData: FormData = useMemo(
     () => ({
       name: "",
-      description: "",
       length_seconds: 0,
       departmentIds: defaultDepartmentIds,
       active: true,
@@ -198,7 +190,6 @@ export default function Video({
       const deptIds = videoData.department_ids || [];
       setFormData({
         name: videoData.name,
-        description: videoData.description,
         length_seconds: videoData.length_seconds,
         departmentIds: deptIds,
         active: videoData.active ?? true,
@@ -247,9 +238,6 @@ export default function Video({
     if (!formData["name"].trim()) {
       newErrors["name"] = "Name is required";
     }
-    if (!formData["description"].trim()) {
-      newErrors["description"] = "Description is required";
-    }
     if (formData["length_seconds"] <= 0) {
       newErrors["length_seconds"] = "Length must be greater than 0";
     }
@@ -290,9 +278,11 @@ export default function Video({
         const updatePayload = {
           videoId,
           name: formData.name,
-          description: formData.description,
           length_seconds: formData.length_seconds,
           department_ids: finalDepartmentIds,
+          problem_statement_ids: [], // TODO: Add problem statement picker
+          objective_ids: [], // TODO: Add objective picker
+          policy_ids: [], // TODO: Add policy picker
           active: formData.active,
           questions: questionsForApi,
         };
@@ -303,9 +293,11 @@ export default function Video({
         // CREATE mode
         const createPayload = {
           name: formData.name,
-          description: formData.description,
           length_seconds: formData.length_seconds,
           department_ids: finalDepartmentIds,
+          problem_statement_ids: [], // TODO: Add problem statement picker
+          objective_ids: [], // TODO: Add objective picker
+          policy_ids: [], // TODO: Add policy picker
           active: formData.active,
           questions: questionsForApi,
         };
@@ -475,232 +467,286 @@ export default function Video({
     return Array.from(times).sort((a, b) => a - b);
   }, [questions]);
 
+  // Video upload state (placeholder for now)
+  const [uploadedVideoFile, setUploadedVideoFile] = useState<File | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+  const hasSetLengthRef = useRef<boolean>(false);
+
+  // Create object URL when file changes
+  useEffect(() => {
+    if (uploadedVideoFile) {
+      const url = URL.createObjectURL(uploadedVideoFile);
+      setVideoObjectUrl(url);
+      hasSetLengthRef.current = false;
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      setVideoObjectUrl(null);
+      hasSetLengthRef.current = false;
+      return undefined;
+    }
+  }, [uploadedVideoFile]);
+
+  const handleVideoLoadedMetadata = () => {
+    if (videoRef.current && !hasSetLengthRef.current) {
+      const duration = Math.floor(videoRef.current.duration);
+      if (duration > 0 && !isNaN(duration)) {
+        hasSetLengthRef.current = true;
+        handleInputChange("length_seconds", duration);
+      }
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("video/")) {
+      setUploadedVideoFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) {
+      setUploadedVideoFile(file);
+    }
+  };
+
+  const handleRemoveVideo = () => {
+    setUploadedVideoFile(null);
+    handleInputChange("length_seconds", 0);
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">
-            {isEditMode ? "Edit Video" : "Create Video"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isEditMode
-              ? "Edit video details and configure questions"
-              : "Create a new video with interactive questions"}
-          </p>
+    <div className="space-y-6 py-4 px-4">
+      {/* Form Fields */}
+      <div className="space-y-4">
+        {/* Name */}
+        <div className="space-y-2">
+          <Label htmlFor="name">Video Name *</Label>
+          <Input
+            id="name"
+            value={formData["name"]}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="Enter video name"
+            disabled={isReadonly}
+            data-testid="input-video-name"
+          />
+          {errors["name"] && (
+            <p className="text-sm text-destructive">{errors["name"]}</p>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/create/videos")}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || isReadonly}>
-            {isSubmitting
-              ? "Saving..."
-              : isEditMode
-                ? "Update Video"
-                : "Create Video"}
-          </Button>
+
+        {/* Department Selection */}
+        {videoData?.valid_department_ids &&
+          videoData.valid_department_ids.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              {formData?.departmentIds !== undefined ? (
+                <DepartmentPicker
+                  mapping={departmentMapping}
+                  validIds={Array.from(
+                    new Set([
+                      ...(videoData?.valid_department_ids || []),
+                      ...(formData.departmentIds || []),
+                    ])
+                  )}
+                  selectedIds={formData.departmentIds || []}
+                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                  placeholder="All Departments"
+                  disabled={isReadonly}
+                  multiSelect={true}
+                />
+              ) : null}
+            </div>
+          )}
+
+        {/* Active Switch */}
+        <div className="space-y-2 pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="active"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                Active
+              </Label>
+              <Switch
+                id="active"
+                checked={formData.active}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+                disabled={isReadonly}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Inactive videos will not be available for use
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Form Fields */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Video Information</CardTitle>
-          <CardDescription>Basic information about the video</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={formData["name"]}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              placeholder="Enter video name"
-              disabled={isReadonly}
-              data-testid="input-video-name"
+      {/* Video Upload Section */}
+      <div className="space-y-2">
+        <Label>Video Upload</Label>
+        {uploadedVideoFile && videoObjectUrl ? (
+          <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
+            <video
+              ref={videoRef}
+              src={videoObjectUrl}
+              controls
+              className="w-full h-full rounded-lg"
+              onLoadedMetadata={handleVideoLoadedMetadata}
             />
-            {errors["name"] && (
-              <p className="text-sm text-destructive">{errors["name"]}</p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              value={formData["description"]}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Enter video description"
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRemoveVideo}
+              className="absolute top-2 right-2"
               disabled={isReadonly}
-              rows={3}
-              data-testid="input-video-description"
-            />
-            {errors["description"] && (
-              <p className="text-sm text-destructive">
-                {errors["description"]}
-              </p>
-            )}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Length */}
-          <div className="space-y-2">
-            <Label htmlFor="length_seconds">Length (seconds) *</Label>
-            <Input
-              id="length_seconds"
-              type="number"
-              min="1"
-              value={formData["length_seconds"]}
-              onChange={(e) =>
-                handleInputChange(
-                  "length_seconds",
-                  parseInt(e.target.value) || 0
-                )
+        ) : (
+          <div
+            className={cn(
+              "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative aspect-video flex items-center justify-center",
+              isDragActive
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-primary/50"
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => {
+              if (!isReadonly) {
+                document.getElementById("video-upload-input")?.click();
               }
-              placeholder="Enter video length in seconds"
+            }}
+          >
+            <input
+              id="video-upload-input"
+              type="file"
+              accept="video/*"
+              onChange={handleFileSelect}
               disabled={isReadonly}
-              data-testid="input-video-length"
+              className="hidden"
             />
-            {errors["length_seconds"] && (
-              <p className="text-sm text-destructive">
-                {errors["length_seconds"]}
-              </p>
-            )}
-          </div>
-
-          {/* Department Selection */}
-          {videoData?.valid_department_ids &&
-            videoData.valid_department_ids.length > 1 && (
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                {formData?.departmentIds !== undefined ? (
-                  <DepartmentPicker
-                    mapping={departmentMapping}
-                    validIds={Array.from(
-                      new Set([
-                        ...(videoData?.valid_department_ids || []),
-                        ...(formData.departmentIds || []),
-                      ])
-                    )}
-                    selectedIds={formData.departmentIds || []}
-                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                    placeholder="All Departments"
-                    disabled={isReadonly}
-                    multiSelect={true}
-                  />
-                ) : null}
-              </div>
-            )}
-
-          {/* Active Switch */}
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch
-              id="active"
-              checked={formData.active}
-              onCheckedChange={(checked) =>
-                handleInputChange("active", checked)
-              }
-              disabled={isReadonly}
-            />
-            <Label htmlFor="active">Active</Label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Video Player Section */}
-      {formData.length_seconds > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Video Player</CardTitle>
-            <CardDescription>
-              Click on the timeline to add questions at specific times
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Video Player Placeholder */}
-            <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center">
-              <div className="text-white text-center">
-                <p className="text-lg mb-2">Video Player</p>
-                <p className="text-sm text-gray-400">
-                  Video URL will be loaded from endpoint
+            <div className="space-y-3">
+              <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
+              <div>
+                <p className="text-lg font-medium">
+                  Click to upload or drag and drop
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Video files only
                 </p>
               </div>
             </div>
+          </div>
+        )}
+      </div>
 
-            {/* Timeline */}
-            <div className="space-y-2">
-              <Label>Timeline</Label>
-              <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
-                {/* Timeline markers */}
-                {allQuestionTimes.map((time) => (
-                  <Tooltip key={time}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const question = questions.find((q) =>
-                            q.times.includes(time)
-                          );
-                          if (question) {
-                            openQuestionModal(time, question);
-                          } else {
-                            openQuestionModal(time);
-                          }
-                        }}
-                        className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
-                        style={{
-                          left: `${(time / formData.length_seconds) * 100}%`,
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{formatTime(time)}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
+      {/* Length Field - Only show if no video is uploaded */}
+      {!uploadedVideoFile && (
+        <div className="space-y-2">
+          <Label htmlFor="length_seconds">Length (seconds) *</Label>
+          <Input
+            id="length_seconds"
+            type="number"
+            min="1"
+            value={formData["length_seconds"]}
+            onChange={(e) =>
+              handleInputChange("length_seconds", parseInt(e.target.value) || 0)
+            }
+            placeholder="Enter video length in seconds"
+            disabled={isReadonly}
+            data-testid="input-video-length"
+          />
+          {errors["length_seconds"] && (
+            <p className="text-sm text-destructive">
+              {errors["length_seconds"]}
+            </p>
+          )}
+        </div>
+      )}
 
-                {/* Clickable timeline */}
-                <div
-                  className="absolute inset-0 cursor-pointer"
-                  onClick={(e) => {
-                    if (isReadonly) return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const time = Math.floor(
-                      percentage * formData.length_seconds
-                    );
-                    openQuestionModal(time);
-                  }}
-                />
+      {/* Timeline (only show if length > 0) */}
+      {formData.length_seconds > 0 && (
+        <div className="space-y-2">
+          <Label>Timeline</Label>
+          <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
+            {/* Timeline markers */}
+            {allQuestionTimes.map((time) => (
+              <Tooltip key={time}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const question = questions.find((q) =>
+                        q.times.includes(time)
+                      );
+                      if (question) {
+                        openQuestionModal(time, question);
+                      } else {
+                        openQuestionModal(time);
+                      }
+                    }}
+                    className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
+                    style={{
+                      left: `${(time / formData.length_seconds) * 100}%`,
+                    }}
+                    disabled={isReadonly}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{formatTime(time)}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
 
-                {/* Time labels */}
-                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
-                  <span>0:00</span>
-                  <span>{formatTime(formData.length_seconds)}</span>
-                </div>
-              </div>
+            {/* Clickable timeline */}
+            <div
+              className="absolute inset-0 cursor-pointer"
+              onClick={(e) => {
+                if (isReadonly) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percentage = x / rect.width;
+                const time = Math.floor(percentage * formData.length_seconds);
+                openQuestionModal(time);
+              }}
+            />
+
+            {/* Time labels */}
+            <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
+              <span>0:00</span>
+              <span>{formatTime(formData.length_seconds)}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Questions List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Questions</CardTitle>
-          <CardDescription>
-            Questions that appear at specific times in the video
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Questions</Label>
           {questions.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No questions added yet. Click on the timeline to add questions.
@@ -775,8 +821,29 @@ export default function Video({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push("/create/videos")}
+          disabled={isSubmitting}
+        >
+          Back
+        </Button>
+        <Button onClick={handleSubmit} disabled={isSubmitting || isReadonly}>
+          {isSubmitting
+            ? isEditMode
+              ? "Updating..."
+              : "Creating..."
+            : isEditMode
+              ? "Update Video"
+              : "Create Video"}
+        </Button>
+      </div>
 
       {/* Question Modal */}
       {showQuestionModal && editingQuestion && (

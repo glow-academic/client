@@ -32,22 +32,24 @@ scenario_departments_data AS (
 scenario_active_problem_statement AS (
     SELECT 
         sps.scenario_id,
-        sps.id::text as problem_statement_id,
-        sps.problem_statement,
-        sps.created_at as problem_statement_created_at,
-        sps.updated_at as problem_statement_updated_at
+        ps.id::text as problem_statement_id,
+        ps.problem_statement,
+        ps.created_at as problem_statement_created_at,
+        ps.updated_at as problem_statement_updated_at
     FROM scenario_problem_statements sps
+    JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     WHERE sps.scenario_id = $1 AND sps.active = true
     LIMIT 1
 ),
 scenario_all_problem_statements AS (
     SELECT 
         sps.scenario_id,
-        sps.id::text as problem_statement_id,
-        sps.problem_statement,
-        sps.created_at as problem_statement_created_at,
-        sps.updated_at as problem_statement_updated_at
+        ps.id::text as problem_statement_id,
+        ps.problem_statement,
+        ps.created_at as problem_statement_created_at,
+        ps.updated_at as problem_statement_updated_at
     FROM scenario_problem_statements sps
+    JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     WHERE sps.scenario_id = $1
 ),
 problem_statement_mapping_data AS (
@@ -122,13 +124,14 @@ scenario_documents_agg AS (
 ),
 scenario_objectives_data AS (
     SELECT 
-        COALESCE(ARRAY_AGG(scenario_id::text || '_' || idx::text ORDER BY idx), ARRAY[]::text[]) as objective_ids,
+        COALESCE(ARRAY_AGG(o.id::text ORDER BY so.idx), ARRAY[]::text[]) as objective_ids,
         COALESCE(jsonb_object_agg(
-            scenario_id::text || '_' || idx::text,
-            jsonb_build_object('name', objective, 'description', objective)
-        ) FILTER (WHERE objective IS NOT NULL), '{}'::jsonb) as objective_mapping
-    FROM scenario_objectives
-    WHERE scenario_id = $1
+            o.id::text,
+            jsonb_build_object('name', o.objective, 'description', o.objective)
+        ) FILTER (WHERE o.objective IS NOT NULL), '{}'::jsonb) as objective_mapping
+    FROM scenario_objectives so
+    JOIN objectives o ON o.id = so.objective_id
+    WHERE so.scenario_id = $1
 ),
 scenario_simulations_agg AS (
     SELECT 
@@ -655,27 +658,29 @@ accessible_scenarios AS (
 ),
 objectives_with_departments AS (
     SELECT
-        so.objective,
+        o.objective,
         COALESCE(
             (
                 SELECT ARRAY_AGG(DISTINCT dept_id ORDER BY dept_id)
                 FROM (
                     SELECT DISTINCT sd.department_id::text as dept_id
                     FROM scenario_objectives so2
+                    JOIN objectives o2 ON o2.id = so2.objective_id
                     JOIN accessible_scenarios acs2 ON acs2.scenario_id = so2.scenario_id
                     LEFT JOIN scenario_departments sd ON sd.scenario_id = so2.scenario_id AND sd.active = true
-                    WHERE so2.objective = so.objective
-                        AND so2.objective IS NOT NULL 
-                        AND so2.objective != ''
+                    WHERE o2.objective = o.objective
+                        AND o2.objective IS NOT NULL 
+                        AND o2.objective != ''
                         AND sd.department_id IS NOT NULL
                 ) dept_list
             ),
             ARRAY[]::text[]
         ) as department_ids
     FROM scenario_objectives so
+    JOIN objectives o ON o.id = so.objective_id
     JOIN accessible_scenarios acs ON acs.scenario_id = so.scenario_id
-    WHERE so.objective IS NOT NULL AND so.objective != ''
-    GROUP BY so.objective
+    WHERE o.objective IS NOT NULL AND o.objective != ''
+    GROUP BY o.objective
 ),
 objectives_history_data AS (
     SELECT COALESCE(

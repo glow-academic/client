@@ -1,17 +1,19 @@
 -- Create video with all relationships in a single transaction
--- Parameters: $1=name, $2=description, $3=length_seconds, $4=active,
---            $5=department_ids (text array, nullable),
---            $6=questions_json (JSONB string with questions array)
+-- Parameters: $1=name, $2=length_seconds, $3=active,
+--            $4=department_ids (text array, nullable),
+--            $5=problem_statement_ids (text array, nullable),
+--            $6=objective_ids (text array, nullable),
+--            $7=policy_ids (text array, nullable),
+--            $8=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 
 WITH new_video AS (
     INSERT INTO videos (
         name,
-        description,
         length_seconds,
         active
     )
-    VALUES ($1, $2, $3, $4)
+    VALUES ($1, $2, $3)
     RETURNING id::uuid as video_id
 ),
 link_departments AS (
@@ -24,9 +26,55 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($5::text[]) as dept_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($4::text[]) as dept_id
+    WHERE COALESCE(array_length($4::text[], 1), 0) > 0
     ON CONFLICT (video_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_problem_statements AS (
+    -- Link problem statements if provided
+    INSERT INTO video_problem_statements (video_id, problem_statement_id, active, created_at, updated_at)
+    SELECT 
+        nv.video_id,
+        ps_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($5::text[]) as ps_id
+    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+    ON CONFLICT (video_id, problem_statement_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_objectives AS (
+    -- Link objectives if provided (with idx for ordering)
+    INSERT INTO video_objectives (video_id, objective_id, idx, created_at)
+    SELECT 
+        nv.video_id,
+        obj_id::uuid,
+        ROW_NUMBER() OVER () - 1 as idx,
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($6::text[]) as obj_id
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+    ON CONFLICT (video_id, objective_id) DO UPDATE SET
+        idx = EXCLUDED.idx
+),
+link_policies AS (
+    -- Link policies if provided
+    INSERT INTO video_policies (video_id, policy_id, active, created_at, updated_at)
+    SELECT 
+        nv.video_id,
+        policy_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($7::text[]) as policy_id
+    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+    ON CONFLICT (video_id, policy_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
@@ -45,7 +93,7 @@ questions_data AS (
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
     FROM new_video nv
-    CROSS JOIN jsonb_array_elements($6::jsonb) as q
+    CROSS JOIN jsonb_array_elements($8::jsonb) as q
 ),
 create_questions AS (
     -- Create questions

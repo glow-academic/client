@@ -18,6 +18,7 @@ class CreateScenarioRequest(BaseModel):
 
     name: str
     problem_statement: str
+    problem_statement_name: str | None = None  # Optional, defaults to scenario name
     problem_statement_versions: list[str] | None = None
     department_ids: list[str] | None
     active: bool
@@ -111,6 +112,7 @@ async def create_scenario(
             request.input_guardrail_enabled,
             request.output_guardrail_enabled,
             request.problem_statement,
+            request.problem_statement_name,  # Optional problem statement name
             problem_statement_versions,
             department_ids if department_ids else None,
             persona_ids if persona_ids else None,

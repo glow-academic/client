@@ -6,8 +6,9 @@ WITH user_departments AS (
 scenario_objectives AS (
     SELECT 
         so.scenario_id,
-        ARRAY_AGG((so.scenario_id::text || '_' || so.idx::text) ORDER BY so.idx) as objective_ids
+        ARRAY_AGG(o.id::text ORDER BY so.idx) as objective_ids
     FROM scenario_objectives so
+    JOIN objectives o ON o.id = so.objective_id
     GROUP BY so.scenario_id
 ),
 scenario_parameters AS (
@@ -66,7 +67,7 @@ scenario_data AS (
     SELECT 
         s.id as scenario_id,
         s.name as title,
-        COALESCE(sps.problem_statement, '') as problem_statement,
+        COALESCE(ps.problem_statement, '') as problem_statement,
         s.active,
         s.generated,
         s.updated_at,
@@ -107,7 +108,8 @@ scenario_data AS (
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
-    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps_j.problem_statement_id
     LEFT JOIN scenario_objectives so ON so.scenario_id = s.id
     LEFT JOIN scenario_parameters spar ON spar.scenario_id = s.id
     LEFT JOIN scenario_simulations ss ON ss.scenario_id = s.id
@@ -115,7 +117,7 @@ scenario_data AS (
     LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
     CROSS JOIN user_profile up
-    GROUP BY s.id, s.name, sps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
+    GROUP BY s.id, s.name, ps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
              sc.cohort_ids, sdd.department_ids, sal.total_links, up.role
     HAVING 

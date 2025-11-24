@@ -27,7 +27,6 @@ class VideoItem(BaseModel):
 
     video_id: str
     name: str
-    description: str
     length_seconds: int
     active: bool
     department_ids: list[str] | None  # None = cross-department (all departments)
@@ -115,7 +114,6 @@ async def get_videos_list(
                 VideoItem(
                     video_id=str(row["video_id"]),
                     name=row["name"],
-                    description=row["description"],
                     length_seconds=row["length_seconds"],
                     active=row["active"],
                     department_ids=dept_ids,

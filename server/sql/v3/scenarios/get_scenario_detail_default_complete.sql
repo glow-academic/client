@@ -240,27 +240,29 @@ accessible_scenarios_default AS (
 ),
 objectives_with_departments_default AS (
     SELECT
-        so.objective,
+        o.objective,
         COALESCE(
             (
                 SELECT ARRAY_AGG(DISTINCT dept_id ORDER BY dept_id)
                 FROM (
                     SELECT DISTINCT sd.department_id::text as dept_id
                     FROM scenario_objectives so2
+                    JOIN objectives o2 ON o2.id = so2.objective_id
                     JOIN accessible_scenarios_default acs2 ON acs2.scenario_id = so2.scenario_id
                     LEFT JOIN scenario_departments sd ON sd.scenario_id = so2.scenario_id AND sd.active = true
-                    WHERE so2.objective = so.objective
-                        AND so2.objective IS NOT NULL 
-                        AND so2.objective != ''
+                    WHERE o2.objective = o.objective
+                        AND o2.objective IS NOT NULL 
+                        AND o2.objective != ''
                         AND sd.department_id IS NOT NULL
                 ) dept_list
             ),
             ARRAY[]::text[]
         ) as department_ids
     FROM scenario_objectives so
+    JOIN objectives o ON o.id = so.objective_id
     JOIN accessible_scenarios_default acs ON acs.scenario_id = so.scenario_id
-    WHERE so.objective IS NOT NULL AND so.objective != ''
-    GROUP BY so.objective
+    WHERE o.objective IS NOT NULL AND o.objective != ''
+    GROUP BY o.objective
 ),
 objectives_history_data_default AS (
     SELECT COALESCE(

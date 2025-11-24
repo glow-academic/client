@@ -1,10 +1,11 @@
 -- Create scenario with all relationships in a single transaction
 -- Parameters: $1=name, $2=active, $3=hints_enabled, $4=objectives_enabled, $5=image_input_enabled, 
 --            $6=copy_paste_allowed, $7=input_guardrail_enabled, $8=output_guardrail_enabled,
---            $9=problem_statement (text), $10=problem_statement_versions (text array, nullable),
---            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
---            $13=document_ids (text array), $14=objective_ids (text array), 
---            $15=parameter_item_ids (text array, flattened from parameters dict)
+--            $9=problem_statement (text), $10=problem_statement_name (text, nullable - defaults to scenario name),
+--            $11=problem_statement_versions (text array, nullable),
+--            $12=department_ids (text array, nullable), $13=persona_ids (text array, nullable),
+--            $14=document_ids (text array), $15=objective_ids (text array), 
+--            $16=parameter_item_ids (text array, flattened from parameters dict)
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
 WITH new_scenario AS (
@@ -43,31 +44,44 @@ link_tree_edge AS (
     SELECT ns.scenario_id::uuid, ns.scenario_id::uuid, true
     FROM new_scenario ns
 ),
-insert_problem_statements AS (
-    -- Insert problem statement versions if provided, otherwise insert single problem statement
-    INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active, created_at, updated_at)
+problem_statement_versions_data AS (
+    -- Prepare problem statement versions
+    SELECT DISTINCT version_text
+    FROM new_scenario ns
+    CROSS JOIN UNNEST($11::text[]) as version_text
+    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    UNION ALL
+    -- If no versions provided, use single problem statement
+    SELECT $9::text as version_text
+    FROM new_scenario ns
+    WHERE COALESCE(array_length($11::text[], 1), 0) = 0 AND $9::text IS NOT NULL AND $9::text != ''
+),
+create_problem_statements AS (
+    -- Create problem_statement records first (strong entity)
+    -- Always create new records (don't reuse) to allow different names for same text
+    INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
+    SELECT 
+        COALESCE($10::text, $1::text) as name,  -- Use provided name or scenario name
+        psd.version_text,
+        NOW(),
+        NOW()
+    FROM problem_statement_versions_data psd
+    RETURNING id as problem_statement_id, problem_statement
+),
+link_problem_statements AS (
+    -- Link problem statements to scenario via junction table
+    INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
-        version_text,
+        cps.problem_statement_id,
         CASE 
-            WHEN version_text = $9 THEN true  -- Active if matches problem_statement
+            WHEN cps.problem_statement = $9 THEN true  -- Active if matches problem_statement
             ELSE false
         END as active,
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($10::text[]) as version_text
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
-    UNION ALL
-    -- If no versions provided, insert single problem statement as active
-    SELECT 
-        ns.scenario_id::uuid,
-        $9::text,
-        true,
-        NOW(),
-        NOW()
-    FROM new_scenario ns
-    WHERE COALESCE(array_length($10::text[], 1), 0) = 0 AND $9::text IS NOT NULL AND $9::text != ''
+    CROSS JOIN create_problem_statements cps
 ),
 link_personas AS (
     -- Link personas if provided
@@ -79,8 +93,8 @@ link_personas AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($12::text[]) as persona_id
-    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($13::text[]) as persona_id
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -95,8 +109,8 @@ link_documents AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($13::text[]) as doc_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($14::text[]) as doc_id
+    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -106,19 +120,45 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($14::text[]) as obj_text
-    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
+    FROM UNNEST($15::text[]) as obj_text
+    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
+),
+existing_objectives AS (
+    -- Find existing objectives by text
+    SELECT id as objective_id, objective
+    FROM objectives
+    WHERE objective = ANY(SELECT obj_text FROM objectives_with_index)
+),
+new_objectives AS (
+    -- Create new objectives that don't exist yet
+    INSERT INTO objectives (objective, created_at, updated_at)
+    SELECT DISTINCT
+        owi.obj_text,
+        NOW(),
+        NOW()
+    FROM objectives_with_index owi
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_objectives eo WHERE eo.objective = owi.obj_text
+    )
+    RETURNING id as objective_id, objective
+),
+all_objectives AS (
+    -- Combine existing and new objectives
+    SELECT objective_id, objective FROM existing_objectives
+    UNION ALL
+    SELECT objective_id, objective FROM new_objectives
 ),
 link_objectives AS (
-    -- Insert objectives
-    INSERT INTO scenario_objectives (scenario_id, idx, objective, created_at)
+    -- Link objectives to scenario via junction table
+    INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
     SELECT 
         ns.scenario_id::uuid,
+        ao.objective_id,
         owi.idx,
-        owi.obj_text,
         NOW()
     FROM new_scenario ns
     CROSS JOIN objectives_with_index owi
+    JOIN all_objectives ao ON ao.objective = owi.obj_text
 ),
 link_parameters AS (
     -- Link parameter items
@@ -130,8 +170,8 @@ link_parameters AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($15::text[]) as param_item_id
-    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($16::text[]) as param_item_id
+    WHERE COALESCE(array_length($16::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

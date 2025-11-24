@@ -10,7 +10,6 @@ CREATE TABLE videos (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
-  description TEXT        NOT NULL DEFAULT 'No description provided',
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
   active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
@@ -62,4 +61,43 @@ CREATE INDEX ON simulation_videos (video_id);
 -- Enforce unique ordering within each simulation
 CREATE UNIQUE INDEX simulation_videos_position_uniq
   ON simulation_videos(simulation_id, position);
+
+-- Video → Problem Statements junction table (BCNF normalization)
+CREATE TABLE video_problem_statements (
+  video_id            UUID NOT NULL REFERENCES videos(id)            ON DELETE CASCADE,
+  problem_statement_id UUID NOT NULL REFERENCES problem_statements(id) ON DELETE CASCADE,
+  active              BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, problem_statement_id)
+);
+
+CREATE INDEX ON video_problem_statements (video_id);
+CREATE INDEX ON video_problem_statements (problem_statement_id);
+CREATE INDEX ON video_problem_statements (video_id, active);
+
+-- Video → Objectives junction table (BCNF normalization)
+CREATE TABLE video_objectives (
+  video_id    UUID NOT NULL REFERENCES videos(id)     ON DELETE CASCADE,
+  objective_id UUID NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+  idx         INT  NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (video_id, objective_id)
+);
+
+CREATE INDEX ON video_objectives (video_id);
+CREATE INDEX ON video_objectives (objective_id);
+
+-- Video → Policies junction table (BCNF normalization)
+CREATE TABLE video_policies (
+  video_id   UUID NOT NULL REFERENCES videos(id)   ON DELETE CASCADE,
+  policy_id  UUID NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, policy_id)
+);
+
+CREATE INDEX ON video_policies (video_id);
+CREATE INDEX ON video_policies (policy_id);
 

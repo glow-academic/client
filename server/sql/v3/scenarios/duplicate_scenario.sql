@@ -8,9 +8,12 @@ WITH source_scenario AS (
         s.copy_paste_allowed,
         s.input_guardrail_enabled,
         s.output_guardrail_enabled,
-        sps.problem_statement
+        ps.problem_statement,
+        ps.id as problem_statement_id,
+        ps.name as problem_statement_name
     FROM scenarios s
-    LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
+    LEFT JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
+    LEFT JOIN problem_statements ps ON ps.id = sps_j.problem_statement_id
     WHERE s.id = $1::uuid
 ),
 new_scenario AS (
@@ -45,16 +48,33 @@ insert_tree_edge AS (
     SELECT ns.scenario_id::uuid, ns.scenario_id::uuid, true, NOW(), NOW()
     FROM new_scenario ns
 ),
-copy_problem_statements AS (
-    INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active, created_at, updated_at)
-    SELECT 
-        ns.scenario_id::uuid,
-        sps.problem_statement,
-        sps.active,
+create_problem_statements AS (
+    -- Create new problem_statement records (reuse if same text exists, but create new for history)
+    INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
+    SELECT DISTINCT
+        COALESCE(ps.name, ss.name) as name,
+        ps.problem_statement,
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_problem_statements sps ON sps.scenario_id = ss.source_id
+    JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = ss.source_id
+    JOIN problem_statements ps ON ps.id = sps_j.problem_statement_id
+    CROSS JOIN new_scenario ns
+    RETURNING id as problem_statement_id, problem_statement
+),
+link_problem_statements AS (
+    -- Link problem statements to new scenario via junction table
+    INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
+    SELECT 
+        ns.scenario_id::uuid,
+        cps.problem_statement_id,
+        sps_j.active,
+        NOW(),
+        NOW()
+    FROM source_scenario ss
+    JOIN scenario_problem_statements sps_j ON sps_j.scenario_id = ss.source_id
+    JOIN problem_statements ps ON ps.id = sps_j.problem_statement_id
+    JOIN create_problem_statements cps ON cps.problem_statement = ps.problem_statement
     CROSS JOIN new_scenario ns
 ),
 copy_personas AS (
@@ -81,15 +101,50 @@ copy_documents AS (
     JOIN scenario_documents sd ON sd.scenario_id = ss.source_id
     CROSS JOIN new_scenario ns
 ),
-copy_objectives AS (
-    INSERT INTO scenario_objectives (scenario_id, idx, objective, created_at)
+source_objectives AS (
+    -- Get objectives from source scenario
     SELECT 
-        ns.scenario_id::uuid,
-        so.idx,
-        so.objective,
-        NOW()
+        o.objective,
+        so.idx
     FROM source_scenario ss
     JOIN scenario_objectives so ON so.scenario_id = ss.source_id
+    JOIN objectives o ON o.id = so.objective_id
+),
+existing_objectives AS (
+    -- Find existing objectives by text
+    SELECT id as objective_id, objective
+    FROM objectives
+    WHERE objective = ANY(SELECT objective FROM source_objectives)
+),
+new_objectives AS (
+    -- Create new objectives that don't exist yet
+    INSERT INTO objectives (objective, created_at, updated_at)
+    SELECT DISTINCT
+        so.objective,
+        NOW(),
+        NOW()
+    FROM source_objectives so
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_objectives eo WHERE eo.objective = so.objective
+    )
+    RETURNING id as objective_id, objective
+),
+all_objectives AS (
+    -- Combine existing and new objectives
+    SELECT objective_id, objective FROM existing_objectives
+    UNION ALL
+    SELECT objective_id, objective FROM new_objectives
+),
+link_objectives AS (
+    -- Link objectives to new scenario via junction table
+    INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
+    SELECT 
+        ns.scenario_id::uuid,
+        ao.objective_id,
+        so.idx,
+        NOW()
+    FROM source_objectives so
+    JOIN all_objectives ao ON ao.objective = so.objective
     CROSS JOIN new_scenario ns
 ),
 copy_parameters AS (

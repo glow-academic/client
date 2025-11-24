@@ -27,7 +27,8 @@ interface DepartmentAccessDeniedProps {
     | "rubric"
     | "parameter"
     | "key"
-    | "prompt";
+    | "prompt"
+    | "video";
   redirectPath: string;
 }
 
@@ -57,6 +58,8 @@ export function DepartmentAccessDenied({
         return "key";
       case "prompt":
         return "prompt";
+      case "video":
+        return "video";
       default:
         return "resource";
     }
@@ -84,6 +87,8 @@ export function DepartmentAccessDenied({
         return "/engine/keys";
       case "prompt":
         return "/engine/prompts";
+      case "video":
+        return "/create/videos";
       default:
         return "/";
     }

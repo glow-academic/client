@@ -2,9 +2,10 @@
 -- Parameters: $1=scenarioId, $2=name, $3=active, $4=hints_enabled, $5=objectives_enabled,
 --            $6=image_input_enabled, $7=copy_paste_allowed, $8=input_guardrail_enabled,
 --            $9=output_guardrail_enabled, $10=problem_statement (text),
---            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
---            $13=document_ids (text array), $14=objective_ids (text array),
---            $15=parameter_item_ids (text array, flattened from parameters dict)
+--            $11=problem_statement_name (text, nullable - defaults to scenario name),
+--            $12=department_ids (text array, nullable), $13=persona_ids (text array, nullable),
+--            $14=document_ids (text array), $15=objective_ids (text array),
+--            $16=parameter_item_ids (text array, flattened from parameters dict)
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
 WITH scenario_exists AS (
@@ -30,31 +31,36 @@ update_scenario AS (
     RETURNING id::text as scenario_id, name
 ),
 deactivate_problem_statements AS (
-    -- Deactivate all existing problem statements (preserve history)
-    -- Return rows to ensure this CTE executes
+    -- Deactivate all existing problem statement links (preserve history)
     UPDATE scenario_problem_statements
     SET active = false, updated_at = NOW()
     WHERE scenario_id = $1::uuid AND active = true
-    RETURNING id
+    RETURNING problem_statement_id
 ),
 create_problem_statement AS (
-    -- Create new problem statement version (always create new for history)
-    -- Reference deactivate_problem_statements to ensure it executes first
-    -- This ensures deactivation happens before insertion, avoiding unique constraint violation
-    INSERT INTO scenario_problem_statements (scenario_id, problem_statement, active, created_at, updated_at)
+    -- Create new problem_statement record (strong entity)
+    INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
     SELECT 
-        $1::uuid,
+        COALESCE($11::text, $2::text) as name,  -- Use provided name or scenario name
         $10::text,
-        true,
         NOW(),
         NOW()
     WHERE EXISTS (SELECT 1 FROM scenario_exists) 
       AND $10::text IS NOT NULL 
       AND $10::text != ''
-      AND (
-          EXISTS (SELECT 1 FROM deactivate_problem_statements)
-          OR NOT EXISTS (SELECT 1 FROM scenario_problem_statements WHERE scenario_id = $1::uuid AND active = true)
-      )
+    RETURNING id as problem_statement_id
+),
+link_problem_statement AS (
+    -- Link new problem statement to scenario via junction table
+    INSERT INTO scenario_problem_statements (scenario_id, problem_statement_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        cps.problem_statement_id,
+        true,
+        NOW(),
+        NOW()
+    FROM create_problem_statement cps
+    WHERE EXISTS (SELECT 1 FROM scenario_exists)
 ),
 replace_departments AS (
     -- Delete all existing department links
@@ -70,9 +76,9 @@ insert_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($11::text[]) as dept_id
+    FROM UNNEST($12::text[]) as dept_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($11::text[], 1), 0) > 0
+      AND COALESCE(array_length($12::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -91,9 +97,9 @@ insert_personas AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($12::text[]) as persona_id
+    FROM UNNEST($13::text[]) as persona_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($12::text[], 1), 0) > 0
+      AND COALESCE(array_length($13::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -112,15 +118,15 @@ insert_documents AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($13::text[]) as doc_id
+    FROM UNNEST($14::text[]) as doc_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($13::text[], 1), 0) > 0
+      AND COALESCE(array_length($14::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 replace_objectives AS (
-    -- Delete all existing objectives
+    -- Delete all existing objective links
     DELETE FROM scenario_objectives 
     WHERE scenario_id = $1::uuid
 ),
@@ -129,19 +135,45 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($14::text[]) as obj_text
+    FROM UNNEST($15::text[]) as obj_text
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($14::text[], 1), 0) > 0
+      AND COALESCE(array_length($15::text[], 1), 0) > 0
 ),
-insert_objectives AS (
-    -- Insert new objectives
-    INSERT INTO scenario_objectives (scenario_id, idx, objective, created_at)
-    SELECT 
-        $1::uuid,
-        owi.idx,
+existing_objectives AS (
+    -- Find existing objectives by text
+    SELECT id as objective_id, objective
+    FROM objectives
+    WHERE objective = ANY(SELECT obj_text FROM objectives_with_index)
+),
+new_objectives AS (
+    -- Create new objectives that don't exist yet
+    INSERT INTO objectives (objective, created_at, updated_at)
+    SELECT DISTINCT
         owi.obj_text,
+        NOW(),
         NOW()
     FROM objectives_with_index owi
+    WHERE NOT EXISTS (
+        SELECT 1 FROM existing_objectives eo WHERE eo.objective = owi.obj_text
+    )
+    RETURNING id as objective_id, objective
+),
+all_objectives AS (
+    -- Combine existing and new objectives
+    SELECT objective_id, objective FROM existing_objectives
+    UNION ALL
+    SELECT objective_id, objective FROM new_objectives
+),
+insert_objectives AS (
+    -- Link objectives to scenario via junction table
+    INSERT INTO scenario_objectives (scenario_id, objective_id, idx, created_at)
+    SELECT 
+        $1::uuid,
+        ao.objective_id,
+        owi.idx,
+        NOW()
+    FROM objectives_with_index owi
+    JOIN all_objectives ao ON ao.objective = owi.obj_text
 ),
 replace_parameters AS (
     -- Delete all existing parameter links
@@ -157,9 +189,9 @@ insert_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($15::text[]) as param_item_id
+    FROM UNNEST($16::text[]) as param_item_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($15::text[], 1), 0) > 0
+      AND COALESCE(array_length($16::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

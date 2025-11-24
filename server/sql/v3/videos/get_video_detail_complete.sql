@@ -55,7 +55,6 @@ video_core AS (
     SELECT 
         v.id,
         v.name,
-        v.description,
         v.length_seconds,
         v.active,
         COALESCE(vdd.department_ids, NULL) as department_ids
@@ -63,6 +62,28 @@ video_core AS (
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
     CROSS JOIN video_department_access_check vdac
     WHERE v.id = $1 AND vdac.has_access = true
+),
+video_problem_statements_agg AS (
+    SELECT ARRAY_AGG(ps.id::text ORDER BY vps.created_at) as problem_statement_ids
+    FROM video_problem_statements vps
+    JOIN problem_statements ps ON ps.id = vps.problem_statement_id
+    WHERE vps.video_id = $1 AND vps.active = true
+),
+video_objectives_agg AS (
+    SELECT 
+        ARRAY_AGG(o.id::text ORDER BY vo.idx) as objective_ids,
+        COALESCE(jsonb_object_agg(
+            o.id::text,
+            jsonb_build_object('name', o.objective, 'description', o.objective)
+        ) FILTER (WHERE o.objective IS NOT NULL), '{}'::jsonb) as objective_mapping
+    FROM video_objectives vo
+    JOIN objectives o ON o.id = vo.objective_id
+    WHERE vo.video_id = $1
+),
+video_policies_agg AS (
+    SELECT ARRAY_AGG(policy_id::text ORDER BY vp.created_at) as policy_ids
+    FROM video_policies vp
+    WHERE vp.video_id = $1 AND vp.active = true
 ),
 video_all_simulation_links AS (
     SELECT 
@@ -95,9 +116,8 @@ video_permissions AS (
     LEFT JOIN video_all_simulation_links vasl ON vasl.video_id = vc.id
 ),
 valid_departments AS (
-    SELECT ARRAY_AGG(DISTINCT d.id::text ORDER BY d.id) as department_ids
-    FROM departments d
-    WHERE d.id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id WHERE pd.active = true)
+    SELECT ARRAY_AGG(d.id::text ORDER BY d.id) as department_ids
+    FROM (SELECT DISTINCT d.id FROM departments d WHERE d.id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id WHERE pd.active = true)) d
 ),
 department_mapping_data AS (
     SELECT COALESCE(
@@ -120,7 +140,7 @@ video_questions_data AS (
         q.question_text,
         q.type as question_type,
         q.allow_multiple,
-        ARRAY_AGG(DISTINCT qt.time ORDER BY qt.time) FILTER (WHERE qt.active = true) as times,
+        (SELECT ARRAY_AGG(time ORDER BY time) FROM (SELECT DISTINCT qt.time FROM question_times qt WHERE qt.video_id = vq.video_id AND qt.question_id = q.id AND qt.active = true) distinct_times) as times,
         -- All options for this question
         COALESCE(
             jsonb_agg(
@@ -135,12 +155,11 @@ video_questions_data AS (
         ) as options
     FROM video_questions vq
     JOIN questions q ON q.id = vq.question_id
-    LEFT JOIN question_times qt ON qt.video_id = vq.video_id AND qt.question_id = q.id AND qt.active = true
     LEFT JOIN question_options qo ON qo.question_id = q.id AND qo.active = true
     LEFT JOIN options o ON o.id = qo.option_id AND o.active = true
     LEFT JOIN question_answers qa ON qa.question_id = q.id AND qa.option_id = o.id AND qa.active = true
     WHERE vq.video_id = $1 AND vq.active = true AND q.active = true
-    GROUP BY q.id, q.question_text, q.type, q.allow_multiple
+    GROUP BY q.id, q.question_text, q.type, q.allow_multiple, vq.video_id
 ),
 questions_json AS (
     SELECT COALESCE(
@@ -160,11 +179,14 @@ questions_json AS (
 )
 SELECT 
     vc.name,
-    vc.description,
     vc.length_seconds,
     vc.active,
     vc.department_ids,
     COALESCE((SELECT department_ids FROM valid_departments), ARRAY[]::text[]) as valid_department_ids,
+    COALESCE((SELECT problem_statement_ids FROM video_problem_statements_agg), ARRAY[]::text[]) as problem_statement_ids,
+    COALESCE((SELECT objective_ids FROM video_objectives_agg), ARRAY[]::text[]) as objective_ids,
+    COALESCE((SELECT objective_mapping FROM video_objectives_agg), '{}'::jsonb) as objective_mapping,
+    COALESCE((SELECT policy_ids FROM video_policies_agg), ARRAY[]::text[]) as policy_ids,
     vp.can_edit,
     vp.can_duplicate,
     vp.can_delete,
