@@ -4,7 +4,7 @@
 --            $5=problem_statement_ids (text array, nullable),
 --            $6=objective_ids (text array, nullable),
 --            $7=policy_ids (text array, nullable),
---            $8=video_image_ids (text array, nullable),
+--            $8=image_ids (text array, nullable),
 --            $9=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 
@@ -80,17 +80,21 @@ link_policies AS (
         updated_at = NOW()
 ),
 link_video_images AS (
-    -- Link video images if provided (update existing images to link to this video)
-    -- Note: video_images must be created via upload finalize endpoint first
-    UPDATE video_images
-    SET 
-        video_id = nv.video_id,
+    -- Link video images if provided (create junction table entries)
+    -- Note: images must be created via upload finalize endpoint first
+    INSERT INTO video_images (video_id, image_id, active, created_at, updated_at)
+    SELECT 
+        nv.video_id,
+        image_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($8::text[]) as image_id
+    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
+    ON CONFLICT (video_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-    FROM new_video nv
-    WHERE video_images.id = ANY($8::uuid[])
-        AND COALESCE(array_length($8::text[], 1), 0) > 0
-        AND video_images.video_id IS NOT NULL  -- Only update if already linked (safety check)
 ),
 link_tree_edge AS (
     -- Insert self-referencing edge in video_tree (marks as root)

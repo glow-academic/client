@@ -121,6 +121,23 @@ scenario_documents_agg AS (
     FROM scenario_documents
     WHERE scenario_id = $1 AND active = true
 ),
+scenario_images_data AS (
+    SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'id', i.id::text,
+                'name', i.name,
+                'file_path', i.file_path,
+                'mime_type', i.mime_type,
+                'active', si.active
+            )
+        ) FILTER (WHERE i.id IS NOT NULL),
+        '[]'::jsonb
+    ) as scenario_images
+    FROM scenario_images si
+    JOIN images i ON i.id = si.image_id
+    WHERE si.scenario_id = $1 AND si.active = true AND i.active = true
+),
 scenario_objectives_data AS (
     SELECT 
         COALESCE(ARRAY_AGG(o.id::text ORDER BY so.idx), ARRAY[]::text[]) as objective_ids,
@@ -737,7 +754,8 @@ SELECT
     COALESCE(edmdept.department_mapping, dmd.department_mapping) as department_mapping,
     ddd.document_details,
     COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
-    COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history
+    COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history,
+    COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images
 FROM scenario_core sc
 CROSS JOIN user_profile up
 LEFT JOIN scenario_personas_agg spa ON true

@@ -95,6 +95,7 @@ class ScenarioDetailResponse(BaseModel):
     valid_persona_ids: list[str]
     document_ids: list[str]
     valid_document_ids: list[str]
+    scenario_images: list[dict[str, Any]]
 
     # Objectives
     objective_ids: list[str]
@@ -411,6 +412,22 @@ async def get_scenario_detail(
         valid_document_ids = scenario["valid_document_ids"] or []
         dept_ids_raw = scenario["valid_department_ids"] or []
         dept_ids = [str(did) for did in dept_ids_raw]
+        
+        # Parse scenario_images from JSONB
+        scenario_images_data = parse_jsonb(scenario.get("scenario_images"))
+        scenario_images: list[dict[str, Any]] = []
+        if isinstance(scenario_images_data, list):
+            scenario_images = [
+                {
+                    "id": img.get("id", ""),
+                    "name": img.get("name", ""),
+                    "file_path": img.get("file_path", ""),
+                    "mime_type": img.get("mime_type", ""),
+                    "active": img.get("active", True),
+                }
+                for img in scenario_images_data
+                if isinstance(img, dict)
+            ]
 
         response_data = ScenarioDetailResponse(
             name=scenario["name"],
@@ -430,6 +447,7 @@ async def get_scenario_detail(
             valid_persona_ids=valid_persona_ids,
             document_ids=document_ids,
             valid_document_ids=valid_document_ids,
+            scenario_images=scenario_images,
             objective_ids=objective_ids,
             valid_objectives=[],
             objectives_history=objectives_history,

@@ -241,6 +241,7 @@ async def get_video_detail(
             video_images = [
                 {
                     "id": img.get("id", ""),
+                    "name": img.get("name", ""),
                     "file_path": img.get("file_path", ""),
                     "mime_type": img.get("mime_type", ""),
                     "active": img.get("active", True),

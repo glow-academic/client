@@ -2388,6 +2388,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/upload/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Finalize
+         * @description Finalize an image upload and create the image.
+         */
+        post: operations["upload_finalize_api_v3_upload_finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/policies/create": {
         parameters: {
             query?: never;
@@ -5838,6 +5858,8 @@ export interface components {
             document_ids: string[];
             /** Objective Ids */
             objective_ids: string[];
+            /** Image Ids */
+            image_ids?: string[] | null;
             /** Parameters */
             parameters: {
                 [key: string]: string[];
@@ -5996,8 +6018,8 @@ export interface components {
             objective_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
-            /** Video Image Ids */
-            video_image_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
             /**
              * Active
              * @default true
@@ -11509,6 +11531,8 @@ export interface components {
             document_ids: string[];
             /** Objective Ids */
             objective_ids: string[];
+            /** Image Ids */
+            image_ids?: string[] | null;
             /** Parameters */
             parameters: {
                 [key: string]: string[];
@@ -11649,8 +11673,8 @@ export interface components {
             objective_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
-            /** Video Image Ids */
-            video_image_ids?: string[] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
             /** Active */
             active: boolean;
             /**
@@ -12540,6 +12564,32 @@ export interface components {
             practiceScenarioId?: string | null;
         };
         /**
+         * UploadFinalizeRequest
+         * @description Request to finalize image upload.
+         */
+        app__api__v3__images__upload_finalize__UploadFinalizeRequest: {
+            /** Uploadid */
+            uploadId: string;
+            /** Fileid */
+            fileId: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * UploadFinalizeResponse
+         * @description Response from finalize upload.
+         */
+        app__api__v3__images__upload_finalize__UploadFinalizeResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Imageid */
+            imageId?: string | null;
+        };
+        /**
          * FeedbackItem
          * @description Feedback item.
          */
@@ -13352,6 +13402,10 @@ export interface components {
             document_ids: string[];
             /** Valid Document Ids */
             valid_document_ids: string[];
+            /** Scenario Images */
+            scenario_images: {
+                [key: string]: unknown;
+            }[];
             /** Objective Ids */
             objective_ids: string[];
             /** Valid Objectives */
@@ -17578,6 +17632,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_finalize_api_v3_upload_finalize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v3__images__upload_finalize__UploadFinalizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__images__upload_finalize__UploadFinalizeResponse"];
                 };
             };
             /** @description Validation Error */

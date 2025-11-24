@@ -5,7 +5,8 @@
 --            $10=problem_statement_name (text, nullable - defaults to scenario name),
 --            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
 --            $13=document_ids (text array), $14=objective_ids (text array),
---            $15=parameter_item_ids (text array, flattened from parameters dict)
+--            $15=parameter_item_ids (text array, flattened from parameters dict),
+--            $16=image_ids (text array, nullable)
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
 WITH scenario_exists AS (
@@ -192,6 +193,27 @@ insert_parameters AS (
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
       AND COALESCE(array_length($15::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+delete_old_images AS (
+    -- Delete old scenario image links (junction table entries)
+    DELETE FROM scenario_images
+    WHERE scenario_id = $1::uuid
+),
+link_images AS (
+    -- Link images if provided (create junction table entries)
+    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        image_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM UNNEST($16::text[]) as image_id
+    WHERE EXISTS (SELECT 1 FROM scenario_exists)
+      AND COALESCE(array_length($16::text[], 1), 0) > 0
+    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

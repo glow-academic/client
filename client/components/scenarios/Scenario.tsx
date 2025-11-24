@@ -54,6 +54,7 @@ import {
   type DocumentMappingItem,
 } from "@/components/common/forms/DocumentPicker";
 import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
+import { ImagePicker } from "@/components/common/forms/ImagePicker";
 import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 
@@ -405,6 +406,9 @@ export default function Scenario({
     string[]
   >([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
+  const [images, setImages] = useState<
+    Array<{ id: string; name: string; file_path: string; mime_type: string; active: boolean }>
+  >([]);
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
@@ -877,6 +881,26 @@ export default function Scenario({
           >
         )
       );
+      // Load scenario images
+      if (scenarioData.scenario_images && Array.isArray(scenarioData.scenario_images)) {
+        setImages(
+          scenarioData.scenario_images.map(
+            (img: {
+              id?: string;
+              name?: string;
+              file_path?: string;
+              mime_type?: string;
+              active?: boolean;
+            }) => ({
+              id: img.id || "",
+              name: img.name || "",
+              file_path: img.file_path || "",
+              mime_type: img.mime_type || "",
+              active: img.active !== false,
+            })
+          )
+        );
+      }
       // Store originals for change tracking
       setOriginalFormData({
         name: scenarioData.name,
@@ -1370,6 +1394,7 @@ export default function Scenario({
         persona_ids: string[] | null;
         document_ids: string[];
         objective_ids: string[];
+        image_ids: string[] | null;
         parameters: Record<string, string[]>;
       } = {
         name: formData.name?.trim() || "",
@@ -1379,6 +1404,9 @@ export default function Scenario({
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
+        image_ids: images.map((img) => img.id).filter(Boolean).length > 0
+          ? images.map((img) => img.id).filter(Boolean)
+          : null,
         parameters: groupParameterItemsByParameterId(
           currentParameterItemIds,
           parameterItemMapping
@@ -1794,6 +1822,38 @@ export default function Scenario({
                 const uniqueIds = Array.from(new Set(ids));
                 const limitedIds = uniqueIds.slice(0, 2);
                 setCurrentDocumentIds(limitedIds);
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Step 3.5: Images */}
+        <Card
+          className={`transition-all ${!isEditMode && getStepStatus("images") === "active" ? "ring-2 ring-primary" : ""} ${
+            !isEditMode && getStepStatus("images") === "pending"
+              ? "opacity-50"
+              : ""
+          }`}
+        >
+          <CardHeader>
+            <CardTitle>Reference Images</CardTitle>
+            <CardDescription>
+              Upload reference images that can be shared between scenarios and videos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ImagePicker
+              images={images}
+              onImagesChange={setImages}
+              disabled={isSubmitting}
+              readonly={isReadonly}
+              finalizeUploadAction={async (input) => {
+                const response = await fetch("/api/images/upload/finalize", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(input),
+                });
+                return response.json();
               }}
             />
           </CardContent>

@@ -104,18 +104,17 @@ CREATE TABLE video_policies (
 CREATE INDEX ON video_policies (video_id);
 CREATE INDEX ON video_policies (policy_id);
 
--- Video Images weak entity table (BCNF normalization)
--- Stores reference images for videos
+-- Video → Images junction table (BCNF normalization)
 CREATE TABLE video_images (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  video_id   UUID        NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-  file_path  TEXT        NOT NULL,
-  mime_type  TEXT        NOT NULL,
-  active     BOOLEAN     NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  video_id   UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  image_id   UUID NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, image_id)
 );
 
 CREATE INDEX ON video_images (video_id);
-CREATE INDEX ON video_images (active);
+CREATE INDEX ON video_images (image_id);
+CREATE INDEX ON video_images (video_id, active);
 

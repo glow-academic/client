@@ -142,6 +142,20 @@ CREATE TABLE scenario_documents (
 CREATE INDEX ON scenario_documents (scenario_id);
 CREATE INDEX ON scenario_documents (document_id);
 
+-- Scenario → Images junction table (BCNF normalization)
+CREATE TABLE scenario_images (
+  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+  image_id     UUID NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+  active       BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (scenario_id, image_id)
+);
+
+CREATE INDEX ON scenario_images (scenario_id);
+CREATE INDEX ON scenario_images (image_id);
+CREATE INDEX ON scenario_images (scenario_id, active);
+
 -- Document → Parameter Items junction table (BCNF normalization)
 -- Allows documents to be filtered by parameter values
 CREATE TABLE document_parameter_items (

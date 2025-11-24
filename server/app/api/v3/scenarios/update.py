@@ -25,6 +25,7 @@ class UpdateScenarioRequest(BaseModel):
     persona_ids: list[str] | None
     document_ids: list[str]
     objective_ids: list[str]
+    image_ids: list[str] | None = None
     parameters: dict[str, list[str]]
     hints_enabled: bool = False
     objectives_enabled: bool = True
@@ -77,6 +78,7 @@ async def update_scenario(
         persona_ids = request.persona_ids or []
         document_ids = request.document_ids or []
         objective_ids = filtered_objective_ids or []
+        image_ids = request.image_ids or []
         parameter_item_ids = parameter_item_ids or []
 
         # Update scenario with all relationships in a single SQL file
@@ -97,6 +99,7 @@ async def update_scenario(
             document_ids,
             objective_ids,
             parameter_item_ids,
+            image_ids if image_ids else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

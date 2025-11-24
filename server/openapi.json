@@ -5019,6 +5019,51 @@
         ]
       }
     },
+    "/api/v3/upload/finalize": {
+      "post": {
+        "tags": [
+          "v3"
+        ],
+        "summary": "Upload Finalize",
+        "description": "Finalize an image upload and create the image.",
+        "operationId": "upload_finalize_api_v3_upload_finalize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__images__upload_finalize__UploadFinalizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__images__upload_finalize__UploadFinalizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3"
+        ]
+      }
+    },
     "/api/v3/policies/create": {
       "post": {
         "tags": [
@@ -13186,6 +13231,20 @@
             "type": "array",
             "title": "Objective Ids"
           },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
+          },
           "parameters": {
             "additionalProperties": {
               "items": {
@@ -13605,7 +13664,7 @@
             ],
             "title": "Policy Ids"
           },
-          "video_image_ids": {
+          "image_ids": {
             "anyOf": [
               {
                 "items": {
@@ -13617,7 +13676,7 @@
                 "type": "null"
               }
             ],
-            "title": "Video Image Ids"
+            "title": "Image Ids"
           },
           "active": {
             "type": "boolean",
@@ -27758,6 +27817,20 @@
             "type": "array",
             "title": "Objective Ids"
           },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
+          },
           "parameters": {
             "additionalProperties": {
               "items": {
@@ -28152,7 +28225,7 @@
             ],
             "title": "Policy Ids"
           },
-          "video_image_ids": {
+          "image_ids": {
             "anyOf": [
               {
                 "items": {
@@ -28164,7 +28237,7 @@
                 "type": "null"
               }
             ],
-            "title": "Video Image Ids"
+            "title": "Image Ids"
           },
           "active": {
             "type": "boolean",
@@ -30510,6 +30583,65 @@
         "title": "AttemptHistoryRow",
         "description": "Attempt history row."
       },
+      "app__api__v3__images__upload_finalize__UploadFinalizeRequest": {
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "fileId": {
+            "type": "string",
+            "title": "Fileid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploadId",
+          "fileId",
+          "name"
+        ],
+        "title": "UploadFinalizeRequest",
+        "description": "Request to finalize image upload."
+      },
+      "app__api__v3__images__upload_finalize__UploadFinalizeResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "imageId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imageid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "status"
+        ],
+        "title": "UploadFinalizeResponse",
+        "description": "Response from finalize upload."
+      },
       "app__api__v3__logs__bundle__FeedbackItem": {
         "properties": {
           "feedback_id": {
@@ -32813,6 +32945,14 @@
             "type": "array",
             "title": "Valid Document Ids"
           },
+          "scenario_images": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Scenario Images"
+          },
           "objective_ids": {
             "items": {
               "type": "string"
@@ -32943,6 +33083,7 @@
           "valid_persona_ids",
           "document_ids",
           "valid_document_ids",
+          "scenario_images",
           "objective_ids",
           "valid_objectives",
           "objectives_history",

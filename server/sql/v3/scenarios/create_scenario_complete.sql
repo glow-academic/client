@@ -5,7 +5,8 @@
 --            $10=problem_statement_versions (text array, nullable),
 --            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
 --            $13=document_ids (text array), $14=objective_ids (text array), 
---            $15=parameter_item_ids (text array, flattened from parameters dict)
+--            $15=parameter_item_ids (text array, flattened from parameters dict),
+--            $16=image_ids (text array, nullable)
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
 WITH new_scenario AS (
@@ -172,6 +173,22 @@ link_parameters AS (
     CROSS JOIN UNNEST($15::text[]) as param_item_id
     WHERE COALESCE(array_length($15::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_images AS (
+    -- Link images if provided (create junction table entries)
+    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+    SELECT 
+        ns.scenario_id::uuid,
+        image_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_scenario ns
+    CROSS JOIN UNNEST($16::text[]) as image_id
+    WHERE COALESCE(array_length($16::text[], 1), 0) > 0
+    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

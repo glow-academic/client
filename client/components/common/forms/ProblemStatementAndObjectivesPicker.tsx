@@ -1,15 +1,14 @@
 /**
  * ProblemStatementAndObjectivesPicker.tsx
- * Combined component for problem statement selection, objectives input, and optional video images
+ * Combined component for problem statement selection and objectives input
  * Used by both Scenario.tsx and Video.tsx
  */
 
 "use client";
 
-import { GripVertical, PlusCircle, Trash2, Upload, X } from "lucide-react";
+import { GripVertical, PlusCircle, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import * as tus from "tus-js-client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +22,6 @@ type ProblemStatementInfo = {
   updated_at: string;
 };
 
-type VideoImage = {
-  id: string;
-  file_path: string;
-  mime_type: string;
-  active: boolean;
-};
 
 // Component for objective input with autocomplete
 function ObjectiveInputWithAutocomplete({
@@ -180,10 +173,6 @@ export interface ProblemStatementAndObjectivesPickerProps {
   onObjectivesChange: (objectives: string[]) => void;
   objectivesHistory: string[];
 
-  // Video images props (optional - only for videos)
-  enableVideoImages?: boolean;
-  videoImages?: VideoImage[];
-  onVideoImagesChange?: (images: VideoImage[]) => void;
 
   // Common props
   disabled?: boolean;
@@ -201,9 +190,6 @@ export function ProblemStatementAndObjectivesPicker({
   objectives,
   onObjectivesChange,
   objectivesHistory,
-  enableVideoImages = false,
-  videoImages = [],
-  onVideoImagesChange,
   disabled = false,
   readonly = false,
   entityType = "scenario",
@@ -211,7 +197,6 @@ export function ProblemStatementAndObjectivesPicker({
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Objective handlers
   const addObjective = () => {
@@ -252,92 +237,6 @@ export function ProblemStatementAndObjectivesPicker({
     setDraggedObjectiveIndex(null);
   };
 
-  // Video images handlers
-  const handleImageFileSelect = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
-
-    if (!onVideoImagesChange) return;
-
-    setIsUploadingImage(true);
-    const toastId = toast.loading(`Uploading image: ${file.name}`, {
-      description: "0% complete",
-      dismissible: true,
-    });
-
-    try {
-      // Create TUS upload
-      const upload = new tus.Upload(file, {
-        endpoint: `/api/videos/images/upload`,
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        metadata: {
-          filename: file.name,
-          filetype: file.type,
-        },
-        onError: (error) => {
-          toast.error(`Upload failed: ${file.name}`, {
-            description: error.message || "An error occurred during upload",
-            id: toastId,
-          });
-          setIsUploadingImage(false);
-        },
-        onProgress: (bytesUploaded, bytesTotal) => {
-          const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
-          toast.loading(`Uploading image: ${file.name}`, {
-            description: `${percentage}% complete`,
-            id: toastId,
-          });
-        },
-        onSuccess: async () => {
-          // Get upload ID from location header
-          const location = upload.url;
-          const uploadId = location.split("/").pop();
-
-          if (!uploadId) {
-            throw new Error("Failed to get upload ID");
-          }
-
-          // Finalize upload - this will be handled by the parent component
-          // For now, we'll create a placeholder image object
-          const newImage: VideoImage = {
-            id: uploadId,
-            file_path: `/api/videos/images/upload/${uploadId}`,
-            mime_type: file.type,
-            active: true,
-          };
-
-          onVideoImagesChange([...videoImages, newImage]);
-          toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-          setIsUploadingImage(false);
-        },
-      });
-
-      upload.start();
-    } catch (error) {
-      toast.error(
-        `Failed to upload image: ${error instanceof Error ? error.message : "Unknown error"}`,
-        {
-          id: toastId,
-        }
-      );
-      setIsUploadingImage(false);
-    }
-
-    // Reset input
-    e.target.value = "";
-  };
-
-  const handleRemoveImage = (imageId: string) => {
-    if (!onVideoImagesChange) return;
-    onVideoImagesChange(videoImages.filter((img) => img.id !== imageId));
-  };
 
   return (
     <div className="space-y-4">
@@ -427,63 +326,6 @@ export function ProblemStatementAndObjectivesPicker({
         )}
       </div>
 
-      {/* Video Images (optional) */}
-      {enableVideoImages && (
-        <div className="space-y-2">
-          <Label>Reference Images</Label>
-          <p className="text-xs text-muted-foreground">
-            Add images to help prompt video generation
-          </p>
-          <div className="space-y-2">
-            {videoImages.map((image) => (
-              <div
-                key={image.id}
-                className="flex items-center gap-2 p-2 border rounded-lg"
-              >
-                <img
-                  src={image.file_path}
-                  alt="Reference"
-                  className="h-16 w-16 object-cover rounded"
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{image.mime_type}</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveImage(image.id)}
-                  disabled={disabled || readonly}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageFileSelect}
-                disabled={disabled || readonly || isUploadingImage}
-                className="hidden"
-                id="video-image-upload"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  document.getElementById("video-image-upload")?.click()
-                }
-                disabled={disabled || readonly || isUploadingImage}
-                size="sm"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isUploadingImage ? "Uploading..." : "Upload Image"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

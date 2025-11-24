@@ -4,7 +4,7 @@
 --            $6=problem_statement_ids (text array, nullable),
 --            $7=objective_ids (text array, nullable),
 --            $8=policy_ids (text array, nullable),
---            $9=video_image_ids (text array, nullable),
+--            $9=image_ids (text array, nullable),
 --            $10=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
@@ -102,21 +102,25 @@ link_policies AS (
     WHERE COALESCE(array_length($8::text[], 1), 0) > 0
 ),
 delete_old_video_images AS (
-    -- Deactivate old video images (don't delete, just deactivate)
-    UPDATE video_images
-    SET active = false, updated_at = NOW()
+    -- Delete old video image links (junction table entries)
+    DELETE FROM video_images
     WHERE video_id = $1::uuid
 ),
 link_video_images AS (
-    -- Link video images if provided (activate and link to this video)
-    UPDATE video_images
-    SET 
-        video_id = uv.video_id,
+    -- Link video images if provided (create junction table entries)
+    INSERT INTO video_images (video_id, image_id, active, created_at, updated_at)
+    SELECT 
+        uv.video_id,
+        image_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM updated_video uv
+    CROSS JOIN UNNEST($9::text[]) as image_id
+    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
+    ON CONFLICT (video_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
-    FROM updated_video uv
-    WHERE video_images.id = ANY($9::uuid[])
-        AND COALESCE(array_length($9::text[], 1), 0) > 0
 ),
 questions_data AS (
     -- Parse questions from JSON

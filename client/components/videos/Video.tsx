@@ -50,6 +50,7 @@ import { cn } from "@/lib/utils";
 
 // Custom Components
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import { ImagePicker } from "@/components/common/forms/ImagePicker";
 import {
   PolicyMappingItem,
   PolicyPicker,
@@ -275,8 +276,8 @@ export default function Video({
       setCurrentObjectives([]);
     } else if (section === "policies") {
       setSelectedPolicyIds([]);
-    } else if (section === "video_images") {
-      setVideoImages([]);
+    } else if (section === "images") {
+      setImages([]);
     }
   };
 
@@ -303,8 +304,14 @@ export default function Video({
     string | null
   >(null);
   const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
-  const [videoImages, setVideoImages] = useState<
-    Array<{ id: string; file_path: string; mime_type: string; active: boolean }>
+  const [images, setImages] = useState<
+    Array<{
+      id: string;
+      name: string;
+      file_path: string;
+      mime_type: string;
+      active: boolean;
+    }>
   >([]);
 
   // Policies state
@@ -410,15 +417,17 @@ export default function Video({
 
       // Load video images
       if (videoData.video_images && Array.isArray(videoData.video_images)) {
-        setVideoImages(
+        setImages(
           videoData.video_images.map(
             (img: {
               id?: string;
+              name?: string;
               file_path?: string;
               mime_type?: string;
               active?: boolean;
             }) => ({
               id: img.id || "",
+              name: img.name || "",
               file_path: img.file_path || "",
               mime_type: img.mime_type || "",
               active: img.active !== false,
@@ -521,7 +530,7 @@ export default function Video({
       const objectiveIds: string[] = [];
 
       // Get video image IDs
-      const videoImageIds = videoImages.map((img) => img.id).filter(Boolean);
+      const imageIds = images.map((img) => img.id).filter(Boolean);
 
       if (isEditMode && videoId) {
         // UPDATE mode
@@ -543,8 +552,8 @@ export default function Video({
         if (selectedPolicyIds.length > 0) {
           updatePayload.policy_ids = selectedPolicyIds;
         }
-        if (videoImageIds.length > 0) {
-          updatePayload.video_image_ids = videoImageIds;
+        if (imageIds.length > 0) {
+          updatePayload.image_ids = imageIds;
         }
 
         await handleUpdateVideo(updatePayload);
@@ -568,8 +577,8 @@ export default function Video({
         if (selectedPolicyIds.length > 0) {
           createPayload.policy_ids = selectedPolicyIds;
         }
-        if (videoImageIds.length > 0) {
-          createPayload.video_image_ids = videoImageIds;
+        if (imageIds.length > 0) {
+          createPayload.image_ids = imageIds;
         }
 
         await handleCreateVideo(createPayload);
@@ -1041,12 +1050,42 @@ export default function Video({
             objectives={currentObjectives}
             onObjectivesChange={setCurrentObjectives}
             objectivesHistory={objectivesHistory}
-            enableVideoImages={true}
-            videoImages={videoImages}
-            onVideoImagesChange={setVideoImages}
             disabled={isSubmitting}
             readonly={isReadonly}
             entityType="video"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Step 2.5: Images */}
+      <Card
+        className={`transition-all ${!isEditMode && getStepStatus("images") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode && getStepStatus("images") === "pending"
+            ? "opacity-50"
+            : ""
+        }`}
+      >
+        <CardHeader>
+          <CardTitle>Reference Images</CardTitle>
+          <CardDescription>
+            Upload reference images that can be shared between scenarios and
+            videos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ImagePicker
+            images={images}
+            onImagesChange={setImages}
+            disabled={isSubmitting}
+            readonly={isReadonly}
+            finalizeUploadAction={async (input) => {
+              const response = await fetch("/api/images/upload/finalize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+              });
+              return response.json();
+            }}
           />
         </CardContent>
       </Card>
