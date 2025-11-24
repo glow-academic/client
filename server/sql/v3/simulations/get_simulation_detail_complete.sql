@@ -97,6 +97,7 @@ user_context AS (
                 ss.output_guardrail_enabled,
                 ss.image_input_enabled,
                 ss.rubric_id,
+                stl.time_limit_seconds,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
                      FROM scenario_parameter_items spi
@@ -107,6 +108,7 @@ user_context AS (
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+            LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
             WHERE ss.simulation_id = $1
             ORDER BY ss.position
         ),
@@ -171,6 +173,7 @@ user_context AS (
                         'output_guardrail_enabled', sb.output_guardrail_enabled,
                         'image_input_enabled', sb.image_input_enabled,
                         'rubric_id', sb.rubric_id::text,
+                        'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
                             FROM unnest(sb.parameter_item_ids) as pid
@@ -193,7 +196,7 @@ user_context AS (
             SELECT DISTINCT
                 s.id,
                 s.name,
-                sps.problem_statement
+                ps.problem_statement
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
@@ -217,7 +220,7 @@ user_context AS (
                     ssb.scenario_id
                 ) as id,
                 s2.name,
-                sps2.problem_statement
+                ps2.problem_statement
             FROM simulation_scenarios_base ssb
             JOIN scenarios s2 ON s2.id = COALESCE(
                 (SELECT st3.parent_id 
@@ -239,13 +242,15 @@ user_context AS (
             SELECT 
                 v.id as video_id,
                 v.name,
-                v.description,
+                COALESCE(ps.problem_statement, '') as description,
                 sv.active,
                 sv.position,
                 sv.objectives_enabled,
                 v.length_seconds
             FROM videos v
             JOIN simulation_videos sv ON sv.video_id = v.id
+            LEFT JOIN video_problem_statements vps ON vps.video_id = v.id AND vps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = vps.problem_statement_id
             WHERE sv.simulation_id = $1
             ORDER BY sv.position
         ),
@@ -309,8 +314,10 @@ user_context AS (
             SELECT DISTINCT
                 v.id,
                 v.name,
-                v.description
+                COALESCE(ps.problem_statement, '') as description
             FROM videos v
+            LEFT JOIN video_problem_statements vps ON vps.video_id = v.id AND vps.active = true
+            LEFT JOIN problem_statements ps ON ps.id = vps.problem_statement_id
             CROSS JOIN user_department_ids udi
             JOIN video_tree vt ON vt.parent_id = v.id AND vt.child_id = v.id
             LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true
@@ -331,7 +338,7 @@ user_context AS (
                     svb.video_id
                 ) as id,
                 v2.name,
-                v2.description
+                svb.description
             FROM simulation_videos_base svb
             JOIN videos v2 ON v2.id = COALESCE(
                 (SELECT vt3.parent_id 

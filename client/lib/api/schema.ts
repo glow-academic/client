@@ -5244,6 +5244,8 @@ export interface components {
             image_input_enabled?: boolean | null;
             /** Rubric Id */
             rubric_id?: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds?: number | null;
         };
         /** CreateAgentRequest */
         CreateAgentRequest: {
@@ -5832,8 +5834,11 @@ export interface components {
             /** Practice Simulation */
             practice_simulation: boolean;
             /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
+            time_limit?: number | null;
+            /**
+             * Rubric Id
+             * @default
+             */
             rubric_id: string;
             /** Scenario Ids */
             scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;
@@ -10108,6 +10113,8 @@ export interface components {
             image_input_enabled: boolean;
             /** Rubric Id */
             rubric_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -11403,8 +11410,11 @@ export interface components {
             /** Practice Simulation */
             practice_simulation: boolean;
             /** Time Limit */
-            time_limit: number | null;
-            /** Rubric Id */
+            time_limit?: number | null;
+            /**
+             * Rubric Id
+             * @default
+             */
             rubric_id: string;
             /** Scenario Ids */
             scenario_ids?: string[] | components["schemas"]["ScenarioInRequest"][] | null;

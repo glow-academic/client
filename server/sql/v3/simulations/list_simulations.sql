@@ -3,7 +3,7 @@ WITH user_departments AS (
     FROM profile_departments
     WHERE profile_id = $1 AND active = true
 ),
-simulation_scenarios AS (
+simulation_scenarios_data AS (
     SELECT 
         ss.simulation_id,
         ARRAY_AGG(ss.scenario_id ORDER BY sc.name) as scenario_ids,
@@ -70,8 +70,8 @@ simulation_data AS (
         (SELECT ss_rubric.rubric_id FROM simulation_scenarios ss_rubric WHERE ss_rubric.simulation_id = s.id AND ss_rubric.active = true ORDER BY ss_rubric.position LIMIT 1) as rubric_id,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        COALESCE(ss.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
-        COALESCE(ss.num_scenarios, 0) as num_scenarios,
+        COALESCE(ssd.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
+        COALESCE(ssd.num_scenarios, 0) as num_scenarios,
         COALESCE(sa.attempt_count, 0) as attempt_count,
         COALESCE(sacl.active_cohort_count, 0) as active_cohort_count,
         COALESCE(salcl.total_cohort_links, 0) as total_cohort_links,
@@ -80,13 +80,13 @@ simulation_data AS (
     FROM simulations s
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     LEFT JOIN simulation_departments_data sdd ON sdd.simulation_id = s.id
-    LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
+    LEFT JOIN simulation_scenarios_data ssd ON ssd.simulation_id = s.id
     LEFT JOIN simulation_attempts sa ON sa.simulation_id = s.id
     LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
     LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
     GROUP BY s.id, s.title, s.description, s.active, s.practice_simulation, 
-             s.updated_at, sdd.department_ids, ss.scenario_ids, ss.num_scenarios, sa.attempt_count, 
+             s.updated_at, sdd.department_ids, ssd.scenario_ids, ssd.num_scenarios, sa.attempt_count, 
              sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts, scd.cohort_ids
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)

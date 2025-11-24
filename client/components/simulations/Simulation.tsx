@@ -28,8 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// Replaced standard select with RubricPicker
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
+// RubricPicker is now used in SimulationContentTable, not here
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
@@ -100,8 +99,6 @@ export interface SimulationProps {
 interface FormData {
   title?: string;
   description?: string;
-  timeLimit?: number | null;
-  rubricId?: string;
   cohortIds?: string[];
   active?: boolean;
   practiceSimulation?: boolean;
@@ -110,8 +107,6 @@ interface FormData {
 
 interface FormErrors {
   title?: string;
-  timeLimit?: string;
-  rubricId?: string;
   cohortIds?: string[];
   departmentIds?: string[];
 }
@@ -144,6 +139,13 @@ export default function Simulation({
   const simulationData = isEditMode
     ? simulationDetail
     : simulationDetailDefault;
+
+  // Extract strongly typed scenario from SimulationDetailOut or SimulationDetailDefaultOut
+  type ScenarioInSimulation = NonNullable<
+    SimulationDetailOut["scenarios"]
+  >[number] extends infer S
+    ? S
+    : NonNullable<SimulationDetailDefaultOut["scenarios"]>[number];
 
   // Extract body types from server action types for type safety
   type CreateSimulationBody = CreateSimulationIn extends { body: infer B }
@@ -199,8 +201,6 @@ export default function Simulation({
     () => ({
       title: "",
       description: "",
-      timeLimit: 15,
-      rubricId: "",
       cohortIds: [],
       active: true,
       practiceSimulation: false,
@@ -249,6 +249,7 @@ export default function Simulation({
         output_guardrail_enabled?: boolean;
         image_input_enabled?: boolean;
         rubric_id?: string | null;
+        time_limit_seconds?: number | null;
       }
     >
   >({});
@@ -263,6 +264,7 @@ export default function Simulation({
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           rubric_id?: string | null;
+          time_limit_seconds?: number | null;
         }
       >
     >({});
@@ -320,17 +322,20 @@ export default function Simulation({
   ]);
 
   // Extract valid rubric IDs from V2 response, filtered by selected departments
-  // Includes: items from selected departments + cross-department items + currently selected items
+  // Includes: items from selected departments + cross-department items + currently selected items from content
   const validRubricIds = useMemo(() => {
     const baseIds = simulationData?.valid_rubric_ids || [];
     const selectedDeptIds = formData?.departmentIds || [];
 
-    // Always include currently selected rubric (for edit mode - ensures selected item is visible)
-    const selectedRubricIdSet = formData?.rubricId
-      ? new Set([formData.rubricId])
-      : new Set<string>();
+    // Always include currently selected rubrics from content items (for edit mode - ensures selected items are visible)
+    const selectedRubricIdSet = new Set<string>();
+    currentContentItems.forEach((item) => {
+      if (item.type === "scenario" && item.rubric_id) {
+        selectedRubricIdSet.add(item.rubric_id);
+      }
+    });
 
-    // If no departments selected, return all valid IDs plus selected one
+    // If no departments selected, return all valid IDs plus selected ones
     if (selectedDeptIds.length === 0) {
       return Array.from(new Set([...baseIds, ...selectedRubricIdSet]));
     }
@@ -355,7 +360,7 @@ export default function Simulation({
     // Include items that are:
     // 1. In selected departments
     // 2. Cross-department (not in any department's rubric_ids)
-    // 3. Currently selected
+    // 3. Currently selected from content
     const filtered = baseIds.filter((id) => {
       const inSelectedDepts = selectedDeptRubricIds.has(id);
       const isCrossDept = !allDeptRubricIds.has(id); // Not in any department = cross-department
@@ -366,7 +371,7 @@ export default function Simulation({
   }, [
     simulationData?.valid_rubric_ids,
     formData?.departmentIds,
-    formData?.rubricId,
+    currentContentItems,
     departmentMapping,
   ]);
 
@@ -400,8 +405,6 @@ export default function Simulation({
       const formDataFromServer = {
         title: simulationData.name,
         description: simulationData.description,
-        timeLimit: simulationData.time_limit,
-        rubricId: simulationData.rubric_id,
         active: simulationData.active,
         practiceSimulation: simulationData.practice_simulation ?? false,
         departmentIds: deptIds,
@@ -414,12 +417,8 @@ export default function Simulation({
       setPreviousDepartmentIds((prev) => (prev.length === 0 ? deptIds : prev));
 
       // Initialize scenario active states from server data
-      const activeStates: Record<string, boolean> = {};
-      simulationData.scenarios.forEach((s) => {
-        activeStates[s.scenario_id] = s.active;
-      });
-      setScenarioActiveStates(activeStates);
-      setOriginalActiveStates(activeStates);
+      // Note: This is legacy code - active states are now handled via contentActiveStates
+      // Keeping for backward compatibility during migration
     } else if (!isEditMode && simulationData) {
       setFormData(initialFormData);
       setOriginalFormData(initialFormData);
@@ -436,12 +435,13 @@ export default function Simulation({
     }
   };
 
-  const handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
+  // Legacy drag-and-drop handlers - replaced by table's up/down buttons
+  const _handleDragStartScenario = (e: React.DragEvent, scenarioId: string) => {
     setDraggedScenario(scenarioId);
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const _handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   };
@@ -463,7 +463,7 @@ export default function Simulation({
 
     // Add scenarios from server data
     if (simulationData?.scenarios) {
-      simulationData.scenarios.forEach((scenario) => {
+      simulationData.scenarios.forEach((scenario: ScenarioInSimulation) => {
         const key = `scenario:${scenario.scenario_id}`;
         const switchState = contentSwitchStates[key];
         items.push({
@@ -497,6 +497,10 @@ export default function Simulation({
             scenario.image_input_enabled ??
             false,
           rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
+          time_limit_seconds:
+            switchState?.time_limit_seconds ??
+            scenario.time_limit_seconds ??
+            null,
         });
       });
     }
@@ -504,23 +508,25 @@ export default function Simulation({
     // Add videos from server data
     if (simulationData?.videos) {
       simulationData.videos.forEach((video) => {
-        const key = `video:${video.video_id}`;
+        const key = `video:${video["video_id"]}`;
         const switchState = contentSwitchStates[key];
         items.push({
           type: "video",
-          id: video.video_id,
-          title: video.title,
-          description: video.description,
-          active: contentActiveStates[key] ?? video.active,
-          position: video.position,
-          usage_count: video.usage_count,
-          success_rate: video.success_rate,
-          last_used: video.last_used,
-          can_remove: video.can_remove,
-          length_seconds: video.length_seconds,
+          id: video["video_id"] as string,
+          title: video["title"] as string,
+          description: video["description"] as string,
+          active: contentActiveStates[key] ?? (video["active"] as boolean),
+          position: video["position"] as number,
+          usage_count: video["usage_count"] as number,
+          success_rate: video["success_rate"] as number,
+          last_used: video["last_used"] as string | null,
+          can_remove: video["can_remove"] as boolean,
+          length_seconds: video["length_seconds"] as number,
           isNew: false,
           objectives_enabled:
-            switchState?.objectives_enabled ?? video.objectives_enabled ?? true,
+            switchState?.objectives_enabled ??
+            (video["objectives_enabled"] as boolean) ??
+            true,
         });
       });
     }
@@ -558,6 +564,7 @@ export default function Simulation({
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           rubric_id?: string | null;
+          time_limit_seconds?: number | null;
         }
       > = {};
       const newOriginalSwitchStates: Record<
@@ -569,12 +576,13 @@ export default function Simulation({
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           rubric_id?: string | null;
+          time_limit_seconds?: number | null;
         }
       > = {};
 
       // Initialize active states and switch states from scenarios
       if (simulationData.scenarios) {
-        simulationData.scenarios.forEach((scenario) => {
+        simulationData.scenarios.forEach((scenario: ScenarioInSimulation) => {
           const key = `scenario:${scenario.scenario_id}`;
           newActiveStates[key] = scenario.active;
           newOriginalActiveStates[key] = scenario.active;
@@ -586,6 +594,7 @@ export default function Simulation({
               scenario.output_guardrail_enabled ?? false,
             image_input_enabled: scenario.image_input_enabled ?? false,
             rubric_id: scenario.rubric_id ?? null,
+            time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
           newOriginalSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
@@ -595,6 +604,7 @@ export default function Simulation({
               scenario.output_guardrail_enabled ?? false,
             image_input_enabled: scenario.image_input_enabled ?? false,
             rubric_id: scenario.rubric_id ?? null,
+            time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
         });
       }
@@ -602,10 +612,11 @@ export default function Simulation({
       // Initialize active states and switch states from videos
       if (simulationData.videos) {
         simulationData.videos.forEach((video) => {
-          const key = `video:${video.video_id}`;
-          newActiveStates[key] = video.active;
-          newOriginalActiveStates[key] = video.active;
-          const videoObjectivesEnabled = video.objectives_enabled ?? true;
+          const key = `video:${video["video_id"]}`;
+          newActiveStates[key] = video["active"] as boolean;
+          newOriginalActiveStates[key] = video["active"] as boolean;
+          const videoObjectivesEnabled =
+            (video["objectives_enabled"] as boolean) ?? true;
           newSwitchStates[key] = {
             objectives_enabled: videoObjectivesEnabled,
           };
@@ -671,7 +682,7 @@ export default function Simulation({
     // This ensures we save the full list before validScenarioIds changes filter them out
     // The ref contains the value from the previous render, before department changes affected validScenarioIds
     const scenariosToSave = [...currentScenarioIdsRef.current];
-    const rubricToSave = formData?.rubricId || undefined;
+    // Note: rubric_id is now per-scenario, not simulation-level, so we don't save it here
 
     // Find departments that were deselected
     const deselectedDepts = prevDeptIds.filter(
@@ -691,7 +702,7 @@ export default function Simulation({
         deselectedDepts.forEach((deptId) => {
           updated[deptId] = {
             scenario_ids: scenariosToSave,
-            rubric_id: rubricToSave,
+            // rubric_id is now per-scenario, not simulation-level
           };
         });
         return updated;
@@ -721,14 +732,7 @@ export default function Simulation({
               }
             }
 
-            // Restore rubric if valid
-            if (
-              staged.rubric_id &&
-              validRubricIds.includes(staged.rubric_id) &&
-              !formData?.rubricId
-            ) {
-              setFormData((prev) => ({ ...prev, rubricId: staged.rubric_id! }));
-            }
+            // Note: rubric_id is now per-scenario, not simulation-level, so we don't restore it here
           }
         });
         return prev; // Return unchanged since we're using separate setters
@@ -739,7 +743,6 @@ export default function Simulation({
     setPreviousDepartmentIds(currentDeptIds);
   }, [
     formData?.departmentIds,
-    formData?.rubricId,
     previousDepartmentIds,
     // Note: We don't include currentScenarioIds in dependencies to avoid race conditions
     // with the clearing effect. We capture the value at the start of the effect instead.
@@ -775,18 +778,14 @@ export default function Simulation({
     }
   }, [currentScenarioIds, validScenarioIds]);
 
-  useEffect(() => {
-    // Clear rubric if it's no longer valid
-    if (formData?.rubricId && !validRubricIds.includes(formData.rubricId)) {
-      setFormData((prev) => ({ ...prev, rubricId: "" }));
-    }
-  }, [formData?.rubricId, validRubricIds]);
+  // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
   // Modal states
   const [showSearchScenarioModal, setShowSearchScenarioModal] = useState(false);
   const [showSearchVideoModal, setShowSearchVideoModal] = useState(false);
 
-  const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
+  // Legacy drag-and-drop handler - replaced by table's up/down buttons
+  const _handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
 
     if (!draggedScenario) return;
@@ -812,17 +811,6 @@ export default function Simulation({
 
     if (!formData?.title?.trim()) {
       newErrors.title = "Title is required";
-    }
-
-    if (
-      formData?.timeLimit &&
-      (formData.timeLimit < 1 || formData.timeLimit > 120)
-    ) {
-      newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
-    }
-
-    if (!formData?.rubricId) {
-      newErrors.rubricId = "Rubric is required";
     }
 
     setErrors(newErrors);
@@ -856,40 +844,64 @@ export default function Simulation({
 
       // Convert unified content items to API format
       // Separate scenarios and videos while preserving order
-      const contentItems = currentContentItems.map((item) => {
-        const key = `${item.type}:${item.id}`;
-        const switchState = contentSwitchStates[key];
-        const baseItem: any = {
-          type: item.type,
-          id: item.id,
-          active: contentActiveStates[key] ?? item.active,
-        };
+      interface ContentItemPayload {
+        type: "scenario" | "video";
+        id: string;
+        active: boolean;
+        hints_enabled?: boolean;
+        objectives_enabled?: boolean;
+        input_guardrail_enabled?: boolean;
+        output_guardrail_enabled?: boolean;
+        image_input_enabled?: boolean;
+        rubric_id?: string | null;
+        time_limit_seconds?: number | null;
+      }
 
-        if (item.type === "scenario") {
-          baseItem.hints_enabled =
-            switchState?.hints_enabled ?? item.hints_enabled ?? false;
-          baseItem.objectives_enabled =
-            switchState?.objectives_enabled ?? item.objectives_enabled ?? true;
-          baseItem.input_guardrail_enabled =
-            switchState?.input_guardrail_enabled ??
-            item.input_guardrail_enabled ??
-            false;
-          baseItem.output_guardrail_enabled =
-            switchState?.output_guardrail_enabled ??
-            item.output_guardrail_enabled ??
-            false;
-          baseItem.image_input_enabled =
-            switchState?.image_input_enabled ??
-            item.image_input_enabled ??
-            false;
-          baseItem.rubric_id = switchState?.rubric_id ?? item.rubric_id ?? null;
-        } else if (item.type === "video") {
-          baseItem.objectives_enabled =
-            switchState?.objectives_enabled ?? item.objectives_enabled ?? true;
+      const contentItems: ContentItemPayload[] = currentContentItems.map(
+        (item) => {
+          const key = `${item.type}:${item.id}`;
+          const switchState = contentSwitchStates[key];
+          const baseItem: ContentItemPayload = {
+            type: item.type,
+            id: item.id,
+            active: contentActiveStates[key] ?? item.active,
+          };
+
+          if (item.type === "scenario") {
+            baseItem.hints_enabled =
+              switchState?.hints_enabled ?? item.hints_enabled ?? false;
+            baseItem.objectives_enabled =
+              switchState?.objectives_enabled ??
+              item.objectives_enabled ??
+              true;
+            baseItem.input_guardrail_enabled =
+              switchState?.input_guardrail_enabled ??
+              item.input_guardrail_enabled ??
+              false;
+            baseItem.output_guardrail_enabled =
+              switchState?.output_guardrail_enabled ??
+              item.output_guardrail_enabled ??
+              false;
+            baseItem.image_input_enabled =
+              switchState?.image_input_enabled ??
+              item.image_input_enabled ??
+              false;
+            baseItem.rubric_id =
+              switchState?.rubric_id ?? item.rubric_id ?? null;
+            baseItem.time_limit_seconds =
+              switchState?.time_limit_seconds ??
+              item.time_limit_seconds ??
+              null;
+          } else if (item.type === "video") {
+            baseItem.objectives_enabled =
+              switchState?.objectives_enabled ??
+              item.objectives_enabled ??
+              true;
+          }
+
+          return baseItem;
         }
-
-        return baseItem;
-      });
+      );
 
       if (targetSimulationId) {
         // UPDATE mode - unified content items
@@ -900,8 +912,8 @@ export default function Simulation({
           department_ids: finalDepartmentIds,
           active: formData?.active ?? true,
           practice_simulation: formData?.practiceSimulation || false,
-          time_limit: formData?.timeLimit || null,
-          rubric_id: formData?.rubricId || "",
+          rubric_id: "", // Deprecated: kept for backward compatibility
+          time_limit: null, // Deprecated: kept for backward compatibility
           content_items: contentItems,
         };
 
@@ -915,8 +927,8 @@ export default function Simulation({
           department_ids: finalDepartmentIds,
           active: formData?.active || true,
           practice_simulation: formData?.practiceSimulation || false,
-          time_limit: formData?.timeLimit || null,
-          rubric_id: formData?.rubricId || "",
+          rubric_id: "", // Deprecated: kept for backward compatibility
+          time_limit: null, // Deprecated: kept for backward compatibility
           content_items: contentItems,
         };
 
@@ -950,12 +962,13 @@ export default function Simulation({
     handleUpdateClick();
   };
 
-  const editScenario = (scenarioId: string) => {
+  // Legacy handler - not used in table-based interface
+  const _editScenario = (scenarioId: string) => {
     window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
   };
 
-  // Handle scenario selection from picker (now works with IDs)
-  const handleScenarioSelection = (scenarioIds: string[]) => {
+  // Legacy handler - not used in table-based interface
+  const _handleScenarioSelection = (scenarioIds: string[]) => {
     setCurrentScenarioIds(scenarioIds);
   };
 
@@ -980,8 +993,6 @@ export default function Simulation({
     return (
       current.title !== original.title ||
       current.description !== original.description ||
-      current.timeLimit !== original.timeLimit ||
-      current.rubricId !== original.rubricId ||
       current.active !== original.active ||
       current.practiceSimulation !== original.practiceSimulation ||
       JSON.stringify(current.departmentIds?.sort()) !==
@@ -991,7 +1002,9 @@ export default function Simulation({
       JSON.stringify(currentVideoIdsFromContent) !==
         JSON.stringify(originalVideoIds) ||
       JSON.stringify(contentActiveStates) !==
-        JSON.stringify(originalContentActiveStates)
+        JSON.stringify(originalContentActiveStates) ||
+      JSON.stringify(contentSwitchStates) !==
+        JSON.stringify(originalContentSwitchStates)
     );
   }, [
     formData,
@@ -1001,10 +1014,12 @@ export default function Simulation({
     simulationData,
     contentActiveStates,
     originalContentActiveStates,
+    contentSwitchStates,
+    originalContentSwitchStates,
   ]);
 
-  // Helper function to format last used date
-  const formatLastUsed = (date: string | null): string => {
+  // Helper function to format last used date (not currently used in table)
+  const _formatLastUsed = (date: string | null): string => {
     if (!date) return "Never";
     const d = new Date(date);
     return d.toLocaleDateString("en-US", {
@@ -1014,27 +1029,23 @@ export default function Simulation({
     });
   };
 
-  // Helper function to remove a scenario (legacy)
-  const handleRemoveScenario = (scenarioId: string) => {
+  // Helper function to remove a scenario (legacy - replaced by handleContentRemove)
+  // Kept for backward compatibility but not used
+  const _handleRemoveScenario = (scenarioId: string) => {
     setCurrentScenarioIds((prev) => prev.filter((id) => id !== scenarioId));
-    // Also remove from active states if present
-    setScenarioActiveStates((prev) => {
-      const newStates = { ...prev };
-      delete newStates[scenarioId];
-      return newStates;
-    });
+    // Active states are now handled via contentActiveStates in handleContentRemove
   };
 
   // Unified content handlers
   const handleContentSelect = useCallback(
-    (contentId: string, checked: boolean) => {
+    (_contentId: string, _checked: boolean) => {
       // Selection logic for bulk operations - TODO: implement selection state
     },
     []
   );
 
   const handleContentSelectAll = useCallback(
-    (checked: boolean, visibleRowIds?: string[]) => {
+    (_checked: boolean, _visibleRowIds?: string[]) => {
       // Select all logic - TODO: implement selection state
     },
     []
@@ -1129,6 +1140,21 @@ export default function Simulation({
     []
   );
 
+  const handleTimeLimitChange = useCallback(
+    (contentId: string, timeLimitMinutes: number | null) => {
+      // Convert minutes to seconds for storage
+      const timeLimitSeconds = timeLimitMinutes ? timeLimitMinutes * 60 : null;
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          time_limit_seconds: timeLimitSeconds,
+        },
+      }));
+    },
+    []
+  );
+
   const handleContentMoveUp = useCallback((contentId: string) => {
     setCurrentContentItems((prev) => {
       const index = prev.findIndex(
@@ -1136,10 +1162,10 @@ export default function Simulation({
       );
       if (index <= 0) return prev;
       const newItems = [...prev];
-      [newItems[index - 1], newItems[index]] = [
-        newItems[index],
-        newItems[index - 1],
-      ];
+      const prevItem = newItems[index - 1];
+      const currentItem = newItems[index];
+      if (!prevItem || !currentItem) return prev;
+      [newItems[index - 1], newItems[index]] = [currentItem, prevItem];
       // Recalculate positions sequentially
       return newItems.map((item, idx) => ({ ...item, position: idx + 1 }));
     });
@@ -1152,10 +1178,10 @@ export default function Simulation({
       );
       if (index < 0 || index >= prev.length - 1) return prev;
       const newItems = [...prev];
-      [newItems[index], newItems[index + 1]] = [
-        newItems[index + 1],
-        newItems[index],
-      ];
+      const currentItem = newItems[index];
+      const nextItem = newItems[index + 1];
+      if (!currentItem || !nextItem) return prev;
+      [newItems[index], newItems[index + 1]] = [nextItem, currentItem];
       // Recalculate positions sequentially
       return newItems.map((item, idx) => ({ ...item, position: idx + 1 }));
     });
@@ -1411,72 +1437,6 @@ export default function Simulation({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="timeLimit">Minutes Allowed</Label>
-            {formData?.timeLimit !== undefined ? (
-              <Input
-                id="timeLimit"
-                data-testid="input-simulation-time-limit"
-                type="number"
-                min="1"
-                max="120"
-                value={formData.timeLimit || ""}
-                onChange={(e) =>
-                  handleInputChange(
-                    "timeLimit",
-                    parseInt(e.target.value) || null
-                  )
-                }
-                className={errors.timeLimit ? "border-destructive" : ""}
-                placeholder="Leave empty for no time limit"
-                disabled={isReadonly}
-              />
-            ) : null}
-            {errors.timeLimit && (
-              <p className="text-sm text-destructive">{errors.timeLimit}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rubricId">Rubric</Label>
-            {formData?.rubricId !== undefined ? (
-              isReadonly ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`${errors.rubricId ? "border-destructive" : ""} w-full justify-between`}
-                  disabled
-                >
-                  <span className="truncate text-left">
-                    {(formData.rubricId &&
-                      simulationData?.rubric_mapping[formData.rubricId]
-                        ?.name) ||
-                      "No rubric selected"}
-                  </span>
-                </Button>
-              ) : (
-                <div data-testid="picker-rubric">
-                  <RubricPicker
-                    mapping={simulationData?.rubric_mapping || {}}
-                    validIds={validRubricIds}
-                    selectedIds={formData.rubricId ? [formData.rubricId] : []}
-                    onSelect={(ids) =>
-                      handleInputChange("rubricId", ids[0] || "")
-                    }
-                    placeholder="Select a rubric..."
-                    hideSelectedChips={true}
-                    buttonClassName={`${errors.rubricId ? "border-destructive" : ""}`}
-                  />
-                </div>
-              )
-            ) : null}
-            {errors.rubricId && (
-              <p className="text-sm text-destructive">{errors.rubricId}</p>
-            )}
-          </div>
-        </div>
-
         {/* Content (Scenarios & Videos) */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
@@ -1511,28 +1471,37 @@ export default function Simulation({
             onOutputGuardrailToggle={handleOutputGuardrailToggle}
             onImageInputToggle={handleImageInputToggle}
             onRubricChange={handleRubricChange}
+            onTimeLimitChange={handleTimeLimitChange}
+            rubricMapping={simulationData?.rubric_mapping || {}}
+            validRubricIds={validRubricIds}
             readonly={isReadonly}
           />
         </div>
 
         {/* Search Modals */}
-        <SearchExistingScenarioModal
-          open={showSearchScenarioModal}
-          onOpenChange={setShowSearchScenarioModal}
-          onStagedScenarios={handleStagedScenarios}
-          existingScenarioIds={currentScenarioIds}
-          searchScenarioAction={searchScenarioAction}
-        />
-        <SearchExistingVideoModal
-          open={showSearchVideoModal}
-          onOpenChange={setShowSearchVideoModal}
-          onStagedVideos={handleStagedVideos}
-          existingVideoIds={currentContentItems
-            .filter((item) => item.type === "video")
-            .map((item) => item.id)}
-          departmentIds={formData?.departmentIds}
-          searchVideoAction={searchVideoAction}
-        />
+        {searchScenarioAction && (
+          <SearchExistingScenarioModal
+            open={showSearchScenarioModal}
+            onOpenChange={setShowSearchScenarioModal}
+            onStagedScenarios={handleStagedScenarios}
+            existingScenarioIds={currentScenarioIds}
+            searchScenarioAction={searchScenarioAction}
+          />
+        )}
+        {searchVideoAction && (
+          <SearchExistingVideoModal
+            open={showSearchVideoModal}
+            onOpenChange={setShowSearchVideoModal}
+            onStagedVideos={handleStagedVideos}
+            existingVideoIds={currentContentItems
+              .filter((item) => item.type === "video")
+              .map((item) => item.id)}
+            {...(formData?.departmentIds && {
+              departmentIds: formData.departmentIds,
+            })}
+            searchVideoAction={searchVideoAction}
+          />
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">

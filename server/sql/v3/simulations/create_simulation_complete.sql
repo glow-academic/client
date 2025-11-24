@@ -1,18 +1,18 @@
--- Create simulation with departments, time limit, scenarios, and videos in a single transaction
--- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=rubric_id, $6=department_ids (nullable text array), $7=time_limit (nullable int), $8=scenario_ids (text array), $9=scenario_active_flags (bool array), $10=video_ids (text array), $11=video_active_flags (bool array), $12=scenario_hints_enabled (bool array), $13=scenario_objectives_enabled (bool array), $14=scenario_input_guardrail_enabled (bool array), $15=scenario_output_guardrail_enabled (bool array), $16=scenario_image_input_enabled (bool array), $17=scenario_rubric_ids (text array, nullable), $18=video_objectives_enabled (bool array)
+-- Create simulation with departments, scenarios, and videos in a single transaction
+-- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=video_ids (text array), $9=video_active_flags (bool array), $10=scenario_hints_enabled (bool array), $11=scenario_objectives_enabled (bool array), $12=scenario_input_guardrail_enabled (bool array), $13=scenario_output_guardrail_enabled (bool array), $14=scenario_image_input_enabled (bool array), $15=scenario_rubric_ids (text array, nullable), $16=scenario_time_limit_seconds (int array, nullable), $17=video_objectives_enabled (bool array)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
+-- Note: rubric_id and time_limit are now per-scenario, not simulation-level
 WITH new_simulation AS (
     INSERT INTO simulations (
         title,
         description,
         active,
         practice_simulation,
-        rubric_id,
         created_at,
         updated_at
     )
-    VALUES ($1, $2, $3, $4, $5::uuid, NOW(), NOW())
+    VALUES ($1, $2, $3, $4, NOW(), NOW())
     RETURNING id::text as simulation_id
 ),
 link_departments AS (
@@ -25,14 +25,14 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_simulation ns
-    CROSS JOIN UNNEST($6::text[]) as dept_id
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($5::text[]) as dept_id
+    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
     ON CONFLICT (simulation_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 scenarios_data AS (
-    -- Prepare scenarios with their active flags and switch flags
+    -- Prepare scenarios with their active flags, switch flags, rubric_id, and time_limit_seconds
     SELECT 
         scenario_id,
         active_flag,
@@ -42,6 +42,7 @@ scenarios_data AS (
         output_guardrail_enabled,
         image_input_enabled,
         rubric_id,
+        time_limit_seconds,
         row_num
     FROM (
         SELECT 
@@ -53,17 +54,19 @@ scenarios_data AS (
             COALESCE(output_guardrail_enabled, false) as output_guardrail_enabled,
             COALESCE(image_input_enabled, false) as image_input_enabled,
             rubric_id,
+            time_limit_seconds,
             ROW_NUMBER() OVER () as row_num
         FROM UNNEST(
-            $8::text[], 
-            $9::bool[], 
+            $6::text[], 
+            $7::bool[], 
+            COALESCE($10::bool[], ARRAY[]::bool[]),
+            COALESCE($11::bool[], ARRAY[]::bool[]),
             COALESCE($12::bool[], ARRAY[]::bool[]),
             COALESCE($13::bool[], ARRAY[]::bool[]),
             COALESCE($14::bool[], ARRAY[]::bool[]),
-            COALESCE($15::bool[], ARRAY[]::bool[]),
-            COALESCE($16::bool[], ARRAY[]::bool[]),
-            COALESCE($17::text[], ARRAY[]::text[])
-        ) AS t(scenario_id, active_flag, hints_enabled, objectives_enabled, input_guardrail_enabled, output_guardrail_enabled, image_input_enabled, rubric_id)
+            COALESCE($15::text[], ARRAY[]::text[]),
+            COALESCE($16::int[], ARRAY[]::int[])
+        ) AS t(scenario_id, active_flag, hints_enabled, objectives_enabled, input_guardrail_enabled, output_guardrail_enabled, image_input_enabled, rubric_id, time_limit_seconds)
     ) sub
 ),
 scenarios_with_order AS (
@@ -77,44 +80,33 @@ scenarios_with_order AS (
         output_guardrail_enabled,
         image_input_enabled,
         rubric_id,
+        time_limit_seconds,
         ROW_NUMBER() OVER (
             ORDER BY active_flag DESC, row_num
         ) as position
     FROM scenarios_data
-    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
 ),
 replace_time_limits AS (
-    -- Delete existing scenario time limits for this simulation
+    -- Delete existing scenario time limits for this simulation (should be empty for new simulation, but included for consistency)
     DELETE FROM scenario_time_limits 
     WHERE simulation_id IN (SELECT simulation_id FROM new_simulation)
 ),
-active_scenario_count AS (
-    -- Count active scenarios for time limit splitting
-    SELECT 
-        ns.simulation_id,
-        COUNT(*) FILTER (WHERE swo.active_flag = true) as active_count
-    FROM new_simulation ns
-    CROSS JOIN scenarios_with_order swo
-    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
-    GROUP BY ns.simulation_id
-),
 link_time_limits AS (
-    -- Link time limits to scenarios (split evenly across active scenarios) if provided
+    -- Link per-scenario time limits to scenarios if provided
     INSERT INTO scenario_time_limits (simulation_id, scenario_id, time_limit_seconds, active, created_at, updated_at)
     SELECT 
         ns.simulation_id::uuid,
         swo.scenario_id::uuid,
-        ($7::int / NULLIF(asc_count.active_count, 0))::int,
+        swo.time_limit_seconds,
         true,
         NOW(),
         NOW()
     FROM new_simulation ns
     CROSS JOIN scenarios_with_order swo
-    CROSS JOIN active_scenario_count asc_count
-    WHERE $7::int IS NOT NULL 
+    WHERE swo.time_limit_seconds IS NOT NULL 
+      AND swo.time_limit_seconds > 0
       AND swo.active_flag = true
-      AND COALESCE(array_length($8::text[], 1), 0) > 0
-      AND asc_count.simulation_id = ns.simulation_id
 ),
 scenario_count AS (
     -- Count scenarios to determine starting position for videos
@@ -135,9 +127,9 @@ videos_data AS (
             COALESCE(objectives_enabled, true) as objectives_enabled,
             ROW_NUMBER() OVER () as row_num
         FROM UNNEST(
-            $10::text[], 
-            $11::bool[],
-            COALESCE($18::bool[], ARRAY[]::bool[])
+            $8::text[], 
+            $9::bool[],
+            COALESCE($17::bool[], ARRAY[]::bool[])
         ) AS t(video_id, active_flag, objectives_enabled)
     ) sub
 ),
@@ -153,7 +145,7 @@ videos_with_order AS (
         ) as position
     FROM videos_data vd
     CROSS JOIN scenario_count sc
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
+    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
 ),
 link_scenarios AS (
     -- Link scenarios with proper ordering (active first, then inactive) and switch flags

@@ -11756,6 +11756,17 @@
               }
             ],
             "title": "Rubric Id"
+          },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
           }
         },
         "type": "object",
@@ -13140,7 +13151,8 @@
           },
           "rubric_id": {
             "type": "string",
-            "title": "Rubric Id"
+            "title": "Rubric Id",
+            "default": ""
           },
           "scenario_ids": {
             "anyOf": [
@@ -13203,9 +13215,7 @@
           "description",
           "department_ids",
           "active",
-          "practice_simulation",
-          "time_limit",
-          "rubric_id"
+          "practice_simulation"
         ],
         "title": "CreateSimulationRequest",
         "description": "Request to create a simulation."
@@ -24263,6 +24273,17 @@
             ],
             "title": "Rubric Id"
           },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
+          },
           "usage_count": {
             "type": "integer",
             "title": "Usage Count"
@@ -24301,6 +24322,7 @@
           "output_guardrail_enabled",
           "image_input_enabled",
           "rubric_id",
+          "time_limit_seconds",
           "usage_count",
           "success_rate",
           "last_used",
@@ -27457,7 +27479,8 @@
           },
           "rubric_id": {
             "type": "string",
-            "title": "Rubric Id"
+            "title": "Rubric Id",
+            "default": ""
           },
           "scenario_ids": {
             "anyOf": [
@@ -27521,9 +27544,7 @@
           "description",
           "department_ids",
           "active",
-          "practice_simulation",
-          "time_limit",
-          "rubric_id"
+          "practice_simulation"
         ],
         "title": "UpdateSimulationRequest",
         "description": "Request to update simulation."

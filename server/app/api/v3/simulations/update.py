@@ -40,6 +40,7 @@ class ContentItemInRequest(BaseModel):
     output_guardrail_enabled: bool | None = None
     image_input_enabled: bool | None = None
     rubric_id: str | None = None
+    time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
 
 
 class UpdateSimulationRequest(BaseModel):
@@ -51,8 +52,8 @@ class UpdateSimulationRequest(BaseModel):
     department_ids: list[str] | None
     active: bool
     practice_simulation: bool
-    time_limit: int | None
-    rubric_id: str
+    time_limit: int | None = None  # Deprecated: use per-scenario time_limit_seconds in content_items
+    rubric_id: str = ""  # Deprecated: use per-scenario rubric_id in content_items
     scenario_ids: list[str] | list[ScenarioInRequest] | None = None  # Deprecated, use content_items
     video_ids: list[str] | list[VideoInRequest] | None = None  # Deprecated, use content_items
     content_items: list[ContentItemInRequest] | None = None  # Unified content list
@@ -92,6 +93,7 @@ async def update_simulation(
             scenario_output_guardrail_enabled: list[bool] = []
             scenario_image_input_enabled: list[bool] = []
             scenario_rubric_ids: list[str] = []
+            scenario_time_limit_seconds: list[int | None] = []
             video_ids: list[str] = []
             video_active_flags: list[bool] = []
             video_objectives_enabled: list[bool] = []
@@ -108,6 +110,7 @@ async def update_simulation(
                         scenario_output_guardrail_enabled.append(item.output_guardrail_enabled if item.output_guardrail_enabled is not None else False)
                         scenario_image_input_enabled.append(item.image_input_enabled if item.image_input_enabled is not None else False)
                         scenario_rubric_ids.append(item.rubric_id if item.rubric_id else "")
+                        scenario_time_limit_seconds.append(item.time_limit_seconds)
                     elif item.type == "video":
                         video_ids.append(item.id)
                         video_active_flags.append(item.active)
@@ -144,11 +147,13 @@ async def update_simulation(
             scenario_output_guardrail_array = scenario_output_guardrail_enabled if scenario_output_guardrail_enabled else []
             scenario_image_input_array = scenario_image_input_enabled if scenario_image_input_enabled else []
             scenario_rubric_ids_array = scenario_rubric_ids if scenario_rubric_ids else []
+            scenario_time_limit_seconds_array = scenario_time_limit_seconds if scenario_time_limit_seconds else []
             video_ids_array = video_ids if video_ids else []
             video_flags_array = video_active_flags if video_active_flags else []
             video_objectives_array = video_objectives_enabled if video_objectives_enabled else []
 
-            # Update simulation with departments, time limit, scenarios, and videos in single SQL (DHH style)
+            # Update simulation with departments, scenarios, and videos in single SQL (DHH style)
+            # Note: rubric_id and time_limit are now per-scenario, not simulation-level
             sql_query = load_sql("sql/v3/simulations/update_simulation_complete.sql")
             sql_params = (
                 request.simulationId,
@@ -156,9 +161,7 @@ async def update_simulation(
                 request.description,
                 request.active,
                 request.practice_simulation,
-                request.rubric_id,
                 dept_ids,  # Always pass array (empty array if no departments)
-                request.time_limit,
                 scenario_ids_array,
                 scenario_flags_array,
                 video_ids_array,
@@ -169,6 +172,7 @@ async def update_simulation(
                 scenario_output_guardrail_array,
                 scenario_image_input_array,
                 scenario_rubric_ids_array,
+                scenario_time_limit_seconds_array,
                 video_objectives_array,
             )
             result = await conn.fetchrow(sql_query, *sql_params)

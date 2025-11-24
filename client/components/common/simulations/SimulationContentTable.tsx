@@ -26,7 +26,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import {
   Tooltip,
   TooltipContent,
@@ -56,6 +58,7 @@ export interface ContentItem {
   output_guardrail_enabled?: boolean;
   image_input_enabled?: boolean;
   rubric_id?: string | null;
+  time_limit_seconds?: number | null; // Per-scenario time limit in seconds
 }
 
 export interface SimulationContentTableProps {
@@ -76,6 +79,10 @@ export interface SimulationContentTableProps {
   onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onImageInputToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
+  onTimeLimitChange?: (contentId: string, timeLimitMinutes: number | null) => void;
+  // Rubric picker props
+  rubricMapping?: Record<string, { name: string; description?: string }>;
+  validRubricIds?: string[];
   readonly?: boolean;
 }
 
@@ -96,6 +103,9 @@ export function SimulationContentTable({
   onOutputGuardrailToggle,
   onImageInputToggle,
   onRubricChange,
+  onTimeLimitChange,
+  rubricMapping = {},
+  validRubricIds = [],
   readonly = false,
 }: SimulationContentTableProps) {
   const [rowSelection, setRowSelection] = React.useState({});
@@ -464,12 +474,81 @@ export function SimulationContentTable({
               </Badge>
             );
           }
+          const contentId = `${item.type}:${item.id}`;
+          return (
+            <div className="flex items-center justify-center min-w-[200px]">
+              {readonly ? (
+                <span className="text-xs text-muted-foreground">
+                  {item.rubric_id && rubricMapping[item.rubric_id]
+                    ? rubricMapping[item.rubric_id].name
+                    : "None"}
+                </span>
+              ) : (
+                <RubricPicker
+                  mapping={rubricMapping}
+                  validIds={validRubricIds}
+                  selectedIds={item.rubric_id ? [item.rubric_id] : []}
+                  onSelect={(ids) =>
+                    onRubricChange?.(contentId, ids[0] || null)
+                  }
+                  placeholder="Select rubric..."
+                  hideSelectedChips={true}
+                />
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: "time_limit",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 cursor-help">
+                <span>Time Limit</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Time limit in minutes for this scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          const contentId = `${item.type}:${item.id}`;
+          // Convert seconds to minutes for display
+          const timeLimitMinutes = item.time_limit_seconds
+            ? Math.round(item.time_limit_seconds / 60)
+            : null;
           return (
             <div className="flex items-center justify-center">
-              {item.rubric_id ? (
-                <Badge variant="secondary">{item.rubric_id}</Badge>
+              {readonly ? (
+                <span className="text-xs text-muted-foreground">
+                  {timeLimitMinutes ? `${timeLimitMinutes} min` : "No limit"}
+                </span>
               ) : (
-                <span className="text-xs text-muted-foreground">None</span>
+                <Input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={timeLimitMinutes || ""}
+                  onChange={(e) => {
+                    const value = e.target.value
+                      ? parseInt(e.target.value)
+                      : null;
+                    onTimeLimitChange?.(contentId, value);
+                  }}
+                  placeholder="No limit"
+                  className="w-24 h-8 text-sm"
+                  disabled={readonly}
+                />
               )}
             </div>
           );
@@ -546,7 +625,7 @@ export function SimulationContentTable({
         enableSorting: false,
       },
     ],
-    [data, selectedContentIds, readonly, onContentSelect, onSelectAll, onActiveToggle, onMoveUp, onMoveDown, onRemove, onHintsToggle, onObjectivesToggle, onInputGuardrailToggle, onOutputGuardrailToggle, onImageInputToggle]
+    [data, selectedContentIds, readonly, onContentSelect, onSelectAll, onActiveToggle, onMoveUp, onMoveDown, onRemove, onHintsToggle, onObjectivesToggle, onInputGuardrailToggle, onOutputGuardrailToggle, onImageInputToggle, onRubricChange, onTimeLimitChange, rubricMapping, validRubricIds]
   );
 
   const table = useReactTable({

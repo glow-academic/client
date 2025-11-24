@@ -63,6 +63,18 @@ scenario_departments_data AS (
     WHERE sd.active = true
     GROUP BY sd.scenario_id
 ),
+scenario_attributes AS (
+    SELECT DISTINCT ON (ss.scenario_id)
+        ss.scenario_id,
+        ss.hints_enabled,
+        ss.objectives_enabled,
+        ss.image_input_enabled,
+        ss.input_guardrail_enabled,
+        ss.output_guardrail_enabled
+    FROM simulation_scenarios ss
+    WHERE ss.active = true
+    ORDER BY ss.scenario_id, ss.position
+),
 scenario_data AS (
     SELECT 
         s.id as scenario_id,
@@ -79,12 +91,12 @@ scenario_data AS (
         COALESCE(ss.num_simulations, 0) as num_simulations,
         COALESCE(sc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        s.hints_enabled,
-        s.objectives_enabled,
-        s.image_input_enabled,
+        COALESCE(sa.hints_enabled, false) as hints_enabled,
+        COALESCE(sa.objectives_enabled, true) as objectives_enabled,
+        COALESCE(sa.image_input_enabled, false) as image_input_enabled,
         s.copy_paste_allowed,
-        s.input_guardrail_enabled,
-        s.output_guardrail_enabled,
+        COALESCE(sa.input_guardrail_enabled, false) as input_guardrail_enabled,
+        COALESCE(sa.output_guardrail_enabled, false) as output_guardrail_enabled,
         CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
         CASE 
             WHEN COALESCE(sdd.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
@@ -116,10 +128,12 @@ scenario_data AS (
     LEFT JOIN scenario_all_simulation_links sal ON sal.scenario_id = s.id
     LEFT JOIN scenario_cohorts sc ON sc.scenario_id = s.id
     LEFT JOIN scenario_personas_agg spa ON spa.scenario_id = s.id
+    LEFT JOIN scenario_attributes sa ON sa.scenario_id = s.id
     CROSS JOIN user_profile up
     GROUP BY s.id, s.name, ps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
-             sc.cohort_ids, sdd.department_ids, sal.total_links, up.role
+             sc.cohort_ids, sdd.department_ids, sal.total_links, up.role, s.copy_paste_allowed,
+             sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled, sa.input_guardrail_enabled, sa.output_guardrail_enabled
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(sd.scenario_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0

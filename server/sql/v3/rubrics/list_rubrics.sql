@@ -5,18 +5,20 @@ WITH user_departments AS (
 ),
 rubric_active_simulation_links AS (
     SELECT 
-        rubric_id,
-        COUNT(*) as active_simulation_count
-    FROM simulations
-    WHERE active = true
-    GROUP BY rubric_id
+        ss.rubric_id,
+        COUNT(DISTINCT ss.simulation_id) as active_simulation_count
+    FROM simulation_scenarios ss
+    JOIN simulations s ON s.id = ss.simulation_id
+    WHERE ss.active = true AND s.active = true AND ss.rubric_id IS NOT NULL
+    GROUP BY ss.rubric_id
 ),
 rubric_all_simulation_links AS (
     SELECT 
-        rubric_id,
-        COUNT(*) as total_simulation_links
-    FROM simulations
-    GROUP BY rubric_id
+        ss.rubric_id,
+        COUNT(DISTINCT ss.simulation_id) as total_simulation_links
+    FROM simulation_scenarios ss
+    WHERE ss.rubric_id IS NOT NULL
+    GROUP BY ss.rubric_id
 ),
 simulation_department_access_for_rubrics AS (
     -- Pre-compute which simulations the user has access to (for filtering rubric_simulations_data)
@@ -33,14 +35,23 @@ simulation_department_access_for_rubrics AS (
     WHERE s.active = true
     GROUP BY s.id
 ),
-rubric_simulations_data AS (
-    SELECT 
-        (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
-        ARRAY_AGG(s.id::text ORDER BY s.title) as simulation_ids
+rubric_simulations_distinct AS (
+    SELECT DISTINCT ON (ss.rubric_id, s.id)
+        ss.rubric_id,
+        s.id as simulation_id,
+        s.title as simulation_title
     FROM simulations s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
-    WHERE s.active = true
-    GROUP BY (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1)
+    INNER JOIN simulation_scenarios ss ON ss.simulation_id = s.id AND ss.active = true
+    WHERE s.active = true AND ss.rubric_id IS NOT NULL
+    ORDER BY ss.rubric_id, s.id, s.title
+),
+rubric_simulations_data AS (
+    SELECT 
+        rsd.rubric_id,
+        ARRAY_AGG(DISTINCT rsd.simulation_id::text ORDER BY rsd.simulation_id::text) as simulation_ids
+    FROM rubric_simulations_distinct rsd
+    GROUP BY rsd.rubric_id
 ),
 rubric_departments_data AS (
     SELECT 

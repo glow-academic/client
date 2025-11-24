@@ -380,10 +380,10 @@ if [[ "$MIGRATE_DB" == true ]]; then
       echo "📁 Found migration files, applying all of them..."
       for migration_file in migrate/*.sql; do
         echo "🔄 Applying migration: $(basename "$migration_file")"
-        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$migration_file"; then
           echo "✅ Migration applied: $(basename "$migration_file")"
         else
-          echo "⚠️  Migration had issues: $(basename "$migration_file")"
+          echo "❌ Migration failed: $(basename "$migration_file")"
           exit 1
         fi
       done
@@ -421,13 +421,13 @@ if [[ "$MIGRATE_DB" == true ]]; then
         
         # Step 2: Apply migration
         echo "🔄 Applying migration: $(basename "$migration_file")"
-        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$migration_file"; then
           echo "✅ Migration applied successfully: $(basename "$migration_file")"
           
           # Step 3: Create backup with migration number prefix
           create_backup "$migration_num"
         else
-          echo "⚠️  Migration had issues: $(basename "$migration_file")"
+          echo "❌ Migration failed: $(basename "$migration_file")"
           exit 1
         fi
       else

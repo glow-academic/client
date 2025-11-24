@@ -38,6 +38,7 @@ class ScenarioInSimulation(BaseModel):
     output_guardrail_enabled: bool
     image_input_enabled: bool
     rubric_id: str | None
+    time_limit_seconds: int | None  # Per-scenario time limit in seconds
 
     # Statistics fields
     usage_count: int  # Number of all chats (regardless of completion)
@@ -246,6 +247,7 @@ async def get_simulation_detail(
                             output_guardrail_enabled=s_data.get("output_guardrail_enabled", False),
                             image_input_enabled=s_data.get("image_input_enabled", False),
                             rubric_id=s_data.get("rubric_id"),
+                            time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
                             success_rate=s_data.get("success_rate", 0),
                             last_used=s_data.get("last_used"),

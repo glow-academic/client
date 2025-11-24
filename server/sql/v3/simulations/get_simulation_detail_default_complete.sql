@@ -71,6 +71,7 @@ WITH user_departments AS (
                 ss.output_guardrail_enabled,
                 ss.image_input_enabled,
                 ss.rubric_id,
+                stl.time_limit_seconds, -- Added per-scenario time limit
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
                      FROM scenario_parameter_items spi
@@ -81,6 +82,7 @@ WITH user_departments AS (
             JOIN simulation_scenarios ss ON ss.scenario_id = s.id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+            LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
             JOIN default_simulation ds ON ss.simulation_id = ds.id
             ORDER BY ss.position
         ),
@@ -140,6 +142,7 @@ WITH user_departments AS (
                         'output_guardrail_enabled', sb.output_guardrail_enabled,
                         'image_input_enabled', sb.image_input_enabled,
                         'rubric_id', sb.rubric_id::text,
+                        'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
                             FROM unnest(sb.parameter_item_ids) as pid
@@ -160,7 +163,7 @@ WITH user_departments AS (
             SELECT DISTINCT
                 s.id,
                 s.name,
-                sps.problem_statement
+                ps.problem_statement
             FROM scenarios s
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
