@@ -3060,6 +3060,57 @@
         ]
       }
     },
+    "/api/v3/videos/search": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Find Videos",
+        "description": "\ud83d\udd0e Find videos by name/description\n-----------------------------------\nFuzzy, case-insensitive search on video name and description.\nSupports optional department filtering.\n\nInput\n    \u2022 query - Video name or description to search for\n    \u2022 limit - Max results (default: 200)\n    \u2022 department_ids - Optional list of department IDs to filter by\n\nReturns\n    [\n        {\n            \"id\": str,                    # Video UUID\n            \"name\": str | None,           # Video name/title\n            \"description\": str | None,    # Video description\n            \"length_seconds\": int,         # Video length in seconds\n            \"department_ids\": list[str] | None,  # Department IDs (if any)\n            \"score\": int                  # Heuristic match score\n        },\n        ...\n    ]",
+        "operationId": "find_videos_api_v3_videos_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindVideosRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VideoSearchResult"
+                  },
+                  "type": "array",
+                  "title": "Response Find Videos Api V3 Videos Search Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
     "/api/v3/auth/list": {
       "post": {
         "tags": [
@@ -4918,6 +4969,241 @@
         "x-cache-tags": [
           "v3",
           "documents"
+        ]
+      }
+    },
+    "/api/v3/policies/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Create Policy",
+        "description": "Create a new policy.",
+        "operationId": "create_policy_api_v3_policies_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePolicyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
+        ]
+      }
+    },
+    "/api/v3/policies/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Get Policies List",
+        "description": "Get policies list.",
+        "operationId": "get_policies_list_api_v3_policies_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoliciesFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliciesListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
+        ]
+      }
+    },
+    "/api/v3/policies/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Get Policy Detail",
+        "description": "Get detailed policy information.",
+        "operationId": "get_policy_detail_api_v3_policies_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
+        ]
+      }
+    },
+    "/api/v3/policies/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Update Policy",
+        "description": "Update an existing policy.",
+        "operationId": "update_policy_api_v3_policies_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatePolicyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
+        ]
+      }
+    },
+    "/api/v3/policies/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Delete Policy",
+        "description": "Delete a policy (soft delete).",
+        "operationId": "delete_policy_api_v3_policies_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletePolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePolicyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
         ]
       }
     },
@@ -12349,6 +12635,59 @@
         "title": "CreatePersonaResponse",
         "description": "Response from create persona."
       },
+      "CreatePolicyRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "file_path",
+          "mime_type"
+        ],
+        "title": "CreatePolicyRequest",
+        "description": "Request to create a policy."
+      },
+      "CreatePolicyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "policyId": {
+            "type": "string",
+            "title": "Policyid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "policyId",
+          "message"
+        ],
+        "title": "CreatePolicyResponse",
+        "description": "Response from create operation."
+      },
       "CreatePromptRequest": {
         "properties": {
           "name": {
@@ -12515,6 +12854,17 @@
           "problem_statement": {
             "type": "string",
             "title": "Problem Statement"
+          },
+          "problem_statement_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Name"
           },
           "problem_statement_versions": {
             "anyOf": [
@@ -12905,10 +13255,6 @@
             "type": "string",
             "title": "Name"
           },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
           "length_seconds": {
             "type": "integer",
             "title": "Length Seconds"
@@ -12927,6 +13273,48 @@
             ],
             "title": "Department Ids"
           },
+          "problem_statement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Ids"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
+          "policy_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Ids"
+          },
           "active": {
             "type": "boolean",
             "title": "Active",
@@ -12944,7 +13332,6 @@
         "type": "object",
         "required": [
           "name",
-          "description",
           "length_seconds",
           "department_ids"
         ],
@@ -14184,6 +14571,39 @@
         ],
         "title": "DeletePersonaResponse",
         "description": "Response from delete persona."
+      },
+      "DeletePolicyRequest": {
+        "properties": {
+          "policyId": {
+            "type": "string",
+            "title": "Policyid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policyId"
+        ],
+        "title": "DeletePolicyRequest",
+        "description": "Request to delete a policy."
+      },
+      "DeletePolicyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeletePolicyResponse",
+        "description": "Response from delete operation."
       },
       "DeletePromptRequest": {
         "properties": {
@@ -15757,6 +16177,39 @@
         ],
         "title": "FindSimulationsRequest",
         "description": "Request to search simulations."
+      },
+      "FindVideosRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 200
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "FindVideosRequest",
+        "description": "Request to search videos."
       },
       "GenerateCertificateRequest": {
         "properties": {
@@ -19480,6 +19933,185 @@
         ],
         "title": "PersonasListResponse",
         "description": "Response for personas list endpoint."
+      },
+      "PoliciesFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "PoliciesFilters",
+        "description": "Filters for policies list request."
+      },
+      "PoliciesListResponse": {
+        "properties": {
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyItem"
+            },
+            "type": "array",
+            "title": "Policies"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policies",
+          "department_mapping"
+        ],
+        "title": "PoliciesListResponse",
+        "description": "Response for policies list endpoint."
+      },
+      "PolicyDetailRequest": {
+        "properties": {
+          "policyId": {
+            "type": "string",
+            "title": "Policyid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policyId",
+          "profileId"
+        ],
+        "title": "PolicyDetailRequest",
+        "description": "Request to get policy detail."
+      },
+      "PolicyDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "file_path",
+          "mime_type",
+          "active",
+          "created_at",
+          "updated_at",
+          "can_edit",
+          "can_delete",
+          "department_mapping"
+        ],
+        "title": "PolicyDetailResponse",
+        "description": "Response for policy detail."
+      },
+      "PolicyItem": {
+        "properties": {
+          "policy_id": {
+            "type": "string",
+            "title": "Policy Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy_id",
+          "name",
+          "description",
+          "file_path",
+          "mime_type",
+          "active",
+          "created_at",
+          "updated_at",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "PolicyItem",
+        "description": "Individual policy item in the response."
       },
       "PracticeFilters": {
         "properties": {
@@ -26146,6 +26778,64 @@
         "title": "UpdatePersonaResponse",
         "description": "Response from update persona."
       },
+      "UpdatePolicyRequest": {
+        "properties": {
+          "policyId": {
+            "type": "string",
+            "title": "Policyid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policyId",
+          "name",
+          "description",
+          "file_path",
+          "mime_type",
+          "active"
+        ],
+        "title": "UpdatePolicyRequest",
+        "description": "Request to update a policy."
+      },
+      "UpdatePolicyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "UpdatePolicyResponse",
+        "description": "Response from update operation."
+      },
       "UpdateProfileRequest": {
         "properties": {
           "profileId": {
@@ -26434,6 +27124,17 @@
           "problem_statement": {
             "type": "string",
             "title": "Problem Statement"
+          },
+          "problem_statement_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Name"
           },
           "department_ids": {
             "anyOf": [
@@ -26785,10 +27486,6 @@
             "type": "string",
             "title": "Name"
           },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
           "length_seconds": {
             "type": "integer",
             "title": "Length Seconds"
@@ -26807,6 +27504,48 @@
             ],
             "title": "Department Ids"
           },
+          "problem_statement_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Ids"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
+          "policy_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Ids"
+          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -26824,7 +27563,6 @@
         "required": [
           "videoId",
           "name",
-          "description",
           "length_seconds",
           "department_ids",
           "active"
@@ -27111,6 +27849,72 @@
         "title": "VideoDetailRequest",
         "description": "Request to get video detail."
       },
+      "VideoInSimulation": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "success_rate": {
+            "type": "integer",
+            "title": "Success Rate"
+          },
+          "last_used": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used"
+          },
+          "can_remove": {
+            "type": "boolean",
+            "title": "Can Remove"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id",
+          "title",
+          "description",
+          "active",
+          "position",
+          "length_seconds",
+          "usage_count",
+          "success_rate",
+          "last_used",
+          "can_remove"
+        ],
+        "title": "VideoInSimulation",
+        "description": "Video with position in simulation."
+      },
       "VideoItem": {
         "properties": {
           "video_id": {
@@ -27120,10 +27924,6 @@
           "name": {
             "type": "string",
             "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
           },
           "length_seconds": {
             "type": "integer",
@@ -27168,7 +27968,6 @@
         "required": [
           "video_id",
           "name",
-          "description",
           "length_seconds",
           "active",
           "department_ids",
@@ -27179,6 +27978,69 @@
         ],
         "title": "VideoItem",
         "description": "Individual video item in the response."
+      },
+      "VideoSearchResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "length_seconds",
+          "department_ids",
+          "score"
+        ],
+        "title": "VideoSearchResult",
+        "description": "Video search result."
       },
       "VideosFilters": {
         "properties": {
@@ -31914,6 +32776,20 @@
             "type": "array",
             "title": "Valid Scenario Ids"
           },
+          "video_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Ids"
+          },
+          "valid_video_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Video Ids"
+          },
           "active": {
             "type": "boolean",
             "title": "Active"
@@ -31949,6 +32825,13 @@
             "type": "array",
             "title": "Scenarios"
           },
+          "videos": {
+            "items": {
+              "$ref": "#/components/schemas/VideoInSimulation"
+            },
+            "type": "array",
+            "title": "Videos"
+          },
           "parameters": {
             "items": {
               "$ref": "#/components/schemas/app__api__v3__simulations__detail__ParameterItem"
@@ -31976,6 +32859,14 @@
             },
             "type": "object",
             "title": "Scenario Mapping"
+          },
+          "video_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Video Mapping"
           },
           "rubric_mapping": {
             "additionalProperties": {
@@ -32010,6 +32901,8 @@
           "valid_rubric_ids",
           "scenario_ids",
           "valid_scenario_ids",
+          "video_ids",
+          "valid_video_ids",
           "active",
           "practice_simulation",
           "can_edit",
@@ -32018,10 +32911,12 @@
           "in_use",
           "cohort_count",
           "scenarios",
+          "videos",
           "parameters",
           "parameter_items",
           "parameter_mapping",
           "scenario_mapping",
+          "video_mapping",
           "rubric_mapping",
           "department_mapping",
           "parameter_item_mapping"
@@ -32431,10 +33326,6 @@
             "type": "string",
             "title": "Name"
           },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
           "length_seconds": {
             "type": "integer",
             "title": "Length Seconds"
@@ -32463,6 +33354,37 @@
             },
             "type": "array",
             "title": "Valid Department Ids"
+          },
+          "problem_statement_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Problem Statement Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "objective_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Objective Mapping"
+          },
+          "policy_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Policy Ids"
           },
           "can_edit": {
             "type": "boolean",
@@ -32494,11 +33416,14 @@
         "type": "object",
         "required": [
           "name",
-          "description",
           "length_seconds",
           "active",
           "department_ids",
           "valid_department_ids",
+          "problem_statement_ids",
+          "objective_ids",
+          "objective_mapping",
+          "policy_ids",
           "can_edit",
           "can_duplicate",
           "can_delete",

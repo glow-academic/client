@@ -20,6 +20,12 @@ type SimulationDetailDefaultOut = OutputOf<
 type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
 type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
 
+type SearchScenarioIn = InputOf<"/api/v3/scenarios/search", "post">;
+type SearchScenarioOut = OutputOf<"/api/v3/scenarios/search", "post">;
+
+type SearchVideoIn = InputOf<"/api/v3/videos/search", "post">;
+type SearchVideoOut = OutputOf<"/api/v3/videos/search", "post">;
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -47,6 +53,20 @@ async function createSimulation(
   return api.post("/simulations/create", input);
 }
 
+async function searchScenarios(
+  input: SearchScenarioIn,
+): Promise<SearchScenarioOut> {
+  "use server";
+  return api.post("/scenarios/search", input);
+}
+
+async function searchVideos(
+  input: SearchVideoIn,
+): Promise<SearchVideoOut> {
+  "use server";
+  return api.post("/videos/search", input);
+}
+
 export const metadata: Metadata = {
   title: "New Simulation",
   description: `New simulation creation page for the simulations section in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
@@ -68,6 +88,8 @@ export default async function NewSimulationPage() {
       <Simulation
         simulationDetailDefault={simulationDetailDefault}
         createSimulationAction={createSimulation}
+        searchScenarioAction={searchScenarios}
+        searchVideoAction={searchVideos}
       />
     </div>
   );

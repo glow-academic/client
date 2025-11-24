@@ -28,8 +28,11 @@ import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { ScenarioPicker } from "@/components/common/forms/ScenarioPicker";
 import { Switch } from "@/components/ui/switch";
+import { SimulationContentTable, type ContentItem } from "@/components/common/simulations/SimulationContentTable";
+import { AddContentButton } from "@/components/common/simulations/AddContentButton";
+import SearchExistingScenarioModal from "@/components/common/simulations/SearchExistingScenarioModal";
+import SearchExistingVideoModal from "@/components/common/simulations/SearchExistingVideoModal";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -67,6 +70,12 @@ export interface SimulationProps {
   updateSimulationAction?: (
     input: UpdateSimulationIn
   ) => Promise<UpdateSimulationOut>;
+  searchScenarioAction?: (
+    input: { body: { query: string; limit: number } }
+  ) => Promise<Array<{ id: string; name: string | null; problem_statement: string | null; persona_id: string | null; default_scenario: boolean; score: number }>>;
+  searchVideoAction?: (
+    input: { body: { query: string; limit: number; department_ids?: string[] | null } }
+  ) => Promise<Array<{ id: string; name: string | null; description: string | null; length_seconds: number; department_ids: string[] | null; score: number }>>;
 }
 
 interface FormData {
@@ -94,6 +103,8 @@ export default function Simulation({
   simulationDetailDefault: serverSimulationDetailDefault,
   createSimulationAction,
   updateSimulationAction,
+  searchScenarioAction,
+  searchVideoAction,
 }: SimulationProps) {
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -195,7 +206,13 @@ export default function Simulation({
     [simulationData]
   );
 
-  // State for managing scenario IDs (declared early for use in validScenarioIds useMemo)
+  // State for managing unified content (scenarios + videos)
+  const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>([]);
+  const [stagedContentItems, setStagedContentItems] = useState<ContentItem[]>([]); // New items not yet saved
+  const [contentActiveStates, setContentActiveStates] = useState<Record<string, boolean>>({});
+  const [originalContentActiveStates, setOriginalContentActiveStates] = useState<Record<string, boolean>>({});
+  
+  // Legacy state for backward compatibility during migration
   const [currentScenarioIds, setCurrentScenarioIds] = useState<string[]>([]);
 
   // Extract valid scenario IDs from V2 response, filtered by selected departments
@@ -385,7 +402,111 @@ export default function Simulation({
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
     []
   );
-  // Use ref to capture currentScenarioIds before they get filtered
+  // Convert server data to unified ContentItem format
+  const unifiedContentItems = useMemo(() => {
+    const items: ContentItem[] = [];
+    
+    // Add scenarios from server data
+    if (simulationData?.scenarios) {
+      simulationData.scenarios.forEach((scenario) => {
+        const key = `scenario:${scenario.scenario_id}`;
+        items.push({
+          type: "scenario",
+          id: scenario.scenario_id,
+          title: scenario.title,
+          description: scenario.description,
+          active: contentActiveStates[key] ?? scenario.active,
+          position: scenario.position,
+          usage_count: scenario.usage_count,
+          success_rate: scenario.success_rate,
+          last_used: scenario.last_used,
+          can_remove: scenario.can_remove,
+          isNew: false,
+        });
+      });
+    }
+    
+    // Add videos from server data
+    if (simulationData?.videos) {
+      simulationData.videos.forEach((video) => {
+        const key = `video:${video.video_id}`;
+        items.push({
+          type: "video",
+          id: video.video_id,
+          title: video.title,
+          description: video.description,
+          active: contentActiveStates[key] ?? video.active,
+          position: video.position,
+          usage_count: video.usage_count,
+          success_rate: video.success_rate,
+          last_used: video.last_used,
+          can_remove: video.can_remove,
+          length_seconds: video.length_seconds,
+          isNew: false,
+        });
+      });
+    }
+    
+    // Add staged items (newly added, not yet saved)
+    stagedContentItems.forEach((item) => {
+      const key = `${item.type}:${item.id}`;
+      items.push({
+        ...item,
+        active: contentActiveStates[key] ?? item.active,
+      });
+    });
+    
+    // Sort by position
+    return items.sort((a, b) => a.position - b.position);
+  }, [simulationData?.scenarios, simulationData?.videos, stagedContentItems, contentActiveStates]);
+
+  // Initialize content active states from server data
+  useEffect(() => {
+    if (isEditMode && simulationData) {
+      const newActiveStates: Record<string, boolean> = {};
+      const newOriginalActiveStates: Record<string, boolean> = {};
+      
+      // Initialize active states from scenarios
+      if (simulationData.scenarios) {
+        simulationData.scenarios.forEach((scenario) => {
+          const key = `scenario:${scenario.scenario_id}`;
+          newActiveStates[key] = scenario.active;
+          newOriginalActiveStates[key] = scenario.active;
+        });
+      }
+      
+      // Initialize active states from videos
+      if (simulationData.videos) {
+        simulationData.videos.forEach((video) => {
+          const key = `video:${video.video_id}`;
+          newActiveStates[key] = video.active;
+          newOriginalActiveStates[key] = video.active;
+        });
+      }
+      
+      setContentActiveStates((prev) => {
+        // Merge with existing states to preserve user changes
+        return { ...newActiveStates, ...prev };
+      });
+      setOriginalContentActiveStates(newOriginalActiveStates);
+    } else if (!isEditMode) {
+      // Reset for create mode
+      setContentActiveStates({});
+      setOriginalContentActiveStates({});
+    }
+  }, [isEditMode, simulationData]);
+
+  // Update currentContentItems from unifiedContentItems and sync legacy state
+  useEffect(() => {
+    setCurrentContentItems(unifiedContentItems);
+    // Sync legacy currentScenarioIds for backward compatibility
+    const scenarioIds = unifiedContentItems
+      .filter(item => item.type === "scenario")
+      .map(item => item.id);
+    setCurrentScenarioIds(scenarioIds);
+  }, [unifiedContentItems]);
+
+  // Use ref to capture currentScenarioIds before they get filtered (legacy)
   const currentScenarioIdsRef = useRef<string[]>([]);
   useEffect(() => {
     currentScenarioIdsRef.current = currentScenarioIds;
@@ -523,13 +644,9 @@ export default function Simulation({
     }
   }, [formData?.rubricId, validRubricIds]);
 
-  // State for managing scenario active toggles (staged changes)
-  const [scenarioActiveStates, setScenarioActiveStates] = useState<
-    Record<string, boolean>
-  >({});
-  const [originalActiveStates, setOriginalActiveStates] = useState<
-    Record<string, boolean>
-  >({});
+  // Modal states
+  const [showSearchScenarioModal, setShowSearchScenarioModal] = useState(false);
+  const [showSearchVideoModal, setShowSearchVideoModal] = useState(false);
 
   const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
@@ -599,8 +716,16 @@ export default function Simulation({
 
       const targetSimulationId = simulationId || editingSimulationId;
 
+      // Convert unified content items to API format
+      // Separate scenarios and videos while preserving order
+      const contentItems = currentContentItems.map((item) => ({
+        type: item.type,
+        id: item.id,
+        active: contentActiveStates[`${item.type}:${item.id}`] ?? item.active,
+      }));
+
       if (targetSimulationId) {
-        // UPDATE mode - v2 API handles scenarios in one request
+        // UPDATE mode - unified content items
         const updatePayload = {
           simulationId: targetSimulationId,
           title: formData?.title || "",
@@ -610,16 +735,13 @@ export default function Simulation({
           practice_simulation: formData?.practiceSimulation || false,
           time_limit: formData?.timeLimit || null,
           rubric_id: formData?.rubricId || "",
-          scenario_ids: currentScenarioIds.map((scenarioId) => ({
-            scenario_id: scenarioId,
-            active: scenarioActiveStates[scenarioId] ?? true,
-          })),
+          content_items: contentItems,
         };
 
         await handleUpdateSimulation(updatePayload);
         toast.success("Simulation updated successfully!");
       } else {
-        // CREATE mode - v3 API handles scenarios in one request
+        // CREATE mode - unified content items
         const createPayload = {
           title: formData?.title || "",
           description: formData?.description ?? "",
@@ -628,10 +750,7 @@ export default function Simulation({
           practice_simulation: formData?.practiceSimulation || false,
           time_limit: formData?.timeLimit || null,
           rubric_id: formData?.rubricId || "",
-          scenario_ids: currentScenarioIds.map((scenarioId) => ({
-            scenario_id: scenarioId,
-            active: scenarioActiveStates[scenarioId] ?? true,
-          })),
+          content_items: contentItems,
         };
 
         await handleCreateSimulation(createPayload);
@@ -681,8 +800,15 @@ export default function Simulation({
     const current = formData;
     const original = originalFormData;
 
-    // Get original scenario IDs from server data
+    // Get original content IDs from server data
     const originalScenarioIds = simulationData.scenario_ids || [];
+    const originalVideoIds = simulationData.video_ids || [];
+    const currentScenarioIdsFromContent = currentContentItems
+      .filter(item => item.type === "scenario")
+      .map(item => item.id);
+    const currentVideoIdsFromContent = currentContentItems
+      .filter(item => item.type === "video")
+      .map(item => item.id);
 
     return (
       current.title !== original.title ||
@@ -693,19 +819,21 @@ export default function Simulation({
       current.practiceSimulation !== original.practiceSimulation ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
-      JSON.stringify(currentScenarioIds) !==
+      JSON.stringify(currentScenarioIdsFromContent) !==
         JSON.stringify(originalScenarioIds) ||
-      JSON.stringify(scenarioActiveStates) !==
-        JSON.stringify(originalActiveStates)
+      JSON.stringify(currentVideoIdsFromContent) !==
+        JSON.stringify(originalVideoIds) ||
+      JSON.stringify(contentActiveStates) !==
+        JSON.stringify(originalContentActiveStates)
     );
   }, [
     formData,
     originalFormData,
     isEditMode,
-    currentScenarioIds,
+    currentContentItems,
     simulationData,
-    scenarioActiveStates,
-    originalActiveStates,
+    contentActiveStates,
+    originalContentActiveStates,
   ]);
 
   // Helper function to format last used date
@@ -719,7 +847,7 @@ export default function Simulation({
     });
   };
 
-  // Helper function to remove a scenario
+  // Helper function to remove a scenario (legacy)
   const handleRemoveScenario = (scenarioId: string) => {
     setCurrentScenarioIds((prev) => prev.filter((id) => id !== scenarioId));
     // Also remove from active states if present
@@ -729,6 +857,104 @@ export default function Simulation({
       return newStates;
     });
   };
+
+  // Unified content handlers
+  const handleContentSelect = useCallback((contentId: string, checked: boolean) => {
+    // Selection logic for bulk operations - TODO: implement selection state
+  }, []);
+
+  const handleContentSelectAll = useCallback((checked: boolean, visibleRowIds?: string[]) => {
+    // Select all logic - TODO: implement selection state
+  }, []);
+
+  const handleContentActiveToggle = useCallback((contentId: string, active: boolean) => {
+    setContentActiveStates((prev) => ({
+      ...prev,
+      [contentId]: active,
+    }));
+  }, []);
+
+  const handleContentMoveUp = useCallback((contentId: string) => {
+    setCurrentContentItems((prev) => {
+      const index = prev.findIndex((item) => `${item.type}:${item.id}` === contentId);
+      if (index <= 0) return prev;
+      const newItems = [...prev];
+      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+      // Recalculate positions sequentially
+      return newItems.map((item, idx) => ({ ...item, position: idx + 1 }));
+    });
+  }, []);
+
+  const handleContentMoveDown = useCallback((contentId: string) => {
+    setCurrentContentItems((prev) => {
+      const index = prev.findIndex((item) => `${item.type}:${item.id}` === contentId);
+      if (index < 0 || index >= prev.length - 1) return prev;
+      const newItems = [...prev];
+      [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+      // Recalculate positions sequentially
+      return newItems.map((item, idx) => ({ ...item, position: idx + 1 }));
+    });
+  }, []);
+
+  const handleContentRemove = useCallback((contentId: string) => {
+    const [type, id] = contentId.split(":");
+    if (type === "scenario") {
+      setCurrentScenarioIds((prev) => prev.filter((sid) => sid !== id));
+    }
+    setCurrentContentItems((prev) => prev.filter((item) => `${item.type}:${item.id}` !== contentId));
+    setStagedContentItems((prev) => prev.filter((item) => `${item.type}:${item.id}` !== contentId));
+    setContentActiveStates((prev) => {
+      const newStates = { ...prev };
+      delete newStates[contentId];
+      return newStates;
+    });
+  }, []);
+
+  const handleBulkContentEdit = useCallback(() => {
+    toast.info("Bulk edit functionality coming soon");
+  }, []);
+
+  const handleBulkContentDelete = useCallback(() => {
+    toast.info("Bulk delete functionality coming soon");
+  }, []);
+
+  const handleStagedScenarios = useCallback((scenarios: Array<{scenarioId: string; name?: string; description?: string}>) => {
+    const maxPosition = Math.max(...currentContentItems.map(item => item.position), 0);
+    const newItems: ContentItem[] = scenarios.map((scenario, idx) => ({
+      type: "scenario" as const,
+      id: scenario.scenarioId,
+      title: scenario.name || "Unnamed Scenario",
+      description: scenario.description || "",
+      active: true,
+      position: maxPosition + idx + 1,
+      usage_count: 0,
+      success_rate: 0,
+      last_used: null,
+      can_remove: true,
+      isNew: true,
+    }));
+    setStagedContentItems((prev) => [...prev, ...newItems]);
+    setCurrentScenarioIds((prev) => [...prev, ...scenarios.map(s => s.scenarioId)]);
+  }, [currentContentItems]);
+
+  const handleStagedVideos = useCallback((videos: Array<{videoId: string; name?: string; description?: string; length_seconds?: number}>) => {
+    const maxPosition = Math.max(...currentContentItems.map(item => item.position), 0);
+    const newItems: ContentItem[] = videos.map((video, idx) => ({
+      type: "video" as const,
+      id: video.videoId,
+      title: video.name || "Unnamed Video",
+      description: video.description || "",
+      active: true,
+      position: maxPosition + idx + 1,
+      usage_count: 0,
+      success_rate: 0,
+      last_used: null,
+      can_remove: true,
+      length_seconds: video.length_seconds || 0,
+      isNew: true,
+    }));
+    setStagedContentItems((prev) => [...prev, ...newItems]);
+  }, [currentContentItems]);
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
 
@@ -952,158 +1178,54 @@ export default function Simulation({
           </div>
         </div>
 
-        {/* Scenarios */}
+        {/* Content (Scenarios & Videos) */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
-              <Label htmlFor="scenarios">Scenarios</Label>
+              <Label htmlFor="content">Content</Label>
+              <p className="text-sm text-muted-foreground">
+                Manage scenarios and videos for this simulation
+              </p>
             </div>
-            <div data-testid="picker-scenario">
-              <ScenarioPicker
-                scenarioMapping={simulationData?.scenario_mapping || {}}
-                validScenarioIds={validScenarioIds}
-                selectedScenarioIds={currentScenarioIds}
-                onSelect={handleScenarioSelection}
-                label=""
-                placeholder="Select scenarios..."
-                description="Choose scenarios to include in this simulation"
-                hideSelectedChips={true}
-                showOnlyActive={true}
-                showLabel={false}
-                isPracticeSimulation={formData?.practiceSimulation ?? false}
-                disabled={isReadonly}
+            {!isReadonly && (
+              <AddContentButton
+                onAddScenario={() => setShowSearchScenarioModal(true)}
+                onAddVideo={() => setShowSearchVideoModal(true)}
               />
-            </div>
+            )}
           </div>
 
-          {/* Display selected scenarios with preview functionality */}
-          {currentScenarioIds.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {currentScenarioIds.map((scenarioId) => {
-                const scenarioData =
-                  simulationData?.scenario_mapping[scenarioId];
-                if (!scenarioData) return null;
-
-                // Determine if this is an existing scenario (in original server data)
-                const isExistingScenario =
-                  simulationData?.scenario_ids.includes(scenarioId) ?? false;
-
-                // Get scenario statistics from scenarios array (only for existing scenarios)
-                const scenarioStats = simulationData?.scenarios.find(
-                  (s) => s.scenario_id === scenarioId
-                );
-
-                // Determine if Remove button should show
-                const shouldShowRemove = isExistingScenario
-                  ? (scenarioStats?.can_remove ?? false)
-                  : true; // New scenarios always show remove
-
-                // Get active state for styling
-                const isScenarioActive =
-                  scenarioActiveStates[scenarioId] ?? true;
-
-                return (
-                  <Card
-                    key={scenarioId}
-                    className={`p-4 cursor-move hover:shadow-md transition-all flex flex-col h-full ${
-                      draggedScenario === scenarioId ? "opacity-50" : ""
-                    } ${!isScenarioActive ? "opacity-50 bg-muted" : ""}`}
-                    draggable={!isReadonly}
-                    onDragStart={(e) =>
-                      !isReadonly && handleDragStartScenario(e, scenarioId)
-                    }
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => !isReadonly && handleDrop(e, scenarioId)}
-                  >
-                    {/* Header: Title, Description, and Active Switch */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm line-clamp-1">
-                          {scenarioData.name || "Unnamed Scenario"}
-                        </h4>
-                        <p className="text-xs text-muted-foreground line-clamp-4 mt-2">
-                          {scenarioData.description ||
-                            "No description provided"}
-                        </p>
-                      </div>
-                      {isExistingScenario && !isReadonly && (
-                        <Switch
-                          checked={scenarioActiveStates[scenarioId] ?? true}
-                          onCheckedChange={(checked) =>
-                            setScenarioActiveStates((prev) => ({
-                              ...prev,
-                              [scenarioId]: checked,
-                            }))
-                          }
-                        />
-                      )}
-                    </div>
-
-                    {/* Content area with flex-grow */}
-                    <div className="flex-grow flex flex-col">
-                      {/* Bottom section - Statistics and Actions */}
-                      <div className="space-y-2 mt-auto">
-                        {/* Statistics Row - Only for existing scenarios */}
-                        {isExistingScenario && scenarioStats && (
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground border-t pt-2">
-                            <div className="flex items-center gap-1">
-                              <BarChart3 className="h-3 w-3" />
-                              <span>Usage: {scenarioStats.usage_count}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>
-                                Last: {formatLastUsed(scenarioStats.last_used)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              <span>
-                                Success: {scenarioStats.success_rate}%
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center justify-between border-t pt-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => editScenario(scenarioId)}
-                          >
-                            View Details
-                          </Button>
-
-                          {!isReadonly && shouldShowRemove && (
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRemoveScenario(scenarioId)}
-                            >
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-              <div>
-                <p className="font-medium mb-1">No scenarios selected</p>
-                <p className="text-sm">
-                  Use the selector above to add scenarios to this simulation
-                </p>
-              </div>
-            </div>
-          )}
+          <SimulationContentTable
+            data={currentContentItems}
+            selectedContentIds={[]} // TODO: implement selection state
+            onContentSelect={handleContentSelect}
+            onSelectAll={handleContentSelectAll}
+            onActiveToggle={handleContentActiveToggle}
+            onMoveUp={handleContentMoveUp}
+            onMoveDown={handleContentMoveDown}
+            onRemove={handleContentRemove}
+            onBulkEdit={handleBulkContentEdit}
+            onBulkDelete={handleBulkContentDelete}
+            readonly={isReadonly}
+          />
         </div>
+
+        {/* Search Modals */}
+        <SearchExistingScenarioModal
+          open={showSearchScenarioModal}
+          onOpenChange={setShowSearchScenarioModal}
+          onStagedScenarios={handleStagedScenarios}
+          existingScenarioIds={currentScenarioIds}
+          searchScenarioAction={searchScenarioAction}
+        />
+        <SearchExistingVideoModal
+          open={showSearchVideoModal}
+          onOpenChange={setShowSearchVideoModal}
+          onStagedVideos={handleStagedVideos}
+          existingVideoIds={currentContentItems.filter(item => item.type === "video").map(item => item.id)}
+          departmentIds={formData?.departmentIds}
+          searchVideoAction={searchVideoAction}
+        />
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">

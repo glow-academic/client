@@ -76,6 +76,8 @@ class SimulationDetailResponse(BaseModel):
     valid_rubric_ids: list[str]
     scenario_ids: list[str]
     valid_scenario_ids: list[str]
+    video_ids: list[str]
+    valid_video_ids: list[str]
 
     # Boolean parameters
     active: bool
@@ -92,6 +94,7 @@ class SimulationDetailResponse(BaseModel):
 
     # Full scenario objects
     scenarios: list[ScenarioInSimulation]
+    videos: list[dict[str, Any]]  # Videos list (empty for default)
 
     # Parameter data
     parameters: list[ParameterItem]
@@ -100,6 +103,7 @@ class SimulationDetailResponse(BaseModel):
 
     # Top-level mappings
     scenario_mapping: ScenarioMapping
+    video_mapping: dict[str, dict[str, Any]]  # Video mapping
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     parameter_item_mapping: ParameterItemMapping
@@ -205,7 +209,9 @@ async def get_simulation_detail_default(
 
         # Get IDs
         scenario_ids = result.get("scenario_ids", [])
+        video_ids = result.get("video_ids", [])
         valid_scenario_ids = result.get("valid_scenario_ids", [])
+        valid_video_ids = result.get("valid_video_ids", [])
         valid_rubric_ids = result.get("valid_rubric_ids", [])
         valid_department_ids = result.get("valid_department_ids", [])
 
@@ -219,6 +225,12 @@ async def get_simulation_detail_default(
                         name=rdata.get("name", ""),
                         description=rdata.get("description", ""),
                     )
+
+        # Parse video mapping
+        video_mapping: dict[str, dict[str, Any]] = {}
+        video_mapping_data = parse_jsonb(result.get("video_mapping"))
+        if isinstance(video_mapping_data, dict):
+            video_mapping = video_mapping_data
 
         # Parse scenario mapping (same logic as detail.py)
         scenario_mapping: ScenarioMapping = {}
@@ -389,6 +401,8 @@ async def get_simulation_detail_default(
             valid_rubric_ids=valid_rubric_ids,
             scenario_ids=scenario_ids,
             valid_scenario_ids=valid_scenario_ids,
+            video_ids=video_ids,
+            valid_video_ids=valid_video_ids,
             active=result.get("active", False),
             practice_simulation=result.get("practice_simulation", False),
             can_edit=can_edit,
@@ -397,10 +411,12 @@ async def get_simulation_detail_default(
             in_use=total_cohort_links > 0,  # In use if has any cohort links
             cohort_count=total_cohort_links,  # Return total for display
             scenarios=scenarios_list,
+            videos=[],  # Default simulation has no videos
             parameters=parameters_list,
             parameter_items=parameter_items_list,
             parameter_mapping=parameter_mapping,
             scenario_mapping=scenario_mapping,
+            video_mapping=video_mapping,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
             parameter_item_mapping=parameter_item_mapping,

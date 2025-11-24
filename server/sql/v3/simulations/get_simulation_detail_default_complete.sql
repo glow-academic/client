@@ -158,6 +158,40 @@ WITH user_departments AS (
             SELECT ARRAY_AGG(id::text) as ids
             FROM valid_scenarios_list
         ),
+        valid_videos_list AS (
+            SELECT DISTINCT
+                v.id,
+                v.name,
+                v.description
+            FROM videos v
+            LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true
+            CROSS JOIN user_department_ids udi
+            JOIN video_tree vt ON vt.parent_id = v.id AND vt.child_id = v.id
+            WHERE v.active = true
+              AND (
+                  vd.department_id = ANY(udi.ids)
+                  OR NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = v.id AND vd2.active = true)
+              )
+        ),
+        valid_videos AS (
+            SELECT ARRAY_AGG(id::text) as ids
+            FROM valid_videos_list
+        ),
+        video_mapping_data AS (
+            SELECT COALESCE(
+                jsonb_object_agg(
+                    vvl.id::text,
+                    jsonb_build_object(
+                        'name', vvl.name,
+                        'description', COALESCE(vvl.description, ''),
+                        'length_seconds', v.length_seconds
+                    )
+                ),
+                '{}'::jsonb
+            ) as video_mapping
+            FROM valid_videos_list vvl
+            JOIN videos v ON v.id = vvl.id
+        ),
         valid_rubrics_data AS (
             SELECT DISTINCT
                 r.id,
@@ -439,9 +473,11 @@ WITH user_departments AS (
             sld.scenarios_list,
             sld.scenario_ids,
             COALESCE(vs.ids, ARRAY[]::text[]) as valid_scenario_ids,
+            COALESCE(vv.ids, ARRAY[]::text[]) as valid_video_ids,
             COALESCE(rmd.rubric_ids, ARRAY[]::text[]) as valid_rubric_ids,
             dmd.department_ids as valid_department_ids,
             smc.scenario_mapping,
+            vmd.video_mapping,
             rmd.rubric_mapping,
             dmd.department_mapping,
             pmd.parameter_mapping,
@@ -454,9 +490,11 @@ WITH user_departments AS (
         LEFT JOIN cohort_usage cu ON true
         LEFT JOIN scenarios_list_data sld ON true
         LEFT JOIN valid_scenarios vs ON true
+        LEFT JOIN valid_videos vv ON true
         LEFT JOIN rubric_mapping_data rmd ON true
         LEFT JOIN parameter_mapping_data pmd ON true
         LEFT JOIN parameter_item_mapping_data pimd ON true
         LEFT JOIN parameter_items_list_data pild ON true
         LEFT JOIN scenario_mapping_complete smc ON true
+        LEFT JOIN video_mapping_data vmd ON true
         LEFT JOIN department_mapping_data dmd ON true

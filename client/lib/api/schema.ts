@@ -1475,6 +1475,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/videos/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find Videos
+         * @description 🔎 Find videos by name/description
+         *     -----------------------------------
+         *     Fuzzy, case-insensitive search on video name and description.
+         *     Supports optional department filtering.
+         *
+         *     Input
+         *         • query - Video name or description to search for
+         *         • limit - Max results (default: 200)
+         *         • department_ids - Optional list of department IDs to filter by
+         *
+         *     Returns
+         *         [
+         *             {
+         *                 "id": str,                    # Video UUID
+         *                 "name": str | None,           # Video name/title
+         *                 "description": str | None,    # Video description
+         *                 "length_seconds": int,         # Video length in seconds
+         *                 "department_ids": list[str] | None,  # Department IDs (if any)
+         *                 "score": int                  # Heuristic match score
+         *             },
+         *             ...
+         *         ]
+         */
+        post: operations["find_videos_api_v3_videos_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -2321,6 +2362,106 @@ export interface paths {
          * @description Generate a certificate PDF/text for a profile.
          */
         post: operations["generate_certificate_api_v3_documents_certificate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/policies/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Policy
+         * @description Create a new policy.
+         */
+        post: operations["create_policy_api_v3_policies_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/policies/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Policies List
+         * @description Get policies list.
+         */
+        post: operations["get_policies_list_api_v3_policies_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/policies/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Policy Detail
+         * @description Get detailed policy information.
+         */
+        post: operations["get_policy_detail_api_v3_policies_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/policies/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Policy
+         * @description Update an existing policy.
+         */
+        post: operations["update_policy_api_v3_policies_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/policies/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Policy
+         * @description Delete a policy (soft delete).
+         */
+        post: operations["delete_policy_api_v3_policies_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5477,6 +5618,32 @@ export interface components {
             message: string;
         };
         /**
+         * CreatePolicyRequest
+         * @description Request to create a policy.
+         */
+        CreatePolicyRequest: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+        };
+        /**
+         * CreatePolicyResponse
+         * @description Response from create operation.
+         */
+        CreatePolicyResponse: {
+            /** Success */
+            success: boolean;
+            /** Policyid */
+            policyId: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * CreatePromptRequest
          * @description Request to create prompt.
          */
@@ -5561,6 +5728,8 @@ export interface components {
             name: string;
             /** Problem Statement */
             problem_statement: string;
+            /** Problem Statement Name */
+            problem_statement_name?: string | null;
             /** Problem Statement Versions */
             problem_statement_versions?: string[] | null;
             /** Department Ids */
@@ -5719,12 +5888,16 @@ export interface components {
         CreateVideoRequest: {
             /** Name */
             name: string;
-            /** Description */
-            description: string;
             /** Length Seconds */
             length_seconds: number;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Policy Ids */
+            policy_ids?: string[] | null;
             /**
              * Active
              * @default true
@@ -6199,6 +6372,24 @@ export interface components {
          * @description Response from delete persona.
          */
         DeletePersonaResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * DeletePolicyRequest
+         * @description Request to delete a policy.
+         */
+        DeletePolicyRequest: {
+            /** Policyid */
+            policyId: string;
+        };
+        /**
+         * DeletePolicyResponse
+         * @description Response from delete operation.
+         */
+        DeletePolicyResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -6917,6 +7108,21 @@ export interface components {
              * @default 10
              */
             limit: number;
+        };
+        /**
+         * FindVideosRequest
+         * @description Request to search videos.
+         */
+        FindVideosRequest: {
+            /** Query */
+            query: string;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * GenerateCertificateRequest
@@ -8320,6 +8526,90 @@ export interface components {
             department_options: {
                 [key: string]: string;
             }[];
+        };
+        /**
+         * PoliciesFilters
+         * @description Filters for policies list request.
+         */
+        PoliciesFilters: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * PoliciesListResponse
+         * @description Response for policies list endpoint.
+         */
+        PoliciesListResponse: {
+            /** Policies */
+            policies: components["schemas"]["PolicyItem"][];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+        };
+        /**
+         * PolicyDetailRequest
+         * @description Request to get policy detail.
+         */
+        PolicyDetailRequest: {
+            /** Policyid */
+            policyId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * PolicyDetailResponse
+         * @description Response for policy detail.
+         */
+        PolicyDetailResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+        };
+        /**
+         * PolicyItem
+         * @description Individual policy item in the response.
+         */
+        PolicyItem: {
+            /** Policy Id */
+            policy_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
         };
         /**
          * PracticeFilters
@@ -10858,6 +11148,34 @@ export interface components {
             message: string;
         };
         /**
+         * UpdatePolicyRequest
+         * @description Request to update a policy.
+         */
+        UpdatePolicyRequest: {
+            /** Policyid */
+            policyId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Active */
+            active: boolean;
+        };
+        /**
+         * UpdatePolicyResponse
+         * @description Response from update operation.
+         */
+        UpdatePolicyResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
          * UpdateProfileRequest
          * @description Request to update profile fields.
          */
@@ -10969,6 +11287,8 @@ export interface components {
             name: string;
             /** Problem Statement */
             problem_statement: string;
+            /** Problem Statement Name */
+            problem_statement_name?: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Active */
@@ -11107,12 +11427,16 @@ export interface components {
             videoId: string;
             /** Name */
             name: string;
-            /** Description */
-            description: string;
             /** Length Seconds */
             length_seconds: number;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Policy Ids */
+            policy_ids?: string[] | null;
             /** Active */
             active: boolean;
             /**
@@ -11219,6 +11543,32 @@ export interface components {
             profileId: string;
         };
         /**
+         * VideoInSimulation
+         * @description Video with position in simulation.
+         */
+        VideoInSimulation: {
+            /** Video Id */
+            video_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Position */
+            position: number;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Usage Count */
+            usage_count: number;
+            /** Success Rate */
+            success_rate: number;
+            /** Last Used */
+            last_used: string | null;
+            /** Can Remove */
+            can_remove: boolean;
+        };
+        /**
          * VideoItem
          * @description Individual video item in the response.
          */
@@ -11227,8 +11577,6 @@ export interface components {
             video_id: string;
             /** Name */
             name: string;
-            /** Description */
-            description: string;
             /** Length Seconds */
             length_seconds: number;
             /** Active */
@@ -11243,6 +11591,24 @@ export interface components {
             can_duplicate: boolean;
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * VideoSearchResult
+         * @description Video search result.
+         */
+        VideoSearchResult: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Score */
+            score: number;
         };
         /**
          * VideosFilters
@@ -12970,6 +13336,10 @@ export interface components {
             scenario_ids: string[];
             /** Valid Scenario Ids */
             valid_scenario_ids: string[];
+            /** Video Ids */
+            video_ids: string[];
+            /** Valid Video Ids */
+            valid_video_ids: string[];
             /** Active */
             active: boolean;
             /** Practice Simulation */
@@ -12986,6 +13356,8 @@ export interface components {
             cohort_count: number;
             /** Scenarios */
             scenarios: components["schemas"]["ScenarioInSimulation"][];
+            /** Videos */
+            videos: components["schemas"]["VideoInSimulation"][];
             /** Parameters */
             parameters: components["schemas"]["app__api__v3__simulations__detail__ParameterItem"][];
             /** Parameter Items */
@@ -12997,6 +13369,12 @@ export interface components {
             /** Scenario Mapping */
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
+            };
+            /** Video Mapping */
+            video_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
             };
             /** Rubric Mapping */
             rubric_mapping: {
@@ -13163,8 +13541,6 @@ export interface components {
         app__api__v3__videos__detail__VideoDetailResponse: {
             /** Name */
             name: string;
-            /** Description */
-            description: string;
             /** Length Seconds */
             length_seconds: number;
             /** Active */
@@ -13173,6 +13549,18 @@ export interface components {
             department_ids: string[] | null;
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Problem Statement Ids */
+            problem_statement_ids: string[];
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Objective Mapping */
+            objective_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
+            /** Policy Ids */
+            policy_ids: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Duplicate */
@@ -15474,6 +15862,39 @@ export interface operations {
             };
         };
     };
+    find_videos_api_v3_videos_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindVideosRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoSearchResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_list_api_v3_auth_list_post: {
         parameters: {
             query?: never;
@@ -16766,6 +17187,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_policy_api_v3_policies_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatePolicyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_policies_list_api_v3_policies_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PoliciesFilters"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PoliciesListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_policy_detail_api_v3_policies_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicyDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_policy_api_v3_policies_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdatePolicyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_policy_api_v3_policies_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeletePolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletePolicyResponse"];
                 };
             };
             /** @description Validation Error */
