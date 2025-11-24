@@ -46,6 +46,9 @@ CREATE TABLE simulation_scenarios (
   output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   image_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   copy_paste_allowed BOOLEAN NOT NULL DEFAULT FALSE,
+  audio_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  text_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  show_scenario BOOLEAN NOT NULL DEFAULT TRUE,
   rubric_id UUID REFERENCES rubrics(id) ON DELETE CASCADE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -172,6 +175,25 @@ CREATE TABLE simulation_chat_grades (
     total INTEGER     NOT NULL,
     feedback TEXT NOT NULL DEFAULT 'No feedback provided'  -- NOT NULL with meaningful default
   );
+
+-- Message tree for branching conversations (BCNF normalization)
+-- Tracks parent-child relationships between simulation_messages for branching functionality
+CREATE TABLE message_tree (
+  parent_id UUID NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE,
+  child_id  UUID NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE,
+  active    BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (parent_id, child_id),
+  CHECK (parent_id != child_id)  -- Prevent self-references
+);
+
+CREATE INDEX ON message_tree (parent_id);
+CREATE INDEX ON message_tree (child_id);
+CREATE INDEX ON message_tree (active);
+
+-- Enforce single parent per child (tree structure, not DAG)
+CREATE UNIQUE INDEX message_tree_one_parent_per_child ON message_tree(child_id) WHERE active = true;
 
 -- Note: Crowdsourcing tables (simulation_chat_crowdsourced_feedbacks, simulation_crowdsourced_messages)
 -- have been removed as part of BCNF migration

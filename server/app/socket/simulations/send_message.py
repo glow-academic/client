@@ -510,6 +510,7 @@ async def _send_simulation_message_impl(
         async with pool.acquire() as conn:
             try:
                 # 1. Add the user message to the chat (skip if this is a retry)
+                user_message = None
                 if message_str and message_str.strip() != "" and not is_retry:
                     sql = load_sql("sql/v3/simulations/create_message.sql")
                     user_message_row = await conn.fetchrow(
@@ -519,6 +520,22 @@ async def _send_simulation_message_impl(
                         "id": user_message_row["id"],
                         "created_at": user_message_row["created_at"],
                     }
+
+                    # Create branch from latest message to new user message (if latest exists)
+                    sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
+                    latest_message_row = await conn.fetchrow(
+                        sql_latest, str(chat_id_uuid)
+                    )
+                    if latest_message_row:
+                        sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                        await conn.execute(
+                            sql_branch,
+                            str(latest_message_row["id"]),
+                            str(user_message["id"]),
+                        )
+                        logger.info(
+                            f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
+                        )
 
                     # 2. Emit user message to connected clients
                     logger.info(
@@ -560,6 +577,44 @@ async def _send_simulation_message_impl(
                     "id": assistant_message_row["id"],
                     "created_at": assistant_message_row["created_at"],
                 }
+
+                # Create branch for assistant message
+                parent_message_id = None
+                if is_retry:
+                    # For retry: branch from previous user message
+                    sql_prev_user = load_sql("sql/v3/simulations/get_previous_user_message.sql")
+                    prev_user_row = await conn.fetchrow(
+                        sql_prev_user, str(chat_id_uuid)
+                    )
+                    if prev_user_row:
+                        parent_message_id = prev_user_row["id"]
+                        logger.info(
+                            f"Retry: branching assistant message from previous user message {parent_message_id}"
+                        )
+                else:
+                    # For normal flow: branch from user message just created (or latest if no user message)
+                    if user_message:
+                        parent_message_id = user_message["id"]
+                    else:
+                        # Fallback: use latest message (shouldn't happen in normal flow)
+                        sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
+                        latest_message_row = await conn.fetchrow(
+                            sql_latest, str(chat_id_uuid)
+                        )
+                        if latest_message_row:
+                            parent_message_id = latest_message_row["id"]
+
+                # Create branch from parent to assistant message (if parent exists)
+                if parent_message_id:
+                    sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                    await conn.execute(
+                        sql_branch,
+                        str(parent_message_id),
+                        str(assistant_message["id"]),
+                    )
+                    logger.info(
+                        f"Created branch from message {parent_message_id} to assistant message {assistant_message['id']}"
+                    )
 
                 # 4. Emit placeholder assistant message
                 logger.info(

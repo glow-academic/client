@@ -23,7 +23,9 @@ class UpdatePersonaRequest(BaseModel):
     active: bool
     color: str
     icon: str
-    model_id: str
+    text_model_id: str | None
+    audio_model_id: str | None
+    voice: str | None
     reasoning: str | None
     temperature: float
     system_prompt: str | None
@@ -57,6 +59,39 @@ async def update_persona(
 
     try:
         async with transaction(conn):
+            # Validate: at least one model must be provided
+            if not request.text_model_id and not request.audio_model_id:
+                raise ValueError("At least one model (text or audio) must be provided")
+            
+            # Validate: if audio_model_id is provided, voice must also be provided
+            if request.audio_model_id and not request.voice:
+                raise ValueError("Voice is required when audio_model_id is provided")
+            
+            # Validate: if voice is provided, audio_model_id must also be provided
+            if request.voice and not request.audio_model_id:
+                raise ValueError("audio_model_id is required when voice is provided")
+            
+            # Validate models exist and have correct type
+            if request.text_model_id:
+                text_model = await conn.fetchrow(
+                    "SELECT model_type FROM models WHERE id = $1 AND active = true",
+                    request.text_model_id,
+                )
+                if not text_model:
+                    raise ValueError(f"Text model not found: {request.text_model_id}")
+                if text_model["model_type"] != "text":
+                    raise ValueError(f"Model {request.text_model_id} is not a text model")
+            
+            if request.audio_model_id:
+                audio_model = await conn.fetchrow(
+                    "SELECT model_type FROM models WHERE id = $1 AND active = true",
+                    request.audio_model_id,
+                )
+                if not audio_model:
+                    raise ValueError(f"Audio model not found: {request.audio_model_id}")
+                if audio_model["model_type"] != "audio":
+                    raise ValueError(f"Model {request.audio_model_id} is not an audio model")
+            
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
 
@@ -75,7 +110,9 @@ async def update_persona(
                 request.active,
                 request.color,
                 request.icon,
-                request.model_id,
+                request.text_model_id,
+                request.audio_model_id,
+                request.voice,
                 request.reasoning,
                 request.temperature,
                 request.prompt_id,

@@ -39,6 +39,9 @@ class ContentItemInRequest(BaseModel):
     input_guardrail_enabled: bool | None = None
     output_guardrail_enabled: bool | None = None
     image_input_enabled: bool | None = None
+    audio_enabled: bool | None = None  # Scenarios only
+    text_enabled: bool | None = None  # Scenarios only
+    show_scenario: bool | None = None  # Scenarios only
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
 
@@ -92,6 +95,9 @@ async def create_simulation(
             scenario_input_guardrail_enabled: list[bool] = []
             scenario_output_guardrail_enabled: list[bool] = []
             scenario_image_input_enabled: list[bool] = []
+            scenario_audio_enabled: list[bool] = []
+            scenario_text_enabled: list[bool] = []
+            scenario_show_scenario: list[bool] = []
             scenario_rubric_ids: list[str] = []
             scenario_time_limit_seconds: list[int | None] = []
             video_ids: list[str] = []
@@ -109,6 +115,9 @@ async def create_simulation(
                         scenario_input_guardrail_enabled.append(item.input_guardrail_enabled if item.input_guardrail_enabled is not None else False)
                         scenario_output_guardrail_enabled.append(item.output_guardrail_enabled if item.output_guardrail_enabled is not None else False)
                         scenario_image_input_enabled.append(item.image_input_enabled if item.image_input_enabled is not None else False)
+                        scenario_audio_enabled.append(item.audio_enabled if item.audio_enabled is not None else False)
+                        scenario_text_enabled.append(item.text_enabled if item.text_enabled is not None else True)
+                        scenario_show_scenario.append(item.show_scenario if item.show_scenario is not None else True)
                         scenario_rubric_ids.append(item.rubric_id if item.rubric_id else "")
                         scenario_time_limit_seconds.append(item.time_limit_seconds)
                     elif item.type == "video":
@@ -146,6 +155,9 @@ async def create_simulation(
             scenario_input_guardrail_array = scenario_input_guardrail_enabled if scenario_input_guardrail_enabled else []
             scenario_output_guardrail_array = scenario_output_guardrail_enabled if scenario_output_guardrail_enabled else []
             scenario_image_input_array = scenario_image_input_enabled if scenario_image_input_enabled else []
+            scenario_audio_enabled_array = scenario_audio_enabled if scenario_audio_enabled else []
+            scenario_text_enabled_array = scenario_text_enabled if scenario_text_enabled else []
+            scenario_show_scenario_array = scenario_show_scenario if scenario_show_scenario else []
             scenario_rubric_ids_array = scenario_rubric_ids if scenario_rubric_ids else []
             scenario_time_limit_seconds_array = scenario_time_limit_seconds if scenario_time_limit_seconds else []
             video_ids_array = video_ids if video_ids else []
@@ -173,6 +185,9 @@ async def create_simulation(
                 scenario_rubric_ids_array,
                 scenario_time_limit_seconds_array,
                 video_objectives_array,
+                scenario_audio_enabled_array,
+                scenario_text_enabled_array,
+                scenario_show_scenario_array,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

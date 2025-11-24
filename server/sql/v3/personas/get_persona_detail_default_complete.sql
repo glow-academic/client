@@ -50,6 +50,25 @@ user_departments AS (
             WHERE pp.active = true
             LIMIT 1
         ),
+        persona_text_model_data AS (
+            SELECT 
+                ptm.persona_id,
+                ptm.model_id::text as text_model_id
+            FROM persona_text_model ptm
+            JOIN default_persona dp ON ptm.persona_id = dp.id
+            WHERE ptm.active = true
+            LIMIT 1
+        ),
+        persona_audio_model_data AS (
+            SELECT 
+                pam.persona_id,
+                pam.model_id::text as audio_model_id,
+                pam.voice::text as voice
+            FROM persona_audio_model pam
+            JOIN default_persona dp ON pam.persona_id = dp.id
+            WHERE pam.active = true
+            LIMIT 1
+        ),
         persona_data AS (
             SELECT 
                 p.name,
@@ -57,7 +76,9 @@ user_departments AS (
                 p.active,
                 p.color,
                 p.icon,
-                p.model_id,
+                COALESCE(ptmd.text_model_id, NULL)::text as text_model_id,
+                COALESCE(pamd.audio_model_id, NULL)::text as audio_model_id,
+                COALESCE(pamd.voice, NULL)::text as voice,
                 p.reasoning,
                 p.temperature,
                 COALESCE(pap.system_prompt, '') as system_prompt,
@@ -67,6 +88,8 @@ user_departments AS (
             JOIN default_persona dp ON p.id = dp.id
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
             LEFT JOIN persona_active_prompt pap ON pap.persona_id = p.id
+            LEFT JOIN persona_text_model_data ptmd ON ptmd.persona_id = p.id
+            LEFT JOIN persona_audio_model_data pamd ON pamd.persona_id = p.id
         ),
         valid_depts AS (
             SELECT 
@@ -86,8 +109,8 @@ user_departments AS (
             JOIN profile_departments pd ON d.id = pd.department_id
             WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
         ),
-        valid_models AS (
-            -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
+        valid_text_models AS (
+            -- Filter text models by department: include if has matching department link OR has no department links at all (cross-dept)
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
@@ -98,11 +121,33 @@ user_departments AS (
                         )
                     ),
                     '{}'::jsonb
-                ) as model_mapping,
-                array_agg(m.id::text ORDER BY m.name) as model_ids
+                ) as text_model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as text_model_ids
             FROM models m
             LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
-            WHERE m.active = true
+            WHERE m.active = true AND m.model_type = 'text'
+            GROUP BY m.id
+            HAVING 
+                COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments)) > 0
+                OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
+        ),
+        valid_audio_models AS (
+            -- Filter audio models by department: include if has matching department link OR has no department links at all (cross-dept)
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        m.id::text,
+                        jsonb_build_object(
+                            'name', m.name,
+                            'description', COALESCE(m.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as audio_model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as audio_model_ids
+            FROM models m
+            LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
+            WHERE m.active = true AND m.model_type = 'audio'
             GROUP BY m.id
             HAVING 
                 COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -130,14 +175,17 @@ user_departments AS (
             p.*,
             vd.dept_mapping,
             vd.dept_ids as valid_department_ids,
-            vm.model_mapping,
-            vm.model_ids as valid_model_ids,
+            COALESCE(vtm.text_model_mapping, '{}'::jsonb) as text_model_mapping,
+            COALESCE(vtm.text_model_ids, ARRAY[]::text[]) as valid_text_model_ids,
+            COALESCE(vam.audio_model_mapping, '{}'::jsonb) as audio_model_mapping,
+            COALESCE(vam.audio_model_ids, ARRAY[]::text[]) as valid_audio_model_ids,
             u.usage_count,
             pr.user_role,
             pdi.department_id as primary_department_id
         FROM persona_data p
         CROSS JOIN valid_depts vd
-        CROSS JOIN valid_models vm
+        CROSS JOIN valid_text_models vtm
+        CROSS JOIN valid_audio_models vam
         CROSS JOIN usage_data u
         CROSS JOIN profile_data pr
         LEFT JOIN primary_department_id pdi ON true

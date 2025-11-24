@@ -54,7 +54,9 @@ class PersonaDetailResponse(BaseModel):
     active: bool
     color: str
     icon: str
-    model_id: str
+    text_model_id: str | None
+    audio_model_id: str | None
+    voice: str | None
     reasoning: str | None
     temperature: float
     system_prompt: str
@@ -71,7 +73,8 @@ class PersonaDetailResponse(BaseModel):
     preset_colors: list[str]
     suggested_icons: list[str]
     valid_icons: list[str]
-    valid_model_ids: list[str]
+    valid_text_model_ids: list[str]
+    valid_audio_model_ids: list[str]
     reasoning_options: list[str]
     valid_department_ids: list[str]
     temperature_lower: float
@@ -82,7 +85,8 @@ class PersonaDetailResponse(BaseModel):
     department_prompt_links: dict[str, str]
 
     # Mappings
-    model_mapping: ModelMapping
+    text_model_mapping: ModelMapping
+    audio_model_mapping: ModelMapping
     reasoning_mapping: ReasoningMapping
     department_mapping: DepartmentMapping
 
@@ -157,15 +161,27 @@ async def get_persona_detail(
 
         # Parse valid IDs
         valid_department_ids = result.get("valid_department_ids", [])
-        valid_model_ids = result.get("valid_model_ids", [])
+        valid_text_model_ids = result.get("valid_text_model_ids", [])
+        valid_audio_model_ids = result.get("valid_audio_model_ids", [])
 
-        # Parse model mapping
-        model_mapping: ModelMapping = {}
-        model_mapping_data = parse_jsonb(result.get("model_mapping"))
-        if isinstance(model_mapping_data, dict):
-            for model_id, mdata in model_mapping_data.items():
+        # Parse text model mapping
+        text_model_mapping: ModelMapping = {}
+        text_model_mapping_data = parse_jsonb(result.get("text_model_mapping"))
+        if isinstance(text_model_mapping_data, dict):
+            for model_id, mdata in text_model_mapping_data.items():
                 if isinstance(mdata, dict):
-                    model_mapping[model_id] = ModelMappingItem(
+                    text_model_mapping[model_id] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", ""),
+                    )
+
+        # Parse audio model mapping
+        audio_model_mapping: ModelMapping = {}
+        audio_model_mapping_data = parse_jsonb(result.get("audio_model_mapping"))
+        if isinstance(audio_model_mapping_data, dict):
+            for model_id, mdata in audio_model_mapping_data.items():
+                if isinstance(mdata, dict):
+                    audio_model_mapping[model_id] = ModelMappingItem(
                         name=mdata.get("name", ""),
                         description=mdata.get("description", ""),
                     )
@@ -350,7 +366,9 @@ async def get_persona_detail(
             active=result.get("active", False),
             color=result.get("color", ""),
             icon=result.get("icon", ""),
-            model_id=str(result.get("model_id", "")) if result.get("model_id") else "",
+            text_model_id=str(result.get("text_model_id", "")) if result.get("text_model_id") else None,
+            audio_model_id=str(result.get("audio_model_id", "")) if result.get("audio_model_id") else None,
+            voice=str(result.get("voice", "")) if result.get("voice") else None,
             reasoning=result.get("reasoning"),
             temperature=float(result.get("temperature", 0.0)),
             system_prompt=result.get("system_prompt", ""),
@@ -363,14 +381,16 @@ async def get_persona_detail(
             preset_colors=preset_colors,
             suggested_icons=suggested_icons,
             valid_icons=valid_icons,
-            valid_model_ids=valid_model_ids,
+            valid_text_model_ids=valid_text_model_ids,
+            valid_audio_model_ids=valid_audio_model_ids,
             reasoning_options=reasoning_options,
             valid_department_ids=valid_department_ids,
             temperature_lower=0.0,
             temperature_upper=2.0,
             prompt_mapping=prompt_mapping,
             department_prompt_links=department_prompt_links,
-            model_mapping=model_mapping,
+            text_model_mapping=text_model_mapping,
+            audio_model_mapping=audio_model_mapping,
             reasoning_mapping=reasoning_mapping,
             department_mapping=department_mapping,
             debug_info=debug_info,

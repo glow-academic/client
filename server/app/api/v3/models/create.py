@@ -16,6 +16,7 @@ class CreateModelRequest(BaseModel):
     """Request to create model."""
 
     provider: str  # enum: 'openai', 'gemini', 'custom'
+    model_type: str  # enum: 'text', 'audio', 'video'
     name: str
     description: str
     active: bool
@@ -54,11 +55,16 @@ async def create_model(
 
     try:
         async with transaction(conn):
+            # Validate model_type
+            if request.model_type not in ["text", "audio", "video"]:
+                raise ValueError(f"Invalid model_type: {request.model_type}. Must be 'text', 'audio', or 'video'")
+            
             sql_query = load_sql("sql/v3/models/create_model_complete.sql")
             # Ensure department_ids is always an array (empty if None)
             department_ids = request.department_ids if request.department_ids else []
             sql_params = (
                 request.provider,
+                request.model_type,
                 request.name,
                 request.description,
                 request.active,
@@ -73,6 +79,7 @@ async def create_model(
             result = await conn.fetchrow(
                 sql_query,
                 request.provider,
+                request.model_type,
                 request.name,
                 request.description,
                 request.active,

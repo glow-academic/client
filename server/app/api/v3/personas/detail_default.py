@@ -53,7 +53,9 @@ class PersonaDetailResponse(BaseModel):
     active: bool
     color: str
     icon: str
-    model_id: str
+    text_model_id: str | None
+    audio_model_id: str | None
+    voice: str | None
     reasoning: str | None
     temperature: float
     system_prompt: str
@@ -70,7 +72,8 @@ class PersonaDetailResponse(BaseModel):
     preset_colors: list[str]
     suggested_icons: list[str]
     valid_icons: list[str]
-    valid_model_ids: list[str]
+    valid_text_model_ids: list[str]
+    valid_audio_model_ids: list[str]
     reasoning_options: list[str]
     valid_department_ids: list[str]
     temperature_lower: float
@@ -81,7 +84,8 @@ class PersonaDetailResponse(BaseModel):
     department_prompt_links: dict[str, str]
 
     # Mappings
-    model_mapping: ModelMapping
+    text_model_mapping: ModelMapping
+    audio_model_mapping: ModelMapping
     reasoning_mapping: ReasoningMapping
     department_mapping: DepartmentMapping
 
@@ -140,7 +144,8 @@ async def get_persona_detail_default(
             )
 
         valid_department_ids = result.get("valid_department_ids", [])
-        valid_model_ids = result.get("valid_model_ids", [])
+        valid_text_model_ids = result.get("valid_text_model_ids", [])
+        valid_audio_model_ids = result.get("valid_audio_model_ids", [])
         
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
@@ -176,13 +181,24 @@ async def get_persona_detail_default(
                         description=ddata.get("description", ""),
                     )
 
-        # Parse model_mapping
-        model_mapping_data = parse_jsonb(result.get("model_mapping"))
-        model_mapping: ModelMapping = {}
-        if isinstance(model_mapping_data, dict):
-            for model_id, mdata in model_mapping_data.items():
+        # Parse text model mapping
+        text_model_mapping_data = parse_jsonb(result.get("text_model_mapping"))
+        text_model_mapping: ModelMapping = {}
+        if isinstance(text_model_mapping_data, dict):
+            for model_id, mdata in text_model_mapping_data.items():
                 if isinstance(mdata, dict):
-                    model_mapping[model_id] = ModelMappingItem(
+                    text_model_mapping[model_id] = ModelMappingItem(
+                        name=mdata.get("name", ""),
+                        description=mdata.get("description", ""),
+                    )
+
+        # Parse audio model mapping
+        audio_model_mapping_data = parse_jsonb(result.get("audio_model_mapping"))
+        audio_model_mapping: ModelMapping = {}
+        if isinstance(audio_model_mapping_data, dict):
+            for model_id, mdata in audio_model_mapping_data.items():
+                if isinstance(mdata, dict):
+                    audio_model_mapping[model_id] = ModelMappingItem(
                         name=mdata.get("name", ""),
                         description=mdata.get("description", ""),
                     )
@@ -252,10 +268,10 @@ async def get_persona_detail_default(
             ),
         }
 
-        # Get default model ID (first valid model)
-        default_model_id = valid_model_ids[0] if valid_model_ids else None
-        if not default_model_id:
-            raise HTTPException(status_code=400, detail="No valid models found")
+        # Get default text model ID (first valid text model)
+        default_text_model_id = valid_text_model_ids[0] if valid_text_model_ids else None
+        if not default_text_model_id:
+            raise HTTPException(status_code=400, detail="No valid text models found")
 
         # Debug info (empty for now)
         debug_info: list[DebugInfoItem] = []
@@ -268,7 +284,9 @@ async def get_persona_detail_default(
             active=True,
             color=preset_colors[0] if preset_colors else "#3B82F6",
             icon=suggested_icons[0] if suggested_icons else "Sparkles",
-            model_id=default_model_id,
+            text_model_id=default_text_model_id,
+            audio_model_id=None,
+            voice=None,
             reasoning="none",
             temperature=0.0,
             system_prompt="",
@@ -283,7 +301,8 @@ async def get_persona_detail_default(
             preset_colors=preset_colors,
             suggested_icons=suggested_icons,
             valid_icons=valid_icons,
-            valid_model_ids=valid_model_ids,
+            valid_text_model_ids=valid_text_model_ids,
+            valid_audio_model_ids=valid_audio_model_ids,
             reasoning_options=reasoning_options,
             valid_department_ids=valid_department_ids,
             temperature_lower=0.0,
@@ -292,7 +311,8 @@ async def get_persona_detail_default(
             prompt_mapping={},
             department_prompt_links={},
             # Mappings
-            model_mapping=model_mapping,
+            text_model_mapping=text_model_mapping,
+            audio_model_mapping=audio_model_mapping,
             reasoning_mapping=reasoning_mapping,
             department_mapping=department_mapping,
             # Debug info

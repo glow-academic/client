@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 CREATE TYPE reasoning_effort AS ENUM ('none', 'minimal', 'low', 'medium', 'high');
+CREATE TYPE voice AS ENUM ('alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse');
 
 CREATE TABLE personas (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -14,10 +15,10 @@ CREATE TABLE personas (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   -- system_prompt moved to prompts table via persona_prompts junction (default prompt)
+  -- model_id moved to persona_text_model and persona_audio_model junction tables
   temperature  REAL     NOT NULL, -- 0.0-1.0
   color TEXT        NOT NULL, -- hex color code
   icon TEXT        NOT NULL, -- icon name, in Lucide Icons
-  model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort NOT NULL DEFAULT 'none',  -- NOT NULL with default 'none'
   active BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -77,3 +78,42 @@ CREATE INDEX ON persona_prompts (persona_id, active);
 -- Only one active prompt per persona
 CREATE UNIQUE INDEX persona_prompts_one_active_per_persona
   ON persona_prompts(persona_id) WHERE active = true;
+
+-- Persona → Text Models junction table (BCNF normalization - replaces personas.model_id)
+-- Links personas to their text models
+CREATE TABLE persona_text_model (
+  persona_id UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
+  model_id   UUID NOT NULL REFERENCES models(id)      ON DELETE RESTRICT,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, model_id)
+);
+
+CREATE INDEX ON persona_text_model (persona_id);
+CREATE INDEX ON persona_text_model (model_id);
+CREATE INDEX ON persona_text_model (persona_id, active);
+
+-- Only one active text model per persona
+CREATE UNIQUE INDEX persona_text_model_one_active_per_persona
+  ON persona_text_model(persona_id) WHERE active = true;
+
+-- Persona → Audio Models junction table (BCNF normalization)
+-- Links personas to their audio models with voice selection
+CREATE TABLE persona_audio_model (
+  persona_id UUID NOT NULL REFERENCES personas(id)     ON DELETE CASCADE,
+  model_id   UUID NOT NULL REFERENCES models(id)      ON DELETE RESTRICT,
+  voice      voice NOT NULL,
+  active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (persona_id, model_id, voice)
+);
+
+CREATE INDEX ON persona_audio_model (persona_id);
+CREATE INDEX ON persona_audio_model (model_id);
+CREATE INDEX ON persona_audio_model (persona_id, active);
+
+-- Only one active audio model per persona (across all voices)
+CREATE UNIQUE INDEX persona_audio_model_one_active_per_persona
+  ON persona_audio_model(persona_id) WHERE active = true;

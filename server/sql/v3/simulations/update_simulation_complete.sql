@@ -1,5 +1,5 @@
 -- Update simulation with departments, scenarios, and videos in a single transaction
--- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_objectives_enabled (bool array), $13=scenario_input_guardrail_enabled (bool array), $14=scenario_output_guardrail_enabled (bool array), $15=scenario_image_input_enabled (bool array), $16=scenario_rubric_ids (text array, nullable), $17=scenario_time_limit_seconds (int array, nullable), $18=video_objectives_enabled (bool array)
+-- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_objectives_enabled (bool array), $13=scenario_input_guardrail_enabled (bool array), $14=scenario_output_guardrail_enabled (bool array), $15=scenario_image_input_enabled (bool array), $16=scenario_rubric_ids (text array, nullable), $17=scenario_time_limit_seconds (int array, nullable), $18=video_objectives_enabled (bool array), $19=scenario_audio_enabled (bool array), $20=scenario_text_enabled (bool array), $21=scenario_show_scenario (bool array)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -56,6 +56,9 @@ scenarios_data AS (
         input_guardrail_enabled,
         output_guardrail_enabled,
         image_input_enabled,
+        audio_enabled,
+        text_enabled,
+        show_scenario,
         rubric_id,
         time_limit_seconds,
         row_num
@@ -68,6 +71,9 @@ scenarios_data AS (
             COALESCE(input_guardrail_enabled, false) as input_guardrail_enabled,
             COALESCE(output_guardrail_enabled, false) as output_guardrail_enabled,
             COALESCE(image_input_enabled, false) as image_input_enabled,
+            COALESCE(audio_enabled, false) as audio_enabled,
+            COALESCE(text_enabled, true) as text_enabled,
+            COALESCE(show_scenario, true) as show_scenario,
             rubric_id,
             time_limit_seconds,
             ROW_NUMBER() OVER () as row_num
@@ -79,9 +85,12 @@ scenarios_data AS (
             COALESCE($13::bool[], ARRAY[]::bool[]),
             COALESCE($14::bool[], ARRAY[]::bool[]),
             COALESCE($15::bool[], ARRAY[]::bool[]),
+            COALESCE($19::bool[], ARRAY[]::bool[]),
+            COALESCE($20::bool[], ARRAY[]::bool[]),
+            COALESCE($21::bool[], ARRAY[]::bool[]),
             COALESCE($16::text[], ARRAY[]::text[]),
             COALESCE($17::int[], ARRAY[]::int[])
-        ) AS t(scenario_id, active_flag, hints_enabled, objectives_enabled, input_guardrail_enabled, output_guardrail_enabled, image_input_enabled, rubric_id, time_limit_seconds)
+        ) AS t(scenario_id, active_flag, hints_enabled, objectives_enabled, input_guardrail_enabled, output_guardrail_enabled, image_input_enabled, audio_enabled, text_enabled, show_scenario, rubric_id, time_limit_seconds)
     ) sub
 ),
 scenarios_with_order AS (
@@ -94,6 +103,9 @@ scenarios_with_order AS (
         input_guardrail_enabled,
         output_guardrail_enabled,
         image_input_enabled,
+        audio_enabled,
+        text_enabled,
+        show_scenario,
         rubric_id,
         time_limit_seconds,
         ROW_NUMBER() OVER (
@@ -158,7 +170,7 @@ videos_with_order AS (
 ),
 link_scenarios AS (
     -- Insert new scenarios with proper ordering (active first, then inactive) and switch flags
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, objectives_enabled, input_guardrail_enabled, output_guardrail_enabled, image_input_enabled, rubric_id, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, objectives_enabled, input_guardrail_enabled, output_guardrail_enabled, image_input_enabled, audio_enabled, text_enabled, show_scenario, rubric_id, created_at, updated_at)
     SELECT 
         $1::uuid,
         swo.scenario_id::uuid,
@@ -169,6 +181,9 @@ link_scenarios AS (
         swo.input_guardrail_enabled,
         swo.output_guardrail_enabled,
         swo.image_input_enabled,
+        swo.audio_enabled,
+        swo.text_enabled,
+        swo.show_scenario,
         CASE WHEN swo.rubric_id = '' OR swo.rubric_id IS NULL THEN NULL ELSE swo.rubric_id::uuid END,
         NOW(),
         NOW()

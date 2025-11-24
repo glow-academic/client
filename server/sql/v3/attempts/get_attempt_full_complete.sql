@@ -381,27 +381,110 @@
                 COALESCE((SELECT ss.input_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
                 COALESCE((SELECT ss.output_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
         ),
+        -- Tree traversal for messages: get all messages following conversation flow
+        messages_with_tree AS (
+            WITH RECURSIVE message_path AS (
+                -- Base case: Start from latest messages (no active children in message_tree)
+                SELECT 
+                    id, 
+                    chat_id, 
+                    type, 
+                    content, 
+                    created_at, 
+                    completed, 
+                    updated_at,
+                    0 as depth,
+                    id as path_root_id
+                FROM simulation_messages
+                CROSS JOIN chat_ids_list cil
+                WHERE chat_id = ANY(cil.chat_ids)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM message_tree mt 
+                      WHERE mt.parent_id = simulation_messages.id AND mt.active = true
+                  )
+                
+                UNION ALL
+                
+                -- Recursive case: Traverse up the tree following parent links
+                SELECT 
+                    sm.id, 
+                    sm.chat_id, 
+                    sm.type, 
+                    sm.content, 
+                    sm.created_at, 
+                    sm.completed, 
+                    sm.updated_at,
+                    mp.depth + 1 as depth,
+                    mp.path_root_id
+                FROM simulation_messages sm
+                JOIN message_tree mt ON mt.child_id = sm.id AND mt.active = true
+                JOIN message_path mp ON mp.id = mt.parent_id
+                CROSS JOIN chat_ids_list cil
+                WHERE mp.depth < 1000  -- Safety limit
+                  AND sm.chat_id = mp.chat_id  -- Ensure parent and child are in same chat
+                  AND sm.chat_id = ANY(cil.chat_ids)  -- Ensure we stay within the target chats
+            ),
+            -- Include messages without parents (backward compatibility for existing messages)
+            messages_without_parents AS (
+                SELECT 
+                    id, 
+                    chat_id, 
+                    type, 
+                    content, 
+                    created_at, 
+                    completed, 
+                    updated_at,
+                    -1 as depth,
+                    id as path_root_id
+                FROM simulation_messages
+                CROSS JOIN chat_ids_list cil
+                WHERE chat_id = ANY(cil.chat_ids)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM message_tree mt 
+                      WHERE mt.child_id = simulation_messages.id AND mt.active = true
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM message_path mp 
+                      WHERE mp.id = simulation_messages.id
+                  )
+            ),
+            -- Combine tree-traversed messages and messages without parents
+            all_messages AS (
+                SELECT * FROM message_path
+                UNION ALL
+                SELECT * FROM messages_without_parents
+            )
+            -- Select distinct messages ordered by conversation flow
+            SELECT DISTINCT ON (id, chat_id)
+                id,
+                chat_id,
+                type,
+                content,
+                created_at,
+                completed,
+                updated_at
+            FROM all_messages
+            ORDER BY id, chat_id, created_at
+        ),
         messages_grouped AS (
             SELECT 
-                sm.chat_id,
+                mwt.chat_id,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
-                            'id', sm.id::text,
-                            'createdAt', sm.created_at,
-                            'updatedAt', sm.updated_at,
-                            'chatId', sm.chat_id::text,
-                            'content', sm.content,
-                            'type', sm.type,
-                            'completed', sm.completed
-                        ) ORDER BY sm.created_at
+                            'id', mwt.id::text,
+                            'createdAt', mwt.created_at,
+                            'updatedAt', mwt.updated_at,
+                            'chatId', mwt.chat_id::text,
+                            'content', mwt.content,
+                            'type', mwt.type,
+                            'completed', mwt.completed
+                        ) ORDER BY mwt.created_at
                     ),
                     '[]'::jsonb
                 ) as messages
-            FROM simulation_messages sm
-            CROSS JOIN chat_ids_list cil
-            WHERE sm.chat_id = ANY(cil.chat_ids)
-            GROUP BY sm.chat_id
+            FROM messages_with_tree mwt
+            GROUP BY mwt.chat_id
         ),
         hints_data AS (
             SELECT 

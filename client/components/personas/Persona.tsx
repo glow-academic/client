@@ -26,6 +26,7 @@ import type {
 import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
+import { VoicePicker } from "@/components/common/forms/VoicePicker";
 import {
   PromptInfo,
   PromptPicker,
@@ -97,7 +98,9 @@ interface FormData {
   systemPrompt?: string;
   promptId?: string | null;
   temperature?: number;
-  modelId?: string;
+  textModelId?: string | null;
+  audioModelId?: string | null;
+  voice?: string | null;
   reasoning?: "none" | "minimal" | "low" | "medium" | "high";
   color?: string;
   icon?: string;
@@ -322,7 +325,9 @@ export default function Persona({
       systemPrompt: "",
       promptId: null,
       temperature: 0.0,
-      modelId: "",
+      textModelId: null,
+      audioModelId: null,
+      voice: null,
       reasoning: "none",
       color: "#000000",
       icon: "Zap",
@@ -570,7 +575,9 @@ export default function Persona({
         systemPrompt: personaData.system_prompt,
         promptId: personaData.prompt_id || null,
         temperature: personaData.temperature,
-        modelId: personaData.model_id || "",
+        textModelId: personaData.text_model_id || null,
+        audioModelId: personaData.audio_model_id || null,
+        voice: personaData.voice || null,
         reasoning:
           (personaData.reasoning as
             | "minimal"
@@ -593,7 +600,9 @@ export default function Persona({
         icon: personaData.icon || initialFormData.icon || "Zap",
         temperature:
           personaData.temperature ?? initialFormData.temperature ?? 0.0,
-        modelId: personaData.model_id || initialFormData.modelId || "",
+        textModelId: personaData.text_model_id || initialFormData.textModelId || null,
+        audioModelId: personaData.audio_model_id || initialFormData.audioModelId || null,
+        voice: personaData.voice || initialFormData.voice || null,
         systemPrompt:
           personaData.system_prompt || initialFormData.systemPrompt || "",
         promptId: null,
@@ -671,9 +680,21 @@ export default function Persona({
       return;
     }
 
-    if (!formData.modelId || formData.modelId === "") {
-      // must have some model selected
-      toast.error("Model selection is required");
+    // Validate: at least one model must be selected
+    if (!formData.textModelId && !formData.audioModelId) {
+      toast.error("At least one model (text or audio) must be selected");
+      return;
+    }
+
+    // Validate: if audio model is selected, voice must also be selected
+    if (formData.audioModelId && !formData.voice) {
+      toast.error("Voice selection is required when audio model is selected");
+      return;
+    }
+
+    // Validate: if voice is selected, audio model must also be selected
+    if (formData.voice && !formData.audioModelId) {
+      toast.error("Audio model is required when voice is selected");
       return;
     }
 
@@ -749,7 +770,9 @@ export default function Persona({
             prompt_id: shouldCreateNewPrompt ? null : formData.promptId || null,
             system_prompt: formData.systemPrompt,
             temperature: Number(formData.temperature),
-            model_id: formData.modelId,
+            text_model_id: formData.textModelId || null,
+            audio_model_id: formData.audioModelId || null,
+            voice: formData.voice || null,
             reasoning:
               formData.reasoning === "none" ? null : formData.reasoning || null,
             color: formData.color || "#000000",
@@ -778,7 +801,9 @@ export default function Persona({
             prompt_id: formData.promptId || null,
             system_prompt: formData.systemPrompt,
             temperature: Number(formData.temperature),
-            model_id: formData.modelId,
+            text_model_id: formData.textModelId || null,
+            audio_model_id: formData.audioModelId || null,
+            voice: formData.voice || null,
             reasoning:
               formData.reasoning === "none" ? null : formData.reasoning || null,
             color: formData.color || "#000000",
@@ -1150,26 +1175,69 @@ export default function Persona({
               </div>
             </div>
 
-            {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+            {/* Text Model, Audio Model, Voice, Reasoning Effort, and Temperature */}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
               {/* Text Model */}
               <div className="space-y-2">
-                <Label htmlFor="modelId">Text Model *</Label>
-                {formData?.modelId !== undefined ? (
+                <Label htmlFor="textModelId">Text Model</Label>
+                {formData?.textModelId !== undefined ? (
                   <ModelPicker
-                    mapping={personaData?.model_mapping || {}}
-                    validIds={personaData?.valid_model_ids || []}
-                    selectedIds={formData?.modelId ? [formData.modelId] : []}
+                    mapping={personaData?.text_model_mapping || {}}
+                    validIds={personaData?.valid_text_model_ids || []}
+                    selectedIds={formData?.textModelId ? [formData.textModelId] : []}
                     onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
-                        modelId: ids[0] || "",
+                        textModelId: ids[0] || null,
                       }))
                     }
-                    placeholder="Select a model"
+                    placeholder="Select text model"
                     disabled={isReadonly}
                     multiSelect={false}
-                    triggerProps={{ "data-testid": "picker-model" }}
+                    triggerProps={{ "data-testid": "picker-text-model" }}
+                  />
+                ) : null}
+              </div>
+
+              {/* Audio Model */}
+              <div className="space-y-2">
+                <Label htmlFor="audioModelId">Audio Model</Label>
+                {formData?.audioModelId !== undefined ? (
+                  <ModelPicker
+                    mapping={personaData?.audio_model_mapping || {}}
+                    validIds={personaData?.valid_audio_model_ids || []}
+                    selectedIds={formData?.audioModelId ? [formData.audioModelId] : []}
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        audioModelId: ids[0] || null,
+                        // Clear voice if audio model is cleared
+                        voice: ids[0] ? prev.voice : null,
+                      }))
+                    }
+                    placeholder="Select audio model"
+                    disabled={isReadonly}
+                    multiSelect={false}
+                    triggerProps={{ "data-testid": "picker-audio-model" }}
+                  />
+                ) : null}
+              </div>
+
+              {/* Voice */}
+              <div className="space-y-2">
+                <Label htmlFor="voice">Voice</Label>
+                {formData?.voice !== undefined ? (
+                  <VoicePicker
+                    selectedVoice={formData.voice}
+                    onSelect={(voice) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        voice,
+                      }))
+                    }
+                    placeholder="Select voice"
+                    disabled={isReadonly || !formData.audioModelId}
+                    buttonClassName="w-full"
                   />
                 ) : null}
               </div>

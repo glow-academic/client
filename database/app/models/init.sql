@@ -6,6 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 CREATE TYPE provider AS ENUM ('openai', 'gemini', 'custom');
+CREATE TYPE model_type AS ENUM ('text', 'video', 'audio');
 
 -- ============================================================================
 -- TABLE DEFINITIONS
@@ -18,6 +19,7 @@ CREATE TABLE models (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   provider   provider    NOT NULL,
+  model_type model_type  NOT NULL DEFAULT 'text',
   active      BOOLEAN     NOT NULL DEFAULT TRUE,
   input_ppm   FLOAT       NOT NULL DEFAULT 0.0, -- price per million input tokens (dollars) (free is 0.0)
   output_ppm  FLOAT       NOT NULL DEFAULT 0.0, -- price per million output tokens (dollars) (free is 0.0)

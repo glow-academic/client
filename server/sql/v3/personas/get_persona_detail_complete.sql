@@ -139,6 +139,23 @@ user_profile AS (
             LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = pp.prompt_id
             CROSS JOIN default_prompt_count dpc
         ),
+        persona_text_model_data AS (
+            SELECT 
+                ptm.persona_id,
+                ptm.model_id::text as text_model_id
+            FROM persona_text_model ptm
+            WHERE ptm.persona_id = $1 AND ptm.active = true
+            LIMIT 1
+        ),
+        persona_audio_model_data AS (
+            SELECT 
+                pam.persona_id,
+                pam.model_id::text as audio_model_id,
+                pam.voice::text as voice
+            FROM persona_audio_model pam
+            WHERE pam.persona_id = $1 AND pam.active = true
+            LIMIT 1
+        ),
         persona_data AS (
             SELECT 
                 p.name,
@@ -146,7 +163,9 @@ user_profile AS (
                 p.active,
                 p.color,
                 p.icon,
-                p.model_id,
+                COALESCE(ptmd.text_model_id, NULL)::text as text_model_id,
+                COALESCE(pamd.audio_model_id, NULL)::text as audio_model_id,
+                COALESCE(pamd.voice, NULL)::text as voice,
                 p.reasoning,
                 p.temperature,
                 COALESCE(pap.system_prompt, '') as system_prompt,
@@ -155,6 +174,8 @@ user_profile AS (
             FROM personas p
             LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
             LEFT JOIN persona_active_prompt pap ON pap.persona_id = p.id
+            LEFT JOIN persona_text_model_data ptmd ON ptmd.persona_id = p.id
+            LEFT JOIN persona_audio_model_data pamd ON pamd.persona_id = p.id
             INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
             WHERE p.id = $1
         ),
@@ -176,7 +197,7 @@ user_profile AS (
             JOIN profile_departments pd ON d.id = pd.department_id
             WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
         ),
-        valid_models AS (
+        valid_text_models AS (
             SELECT 
                 COALESCE(
                     jsonb_object_agg(
@@ -187,10 +208,26 @@ user_profile AS (
                         )
                     ),
                     '{}'::jsonb
-                ) as model_mapping,
-                array_agg(m.id::text ORDER BY m.name) as model_ids
+                ) as text_model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as text_model_ids
             FROM models m 
-            WHERE m.active = true
+            WHERE m.active = true AND m.model_type = 'text'
+        ),
+        valid_audio_models AS (
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        m.id::text,
+                        jsonb_build_object(
+                            'name', m.name,
+                            'description', COALESCE(m.description, '')
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as audio_model_mapping,
+                array_agg(m.id::text ORDER BY m.name) as audio_model_ids
+            FROM models m 
+            WHERE m.active = true AND m.model_type = 'audio'
         ),
         usage_data AS (
             SELECT COUNT(*) as usage_count
@@ -206,15 +243,18 @@ user_profile AS (
             p.*,
             vd.dept_mapping,
             vd.dept_ids as valid_department_ids,
-            vm.model_mapping,
-            vm.model_ids as valid_model_ids,
+            COALESCE(vtm.text_model_mapping, '{}'::jsonb) as text_model_mapping,
+            COALESCE(vtm.text_model_ids, ARRAY[]::text[]) as valid_text_model_ids,
+            COALESCE(vam.audio_model_mapping, '{}'::jsonb) as audio_model_mapping,
+            COALESCE(vam.audio_model_ids, ARRAY[]::text[]) as valid_audio_model_ids,
             u.usage_count,
             pr.user_role,
             COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
             COALESCE(pdpl.department_prompt_links, '{}'::jsonb) as department_prompt_links
         FROM persona_data p
         CROSS JOIN valid_depts vd
-        CROSS JOIN valid_models vm
+        CROSS JOIN valid_text_models vtm
+        CROSS JOIN valid_audio_models vam
         CROSS JOIN usage_data u
         CROSS JOIN profile_data pr
         CROSS JOIN prompt_mapping_data pmd

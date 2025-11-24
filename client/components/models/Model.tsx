@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { KeyPicker } from "@/components/common/forms/KeyPicker";
+import { ModelTypePicker } from "@/components/common/forms/ModelTypePicker";
 import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -37,6 +38,7 @@ interface FormData {
   name?: string;
   description?: string;
   provider?: string;
+  modelType?: string;
   active?: boolean;
   customModel?: boolean; // Determined by provider === 'custom' or baseUrl presence
   baseUrl?: string;
@@ -110,6 +112,7 @@ export default function Model({
       name: "",
       description: "",
       provider: "",
+      modelType: "text",
       active: true,
       customModel: false,
       baseUrl: "",
@@ -278,6 +281,7 @@ export default function Model({
         name: modelDetail.name,
         description: modelDetail.description,
         provider: modelDetail.provider,
+        modelType: modelDetail.model_type || "text",
         active:
           typeof modelDetail.active === "boolean" ? modelDetail.active : true,
         baseUrl: modelDetail.base_url || "",
@@ -337,6 +341,13 @@ export default function Model({
       return;
     }
 
+    if (!formData.modelType) {
+      // Model type is always set to default "text" in initialFormData, so this shouldn't happen
+      // But adding validation for completeness
+      toast.error("Model type is required");
+      return;
+    }
+
     // Validate base_url if custom model
     if (
       formData.customModel &&
@@ -371,6 +382,7 @@ export default function Model({
         await handleUpdateModel({
           modelId: modelId,
           provider: formData.provider!,
+          model_type: formData.modelType!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
@@ -388,6 +400,7 @@ export default function Model({
       } else {
         await handleCreateModel({
           provider: formData.provider!,
+          model_type: formData.modelType!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
@@ -450,30 +463,54 @@ export default function Model({
           )}
         </div>
 
-        {/* Provider Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="provider">Provider</Label>
-          <div data-testid="picker-provider">
-            <ProviderPicker
-              selectedProvider={formData.provider || ""}
-              onSelect={(provider) => {
-                handleInputChange("provider", provider);
-                // Auto-enable custom model if provider is 'custom'
-                if (provider === "custom") {
-                  handleInputChange("customModel", true);
-                } else if (formData.provider === "custom") {
-                  // If switching away from custom, disable custom model
-                  handleInputChange("customModel", false);
-                  handleInputChange("baseUrl", "");
-                }
-              }}
-              placeholder="Select a provider..."
-              buttonClassName={errors.provider ? "border-destructive" : ""}
-            />
+        {/* Provider and Model Type Selection */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          {/* Provider Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="provider">Provider</Label>
+            <div data-testid="picker-provider">
+              <ProviderPicker
+                selectedProvider={formData.provider || ""}
+                onSelect={(provider) => {
+                  handleInputChange("provider", provider);
+                  // Auto-enable custom model if provider is 'custom'
+                  if (provider === "custom") {
+                    handleInputChange("customModel", true);
+                  } else if (formData.provider === "custom") {
+                    // If switching away from custom, disable custom model
+                    handleInputChange("customModel", false);
+                    handleInputChange("baseUrl", "");
+                  }
+                }}
+                placeholder="Select a provider..."
+                buttonClassName={errors.provider ? "border-destructive" : ""}
+              />
+            </div>
+            {errors.provider && (
+              <p className="text-sm text-destructive">{errors.provider}</p>
+            )}
           </div>
-          {errors.provider && (
-            <p className="text-sm text-destructive">{errors.provider}</p>
-          )}
+
+          {/* Model Type Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="modelType">Model Type</Label>
+            <div data-testid="picker-model-type">
+              <ModelTypePicker
+                selectedModelType={formData.modelType || "text"}
+                onSelect={(modelType) => {
+                  handleInputChange("modelType", modelType);
+                }}
+                placeholder="Select model type..."
+                disabled={isEditMode} // Model type is immutable after creation
+                buttonClassName={errors.provider ? "border-destructive" : ""}
+              />
+            </div>
+            {isEditMode && (
+              <p className="text-xs text-muted-foreground">
+                Model type cannot be changed after creation
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Department Selection */}
