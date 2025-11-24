@@ -22,7 +22,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,6 +121,16 @@ type RandomizeVideoOut = {
   objectiveIds: string[];
   policyIds: string[];
 };
+
+type StepStatus = "pending" | "active" | "completed";
+
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+  optional?: boolean;
+}
 
 export default function Video({
   mode = "create",
@@ -574,6 +590,91 @@ export default function Video({
 
   const isReadonly = !videoData?.can_edit;
 
+  // Calculate step status
+  const getStepStatus = (stepId: string): StepStatus => {
+    switch (stepId) {
+      case "name":
+        // Always completed - name is required
+        return "completed";
+      case "problem_statement_objectives":
+        // Completed if problem statement exists and at least one objective
+        if (formData.problemStatement.trim() && currentObjectives.length > 0) {
+          return "completed";
+        }
+        // Active if name is filled (previous step completed)
+        return formData.name.trim() ? "active" : "pending";
+      case "policies":
+        // Pending if previous step not completed
+        const prevStepCompleted =
+          formData.problemStatement.trim() && currentObjectives.length > 0;
+        if (!prevStepCompleted) {
+          return "pending";
+        }
+        // Completed if at least one policy selected
+        return selectedPolicyIds.length > 0 ? "completed" : "active";
+      case "questions":
+        // Pending if previous step not completed
+        const policiesStepCompleted =
+          formData.problemStatement.trim() &&
+          currentObjectives.length > 0 &&
+          selectedPolicyIds.length > 0;
+        if (!policiesStepCompleted) {
+          return "pending";
+        }
+        // Completed if at least one question added
+        return questions.length > 0 ? "completed" : "active";
+      case "video_generation":
+        // Pending if previous step not completed
+        const questionsStepCompleted =
+          formData.problemStatement.trim() &&
+          currentObjectives.length > 0 &&
+          selectedPolicyIds.length > 0 &&
+          questions.length > 0;
+        if (!questionsStepCompleted) {
+          return "pending";
+        }
+        // Completed if video uploaded OR length set
+        return uploadedVideoFile || formData.length_seconds > 0
+          ? "completed"
+          : "active";
+      default:
+        return "pending";
+    }
+  };
+
+  const steps: Step[] = [
+    {
+      id: "name",
+      title: "",
+      description: "",
+      status: getStepStatus("name"),
+    },
+    {
+      id: "problem_statement_objectives",
+      title: "Problem Statement & Objectives",
+      description: "Define the problem statement and learning objectives",
+      status: getStepStatus("problem_statement_objectives"),
+    },
+    {
+      id: "policies",
+      title: "Policies",
+      description: "Select policies that will be available for this video",
+      status: getStepStatus("policies"),
+    },
+    {
+      id: "questions",
+      title: "Questions",
+      description: "Add interactive questions at specific timestamps",
+      status: getStepStatus("questions"),
+    },
+    {
+      id: "video_generation",
+      title: "Video Generation/Upload",
+      description: "Upload a video file or set video length",
+      status: getStepStatus("video_generation"),
+    },
+  ];
+
   // Question modal state
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -786,110 +887,142 @@ export default function Video({
 
   return (
     <div className="space-y-6 py-4 px-4">
-      {/* Form Fields */}
-      <div className="space-y-4">
-        {/* Name */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Video Name *</Label>
-          <Input
-            id="name"
-            value={formData["name"]}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-            placeholder="Enter video name"
-            disabled={isReadonly}
-            data-testid="input-video-name"
-          />
-          {errors["name"] && (
-            <p className="text-sm text-destructive">{errors["name"]}</p>
-          )}
-        </div>
-
-        {/* Department Selection */}
-        {videoData?.valid_department_ids &&
-          videoData.valid_department_ids.length > 1 && (
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              {formData?.departmentIds !== undefined ? (
-                <DepartmentPicker
-                  mapping={departmentMapping}
-                  validIds={Array.from(
-                    new Set([
-                      ...(videoData?.valid_department_ids || []),
-                      ...(formData.departmentIds || []),
-                    ])
-                  )}
-                  selectedIds={formData.departmentIds || []}
-                  onSelect={(ids) => handleInputChange("departmentIds", ids)}
-                  placeholder="All Departments"
-                  disabled={isReadonly}
-                  multiSelect={true}
-                />
-              ) : null}
+      {/* Step 1: Name */}
+      <Card className="transition-all">
+        <CardContent className="pt-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-green-500 text-white shrink-0">
+              <Check className="w-4 h-4" />
             </div>
-          )}
-
-        {/* Active Switch */}
-        <div className="space-y-2 pt-2">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="active"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                Active
-              </Label>
-              <Switch
-                id="active"
-                checked={formData.active}
-                onCheckedChange={(checked) =>
-                  handleInputChange("active", checked)
-                }
+            <div className="flex-1">
+              <Input
+                id="name"
+                value={formData["name"]}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                placeholder="Enter video name"
                 disabled={isReadonly}
+                data-testid="input-video-name"
+                className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
               />
+              {errors["name"] && (
+                <p className="text-sm text-destructive px-2 mt-1">
+                  {errors["name"]}
+                </p>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Inactive videos will not be available for use
-            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Problem Statement & Objectives Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">
-              Problem Statement & Objectives
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  handleRandomizeVideo(
-                    ["problem_statement", "objectives"],
-                    "problem_statement"
-                  )
-                }
-                disabled={isRandomizing || isReadonly}
-              >
-                {isRandomizing ? "Randomizing..." : "Randomize"}
-              </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleResetSection("problem_statement")}
+        </CardContent>
+        <CardContent className="pt-0 space-y-4">
+          {/* Department Selection */}
+          {videoData?.valid_department_ids &&
+            videoData.valid_department_ids.length > 1 && (
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                {formData?.departmentIds !== undefined ? (
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={Array.from(
+                      new Set([
+                        ...(videoData?.valid_department_ids || []),
+                        ...(formData.departmentIds || []),
+                      ])
+                    )}
+                    selectedIds={formData.departmentIds || []}
+                    onSelect={(ids) => handleInputChange("departmentIds", ids)}
+                    placeholder="All Departments"
                     disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
+                    multiSelect={true}
+                  />
+                ) : null}
+              </div>
+            )}
+
+          {/* Active Switch */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="active"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  Active
+                </Label>
+                <Switch
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("active", checked)
+                  }
+                  disabled={isReadonly}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground pl-5">
+                Inactive videos will not be available for use
+              </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Step 2: Problem Statement & Objectives */}
+      <Card
+        className={`transition-all ${!isEditMode && getStepStatus("problem_statement_objectives") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode &&
+          getStepStatus("problem_statement_objectives") === "pending"
+            ? "opacity-50"
+            : ""
+        }`}
+      >
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+          <div className="flex items-center space-x-3">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                getStepStatus("problem_statement_objectives") === "completed"
+                  ? "bg-green-500 text-white"
+                  : getStepStatus("problem_statement_objectives") === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              }`}
+            >
+              {getStepStatus("problem_statement_objectives") === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                "2"
+              )}
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg">{steps[1]?.title || ""}</CardTitle>
+              <CardDescription>{steps[1]?.description || ""}</CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                handleRandomizeVideo(
+                  ["problem_statement", "objectives"],
+                  "problem_statement"
+                )
+              }
+              disabled={isRandomizing || isReadonly}
+            >
+              {isRandomizing ? "Randomizing..." : "Randomize"}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleResetSection("problem_statement")}
+                  disabled={isReadonly}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset</TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CardContent>
@@ -918,34 +1051,58 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Policies Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Policies</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRandomizeVideo(["policies"], "policies")}
-                disabled={isRandomizing || isReadonly}
-              >
-                {isRandomizing ? "Randomizing..." : "Randomize"}
-              </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleResetSection("policies")}
-                    disabled={isReadonly}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Reset</TooltipContent>
-              </Tooltip>
+      {/* Step 3: Policies */}
+      <Card
+        className={`transition-all ${!isEditMode && getStepStatus("policies") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode && getStepStatus("policies") === "pending"
+            ? "opacity-50"
+            : ""
+        }`}
+      >
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+          <div className="flex items-center space-x-3">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                getStepStatus("policies") === "completed"
+                  ? "bg-green-500 text-white"
+                  : getStepStatus("policies") === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              }`}
+            >
+              {getStepStatus("policies") === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                "3"
+              )}
             </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg">{steps[2]?.title || ""}</CardTitle>
+              <CardDescription>{steps[2]?.description || ""}</CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleRandomizeVideo(["policies"], "policies")}
+              disabled={isRandomizing || isReadonly}
+            >
+              {isRandomizing ? "Randomizing..." : "Randomize"}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleResetSection("policies")}
+                  disabled={isReadonly}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset</TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CardContent>
@@ -964,10 +1121,35 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Questions Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Questions</CardTitle>
+      {/* Step 4: Questions */}
+      <Card
+        className={`transition-all ${!isEditMode && getStepStatus("questions") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode && getStepStatus("questions") === "pending"
+            ? "opacity-50"
+            : ""
+        }`}
+      >
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+          <div className="flex items-center space-x-3">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                getStepStatus("questions") === "completed"
+                  ? "bg-green-500 text-white"
+                  : getStepStatus("questions") === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              }`}
+            >
+              {getStepStatus("questions") === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                "4"
+              )}
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg">{steps[3]?.title || ""}</CardTitle>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -1059,10 +1241,35 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Video Generation/Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Video Generation/Upload</CardTitle>
+      {/* Step 5: Video Generation/Upload */}
+      <Card
+        className={`transition-all ${!isEditMode && getStepStatus("video_generation") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode && getStepStatus("video_generation") === "pending"
+            ? "opacity-50"
+            : ""
+        }`}
+      >
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+          <div className="flex items-center space-x-3">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                getStepStatus("video_generation") === "completed"
+                  ? "bg-green-500 text-white"
+                  : getStepStatus("video_generation") === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              }`}
+            >
+              {getStepStatus("video_generation") === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                "5"
+              )}
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg">{steps[4]?.title || ""}</CardTitle>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Video Upload */}
