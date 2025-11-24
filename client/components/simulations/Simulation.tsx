@@ -962,8 +962,8 @@ export default function Simulation({
     handleUpdateClick();
   };
 
-  // Legacy handler - not used in table-based interface
-  const _editScenario = (scenarioId: string) => {
+  // Handler for editing scenario - opens in new tab
+  const editScenario = (scenarioId: string) => {
     window.open(`/create/scenarios/s/${scenarioId}`, "_blank");
   };
 
@@ -1463,6 +1463,7 @@ export default function Simulation({
             onMoveUp={handleContentMoveUp}
             onMoveDown={handleContentMoveDown}
             onRemove={handleContentRemove}
+            onEditScenario={editScenario}
             onBulkEdit={handleBulkContentEdit}
             onBulkDelete={handleBulkContentDelete}
             onHintsToggle={handleHintsToggle}

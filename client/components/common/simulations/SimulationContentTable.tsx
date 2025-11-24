@@ -23,19 +23,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ArrowDown, ArrowUp, Trash2, Video, FileText, Lightbulb, Target, Shield, ShieldCheck, Image } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  BarChart3,
+  BookOpen,
+  Clock,
+  FileText,
+  Image,
+  Layers,
+  Lightbulb,
+  Pencil,
+  Power,
+  Shield,
+  ShieldCheck,
+  Target,
+  Trash2,
+  Video,
+} from "lucide-react";
 
 export interface ContentItem {
   type: "scenario" | "video";
@@ -70,6 +87,7 @@ export interface SimulationContentTableProps {
   onMoveUp: (contentId: string) => void;
   onMoveDown: (contentId: string) => void;
   onRemove: (contentId: string) => void;
+  onEditScenario?: (scenarioId: string) => void;
   onBulkEdit: () => void;
   onBulkDelete: () => void;
   // Switch toggle handlers
@@ -79,7 +97,10 @@ export interface SimulationContentTableProps {
   onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onImageInputToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
-  onTimeLimitChange?: (contentId: string, timeLimitMinutes: number | null) => void;
+  onTimeLimitChange?: (
+    contentId: string,
+    timeLimitMinutes: number | null
+  ) => void;
   // Rubric picker props
   rubricMapping?: Record<string, { name: string; description?: string }>;
   validRubricIds?: string[];
@@ -95,6 +116,7 @@ export function SimulationContentTable({
   onMoveUp,
   onMoveDown,
   onRemove,
+  onEditScenario,
   onBulkEdit,
   onBulkDelete,
   onHintsToggle,
@@ -180,21 +202,33 @@ export function SimulationContentTable({
       },
       {
         accessorKey: "type",
-        header: "Type",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Layers className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Type</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Content type (scenario or video)</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 justify-center">
               {item.type === "scenario" ? (
                 <FileText className="h-4 w-4 text-blue-600" />
               ) : (
                 <Video className="h-4 w-4 text-purple-600" />
               )}
-              <Badge variant={item.type === "scenario" ? "default" : "secondary"}>
-                {item.type === "scenario" ? "Scenario" : "Video"}
-              </Badge>
               {item.isNew && (
-                <Badge variant="outline" className="bg-green-50 text-green-700">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 text-green-700 text-xs px-1 py-0"
+                >
                   NEW
                 </Badge>
               )}
@@ -204,12 +238,30 @@ export function SimulationContentTable({
       },
       {
         accessorKey: "title",
-        header: "Name",
+        size: 150,
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Name</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Content item name</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex flex-col">
-              <span className="font-medium">{item.title}</span>
+            <div className="flex flex-col w-[150px]">
+              <span
+                className="font-medium text-sm leading-tight whitespace-normal"
+                style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
+              >
+                {item.title}
+              </span>
               {item.type === "video" && item.length_seconds && (
                 <span className="text-xs text-muted-foreground">
                   {Math.floor(item.length_seconds / 60)}:
@@ -221,22 +273,20 @@ export function SimulationContentTable({
         },
       },
       {
-        accessorKey: "description",
-        header: "Description",
-        cell: ({ row }) => {
-          const description = row.original.description || "No description";
-          return (
-            <div className="max-w-[300px]">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {description}
-              </p>
-            </div>
-          );
-        },
-      },
-      {
         accessorKey: "usage_count",
-        header: "Usage",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Usage</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Number of times this content has been used</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -256,7 +306,19 @@ export function SimulationContentTable({
       },
       {
         accessorKey: "active",
-        header: "Active",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Power className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Active</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enable or disable this content item</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -277,13 +339,15 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
+              <div className="flex flex-col items-center gap-1 cursor-help">
                 <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                <span>Hints</span>
+                <span className="text-xs">Hints</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Provide hints to help students progress through the scenario</p>
+              <p>
+                Provide hints to help students progress through the scenario
+              </p>
             </TooltipContent>
           </Tooltip>
         ),
@@ -314,9 +378,9 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
+              <div className="flex flex-col items-center gap-1 cursor-help">
                 <Target className="h-4 w-4 text-muted-foreground" />
-                <span>Objectives</span>
+                <span className="text-xs">Objectives</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -344,9 +408,13 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
+              <div className="flex flex-col items-center gap-1 cursor-help">
                 <Shield className="h-4 w-4 text-muted-foreground" />
-                <span>Input Guardrail</span>
+                <span className="text-xs leading-tight text-center">
+                  Input
+                  <br />
+                  Guardrail
+                </span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -381,9 +449,13 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
+              <div className="flex flex-col items-center gap-1 cursor-help">
                 <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                <span>Output Guardrail</span>
+                <span className="text-xs leading-tight text-center">
+                  Output
+                  <br />
+                  Guardrail
+                </span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -418,9 +490,13 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
+              <div className="flex flex-col items-center gap-1 cursor-help">
                 <Image className="h-4 w-4 text-muted-foreground" />
-                <span>Image Input</span>
+                <span className="text-xs leading-tight text-center">
+                  Image
+                  <br />
+                  Input
+                </span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -455,9 +531,9 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
+              <div className="flex flex-col items-center gap-1 cursor-help">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <span>Rubric</span>
+                <span className="text-xs">Rubric</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -476,7 +552,7 @@ export function SimulationContentTable({
           }
           const contentId = `${item.type}:${item.id}`;
           return (
-            <div className="flex items-center justify-center min-w-[200px]">
+            <div className="flex items-center justify-center min-w-[120px]">
               {readonly ? (
                 <span className="text-xs text-muted-foreground">
                   {item.rubric_id && rubricMapping[item.rubric_id]
@@ -504,8 +580,13 @@ export function SimulationContentTable({
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 cursor-help">
-                <span>Time Limit</span>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs leading-tight text-center">
+                  Time
+                  <br />
+                  Limit
+                </span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -545,8 +626,8 @@ export function SimulationContentTable({
                       : null;
                     onTimeLimitChange?.(contentId, value);
                   }}
-                  placeholder="No limit"
-                  className="w-24 h-8 text-sm"
+                  placeholder="None"
+                  className="w-20 h-8 text-sm"
                   disabled={readonly}
                 />
               )}
@@ -602,6 +683,25 @@ export function SimulationContentTable({
                   <p>Move Down</p>
                 </TooltipContent>
               </Tooltip>
+              {item.type === "scenario" && onEditScenario && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => onEditScenario(item.id)}
+                      disabled={readonly}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit Scenario</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -625,7 +725,27 @@ export function SimulationContentTable({
         enableSorting: false,
       },
     ],
-    [data, selectedContentIds, readonly, onContentSelect, onSelectAll, onActiveToggle, onMoveUp, onMoveDown, onRemove, onHintsToggle, onObjectivesToggle, onInputGuardrailToggle, onOutputGuardrailToggle, onImageInputToggle, onRubricChange, onTimeLimitChange, rubricMapping, validRubricIds]
+    [
+      data,
+      selectedContentIds,
+      readonly,
+      onContentSelect,
+      onSelectAll,
+      onActiveToggle,
+      onMoveUp,
+      onMoveDown,
+      onRemove,
+      onEditScenario,
+      onHintsToggle,
+      onObjectivesToggle,
+      onInputGuardrailToggle,
+      onOutputGuardrailToggle,
+      onImageInputToggle,
+      onRubricChange,
+      onTimeLimitChange,
+      rubricMapping,
+      validRubricIds,
+    ]
   );
 
   const table = useReactTable({
@@ -690,7 +810,10 @@ export function SimulationContentTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className="text-center whitespace-normal"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -710,19 +833,17 @@ export function SimulationContentTable({
                     data-state={row.getIsSelected() && "selected"}
                     className="hover:bg-muted/30 transition-colors"
                   >
-                    {row
-                      .getVisibleCells()
-                      .map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className="border-r px-3 py-2 text-center"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="border-r px-3 py-2 text-center min-h-[60px]"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               ) : (
@@ -742,4 +863,3 @@ export function SimulationContentTable({
     </TooltipProvider>
   );
 }
-
