@@ -102,7 +102,6 @@ scenario_core AS (
         s.hints_enabled,
         s.objectives_enabled,
         s.image_input_enabled,
-        s.copy_paste_allowed,
         s.input_guardrail_enabled,
         s.output_guardrail_enabled
     FROM scenarios s
@@ -717,7 +716,6 @@ SELECT
     sc.hints_enabled,
     sc.objectives_enabled,
     sc.image_input_enabled,
-    sc.copy_paste_allowed,
     sc.input_guardrail_enabled,
     sc.output_guardrail_enabled,
     COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,

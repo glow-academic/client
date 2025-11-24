@@ -5659,6 +5659,8 @@ export interface components {
             file_path: string;
             /** Mime Type */
             mime_type: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
         };
         /**
          * CreatePolicyResponse
@@ -5790,11 +5792,6 @@ export interface components {
              * @default false
              */
             image_input_enabled: boolean;
-            /**
-             * Copy Paste Allowed
-             * @default false
-             */
-            copy_paste_allowed: boolean;
             /**
              * Input Guardrail Enabled
              * @default false
@@ -11212,6 +11209,8 @@ export interface components {
             mime_type: string;
             /** Active */
             active: boolean;
+            /** Department Id */
+            department_id?: string | null;
         };
         /**
          * UpdatePolicyResponse
@@ -11366,11 +11365,6 @@ export interface components {
              * @default false
              */
             image_input_enabled: boolean;
-            /**
-             * Copy Paste Allowed
-             * @default false
-             */
-            copy_paste_allowed: boolean;
             /**
              * Input Guardrail Enabled
              * @default false
@@ -13128,8 +13122,6 @@ export interface components {
             objectives_enabled: boolean;
             /** Image Input Enabled */
             image_input_enabled: boolean;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean;
             /** Input Guardrail Enabled */
             input_guardrail_enabled: boolean;
             /** Output Guardrail Enabled */
@@ -13242,8 +13234,6 @@ export interface components {
             objectives_enabled: boolean;
             /** Image Input Enabled */
             image_input_enabled: boolean;
-            /** Copy Paste Allowed */
-            copy_paste_allowed: boolean;
             /** Input Guardrail Enabled */
             input_guardrail_enabled: boolean;
             /** Output Guardrail Enabled */

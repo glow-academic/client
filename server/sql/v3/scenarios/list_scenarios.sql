@@ -94,7 +94,6 @@ scenario_data AS (
         COALESCE(sa.hints_enabled, false) as hints_enabled,
         COALESCE(sa.objectives_enabled, true) as objectives_enabled,
         COALESCE(sa.image_input_enabled, false) as image_input_enabled,
-        s.copy_paste_allowed,
         COALESCE(sa.input_guardrail_enabled, false) as input_guardrail_enabled,
         COALESCE(sa.output_guardrail_enabled, false) as output_guardrail_enabled,
         CASE WHEN COUNT(sd.scenario_id) > 0 THEN true ELSE false END as has_dept_links,
@@ -132,7 +131,7 @@ scenario_data AS (
     CROSS JOIN user_profile up
     GROUP BY s.id, s.name, ps.problem_statement, s.active, s.generated, s.updated_at, st.parent_id, 
              so.objective_ids, spa.persona_ids, spar.parameter_item_ids, ss.simulation_ids, ss.num_simulations, 
-             sc.cohort_ids, sdd.department_ids, sal.total_links, up.role, s.copy_paste_allowed,
+             sc.cohort_ids, sdd.department_ids, sal.total_links, up.role,
              sa.hints_enabled, sa.objectives_enabled, sa.image_input_enabled, sa.input_guardrail_enabled, sa.output_guardrail_enabled
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)

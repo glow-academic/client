@@ -29,7 +29,6 @@ class CreateScenarioRequest(BaseModel):
     hints_enabled: bool = False
     objectives_enabled: bool = True
     image_input_enabled: bool = False
-    copy_paste_allowed: bool = False
     input_guardrail_enabled: bool = False
     output_guardrail_enabled: bool = False
 
@@ -108,7 +107,6 @@ async def create_scenario(
             request.hints_enabled,
             request.objectives_enabled,
             request.image_input_enabled,
-            request.copy_paste_allowed,
             request.input_guardrail_enabled,
             request.output_guardrail_enabled,
             request.problem_statement,

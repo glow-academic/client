@@ -96,6 +96,7 @@ user_context AS (
                 ss.input_guardrail_enabled,
                 ss.output_guardrail_enabled,
                 ss.image_input_enabled,
+                ss.copy_paste_allowed,
                 ss.rubric_id,
                 stl.time_limit_seconds,
                 COALESCE(
@@ -172,6 +173,7 @@ user_context AS (
                         'input_guardrail_enabled', sb.input_guardrail_enabled,
                         'output_guardrail_enabled', sb.output_guardrail_enabled,
                         'image_input_enabled', sb.image_input_enabled,
+                        'copy_paste_allowed', sb.copy_paste_allowed,
                         'rubric_id', sb.rubric_id::text,
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (

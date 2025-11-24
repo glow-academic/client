@@ -7,7 +7,6 @@
 "use client";
 import {
   Check,
-  Copy,
   GripVertical,
   Loader2,
   PlusCircle,
@@ -355,7 +354,6 @@ export default function Scenario({
       problemStatement: "",
       departmentIds: defaultDepartmentIds,
       active: true,
-      copyPasteAllowed: false,
     }),
     [defaultDepartmentIds]
   );
@@ -857,7 +855,6 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: deptIds,
         active: scenarioData.active ?? true,
-        copyPasteAllowed: scenarioData.copy_paste_allowed ?? false,
       });
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
@@ -886,7 +883,6 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: scenarioData.department_ids || [],
         active: scenarioData.active ?? true,
-        copyPasteAllowed: scenarioData.copy_paste_allowed ?? false,
       });
       setOriginalDocumentIds(scenarioData.document_ids);
       setOriginalParameterItemIds(
@@ -948,7 +944,6 @@ export default function Scenario({
       current.name !== original.name ||
       current.problemStatement !== original.problemStatement ||
       current.active !== original.active ||
-      current.copyPasteAllowed !== original.copyPasteAllowed ||
       JSON.stringify(current.departmentIds?.sort()) !==
         JSON.stringify(original.departmentIds?.sort()) ||
       JSON.stringify([...currentDocumentIds].sort()) !==
@@ -1315,7 +1310,6 @@ export default function Scenario({
                 currentParameterItemIds,
                 parameterItemMapping
               ),
-              copy_paste_allowed: formData.copyPasteAllowed ?? false,
               hints_enabled: false, // Controlled by simulation page
               objectives_enabled: true, // Controlled by simulation page
               image_input_enabled: false, // Controlled by simulation page
@@ -1377,7 +1371,6 @@ export default function Scenario({
         document_ids: string[];
         objective_ids: string[];
         parameters: Record<string, string[]>;
-        copy_paste_allowed: boolean;
       } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
@@ -1390,7 +1383,6 @@ export default function Scenario({
           currentParameterItemIds,
           parameterItemMapping
         ),
-        copy_paste_allowed: formData.copyPasteAllowed ?? false,
       };
 
       // Include problem_statement_versions if in create mode and we have local versions
@@ -1697,35 +1689,6 @@ export default function Scenario({
               description="Choose the persona that will interact with students in this scenario."
               readonly={isReadonly}
             />
-
-            {/* Guardrail Switches - Only visible to superadmin */}
-            {isSuperadmin && (
-              <div className="space-y-2 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="copyPasteAllowed"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                      Copy Paste
-                    </Label>
-                    <Switch
-                      id="copyPasteAllowed"
-                      data-testid="switch-scenario-copy-paste"
-                      checked={formData.copyPasteAllowed ?? false}
-                      onCheckedChange={(checked) =>
-                        handleInputChange("copyPasteAllowed", checked)
-                      }
-                      disabled={isReadonly}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Allow students to copy and paste text during the scenario
-                  </p>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 

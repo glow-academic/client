@@ -45,6 +45,7 @@ CREATE TABLE simulation_scenarios (
   input_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   image_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  copy_paste_allowed BOOLEAN NOT NULL DEFAULT FALSE,
   rubric_id UUID REFERENCES rubrics(id) ON DELETE CASCADE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

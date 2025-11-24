@@ -20,3 +20,17 @@ CREATE INDEX ON policies (name);
 CREATE INDEX ON policies (active);
 CREATE INDEX ON policies (created_at);
 
+-- Policy → Departments junction table (BCNF normalization)
+-- No records = available to all departments (cross-department)
+CREATE TABLE policy_departments (
+  policy_id     UUID NOT NULL REFERENCES policies(id)     ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id)   ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (policy_id, department_id)
+);
+
+CREATE INDEX ON policy_departments (policy_id);
+CREATE INDEX ON policy_departments (department_id);
+

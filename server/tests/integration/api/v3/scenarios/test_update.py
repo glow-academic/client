@@ -48,7 +48,6 @@ async def test_update_scenario(
             "hints_enabled": True,
             "objectives_enabled": True,
             "image_input_enabled": False,
-            "copy_paste_allowed": False,
             "input_guardrail_enabled": False,
             "output_guardrail_enabled": False,
         },

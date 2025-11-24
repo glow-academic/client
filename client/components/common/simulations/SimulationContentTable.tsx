@@ -41,6 +41,7 @@ import {
   BarChart3,
   BookOpen,
   Clock,
+  Copy,
   FileText,
   Image,
   Layers,
@@ -74,6 +75,7 @@ export interface ContentItem {
   input_guardrail_enabled?: boolean;
   output_guardrail_enabled?: boolean;
   image_input_enabled?: boolean;
+  copy_paste_allowed?: boolean;
   rubric_id?: string | null;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
 }
@@ -96,6 +98,7 @@ export interface SimulationContentTableProps {
   onInputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onImageInputToggle?: (contentId: string, enabled: boolean) => void;
+  onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
   onTimeLimitChange?: (
     contentId: string,
@@ -124,6 +127,7 @@ export function SimulationContentTable({
   onInputGuardrailToggle,
   onOutputGuardrailToggle,
   onImageInputToggle,
+  onCopyPasteToggle,
   onRubricChange,
   onTimeLimitChange,
   rubricMapping = {},
@@ -521,6 +525,47 @@ export function SimulationContentTable({
                   onImageInputToggle?.(`${item.type}:${item.id}`, checked)
                 }
                 disabled={readonly || !onImageInputToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "copy_paste_allowed",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Copy className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs leading-tight text-center">
+                  Copy
+                  <br />
+                  Paste
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Allow students to copy and paste text during the scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.copy_paste_allowed ?? false}
+                onCheckedChange={(checked) =>
+                  onCopyPasteToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onCopyPasteToggle}
               />
             </div>
           );

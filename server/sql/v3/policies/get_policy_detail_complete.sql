@@ -35,6 +35,25 @@ policy_core AS (
     FROM policies p
     CROSS JOIN user_profile up
     WHERE p.id = $1::uuid
+),
+user_departments AS (
+    SELECT DISTINCT d.id, d.title as name, d.description
+    FROM departments d
+    JOIN profile_departments pd ON d.id = pd.department_id
+    WHERE pd.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) AND d.active = true
+),
+department_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            ud.id::text,
+            jsonb_build_object(
+                'name', ud.name,
+                'description', COALESCE(ud.description, '')
+            )
+        ),
+        '{}'::jsonb
+    ) as mapping
+    FROM user_departments ud
 )
 SELECT 
     pc.name,
@@ -46,6 +65,7 @@ SELECT
     pc.updated_at::text,
     pc.can_edit,
     pc.can_delete,
-    '{}'::jsonb as department_mapping
+    COALESCE(dm.mapping, '{}'::jsonb) as department_mapping
 FROM policy_core pc
+CROSS JOIN department_mapping_data dm
 

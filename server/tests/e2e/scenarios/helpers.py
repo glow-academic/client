@@ -172,7 +172,6 @@ def create_scenario_api(
     hints_enabled: bool = False,
     objectives_enabled: bool = True,
     image_input_enabled: bool = False,
-    copy_paste_allowed: bool = False,
     input_guardrail_enabled: bool = False,
     output_guardrail_enabled: bool = False,
 ) -> str:
@@ -200,7 +199,6 @@ def create_scenario_api(
         "hints_enabled": hints_enabled,
         "objectives_enabled": objectives_enabled,
         "image_input_enabled": image_input_enabled,
-        "copy_paste_allowed": copy_paste_allowed,
         "input_guardrail_enabled": input_guardrail_enabled,
         "output_guardrail_enabled": output_guardrail_enabled,
     }

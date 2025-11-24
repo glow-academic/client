@@ -304,7 +304,7 @@
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
                     'defaultScenario', false,
-                    'copyPasteAllowed', s.copy_paste_allowed,
+                    'copyPasteAllowed', COALESCE(ss.copy_paste_allowed, false),
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(so.objective ORDER BY so.idx)
                          FROM scenario_objectives so
@@ -314,6 +314,7 @@
                 ) as scenario_data,
                 COALESCE(pcf.previous_chats, '[]'::jsonb) as previous_chats
             FROM simulation_scenarios_list ssl
+            LEFT JOIN simulation_scenarios ss ON ss.scenario_id = ssl.scenario_id AND ss.simulation_id = (SELECT simulation_id FROM attempt_base)
             LEFT JOIN scenarios s ON s.id = ssl.scenario_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
@@ -347,7 +348,7 @@
                     'updatedAt', s.updated_at,
                     'generated', s.generated,
                     'defaultScenario', false,
-                    'copyPasteAllowed', s.copy_paste_allowed,
+                    'copyPasteAllowed', COALESCE(ss.copy_paste_allowed, false),
                     'objectives', COALESCE(
                         (SELECT jsonb_agg(so.objective ORDER BY so.idx)
                          FROM scenario_objectives so
@@ -355,28 +356,30 @@
                         '[]'::jsonb
                     )
                 ) as scenario_data,
-                s.hints_enabled,
-                s.objectives_enabled,
-                s.image_input_enabled,
-                s.copy_paste_allowed,
-                s.input_guardrail_enabled,
-                s.output_guardrail_enabled
+                COALESCE(ss.hints_enabled, false) as hints_enabled,
+                COALESCE(ss.objectives_enabled, true) as objectives_enabled,
+                COALESCE(ss.image_input_enabled, false) as image_input_enabled,
+                COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
+                COALESCE(ss.input_guardrail_enabled, false) as input_guardrail_enabled,
+                COALESCE(ss.output_guardrail_enabled, false) as output_guardrail_enabled
             FROM scenarios s
+            CROSS JOIN scenario_ids_list sil
+            CROSS JOIN attempt_base ab
+            LEFT JOIN simulation_scenarios ss ON ss.scenario_id = s.id AND ss.simulation_id = ab.simulation_id
             LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
             LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-            CROSS JOIN scenario_ids_list sil
             LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
             LEFT JOIN personas p ON p.id = sp.persona_id
             WHERE s.id = ANY(sil.scenario_ids)
         ),
         simulation_flags AS (
             SELECT 
-                COALESCE((SELECT s.hints_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
-                COALESCE((SELECT s.objectives_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
-                COALESCE((SELECT s.image_input_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
-                COALESCE((SELECT s.copy_paste_allowed FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed,
-                COALESCE((SELECT s.input_guardrail_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
-                COALESCE((SELECT s.output_guardrail_enabled FROM scenarios s JOIN chats_base cb ON s.id = cb.scenario_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
+                COALESCE((SELECT ss.hints_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
+                COALESCE((SELECT ss.objectives_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
+                COALESCE((SELECT ss.image_input_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
+                COALESCE((SELECT ss.copy_paste_allowed FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed,
+                COALESCE((SELECT ss.input_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
+                COALESCE((SELECT ss.output_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
         ),
         messages_grouped AS (
             SELECT 

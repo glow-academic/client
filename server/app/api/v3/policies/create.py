@@ -21,6 +21,7 @@ class CreatePolicyRequest(BaseModel):
     description: str
     file_path: str
     mime_type: str
+    department_ids: list[str] | None = None
 
 
 class CreatePolicyResponse(BaseModel):
@@ -52,12 +53,19 @@ async def create_policy(
 
         # Create policy in a single SQL file
         sql_query = load_sql("sql/v3/policies/insert_policy_complete.sql")
+        # Convert department_ids to uuid array, empty array if None
+        dept_ids = (
+            [uuid.UUID(did) for did in request.department_ids]
+            if request.department_ids
+            else []
+        )
         sql_params = (
             policy_id,
             request.name,
             request.description,
             request.file_path,
             request.mime_type,
+            dept_ids,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

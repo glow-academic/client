@@ -1,6 +1,7 @@
 """Policy update endpoint - v3 API following DHH principles."""
 
 from typing import Annotated, Any
+import uuid
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -22,6 +23,7 @@ class UpdatePolicyRequest(BaseModel):
     file_path: str
     mime_type: str
     active: bool
+    department_id: str | None = None
 
 
 class UpdatePolicyResponse(BaseModel):
@@ -51,12 +53,13 @@ async def update_policy(
         # Update policy in a single SQL file
         sql_query = load_sql("sql/v3/policies/update_policy_complete.sql")
         sql_params = (
-            request.policyId,
+            uuid.UUID(request.policyId),
             request.name,
             request.description,
             request.file_path,
             request.mime_type,
             request.active,
+            uuid.UUID(request.department_id) if request.department_id else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

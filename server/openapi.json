@@ -12753,6 +12753,20 @@
           "mime_type": {
             "type": "string",
             "title": "Mime Type"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
           }
         },
         "type": "object",
@@ -13050,11 +13064,6 @@
           "image_input_enabled": {
             "type": "boolean",
             "title": "Image Input Enabled",
-            "default": false
-          },
-          "copy_paste_allowed": {
-            "type": "boolean",
-            "title": "Copy Paste Allowed",
             "default": false
           },
           "input_guardrail_enabled": {
@@ -26976,6 +26985,17 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
           }
         },
         "type": "object",
@@ -27378,11 +27398,6 @@
           "image_input_enabled": {
             "type": "boolean",
             "title": "Image Input Enabled",
-            "default": false
-          },
-          "copy_paste_allowed": {
-            "type": "boolean",
-            "title": "Copy Paste Allowed",
             "default": false
           },
           "input_guardrail_enabled": {
@@ -32220,10 +32235,6 @@
             "type": "boolean",
             "title": "Image Input Enabled"
           },
-          "copy_paste_allowed": {
-            "type": "boolean",
-            "title": "Copy Paste Allowed"
-          },
           "input_guardrail_enabled": {
             "type": "boolean",
             "title": "Input Guardrail Enabled"
@@ -32403,7 +32414,6 @@
           "hints_enabled",
           "objectives_enabled",
           "image_input_enabled",
-          "copy_paste_allowed",
           "input_guardrail_enabled",
           "output_guardrail_enabled",
           "department_ids",
@@ -32519,10 +32529,6 @@
           "image_input_enabled": {
             "type": "boolean",
             "title": "Image Input Enabled"
-          },
-          "copy_paste_allowed": {
-            "type": "boolean",
-            "title": "Copy Paste Allowed"
           },
           "input_guardrail_enabled": {
             "type": "boolean",
@@ -32709,7 +32715,6 @@
           "hints_enabled",
           "objectives_enabled",
           "image_input_enabled",
-          "copy_paste_allowed",
           "input_guardrail_enabled",
           "output_guardrail_enabled",
           "parent_scenario_id",

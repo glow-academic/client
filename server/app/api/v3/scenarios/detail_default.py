@@ -78,7 +78,6 @@ class ScenarioDetailResponse(BaseModel):
     hints_enabled: bool
     objectives_enabled: bool
     image_input_enabled: bool
-    copy_paste_allowed: bool
     input_guardrail_enabled: bool
     output_guardrail_enabled: bool
     parent_scenario_id: str | None
@@ -350,7 +349,6 @@ async def get_scenario_detail_default(
             hints_enabled=False,
             objectives_enabled=True,
             image_input_enabled=False,
-            copy_paste_allowed=False,
             input_guardrail_enabled=False,
             output_guardrail_enabled=False,
             parent_scenario_id=None,

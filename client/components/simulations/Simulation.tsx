@@ -248,6 +248,7 @@ export default function Simulation({
         input_guardrail_enabled?: boolean;
         output_guardrail_enabled?: boolean;
         image_input_enabled?: boolean;
+        copy_paste_allowed?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -263,6 +264,7 @@ export default function Simulation({
           input_guardrail_enabled?: boolean;
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
+          copy_paste_allowed?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -496,6 +498,10 @@ export default function Simulation({
             switchState?.image_input_enabled ??
             scenario.image_input_enabled ??
             false,
+          copy_paste_allowed:
+            switchState?.copy_paste_allowed ??
+            scenario.copy_paste_allowed ??
+            false,
           rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
           time_limit_seconds:
             switchState?.time_limit_seconds ??
@@ -563,6 +569,7 @@ export default function Simulation({
           input_guardrail_enabled?: boolean;
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
+          copy_paste_allowed?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -575,6 +582,7 @@ export default function Simulation({
           input_guardrail_enabled?: boolean;
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
+          copy_paste_allowed?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -593,6 +601,7 @@ export default function Simulation({
             output_guardrail_enabled:
               scenario.output_guardrail_enabled ?? false,
             image_input_enabled: scenario.image_input_enabled ?? false,
+            copy_paste_allowed: scenario.copy_paste_allowed ?? false,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -603,6 +612,7 @@ export default function Simulation({
             output_guardrail_enabled:
               scenario.output_guardrail_enabled ?? false,
             image_input_enabled: scenario.image_input_enabled ?? false,
+            copy_paste_allowed: scenario.copy_paste_allowed ?? false,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -853,6 +863,7 @@ export default function Simulation({
         input_guardrail_enabled?: boolean;
         output_guardrail_enabled?: boolean;
         image_input_enabled?: boolean;
+        copy_paste_allowed?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -885,6 +896,10 @@ export default function Simulation({
             baseItem.image_input_enabled =
               switchState?.image_input_enabled ??
               item.image_input_enabled ??
+              false;
+            baseItem.copy_paste_allowed =
+              switchState?.copy_paste_allowed ??
+              item.copy_paste_allowed ??
               false;
             baseItem.rubric_id =
               switchState?.rubric_id ?? item.rubric_id ?? null;
@@ -1121,6 +1136,19 @@ export default function Simulation({
         [contentId]: {
           ...prev[contentId],
           image_input_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleCopyPasteToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          copy_paste_allowed: enabled,
         },
       }));
     },
@@ -1471,6 +1499,7 @@ export default function Simulation({
             onInputGuardrailToggle={handleInputGuardrailToggle}
             onOutputGuardrailToggle={handleOutputGuardrailToggle}
             onImageInputToggle={handleImageInputToggle}
+            onCopyPasteToggle={handleCopyPasteToggle}
             onRubricChange={handleRubricChange}
             onTimeLimitChange={handleTimeLimitChange}
             rubricMapping={simulationData?.rubric_mapping || {}}

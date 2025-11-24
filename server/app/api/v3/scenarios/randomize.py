@@ -356,7 +356,6 @@ async def randomize_scenario_attributes(
             parent_scenario_dict.get("hints_enabled", False),
             parent_scenario_dict.get("objectives_enabled", True),
             parent_scenario_dict.get("image_input_enabled", False),
-            parent_scenario_dict.get("copy_paste_allowed", False),
             parent_scenario_dict.get("input_guardrail_enabled", False),
             parent_scenario_dict.get("output_guardrail_enabled", False),
         )

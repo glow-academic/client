@@ -94,10 +94,10 @@ SELECT
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
-    -- Scenario settings (flags moved from simulations to scenarios)
-    s.image_input_enabled,
-    s.copy_paste_allowed,
-    s.output_guardrail_enabled,
+    -- Scenario settings (flags moved from scenarios to simulation_scenarios)
+    COALESCE(ss.image_input_enabled, false) as image_input_enabled,
+    COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
+    COALESCE(ss.output_guardrail_enabled, false) as output_guardrail_enabled,
     
     -- Profile data (via attempt_profiles junction)
     ap.profile_id::text as profile_id,
@@ -125,6 +125,7 @@ FROM simulation_chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios s ON s.id = sc.scenario_id
+LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
@@ -154,7 +155,7 @@ GROUP BY sc.id, sc.title, sc.trace_id,
          p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, p.temperature, p.reasoning,
          m.id, m.name, m.provider,
          k.key, me.base_url,
-         s.image_input_enabled, s.copy_paste_allowed, s.output_guardrail_enabled,
+         ss.image_input_enabled, ss.copy_paste_allowed, ss.output_guardrail_enabled,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 
