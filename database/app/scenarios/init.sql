@@ -14,7 +14,8 @@ CREATE TABLE parameters (
   numerical BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT FALSE,
   practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  document_parameter BOOLEAN     NOT NULL DEFAULT FALSE
+  document_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  persona_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE parameter_items (

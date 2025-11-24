@@ -2468,6 +2468,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/policies/upload/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Finalize
+         * @description Finalize a policy upload and create the policy.
+         */
+        post: operations["upload_finalize_api_v3_policies_upload_finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/policies/download/{policy_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Policy
+         * @description Download a policy by ID.
+         */
+        get: operations["download_policy_api_v3_policies_download__policy_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/rubrics/list": {
         parameters: {
             query?: never;
@@ -5659,6 +5699,11 @@ export interface components {
             file_path: string;
             /** Mime Type */
             mime_type: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
         };
@@ -8579,6 +8624,34 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
+            /**
+             * Department Options
+             * @default []
+             */
+            department_options: {
+                [key: string]: string;
+            }[];
+            /**
+             * Video Mapping
+             * @default {}
+             */
+            video_mapping: {
+                [key: string]: components["schemas"]["VideoMappingItem"];
+            };
+            /**
+             * Video Options
+             * @default []
+             */
+            video_options: {
+                [key: string]: string;
+            }[];
+            /**
+             * Extension Options
+             * @default []
+             */
+            extension_options: {
+                [key: string]: string;
+            }[];
         };
         /**
          * PolicyDetailRequest
@@ -8609,6 +8682,13 @@ export interface components {
             created_at: string;
             /** Updated At */
             updated_at: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Valid Department Ids
+             * @default []
+             */
+            valid_department_ids: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -8639,6 +8719,23 @@ export interface components {
             created_at: string;
             /** Updated At */
             updated_at: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Video Ids
+             * @default []
+             */
+            video_ids: string[];
+            /**
+             * Video Count
+             * @default 0
+             */
+            video_count: number;
+            /**
+             * Extension
+             * @default
+             */
+            extension: string;
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -11203,14 +11300,10 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
             /** Active */
             active: boolean;
-            /** Department Id */
-            department_id?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
         };
         /**
          * UpdatePolicyResponse
@@ -11504,66 +11597,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UploadFinalizeRequest
-         * @description Request to finalize upload.
-         */
-        UploadFinalizeRequest: {
-            /** Uploadid */
-            uploadId: string;
-            /** Fileid */
-            fileId: string;
-            /**
-             * Zip
-             * @default false
-             */
-            zip: boolean | null;
-            /**
-             * Autoclassify
-             * @default false
-             */
-            autoClassify: boolean | null;
-            /**
-             * Csv
-             * @default false
-             */
-            csv: boolean | null;
-            /**
-             * Test
-             * @default false
-             */
-            test: boolean | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Parameteritemids */
-            parameterItemIds?: string[] | null;
-        };
-        /**
-         * UploadFinalizeResponse
-         * @description Response from finalize upload.
-         */
-        UploadFinalizeResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Status */
-            status: string;
-            /** Documentid */
-            documentId?: string | null;
-            /** Documents */
-            documents?: {
-                [key: string]: string;
-            }[] | null;
-            /** Userscreated */
-            usersCreated?: number | null;
-            /** Usersskipped */
-            usersSkipped?: number | null;
-            /** Errors */
-            errors?: string[] | null;
-        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -11655,6 +11688,20 @@ export interface components {
             can_duplicate: boolean;
             /** Updated At */
             updated_at: string;
+        };
+        /**
+         * VideoMappingItem
+         * @description Video mapping item for facet options.
+         */
+        VideoMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Length Seconds */
+            length_seconds?: number | null;
+            /** Active */
+            active?: boolean | null;
         };
         /**
          * VideoSearchResult
@@ -12291,6 +12338,66 @@ export interface components {
             /** Can Duplicate */
             can_duplicate: boolean;
         };
+        /**
+         * UploadFinalizeRequest
+         * @description Request to finalize upload.
+         */
+        app__api__v3__documents__upload_finalize__UploadFinalizeRequest: {
+            /** Uploadid */
+            uploadId: string;
+            /** Fileid */
+            fileId: string;
+            /**
+             * Zip
+             * @default false
+             */
+            zip: boolean | null;
+            /**
+             * Autoclassify
+             * @default false
+             */
+            autoClassify: boolean | null;
+            /**
+             * Csv
+             * @default false
+             */
+            csv: boolean | null;
+            /**
+             * Test
+             * @default false
+             */
+            test: boolean | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+        };
+        /**
+         * UploadFinalizeResponse
+         * @description Response from finalize upload.
+         */
+        app__api__v3__documents__upload_finalize__UploadFinalizeResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Documentid */
+            documentId?: string | null;
+            /** Documents */
+            documents?: {
+                [key: string]: string;
+            }[] | null;
+            /** Userscreated */
+            usersCreated?: number | null;
+            /** Usersskipped */
+            usersSkipped?: number | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
         /** FeedbackItem */
         app__api__v3__feedback__list__FeedbackItem: {
             /** Feedback Id */
@@ -12742,6 +12849,41 @@ export interface components {
             department_ids: string[] | null;
             /** Can Delete */
             can_delete: boolean;
+        };
+        /**
+         * UploadFinalizeRequest
+         * @description Request to finalize policy upload.
+         */
+        app__api__v3__policies__upload_finalize__UploadFinalizeRequest: {
+            /** Uploadid */
+            uploadId: string;
+            /** Fileid */
+            fileId: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+        };
+        /**
+         * UploadFinalizeResponse
+         * @description Response from finalize upload.
+         */
+        app__api__v3__policies__upload_finalize__UploadFinalizeResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Policyid */
+            policyId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -17186,7 +17328,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UploadFinalizeRequest"];
+                "application/json": components["schemas"]["app__api__v3__documents__upload_finalize__UploadFinalizeRequest"];
             };
         };
         responses: {
@@ -17196,7 +17338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadFinalizeResponse"];
+                    "application/json": components["schemas"]["app__api__v3__documents__upload_finalize__UploadFinalizeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -17426,6 +17568,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePolicyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_finalize_api_v3_policies_upload_finalize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__api__v3__policies__upload_finalize__UploadFinalizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["app__api__v3__policies__upload_finalize__UploadFinalizeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_policy_api_v3_policies_download__policy_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                policy_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

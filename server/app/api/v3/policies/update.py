@@ -20,10 +20,8 @@ class UpdatePolicyRequest(BaseModel):
     policyId: str
     name: str
     description: str
-    file_path: str
-    mime_type: str
     active: bool
-    department_id: str | None = None
+    departmentIds: list[str] | None = None
 
 
 class UpdatePolicyResponse(BaseModel):
@@ -52,14 +50,18 @@ async def update_policy(
     try:
         # Update policy in a single SQL file
         sql_query = load_sql("sql/v3/policies/update_policy_complete.sql")
+        # Convert department_ids to uuid array, empty array if None
+        dept_ids = (
+            [uuid.UUID(did) for did in request.departmentIds]
+            if request.departmentIds
+            else []
+        )
         sql_params = (
             uuid.UUID(request.policyId),
             request.name,
             request.description,
-            request.file_path,
-            request.mime_type,
             request.active,
-            uuid.UUID(request.department_id) if request.department_id else None,
+            dept_ids,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

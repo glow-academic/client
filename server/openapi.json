@@ -4847,7 +4847,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UploadFinalizeRequest"
+                "$ref": "#/components/schemas/app__api__v3__documents__upload_finalize__UploadFinalizeRequest"
               }
             }
           },
@@ -4859,7 +4859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UploadFinalizeResponse"
+                  "$ref": "#/components/schemas/app__api__v3__documents__upload_finalize__UploadFinalizeResponse"
                 }
               }
             }
@@ -5187,6 +5187,99 @@
                 "schema": {
                   "$ref": "#/components/schemas/DeletePolicyResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
+        ]
+      }
+    },
+    "/api/v3/policies/upload/finalize": {
+      "post": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Upload Finalize",
+        "description": "Finalize a policy upload and create the policy.",
+        "operationId": "upload_finalize_api_v3_policies_upload_finalize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v3__policies__upload_finalize__UploadFinalizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__api__v3__policies__upload_finalize__UploadFinalizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "policies"
+        ]
+      }
+    },
+    "/api/v3/policies/download/{policy_id}": {
+      "get": {
+        "tags": [
+          "v3",
+          "policies"
+        ],
+        "summary": "Download Policy",
+        "description": "Download a policy by ID.",
+        "operationId": "download_policy_api_v3_policies_download__policy_id__get",
+        "parameters": [
+          {
+            "name": "policy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Policy Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -12754,6 +12847,11 @@
             "type": "string",
             "title": "Mime Type"
           },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -20108,6 +20206,47 @@
             },
             "type": "object",
             "title": "Department Mapping"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options",
+            "default": []
+          },
+          "video_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/VideoMappingItem"
+            },
+            "type": "object",
+            "title": "Video Mapping",
+            "default": {}
+          },
+          "video_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Video Options",
+            "default": []
+          },
+          "extension_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Extension Options",
+            "default": []
           }
         },
         "type": "object",
@@ -20166,6 +20305,28 @@
           "updated_at": {
             "type": "string",
             "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids",
+            "default": []
           },
           "can_edit": {
             "type": "boolean",
@@ -20232,6 +20393,38 @@
           "updated_at": {
             "type": "string",
             "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "video_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Ids",
+            "default": []
+          },
+          "video_count": {
+            "type": "integer",
+            "title": "Video Count",
+            "default": 0
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension",
+            "default": ""
           },
           "can_edit": {
             "type": "boolean",
@@ -26974,28 +27167,23 @@
             "type": "string",
             "title": "Description"
           },
-          "file_path": {
-            "type": "string",
-            "title": "File Path"
-          },
-          "mime_type": {
-            "type": "string",
-            "title": "Mime Type"
-          },
           "active": {
             "type": "boolean",
             "title": "Active"
           },
-          "department_id": {
+          "departmentIds": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Department Id"
+            "title": "Departmentids"
           }
         },
         "type": "object",
@@ -27003,8 +27191,6 @@
           "policyId",
           "name",
           "description",
-          "file_path",
-          "mime_type",
           "active"
         ],
         "title": "UpdatePolicyRequest",
@@ -27812,200 +27998,6 @@
         "title": "UpdateVideoResponse",
         "description": "Response from update operation."
       },
-      "UploadFinalizeRequest": {
-        "properties": {
-          "uploadId": {
-            "type": "string",
-            "title": "Uploadid"
-          },
-          "fileId": {
-            "type": "string",
-            "title": "Fileid"
-          },
-          "zip": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Zip",
-            "default": false
-          },
-          "autoClassify": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Autoclassify",
-            "default": false
-          },
-          "csv": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Csv",
-            "default": false
-          },
-          "test": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test",
-            "default": false
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "departmentIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentids"
-          },
-          "parameterItemIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameteritemids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "uploadId",
-          "fileId"
-        ],
-        "title": "UploadFinalizeRequest",
-        "description": "Request to finalize upload."
-      },
-      "UploadFinalizeResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "documentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documentid"
-          },
-          "documents": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Documents"
-          },
-          "usersCreated": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Userscreated"
-          },
-          "usersSkipped": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Usersskipped"
-          },
-          "errors": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Errors"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "status"
-        ],
-        "title": "UploadFinalizeResponse",
-        "description": "Response from finalize upload."
-      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -28225,6 +28217,47 @@
         ],
         "title": "VideoItem",
         "description": "Individual video item in the response."
+      },
+      "VideoMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "length_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Seconds"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "VideoMappingItem",
+        "description": "Video mapping item for facet options."
       },
       "VideoSearchResult": {
         "properties": {
@@ -29851,6 +29884,200 @@
         "title": "DepartmentItem",
         "description": "Department item for list view."
       },
+      "app__api__v3__documents__upload_finalize__UploadFinalizeRequest": {
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "fileId": {
+            "type": "string",
+            "title": "Fileid"
+          },
+          "zip": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zip",
+            "default": false
+          },
+          "autoClassify": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autoclassify",
+            "default": false
+          },
+          "csv": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csv",
+            "default": false
+          },
+          "test": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test",
+            "default": false
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "parameterItemIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploadId",
+          "fileId"
+        ],
+        "title": "UploadFinalizeRequest",
+        "description": "Request to finalize upload."
+      },
+      "app__api__v3__documents__upload_finalize__UploadFinalizeResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentid"
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documents"
+          },
+          "usersCreated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userscreated"
+          },
+          "usersSkipped": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usersskipped"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "status"
+        ],
+        "title": "UploadFinalizeResponse",
+        "description": "Response from finalize upload."
+      },
       "app__api__v3__feedback__list__FeedbackItem": {
         "properties": {
           "feedback_id": {
@@ -31142,6 +31369,89 @@
         ],
         "title": "PromptInfo",
         "description": "Prompt information."
+      },
+      "app__api__v3__policies__upload_finalize__UploadFinalizeRequest": {
+        "properties": {
+          "uploadId": {
+            "type": "string",
+            "title": "Uploadid"
+          },
+          "fileId": {
+            "type": "string",
+            "title": "Fileid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "uploadId",
+          "fileId",
+          "name",
+          "description"
+        ],
+        "title": "UploadFinalizeRequest",
+        "description": "Request to finalize policy upload."
+      },
+      "app__api__v3__policies__upload_finalize__UploadFinalizeResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "policyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policyid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "status"
+        ],
+        "title": "UploadFinalizeResponse",
+        "description": "Response from finalize upload."
       },
       "app__api__v3__practice__history__AttemptHistoryRow": {
         "properties": {

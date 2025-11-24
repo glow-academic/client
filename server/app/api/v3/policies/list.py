@@ -1,5 +1,6 @@
 """Policies list endpoint - v3 API following DHH principles."""
 
+import json
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
@@ -21,6 +22,15 @@ class PoliciesFilters(BaseModel):
     profileId: str
 
 
+class VideoMappingItem(BaseModel):
+    """Video mapping item for facet options."""
+
+    name: str
+    description: str
+    length_seconds: int | None = None
+    active: bool | None = None
+
+
 class PolicyItem(BaseModel):
     """Individual policy item in the response."""
 
@@ -32,6 +42,10 @@ class PolicyItem(BaseModel):
     active: bool
     created_at: str
     updated_at: str
+    department_ids: list[str] | None = None
+    video_ids: list[str] = []
+    video_count: int = 0
+    extension: str = ""
     can_edit: bool
     can_delete: bool
 
@@ -41,6 +55,10 @@ class PoliciesListResponse(BaseModel):
 
     policies: list[PolicyItem]
     department_mapping: DepartmentMapping
+    department_options: list[dict[str, str]] = []
+    video_mapping: dict[str, VideoMappingItem] = {}
+    video_options: list[dict[str, str]] = []
+    extension_options: list[dict[str, str]] = []
 
 
 router = APIRouter()
@@ -85,16 +103,45 @@ async def get_policies_list(
         # Build response - transform database rows
         policies = []
         department_mapping: DepartmentMapping = {}
+        video_mapping: dict[str, VideoMappingItem] = {}
 
         # Parse mappings from first row (same across all rows)
         if result:
             first_row = result[0]
+
+            # Parse department mapping from JSONB
             department_mapping_data = first_row.get("department_mapping")
-            if isinstance(department_mapping_data, dict):
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
                 department_mapping = department_mapping_data
+
+            # Parse video mapping from JSONB
+            video_mapping_data = first_row.get("video_mapping")
+            if isinstance(video_mapping_data, str):
+                video_mapping_data = json.loads(video_mapping_data)
+            if video_mapping_data and isinstance(video_mapping_data, dict):
+                for vid, vdata in video_mapping_data.items():
+                    if isinstance(vdata, dict):
+                        video_mapping[vid] = VideoMappingItem(
+                            name=vdata.get("name", ""),
+                            description=vdata.get("description", ""),
+                            length_seconds=vdata.get("length_seconds"),
+                            active=vdata.get("active"),
+                        )
 
         # Build policy items
         for row in result:
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
+
+            video_ids = []
+            if row.get("video_ids"):
+                video_ids = [str(vid) for vid in row["video_ids"]]
+
+            extension = row.get("extension") or ""
+
             policies.append(
                 PolicyItem(
                     policy_id=str(row["policy_id"]),
@@ -105,14 +152,42 @@ async def get_policies_list(
                     active=row["active"],
                     created_at=str(row["created_at"]),
                     updated_at=str(row["updated_at"]),
+                    department_ids=dept_ids,
+                    video_ids=video_ids,
+                    video_count=row.get("video_count", 0) or 0,
+                    extension=extension,
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],
                 )
             )
 
+        # Build facet options
+        # Video options from video_mapping
+        video_options = [
+            {"value": vid, "label": v.name or vid}
+            for (vid, v) in video_mapping.items()
+        ]
+
+        # Extension options from actual extensions used
+        used_extensions = {p.extension for p in policies if p.extension}
+        extension_options = [
+            {"value": ext, "label": ext.upper()}
+            for ext in sorted(used_extensions)
+        ]
+
+        # Department options from department_mapping
+        department_options = [
+            {"value": did, "label": d.get("name", did) if isinstance(d, dict) else did}
+            for (did, d) in department_mapping.items()
+        ]
+
         response_data = PoliciesListResponse(
             policies=policies,
             department_mapping=department_mapping,
+            department_options=department_options,
+            video_mapping=video_mapping,
+            video_options=video_options,
+            extension_options=extension_options,
         )
 
         # Cache response

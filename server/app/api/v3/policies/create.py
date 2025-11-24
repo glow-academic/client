@@ -21,6 +21,7 @@ class CreatePolicyRequest(BaseModel):
     description: str
     file_path: str
     mime_type: str
+    active: bool = True
     department_ids: list[str] | None = None
 
 
@@ -65,6 +66,7 @@ async def create_policy(
             request.description,
             request.file_path,
             request.mime_type,
+            request.active,
             dept_ids,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
