@@ -202,7 +202,8 @@ persona_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM personas p
-    LEFT JOIN models m ON m.id = p.model_id
+    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
+    LEFT JOIN models m ON m.id = ptm.model_id
     WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
 ),
 all_simulation_ids AS (

@@ -13,7 +13,8 @@ SELECT
     p.reasoning,
     'simulation' as agent_type
 FROM personas p
-JOIN models m ON p.model_id = m.id
+JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
+JOIN models m ON m.id = ptm.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'

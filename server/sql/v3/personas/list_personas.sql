@@ -44,7 +44,7 @@ persona_data AS (
         p.description,
         p.color,
         p.icon,
-        p.model_id,
+        ptm.model_id,
         p.reasoning,
         p.temperature,
         p.active,
@@ -61,10 +61,11 @@ persona_data AS (
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
     LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
-    LEFT JOIN models m ON m.id = p.model_id
+    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
+    LEFT JOIN models m ON m.id = ptm.model_id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, p.model_id, p.reasoning, p.temperature, p.active, p.updated_at, 
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, ptm.model_id, p.reasoning, p.temperature, p.active, p.updated_at, 
              pdd.department_ids, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true

@@ -130,7 +130,8 @@ persona_mapping_data AS (
     ) as mapping
     FROM all_persona_ids api
     LEFT JOIN personas p ON p.id = api.persona_id
-    LEFT JOIN models m ON m.id = p.model_id
+    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
+    LEFT JOIN models m ON m.id = ptm.model_id
 ),
 scenario_mapping_data AS (
     SELECT COALESCE(

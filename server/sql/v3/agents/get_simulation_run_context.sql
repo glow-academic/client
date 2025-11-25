@@ -138,7 +138,8 @@ LEFT JOIN persona_department_prompts pdp_prompt ON pdp_prompt.persona_id = p.id
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = pdp_prompt.prompt_id
 LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = pp.prompt_id
-LEFT JOIN models m ON m.id = p.model_id
+LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
+LEFT JOIN models m ON m.id = ptm.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
 LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'

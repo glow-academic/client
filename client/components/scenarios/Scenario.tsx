@@ -203,18 +203,16 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        {totalObjectives > 1 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onRemove}
-            className="h-8 w-8 shrink-0"
-            disabled={disabled}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={onRemove}
+          className="h-8 w-8 shrink-0"
+          disabled={disabled}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

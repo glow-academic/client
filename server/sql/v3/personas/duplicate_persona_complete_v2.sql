@@ -19,12 +19,13 @@ original_persona AS (
         COALESCE(pr.system_prompt, '') as system_prompt,
         p.temperature,
         p.reasoning,
-        p.model_id,
+        ptm.model_id,
         p.color,
         p.icon
     FROM personas p
     LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
     LEFT JOIN prompts pr ON pr.id = pp.prompt_id
+    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
     WHERE p.id = $1
 ),
 original_departments AS (
@@ -39,7 +40,6 @@ new_persona AS (
         description,
         temperature,
         reasoning,
-        model_id,
         color,
         icon,
         active,
@@ -51,7 +51,6 @@ new_persona AS (
         COALESCE(op.description, ''),
         op.temperature,
         COALESCE(op.reasoning::reasoning_effort, 'none'::reasoning_effort),
-        op.model_id::uuid,
         op.color,
         op.icon,
         false,
@@ -79,6 +78,23 @@ link_prompt AS (
         NOW()
     FROM new_persona np
     CROSS JOIN new_prompt newp
+    RETURNING persona_id::text
+),
+link_text_model AS (
+    -- Link text model if original persona had one
+    INSERT INTO persona_text_model (persona_id, model_id, active, created_at, updated_at)
+    SELECT 
+        np.persona_id::uuid,
+        op.model_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN original_persona op
+    WHERE op.model_id IS NOT NULL
+    ON CONFLICT (persona_id, model_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
     RETURNING persona_id::text
 ),
 copy_departments AS (
