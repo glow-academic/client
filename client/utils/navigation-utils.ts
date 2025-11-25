@@ -134,10 +134,10 @@ export const getSectionRoute = (
       return "/system/staff";
     case "auth":
       return "/system/auth";
-    case "logs":
-      return "/system/logs";
-    case "evals":
-      return "/system/evals";
+    case "health":
+      return "/system/health";
+    case "settings":
+      return "/system/settings";
 
     // Profile route
     case "profile":

@@ -5322,6 +5322,12 @@ export interface components {
             output_guardrail_enabled?: boolean | null;
             /** Image Input Enabled */
             image_input_enabled?: boolean | null;
+            /** Audio Enabled */
+            audio_enabled?: boolean | null;
+            /** Text Enabled */
+            text_enabled?: boolean | null;
+            /** Show Scenario */
+            show_scenario?: boolean | null;
             /** Rubric Id */
             rubric_id?: string | null;
             /** Time Limit Seconds */
@@ -5543,6 +5549,8 @@ export interface components {
         CreateModelRequest: {
             /** Provider */
             provider: string;
+            /** Model Type */
+            model_type: string;
             /** Name */
             name: string;
             /** Description */
@@ -5701,8 +5709,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Model Id */
-            model_id: string;
+            /** Text Model Id */
+            text_model_id: string | null;
+            /** Audio Model Id */
+            audio_model_id: string | null;
+            /** Voice */
+            voice: string | null;
             /** Reasoning */
             reasoning: string | null;
             /** Temperature */
@@ -11270,6 +11282,8 @@ export interface components {
             modelId: string;
             /** Provider */
             provider: string;
+            /** Model Type */
+            model_type: string;
             /** Name */
             name: string;
             /** Description */
@@ -11356,8 +11370,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Model Id */
-            model_id: string;
+            /** Text Model Id */
+            text_model_id: string | null;
+            /** Audio Model Id */
+            audio_model_id: string | null;
+            /** Voice */
+            voice: string | null;
             /** Reasoning */
             reasoning: string | null;
             /** Temperature */
@@ -12787,8 +12805,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Model Id */
-            model_id: string;
+            /** Text Model Id */
+            text_model_id: string | null;
+            /** Audio Model Id */
+            audio_model_id: string | null;
+            /** Voice */
+            voice: string | null;
             /** Reasoning */
             reasoning: string | null;
             /** Temperature */
@@ -12813,8 +12835,10 @@ export interface components {
             suggested_icons: string[];
             /** Valid Icons */
             valid_icons: string[];
-            /** Valid Model Ids */
-            valid_model_ids: string[];
+            /** Valid Text Model Ids */
+            valid_text_model_ids: string[];
+            /** Valid Audio Model Ids */
+            valid_audio_model_ids: string[];
             /** Reasoning Options */
             reasoning_options: string[];
             /** Valid Department Ids */
@@ -12831,8 +12855,12 @@ export interface components {
             department_prompt_links: {
                 [key: string]: string;
             };
-            /** Model Mapping */
-            model_mapping: {
+            /** Text Model Mapping */
+            text_model_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
+            };
+            /** Audio Model Mapping */
+            audio_model_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Reasoning Mapping */
@@ -12893,8 +12921,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Model Id */
-            model_id: string;
+            /** Text Model Id */
+            text_model_id: string | null;
+            /** Audio Model Id */
+            audio_model_id: string | null;
+            /** Voice */
+            voice: string | null;
             /** Reasoning */
             reasoning: string | null;
             /** Temperature */
@@ -12919,8 +12951,10 @@ export interface components {
             suggested_icons: string[];
             /** Valid Icons */
             valid_icons: string[];
-            /** Valid Model Ids */
-            valid_model_ids: string[];
+            /** Valid Text Model Ids */
+            valid_text_model_ids: string[];
+            /** Valid Audio Model Ids */
+            valid_audio_model_ids: string[];
             /** Reasoning Options */
             reasoning_options: string[];
             /** Valid Department Ids */
@@ -12937,8 +12971,12 @@ export interface components {
             department_prompt_links: {
                 [key: string]: string;
             };
-            /** Model Mapping */
-            model_mapping: {
+            /** Text Model Mapping */
+            text_model_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
+            };
+            /** Audio Model Mapping */
+            audio_model_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
             };
             /** Reasoning Mapping */

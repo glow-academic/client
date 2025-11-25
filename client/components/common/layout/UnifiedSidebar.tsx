@@ -406,19 +406,19 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("logs")) {
+      if (availableSections.includes("health")) {
         systemItems.push({
-          title: "Logs",
+          title: "Health",
           url: "#",
-          section: "logs",
+          section: "health",
         });
       }
 
-      if (availableSections.includes("evals")) {
+      if (availableSections.includes("settings")) {
         systemItems.push({
-          title: "Evals",
+          title: "Settings",
           url: "#",
-          section: "evals",
+          section: "settings",
         });
       }
 

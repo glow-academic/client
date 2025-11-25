@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/evals/loading.tsx
- * Loading skeleton for evals page
+ * app/(main)/system/settings/loading.tsx
+ * Loading skeleton for settings page
  */
 import { Skeleton } from "@/components/ui/skeleton";
 

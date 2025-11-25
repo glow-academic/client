@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/logs/page.tsx
- * System logs page for the user.
+ * app/(main)/system/health/page.tsx
+ * System health page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */

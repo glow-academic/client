@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/logs/loading.tsx
- * Loading skeleton for logs page
+ * app/(main)/system/health/loading.tsx
+ * Loading skeleton for health page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */

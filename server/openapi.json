@@ -11931,6 +11931,39 @@
             ],
             "title": "Image Input Enabled"
           },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "show_scenario": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Scenario"
+          },
           "rubric_id": {
             "anyOf": [
               {
@@ -12455,6 +12488,10 @@
             "type": "string",
             "title": "Provider"
           },
+          "model_type": {
+            "type": "string",
+            "title": "Model Type"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -12523,6 +12560,7 @@
         "type": "object",
         "required": [
           "provider",
+          "model_type",
           "name",
           "description",
           "active",
@@ -12833,9 +12871,38 @@
             "type": "string",
             "title": "Icon"
           },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
+          "text_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Model Id"
+          },
+          "audio_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Model Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
           },
           "reasoning": {
             "anyOf": [
@@ -12887,7 +12954,9 @@
           "active",
           "color",
           "icon",
-          "model_id",
+          "text_model_id",
+          "audio_model_id",
+          "voice",
           "reasoning",
           "temperature",
           "system_prompt",
@@ -27073,6 +27142,10 @@
             "type": "string",
             "title": "Provider"
           },
+          "model_type": {
+            "type": "string",
+            "title": "Model Type"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -27142,6 +27215,7 @@
         "required": [
           "modelId",
           "provider",
+          "model_type",
           "name",
           "description",
           "active",
@@ -27310,9 +27384,38 @@
             "type": "string",
             "title": "Icon"
           },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
+          "text_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Model Id"
+          },
+          "audio_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Model Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
           },
           "reasoning": {
             "anyOf": [
@@ -27379,7 +27482,9 @@
           "active",
           "color",
           "icon",
-          "model_id",
+          "text_model_id",
+          "audio_model_id",
+          "voice",
           "reasoning",
           "temperature",
           "system_prompt",
@@ -31177,9 +31282,38 @@
             "type": "string",
             "title": "Icon"
           },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
+          "text_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Model Id"
+          },
+          "audio_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Model Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
           },
           "reasoning": {
             "anyOf": [
@@ -31252,12 +31386,19 @@
             "type": "array",
             "title": "Valid Icons"
           },
-          "valid_model_ids": {
+          "valid_text_model_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Model Ids"
+            "title": "Valid Text Model Ids"
+          },
+          "valid_audio_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Audio Model Ids"
           },
           "reasoning_options": {
             "items": {
@@ -31295,12 +31436,19 @@
             "type": "object",
             "title": "Department Prompt Links"
           },
-          "model_mapping": {
+          "text_model_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
-            "title": "Model Mapping"
+            "title": "Text Model Mapping"
+          },
+          "audio_model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
+            },
+            "type": "object",
+            "title": "Audio Model Mapping"
           },
           "reasoning_mapping": {
             "additionalProperties": {
@@ -31332,7 +31480,9 @@
           "active",
           "color",
           "icon",
-          "model_id",
+          "text_model_id",
+          "audio_model_id",
+          "voice",
           "reasoning",
           "temperature",
           "system_prompt",
@@ -31345,14 +31495,16 @@
           "preset_colors",
           "suggested_icons",
           "valid_icons",
-          "valid_model_ids",
+          "valid_text_model_ids",
+          "valid_audio_model_ids",
           "reasoning_options",
           "valid_department_ids",
           "temperature_lower",
           "temperature_upper",
           "prompt_mapping",
           "department_prompt_links",
-          "model_mapping",
+          "text_model_mapping",
+          "audio_model_mapping",
           "reasoning_mapping",
           "department_mapping",
           "debug_info"
@@ -31476,9 +31628,38 @@
             "type": "string",
             "title": "Icon"
           },
-          "model_id": {
-            "type": "string",
-            "title": "Model Id"
+          "text_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Model Id"
+          },
+          "audio_model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Model Id"
+          },
+          "voice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice"
           },
           "reasoning": {
             "anyOf": [
@@ -31551,12 +31732,19 @@
             "type": "array",
             "title": "Valid Icons"
           },
-          "valid_model_ids": {
+          "valid_text_model_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Model Ids"
+            "title": "Valid Text Model Ids"
+          },
+          "valid_audio_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Audio Model Ids"
           },
           "reasoning_options": {
             "items": {
@@ -31594,12 +31782,19 @@
             "type": "object",
             "title": "Department Prompt Links"
           },
-          "model_mapping": {
+          "text_model_mapping": {
             "additionalProperties": {
               "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
             },
             "type": "object",
-            "title": "Model Mapping"
+            "title": "Text Model Mapping"
+          },
+          "audio_model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
+            },
+            "type": "object",
+            "title": "Audio Model Mapping"
           },
           "reasoning_mapping": {
             "additionalProperties": {
@@ -31631,7 +31826,9 @@
           "active",
           "color",
           "icon",
-          "model_id",
+          "text_model_id",
+          "audio_model_id",
+          "voice",
           "reasoning",
           "temperature",
           "system_prompt",
@@ -31644,14 +31841,16 @@
           "preset_colors",
           "suggested_icons",
           "valid_icons",
-          "valid_model_ids",
+          "valid_text_model_ids",
+          "valid_audio_model_ids",
           "reasoning_options",
           "valid_department_ids",
           "temperature_lower",
           "temperature_upper",
           "prompt_mapping",
           "department_prompt_links",
-          "model_mapping",
+          "text_model_mapping",
+          "audio_model_mapping",
           "reasoning_mapping",
           "department_mapping",
           "debug_info"
