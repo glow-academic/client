@@ -8468,6 +8468,8 @@ export interface components {
             numerical: boolean;
             /** Document Parameter */
             document_parameter: boolean;
+            /** Persona Parameter */
+            persona_parameter: boolean;
         };
         /** ParameterSampleItem */
         ParameterSampleItem: {

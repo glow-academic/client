@@ -68,6 +68,7 @@ class ParameterMappingItem(MappingItem):
 
     numerical: bool
     document_parameter: bool
+    persona_parameter: bool
 
 
 class ParameterItemMappingItem(MappingItem):

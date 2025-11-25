@@ -20,6 +20,7 @@ type ParameterMappingItem = {
   description: string;
   numerical: boolean;
   document_parameter: boolean;
+  persona_parameter: boolean;
 };
 
 type ParameterItemMappingItem = {

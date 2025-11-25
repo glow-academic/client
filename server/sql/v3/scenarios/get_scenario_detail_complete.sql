@@ -404,13 +404,15 @@ parameter_data_for_mapping AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        p.numerical
+        p.numerical,
+        p.document_parameter,
+        p.persona_parameter
     FROM parameters p
     JOIN parameter_items pi ON pi.parameter_id = p.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.numerical
+    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
     HAVING 
         COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
@@ -422,7 +424,13 @@ parameter_mapping_data AS (
     SELECT 
         COALESCE(jsonb_object_agg(
             p.id::text,
-            jsonb_build_object('name', p.name, 'description', p.description, 'numerical', p.numerical)
+            jsonb_build_object(
+                'name', p.name, 
+                'description', p.description, 
+                'numerical', p.numerical,
+                'document_parameter', p.document_parameter,
+                'persona_parameter', p.persona_parameter
+            )
         ), '{}'::jsonb) as parameter_mapping
     FROM parameter_data_for_mapping p
 ),
@@ -430,7 +438,13 @@ scenario_parameters_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             p.id::text,
-            jsonb_build_object('name', p.name, 'description', COALESCE(p.description, ''), 'numerical', p.numerical)
+            jsonb_build_object(
+                'name', p.name, 
+                'description', COALESCE(p.description, ''), 
+                'numerical', p.numerical,
+                'document_parameter', p.document_parameter,
+                'persona_parameter', p.persona_parameter
+            )
         ),
         '{}'::jsonb
     ) as parameter_mapping

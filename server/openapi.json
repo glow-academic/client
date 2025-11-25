@@ -19893,6 +19893,10 @@
           "document_parameter": {
             "type": "boolean",
             "title": "Document Parameter"
+          },
+          "persona_parameter": {
+            "type": "boolean",
+            "title": "Persona Parameter"
           }
         },
         "type": "object",
@@ -19900,7 +19904,8 @@
           "name",
           "description",
           "numerical",
-          "document_parameter"
+          "document_parameter",
+          "persona_parameter"
         ],
         "title": "ParameterMappingItem",
         "description": "Parameter mapping item - extends MappingItem"

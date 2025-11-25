@@ -202,6 +202,7 @@ async def get_scenario_detail_default(
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
                         document_parameter=pdata.get("document_parameter", False),
+                        persona_parameter=pdata.get("persona_parameter", False),
                     )
 
         parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))

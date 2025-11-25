@@ -698,6 +698,114 @@ export default function Scenario({
     currentParameterItemIds,
   ]);
 
+  // Filter parameters by type
+  const documentParameterIds = useMemo(() => {
+    return Object.keys(parameterMapping).filter(
+      (paramId) => parameterMapping[paramId]?.document_parameter === true
+    );
+  }, [parameterMapping]);
+
+  const personaParameterIds = useMemo(() => {
+    return Object.keys(parameterMapping).filter(
+      (paramId) => parameterMapping[paramId]?.persona_parameter === true
+    );
+  }, [parameterMapping]);
+
+  const generalParameterIds = useMemo(() => {
+    return Object.keys(parameterMapping).filter(
+      (paramId) =>
+        parameterMapping[paramId]?.document_parameter !== true &&
+        parameterMapping[paramId]?.persona_parameter !== true
+    );
+  }, [parameterMapping]);
+
+  // Filter parameter item IDs by parameter type
+  const documentParameterItemIds = useMemo(() => {
+    return currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return documentParameterIds.includes(paramId);
+    });
+  }, [currentParameterItemIds, parameterItemMapping, documentParameterIds]);
+
+  const personaParameterItemIds = useMemo(() => {
+    return currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return personaParameterIds.includes(paramId);
+    });
+  }, [currentParameterItemIds, parameterItemMapping, personaParameterIds]);
+
+  const generalParameterItemIds = useMemo(() => {
+    return currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return generalParameterIds.includes(paramId);
+    });
+  }, [currentParameterItemIds, parameterItemMapping, generalParameterIds]);
+
+  // Filter valid parameter item IDs by parameter type
+  const validDocumentParameterItemIds = useMemo(() => {
+    return validParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return documentParameterIds.includes(paramId);
+    });
+  }, [validParameterItemIds, parameterItemMapping, documentParameterIds]);
+
+  const validPersonaParameterItemIds = useMemo(() => {
+    return validParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return personaParameterIds.includes(paramId);
+    });
+  }, [validParameterItemIds, parameterItemMapping, personaParameterIds]);
+
+  const validGeneralParameterItemIds = useMemo(() => {
+    return validParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return generalParameterIds.includes(paramId);
+    });
+  }, [validParameterItemIds, parameterItemMapping, generalParameterIds]);
+
+  // Filter parameter mapping by type
+  const documentParameterMapping = useMemo(() => {
+    const filtered: typeof parameterMapping = {};
+    documentParameterIds.forEach((paramId) => {
+      if (parameterMapping[paramId]) {
+        filtered[paramId] = parameterMapping[paramId];
+      }
+    });
+    return filtered;
+  }, [parameterMapping, documentParameterIds]);
+
+  const personaParameterMapping = useMemo(() => {
+    const filtered: typeof parameterMapping = {};
+    personaParameterIds.forEach((paramId) => {
+      if (parameterMapping[paramId]) {
+        filtered[paramId] = parameterMapping[paramId];
+      }
+    });
+    return filtered;
+  }, [parameterMapping, personaParameterIds]);
+
+  const generalParameterMapping = useMemo(() => {
+    const filtered: typeof parameterMapping = {};
+    generalParameterIds.forEach((paramId) => {
+      if (parameterMapping[paramId]) {
+        filtered[paramId] = parameterMapping[paramId];
+      }
+    });
+    return filtered;
+  }, [parameterMapping, generalParameterIds]);
+
   // Track department changes and manage staged selections
   useEffect(() => {
     const currentDeptIds = formData.departmentIds || [];
@@ -849,6 +957,78 @@ export default function Scenario({
       }
     }
   }, [currentDocumentIds, validDocumentIds]);
+
+  // Sync document parameters when documents change (integrity constraint)
+  useEffect(() => {
+    if (currentDocumentIds.length === 0) {
+      // Clear document parameters if no documents selected
+      const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return true;
+        const paramId = item.parameter_id;
+        return !documentParameterIds.includes(paramId);
+      });
+      if (nonDocumentParamIds.length !== currentParameterItemIds.length) {
+        setCurrentParameterItemIds(nonDocumentParamIds);
+      }
+      return;
+    }
+
+    // Extract parameter items from selected documents
+    const documentParamItemIdsFromDocs = new Set<string>();
+    currentDocumentIds.forEach((docId) => {
+      const docDetails = scenarioData?.document_details?.find(
+        (d) => d.document_id === docId
+      );
+      if (docDetails?.parameter_item_ids) {
+        docDetails.parameter_item_ids.forEach((paramItemId) => {
+          // Only include if it's a document parameter
+          const item = parameterItemMapping[paramItemId];
+          if (item) {
+            const paramId = item.parameter_id;
+            if (documentParameterIds.includes(paramId)) {
+              documentParamItemIdsFromDocs.add(paramItemId);
+            }
+          }
+        });
+      }
+    });
+
+    // Update document parameters to match documents
+    const currentDocumentParamItemIdsSet = new Set(documentParameterItemIds);
+    const newDocumentParamItemIdsArray = Array.from(
+      documentParamItemIdsFromDocs
+    );
+    const newDocumentParamItemIdsSet = new Set(newDocumentParamItemIdsArray);
+
+    // Check if they're different
+    const isDifferent =
+      currentDocumentParamItemIdsSet.size !== newDocumentParamItemIdsSet.size ||
+      !Array.from(currentDocumentParamItemIdsSet).every((id) =>
+        newDocumentParamItemIdsSet.has(id)
+      );
+
+    if (isDifferent) {
+      // Remove old document parameter items and add new ones
+      const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return true;
+        const paramId = item.parameter_id;
+        return !documentParameterIds.includes(paramId);
+      });
+      setCurrentParameterItemIds([
+        ...nonDocumentParamIds,
+        ...newDocumentParamItemIdsArray,
+      ]);
+    }
+  }, [
+    currentDocumentIds,
+    scenarioData?.document_details,
+    parameterItemMapping,
+    documentParameterIds,
+    currentParameterItemIds,
+    documentParameterItemIds,
+  ]);
 
   useEffect(() => {
     // Clear parameter items that are no longer valid
@@ -1125,17 +1305,25 @@ export default function Scenario({
   const handleRandomizeParameters = async () => {
     try {
       setIsRandomizingParameters(true);
+      // Only randomize general parameters - exclude document and persona parameters
+      const generalParamItemIds = generalParameterItemIds;
       const resp = await handleRandomizeScenario({
         name: formData.name || "",
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         documentIds: currentDocumentIds,
-        parameterItemIds: currentParameterItemIds,
+        parameterItemIds: generalParamItemIds,
         departmentIds: formData.departmentIds || null,
         targets: ["parameters"],
       });
       if (!resp.success) throw new Error(resp.message);
-      // Overwrite (not merge) parameter items - completely replace existing selection
-      setCurrentParameterItemIds(resp.parameterItemIds || []);
+      // Merge randomized general parameters with existing document and persona parameters
+      const randomizedGeneralParamItemIds = resp.parameterItemIds || [];
+      const updatedParameterItemIds = [
+        ...documentParameterItemIds,
+        ...personaParameterItemIds,
+        ...randomizedGeneralParamItemIds,
+      ];
+      setCurrentParameterItemIds(updatedParameterItemIds);
       toast.success("Parameter suggestions applied");
     } catch {
       toast.error("Failed to randomize parameters");
@@ -1146,11 +1334,121 @@ export default function Scenario({
 
   const handleResetParameters = () => {
     try {
-      setCurrentParameterItemIds([]);
+      // Only reset general parameters, keep document and persona parameters
+      const nonGeneralIds = currentParameterItemIds.filter((itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return false;
+        const paramId = item.parameter_id;
+        return (
+          documentParameterIds.includes(paramId) ||
+          personaParameterIds.includes(paramId)
+        );
+      });
+      setCurrentParameterItemIds(nonGeneralIds);
       toast.success("Parameters reset");
     } catch {
       toast.error("Failed to reset parameters");
     }
+  };
+
+  // Handler for document parameters - maintains integrity with documents
+  const handleDocumentParameterItemIdsChange = (
+    newDocumentParamItemIds: string[]
+  ) => {
+    // Remove old document parameter items
+    const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return true;
+      const paramId = item.parameter_id;
+      return !documentParameterIds.includes(paramId);
+    });
+
+    // Combine with new document parameter items
+    const updatedParameterItemIds = [
+      ...nonDocumentParamIds,
+      ...newDocumentParamItemIds,
+    ];
+    setCurrentParameterItemIds(updatedParameterItemIds);
+
+    // Integrity check: if document parameters changed, check if documents still match
+    // Extract parameter items from current documents
+    const documentParamItemIdsFromDocs = new Set<string>();
+    currentDocumentIds.forEach((docId) => {
+      const docDetails = scenarioData?.document_details?.find(
+        (d) => d.document_id === docId
+      );
+      if (docDetails?.parameter_item_ids) {
+        docDetails.parameter_item_ids.forEach((paramItemId) => {
+          // Only include if it's a document parameter
+          const item = parameterItemMapping[paramItemId];
+          if (item) {
+            const paramId = item.parameter_id;
+            if (documentParameterIds.includes(paramId)) {
+              documentParamItemIdsFromDocs.add(paramItemId);
+            }
+          }
+        });
+      }
+    });
+
+    // Check if new document parameters match document parameter items
+    const newDocumentParamItemIdsSet = new Set(newDocumentParamItemIds);
+    const matches =
+      Array.from(documentParamItemIdsFromDocs).every((id) =>
+        newDocumentParamItemIdsSet.has(id)
+      ) &&
+      Array.from(newDocumentParamItemIdsSet).every((id) =>
+        documentParamItemIdsFromDocs.has(id)
+      );
+
+    // If documents don't match new parameters, clear documents to maintain integrity
+    if (!matches && currentDocumentIds.length > 0) {
+      setCurrentDocumentIds([]);
+      toast.info("Documents cleared to maintain parameter integrity");
+    }
+  };
+
+  // Handler for persona parameters
+  const handlePersonaParameterItemIdsChange = (
+    newPersonaParamItemIds: string[]
+  ) => {
+    // Remove old persona parameter items
+    const nonPersonaParamIds = currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return true;
+      const paramId = item.parameter_id;
+      return !personaParameterIds.includes(paramId);
+    });
+
+    // Combine with new persona parameter items
+    const updatedParameterItemIds = [
+      ...nonPersonaParamIds,
+      ...newPersonaParamItemIds,
+    ];
+    setCurrentParameterItemIds(updatedParameterItemIds);
+  };
+
+  // Handler for general parameters
+  const handleGeneralParameterItemIdsChange = (
+    newGeneralParamItemIds: string[]
+  ) => {
+    // Remove old general parameter items
+    const nonGeneralParamIds = currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return true;
+      const paramId = item.parameter_id;
+      return (
+        documentParameterIds.includes(paramId) ||
+        personaParameterIds.includes(paramId)
+      );
+    });
+
+    // Combine with new general parameter items
+    const updatedParameterItemIds = [
+      ...nonGeneralParamIds,
+      ...newGeneralParamItemIds,
+    ];
+    setCurrentParameterItemIds(updatedParameterItemIds);
   };
 
   // Persona actions
@@ -1168,6 +1466,29 @@ export default function Scenario({
       if (!resp.success) throw new Error(resp.message);
       // Overwrite (not merge) personas - completely replace existing selection
       setSelectedPersonaIds(resp.personaIds || []);
+      // Update persona parameters if returned
+      if (resp.parameterItemIds && resp.parameterItemIds.length > 0) {
+        // Extract persona parameters from response
+        const newPersonaParamItemIds = resp.parameterItemIds.filter(
+          (itemId) => {
+            const item = parameterItemMapping[itemId];
+            if (!item) return false;
+            const paramId = item.parameter_id;
+            return personaParameterIds.includes(paramId);
+          }
+        );
+        // Update persona parameters while keeping document and general parameters
+        const nonPersonaParamIds = currentParameterItemIds.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return true;
+          const paramId = item.parameter_id;
+          return !personaParameterIds.includes(paramId);
+        });
+        setCurrentParameterItemIds([
+          ...nonPersonaParamIds,
+          ...newPersonaParamItemIds,
+        ]);
+      }
       toast.success("Persona suggestion applied");
     } catch {
       toast.error("Failed to randomize persona");
@@ -1179,6 +1500,14 @@ export default function Scenario({
   const handleResetPersona = () => {
     try {
       setSelectedPersonaIds([]);
+      // Clear persona parameters
+      const nonPersonaParamIds = currentParameterItemIds.filter((itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return true;
+        const paramId = item.parameter_id;
+        return !personaParameterIds.includes(paramId);
+      });
+      setCurrentParameterItemIds(nonPersonaParamIds);
       toast.success("Persona reset");
     } catch {
       toast.error("Failed to reset persona");
@@ -1206,6 +1535,7 @@ export default function Scenario({
       // Deduplicate to prevent React key errors
       const uniqueDocumentIds = Array.from(new Set(resp.documentIds || []));
       setCurrentDocumentIds(uniqueDocumentIds);
+      // Document parameters will be synced automatically via useEffect when documents change
       toast.success("Document suggestions applied");
     } catch {
       toast.error("Failed to randomize documents");
@@ -1217,6 +1547,14 @@ export default function Scenario({
   const handleResetDocuments = () => {
     try {
       setCurrentDocumentIds([]);
+      // Clear document parameters (will also be cleared by useEffect, but doing it explicitly)
+      const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return true;
+        const paramId = item.parameter_id;
+        return !documentParameterIds.includes(paramId);
+      });
+      setCurrentParameterItemIds(nonDocumentParamIds);
       toast.success("Documents reset");
     } catch {
       toast.error("Failed to reset documents");
@@ -1862,6 +2200,18 @@ export default function Scenario({
               description="Choose the persona that will interact with students in this scenario."
               readonly={isReadonly}
             />
+            {Object.keys(personaParameterMapping).length > 0 && (
+              <div className="pt-4">
+                <ParameterSelector
+                  parameterMapping={personaParameterMapping}
+                  parameterItemMapping={parameterItemMapping}
+                  validParameterItemIds={validPersonaParameterItemIds}
+                  selectedParameterItemIds={personaParameterItemIds}
+                  onParameterItemIdsChange={handlePersonaParameterItemIdsChange}
+                  disabled={isReadonly}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -1969,6 +2319,21 @@ export default function Scenario({
                 setCurrentDocumentIds(limitedIds);
               }}
             />
+            {Object.keys(documentParameterMapping).length > 0 &&
+              useDocuments && (
+                <div className="pt-4">
+                  <ParameterSelector
+                    parameterMapping={documentParameterMapping}
+                    parameterItemMapping={parameterItemMapping}
+                    validParameterItemIds={validDocumentParameterItemIds}
+                    selectedParameterItemIds={documentParameterItemIds}
+                    onParameterItemIdsChange={
+                      handleDocumentParameterItemIdsChange
+                    }
+                    disabled={isReadonly || !useDocuments}
+                  />
+                </div>
+              )}
           </CardContent>
         </Card>
 
@@ -2038,16 +2403,20 @@ export default function Scenario({
             </div>
           </CardHeader>
           <CardContent>
-            <ParameterSelector
-              parameterMapping={parameterMapping}
-              parameterItemMapping={parameterItemMapping}
-              validParameterItemIds={validParameterItemIds}
-              selectedParameterItemIds={currentParameterItemIds}
-              onParameterItemIdsChange={(parameterItemIds) =>
-                setCurrentParameterItemIds(parameterItemIds)
-              }
-              disabled={isReadonly}
-            />
+            {Object.keys(generalParameterMapping).length > 0 ? (
+              <ParameterSelector
+                parameterMapping={generalParameterMapping}
+                parameterItemMapping={parameterItemMapping}
+                validParameterItemIds={validGeneralParameterItemIds}
+                selectedParameterItemIds={generalParameterItemIds}
+                onParameterItemIdsChange={handleGeneralParameterItemIdsChange}
+                disabled={isReadonly}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No general environment parameters available.
+              </p>
+            )}
           </CardContent>
         </Card>
 

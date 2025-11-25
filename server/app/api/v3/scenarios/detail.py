@@ -291,6 +291,7 @@ async def get_scenario_detail(
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
                         document_parameter=pdata.get("document_parameter", False),
+                        persona_parameter=pdata.get("persona_parameter", False),
                     )
 
         param_item_full_mapping: ParameterItemMapping = {}
