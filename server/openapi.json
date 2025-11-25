@@ -5019,14 +5019,15 @@
         ]
       }
     },
-    "/api/v3/upload/finalize": {
+    "/api/v3/images/upload/finalize": {
       "post": {
         "tags": [
-          "v3"
+          "v3",
+          "images"
         ],
         "summary": "Upload Finalize",
         "description": "Finalize an image upload and create the image.",
-        "operationId": "upload_finalize_api_v3_upload_finalize_post",
+        "operationId": "upload_finalize_api_v3_images_upload_finalize_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -5060,7 +5061,54 @@
           }
         },
         "x-cache-tags": [
-          "v3"
+          "v3",
+          "images"
+        ]
+      }
+    },
+    "/api/v3/images/download/{image_id}": {
+      "get": {
+        "tags": [
+          "v3",
+          "images"
+        ],
+        "summary": "Download Image",
+        "description": "Download an image by ID.",
+        "operationId": "download_image_api_v3_images_download__image_id__get",
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "images"
         ]
       }
     },

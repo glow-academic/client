@@ -14,10 +14,13 @@ import {
   RotateCcw,
   Shuffle,
   Trash2,
+  Upload,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import * as tus from "tus-js-client";
 
 // UI Components
 import {
@@ -53,8 +56,8 @@ import {
   DocumentPicker,
   type DocumentMappingItem,
 } from "@/components/common/forms/DocumentPicker";
+import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import { PersonaPicker } from "@/components/common/forms/PersonaPicker";
-import { ImagePicker } from "@/components/common/forms/ImagePicker";
 import { ProblemStatementPicker } from "@/components/common/forms/ProblemStatementPicker";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 
@@ -404,9 +407,13 @@ export default function Scenario({
     string[]
   >([]);
   const [currentDocumentIds, setCurrentDocumentIds] = useState<string[]>([]);
-  const [images, setImages] = useState<
-    Array<{ id: string; name: string; file_path: string; mime_type: string; active: boolean }>
-  >([]);
+  const [image, setImage] = useState<{
+    id: string;
+    name: string;
+    mime_type: string;
+  } | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Staged selections per department (preserved when departments are deselected)
   type StagedSelections = {
@@ -879,25 +886,26 @@ export default function Scenario({
           >
         )
       );
-      // Load scenario images
-      if (scenarioData.scenario_images && Array.isArray(scenarioData.scenario_images)) {
-        setImages(
-          scenarioData.scenario_images.map(
-            (img: {
-              id?: string;
-              name?: string;
-              file_path?: string;
-              mime_type?: string;
-              active?: boolean;
-            }) => ({
-              id: img.id || "",
-              name: img.name || "",
-              file_path: img.file_path || "",
-              mime_type: img.mime_type || "",
-              active: img.active !== false,
-            })
-          )
-        );
+      // Load scenario image (single image - take first if exists)
+      if (
+        scenarioData.scenario_images &&
+        Array.isArray(scenarioData.scenario_images) &&
+        scenarioData.scenario_images.length > 0
+      ) {
+        const firstImage = scenarioData.scenario_images[0] as {
+          id?: string;
+          name?: string;
+          mime_type?: string;
+        };
+        if (firstImage.id) {
+          setImage({
+            id: firstImage.id,
+            name: firstImage.name || "",
+            mime_type: firstImage.mime_type || "image/png",
+          });
+        }
+      } else {
+        setImage(null);
       }
       // Store originals for change tracking
       setOriginalFormData({
@@ -1250,6 +1258,114 @@ export default function Scenario({
     setDraggedObjectiveIndex(null);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const toastId = toast.loading(`Uploading image: ${file.name}`, {
+      description: "0% complete",
+      dismissible: true,
+    });
+
+    try {
+      // Generate a unique fileId for tracking
+      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // Create TUS upload
+      const upload = new tus.Upload(file, {
+        endpoint: `/api/images/upload`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+          fileId: fileId,
+        },
+        onError: (error) => {
+          toast.error(`Upload failed: ${file.name}`, {
+            description: error.message || "An error occurred during upload",
+            id: toastId,
+          });
+          setIsUploadingImage(false);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+          toast.loading(`Uploading image: ${file.name}`, {
+            description: `${percentage}% complete`,
+            id: toastId,
+          });
+        },
+        onSuccess: async () => {
+          // Get upload ID from location header
+          const location = upload.url;
+          const uploadId = location.split("/").pop();
+
+          if (!uploadId) {
+            throw new Error("Failed to get upload ID");
+          }
+
+          // Finalize upload
+          try {
+            const response = await fetch("/api/images/upload/finalize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uploadId,
+                fileId,
+                name: file.name,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.imageId) {
+              // Update image state with the returned imageId
+              setImage({
+                id: result.imageId,
+                name: file.name,
+                mime_type: file.type,
+              });
+              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
+            } else {
+              throw new Error(result.message || "Failed to finalize upload");
+            }
+          } catch (finalizeError) {
+            toast.error(
+              `Failed to finalize upload: ${
+                finalizeError instanceof Error
+                  ? finalizeError.message
+                  : "Unknown error"
+              }`,
+              { id: toastId }
+            );
+          } finally {
+            setIsUploadingImage(false);
+          }
+        },
+      });
+
+      upload.start();
+    } catch (error) {
+      toast.error(
+        `Failed to upload image: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        {
+          id: toastId,
+        }
+      );
+      setIsUploadingImage(false);
+    }
+
+    // Reset input
+    e.target.value = "";
+  };
+
   const handleGenerateScenario = async (
     userInstructions?: string,
     shouldRegenerateObjectives?: boolean
@@ -1402,9 +1518,7 @@ export default function Scenario({
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
-        image_ids: images.map((img) => img.id).filter(Boolean).length > 0
-          ? images.map((img) => img.id).filter(Boolean)
-          : null,
+        image_ids: image?.id ? [image.id] : null,
         parameters: groupParameterItemsByParameterId(
           currentParameterItemIds,
           parameterItemMapping
@@ -1825,38 +1939,6 @@ export default function Scenario({
           </CardContent>
         </Card>
 
-        {/* Step 3.5: Images */}
-        <Card
-          className={`transition-all ${!isEditMode && getStepStatus("images") === "active" ? "ring-2 ring-primary" : ""} ${
-            !isEditMode && getStepStatus("images") === "pending"
-              ? "opacity-50"
-              : ""
-          }`}
-        >
-          <CardHeader>
-            <CardTitle>Reference Images</CardTitle>
-            <CardDescription>
-              Upload reference images that can be shared between scenarios and videos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ImagePicker
-              images={images}
-              onImagesChange={setImages}
-              disabled={isSubmitting}
-              readonly={isReadonly}
-              finalizeUploadAction={async (input) => {
-                const response = await fetch("/api/images/upload/finalize", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(input),
-                });
-                return response.json();
-              }}
-            />
-          </CardContent>
-        </Card>
-
         {/* Step 4: Parameters */}
         <Card
           className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
@@ -1991,6 +2073,43 @@ export default function Scenario({
                 />
               )}
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (image) {
+                    setImage(null);
+                  } else {
+                    imageInputRef.current?.click();
+                  }
+                }}
+                disabled={
+                  isSubmitting ||
+                  isGeneratingScenario ||
+                  isReadonly ||
+                  isUploadingImage
+                }
+              >
+                {image ? (
+                  <>
+                    <X className="w-4 h-4 mr-2" />
+                    Remove Image
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Add Image
+                  </>
+                )}
+              </Button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploadingImage || isReadonly}
+                className="hidden"
+              />
+              <Button
                 variant="default"
                 size="sm"
                 onClick={() => {
@@ -2034,6 +2153,16 @@ export default function Scenario({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Image Preview */}
+            {image && (
+              <div className="mb-4 w-1/4">
+                <ImagePreviewCard
+                  image={image}
+                  onRemove={() => setImage(null)}
+                  showActions={!isReadonly}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Textarea
                 id="description"

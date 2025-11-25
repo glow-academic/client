@@ -967,7 +967,17 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
         profile_id: str | None = None
         
         # Try to get from request body if JSON
-        if request.method in ("POST", "PUT", "PATCH"):
+        # Skip JSON parsing for TUS uploads and other binary content types
+        content_type = request.headers.get("Content-Type", "")
+        is_binary_content = (
+            content_type == "application/offset+octet-stream"  # TUS uploads
+            or content_type.startswith("multipart/")  # File uploads
+            or content_type.startswith("image/")  # Direct image uploads
+            or content_type.startswith("video/")  # Direct video uploads
+            or content_type.startswith("audio/")  # Direct audio uploads
+        )
+        
+        if request.method in ("POST", "PUT", "PATCH") and not is_binary_content:
             try:
                 body = await request.body()
                 if body:
@@ -979,7 +989,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                         or body_json.get("actualProfileId")
                         or body_json.get("effectiveProfileId")
                     )
-            except (json.JSONDecodeError, KeyError, AttributeError):
+            except (json.JSONDecodeError, UnicodeDecodeError, KeyError, AttributeError):
                 pass
         
         # Try to get from headers

@@ -2388,7 +2388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/upload/finalize": {
+    "/api/v3/images/upload/finalize": {
         parameters: {
             query?: never;
             header?: never;
@@ -2401,7 +2401,27 @@ export interface paths {
          * Upload Finalize
          * @description Finalize an image upload and create the image.
          */
-        post: operations["upload_finalize_api_v3_upload_finalize_post"];
+        post: operations["upload_finalize_api_v3_images_upload_finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/images/download/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Image
+         * @description Download an image by ID.
+         */
+        get: operations["download_image_api_v3_images_download__image_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -17819,7 +17839,7 @@ export interface operations {
             };
         };
     };
-    upload_finalize_api_v3_upload_finalize_post: {
+    upload_finalize_api_v3_images_upload_finalize_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -17839,6 +17859,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["app__api__v3__images__upload_finalize__UploadFinalizeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_image_api_v3_images_download__image_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
