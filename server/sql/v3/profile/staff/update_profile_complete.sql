@@ -1,7 +1,6 @@
 -- Update staff profile with lookup, update, department, and request limit in single query (DHH style)
 -- Parameters: $1=profile_id (uuid), $2=first_name, $3=last_name, $4=email, $5=role, $6=active, 
---             $7=primary_department_id (uuid), $8=requests_per_day (int, nullable), $9=default_profile (bool),
---             $10=intro_completed (bool, nullable), $11=chat_completed (bool, nullable)
+--             $7=primary_department_id (uuid), $8=requests_per_day (int, nullable), $9=default_profile (bool)
 -- Note: $4=email is now the primary email to update (replaces existing primary email)
 -- Returns: id, first_name, last_name, name (concatenated)
 
@@ -23,8 +22,6 @@ profile_update AS (
         role = $5,
         active = $6,
         default_profile = $9,
-        viewed_intro = COALESCE($10, viewed_intro),
-        viewed_chat = COALESCE($11, viewed_chat),
         updated_at = NOW()
     WHERE id = $1::uuid
         AND EXISTS (SELECT 1 FROM profile_check)

@@ -32,8 +32,6 @@ async def test_get_profile_detail(
     assert "primaryEmail" in profile
     assert "role" in profile
     assert "active" in profile
-    assert "viewedIntro" in profile
-    assert "viewedChat" in profile
     assert "defaultProfile" in profile
     assert "reqPerDay" in profile
     assert "lastLogin" in profile

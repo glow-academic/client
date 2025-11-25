@@ -38,7 +38,7 @@ SELECT
     ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
     (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
     p.role, 
-    p.last_login, p.viewed_intro, p.active, p.created_at,
+    p.last_login, p.active, p.created_at,
     COALESCE(
         (SELECT jsonb_agg(jsonb_build_object(
             'simulation_title', ag.simulation_title,
@@ -54,5 +54,5 @@ SELECT
 FROM profiles p
 LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
 JOIN profile_match pm ON pm.id = p.id
-GROUP BY p.id, p.first_name, p.last_name, p.role, p.last_login, p.viewed_intro, p.active, p.created_at;
+GROUP BY p.id, p.first_name, p.last_name, p.role, p.last_login, p.active, p.created_at;
 

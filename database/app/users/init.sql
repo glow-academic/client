@@ -14,8 +14,6 @@ CREATE TABLE profiles (
   last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,
   last_name  TEXT        NOT NULL,
-  viewed_intro BOOLEAN   NOT NULL DEFAULT FALSE,
-  viewed_chat BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   role       profile_role NOT NULL DEFAULT 'guest',
   default_profile BOOLEAN   NOT NULL DEFAULT FALSE,

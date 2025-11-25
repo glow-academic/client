@@ -273,8 +273,6 @@ SELECT DISTINCT ON (p.id)
     pa.last_active as lastActive,
     prl.requests_per_day as requests_per_day,
     p.default_profile,
-    p.viewed_intro as intro_completed,
-    p.viewed_chat as chat_completed,
     COALESCE(rr.run_count::int, 0) as requests_in_last_day,
     COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
     COALESCE(
@@ -355,7 +353,7 @@ AND (
     (up.role = 'guest' AND p.role = 'guest')
 )
 GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile, 
-         pa.last_active, prl.requests_per_day, p.viewed_intro, p.viewed_chat,
+         pa.last_active, prl.requests_per_day,
          pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
          pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count,
          cmd.cohort_mapping, dmd.department_mapping, tdc.trend_data, up.role,

@@ -18,7 +18,6 @@ import { SimulationControls } from "@/components/common/chat/SimulationControls"
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
-import TATour from "@/components/common/layout/TATour";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { CreateStaffButton } from "@/components/common/staff/CreateStaffButton";
 import { DocumentUploadButton } from "@/components/documents/DocumentUploadButton";
@@ -29,7 +28,6 @@ import {
   useBreadcrumbContext,
 } from "@/contexts/breadcrumb-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
-import { TourProvider } from "@/contexts/tour-context";
 import {
   generateBreadcrumbs,
   getActiveSectionFromPath,
@@ -50,10 +48,6 @@ import type {
   CreateFeedbackOut,
   CreateStaffDataOut,
   LayoutContextResponse,
-  MarkChatCompleteIn,
-  MarkChatCompleteOut,
-  MarkIntroCompleteIn,
-  MarkIntroCompleteOut,
   ProcessCSVIn,
   ProcessCSVOut,
   RefreshAnalyticsIn,
@@ -69,8 +63,6 @@ import type {
 function MainLayoutContent({
   children,
   attemptData,
-  markIntroCompleteAction,
-  markChatCompleteAction,
   getAssistantChatListAction,
   getAssistantChatFullAction,
   switchEffectiveProfileAction,
@@ -83,12 +75,6 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
-  markIntroCompleteAction: (
-    input: MarkIntroCompleteIn
-  ) => Promise<MarkIntroCompleteOut>;
-  markChatCompleteAction: (
-    input: MarkChatCompleteIn
-  ) => Promise<MarkChatCompleteOut>;
   getAssistantChatListAction: (
     input: AssistantChatListIn
   ) => Promise<AssistantChatListOut>;
@@ -474,15 +460,6 @@ function MainLayoutContent({
           </div>
         </SidebarInset>
       </SidebarProvider>
-
-      {/* Tour Component - Available globally for TA users; hide when acting on behalf of another */}
-      {effectiveProfile?.role === "ta" &&
-        activeProfile?.id === effectiveProfile?.id && (
-          <TATour
-            markIntroCompleteAction={markIntroCompleteAction}
-            markChatCompleteAction={markChatCompleteAction}
-          />
-        )}
     </>
   );
 }
@@ -492,8 +469,6 @@ export function MainLayoutClient({
   initial,
   sessionSnapshot,
   attemptData,
-  markIntroCompleteAction,
-  markChatCompleteAction,
   getAssistantChatListAction,
   getAssistantChatFullAction,
   switchEffectiveProfileAction,
@@ -508,12 +483,6 @@ export function MainLayoutClient({
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
-  markIntroCompleteAction: (
-    input: MarkIntroCompleteIn
-  ) => Promise<MarkIntroCompleteOut>;
-  markChatCompleteAction: (
-    input: MarkChatCompleteIn
-  ) => Promise<MarkChatCompleteOut>;
   getAssistantChatListAction: (
     input: AssistantChatListIn
   ) => Promise<AssistantChatListOut>;
@@ -538,14 +507,11 @@ export function MainLayoutClient({
 }) {
   return (
     <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
-      <TourProvider>
-        <BreadcrumbProvider>
-          <AnalyticsProvider>
-            <MainLayoutContent
-              attemptData={attemptData}
-              markIntroCompleteAction={markIntroCompleteAction}
-              markChatCompleteAction={markChatCompleteAction}
-              getAssistantChatListAction={getAssistantChatListAction}
+      <BreadcrumbProvider>
+        <AnalyticsProvider>
+          <MainLayoutContent
+            attemptData={attemptData}
+            getAssistantChatListAction={getAssistantChatListAction}
               getAssistantChatFullAction={getAssistantChatFullAction}
               switchEffectiveProfileAction={switchEffectiveProfileAction}
               createFeedbackAction={createFeedbackAction}
@@ -566,7 +532,6 @@ export function MainLayoutClient({
             </MainLayoutContent>
           </AnalyticsProvider>
         </BreadcrumbProvider>
-      </TourProvider>
     </ProfileProviderClient>
   );
 }

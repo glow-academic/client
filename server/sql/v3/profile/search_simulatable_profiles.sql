@@ -20,8 +20,6 @@ simulatable_data AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        p.viewed_intro,
-        p.viewed_chat,
         p.default_profile,
         COALESCE(prl.requests_per_day, 0) as req_per_day,
         p.last_login,
@@ -49,7 +47,7 @@ simulatable_data AS (
         ELSE false
       END
       {search_where_clause}
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.viewed_intro, p.viewed_chat, 
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              p.default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     ORDER BY p.first_name, p.last_name
@@ -64,8 +62,6 @@ SELECT
         'primary_email', sp.primary_email,
         'role', sp.role,
         'active', sp.active,
-        'viewed_intro', sp.viewed_intro,
-        'viewed_chat', sp.viewed_chat,
         'default_profile', sp.default_profile,
         'req_per_day', sp.req_per_day,
         'last_login', CASE WHEN sp.last_login IS NOT NULL THEN sp.last_login::text ELSE NULL END,

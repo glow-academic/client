@@ -42,7 +42,7 @@ profile_upsert AS (
     -- Insert or update profile (only if role validation passes)
     INSERT INTO profiles (
         id, first_name, last_name, role, active,
-        default_profile, viewed_intro, viewed_chat, updated_at
+        default_profile, updated_at
     )
     SELECT
         COALESCE((SELECT id FROM existing_profile LIMIT 1), $1),  -- Use existing ID if found, else new UUID
@@ -51,8 +51,6 @@ profile_upsert AS (
         $5::profile_role,  -- role
         $6,  -- active
         false,  -- default_profile
-        false,  -- viewed_intro
-        false,  -- viewed_chat
         NOW()  -- updated_at
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (id) DO UPDATE SET

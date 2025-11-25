@@ -32,7 +32,7 @@ profile_insert AS (
     -- Insert all profiles (only if no emails exist)
     INSERT INTO profiles (
         id, first_name, last_name, role, active, 
-        default_profile, viewed_intro, viewed_chat
+        default_profile
     )
     SELECT 
         pd.profile_id,
@@ -40,9 +40,7 @@ profile_insert AS (
         pd.last_name,
         pd.role,
         true,  -- active
-        false,  -- default_profile
-        false,  -- viewed_intro
-        false   -- viewed_chat
+        false  -- default_profile
     FROM profiles_data pd
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)
     RETURNING id

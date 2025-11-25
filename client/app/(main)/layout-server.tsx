@@ -11,19 +11,6 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type MarkIntroCompleteIn = InputOf<
-  "/api/v3/profile/mark-intro-complete",
-  "post"
->;
-type MarkIntroCompleteOut = OutputOf<
-  "/api/v3/profile/mark-intro-complete",
-  "post"
->;
-type MarkChatCompleteIn = InputOf<"/api/v3/profile/mark-chat-complete", "post">;
-type MarkChatCompleteOut = OutputOf<
-  "/api/v3/profile/mark-chat-complete",
-  "post"
->;
 type AssistantChatListIn = InputOf<"/api/v3/assistant/chats/list", "post">;
 type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
 type AssistantChatFullIn = InputOf<"/api/v3/assistant/chats/full", "post">;
@@ -151,29 +138,6 @@ export async function getLayoutContextData() {
   }
 
   return { initial, snapshot, attemptData };
-}
-
-/** ---- Strongly-typed server actions for TATour (single source of truth) ---- */
-export async function markIntroComplete(
-  input: MarkIntroCompleteIn
-): Promise<MarkIntroCompleteOut> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/mark-intro-complete", {
-    body: { ...input.body, profileId },
-  });
-}
-
-export async function markChatComplete(
-  input: MarkChatCompleteIn
-): Promise<MarkChatCompleteOut> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/profile/mark-chat-complete", {
-    body: { ...input.body, profileId },
-  });
 }
 
 /** ---- Strongly-typed server actions for Assistant (single source of truth) ---- */
@@ -316,10 +280,6 @@ export type {
   CreateFeedbackOut,
   CreateStaffDataIn,
   CreateStaffDataOut,
-  MarkChatCompleteIn,
-  MarkChatCompleteOut,
-  MarkIntroCompleteIn,
-  MarkIntroCompleteOut,
   ProcessCSVIn,
   ProcessCSVOut,
   RefreshAnalyticsIn,

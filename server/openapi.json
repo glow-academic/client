@@ -241,100 +241,6 @@
         ]
       }
     },
-    "/api/v3/profile/mark-intro-complete": {
-      "post": {
-        "tags": [
-          "v3",
-          "profile"
-        ],
-        "summary": "Mark Intro Complete",
-        "description": "Mark intro tour step as complete.",
-        "operationId": "mark_intro_complete_api_v3_profile_mark_intro_complete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MarkIntroCompleteRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MarkTourStepResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
-      }
-    },
-    "/api/v3/profile/mark-chat-complete": {
-      "post": {
-        "tags": [
-          "v3",
-          "profile"
-        ],
-        "summary": "Mark Chat Complete",
-        "description": "Mark chat tour step as complete.",
-        "operationId": "mark_chat_complete_api_v3_profile_mark_chat_complete_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MarkChatCompleteRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MarkTourStepResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "profile"
-        ]
-      }
-    },
     "/api/v3/profile/overview": {
       "post": {
         "tags": [
@@ -11013,28 +10919,6 @@
             ],
             "title": "Primary Department Id"
           },
-          "intro_completed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Intro Completed"
-          },
-          "chat_completed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Completed"
-          },
           "currentProfileId": {
             "type": "string",
             "title": "Currentprofileid"
@@ -18985,53 +18869,6 @@
         "title": "LogsRunsResponse",
         "description": "Response for logs runs table."
       },
-      "MarkChatCompleteRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "MarkChatCompleteRequest",
-        "description": "Request to mark chat tour step as complete."
-      },
-      "MarkIntroCompleteRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "MarkIntroCompleteRequest",
-        "description": "Request to mark intro tour step as complete."
-      },
-      "MarkTourStepResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "MarkTourStepResponse",
-        "description": "Response from marking a tour step complete."
-      },
       "MessageItem": {
         "properties": {
           "id": {
@@ -22291,14 +22128,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "viewedIntro": {
-            "type": "boolean",
-            "title": "Viewedintro"
-          },
-          "viewedChat": {
-            "type": "boolean",
-            "title": "Viewedchat"
-          },
           "defaultProfile": {
             "type": "boolean",
             "title": "Defaultprofile"
@@ -22358,8 +22187,6 @@
           "primaryEmail",
           "role",
           "active",
-          "viewedIntro",
-          "viewedChat",
           "defaultProfile",
           "reqPerDay",
           "lastLogin",
@@ -27829,28 +27656,6 @@
             ],
             "title": "Active"
           },
-          "viewedIntro": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Viewedintro"
-          },
-          "viewedChat": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Viewedchat"
-          },
           "reqPerDay": {
             "anyOf": [
               {
@@ -28442,28 +28247,6 @@
           "default_profile": {
             "type": "boolean",
             "title": "Default Profile"
-          },
-          "intro_completed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Intro Completed"
-          },
-          "chat_completed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Completed"
           }
         },
         "type": "object",
@@ -33017,16 +32800,6 @@
           "default_profile": {
             "type": "boolean",
             "title": "Default Profile"
-          },
-          "intro_completed": {
-            "type": "boolean",
-            "title": "Intro Completed",
-            "default": false
-          },
-          "chat_completed": {
-            "type": "boolean",
-            "title": "Chat Completed",
-            "default": false
           },
           "requests_in_last_day": {
             "type": "integer",

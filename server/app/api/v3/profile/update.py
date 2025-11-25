@@ -25,8 +25,6 @@ class UpdateProfileRequest(BaseModel):
     lastLogin: str | None = None  # ISO datetime
     role: str | None = None
     active: bool | None = None
-    viewedIntro: bool | None = None
-    viewedChat: bool | None = None
     reqPerDay: int | None = None
     lastActive: str | None = None  # ISO datetime
 
@@ -80,10 +78,8 @@ async def update_profile(
             last_login_dt,  # $4
             request.role,  # $5
             request.active,  # $6
-            request.viewedIntro,  # $7
-            request.viewedChat,  # $8
-            None,  # $9 - req_per_day (not used, stored in separate table)
-            last_active_dt,  # $10
+            None,  # $7 - req_per_day (not used, stored in separate table)
+            last_active_dt,  # $8
         )
         row = await conn.fetchrow(
             sql_query,
@@ -93,10 +89,8 @@ async def update_profile(
             last_login_dt,  # $4
             request.role,  # $5
             request.active,  # $6
-            request.viewedIntro,  # $7
-            request.viewedChat,  # $8
-            None,  # $9 - req_per_day (not used, stored in separate table)
-            last_active_dt,  # $10
+            None,  # $7 - req_per_day (not used, stored in separate table)
+            last_active_dt,  # $8
         )
 
         if not row:
@@ -113,8 +107,6 @@ async def update_profile(
             primaryEmail=primary_email,
             role=row["role"],
             active=row["active"],
-            viewedIntro=row["viewed_intro"],
-            viewedChat=row["viewed_chat"],
             defaultProfile=row["default_profile"],
             reqPerDay=row["req_per_day"],
             lastLogin=row["last_login"].isoformat() if row["last_login"] else "",

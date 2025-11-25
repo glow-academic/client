@@ -121,8 +121,6 @@ const normalizeDepartmentStaffItem = (
   total_requests: item.total_requests ?? 0,
   default_profile: item.default_profile,
   requests_in_last_day: item.requests_in_last_day ?? 0,
-  intro_completed: item.intro_completed ?? false,
-  chat_completed: item.chat_completed ?? false,
   can_edit: item.can_edit,
   can_delete: item.can_delete,
   can_remove: "can_remove" in item ? item.can_remove : false,

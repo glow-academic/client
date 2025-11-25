@@ -272,8 +272,6 @@ department_staff AS (
         pa.last_active as lastActive,
         prl.requests_per_day as requests_per_day,
         p.default_profile,
-        p.viewed_intro as intro_completed,
-        p.viewed_chat as chat_completed,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
@@ -336,7 +334,7 @@ department_staff AS (
         (up.role = 'guest' AND p.role = 'guest')
     )
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
-             pa.last_active, prl.requests_per_day, p.viewed_intro, p.viewed_chat,
+             pa.last_active, prl.requests_per_day,
              pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
              pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count, up.role
     ORDER BY p.id, p.last_name, p.first_name
@@ -377,8 +375,6 @@ SELECT
             'requests_per_day', ds.requests_per_day,
             'total_requests', ds.total_requests,
             'default_profile', ds.default_profile,
-            'intro_completed', ds.intro_completed,
-            'chat_completed', ds.chat_completed,
             'requests_in_last_day', ds.requests_in_last_day,
             'can_edit', ds.can_edit,
             'can_delete', ds.can_delete,

@@ -72,8 +72,6 @@ actual_profile_data AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        p.viewed_intro,
-        p.viewed_chat,
         p.default_profile,
         COALESCE(prl.requests_per_day, 0) as req_per_day,
         p.last_login,
@@ -93,7 +91,7 @@ actual_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.viewed_intro, p.viewed_chat, 
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              p.default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
 ),
@@ -107,8 +105,6 @@ effective_profile_data AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        p.viewed_intro,
-        p.viewed_chat,
         p.default_profile,
         COALESCE(prl.requests_per_day, 0) as req_per_day,
         p.last_login,
@@ -128,7 +124,7 @@ effective_profile_data AS (
         ORDER BY created_at DESC 
         LIMIT 1
     ) pa ON true
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.viewed_intro, p.viewed_chat, 
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
              p.default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
 ),
@@ -222,8 +218,6 @@ SELECT
     apd.primary_email as actual_primary_email,
     apd.role as actual_role,
     apd.active as actual_active,
-    apd.viewed_intro as actual_viewed_intro,
-    apd.viewed_chat as actual_viewed_chat,
     apd.default_profile as actual_default_profile,
     apd.req_per_day as actual_req_per_day,
     apd.last_login as actual_last_login,
@@ -239,8 +233,6 @@ SELECT
     epd.primary_email,
     epd.role,
     epd.active,
-    epd.viewed_intro,
-    epd.viewed_chat,
     epd.default_profile,
     epd.req_per_day,
     epd.last_login,

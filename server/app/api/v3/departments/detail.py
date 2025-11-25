@@ -42,8 +42,6 @@ class StaffItem(BaseModel):
     requests_per_day: int | None = None
     total_requests: int = 0
     default_profile: bool
-    intro_completed: bool = False
-    chat_completed: bool = False
     requests_in_last_day: int = 0
     can_edit: bool
     can_delete: bool
@@ -187,8 +185,6 @@ async def get_department_detail(
                             requests_per_day=staff_row.get("requests_per_day"),
                             total_requests=staff_row.get("total_requests", 0),
                             default_profile=staff_row["default_profile"],
-                            intro_completed=staff_row.get("intro_completed", False),
-                            chat_completed=staff_row.get("chat_completed", False),
                             requests_in_last_day=staff_row.get(
                                 "requests_in_last_day", 0
                             ),

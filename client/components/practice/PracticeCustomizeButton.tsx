@@ -22,9 +22,7 @@ export function PracticeCustomizeButton() {
     return null;
   }
   if (role === "ta") {
-    if (!(effectiveProfile?.viewedIntro && effectiveProfile?.viewedChat)) {
-      return null;
-    }
+    // Show button for all TAs
   }
   const privilegedRoles: Array<ProfileItem["role"]> = [
     "instructional",

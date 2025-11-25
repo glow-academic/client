@@ -548,15 +548,6 @@ export function SimulationControls({
     }
 
     // No previous chats and has messages, proceed normally
-    // Dispatch endChatButtonPressed event for tour progression and navigating state management
-    window.dispatchEvent(
-      new CustomEvent("endChatButtonPressed", {
-        detail: {
-          chatId: currentChat.id,
-          attemptId: attemptId,
-        },
-      })
-    );
     endChat();
   };
 
@@ -612,7 +603,6 @@ export function SimulationControls({
               onClick={handleNextChat}
               disabled={endChatLoading}
               className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-              data-tour-end-chat
             >
               {/* Red dot indicator for previous chats - overlays on top right corner */}
               {hasPreviousChats && (
@@ -644,7 +634,6 @@ export function SimulationControls({
               onClick={handleEndSession}
               disabled={endChatLoading}
               className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm relative overflow-visible"
-              data-tour-end-all
             >
               {/* Red dot indicator for better previous attempts - overlays on top right corner */}
               {hasBetterPreviousAttempt && (
@@ -846,16 +835,6 @@ export function SimulationControls({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                // Dispatch endAllChatsButtonPressed event for tour progression
-                window.dispatchEvent(
-                  new CustomEvent("endAllChatsButtonPressed", {
-                    detail: {
-                      attemptId: attemptId,
-                      remainingSessions: endAllRemainingSessions,
-                    },
-                  })
-                );
-
                 // Extract permutation map if one is selected and multiple alternatives are allowed
                 let previousChatMap: Record<string, string | null> | undefined;
                 if (
@@ -928,15 +907,6 @@ export function SimulationControls({
                   setConfirmEndChatOpen(false);
                   endAllChats();
                 } else {
-                  // Dispatch endChatButtonPressed event for tour progression and navigating state management
-                  window.dispatchEvent(
-                    new CustomEvent("endChatButtonPressed", {
-                      detail: {
-                        chatId: currentChat.id,
-                        attemptId: attemptId,
-                      },
-                    })
-                  );
                   setConfirmEndChatOpen(false);
                   endChat();
                 }
@@ -1030,15 +1000,6 @@ export function SimulationControls({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                // Dispatch endChatButtonPressed event for tour progression
-                window.dispatchEvent(
-                  new CustomEvent("endChatButtonPressed", {
-                    detail: {
-                      chatId: currentChat.id,
-                      attemptId: attemptId,
-                    },
-                  })
-                );
                 setShowPreviousChatsDialog(false);
                 endChat(
                   undefined,

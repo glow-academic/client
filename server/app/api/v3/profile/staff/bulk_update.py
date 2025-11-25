@@ -25,8 +25,6 @@ class BulkUpdateStaffRequest(BaseModel):
     )
     default_profile: bool | None = None
     primary_department_id: str | None = None
-    intro_completed: bool | None = None
-    chat_completed: bool | None = None
     currentProfileId: str  # Current user's profile ID for permission validation
     active: bool | None = None
 
@@ -90,8 +88,6 @@ async def bulk_update_profile(
             request.default_profile,
             request.active,
             requests_per_day_value,
-            request.intro_completed,
-            request.chat_completed,
             primary_department_uuid,
         )
 

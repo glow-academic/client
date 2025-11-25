@@ -6,8 +6,6 @@ from .authorize_emulation import router as authorize_emulation_router
 from .by_email import router as by_email_router
 from .context import router as context_router
 from .detail import router as detail_router
-from .mark_chat_complete import router as mark_chat_complete_router
-from .mark_intro_complete import router as mark_intro_complete_router
 from .overview import router as overview_router
 from .search import router as search_router
 from .search_simulatable_profiles import (
@@ -25,8 +23,6 @@ router.include_router(update_router)
 router.include_router(by_email_router)
 router.include_router(context_router)
 router.include_router(authorize_emulation_router)
-router.include_router(mark_intro_complete_router)
-router.include_router(mark_chat_complete_router)
 router.include_router(overview_router)
 router.include_router(search_router)
 router.include_router(search_simulatable_profiles_router)

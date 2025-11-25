@@ -68,8 +68,6 @@ export default function StaffEditModal({
       role: staffItem.role || "",
       reqPerDay: staffItem.requests_per_day ?? null,
       defaultProfile: staffItem.default_profile ?? false,
-      introCompleted: staffItem.intro_completed ?? false,
-      chatCompleted: staffItem.chat_completed ?? false,
       departmentId: staffItem.primary_department_id || "",
       active: staffItem.active ?? true,
     };
@@ -83,13 +81,10 @@ export default function StaffEditModal({
     role: "",
     reqPerDay: "" as number | "",
     defaultProfile: false,
-    introCompleted: false,
-    chatCompleted: false,
     primaryDepartmentId: "",
   });
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tourCompletedTouched, setTourCompletedTouched] = useState(false);
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
@@ -104,19 +99,11 @@ export default function StaffEditModal({
         role: targetUser.role || "",
         reqPerDay: targetUser.reqPerDay ?? "",
         defaultProfile: targetUser.defaultProfile ?? false,
-        introCompleted: targetUser.introCompleted ?? false,
-        chatCompleted: targetUser.chatCompleted ?? false,
         primaryDepartmentId: targetUser.departmentId || "",
       });
       setRequestsPerDayEnabled(targetUser.reqPerDay != null);
-      setTourCompletedTouched(false);
     }
   }, [targetUser, open]);
-
-  // Compute tour_completed from intro_completed && chat_completed
-  const tourCompleted = useMemo(() => {
-    return formData.introCompleted && formData.chatCompleted;
-  }, [formData.introCompleted, formData.chatCompleted]);
 
   const handleInputChange = useCallback(
     (field: string, value: string | number | boolean) => {
@@ -212,8 +199,6 @@ export default function StaffEditModal({
         primary_department_id: string;
         active: boolean;
         default_profile: boolean;
-        intro_completed?: boolean;
-        chat_completed?: boolean;
       } = {
         profileId: profileId,
         first_name: formData.firstName,
@@ -228,12 +213,6 @@ export default function StaffEditModal({
         active: targetUser?.active ?? true,
         default_profile: formData.defaultProfile,
       };
-
-      // Only include intro_completed and chat_completed if tour_completed was touched
-      if (tourCompletedTouched) {
-        updateBody.intro_completed = formData.introCompleted;
-        updateBody.chat_completed = formData.chatCompleted;
-      }
 
       await updateStaffAction({
         body: updateBody,
@@ -254,7 +233,6 @@ export default function StaffEditModal({
     profileId,
     formData,
     requestsPerDayEnabled,
-    tourCompletedTouched,
     targetUser?.active,
     validDepartmentIds,
     updateStaffAction,
@@ -461,35 +439,6 @@ export default function StaffEditModal({
                         />
                       </div>
                     )}
-                  </div>
-                </div>
-
-                {/* Tour Completion Section */}
-                <div className="space-y-2 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="tourCompleted"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        Tour Completed
-                      </Label>
-                      <Switch
-                        id="tourCompleted"
-                        checked={tourCompleted}
-                        onCheckedChange={(checked) => {
-                          setTourCompletedTouched(true);
-                          // When toggled, update both intro_completed and chat_completed
-                          handleInputChange("introCompleted", checked);
-                          handleInputChange("chatCompleted", checked);
-                        }}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Mark both intro and chat tours as completed
-                    </p>
                   </div>
                 </div>
 

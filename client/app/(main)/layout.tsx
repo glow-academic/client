@@ -16,8 +16,6 @@ import {
   getAssistantChatList,
   getCreateStaffData,
   getLayoutContextData,
-  markChatComplete,
-  markIntroComplete,
   processCSV,
   refreshAnalytics,
   searchSimulatableProfiles,
@@ -61,8 +59,6 @@ export default async function MainLayout({
       initial={initial}
       sessionSnapshot={snapshot}
       attemptData={attemptData}
-      markIntroCompleteAction={markIntroComplete}
-      markChatCompleteAction={markChatComplete}
       getAssistantChatListAction={getAssistantChatList}
       getAssistantChatFullAction={getAssistantChatFull}
       switchEffectiveProfileAction={switchEffectiveProfile}

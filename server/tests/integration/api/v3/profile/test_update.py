@@ -20,8 +20,6 @@ async def test_update_profile(
             "profileId": profile_id,
             "firstName": "Updated",
             "lastName": "Name",
-            "viewedIntro": True,
-            "viewedChat": True,
         },
     )
 
@@ -36,16 +34,12 @@ async def test_update_profile(
     assert profile["id"] == profile_id
     assert profile["firstName"] == "Updated"
     assert profile["lastName"] == "Name"
-    assert profile["viewedIntro"] is True
-    assert profile["viewedChat"] is True
 
     # Verify in database
     db_profile = await db.fetchrow("SELECT * FROM profiles WHERE id = $1", profile_id)
     assert db_profile is not None
     assert db_profile["first_name"] == "Updated"
     assert db_profile["last_name"] == "Name"
-    assert db_profile["viewed_intro"] is True
-    assert db_profile["viewed_chat"] is True
 
 
 async def test_update_profile_partial(
@@ -119,14 +113,14 @@ async def test_update_profile_guest_profile_id(
         "/api/v3/profile/update",
         json={
             "profileId": "guest-profile-id",
-            "viewedIntro": True,
+            "firstName": "UpdatedGuest",
         },
     )
 
     assert response.status_code == 200
     data = response.json()
     assert data["profile"]["id"] == str(guest_id)
-    assert data["profile"]["viewedIntro"] is True
+    assert data["profile"]["firstName"] == "UpdatedGuest"
 
 
 async def test_update_profile_last_active(

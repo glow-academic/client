@@ -74,10 +74,6 @@ export default function StaffBulkEditModal({
   const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
     null
   );
-  const [bulkTourCompleted, setBulkTourCompleted] = useState<boolean | null>(
-    null
-  );
-  const [keepTourCompleted, setKeepTourCompleted] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -116,7 +112,6 @@ export default function StaffBulkEditModal({
 
       // Default profile - keep as null (don't change) unless explicitly set
       setBulkDefaultProfile(null);
-      setBulkTourCompleted(null);
       setBulkPrimaryDepartmentId(null);
       setKeepCurrent({
         role: true,
@@ -124,7 +119,6 @@ export default function StaffBulkEditModal({
         defaultProfile: true,
         primaryDepartment: true,
       });
-      setKeepTourCompleted(true);
     }
   }, [selectedStaffItems, open]);
 
@@ -135,7 +129,6 @@ export default function StaffBulkEditModal({
       setBulkReqPerDay("");
       setRequestsPerDayEnabled(false);
       setBulkDefaultProfile(null);
-      setBulkTourCompleted(null);
       setBulkPrimaryDepartmentId(null);
       setKeepCurrent({
         role: true,
@@ -143,7 +136,6 @@ export default function StaffBulkEditModal({
         defaultProfile: true,
         primaryDepartment: true,
       });
-      setKeepTourCompleted(true);
     }
   }, [open]);
 
@@ -158,8 +150,6 @@ export default function StaffBulkEditModal({
         requests_per_day?: number | null | string;
         default_profile?: boolean;
         primary_department_id?: string;
-        intro_completed?: boolean;
-        chat_completed?: boolean;
         currentProfileId: string;
       } = {
         profileIds: profileIds,
@@ -187,12 +177,6 @@ export default function StaffBulkEditModal({
         bulkDefaultProfile !== null
       ) {
         updates.default_profile = bulkDefaultProfile;
-      }
-
-      // Tour completion - when changed, update both intro_completed and chat_completed
-      if (!keepTourCompleted && bulkTourCompleted !== null) {
-        updates.intro_completed = bulkTourCompleted;
-        updates.chat_completed = bulkTourCompleted;
       }
 
       // Primary department - only update if not keeping current and value is set
@@ -230,8 +214,6 @@ export default function StaffBulkEditModal({
     keepCurrent,
     bulkDefaultProfile,
     bulkPrimaryDepartmentId,
-    bulkTourCompleted,
-    keepTourCompleted,
     isSuperadmin,
     effectiveProfile?.id,
     bulkUpdateStaffAction,
@@ -394,43 +376,6 @@ export default function StaffBulkEditModal({
                           />
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Tour Completion Row */}
-                  <TableRow>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        <Label htmlFor="bulkTourCompleted">
-                          Tour Completed
-                        </Label>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Mark both intro and chat tours as completed for selected
-                        staff members
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={keepTourCompleted}
-                        onCheckedChange={(checked) => {
-                          const isChecked = checked === true;
-                          setKeepTourCompleted(isChecked);
-                        }}
-                        disabled={isSubmitting}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        id="bulkTourCompleted"
-                        checked={bulkTourCompleted ?? false}
-                        onCheckedChange={(checked) => {
-                          setBulkTourCompleted(checked);
-                          setKeepTourCompleted(false);
-                        }}
-                        disabled={isSubmitting || keepTourCompleted}
-                      />
                     </TableCell>
                   </TableRow>
 

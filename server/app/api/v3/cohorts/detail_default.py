@@ -135,8 +135,6 @@ async def get_cohort_detail_default(
                                 requests_per_day=s.get("requests_per_day"),
                                 total_requests=s.get("total_requests", 0),
                                 default_profile=s.get("default_profile", False),
-                                intro_completed=s.get("intro_completed", False),
-                                chat_completed=s.get("chat_completed", False),
                                 requests_in_last_day=s.get("requests_in_last_day", 0),
                                 can_edit=s.get("can_edit", False),
                                 can_delete=s.get("can_delete", False),

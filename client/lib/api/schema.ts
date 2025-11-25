@@ -104,46 +104,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/profile/mark-intro-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Mark Intro Complete
-         * @description Mark intro tour step as complete.
-         */
-        post: operations["mark_intro_complete_api_v3_profile_mark_intro_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/profile/mark-chat-complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Mark Chat Complete
-         * @description Mark chat tour step as complete.
-         */
-        post: operations["mark_chat_complete_api_v3_profile_mark_chat_complete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/profile/overview": {
         parameters: {
             query?: never;
@@ -8105,32 +8065,6 @@ export interface components {
              */
             actorOptions: components["schemas"]["FilterOption"][];
         };
-        /**
-         * MarkChatCompleteRequest
-         * @description Request to mark chat tour step as complete.
-         */
-        MarkChatCompleteRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * MarkIntroCompleteRequest
-         * @description Request to mark intro tour step as complete.
-         */
-        MarkIntroCompleteRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * MarkTourStepResponse
-         * @description Response from marking a tour step complete.
-         */
-        MarkTourStepResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
         /** MessageItem */
         MessageItem: {
             /** Id */
@@ -9383,10 +9317,6 @@ export interface components {
             role: string;
             /** Active */
             active: boolean;
-            /** Viewedintro */
-            viewedIntro: boolean;
-            /** Viewedchat */
-            viewedChat: boolean;
             /** Defaultprofile */
             defaultProfile: boolean;
             /** Reqperday */
@@ -11536,10 +11466,6 @@ export interface components {
             role?: string | null;
             /** Active */
             active?: boolean | null;
-            /** Viewedintro */
-            viewedIntro?: boolean | null;
-            /** Viewedchat */
-            viewedChat?: boolean | null;
             /** Reqperday */
             reqPerDay?: number | null;
             /** Lastactive */
@@ -11775,10 +11701,6 @@ export interface components {
             active: boolean;
             /** Default Profile */
             default_profile: boolean;
-            /** Intro Completed */
-            intro_completed?: boolean | null;
-            /** Chat Completed */
-            chat_completed?: boolean | null;
         };
         /**
          * UpdateStaffResponse
@@ -13416,16 +13338,6 @@ export interface components {
             total_requests: number;
             /** Default Profile */
             default_profile: boolean;
-            /**
-             * Intro Completed
-             * @default false
-             */
-            intro_completed: boolean;
-            /**
-             * Chat Completed
-             * @default false
-             */
-            chat_completed: boolean;
             /** Requests In Last Day */
             requests_in_last_day: number;
             /** Can Edit */
@@ -14560,72 +14472,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthorizeEmulationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_intro_complete_api_v3_profile_mark_intro_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarkIntroCompleteRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarkTourStepResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_chat_complete_api_v3_profile_mark_chat_complete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarkChatCompleteRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarkTourStepResponse"];
                 };
             };
             /** @description Validation Error */

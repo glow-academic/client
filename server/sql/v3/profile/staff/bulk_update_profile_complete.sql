@@ -6,9 +6,7 @@
 --   $4 = default_profile (boolean) - new default_profile (NULL to skip)
 --   $5 = active (boolean) - new active (NULL to skip)
 --   $6 = requests_per_day (integer) - new requests_per_day (NULL to skip update, use -1 for unlimited)
---   $7 = intro_completed (boolean) - new viewed_intro (NULL to skip)
---   $8 = chat_completed (boolean) - new viewed_chat (NULL to skip)
---   $9 = primary_department_id (uuid) - new primary department (NULL to skip)
+--   $7 = primary_department_id (uuid) - new primary department (NULL to skip)
 -- Returns: updated_count (integer), validation_errors (text[])
 
 WITH current_user_role AS (
@@ -64,8 +62,6 @@ profile_update AS (
         role = COALESCE($3, role),
         default_profile = COALESCE($4, default_profile),
         active = COALESCE($5, active),
-        viewed_intro = COALESCE($7, viewed_intro),
-        viewed_chat = COALESCE($8, viewed_chat),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM validated_profiles)
     RETURNING id
@@ -89,10 +85,10 @@ department_update AS (
     -- Update primary department if provided (skip if NULL)
     UPDATE profile_departments
     SET 
-        department_id = $9,
+        department_id = $7,
         updated_at = NOW()
     WHERE profile_id IN (SELECT id FROM profile_update)
-        AND $9 IS NOT NULL  -- Only update if value provided (not skipping)
+        AND $7 IS NOT NULL  -- Only update if value provided (not skipping)
     RETURNING profile_id
 )
 SELECT COUNT(*)::integer as updated_count

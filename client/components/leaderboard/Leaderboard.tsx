@@ -539,8 +539,6 @@ export default function Leaderboard({
                             lastLogin: new Date().toISOString(),
                             reqPerDay: 0,
                             updatedAt: new Date().toISOString(),
-                            viewedChat: false,
-                            viewedIntro: false,
                             primaryDepartmentId: null,
                           }
                         : undefined
