@@ -5816,6 +5816,53 @@
         ]
       }
     },
+    "/api/v3/settings/active": {
+      "post": {
+        "tags": [
+          "v3",
+          "settings"
+        ],
+        "summary": "Get Active Settings",
+        "description": "Get active settings information.",
+        "operationId": "get_active_settings_api_v3_settings_active_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsActiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsActiveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "settings"
+        ]
+      }
+    },
     "/api/v3/analytics/refresh": {
       "post": {
         "tags": [
@@ -25053,6 +25100,54 @@
         ],
         "title": "SelectAttributesResponse",
         "description": "Response with selected scenario attributes."
+      },
+      "SettingsActiveRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "SettingsActiveRequest",
+        "description": "Request to get active settings."
+      },
+      "SettingsActiveResponse": {
+        "properties": {
+          "settings_id": {
+            "type": "string",
+            "title": "Settings Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          },
+          "organization_name": {
+            "type": "string",
+            "title": "Organization Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings_id",
+          "created_at",
+          "active",
+          "color",
+          "organization_name"
+        ],
+        "title": "SettingsActiveResponse",
+        "description": "Active settings response."
       },
       "SettingsDetailRequest": {
         "properties": {

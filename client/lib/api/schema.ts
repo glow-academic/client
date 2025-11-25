@@ -2728,6 +2728,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/settings/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Active Settings
+         * @description Get active settings information.
+         */
+        post: operations["get_active_settings_api_v3_settings_active_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/analytics/refresh": {
         parameters: {
             query?: never;
@@ -10372,6 +10392,30 @@ export interface components {
              * @default []
              */
             parameterItemIds: string[];
+        };
+        /**
+         * SettingsActiveRequest
+         * @description Request to get active settings.
+         */
+        SettingsActiveRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * SettingsActiveResponse
+         * @description Active settings response.
+         */
+        SettingsActiveResponse: {
+            /** Settings Id */
+            settings_id: string;
+            /** Created At */
+            created_at: string;
+            /** Active */
+            active: boolean;
+            /** Color */
+            color: string;
+            /** Organization Name */
+            organization_name: string;
         };
         /**
          * SettingsDetailRequest
@@ -18150,6 +18194,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateSettingsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_active_settings_api_v3_settings_active_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsActiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsActiveResponse"];
                 };
             };
             /** @description Validation Error */

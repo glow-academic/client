@@ -25,7 +25,8 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initial, snapshot, attemptData } = await getLayoutContextData();
+  const { initial, snapshot, attemptData, activeSettings } =
+    await getLayoutContextData();
 
   // Check if we're on the staff page and fetch initial data if needed
   const session = await getSession();
@@ -57,6 +58,7 @@ export default async function MainLayout({
       initial={initial}
       sessionSnapshot={snapshot}
       attemptData={attemptData}
+      activeSettings={activeSettings}
       switchEffectiveProfileAction={switchEffectiveProfile}
       createFeedbackAction={createFeedback}
       refreshAnalyticsAction={refreshAnalytics}

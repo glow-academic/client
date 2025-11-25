@@ -31,10 +31,7 @@ import {
   generateBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
-import {
-  createSectionChangeHandler,
-  isMainScreen,
-} from "@/utils/navigation-utils";
+import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import type {
   AttemptFullOut,
   BulkCreateOrUpdateStaffIn,
@@ -50,6 +47,7 @@ import type {
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
+  SettingsActiveOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
@@ -58,6 +56,7 @@ import type {
 function MainLayoutContent({
   children,
   attemptData,
+  activeSettings,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
@@ -68,6 +67,7 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
+  activeSettings: SettingsActiveOut | null;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -170,25 +170,6 @@ function MainLayoutContent({
     return pathname.startsWith("/analytics/reports/p");
   }, [pathname]);
 
-  const isChatPage = useMemo(() => {
-    return pathname.startsWith("/practice/a") || pathname.startsWith("/home/a");
-  }, [pathname]);
-
-  // Check if we're on a main screen that should show chat components
-  const shouldShowChatComponents = useMemo(() => {
-    return isMainScreen(pathname) || isReportPage;
-  }, [pathname, isReportPage]);
-
-  // Check if user has permission to see chat components (instructional, admin, superadmin only)
-  const canShowChatComponents = useMemo(() => {
-    const allowedRoles = ["instructional", "admin", "superadmin"];
-    return (
-      effectiveProfile?.role &&
-      allowedRoles.includes(effectiveProfile.role) &&
-      !isChatPage
-    );
-  }, [effectiveProfile?.role, isChatPage]);
-
   // Check if we're on an analytics page and should show filters
   const isAnalyticsPage = useMemo(() => {
     return pathname.startsWith("/analytics");
@@ -258,10 +239,7 @@ function MainLayoutContent({
 
     if (pathname === "/system/auth") {
       return (
-        <Button
-          onClick={() => router.push("/system/auth/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/system/auth/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Auth
         </Button>
@@ -446,8 +424,7 @@ export function MainLayoutClient({
   initial,
   sessionSnapshot,
   attemptData,
-  getAssistantChatListAction,
-  getAssistantChatFullAction,
+  activeSettings,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
@@ -460,6 +437,7 @@ export function MainLayoutClient({
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
+  activeSettings: SettingsActiveOut | null;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -482,25 +460,26 @@ export function MainLayoutClient({
         <AnalyticsProvider>
           <MainLayoutContent
             attemptData={attemptData}
+            activeSettings={activeSettings}
             switchEffectiveProfileAction={switchEffectiveProfileAction}
-              createFeedbackAction={createFeedbackAction}
-              refreshAnalyticsAction={refreshAnalyticsAction}
-              searchSimulatableProfilesAction={searchSimulatableProfilesAction}
-              {...(processCSVAction !== undefined && {
-                processCSVAction,
+            createFeedbackAction={createFeedbackAction}
+            refreshAnalyticsAction={refreshAnalyticsAction}
+            searchSimulatableProfilesAction={searchSimulatableProfilesAction}
+            {...(processCSVAction !== undefined && {
+              processCSVAction,
+            })}
+            {...(bulkCreateOrUpdateStaffAction !== undefined && {
+              bulkCreateOrUpdateStaffAction,
+            })}
+            {...(initialCreateStaffData !== undefined &&
+              initialCreateStaffData !== null && {
+                initialCreateStaffData,
               })}
-              {...(bulkCreateOrUpdateStaffAction !== undefined && {
-                bulkCreateOrUpdateStaffAction,
-              })}
-              {...(initialCreateStaffData !== undefined &&
-                initialCreateStaffData !== null && {
-                  initialCreateStaffData,
-                })}
-            >
-              {children}
-            </MainLayoutContent>
-          </AnalyticsProvider>
-        </BreadcrumbProvider>
+          >
+            {children}
+          </MainLayoutContent>
+        </AnalyticsProvider>
+      </BreadcrumbProvider>
     </ProfileProviderClient>
   );
 }

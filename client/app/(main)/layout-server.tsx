@@ -53,11 +53,19 @@ type BulkCreateOrUpdateStaffOut = OutputOf<
   "/api/v3/profile/staff/bulk-create-or-update-staff",
   "post"
 >;
+type SettingsActiveIn = InputOf<"/api/v3/settings/active", "post">;
+type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
 /** ---- Cached fetch ---- */
 const getLayoutContext = cache(
   async (input: LayoutContextIn): Promise<LayoutContextOut> => {
     return api.post("/profile/context", input);
+  }
+);
+
+const getActiveSettings = cache(
+  async (input: SettingsActiveIn): Promise<SettingsActiveOut> => {
+    return api.post("/settings/active", input);
   }
 );
 
@@ -133,7 +141,19 @@ export async function getLayoutContextData() {
     }
   }
 
-  return { initial, snapshot, attemptData };
+  // Fetch active settings
+  let activeSettings: SettingsActiveOut | null = null;
+  try {
+    activeSettings = await getActiveSettings({
+      body: { profileId: effectiveProfileId },
+    });
+  } catch {
+    // If settings fetch fails, just continue without settings data
+    // This can happen if no active settings exist
+    activeSettings = null;
+  }
+
+  return { initial, snapshot, attemptData, activeSettings };
 }
 
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
@@ -267,6 +287,8 @@ export type {
   SearchSimulatableProfilesOut,
   SearchStaffIn,
   SearchStaffOut,
+  SettingsActiveIn,
+  SettingsActiveOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };
