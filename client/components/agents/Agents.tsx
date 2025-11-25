@@ -500,7 +500,7 @@ export default function Agents({
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive"
               data-testid="btn-confirm-delete"
             >
               {isDeleting ? "Deleting..." : "Delete"}

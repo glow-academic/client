@@ -3795,44 +3795,8 @@ export interface paths {
          *     Quick-start
          *       ask:  "Any critical errors today?"
          *       call: recent_app_logs("error")
-         *
-         *     See also 👉 assistant_usage() for assistant-specific logs.
          */
         post: operations["recent_app_logs_api_v3_logs_recent_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/logs/assistant-usage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Assistant Usage
-         * @description 📊 Assistant usage statistics
-         *     -----------------------------
-         *     Show assistant chat usage over time period.
-         *
-         *     Input
-         *       • days – Analysis window in days (default: 7)
-         *
-         *     Returns
-         *       { "summary": {…}, "daily_stats": […], "top_users": […] }
-         *
-         *     Quick-start
-         *       ask:  "Show assistant usage last 7 days"
-         *       call: assistant_usage(7)
-         *
-         *     See also 👉 recent_app_logs() for system logs.
-         */
-        post: operations["assistant_usage_api_v3_logs_assistant_usage_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4078,46 +4042,6 @@ export interface paths {
          * @description Get paginated, filtered, searched, sorted pricing runs for table.
          */
         post: operations["get_pricing_runs_api_v3_pricing_runs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/assistant/chats/full": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Assistant Chat Full
-         * @description Get complete assistant chat data with all related entities.
-         */
-        post: operations["get_assistant_chat_full_api_v3_assistant_chats_full_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/assistant/chats/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Assistant Chats List
-         * @description Get all chats for a profile (for new chat state without chat_id).
-         */
-        post: operations["get_assistant_chats_list_api_v3_assistant_chats_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4410,85 +4334,6 @@ export interface components {
              * @default []
              */
             previousChats: components["schemas"]["PreviousChat"][];
-        };
-        /**
-         * AssistantChatFullRequest
-         * @description Request schema for assistant chat full data.
-         */
-        AssistantChatFullRequest: {
-            /** Chatid */
-            chatId: string;
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * AssistantChatFullResponse
-         * @description Response schema for assistant chat full data.
-         */
-        AssistantChatFullResponse: {
-            /** Chat */
-            chat: {
-                [key: string]: unknown;
-            } | null;
-            /** Messages */
-            messages: {
-                [key: string]: unknown;
-            }[];
-            /** Toolcalls */
-            toolCalls: {
-                [key: string]: unknown;
-            }[];
-            /** Allchats */
-            allChats: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
-         * AssistantChatListRequest
-         * @description Request schema for assistant chats list.
-         */
-        AssistantChatListRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
-         * AssistantChatListResponse
-         * @description Response schema for assistant chats list.
-         */
-        AssistantChatListResponse: {
-            /** Allchats */
-            allChats: {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
-         * AssistantUsageRequest
-         * @description Request to get assistant usage stats.
-         */
-        AssistantUsageRequest: {
-            /**
-             * Days
-             * @default 7
-             */
-            days: number;
-        };
-        /**
-         * AssistantUsageResponse
-         * @description Response with assistant usage statistics.
-         */
-        AssistantUsageResponse: {
-            /** Summary */
-            summary: {
-                [key: string]: unknown;
-            };
-            /** Daily Stats */
-            daily_stats: {
-                [key: string]: unknown;
-            }[];
-            /** Top Users */
-            top_users: {
-                [key: string]: unknown;
-            }[];
         };
         /** AttemptFullRequest */
         AttemptFullRequest: {
@@ -4932,10 +4777,6 @@ export interface components {
             default_profile?: boolean | null;
             /** Primary Department Id */
             primary_department_id?: string | null;
-            /** Intro Completed */
-            intro_completed?: boolean | null;
-            /** Chat Completed */
-            chat_completed?: boolean | null;
             /** Currentprofileid */
             currentProfileId: string;
             /** Active */
@@ -12169,16 +12010,6 @@ export interface components {
             total_requests: number;
             /** Default Profile */
             default_profile: boolean;
-            /**
-             * Intro Completed
-             * @default false
-             */
-            intro_completed: boolean;
-            /**
-             * Chat Completed
-             * @default false
-             */
-            chat_completed: boolean;
             /** Requests In Last Day */
             requests_in_last_day: number;
             /** Can Edit */
@@ -12343,16 +12174,6 @@ export interface components {
             /** Default Profile */
             default_profile: boolean;
             /**
-             * Intro Completed
-             * @default false
-             */
-            intro_completed: boolean;
-            /**
-             * Chat Completed
-             * @default false
-             */
-            chat_completed: boolean;
-            /**
              * Requests In Last Day
              * @default 0
              */
@@ -12442,16 +12263,6 @@ export interface components {
             total_requests: number;
             /** Default Profile */
             default_profile: boolean;
-            /**
-             * Intro Completed
-             * @default false
-             */
-            intro_completed: boolean;
-            /**
-             * Chat Completed
-             * @default false
-             */
-            chat_completed: boolean;
             /**
              * Requests In Last Day
              * @default 0
@@ -20098,39 +19909,6 @@ export interface operations {
             };
         };
     };
-    assistant_usage_api_v3_logs_assistant_usage_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantUsageRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantUsageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_logs_bundle_api_v3_logs_bundle_post: {
         parameters: {
             query?: never;
@@ -20514,72 +20292,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingRunsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_assistant_chat_full_api_v3_assistant_chats_full_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantChatFullRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantChatFullResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_assistant_chats_list_api_v3_assistant_chats_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantChatListRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantChatListResponse"];
                 };
             };
             /** @description Validation Error */

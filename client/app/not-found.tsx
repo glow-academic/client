@@ -48,7 +48,7 @@ export default function NotFound() {
             initialType="bug"
             initialMessage={`404 Error - Page Not Found\n\nRequested URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}\n\nUser Agent: ${typeof window !== "undefined" ? window.navigator.userAgent : "Unknown"}\n\nTimestamp: ${new Date().toISOString()}`}
           >
-            <Button className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 transition-colors">
+            <Button variant="outline" className="w-full">
               <Bug className="h-4 w-4 mr-2" />
               Report This Issue
             </Button>

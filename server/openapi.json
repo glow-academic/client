@@ -8251,7 +8251,7 @@
           "logs"
         ],
         "summary": "Recent App Logs",
-        "description": "\ud83d\udd0e Fetch recent ERROR/WARN app logs\n-----------------------------------\nRecent application logs filtered by level.\n\nInput\n  \u2022 level \u2013 Log level filter ('error', 'warn', 'info', 'debug')\n  \u2022 limit \u2013 Max results (default: 100)\n\nReturns\n  [ { \"id\": \u2026, \"level\": \"\u2026\", \"message\": \"\u2026\", \u2026 }, \u2026 ]\n\nQuick-start\n  ask:  \"Any critical errors today?\"\n  call: recent_app_logs(\"error\")\n\nSee also \ud83d\udc49 assistant_usage() for assistant-specific logs.",
+        "description": "\ud83d\udd0e Fetch recent ERROR/WARN app logs\n-----------------------------------\nRecent application logs filtered by level.\n\nInput\n  \u2022 level \u2013 Log level filter ('error', 'warn', 'info', 'debug')\n  \u2022 limit \u2013 Max results (default: 100)\n\nReturns\n  [ { \"id\": \u2026, \"level\": \"\u2026\", \"message\": \"\u2026\", \u2026 }, \u2026 ]\n\nQuick-start\n  ask:  \"Any critical errors today?\"\n  call: recent_app_logs(\"error\")",
         "operationId": "recent_app_logs_api_v3_logs_recent_post",
         "requestBody": {
           "content": {
@@ -8274,53 +8274,6 @@
                   },
                   "type": "array",
                   "title": "Response Recent App Logs Api V3 Logs Recent Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "logs"
-        ]
-      }
-    },
-    "/api/v3/logs/assistant-usage": {
-      "post": {
-        "tags": [
-          "v3",
-          "logs"
-        ],
-        "summary": "Assistant Usage",
-        "description": "\ud83d\udcca Assistant usage statistics\n-----------------------------\nShow assistant chat usage over time period.\n\nInput\n  \u2022 days \u2013 Analysis window in days (default: 7)\n\nReturns\n  { \"summary\": {\u2026}, \"daily_stats\": [\u2026], \"top_users\": [\u2026] }\n\nQuick-start\n  ask:  \"Show assistant usage last 7 days\"\n  call: assistant_usage(7)\n\nSee also \ud83d\udc49 recent_app_logs() for system logs.",
-        "operationId": "assistant_usage_api_v3_logs_assistant_usage_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantUsageRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantUsageResponse"
                 }
               }
             }
@@ -8903,100 +8856,6 @@
         "x-cache-tags": [
           "v3",
           "pricing"
-        ]
-      }
-    },
-    "/api/v3/assistant/chats/full": {
-      "post": {
-        "tags": [
-          "v3",
-          "assistant"
-        ],
-        "summary": "Get Assistant Chat Full",
-        "description": "Get complete assistant chat data with all related entities.",
-        "operationId": "get_assistant_chat_full_api_v3_assistant_chats_full_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantChatFullRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantChatFullResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "assistant"
-        ]
-      }
-    },
-    "/api/v3/assistant/chats/list": {
-      "post": {
-        "tags": [
-          "v3",
-          "assistant"
-        ],
-        "summary": "Get Assistant Chats List",
-        "description": "Get all chats for a profile (for new chat state without chat_id).",
-        "operationId": "get_assistant_chats_list_api_v3_assistant_chats_list_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantChatListRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantChatListResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "assistant"
         ]
       }
     },
@@ -9593,151 +9452,6 @@
           "copyPasteAllowed"
         ],
         "title": "AllSimulationScenarioItem"
-      },
-      "AssistantChatFullRequest": {
-        "properties": {
-          "chatId": {
-            "type": "string",
-            "title": "Chatid"
-          },
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chatId",
-          "profileId"
-        ],
-        "title": "AssistantChatFullRequest",
-        "description": "Request schema for assistant chat full data."
-      },
-      "AssistantChatFullResponse": {
-        "properties": {
-          "chat": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat"
-          },
-          "messages": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Messages"
-          },
-          "toolCalls": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Toolcalls"
-          },
-          "allChats": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Allchats"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat",
-          "messages",
-          "toolCalls",
-          "allChats"
-        ],
-        "title": "AssistantChatFullResponse",
-        "description": "Response schema for assistant chat full data."
-      },
-      "AssistantChatListRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "AssistantChatListRequest",
-        "description": "Request schema for assistant chats list."
-      },
-      "AssistantChatListResponse": {
-        "properties": {
-          "allChats": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Allchats"
-          }
-        },
-        "type": "object",
-        "required": [
-          "allChats"
-        ],
-        "title": "AssistantChatListResponse",
-        "description": "Response schema for assistant chats list."
-      },
-      "AssistantUsageRequest": {
-        "properties": {
-          "days": {
-            "type": "integer",
-            "title": "Days",
-            "default": 7
-          }
-        },
-        "type": "object",
-        "title": "AssistantUsageRequest",
-        "description": "Request to get assistant usage stats."
-      },
-      "AssistantUsageResponse": {
-        "properties": {
-          "summary": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Summary"
-          },
-          "daily_stats": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Daily Stats"
-          },
-          "top_users": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Top Users"
-          }
-        },
-        "type": "object",
-        "required": [
-          "summary",
-          "daily_stats",
-          "top_users"
-        ],
-        "title": "AssistantUsageResponse",
-        "description": "Response with assistant usage statistics."
       },
       "AttemptFullRequest": {
         "properties": {
@@ -29555,16 +29269,6 @@
             "type": "boolean",
             "title": "Default Profile"
           },
-          "intro_completed": {
-            "type": "boolean",
-            "title": "Intro Completed",
-            "default": false
-          },
-          "chat_completed": {
-            "type": "boolean",
-            "title": "Chat Completed",
-            "default": false
-          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day"
@@ -29968,16 +29672,6 @@
             "type": "boolean",
             "title": "Default Profile"
           },
-          "intro_completed": {
-            "type": "boolean",
-            "title": "Intro Completed",
-            "default": false
-          },
-          "chat_completed": {
-            "type": "boolean",
-            "title": "Chat Completed",
-            "default": false
-          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day",
@@ -30178,16 +29872,6 @@
           "default_profile": {
             "type": "boolean",
             "title": "Default Profile"
-          },
-          "intro_completed": {
-            "type": "boolean",
-            "title": "Intro Completed",
-            "default": false
-          },
-          "chat_completed": {
-            "type": "boolean",
-            "title": "Chat Completed",
-            "default": false
           },
           "requests_in_last_day": {
             "type": "integer",

@@ -4,66 +4,6 @@
  */
 
 export type ServerToClientEvents = {
-  start_assistant_error: (payload: {
-    success: boolean;
-    message: string;
-    chat_id: string;
-    error: string;
-  }) => void;
-  assistant_started: (payload: {
-    success: boolean;
-    message: string;
-    chat_id: string;
-  }) => void;
-  title_updated: (payload: {
-    chat_id: string;
-    title: string;
-  }) => void;
-  assistant_new_message: (payload: {
-    message_id: string;
-    chat_id: string;
-    role: string;
-    content: string;
-    completed: boolean;
-    created_at: string;
-  }) => void;
-  message_complete: (payload: {
-    message_id: string;
-    chat_id: string;
-    final_content: string;
-  }) => void;
-  tool_call_created: (payload: {
-    tool_call_id: string;
-    chat_id: string;
-    tool_name: string;
-    tool_type: string;
-  }) => void;
-  tool_call_completed: (payload: {
-    tool_call_id: string;
-    chat_id: string;
-    tool_name: string;
-  }) => void;
-  assistant_message_token: (payload: {
-    message_id: string;
-    chat_id: string;
-    token: string;
-    accumulated_content: string;
-  }) => void;
-  assistant_message_complete: (payload: {
-    message_id: string;
-    chat_id: string;
-    final_content: string;
-  }) => void;
-  assistant_message_cancelled: (payload: {
-    message_id: string;
-    chat_id: string;
-    final_content: string;
-  }) => void;
-  assistant_stopped: (payload: {
-    chat_id: string;
-    success: boolean;
-    message: string;
-  }) => void;
   start_simulation_error: (payload: {
     success: boolean;
     message: string;
@@ -202,18 +142,6 @@ export type ServerToClientEvents = {
 };
 
 export type ClientToServerEvents = {
-  send_assistant_message: (payload: {
-    chat_id: string;
-    message: string;
-    is_retry: boolean;
-  }) => void;
-  start_assistant: (payload: {
-    profile_id: string;
-    initial_message: string;
-  }) => void;
-  stop_assistant: (payload: {
-    chat_id: string;
-  }) => void;
   send_simulation_message: (payload: {
     chat_id: string;
     message: string;

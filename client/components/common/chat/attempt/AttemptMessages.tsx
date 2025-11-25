@@ -772,9 +772,9 @@ export default function AttemptMessages({
                                                   }
                                                 >
                                                   <Button
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
-                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                                    className="h-8 w-8 p-0"
                                                   >
                                                     <AlertCircle className="h-4 w-4" />
                                                   </Button>

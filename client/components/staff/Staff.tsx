@@ -478,7 +478,7 @@ export default function Staff({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive"
               data-testid="btn-confirm-delete"
               onClick={async () => {
                 try {
@@ -590,7 +590,7 @@ export default function Staff({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive"
               data-testid="btn-confirm-delete"
               onClick={async () => {
                 if (!deleteStaffMember) return;

@@ -61,7 +61,7 @@ export default function Error({
             initialType="bug"
             initialMessage={`Error occurred on page: ${error.message}\n\nError Stack: ${error.stack || "No stack trace available"}\n\nPage URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}`}
           >
-            <Button className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 transition-colors">
+            <Button variant="outline" className="w-full">
               <Bug className="h-4 w-4 mr-2" />
               Report This Error
             </Button>

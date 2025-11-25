@@ -14,6 +14,7 @@ import type {
 } from "@/app/(main)/layout-server";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -799,16 +800,10 @@ export function UnifiedSidebar({
             <SidebarMenuItem>
               <div className="px-2 pb-2">
                 <ReportProblem createFeedback={createFeedback}>
-                  <div className="relative group">
-                    <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-500 dark:text-purple-200 shadow-none hover:shadow-md">
-                      <div className="flex items-center justify-center gap-2">
-                        <AlertCircle className="h-4 w-4" />
-                        <span className="font-medium text-sm">
-                          Report Problem
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <Button variant="outline" className="w-full">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Report Problem
+                  </Button>
                 </ReportProblem>
               </div>
             </SidebarMenuItem>

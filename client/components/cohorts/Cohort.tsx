@@ -1498,7 +1498,7 @@ export default function Cohort({
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  variant="destructive"
                   data-testid="btn-confirm-bulk-remove-staff"
                   onClick={() => {
                     if (selectedStaffIds.length === 0 || !cohortId) return;
