@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 CREATE TYPE provider AS ENUM ('openai', 'gemini', 'custom');
-CREATE TYPE model_type AS ENUM ('text', 'video', 'audio');
+CREATE TYPE model_type AS ENUM ('text', 'video', 'audio', 'image');
 
 -- ============================================================================
 -- TABLE DEFINITIONS

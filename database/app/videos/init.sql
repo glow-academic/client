@@ -13,7 +13,6 @@ CREATE TABLE videos (
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
   file_path  TEXT        NOT NULL,
   mime_type  TEXT        NOT NULL,
-  model_id   UUID        REFERENCES models(id) ON DELETE RESTRICT,
   active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
@@ -119,6 +118,4 @@ CREATE TABLE video_images (
 CREATE INDEX ON video_images (video_id);
 CREATE INDEX ON video_images (image_id);
 CREATE INDEX ON video_images (video_id, active);
-
-CREATE INDEX ON videos (model_id);
 

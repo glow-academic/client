@@ -13,7 +13,9 @@ CREATE TYPE agent_role AS ENUM (
   'input_guardrail',
   'output_guardrail',
   'scenario',
-  'title'
+  'title',
+  'image',
+  'video'
 );
 
 -- ============================================================================
