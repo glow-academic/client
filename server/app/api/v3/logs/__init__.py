@@ -1,6 +1,5 @@
 """Logs resource router."""
 
-from app.api.v3.logs.assistant_usage import router as assistant_usage_router
 from app.api.v3.logs.bulk_delete import router as bulk_delete_router
 from app.api.v3.logs.bundle import router as bundle_router
 from app.api.v3.logs.create import router as create_router
@@ -18,6 +17,5 @@ router.include_router(create_router)
 router.include_router(bulk_delete_router)
 router.include_router(health_router)
 router.include_router(recent_router)
-router.include_router(assistant_usage_router)
 router.include_router(bundle_router)
 router.include_router(runs_router)

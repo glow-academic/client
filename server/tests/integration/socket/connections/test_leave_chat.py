@@ -29,7 +29,7 @@ async def test_leave_chat_success(
 
     # Assert
     # Verify socket left the room
-    room_name = f"assistant_{chat_id}"
+    room_name = f"simulation_{chat_id}"
     if room_name in mock_sio.rooms:
         assert sid not in mock_sio.rooms[room_name]
 

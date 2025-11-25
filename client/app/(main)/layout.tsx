@@ -12,8 +12,6 @@ import { MainLayoutClient } from "./layout-client";
 import {
   bulkCreateOrUpdateStaff,
   createFeedback,
-  getAssistantChatFull,
-  getAssistantChatList,
   getCreateStaffData,
   getLayoutContextData,
   processCSV,
@@ -59,8 +57,6 @@ export default async function MainLayout({
       initial={initial}
       sessionSnapshot={snapshot}
       attemptData={attemptData}
-      getAssistantChatListAction={getAssistantChatList}
-      getAssistantChatFullAction={getAssistantChatFull}
       switchEffectiveProfileAction={switchEffectiveProfile}
       createFeedbackAction={createFeedback}
       refreshAnalyticsAction={refreshAnalytics}

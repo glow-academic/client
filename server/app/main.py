@@ -380,10 +380,6 @@ async def transaction(
 
 # Import WebSocket handlers after sio is created to avoid circular imports
 # Handlers use @sio.event decorators directly - no registration needed
-from app.socket.assistants import send_assistant_message  # type: ignore
-from app.socket.assistants import start_assistant  # type: ignore
-from app.socket.assistants.stop import \
-    stop_assistant  # noqa: E402; type: ignore
 from app.socket.connections import leave_chat  # type: ignore
 from app.socket.connections.connect import connect  # type: ignore
 from app.socket.connections.disconnect import disconnect  # type: ignore
@@ -829,9 +825,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         client_to_server_handlers = [
             connect,
             disconnect,
-            send_assistant_message,
-            start_assistant,
-            stop_assistant,
             send_simulation_message,
             start_simulation,
             create_practice_scenario,  # type: ignore[name-defined]
@@ -843,15 +836,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)
-        from app.socket.assistants.send_message import (  # noqa: E402
-            assistant_message_cancelled, assistant_message_complete,
-            assistant_message_token, assistant_new_message, message_complete,
-            tool_call_completed, tool_call_created)
-        from app.socket.assistants.start import assistant_started
-        from app.socket.assistants.start import \
-            start_assistant_error as assistant_error_start
-        from app.socket.assistants.start import title_updated
-        from app.socket.assistants.stop import assistant_stopped
         from app.socket.connections.connect import connection_confirmed
         from app.socket.connections.join_chat import joined_chat
         from app.socket.connections.stop_chat import chat_stopped
@@ -875,18 +859,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Collect all unique emit functions (use one instance of each event name)
         server_to_client_stubs = [
-            # Assistant events
-            assistant_error_start,  # Use one instance (they're all the same)
-            assistant_started,
-            title_updated,
-            assistant_new_message,
-            message_complete,
-            tool_call_created,
-            tool_call_completed,
-            assistant_message_token,
-            assistant_message_complete,
-            assistant_message_cancelled,
-            assistant_stopped,
             # Simulation events
             simulation_error_start,  # start_simulation_error
             stop_simulation_error,

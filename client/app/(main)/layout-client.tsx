@@ -13,7 +13,6 @@ import { Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useMemo } from "react";
 
-import AssistantChat from "@/components/assistant/AssistantChat";
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
@@ -37,10 +36,6 @@ import {
   isMainScreen,
 } from "@/utils/navigation-utils";
 import type {
-  AssistantChatFullIn,
-  AssistantChatFullOut,
-  AssistantChatListIn,
-  AssistantChatListOut,
   AttemptFullOut,
   BulkCreateOrUpdateStaffIn,
   BulkCreateOrUpdateStaffOut,
@@ -63,8 +58,6 @@ import type {
 function MainLayoutContent({
   children,
   attemptData,
-  getAssistantChatListAction,
-  getAssistantChatFullAction,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
@@ -75,12 +68,6 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
-  getAssistantChatListAction: (
-    input: AssistantChatListIn
-  ) => Promise<AssistantChatListOut>;
-  getAssistantChatFullAction: (
-    input: AssistantChatFullIn
-  ) => Promise<AssistantChatFullOut>;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -383,12 +370,6 @@ function MainLayoutContent({
 
   return (
     <>
-      {shouldShowChatComponents && canShowChatComponents && (
-        <AssistantChat
-          getAssistantChatList={getAssistantChatListAction}
-          getAssistantChatFull={getAssistantChatFullAction}
-        />
-      )}
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}
@@ -451,11 +432,7 @@ function MainLayoutContent({
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>
 
-          <div
-            className={`flex flex-1 flex-col gap-4 p-4 pt-0 ${
-              shouldShowChatComponents && canShowChatComponents ? "pb-18" : ""
-            }`}
-          >
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <AccessControl pathname={pathname}>{children}</AccessControl>
           </div>
         </SidebarInset>
@@ -483,12 +460,6 @@ export function MainLayoutClient({
   initial: LayoutContextResponse;
   sessionSnapshot: SafeSessionSnapshot;
   attemptData: AttemptFullOut | null;
-  getAssistantChatListAction: (
-    input: AssistantChatListIn
-  ) => Promise<AssistantChatListOut>;
-  getAssistantChatFullAction: (
-    input: AssistantChatFullIn
-  ) => Promise<AssistantChatFullOut>;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -511,9 +482,7 @@ export function MainLayoutClient({
         <AnalyticsProvider>
           <MainLayoutContent
             attemptData={attemptData}
-            getAssistantChatListAction={getAssistantChatListAction}
-              getAssistantChatFullAction={getAssistantChatFullAction}
-              switchEffectiveProfileAction={switchEffectiveProfileAction}
+            switchEffectiveProfileAction={switchEffectiveProfileAction}
               createFeedbackAction={createFeedbackAction}
               refreshAnalyticsAction={refreshAnalyticsAction}
               searchSimulatableProfilesAction={searchSimulatableProfilesAction}

@@ -49,8 +49,6 @@ async def recent_app_logs(
     Quick-start
       ask:  "Any critical errors today?"
       call: recent_app_logs("error")
-
-    See also 👉 assistant_usage() for assistant-specific logs.
     """
     pool = get_pool()
     if not pool:

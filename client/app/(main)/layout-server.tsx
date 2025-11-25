@@ -11,10 +11,6 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
 type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type AssistantChatListIn = InputOf<"/api/v3/assistant/chats/list", "post">;
-type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
-type AssistantChatFullIn = InputOf<"/api/v3/assistant/chats/full", "post">;
-type AssistantChatFullOut = OutputOf<"/api/v3/assistant/chats/full", "post">;
 type AuthorizeEmulationIn = InputOf<
   "/api/v3/profile/authorize-emulation",
   "post"
@@ -140,19 +136,6 @@ export async function getLayoutContextData() {
   return { initial, snapshot, attemptData };
 }
 
-/** ---- Strongly-typed server actions for Assistant (single source of truth) ---- */
-export async function getAssistantChatList(
-  input: AssistantChatListIn
-): Promise<AssistantChatListOut> {
-  return api.post("/assistant/chats/list", input);
-}
-
-export async function getAssistantChatFull(
-  input: AssistantChatFullIn
-): Promise<AssistantChatFullOut> {
-  return api.post("/assistant/chats/full", input);
-}
-
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
 type SwitchEffectiveProfileParams = {
   targetProfileId: string;
@@ -268,10 +251,6 @@ export async function bulkCreateOrUpdateStaff(
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AssistantChatFullIn,
-  AssistantChatFullOut,
-  AssistantChatListIn,
-  AssistantChatListOut,
   AttemptFullIn,
   AttemptFullOut,
   BulkCreateOrUpdateStaffIn,

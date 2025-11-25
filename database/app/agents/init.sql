@@ -6,7 +6,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 CREATE TYPE agent_role AS ENUM (
-  'assistant',
   'classify', 
   'grade',
   'hint',
@@ -32,7 +31,7 @@ CREATE TABLE agents (
   temperature  REAL     NOT NULL, -- 0.0-1.0
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
   reasoning reasoning_effort NOT NULL DEFAULT 'medium',  -- NOT NULL with default 'medium'
-  role agent_role NOT NULL DEFAULT 'assistant',
+  role agent_role NOT NULL DEFAULT 'scenario',
   active BOOLEAN NOT NULL DEFAULT TRUE
 );
 

@@ -1,23 +1,5 @@
 {
   "clientToServer": {
-    "send_assistant_message": {
-      "payload": {
-        "chat_id": "string",
-        "message": "string",
-        "is_retry": "boolean"
-      }
-    },
-    "start_assistant": {
-      "payload": {
-        "profile_id": "string",
-        "initial_message": "string"
-      }
-    },
-    "stop_assistant": {
-      "payload": {
-        "chat_id": "string"
-      }
-    },
     "send_simulation_message": {
       "payload": {
         "chat_id": "string",
@@ -79,88 +61,6 @@
     }
   },
   "serverToClient": {
-    "start_assistant_error": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "chat_id": "string",
-        "error": "string"
-      }
-    },
-    "assistant_started": {
-      "payload": {
-        "success": "boolean",
-        "message": "string",
-        "chat_id": "string"
-      }
-    },
-    "title_updated": {
-      "payload": {
-        "chat_id": "string",
-        "title": "string"
-      }
-    },
-    "assistant_new_message": {
-      "payload": {
-        "message_id": "string",
-        "chat_id": "string",
-        "role": "string",
-        "content": "string",
-        "completed": "boolean",
-        "created_at": "string"
-      }
-    },
-    "message_complete": {
-      "payload": {
-        "message_id": "string",
-        "chat_id": "string",
-        "final_content": "string"
-      }
-    },
-    "tool_call_created": {
-      "payload": {
-        "tool_call_id": "string",
-        "chat_id": "string",
-        "tool_name": "string",
-        "tool_type": "string"
-      }
-    },
-    "tool_call_completed": {
-      "payload": {
-        "tool_call_id": "string",
-        "chat_id": "string",
-        "tool_name": "string"
-      }
-    },
-    "assistant_message_token": {
-      "payload": {
-        "message_id": "string",
-        "chat_id": "string",
-        "token": "string",
-        "accumulated_content": "string"
-      }
-    },
-    "assistant_message_complete": {
-      "payload": {
-        "message_id": "string",
-        "chat_id": "string",
-        "final_content": "string"
-      }
-    },
-    "assistant_message_cancelled": {
-      "payload": {
-        "message_id": "string",
-        "chat_id": "string",
-        "final_content": "string"
-      }
-    },
-    "assistant_stopped": {
-      "payload": {
-        "chat_id": "string",
-        "success": "boolean",
-        "message": "string"
-      }
-    },
     "start_simulation_error": {
       "payload": {
         "success": "boolean",

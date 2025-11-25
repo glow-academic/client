@@ -26,10 +26,10 @@ async def test_join_chat_success(
     joined_events = mock_sio.get_events("joined_chat")
     assert len(joined_events) == 1
     assert joined_events[0]["chat_id"] == chat_id
-    assert joined_events[0]["chat_type"] == "assistant"  # default
+    assert joined_events[0]["chat_type"] == "simulation"  # default
 
     # Verify socket joined the room
-    room_name = f"assistant_{chat_id}"
+    room_name = f"simulation_{chat_id}"
     assert room_name in mock_sio.rooms
     assert sid in mock_sio.rooms[room_name]
 
@@ -69,7 +69,7 @@ async def test_join_chat_with_chat_type(
 async def test_join_chat_default_chat_type(
     db: asyncpg.Connection, mock_sio: MockSocketIO
 ) -> None:
-    """Test join chat defaults to 'assistant' chat_type."""
+    """Test join chat defaults to 'simulation' chat_type."""
     # Arrange
     sid = "test_sid_789"
     chat_id = "00000000-0000-0000-0000-000000000003"
@@ -79,13 +79,13 @@ async def test_join_chat_default_chat_type(
     await join_chat(sid, data)
 
     # Assert
-    # Verify default chat_type is "assistant"
+    # Verify default chat_type is "simulation"
     joined_events = mock_sio.get_events("joined_chat")
     assert len(joined_events) == 1
-    assert joined_events[0]["chat_type"] == "assistant"
+    assert joined_events[0]["chat_type"] == "simulation"
 
     # Verify room name uses default chat_type
-    room_name = f"assistant_{chat_id}"
+    room_name = f"simulation_{chat_id}"
     assert room_name in mock_sio.rooms
     assert sid in mock_sio.rooms[room_name]
 
