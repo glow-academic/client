@@ -26,12 +26,12 @@ import type {
 import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ModelPicker } from "@/components/common/forms/ModelPicker";
-import { VoicePicker } from "@/components/common/forms/VoicePicker";
 import {
   PromptInfo,
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
+import { VoicePicker } from "@/components/common/forms/VoicePicker";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -600,8 +600,10 @@ export default function Persona({
         icon: personaData.icon || initialFormData.icon || "Zap",
         temperature:
           personaData.temperature ?? initialFormData.temperature ?? 0.0,
-        textModelId: personaData.text_model_id || initialFormData.textModelId || null,
-        audioModelId: personaData.audio_model_id || initialFormData.audioModelId || null,
+        textModelId:
+          personaData.text_model_id || initialFormData.textModelId || null,
+        audioModelId:
+          personaData.audio_model_id || initialFormData.audioModelId || null,
         voice: personaData.voice || initialFormData.voice || null,
         systemPrompt:
           personaData.system_prompt || initialFormData.systemPrompt || "",
@@ -850,11 +852,11 @@ export default function Persona({
         data-page={`persona-${isEditMode ? "edit" : "new"}`}
       >
         {isReadonly && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-5 w-5 text-yellow-400"
+                  className="h-5 w-5 text-muted-foreground"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -866,10 +868,10 @@ export default function Persona({
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">
+                <h3 className="text-sm font-medium text-foreground">
                   Persona is read-only
                 </h3>
-                <div className="mt-2 text-sm text-yellow-700">
+                <div className="mt-2 text-sm text-muted-foreground">
                   <p>
                     {personaData?.department_ids?.length === 0
                       ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
@@ -1184,7 +1186,9 @@ export default function Persona({
                   <ModelPicker
                     mapping={personaData?.text_model_mapping || {}}
                     validIds={personaData?.valid_text_model_ids || []}
-                    selectedIds={formData?.textModelId ? [formData.textModelId] : []}
+                    selectedIds={
+                      formData?.textModelId ? [formData.textModelId] : []
+                    }
                     onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,
@@ -1206,7 +1210,9 @@ export default function Persona({
                   <ModelPicker
                     mapping={personaData?.audio_model_mapping || {}}
                     validIds={personaData?.valid_audio_model_ids || []}
-                    selectedIds={formData?.audioModelId ? [formData.audioModelId] : []}
+                    selectedIds={
+                      formData?.audioModelId ? [formData.audioModelId] : []
+                    }
                     onSelect={(ids) =>
                       setFormData((prev) => ({
                         ...prev,

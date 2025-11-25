@@ -312,17 +312,14 @@ export function StaffDataTable({
                     </p>
                     {(staff as ProfileListItem & { isStaged?: boolean })
                       .isStaged && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-blue-50 text-blue-500 border-blue-200"
-                      >
+                      <Badge variant="secondary" className="text-xs">
                         New
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {staff.emails && staff.emails.length > 0 
-                      ? staff.emails.join(", ") 
+                    {staff.emails && staff.emails.length > 0
+                      ? staff.emails.join(", ")
                       : staff.primary_email || "No email"}
                   </p>
                 </div>
@@ -342,8 +339,10 @@ export function StaffDataTable({
           if (!value) return true;
           const valueLower = value.toLowerCase();
           const emails = staff.emails || [];
-          const emailMatch = emails.some(e => e.toLowerCase().includes(valueLower)) ||
-                            (staff.primary_email && staff.primary_email.toLowerCase().includes(valueLower));
+          const emailMatch =
+            emails.some((e) => e.toLowerCase().includes(valueLower)) ||
+            (staff.primary_email &&
+              staff.primary_email.toLowerCase().includes(valueLower));
           return (
             staff.first_name.toLowerCase().includes(valueLower) ||
             staff.last_name.toLowerCase().includes(valueLower) ||
@@ -354,9 +353,10 @@ export function StaffDataTable({
       {
         id: "name",
         accessorFn: (row: ProfileListItem) => {
-          const emails = row.emails && row.emails.length > 0 
-            ? row.emails.join(" ") 
-            : row.primary_email || "";
+          const emails =
+            row.emails && row.emails.length > 0
+              ? row.emails.join(" ")
+              : row.primary_email || "";
           return `${row.first_name} ${row.last_name} ${emails}`.toLowerCase();
         },
         header: "Search",
@@ -420,7 +420,8 @@ export function StaffDataTable({
               {cohortIds.map((id) => (
                 <Badge
                   key={id}
-                  className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100 whitespace-nowrap flex-shrink-0"
+                  variant="secondary"
+                  className="text-xs whitespace-nowrap flex-shrink-0"
                 >
                   {cohortMapping[id]?.name || id}
                 </Badge>
@@ -452,7 +453,8 @@ export function StaffDataTable({
               {departmentIds.map((id) => (
                 <Badge
                   key={id}
-                  className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100 whitespace-nowrap flex-shrink-0"
+                  variant="secondary"
+                  className="text-xs whitespace-nowrap flex-shrink-0"
                 >
                   {departmentMapping[id]?.name || id}
                 </Badge>

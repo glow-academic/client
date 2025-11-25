@@ -121,9 +121,8 @@ export default function SimulationCard({
       const gradientStyle = generateGradientFromHex(color);
       return gradientStyle;
     }
-    return type === "default"
-      ? color || "from-blue-500 to-blue-600"
-      : "from-blue-500 to-blue-600";
+    // Use primary color gradient as fallback (via Button default variant styling)
+    return type === "default" ? color || null : null;
   };
 
   const gradientClass = getGradientClass();
@@ -179,27 +178,41 @@ export default function SimulationCard({
 
         <CardHeader className="pb-1 relative z-10">
           <div className="flex items-start justify-between">
-            <div
-              className={`p-2 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ${
-                typeof gradientClass === "string" &&
-                !gradientClass.startsWith("linear-gradient")
-                  ? `bg-gradient-to-br ${gradientClass}`
-                  : ""
-              }`}
-              style={{
-                minHeight: 40,
-                minWidth: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                ...(typeof gradientClass === "string" &&
-                  gradientClass.startsWith("linear-gradient") && {
-                    background: gradientClass,
-                  }),
-              }}
-            >
-              <IconComponent className="h-5 w-5 text-white" />
-            </div>
+            {gradientClass ? (
+              <div
+                className={`p-2 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ${
+                  typeof gradientClass === "string" &&
+                  !gradientClass.startsWith("linear-gradient")
+                    ? `bg-gradient-to-br ${gradientClass}`
+                    : ""
+                }`}
+                style={{
+                  minHeight: 40,
+                  minWidth: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...(typeof gradientClass === "string" &&
+                    gradientClass.startsWith("linear-gradient") && {
+                      background: gradientClass,
+                    }),
+                }}
+              >
+                <IconComponent className="h-5 w-5 text-white" />
+              </div>
+            ) : (
+              <Button
+                variant="default"
+                size="icon"
+                className="rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0"
+                style={{
+                  minHeight: 40,
+                  minWidth: 40,
+                }}
+              >
+                <IconComponent className="h-5 w-5" />
+              </Button>
+            )}
             <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">
               {/* Rubric Icon */}
               {effectiveProfile?.role !== "guest" && (
@@ -214,13 +227,10 @@ export default function SimulationCard({
                           style={
                             shouldUsePersonaColor
                               ? {
-                            borderColor: iconColor,
-                            color: iconColor,
+                                  borderColor: iconColor,
+                                  color: iconColor,
                                 }
-                              : {
-                            borderColor: "#3b82f6", // blue-500
-                            color: "#3b82f6", // blue-500
-                                }
+                              : undefined
                           }
                         >
                           <Table className="h-4 w-4" />
@@ -379,7 +389,7 @@ export default function SimulationCard({
             onStartInfiniteMode &&
             effectiveProfile?.role !== "guest" ? (
             <div className="flex gap-2 w-full">
-              <button
+              <Button
                 onClick={() => {
                   window.dispatchEvent(
                     new CustomEvent("simulationButtonPressed", {
@@ -390,29 +400,30 @@ export default function SimulationCard({
                 }}
                 disabled={loadingSimulation !== null}
                 data-testid={`start-simulation-${id}`}
-                className={`flex-1 text-center py-2 rounded-lg font-medium text-sm hover:shadow-lg transition-all duration-300 ${
-                  loadingSimulation === id
-                    ? "animate-pulse cursor-not-allowed"
-                    : "hover:scale-105 cursor-pointer"
-                } disabled:opacity-70 ${
+                variant={gradientClass ? undefined : "default"}
+                className={`flex-1 hover:shadow-lg transition-all duration-300 ${
+                  loadingSimulation === id ? "animate-pulse" : "hover:scale-105"
+                } ${
                   typeof gradientClass === "string" &&
-                  gradientClass === "bg-primary"
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                    : typeof gradientClass === "string" &&
+                  gradientClass !== null &&
                   !gradientClass.startsWith("linear-gradient")
-                      ? `bg-gradient-to-r ${gradientClass} text-white`
-                      : "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                    ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
+                    : typeof gradientClass === "string" &&
+                        gradientClass.startsWith("linear-gradient")
+                      ? "border-0"
+                      : ""
                 }`}
                 style={{
                   ...(typeof gradientClass === "string" &&
                     gradientClass.startsWith("linear-gradient") && {
                       background: gradientClass,
                       color: "white",
+                      border: "none",
                     }),
                 }}
               >
                 {loadingSimulation === id ? "Starting..." : "Start Simulation"}
-              </button>
+              </Button>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -424,23 +435,19 @@ export default function SimulationCard({
                     disabled={loadingSimulation !== null}
                     variant="default"
                     size="icon"
-                    className="flex-shrink-0 hover:scale-105 cursor-pointer transition-all duration-300"
+                    className="flex-shrink-0 hover:scale-105 transition-all duration-300"
                     data-testid={`start-infinite-${id}`}
                     style={
                       shouldUsePersonaColor
                         ? {
-                      backgroundColor: iconColor,
-                      borderColor: iconColor,
+                            backgroundColor: iconColor,
+                            borderColor: iconColor,
+                            color: "white",
                           }
-                        : {
-                      backgroundColor: "#3b82f6", // blue-500
-                      borderColor: "#3b82f6", // blue-500
-                          }
+                        : undefined
                     }
                   >
-                    <Infinity
-                      className={`h-4 w-4 text-white`}
-                    />
+                    <Infinity className={`h-4 w-4 text-white`} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -449,7 +456,7 @@ export default function SimulationCard({
               </Tooltip>
             </div>
           ) : (
-            <button
+            <Button
               onClick={() => {
                 window.dispatchEvent(
                   new CustomEvent("simulationButtonPressed", {
@@ -460,24 +467,25 @@ export default function SimulationCard({
               }}
               disabled={loadingSimulation !== null}
               data-testid={`start-simulation-${id}`}
-              className={`w-full text-center py-2 rounded-lg font-medium text-sm hover:shadow-lg transition-all duration-300 ${
-                loadingSimulation === id
-                  ? "animate-pulse cursor-not-allowed"
-                  : "hover:scale-105 cursor-pointer"
-              } disabled:opacity-70 ${
+              variant={gradientClass ? undefined : "default"}
+              className={`w-full hover:shadow-lg transition-all duration-300 ${
+                loadingSimulation === id ? "animate-pulse" : "hover:scale-105"
+              } ${
                 typeof gradientClass === "string" &&
-                gradientClass === "bg-primary"
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                  : typeof gradientClass === "string" &&
+                gradientClass !== null &&
                 !gradientClass.startsWith("linear-gradient")
-                    ? `bg-gradient-to-r ${gradientClass} text-white`
-                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                  ? `bg-gradient-to-r ${gradientClass} text-white border-0 hover:opacity-90`
+                  : typeof gradientClass === "string" &&
+                      gradientClass.startsWith("linear-gradient")
+                    ? "border-0"
+                    : ""
               }`}
               style={{
                 ...(typeof gradientClass === "string" &&
                   gradientClass.startsWith("linear-gradient") && {
                     background: gradientClass,
                     color: "white",
+                    border: "none",
                   }),
               }}
             >
@@ -488,7 +496,7 @@ export default function SimulationCard({
                   : hasPassed
                     ? "Start Simulation (Complete)"
                     : "Start Simulation"}
-            </button>
+            </Button>
           )}
         </CardFooter>
       </Card>

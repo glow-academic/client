@@ -104,7 +104,7 @@ export default function Rubric({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }),
-    [],
+    []
   );
 
   // Transform v3 data to current rubric format
@@ -243,11 +243,11 @@ export default function Rubric({
       data-page={`rubric-${isEditMode ? "edit" : "new"}`}
     >
       {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-yellow-400"
+                className="h-5 w-5 text-muted-foreground"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -259,10 +259,10 @@ export default function Rubric({
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-foreground">
                 Rubric is read-only
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <div className="mt-2 text-sm text-muted-foreground">
                 <p>
                   {rubricData?.department_ids?.length === 0
                     ? "This is a default rubric that cannot be edited. You can view the details but cannot make changes."
@@ -328,31 +328,34 @@ export default function Rubric({
           />
         </div>
       )}
-      
+
       {/* Standard Groups - Show in readonly mode (view only) */}
-      {isEditMode && isReadonly && standardGroups && standardGroups.length > 0 && (
-        <div className="space-y-6">
-          {standardGroups.map((group, index) => (
-            <RubricStandardGroup
-              key={group.id}
-              group={group}
-              standards={standards || []}
-              rubricId={currentRubricId}
-              index={index}
-              isOpen={openCards[index] ?? false}
-              onToggle={toggleCard}
-              mode="edit"
-              rubricName={currentRubric.name}
-              rubricDescription={currentRubric.description}
-              rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
-              rubricActive={currentRubric.active}
-              profileId={effectiveProfile?.id || "guest-profile-id"}
-              isReadonly={isReadonly}
-              {...(updateRubricAction && { updateRubricAction })}
-            />
-          ))}
-        </div>
-      )}
+      {isEditMode &&
+        isReadonly &&
+        standardGroups &&
+        standardGroups.length > 0 && (
+          <div className="space-y-6">
+            {standardGroups.map((group, index) => (
+              <RubricStandardGroup
+                key={group.id}
+                group={group}
+                standards={standards || []}
+                rubricId={currentRubricId}
+                index={index}
+                isOpen={openCards[index] ?? false}
+                onToggle={toggleCard}
+                mode="edit"
+                rubricName={currentRubric.name}
+                rubricDescription={currentRubric.description}
+                rubricDepartmentId={currentRubric.department_ids?.[0] || ""}
+                rubricActive={currentRubric.active}
+                profileId={effectiveProfile?.id || "guest-profile-id"}
+                isReadonly={isReadonly}
+                {...(updateRubricAction && { updateRubricAction })}
+              />
+            ))}
+          </div>
+        )}
     </div>
   );
 }

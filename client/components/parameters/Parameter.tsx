@@ -89,10 +89,10 @@ export interface ParameterProps {
   parameterDetail?: ParameterDetailOut;
   parameterDetailDefault?: ParameterDetailDefaultOut;
   createParameterAction?: (
-    input: CreateParameterIn,
+    input: CreateParameterIn
   ) => Promise<CreateParameterOut>;
   updateParameterAction?: (
-    input: UpdateParameterIn,
+    input: UpdateParameterIn
   ) => Promise<UpdateParameterOut>;
 }
 
@@ -128,7 +128,7 @@ export default function Parameter({
       practice_parameter: false,
       departmentIds: null, // No longer used at parameter level
     }),
-    [],
+    []
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -187,18 +187,18 @@ export default function Parameter({
   const departmentMapping = useMemo(
     () =>
       (parameterData?.department_mapping || {}) as Record<string, MappingItem>,
-    [parameterData],
+    [parameterData]
   );
 
   const validDepartmentIds = useMemo(
     () => parameterData?.valid_department_ids || [],
-    [parameterData],
+    [parameterData]
   );
 
   // Parameter items come nested in response
   const parameterItems = useMemo(
     () => parameterData?.parameter_items || [],
-    [parameterData],
+    [parameterData]
   );
 
   const [initiallySorted, setInitiallySorted] = useState(false);
@@ -340,7 +340,7 @@ export default function Parameter({
       router.push("/management/parameters");
     } catch (error) {
       toast.error(
-        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`,
+        `Failed to ${isEditMode ? "update" : "create"} parameter: ${error}`
       );
     } finally {
       setIsSubmitting(false);
@@ -350,7 +350,7 @@ export default function Parameter({
   const handleParameterItemInputChange = (
     itemIndex: number,
     field: keyof ParameterItemFormData,
-    value: string | boolean | string[] | null,
+    value: string | boolean | string[] | null
   ) => {
     setParameterItemsFormData((prev) => {
       const updated = [...prev];
@@ -366,7 +366,8 @@ export default function Parameter({
       value: "",
       isNew: true,
       isDeleted: false,
-      departmentIds: defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
+      departmentIds:
+        defaultDepartmentIds.length > 0 ? defaultDepartmentIds : null,
     };
     setParameterItemsFormData((prev) => [...prev, newItem]);
   };
@@ -400,7 +401,7 @@ export default function Parameter({
 
     // Validate parameter items
     const activeItems = parameterItemsFormData.filter(
-      (item) => !item.isDeleted,
+      (item) => !item.isDeleted
     );
 
     activeItems.forEach((item, index) => {
@@ -418,7 +419,7 @@ export default function Parameter({
         const numValue = parseFloat(item.value);
         if (isNaN(numValue)) {
           errors.push(
-            `Parameter item ${index + 1}: Value must be a valid number`,
+            `Parameter item ${index + 1}: Value must be a valid number`
           );
         }
       }
@@ -438,11 +439,11 @@ export default function Parameter({
   return (
     <div className="space-y-6 py-4 px-4">
       {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-yellow-400"
+                className="h-5 w-5 text-muted-foreground"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -454,10 +455,10 @@ export default function Parameter({
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-foreground">
                 Parameter is read-only
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <div className="mt-2 text-sm text-muted-foreground">
                 <p>
                   {parameterData?.department_ids?.length === 0
                     ? "This is a default parameter that cannot be edited. You can view the details but cannot make changes."
@@ -484,7 +485,9 @@ export default function Parameter({
                   }
                   placeholder="e.g., Difficulty Level"
                   required
-                  disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
+                  disabled={
+                    isEditMode && parameterDetail && !parameterDetail.can_edit
+                  }
                 />
               ) : null}
             </div>
@@ -505,7 +508,9 @@ export default function Parameter({
                   placeholder="Detailed description of the parameter"
                   rows={4}
                   required
-                  disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
+                  disabled={
+                    isEditMode && parameterDetail && !parameterDetail.can_edit
+                  }
                 />
               ) : null}
             </div>
@@ -529,7 +534,11 @@ export default function Parameter({
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({ ...prev, active: checked }))
                       }
-                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
+                      disabled={
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      }
                     />
                   ) : null}
                 </div>
@@ -558,7 +567,11 @@ export default function Parameter({
                       onCheckedChange={(checked) =>
                         setFormData((prev) => ({ ...prev, numerical: checked }))
                       }
-                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
+                      disabled={
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      }
                     />
                   ) : null}
                 </div>
@@ -590,7 +603,11 @@ export default function Parameter({
                           document_parameter: checked,
                         }))
                       }
-                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
+                      disabled={
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      }
                     />
                   ) : null}
                 </div>
@@ -622,7 +639,11 @@ export default function Parameter({
                           practice_parameter: checked,
                         }))
                       }
-                      disabled={isEditMode && parameterDetail && !parameterDetail.can_edit}
+                      disabled={
+                        isEditMode &&
+                        parameterDetail &&
+                        !parameterDetail.can_edit
+                      }
                     />
                   ) : null}
                 </div>
@@ -668,7 +689,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "name",
-                                  e.target.value,
+                                  e.target.value
                                 )
                               }
                               className="text-sm font-medium w-full"
@@ -699,7 +720,7 @@ export default function Parameter({
                               handleParameterItemInputChange(
                                 itemIndex,
                                 "description",
-                                e.target.value,
+                                e.target.value
                               )
                             }
                             className="text-sm min-h-[80px] w-full"
@@ -720,7 +741,7 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "value",
-                                  e.target.value,
+                                  e.target.value
                                 )
                               }
                               className="text-sm w-full"
@@ -742,18 +763,20 @@ export default function Parameter({
                                 handleParameterItemInputChange(
                                   itemIndex,
                                   "departmentIds",
-                                  ids.length > 0 ? ids : null,
+                                  ids.length > 0 ? ids : null
                                 )
                               }
                               placeholder="All Departments"
                               multiSelect={true}
                               disabled={isReadonly}
-                              triggerProps={{ "data-testid": "picker-department" }}
+                              triggerProps={{
+                                "data-testid": "picker-department",
+                              }}
                             />
                           </div>
                         )}
                       </div>
-                    ),
+                    )
                   )}
                 </div>
 
@@ -782,7 +805,7 @@ export default function Parameter({
                                   handleParameterItemInputChange(
                                     itemIndex,
                                     "name",
-                                    e.target.value,
+                                    e.target.value
                                   )
                                 }
                                 className="text-sm"
@@ -797,7 +820,7 @@ export default function Parameter({
                                   handleParameterItemInputChange(
                                     itemIndex,
                                     "description",
-                                    e.target.value,
+                                    e.target.value
                                   )
                                 }
                                 className="text-sm min-h-[96px]"
@@ -815,7 +838,7 @@ export default function Parameter({
                                     handleParameterItemInputChange(
                                       itemIndex,
                                       "value",
-                                      e.target.value,
+                                      e.target.value
                                     )
                                   }
                                   className="text-sm"
@@ -834,13 +857,15 @@ export default function Parameter({
                                     handleParameterItemInputChange(
                                       itemIndex,
                                       "departmentIds",
-                                      ids.length > 0 ? ids : null,
+                                      ids.length > 0 ? ids : null
                                     )
                                   }
                                   placeholder="All Departments"
                                   multiSelect={true}
                                   disabled={isReadonly}
-                                  triggerProps={{ "data-testid": "picker-department" }}
+                                  triggerProps={{
+                                    "data-testid": "picker-department",
+                                  }}
                                 />
                               ) : null}
                             </TableCell>
@@ -871,7 +896,7 @@ export default function Parameter({
                               </div>
                             </TableCell>
                           </TableRow>
-                        ),
+                        )
                       )}
                     </TableBody>
                   </Table>
@@ -923,7 +948,7 @@ export default function Parameter({
                         departmentIds: item.department_ids ?? null,
                         isNew: false,
                         isDeleted: false,
-                      })),
+                      }))
                     ))
               }
               className="w-full sm:w-auto"

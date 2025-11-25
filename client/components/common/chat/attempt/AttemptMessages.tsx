@@ -735,12 +735,12 @@ export default function AttemptMessages({
                                     ) ? (
                                     // Show error messages in red with retry button (only if no successful responses exist)
                                     <div
-                                      className="bg-red-50 border border-red-200 rounded-lg p-3 relative"
+                                      className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 relative"
                                       data-testid={`message-${currentResponse.id}`}
                                       data-message-id={currentResponse.id}
                                       data-message-type="assistant"
                                     >
-                                      <div className="text-red-700 pr-12">
+                                      <div className="text-destructive pr-12">
                                         <Markdown>
                                           {currentResponse.content}
                                         </Markdown>
@@ -792,7 +792,7 @@ export default function AttemptMessages({
                                               <Tooltip>
                                                 <TooltipTrigger asChild>
                                                   <Button
-                                                    variant="ghost"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() =>
                                                       handleRetry(
@@ -801,7 +801,7 @@ export default function AttemptMessages({
                                                         )
                                                       )
                                                     }
-                                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100 border border-red-200 rounded-md"
+                                                    className="h-8 w-8 p-0"
                                                     disabled={
                                                       currentChat?.completed ||
                                                       isSendingMessage ||

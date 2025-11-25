@@ -416,6 +416,29 @@ final_rows AS (
                         END
                 END
         END AS score_percent,
+        CASE
+            WHEN aj.infinite_mode THEN
+                CASE GREATEST(array_length(aj.leaf_scenarios_seen, 1), 0)
+                    WHEN 0 THEN NULL
+                    ELSE CASE
+                        WHEN ROUND(aj.sum_grade_percent_zero_fill / GREATEST(array_length(aj.leaf_scenarios_seen, 1), 1))::int >= 80 THEN 'high'
+                        WHEN ROUND(aj.sum_grade_percent_zero_fill / GREATEST(array_length(aj.leaf_scenarios_seen, 1), 1))::int >= 70 THEN 'medium'
+                        ELSE 'low'
+                    END
+                END
+            ELSE
+                CASE COALESCE(aj.sim_scenario_count, 0)
+                    WHEN 0 THEN NULL
+                    ELSE CASE
+                        WHEN aj.completed_with_grade = 0 THEN NULL
+                        ELSE CASE
+                            WHEN ROUND(aj.sum_grade_percent_zero_fill / NULLIF(aj.sim_scenario_count, 0))::int >= 80 THEN 'high'
+                            WHEN ROUND(aj.sum_grade_percent_zero_fill / NULLIF(aj.sim_scenario_count, 0))::int >= 70 THEN 'medium'
+                            ELSE 'low'
+                        END
+                    END
+                END
+        END AS score_status,
         (NOT aj.is_archived) AS show_view,
         (NOT aj.is_archived) AND (
             (aj.infinite_mode
@@ -497,6 +520,7 @@ paginated_rows AS (
         fr.num_scenarios_completed,
         fr.infinite_mode,
         fr.score_percent,
+        fr.score_status,
         fr.simulation_id,
         fr.scenario_ids_assigned,
         fr.is_archived,
@@ -566,6 +590,7 @@ SELECT json_build_object(
                 'personaNames', COALESCE(pl.persona_names, ARRAY[]::text[]),
                 'personaColors', COALESCE(pl.persona_colors, ARRAY[]::text[]),
                 'score', pr.score_percent,
+                'scoreStatus', pr.score_status,
                 'simulation_id', pr.simulation_id::text,
                 'scenario_ids', COALESCE(pr.scenario_ids_assigned, ARRAY[]::uuid[])::text[],
                 'scenario_titles', COALESCE(sn.names, ARRAY[]::text[]),

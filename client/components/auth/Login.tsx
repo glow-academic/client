@@ -476,9 +476,30 @@ export default function Login({ providers = [] }: LoginProps) {
                   onClick={handleGuestAccess}
                   disabled={loadingGuest}
                   data-testid="guest-login-button"
-                  className="w-full h-12 bg-blue-500/80 hover:bg-blue-500/90 backdrop-blur-sm text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                    boxShadow:
+                      "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background =
+                      "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
+                  }}
                 >
-                  <div className="flex items-center justify-center space-x-3">
+                  {/* Liquid glass shine effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
+                  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                  <div className="relative flex items-center justify-center space-x-3">
                     {loadingGuest ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (

@@ -437,11 +437,11 @@ export default function Department({
       data-page={isEditMode ? "department-edit" : "department-new"}
     >
       {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-yellow-400"
+                className="h-5 w-5 text-muted-foreground"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -453,10 +453,10 @@ export default function Department({
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-foreground">
                 Department is read-only
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <div className="mt-2 text-sm text-muted-foreground">
                 <p>
                   {effectiveProfile?.role === "admin" ||
                   effectiveProfile?.role === "superadmin"

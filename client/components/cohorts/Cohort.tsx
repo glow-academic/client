@@ -163,9 +163,9 @@ export default function Cohort({
     () =>
       getDefaultDepartmentIds(
         isSuperadmin,
-        effectiveProfile?.primaryDepartmentId ?? null,
+        effectiveProfile?.primaryDepartmentId ?? null
       ),
-    [isSuperadmin, effectiveProfile?.primaryDepartmentId],
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
 
   const initialFormData: FormData = {
@@ -667,7 +667,7 @@ export default function Cohort({
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         formData.departmentIds || [],
         isSuperadmin,
-        validDepartmentIds,
+        validDepartmentIds
       );
 
       const targetCohortId = cohortId || editingCohortId;
@@ -739,11 +739,11 @@ export default function Cohort({
   return (
     <div className="space-y-6">
       {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-yellow-400"
+                className="h-5 w-5 text-muted-foreground"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -755,10 +755,10 @@ export default function Cohort({
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-foreground">
                 Cohort is read-only
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <div className="mt-2 text-sm text-muted-foreground">
                 <p>
                   {cohortData?.department_ids?.length === 0
                     ? "This is a default cohort that cannot be edited. You can view the details but cannot make changes."
@@ -1033,7 +1033,8 @@ export default function Cohort({
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
                 const emails = staged.emails || [];
-                const primaryEmail = staged.primary_email || (emails.length > 0 ? emails[0] : "");
+                const primaryEmail =
+                  staged.primary_email || (emails.length > 0 ? emails[0] : "");
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
@@ -1323,7 +1324,8 @@ export default function Cohort({
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
                 const emails = staged.emails || [];
-                const primaryEmail = staged.primary_email || (emails.length > 0 ? emails[0] : "");
+                const primaryEmail =
+                  staged.primary_email || (emails.length > 0 ? emails[0] : "");
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
@@ -1407,7 +1409,8 @@ export default function Cohort({
                 const firstName = staged.firstName || "";
                 const lastName = staged.lastName || "";
                 const emails = staged.emails || [];
-                const primaryEmail = staged.primary_email || (emails.length > 0 ? emails[0] : "");
+                const primaryEmail =
+                  staged.primary_email || (emails.length > 0 ? emails[0] : "");
                 return {
                   profile_id: staged.profileId,
                   first_name: firstName,
@@ -1514,8 +1517,12 @@ export default function Cohort({
                       // Create minimal ProfileListItem from staged data
                       const firstName = staged.firstName || "";
                       const lastName = staged.lastName || "";
-                      const emails = staged.emails || (staged.email ? [staged.email] : []);
-                      const primaryEmail = staged.primary_email || staged.email || (emails.length > 0 ? emails[0] : "");
+                      const emails =
+                        staged.emails || (staged.email ? [staged.email] : []);
+                      const primaryEmail =
+                        staged.primary_email ||
+                        staged.email ||
+                        (emails.length > 0 ? emails[0] : "");
                       return {
                         profile_id: staged.profileId,
                         first_name: firstName,

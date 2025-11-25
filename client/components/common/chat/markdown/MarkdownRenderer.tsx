@@ -50,7 +50,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
           // Links
           .replace(
             /\[([^\]]+)\]\(([^)]+)\)/g,
-            '<a href="$2" class="text-blue-500 hover:text-blue-600 underline" target="_blank" rel="noopener noreferrer">$1</a>',
+            '<a href="$2" class="text-primary underline-offset-4 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>',
           )
 
           // Lists

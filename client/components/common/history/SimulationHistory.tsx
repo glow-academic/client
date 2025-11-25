@@ -1065,6 +1065,7 @@ export default function SimulationHistory({
         accessorFn: (row: HistoryDataItem) => row.score, // <-- no `|| 0`
         cell: ({ row }) => {
           const score = row.original.score; // <-- read original for display
+          const scoreStatus = row.original.scoreStatus; // <-- read server-computed status
           if (score === null || score === undefined) {
             return (
               <div className="text-muted-foreground text-center min-w-0 max-w-[100px]">
@@ -1072,17 +1073,19 @@ export default function SimulationHistory({
               </div>
             );
           }
+          // Use server-computed status for badge styling
+          const badgeClassName = scoreStatus === "high"
+            ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+            : scoreStatus === "medium"
+              ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+              : scoreStatus === "low"
+                ? "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
+                : ""; // fallback to default badge styling if status is null
           return (
             <div className="text-center min-w-0 max-w-[100px]">
               <Badge
                 variant="outline"
-                className={`text-xs font-semibold ${
-                  score >= 80
-                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                    : score >= 70
-                      ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
-                      : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
-                }`}
+                className={`text-xs font-semibold ${badgeClassName}`}
               >
                 {score}%
               </Badge>

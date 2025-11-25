@@ -655,8 +655,7 @@ export default function Simulation({
           newOriginalActiveStates[key] = video["active"] as boolean;
           const videoObjectivesEnabled =
             (video["objectives_enabled"] as boolean) ?? true;
-          const videoShowScenario =
-            (video["show_scenario"] as boolean) ?? true;
+          const videoShowScenario = (video["show_scenario"] as boolean) ?? true;
           newSwitchStates[key] = {
             objectives_enabled: videoObjectivesEnabled,
             show_scenario: videoShowScenario,
@@ -1094,7 +1093,6 @@ export default function Simulation({
     // Active states are now handled via contentActiveStates in handleContentRemove
   };
 
-
   const handleContentActiveToggle = useCallback(
     (contentId: string, active: boolean) => {
       setContentActiveStates((prev) => ({
@@ -1375,11 +1373,11 @@ export default function Simulation({
       data-page={`simulation-${isEditMode ? "edit" : "new"}`}
     >
       {isReadonly && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="bg-muted border border-border rounded-lg p-4 mb-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-yellow-400"
+                className="h-5 w-5 text-muted-foreground"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -1391,10 +1389,10 @@ export default function Simulation({
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
+              <h3 className="text-sm font-medium text-foreground">
                 Simulation is read-only
               </h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <div className="mt-2 text-sm text-muted-foreground">
                 <p>
                   {simulationData?.department_ids?.length === 0
                     ? "This is a default simulation that cannot be edited. You can view the details but cannot make changes."

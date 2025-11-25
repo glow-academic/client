@@ -802,7 +802,7 @@ export function UnifiedSidebar({
                 <ReportProblem createFeedback={createFeedback}>
                   <Button variant="outline" className="w-full">
                     <AlertCircle className="h-4 w-4 mr-2" />
-                    Report Problem
+                          Report Problem
                   </Button>
                 </ReportProblem>
               </div>

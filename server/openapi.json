@@ -34889,6 +34889,17 @@
             ],
             "title": "Score"
           },
+          "scoreStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scorestatus"
+          },
           "simulation_id": {
             "type": "string",
             "title": "Simulation Id"

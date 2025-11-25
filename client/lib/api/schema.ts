@@ -14033,6 +14033,8 @@ export interface components {
             personaColors: string[];
             /** Score */
             score?: number | null;
+            /** Scorestatus */
+            scoreStatus?: string | null;
             /** Simulation Id */
             simulation_id: string;
             /** Scenario Ids */

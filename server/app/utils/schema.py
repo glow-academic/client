@@ -264,6 +264,7 @@ class AttemptHistoryRow(BaseModel):
     personaNames: list[str]
     personaColors: list[str]
     score: int | None = None
+    scoreStatus: str | None = None  # "high" | "medium" | "low" | None
     simulation_id: str
     scenario_ids: list[str]
     scenario_titles: list[str]
