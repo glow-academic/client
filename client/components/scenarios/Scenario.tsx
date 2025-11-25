@@ -8,14 +8,15 @@
 import {
   Check,
   GripVertical,
+  Image,
   Loader2,
   PlusCircle,
   Power,
   RotateCcw,
   Shuffle,
+  Target,
   Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -101,6 +102,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop,
   onRemove,
   totalObjectives,
+  useObjectives,
 }: {
   index: number;
   value: string;
@@ -114,6 +116,7 @@ function ObjectiveInputWithAutocomplete({
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
   totalObjectives: number;
+  useObjectives: boolean;
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -206,16 +209,18 @@ function ObjectiveInputWithAutocomplete({
             </div>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={onRemove}
-          className="h-8 w-8 shrink-0"
-          disabled={disabled}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {!(useObjectives && totalObjectives === 1) && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onRemove}
+            className="h-8 w-8 shrink-0"
+            disabled={disabled}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -397,6 +402,8 @@ export default function Scenario({
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
   const [useDocuments, setUseDocuments] = useState(true);
+  const [useImage, setUseImage] = useState(false);
+  const [useObjectives, setUseObjectives] = useState(false);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
     number | null
   >(null);
@@ -887,12 +894,21 @@ export default function Scenario({
         )
       );
       // Load scenario image (single image - take first if exists)
+      const scenarioImages = (
+        scenarioData as ScenarioDetailOut & {
+          scenario_images?: Array<{
+            id?: string;
+            name?: string;
+            mime_type?: string;
+          }>;
+        }
+      ).scenario_images;
       if (
-        scenarioData.scenario_images &&
-        Array.isArray(scenarioData.scenario_images) &&
-        scenarioData.scenario_images.length > 0
+        scenarioImages &&
+        Array.isArray(scenarioImages) &&
+        scenarioImages.length > 0
       ) {
-        const firstImage = scenarioData.scenario_images[0] as {
+        const firstImage = scenarioImages[0] as {
           id?: string;
           name?: string;
           mime_type?: string;
@@ -903,10 +919,24 @@ export default function Scenario({
             name: firstImage.name || "",
             mime_type: firstImage.mime_type || "image/png",
           });
+          setUseImage(true);
+        } else {
+          setImage(null);
+          setUseImage(false);
         }
       } else {
         setImage(null);
+        setUseImage(false);
       }
+      // Initialize useObjectives based on existing objectives
+      const loadedObjectives = getObjectivesFromMapping(
+        scenarioData.objective_ids,
+        (scenarioData.objective_mapping || {}) as Record<
+          string,
+          { name: string }
+        >
+      );
+      setUseObjectives(loadedObjectives.length > 0);
       // Store originals for change tracking
       setOriginalFormData({
         name: scenarioData.name,
@@ -1077,7 +1107,7 @@ export default function Scenario({
     },
     {
       id: "content",
-      title: "Scenario",
+      title: "Problem Statement",
       description:
         "This is what the TA will see when they enter the scenario. Leave blank for auto-generation.",
       status: getStepStatus("content"),
@@ -1303,6 +1333,9 @@ export default function Scenario({
         onSuccess: async () => {
           // Get upload ID from location header
           const location = upload.url;
+          if (!location) {
+            throw new Error("Failed to get upload location");
+          }
           const uploadId = location.split("/").pop();
 
           if (!uploadId) {
@@ -2072,35 +2105,6 @@ export default function Scenario({
                   buttonClassName="h-9"
                 />
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (image) {
-                    setImage(null);
-                  } else {
-                    imageInputRef.current?.click();
-                  }
-                }}
-                disabled={
-                  isSubmitting ||
-                  isGeneratingScenario ||
-                  isReadonly ||
-                  isUploadingImage
-                }
-              >
-                {image ? (
-                  <>
-                    <X className="w-4 h-4 mr-2" />
-                    Remove Image
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Add Image
-                  </>
-                )}
-              </Button>
               <input
                 ref={imageInputRef}
                 type="file"
@@ -2153,14 +2157,30 @@ export default function Scenario({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Image Preview */}
-            {image && (
+            {/* Image Preview or Upload Card */}
+            {useImage && (
               <div className="mb-4 w-1/4">
-                <ImagePreviewCard
-                  image={image}
-                  onRemove={() => setImage(null)}
-                  showActions={!isReadonly}
-                />
+                {image ? (
+                  <ImagePreviewCard
+                    image={image}
+                    onRemove={() => setImage(null)}
+                    showActions={!isReadonly}
+                  />
+                ) : (
+                  <div
+                    onClick={() => {
+                      if (!isReadonly && !isUploadingImage) {
+                        imageInputRef.current?.click();
+                      }
+                    }}
+                    className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      Click to upload image
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             <div className="space-y-2">
@@ -2175,58 +2195,124 @@ export default function Scenario({
                     setSelectedProblemStatementId(null);
                   }
                 }}
-                placeholder="Enter a custom scenario description or leave blank to auto-generate..."
+                placeholder="Enter a custom problem statement or leave blank to auto-generate..."
                 className="min-h-[120px]"
                 disabled={isReadonly}
               />
             </div>
 
-            {/* Hints Enabled and Objectives Enabled Switches */}
-            {/* Objectives List - Always visible */}
-            <div className="space-y-2">
-              {currentObjectives.length === 0 && (
-                <div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addObjective}
-                    disabled={isReadonly}
-                    size="sm"
+            {/* Use Image and Use Objectives Switches */}
+            <div className="space-y-4 pt-2">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="use-image"
+                    className="text-sm flex items-center gap-1.5"
                   >
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                  </Button>
+                    <Image
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      aria-label="Image icon"
+                    />
+                    Use Image
+                  </Label>
+                  <Switch
+                    id="use-image"
+                    checked={useImage}
+                    onCheckedChange={(checked) => {
+                      setUseImage(checked);
+                      if (!checked) {
+                        setImage(null);
+                      }
+                    }}
+                    disabled={isReadonly}
+                  />
                 </div>
-              )}
-              {currentObjectives.map((objective, index) => (
-                <ObjectiveInputWithAutocomplete
-                  key={`objective-${index}`}
-                  index={index}
-                  value={objective || ""}
-                  onChange={(value) => updateObjective(index, value)}
-                  placeholder={`Learning objective ${index + 1}`}
-                  suggestions={objectivesHistory}
-                  disabled={isReadonly}
-                  draggedObjectiveIndex={draggedObjectiveIndex}
-                  onDragStart={(e) => handleDragStartObjective(e, index)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDropObjective(e, index)}
-                  onRemove={() => removeObjective(index)}
-                  totalObjectives={currentObjectives.length}
-                />
-              ))}
+                <p className="text-xs text-muted-foreground pl-5">
+                  Use scenario background image
+                </p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="use-objectives"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                    Use Objectives
+                  </Label>
+                  <Switch
+                    id="use-objectives"
+                    checked={useObjectives}
+                    onCheckedChange={(checked) => {
+                      setUseObjectives(checked);
+                      if (checked) {
+                        // Ensure at least one objective when enabled
+                        if (currentObjectives.length === 0) {
+                          setCurrentObjectives([""]);
+                        }
+                      } else {
+                        // Clear objectives when disabled
+                        setCurrentObjectives([]);
+                      }
+                    }}
+                    disabled={isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">
+                  Use learning objectives
+                </p>
+              </div>
             </div>
 
-            {currentObjectives.length < 3 && currentObjectives.length > 0 && (
-              <div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={addObjective}
-                  disabled={isReadonly}
-                  size="sm"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add objective
-                </Button>
+            {/* Objectives List - Only visible when useObjectives is true */}
+            {useObjectives && (
+              <div className="space-y-2">
+                {currentObjectives.length === 0 && (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={addObjective}
+                      disabled={isReadonly}
+                      size="sm"
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                    </Button>
+                  </div>
+                )}
+                {currentObjectives.map((objective, index) => (
+                  <ObjectiveInputWithAutocomplete
+                    key={`objective-${index}`}
+                    index={index}
+                    value={objective || ""}
+                    onChange={(value) => updateObjective(index, value)}
+                    placeholder={`Learning objective ${index + 1}`}
+                    suggestions={objectivesHistory}
+                    disabled={isReadonly}
+                    draggedObjectiveIndex={draggedObjectiveIndex}
+                    onDragStart={(e) => handleDragStartObjective(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDropObjective(e, index)}
+                    onRemove={() => removeObjective(index)}
+                    totalObjectives={currentObjectives.length}
+                    useObjectives={useObjectives}
+                  />
+                ))}
+
+                {currentObjectives.length < 3 &&
+                  currentObjectives.length > 0 && (
+                    <div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={addObjective}
+                        disabled={isReadonly}
+                        size="sm"
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" /> Add objective
+                      </Button>
+                    </div>
+                  )}
               </div>
             )}
           </CardContent>
