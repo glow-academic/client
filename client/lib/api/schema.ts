@@ -10365,46 +10365,6 @@ export interface components {
             active: boolean;
         };
         /**
-         * ScenarioInSimulation
-         * @description Scenario with position in simulation.
-         */
-        ScenarioInSimulation: {
-            /** Scenario Id */
-            scenario_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Position */
-            position: number;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Hints Enabled */
-            hints_enabled: boolean;
-            /** Objectives Enabled */
-            objectives_enabled: boolean;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled: boolean;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled: boolean;
-            /** Image Input Enabled */
-            image_input_enabled: boolean;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds: number | null;
-            /** Usage Count */
-            usage_count: number;
-            /** Success Rate */
-            success_rate: number;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean;
-        };
-        /**
          * ScenarioMappingItem
          * @description Scenario mapping item with extended fields for nested data
          */
@@ -11928,6 +11888,8 @@ export interface components {
             length_seconds: number;
             /** Objectives Enabled */
             objectives_enabled: boolean;
+            /** Show Scenario */
+            show_scenario: boolean;
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -13838,6 +13800,54 @@ export interface components {
             parameter_id: string;
         };
         /**
+         * ScenarioInSimulation
+         * @description Scenario with position in simulation.
+         */
+        app__api__v3__simulations__detail__ScenarioInSimulation: {
+            /** Scenario Id */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Position */
+            position: number;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Hints Enabled */
+            hints_enabled: boolean;
+            /** Objectives Enabled */
+            objectives_enabled: boolean;
+            /** Input Guardrail Enabled */
+            input_guardrail_enabled: boolean;
+            /** Output Guardrail Enabled */
+            output_guardrail_enabled: boolean;
+            /** Image Input Enabled */
+            image_input_enabled: boolean;
+            /** Copy Paste Allowed */
+            copy_paste_allowed: boolean;
+            /** Audio Enabled */
+            audio_enabled: boolean;
+            /** Text Enabled */
+            text_enabled: boolean;
+            /** Show Scenario */
+            show_scenario: boolean;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
+            /** Usage Count */
+            usage_count: number;
+            /** Success Rate */
+            success_rate: number;
+            /** Last Used */
+            last_used: string | null;
+            /** Can Remove */
+            can_remove: boolean;
+        };
+        /**
          * SimulationDetailResponse
          * @description Response for simulation detail endpoint.
          */
@@ -13879,7 +13889,7 @@ export interface components {
             /** Cohort Count */
             cohort_count: number;
             /** Scenarios */
-            scenarios: components["schemas"]["ScenarioInSimulation"][];
+            scenarios: components["schemas"]["app__api__v3__simulations__detail__ScenarioInSimulation"][];
             /** Videos */
             videos: components["schemas"]["VideoInSimulation"][];
             /** Parameters */
@@ -13942,6 +13952,46 @@ export interface components {
             parameter_id: string;
         };
         /**
+         * ScenarioInSimulation
+         * @description Scenario with position in simulation.
+         */
+        app__api__v3__simulations__detail_default__ScenarioInSimulation: {
+            /** Scenario Id */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Position */
+            position: number;
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Hints Enabled */
+            hints_enabled: boolean;
+            /** Objectives Enabled */
+            objectives_enabled: boolean;
+            /** Input Guardrail Enabled */
+            input_guardrail_enabled: boolean;
+            /** Output Guardrail Enabled */
+            output_guardrail_enabled: boolean;
+            /** Image Input Enabled */
+            image_input_enabled: boolean;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds: number | null;
+            /** Usage Count */
+            usage_count: number;
+            /** Success Rate */
+            success_rate: number;
+            /** Last Used */
+            last_used: string | null;
+            /** Can Remove */
+            can_remove: boolean;
+        };
+        /**
          * SimulationDetailResponse
          * @description Response for simulation detail endpoint.
          */
@@ -13983,7 +14033,7 @@ export interface components {
             /** Cohort Count */
             cohort_count: number;
             /** Scenarios */
-            scenarios: components["schemas"]["ScenarioInSimulation"][];
+            scenarios: components["schemas"]["app__api__v3__simulations__detail_default__ScenarioInSimulation"][];
             /** Videos */
             videos: {
                 [key: string]: unknown;

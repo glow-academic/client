@@ -37,6 +37,10 @@ class ScenarioInSimulation(BaseModel):
     input_guardrail_enabled: bool
     output_guardrail_enabled: bool
     image_input_enabled: bool
+    copy_paste_allowed: bool
+    audio_enabled: bool
+    text_enabled: bool
+    show_scenario: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
 
@@ -59,6 +63,7 @@ class VideoInSimulation(BaseModel):
 
     # Switch fields from simulation_videos junction table
     objectives_enabled: bool
+    show_scenario: bool
 
     # Statistics fields
     usage_count: int  # Number of attempts that included this video via quizzes
@@ -246,6 +251,10 @@ async def get_simulation_detail(
                             input_guardrail_enabled=s_data.get("input_guardrail_enabled", False),
                             output_guardrail_enabled=s_data.get("output_guardrail_enabled", False),
                             image_input_enabled=s_data.get("image_input_enabled", False),
+                            copy_paste_allowed=s_data.get("copy_paste_allowed", False),
+                            audio_enabled=s_data.get("audio_enabled", False),
+                            text_enabled=s_data.get("text_enabled", True),
+                            show_scenario=s_data.get("show_scenario", True),
                             rubric_id=s_data.get("rubric_id"),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
@@ -272,6 +281,7 @@ async def get_simulation_detail(
                             position=v_data.get("position", 0),
                             length_seconds=v_data.get("length_seconds", 0),
                             objectives_enabled=v_data.get("objectives_enabled", True),
+                            show_scenario=v_data.get("show_scenario", True),
                             usage_count=v_data.get("usage_count", 0),
                             success_rate=v_data.get("success_rate", 0),
                             last_used=v_data.get("last_used"),
@@ -411,6 +421,7 @@ async def get_simulation_detail(
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
                         document_parameter=pdata.get("document_parameter", False),
+                        persona_parameter=pdata.get("persona_parameter", False),
                     )
 
         # Parse parameter_item mapping

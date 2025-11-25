@@ -97,6 +97,9 @@ user_context AS (
                 ss.output_guardrail_enabled,
                 ss.image_input_enabled,
                 ss.copy_paste_allowed,
+                ss.audio_enabled,
+                ss.text_enabled,
+                ss.show_scenario,
                 ss.rubric_id,
                 stl.time_limit_seconds,
                 COALESCE(
@@ -174,6 +177,9 @@ user_context AS (
                         'output_guardrail_enabled', sb.output_guardrail_enabled,
                         'image_input_enabled', sb.image_input_enabled,
                         'copy_paste_allowed', sb.copy_paste_allowed,
+                        'audio_enabled', sb.audio_enabled,
+                        'text_enabled', sb.text_enabled,
+                        'show_scenario', sb.show_scenario,
                         'rubric_id', sb.rubric_id::text,
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
@@ -248,6 +254,7 @@ user_context AS (
                 sv.active,
                 sv.position,
                 sv.objectives_enabled,
+                sv.show_scenario,
                 v.length_seconds
             FROM videos v
             JOIN simulation_videos sv ON sv.video_id = v.id
@@ -297,6 +304,7 @@ user_context AS (
                         'active', vb.active,
                         'position', vb.position,
                         'objectives_enabled', vb.objectives_enabled,
+                        'show_scenario', vb.show_scenario,
                         'length_seconds', vb.length_seconds,
                         'usage_count', COALESCE(stats.usage_count, 0),
                         'success_rate', COALESCE(stats.success_rate, 0),
@@ -414,13 +422,14 @@ user_context AS (
                 p.name,
                 COALESCE(p.description, '') as description,
                 p.numerical,
-                p.document_parameter
+                p.document_parameter,
+                p.persona_parameter
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
+            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
@@ -436,7 +445,8 @@ user_context AS (
                         'name', pd.name,
                         'description', pd.description,
                         'numerical', pd.numerical,
-                        'document_parameter', pd.document_parameter
+                        'document_parameter', pd.document_parameter,
+                        'persona_parameter', pd.persona_parameter
                     )
                 ),
                 '{}'::jsonb

@@ -24934,124 +24934,6 @@
         "title": "ScenarioInRequest",
         "description": "Scenario in request format."
       },
-      "ScenarioInSimulation": {
-        "properties": {
-          "scenario_id": {
-            "type": "string",
-            "title": "Scenario Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "position": {
-            "type": "integer",
-            "title": "Position"
-          },
-          "parameter_item_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Parameter Item Ids"
-          },
-          "hints_enabled": {
-            "type": "boolean",
-            "title": "Hints Enabled"
-          },
-          "objectives_enabled": {
-            "type": "boolean",
-            "title": "Objectives Enabled"
-          },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled"
-          },
-          "image_input_enabled": {
-            "type": "boolean",
-            "title": "Image Input Enabled"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "time_limit_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit Seconds"
-          },
-          "usage_count": {
-            "type": "integer",
-            "title": "Usage Count"
-          },
-          "success_rate": {
-            "type": "integer",
-            "title": "Success Rate"
-          },
-          "last_used": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Used"
-          },
-          "can_remove": {
-            "type": "boolean",
-            "title": "Can Remove"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenario_id",
-          "title",
-          "description",
-          "active",
-          "position",
-          "parameter_item_ids",
-          "hints_enabled",
-          "objectives_enabled",
-          "input_guardrail_enabled",
-          "output_guardrail_enabled",
-          "image_input_enabled",
-          "rubric_id",
-          "time_limit_seconds",
-          "usage_count",
-          "success_rate",
-          "last_used",
-          "can_remove"
-        ],
-        "title": "ScenarioInSimulation",
-        "description": "Scenario with position in simulation."
-      },
       "ScenarioMappingItem": {
         "properties": {
           "name": {
@@ -28860,6 +28742,10 @@
             "type": "boolean",
             "title": "Objectives Enabled"
           },
+          "show_scenario": {
+            "type": "boolean",
+            "title": "Show Scenario"
+          },
           "usage_count": {
             "type": "integer",
             "title": "Usage Count"
@@ -28893,6 +28779,7 @@
           "position",
           "length_seconds",
           "objectives_enabled",
+          "show_scenario",
           "usage_count",
           "success_rate",
           "last_used",
@@ -34165,6 +34052,144 @@
         "title": "ParameterItemDetail",
         "description": "Full parameter item details."
       },
+      "app__api__v3__simulations__detail__ScenarioInSimulation": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          },
+          "hints_enabled": {
+            "type": "boolean",
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Output Guardrail Enabled"
+          },
+          "image_input_enabled": {
+            "type": "boolean",
+            "title": "Image Input Enabled"
+          },
+          "copy_paste_allowed": {
+            "type": "boolean",
+            "title": "Copy Paste Allowed"
+          },
+          "audio_enabled": {
+            "type": "boolean",
+            "title": "Audio Enabled"
+          },
+          "text_enabled": {
+            "type": "boolean",
+            "title": "Text Enabled"
+          },
+          "show_scenario": {
+            "type": "boolean",
+            "title": "Show Scenario"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "success_rate": {
+            "type": "integer",
+            "title": "Success Rate"
+          },
+          "last_used": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used"
+          },
+          "can_remove": {
+            "type": "boolean",
+            "title": "Can Remove"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "title",
+          "description",
+          "active",
+          "position",
+          "parameter_item_ids",
+          "hints_enabled",
+          "objectives_enabled",
+          "input_guardrail_enabled",
+          "output_guardrail_enabled",
+          "image_input_enabled",
+          "copy_paste_allowed",
+          "audio_enabled",
+          "text_enabled",
+          "show_scenario",
+          "rubric_id",
+          "time_limit_seconds",
+          "usage_count",
+          "success_rate",
+          "last_used",
+          "can_remove"
+        ],
+        "title": "ScenarioInSimulation",
+        "description": "Scenario with position in simulation."
+      },
       "app__api__v3__simulations__detail__SimulationDetailResponse": {
         "properties": {
           "name": {
@@ -34276,7 +34301,7 @@
           },
           "scenarios": {
             "items": {
-              "$ref": "#/components/schemas/ScenarioInSimulation"
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail__ScenarioInSimulation"
             },
             "type": "array",
             "title": "Scenarios"
@@ -34452,6 +34477,124 @@
         "title": "ParameterItemDetail",
         "description": "Full parameter item details."
       },
+      "app__api__v3__simulations__detail_default__ScenarioInSimulation": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
+          },
+          "hints_enabled": {
+            "type": "boolean",
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled"
+          },
+          "input_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Output Guardrail Enabled"
+          },
+          "image_input_enabled": {
+            "type": "boolean",
+            "title": "Image Input Enabled"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "success_rate": {
+            "type": "integer",
+            "title": "Success Rate"
+          },
+          "last_used": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used"
+          },
+          "can_remove": {
+            "type": "boolean",
+            "title": "Can Remove"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "title",
+          "description",
+          "active",
+          "position",
+          "parameter_item_ids",
+          "hints_enabled",
+          "objectives_enabled",
+          "input_guardrail_enabled",
+          "output_guardrail_enabled",
+          "image_input_enabled",
+          "rubric_id",
+          "time_limit_seconds",
+          "usage_count",
+          "success_rate",
+          "last_used",
+          "can_remove"
+        ],
+        "title": "ScenarioInSimulation",
+        "description": "Scenario with position in simulation."
+      },
       "app__api__v3__simulations__detail_default__SimulationDetailResponse": {
         "properties": {
           "name": {
@@ -34563,7 +34706,7 @@
           },
           "scenarios": {
             "items": {
-              "$ref": "#/components/schemas/ScenarioInSimulation"
+              "$ref": "#/components/schemas/app__api__v3__simulations__detail_default__ScenarioInSimulation"
             },
             "type": "array",
             "title": "Scenarios"

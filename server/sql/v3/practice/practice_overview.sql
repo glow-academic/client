@@ -384,13 +384,14 @@ parameter_data AS (
         par.name,
         COALESCE(par.description, '') as description,
         par.numerical,
-        par.document_parameter
+        par.document_parameter,
+        par.persona_parameter
     FROM parameters par
     JOIN parameter_items pi ON pi.parameter_id = par.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
-    GROUP BY par.id, par.name, par.description, par.numerical, par.document_parameter
+    GROUP BY par.id, par.name, par.description, par.numerical, par.document_parameter, par.persona_parameter
     HAVING 
         (cardinality($2::uuid[]) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($2::uuid[])) > 0)
         OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
@@ -401,7 +402,7 @@ parameter_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
             par.id::text,
-            jsonb_build_object('name', par.name, 'description', par.description, 'numerical', par.numerical, 'document_parameter', par.document_parameter)
+            jsonb_build_object('name', par.name, 'description', par.description, 'numerical', par.numerical, 'document_parameter', par.document_parameter, 'persona_parameter', par.persona_parameter)
         ),
         '{}'::jsonb
     ) as mapping

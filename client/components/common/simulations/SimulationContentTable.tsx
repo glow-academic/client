@@ -26,7 +26,6 @@ import {
 import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -46,13 +45,16 @@ import {
   Image,
   Layers,
   Lightbulb,
+  Mic,
   Pencil,
   Power,
   Shield,
   ShieldCheck,
   Target,
+  Text,
   Trash2,
   Video,
+  Eye,
 } from "lucide-react";
 
 export interface ContentItem {
@@ -76,22 +78,20 @@ export interface ContentItem {
   output_guardrail_enabled?: boolean;
   image_input_enabled?: boolean;
   copy_paste_allowed?: boolean;
+  audio_enabled?: boolean; // Scenarios only
+  text_enabled?: boolean; // Scenarios only
+  show_scenario?: boolean; // Scenarios and videos
   rubric_id?: string | null;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
 }
 
 export interface SimulationContentTableProps {
   data: ContentItem[];
-  selectedContentIds: string[];
-  onContentSelect: (contentId: string, checked: boolean) => void;
-  onSelectAll: (checked: boolean, visibleRowIds?: string[]) => void;
   onActiveToggle: (contentId: string, active: boolean) => void;
   onMoveUp: (contentId: string) => void;
   onMoveDown: (contentId: string) => void;
   onRemove: (contentId: string) => void;
   onEditScenario?: (scenarioId: string) => void;
-  onBulkEdit: () => void;
-  onBulkDelete: () => void;
   // Switch toggle handlers
   onHintsToggle?: (contentId: string, enabled: boolean) => void;
   onObjectivesToggle?: (contentId: string, enabled: boolean) => void;
@@ -99,6 +99,9 @@ export interface SimulationContentTableProps {
   onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onImageInputToggle?: (contentId: string, enabled: boolean) => void;
   onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
+  onAudioToggle?: (contentId: string, enabled: boolean) => void;
+  onTextToggle?: (contentId: string, enabled: boolean) => void;
+  onShowScenarioToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
   onTimeLimitChange?: (
     contentId: string,
@@ -112,29 +115,26 @@ export interface SimulationContentTableProps {
 
 export function SimulationContentTable({
   data,
-  selectedContentIds,
-  onContentSelect,
-  onSelectAll,
   onActiveToggle,
   onMoveUp,
   onMoveDown,
   onRemove,
   onEditScenario,
-  onBulkEdit,
-  onBulkDelete,
   onHintsToggle,
   onObjectivesToggle,
   onInputGuardrailToggle,
   onOutputGuardrailToggle,
   onImageInputToggle,
   onCopyPasteToggle,
+  onAudioToggle,
+  onTextToggle,
+  onShowScenarioToggle,
   onRubricChange,
   onTimeLimitChange,
   rubricMapping = {},
   validRubricIds = [],
   readonly = false,
 }: SimulationContentTableProps) {
-  const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -143,8 +143,6 @@ export function SimulationContentTable({
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "position", desc: false }, // Default sort by position ascending
   ]);
-
-  const selectedCount = selectedContentIds.length;
 
   // Format usage count display
   const formatUsage = (count: number) => {
@@ -161,85 +159,6 @@ export function SimulationContentTable({
   // Columns definition
   const columns: ColumnDef<ContentItem>[] = React.useMemo(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <div className="pr-2">
-            <Checkbox
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(value) => {
-                table.toggleAllPageRowsSelected(!!value);
-                const visibleRowIds = table
-                  .getFilteredRowModel()
-                  .rows.map((row) => `${row.original.type}:${row.original.id}`);
-                onSelectAll(!!value, visibleRowIds);
-              }}
-              aria-label="Select all"
-              className="translate-y-[2px]"
-              disabled={readonly}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="pr-2">
-            <Checkbox
-              checked={selectedContentIds.includes(
-                `${row.original.type}:${row.original.id}`
-              )}
-              onCheckedChange={(value) =>
-                onContentSelect(
-                  `${row.original.type}:${row.original.id}`,
-                  !!value
-                )
-              }
-              aria-label="Select row"
-              className="translate-y-[2px]"
-              disabled={readonly}
-            />
-          </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "type",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Layers className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Type</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Content type (scenario or video)</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="flex items-center gap-1 justify-center">
-              {item.type === "scenario" ? (
-                <FileText className="h-4 w-4 text-blue-600" />
-              ) : (
-                <Video className="h-4 w-4 text-purple-600" />
-              )}
-              {item.isNew && (
-                <Badge
-                  variant="outline"
-                  className="bg-green-50 text-green-700 text-xs px-1 py-0"
-                >
-                  NEW
-                </Badge>
-              )}
-            </div>
-          );
-        },
-      },
       {
         accessorKey: "title",
         size: 150,
@@ -261,13 +180,26 @@ export function SimulationContentTable({
           return (
             <div className="flex flex-col w-[150px]">
               <span
-                className="font-medium text-sm leading-tight whitespace-normal"
+                className="font-medium text-sm leading-tight whitespace-normal inline-flex items-center gap-1.5"
                 style={{ wordBreak: "break-word", overflowWrap: "break-word" }}
               >
+                {item.type === "scenario" ? (
+                  <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                ) : (
+                  <Video className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                )}
                 {item.title}
+                {item.isNew && (
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 text-green-700 text-xs px-1 py-0 flex-shrink-0"
+                  >
+                    NEW
+                  </Badge>
+                )}
               </span>
               {item.type === "video" && item.length_seconds && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground pl-5">
                   {Math.floor(item.length_seconds / 60)}:
                   {(item.length_seconds % 60).toString().padStart(2, "0")}
                 </span>
@@ -408,21 +340,17 @@ export function SimulationContentTable({
         },
       },
       {
-        id: "input_guardrail_enabled",
+        id: "guardrail",
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex flex-col items-center gap-1 cursor-help">
                 <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs leading-tight text-center">
-                  Input
-                  <br />
-                  Guardrail
-                </span>
+                <span className="text-xs">Guardrail</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Monitor and filter inappropriate input from students</p>
+              <p>Monitor and filter inappropriate input/output</p>
             </TooltipContent>
           </Tooltip>
         ),
@@ -436,55 +364,27 @@ export function SimulationContentTable({
             );
           }
           return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.input_guardrail_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  onInputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onInputGuardrailToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "output_guardrail_enabled",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs leading-tight text-center">
-                  Output
-                  <br />
-                  Guardrail
-                </span>
+            <div className="flex flex-col items-center justify-center gap-2 py-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Input</span>
+                <Switch
+                  checked={item.input_guardrail_enabled ?? false}
+                  onCheckedChange={(checked) =>
+                    onInputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
+                  }
+                  disabled={readonly || !onInputGuardrailToggle}
+                />
               </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Monitor and filter inappropriate output from the persona</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.output_guardrail_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  onOutputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onOutputGuardrailToggle}
-              />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Output</span>
+                <Switch
+                  checked={item.output_guardrail_enabled ?? false}
+                  onCheckedChange={(checked) =>
+                    onOutputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
+                  }
+                  disabled={readonly || !onOutputGuardrailToggle}
+                />
+              </div>
             </div>
           );
         },
@@ -566,6 +466,114 @@ export function SimulationContentTable({
                   onCopyPasteToggle?.(`${item.type}:${item.id}`, checked)
                 }
                 disabled={readonly || !onCopyPasteToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "audio_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Mic className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Audio</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enable audio input for the scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.audio_enabled ?? false}
+                onCheckedChange={(checked) =>
+                  onAudioToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onAudioToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "text_enabled",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Text className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Text</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Enable text input for the scenario</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.text_enabled ?? true}
+                onCheckedChange={(checked) =>
+                  onTextToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onTextToggle}
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "show_scenario",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs leading-tight text-center">
+                  Show
+                  <br />
+                  Scenario
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Display the scenario/problem statement to students</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center justify-center">
+              <Switch
+                checked={item.show_scenario ?? true}
+                onCheckedChange={(checked) =>
+                  onShowScenarioToggle?.(`${item.type}:${item.id}`, checked)
+                }
+                disabled={readonly || !onShowScenarioToggle}
               />
             </div>
           );
@@ -772,10 +780,7 @@ export function SimulationContentTable({
     ],
     [
       data,
-      selectedContentIds,
       readonly,
-      onContentSelect,
-      onSelectAll,
       onActiveToggle,
       onMoveUp,
       onMoveDown,
@@ -786,6 +791,10 @@ export function SimulationContentTable({
       onInputGuardrailToggle,
       onOutputGuardrailToggle,
       onImageInputToggle,
+      onCopyPasteToggle,
+      onAudioToggle,
+      onTextToggle,
+      onShowScenarioToggle,
       onRubricChange,
       onTimeLimitChange,
       rubricMapping,
@@ -822,32 +831,6 @@ export function SimulationContentTable({
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {selectedCount > 0 && !readonly && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onBulkEdit}
-                  disabled={selectedCount === 0}
-                >
-                  Bulk Edit ({selectedCount})
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onBulkDelete}
-                  disabled={selectedCount === 0}
-                >
-                  Bulk Delete ({selectedCount})
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
         {/* Table */}
         <div className="rounded-md border">
           <Table>
@@ -875,7 +858,6 @@ export function SimulationContentTable({
                 tableRows.map((row) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
                     className="hover:bg-muted/30 transition-colors"
                   >
                     {row.getVisibleCells().map((cell) => (

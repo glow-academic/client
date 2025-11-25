@@ -248,13 +248,14 @@ WITH user_departments AS (
                 p.name,
                 COALESCE(p.description, '') as description,
                 p.numerical,
-                p.document_parameter
+                p.document_parameter,
+                p.persona_parameter
             FROM parameters p
             JOIN parameter_items pi ON pi.parameter_id = p.id
             LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
-            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
+            GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
                 COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
@@ -270,7 +271,8 @@ WITH user_departments AS (
                         'name', pd.name,
                         'description', pd.description,
                         'numerical', pd.numerical,
-                        'document_parameter', pd.document_parameter
+                        'document_parameter', pd.document_parameter,
+                        'persona_parameter', pd.persona_parameter
                     )
                 ),
                 '{}'::jsonb

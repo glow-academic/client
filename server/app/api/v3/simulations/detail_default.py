@@ -352,6 +352,7 @@ async def get_simulation_detail_default(
                         description=pdata.get("description", ""),
                         numerical=pdata.get("numerical", False),
                         document_parameter=pdata.get("document_parameter", False),
+                        persona_parameter=pdata.get("persona_parameter", False),
                     )
 
         # Parse parameter_item mapping

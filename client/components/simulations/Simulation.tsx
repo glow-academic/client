@@ -249,6 +249,9 @@ export default function Simulation({
         output_guardrail_enabled?: boolean;
         image_input_enabled?: boolean;
         copy_paste_allowed?: boolean;
+        audio_enabled?: boolean;
+        text_enabled?: boolean;
+        show_scenario?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -265,6 +268,9 @@ export default function Simulation({
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           copy_paste_allowed?: boolean;
+          audio_enabled?: boolean;
+          text_enabled?: boolean;
+          show_scenario?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -502,6 +508,12 @@ export default function Simulation({
             switchState?.copy_paste_allowed ??
             scenario.copy_paste_allowed ??
             false,
+          audio_enabled:
+            switchState?.audio_enabled ?? scenario.audio_enabled ?? false,
+          text_enabled:
+            switchState?.text_enabled ?? scenario.text_enabled ?? true,
+          show_scenario:
+            switchState?.show_scenario ?? scenario.show_scenario ?? true,
           rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
           time_limit_seconds:
             switchState?.time_limit_seconds ??
@@ -532,6 +544,10 @@ export default function Simulation({
           objectives_enabled:
             switchState?.objectives_enabled ??
             (video["objectives_enabled"] as boolean) ??
+            true,
+          show_scenario:
+            switchState?.show_scenario ??
+            (video["show_scenario"] as boolean) ??
             true,
         });
       });
@@ -570,6 +586,9 @@ export default function Simulation({
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           copy_paste_allowed?: boolean;
+          audio_enabled?: boolean;
+          text_enabled?: boolean;
+          show_scenario?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -583,6 +602,9 @@ export default function Simulation({
           output_guardrail_enabled?: boolean;
           image_input_enabled?: boolean;
           copy_paste_allowed?: boolean;
+          audio_enabled?: boolean;
+          text_enabled?: boolean;
+          show_scenario?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -602,6 +624,9 @@ export default function Simulation({
               scenario.output_guardrail_enabled ?? false,
             image_input_enabled: scenario.image_input_enabled ?? false,
             copy_paste_allowed: scenario.copy_paste_allowed ?? false,
+            audio_enabled: scenario.audio_enabled ?? false,
+            text_enabled: scenario.text_enabled ?? true,
+            show_scenario: scenario.show_scenario ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -613,6 +638,9 @@ export default function Simulation({
               scenario.output_guardrail_enabled ?? false,
             image_input_enabled: scenario.image_input_enabled ?? false,
             copy_paste_allowed: scenario.copy_paste_allowed ?? false,
+            audio_enabled: scenario.audio_enabled ?? false,
+            text_enabled: scenario.text_enabled ?? true,
+            show_scenario: scenario.show_scenario ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -627,11 +655,15 @@ export default function Simulation({
           newOriginalActiveStates[key] = video["active"] as boolean;
           const videoObjectivesEnabled =
             (video["objectives_enabled"] as boolean) ?? true;
+          const videoShowScenario =
+            (video["show_scenario"] as boolean) ?? true;
           newSwitchStates[key] = {
             objectives_enabled: videoObjectivesEnabled,
+            show_scenario: videoShowScenario,
           };
           newOriginalSwitchStates[key] = {
             objectives_enabled: videoObjectivesEnabled,
+            show_scenario: videoShowScenario,
           };
         });
       }
@@ -864,6 +896,9 @@ export default function Simulation({
         output_guardrail_enabled?: boolean;
         image_input_enabled?: boolean;
         copy_paste_allowed?: boolean;
+        audio_enabled?: boolean;
+        text_enabled?: boolean;
+        show_scenario?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -901,6 +936,12 @@ export default function Simulation({
               switchState?.copy_paste_allowed ??
               item.copy_paste_allowed ??
               false;
+            baseItem.audio_enabled =
+              switchState?.audio_enabled ?? item.audio_enabled ?? false;
+            baseItem.text_enabled =
+              switchState?.text_enabled ?? item.text_enabled ?? true;
+            baseItem.show_scenario =
+              switchState?.show_scenario ?? item.show_scenario ?? true;
             baseItem.rubric_id =
               switchState?.rubric_id ?? item.rubric_id ?? null;
             baseItem.time_limit_seconds =
@@ -912,6 +953,8 @@ export default function Simulation({
               switchState?.objectives_enabled ??
               item.objectives_enabled ??
               true;
+            baseItem.show_scenario =
+              switchState?.show_scenario ?? item.show_scenario ?? true;
           }
 
           return baseItem;
@@ -1051,20 +1094,6 @@ export default function Simulation({
     // Active states are now handled via contentActiveStates in handleContentRemove
   };
 
-  // Unified content handlers
-  const handleContentSelect = useCallback(
-    (_contentId: string, _checked: boolean) => {
-      // Selection logic for bulk operations - TODO: implement selection state
-    },
-    []
-  );
-
-  const handleContentSelectAll = useCallback(
-    (_checked: boolean, _visibleRowIds?: string[]) => {
-      // Select all logic - TODO: implement selection state
-    },
-    []
-  );
 
   const handleContentActiveToggle = useCallback(
     (contentId: string, active: boolean) => {
@@ -1233,13 +1262,44 @@ export default function Simulation({
     });
   }, []);
 
-  const handleBulkContentEdit = useCallback(() => {
-    toast.info("Bulk edit functionality coming soon");
-  }, []);
+  const handleAudioToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          audio_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
 
-  const handleBulkContentDelete = useCallback(() => {
-    toast.info("Bulk delete functionality coming soon");
-  }, []);
+  const handleTextToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          text_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleShowScenarioToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          show_scenario: enabled,
+        },
+      }));
+    },
+    []
+  );
 
   const handleStagedScenarios = useCallback(
     (
@@ -1484,22 +1544,20 @@ export default function Simulation({
 
           <SimulationContentTable
             data={currentContentItems}
-            selectedContentIds={[]} // TODO: implement selection state
-            onContentSelect={handleContentSelect}
-            onSelectAll={handleContentSelectAll}
             onActiveToggle={handleContentActiveToggle}
             onMoveUp={handleContentMoveUp}
             onMoveDown={handleContentMoveDown}
             onRemove={handleContentRemove}
             onEditScenario={editScenario}
-            onBulkEdit={handleBulkContentEdit}
-            onBulkDelete={handleBulkContentDelete}
             onHintsToggle={handleHintsToggle}
             onObjectivesToggle={handleObjectivesToggle}
             onInputGuardrailToggle={handleInputGuardrailToggle}
             onOutputGuardrailToggle={handleOutputGuardrailToggle}
             onImageInputToggle={handleImageInputToggle}
             onCopyPasteToggle={handleCopyPasteToggle}
+            onAudioToggle={handleAudioToggle}
+            onTextToggle={handleTextToggle}
+            onShowScenarioToggle={handleShowScenarioToggle}
             onRubricChange={handleRubricChange}
             onTimeLimitChange={handleTimeLimitChange}
             rubricMapping={simulationData?.rubric_mapping || {}}

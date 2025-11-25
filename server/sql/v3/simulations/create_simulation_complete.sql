@@ -1,5 +1,5 @@
 -- Create simulation with departments, scenarios, and videos in a single transaction
--- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=video_ids (text array), $9=video_active_flags (bool array), $10=scenario_hints_enabled (bool array), $11=scenario_objectives_enabled (bool array), $12=scenario_input_guardrail_enabled (bool array), $13=scenario_output_guardrail_enabled (bool array), $14=scenario_image_input_enabled (bool array), $15=scenario_rubric_ids (text array, nullable), $16=scenario_time_limit_seconds (int array, nullable), $17=video_objectives_enabled (bool array), $18=scenario_audio_enabled (bool array), $19=scenario_text_enabled (bool array), $20=scenario_show_scenario (bool array)
+-- Parameters: $1=title, $2=description, $3=active, $4=practice_simulation, $5=department_ids (nullable text array), $6=scenario_ids (text array), $7=scenario_active_flags (bool array), $8=video_ids (text array), $9=video_active_flags (bool array), $10=scenario_hints_enabled (bool array), $11=scenario_objectives_enabled (bool array), $12=scenario_input_guardrail_enabled (bool array), $13=scenario_output_guardrail_enabled (bool array), $14=scenario_image_input_enabled (bool array), $15=scenario_rubric_ids (text array, nullable), $16=scenario_time_limit_seconds (int array, nullable), $17=video_objectives_enabled (bool array), $18=scenario_audio_enabled (bool array), $19=scenario_text_enabled (bool array), $20=scenario_show_scenario (bool array), $21=video_show_scenario (bool array)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -126,23 +126,26 @@ scenario_count AS (
     FROM scenarios_with_order
 ),
 videos_data AS (
-    -- Prepare videos with their active flags and objectives_enabled
+    -- Prepare videos with their active flags, objectives_enabled, and show_scenario
     SELECT 
         video_id,
         active_flag,
         objectives_enabled,
+        show_scenario,
         row_num
     FROM (
         SELECT 
             video_id,
             active_flag,
             COALESCE(objectives_enabled, true) as objectives_enabled,
+            COALESCE(show_scenario, true) as show_scenario,
             ROW_NUMBER() OVER () as row_num
         FROM UNNEST(
             $8::text[], 
-            $9::bool[],
-            COALESCE($17::bool[], ARRAY[]::bool[])
-        ) AS t(video_id, active_flag, objectives_enabled)
+            $9::bool[], 
+            COALESCE($17::bool[], ARRAY[]::bool[]),
+            COALESCE($21::bool[], ARRAY[]::bool[])
+        ) AS t(video_id, active_flag, objectives_enabled, show_scenario)
     ) sub
 ),
 videos_with_order AS (
@@ -152,6 +155,7 @@ videos_with_order AS (
         vd.video_id,
         vd.active_flag,
         vd.objectives_enabled,
+        vd.show_scenario,
         sc.max_position + ROW_NUMBER() OVER (
             ORDER BY vd.active_flag DESC, vd.row_num
         ) as position
@@ -183,13 +187,14 @@ link_scenarios AS (
 ),
 link_videos AS (
     -- Link videos with proper ordering (active first, then inactive), continuing position from scenarios
-    INSERT INTO simulation_videos (simulation_id, video_id, active, position, objectives_enabled, created_at, updated_at)
+    INSERT INTO simulation_videos (simulation_id, video_id, active, position, objectives_enabled, show_scenario, created_at, updated_at)
     SELECT 
         ns.simulation_id::uuid,
         vwo.video_id::uuid,
         vwo.active_flag,
         vwo.position,
         vwo.objectives_enabled,
+        vwo.show_scenario,
         NOW(),
         NOW()
     FROM new_simulation ns

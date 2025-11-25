@@ -41,7 +41,7 @@ class ContentItemInRequest(BaseModel):
     image_input_enabled: bool | None = None
     audio_enabled: bool | None = None  # Scenarios only
     text_enabled: bool | None = None  # Scenarios only
-    show_scenario: bool | None = None  # Scenarios only
+    show_scenario: bool | None = None  # Scenarios and videos
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
 
@@ -124,6 +124,7 @@ async def create_simulation(
                         video_ids.append(item.id)
                         video_active_flags.append(item.active)
                         video_objectives_enabled.append(item.objectives_enabled if item.objectives_enabled is not None else True)
+                        video_show_scenario.append(item.show_scenario if item.show_scenario is not None else True)
             else:
                 # Legacy support: extract from separate arrays
                 if request.scenario_ids:
@@ -163,6 +164,7 @@ async def create_simulation(
             video_ids_array = video_ids if video_ids else []
             video_flags_array = video_active_flags if video_active_flags else []
             video_objectives_array = video_objectives_enabled if video_objectives_enabled else []
+            video_show_scenario_array = video_show_scenario if video_show_scenario else []
 
             # Create simulation with departments, scenarios, and videos in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -188,6 +190,7 @@ async def create_simulation(
                 scenario_audio_enabled_array,
                 scenario_text_enabled_array,
                 scenario_show_scenario_array,
+                video_show_scenario_array,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

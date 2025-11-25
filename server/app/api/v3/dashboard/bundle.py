@@ -1316,6 +1316,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             description=param_data.get("description", ""),
             numerical=param_data.get("numerical", False),
             document_parameter=param_data.get("document_parameter", False),
+            persona_parameter=param_data.get("persona_parameter", False),
         )
 
     parameter_item_mapping_raw = data.get("parameterItemMapping", {})
