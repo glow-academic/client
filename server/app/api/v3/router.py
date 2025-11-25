@@ -38,6 +38,7 @@ from app.api.v3.profile import router as profile_router
 from app.api.v3.prompts import router as prompts_router
 from app.api.v3.reports import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
+from app.api.v3.settings import router as settings_router
 # ============================================================================
 # Batch C: Core Content Resources (Complete CRUD)
 # ============================================================================
@@ -72,6 +73,7 @@ router.include_router(documents_router)
 router.include_router(images_router)
 router.include_router(policies_router)
 router.include_router(rubrics_router)
+router.include_router(settings_router)
 
 # Batch E: Analytics & Dashboard Routes
 router.include_router(analytics_router)

@@ -2688,6 +2688,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/settings/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * List Settings
+         * @description Get list of all settings ordered by created_at DESC.
+         */
+        post: operations["list_settings_api_v3_settings_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/settings/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Settings Detail
+         * @description Get detailed settings information.
+         */
+        post: operations["get_settings_detail_api_v3_settings_detail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/settings/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Settings
+         * @description Update settings (creates new active row, deactivates old).
+         */
+        post: operations["update_settings_api_v3_settings_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/analytics/refresh": {
         parameters: {
             query?: never;
@@ -10566,6 +10626,58 @@ export interface components {
             parameterItemIds: string[];
         };
         /**
+         * SettingsDetailRequest
+         * @description Request to get settings details.
+         */
+        SettingsDetailRequest: {
+            /** Settingsid */
+            settingsId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * SettingsDetailResponse
+         * @description Detailed settings response.
+         */
+        SettingsDetailResponse: {
+            /** Settings Id */
+            settings_id: string;
+            /** Created At */
+            created_at: string;
+            /** Active */
+            active: boolean;
+            /** Color */
+            color: string;
+            /** Organization Name */
+            organization_name: string;
+        };
+        /**
+         * SettingsItem
+         * @description Settings item.
+         */
+        SettingsItem: {
+            /** Settings Id */
+            settings_id: string;
+            /** Created At */
+            created_at: string;
+            /** Active */
+            active: boolean;
+            /** Color */
+            color: string;
+            /** Organization Name */
+            organization_name: string;
+        };
+        /** SettingsListRequest */
+        SettingsListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** SettingsListResponse */
+        SettingsListResponse: {
+            /** Settings */
+            settings: components["schemas"]["SettingsItem"][];
+        };
+        /**
          * SimulationAttemptResult
          * @description Simulation attempt result.
          */
@@ -11590,6 +11702,30 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * UpdateSettingsRequest
+         * @description Request to update settings.
+         */
+        UpdateSettingsRequest: {
+            /** Color */
+            color: string;
+            /** Organization Name */
+            organization_name: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * UpdateSettingsResponse
+         * @description Response from update settings.
+         */
+        UpdateSettingsResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Settings Id */
+            settings_id: string;
         };
         /**
          * UpdateSimulationRequest
@@ -18163,6 +18299,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteRubricResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_settings_api_v3_settings_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_detail_api_v3_settings_detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsDetailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_v3_settings_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateSettingsResponse"];
                 };
             };
             /** @description Validation Error */
