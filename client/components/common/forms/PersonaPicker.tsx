@@ -188,33 +188,6 @@ export function PersonaPicker<
         </HoverCardContent>
       </HoverCard>
 
-      {/* Show selected items in multi-select mode */}
-      {multiSelect && selectedIds.length > 0 && !hideSelectedChips && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {selectedIds.map((id) => {
-            const persona = mapping[id];
-            if (!persona) return null;
-            return (
-              <div
-                key={id}
-                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-              >
-                <span>{persona.name}</span>
-                {!readonly && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleRemoveItem(id, e)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       <Popover
         open={disabled || readonly ? false : open}
         onOpenChange={disabled || readonly ? () => {} : setOpen}
@@ -330,6 +303,33 @@ export function PersonaPicker<
           </HoverCard>
         </PopoverContent>
       </Popover>
+
+      {/* Show selected items in multi-select mode */}
+      {multiSelect && selectedIds.length > 0 && !hideSelectedChips && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {selectedIds.map((id) => {
+            const persona = mapping[id];
+            if (!persona) return null;
+            return (
+              <div
+                key={id}
+                className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
+              >
+                <span>{persona.name}</span>
+                {!readonly && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveItem(id, e)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

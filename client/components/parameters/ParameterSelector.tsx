@@ -394,213 +394,191 @@ export function ParameterSelector({
     handleNumericalParameterChange(parameterId, []);
   };
 
-  const hasNonNumerical = nonNumericalParameters.length > 0;
-  const hasNumerical = numericalParameters.length > 0;
+  // Combine all parameters into a single list, maintaining order
+  const allParameters = useMemo(() => {
+    return [...nonNumericalParameters, ...numericalParameters];
+  }, [nonNumericalParameters, numericalParameters]);
 
-  const showTwoColumns = hasNonNumerical && hasNumerical;
+  const hasParameters = allParameters.length > 0;
 
   return (
-    <div className="relative">
-      {/* Vertical divider only when both columns exist */}
-      {showTwoColumns && (
-        <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px bg-border transform -translate-x-1/2" />
-      )}
+    <div className="space-y-6">
+      {hasParameters ? (
+        allParameters.map((parameterId) => {
+          const parameter = parameterMapping[parameterId];
+          const isNumerical = parameter?.numerical ?? false;
+          const itemIds = parameterItemsByParameter[parameterId] || [];
+          const selectedItemIds =
+            selectedItemsByParameter[parameterId] || [];
 
-      <div
-        className={`grid grid-cols-1 ${showTwoColumns ? "lg:grid-cols-2" : ""} gap-6`}
-      >
-        {/* Left side - Non-numerical parameters */}
-        {hasNonNumerical && (
-          <div className="space-y-4">
-            <div className="space-y-4">
-              {nonNumericalParameters.map((parameterId) => {
-                const parameter = parameterMapping[parameterId];
-                const itemIds = parameterItemsByParameter[parameterId] || [];
-                const selectedItemIds =
-                  selectedItemsByParameter[parameterId] || [];
+          if (isNumerical) {
+            // Numerical parameter rendering
+            const { min, max, step } =
+              getNumericalParameterRange(parameterId);
+            const currentValue = getSelectedNumericalValue(parameterId);
+            const [minValue, maxValue] = currentValue;
+            const hasSelection = selectedItemIds.length > 0;
 
-                return (
-                  <div key={parameterId} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">
-                        {parameter?.name || "Parameter"}
-                      </Label>
-                      {selectedItemIds.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetParameter(parameterId)}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          disabled={disabled}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <ParameterItemPicker
-                      mapping={parameterItemMapping}
-                      validIds={itemIds}
-                      selectedIds={selectedItemIds}
-                      onSelect={(ids) =>
-                        handleNonNumericalParameterChange(parameterId, ids)
-                      }
-                      parameterId={parameterId}
-                      parameterName={parameter?.name || ""}
-                      parameterDescription={parameter?.description || ""}
-                      isDefaultParameter={false}
+            return (
+              <div key={parameterId} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">
+                      {parameter?.name || "Parameter"}
+                    </Label>
+                    {hasSelection && (
+                      <p className="text-xs text-muted-foreground">
+                        {selectedItemIds.length} item
+                        {selectedItemIds.length !== 1 ? "s" : ""} selected
+                      </p>
+                    )}
+                  </div>
+                  {hasSelection && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => resetNumericalParameter(parameterId)}
+                      className="h-6 w-6 p-0 hover:bg-muted"
                       disabled={disabled}
-                      multiSelect={true}
-                    />
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
 
-                    {selectedItemIds.length > 0 && (
-                      <div className="space-y-1">
-                        {selectedItemIds.map((id) => {
+                <SliderLabelContainer
+                  min={min}
+                  max={max}
+                  minValue={minValue}
+                  maxValue={maxValue}
+                  hasSelection={hasSelection}
+                  value={currentValue}
+                  onValueChange={(value) =>
+                    handleNumericalSliderChange(parameterId, value)
+                  }
+                  step={step}
+                  disabled={itemIds.length === 0 || disabled}
+                />
+
+                {hasSelection && selectedItemIds.length > 0 && (
+                  <div className="space-y-1 mt-6">
+                    {(() => {
+                      // Sort selected items by their numerical values to get start and end
+                      const sortedItems = selectedItemIds
+                        .map((id) => {
                           const item = parameterItemMapping[id];
-                          return item ? (
+                          if (!item) return null;
+                          const value = parseFloat(item.value);
+                          return {
+                            id,
+                            item,
+                            value: isNaN(value) ? 0 : value,
+                          };
+                        })
+                        .filter(
+                          (
+                            item
+                          ): item is {
+                            id: string;
+                            item: (typeof parameterItemMapping)[string];
+                            value: number;
+                          } => item !== null
+                        )
+                        .sort((a, b) => a.value - b.value);
+
+                      if (sortedItems.length === 0) return null;
+
+                      const startItem = sortedItems[0];
+                      if (!startItem) return null;
+
+                      const endItem =
+                        sortedItems.length > 1
+                          ? sortedItems[sortedItems.length - 1]
+                          : null;
+
+                      return (
+                        <>
+                          {/* Show start value */}
+                          <p
+                            key={startItem.id}
+                            className="text-xs text-muted-foreground"
+                          >
+                            {startItem.item.name}:{" "}
+                            {startItem.item.description}
+                          </p>
+                          {/* Show end value only if different from start */}
+                          {endItem && endItem.id !== startItem.id && (
                             <p
-                              key={id}
+                              key={endItem.id}
                               className="text-xs text-muted-foreground"
                             >
-                              {item.description}
+                              {endItem.item.name}:{" "}
+                              {endItem.item.description}
                             </p>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                )}
+              </div>
+            );
+          } else {
+            // Non-numerical parameter rendering
+            return (
+              <div key={parameterId} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">
+                    {parameter?.name || "Parameter"}
+                  </Label>
+                  {selectedItemIds.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => resetParameter(parameterId)}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                      disabled={disabled}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
 
-        {/* Right side - Numerical parameters */}
-        {hasNumerical && (
-          <div className="space-y-4">
-            <div className="space-y-6">
-              {numericalParameters.map((parameterId) => {
-                const parameter = parameterMapping[parameterId];
-                const itemIds = parameterItemsByParameter[parameterId] || [];
-                const selectedItemIds =
-                  selectedItemsByParameter[parameterId] || [];
-                const { min, max, step } =
-                  getNumericalParameterRange(parameterId);
-                const currentValue = getSelectedNumericalValue(parameterId);
-                const [minValue, maxValue] = currentValue;
-                const hasSelection = selectedItemIds.length > 0;
+                <ParameterItemPicker
+                  mapping={parameterItemMapping}
+                  validIds={itemIds}
+                  selectedIds={selectedItemIds}
+                  onSelect={(ids) =>
+                    handleNonNumericalParameterChange(parameterId, ids)
+                  }
+                  parameterId={parameterId}
+                  parameterName={parameter?.name || ""}
+                  parameterDescription={parameter?.description || ""}
+                  isDefaultParameter={false}
+                  disabled={disabled}
+                  multiSelect={true}
+                />
 
-                return (
-                  <div key={parameterId} className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-sm font-medium">
-                          {parameter?.name || "Parameter"}
-                        </Label>
-                        {hasSelection && (
-                          <p className="text-xs text-muted-foreground">
-                            {selectedItemIds.length} item
-                            {selectedItemIds.length !== 1 ? "s" : ""} selected
-                          </p>
-                        )}
-                      </div>
-                      {hasSelection && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetNumericalParameter(parameterId)}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          disabled={disabled}
+                {selectedItemIds.length > 0 && (
+                  <div className="space-y-1">
+                    {selectedItemIds.map((id) => {
+                      const item = parameterItemMapping[id];
+                      return item ? (
+                        <p
+                          key={id}
+                          className="text-xs text-muted-foreground"
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <SliderLabelContainer
-                      min={min}
-                      max={max}
-                      minValue={minValue}
-                      maxValue={maxValue}
-                      hasSelection={hasSelection}
-                      value={currentValue}
-                      onValueChange={(value) =>
-                        handleNumericalSliderChange(parameterId, value)
-                      }
-                      step={step}
-                      disabled={itemIds.length === 0 || disabled}
-                    />
-
-                    {hasSelection && selectedItemIds.length > 0 && (
-                      <div className="space-y-1 mt-6">
-                        {(() => {
-                          // Sort selected items by their numerical values to get start and end
-                          const sortedItems = selectedItemIds
-                            .map((id) => {
-                              const item = parameterItemMapping[id];
-                              if (!item) return null;
-                              const value = parseFloat(item.value);
-                              return {
-                                id,
-                                item,
-                                value: isNaN(value) ? 0 : value,
-                              };
-                            })
-                            .filter(
-                              (
-                                item
-                              ): item is {
-                                id: string;
-                                item: (typeof parameterItemMapping)[string];
-                                value: number;
-                              } => item !== null
-                            )
-                            .sort((a, b) => a.value - b.value);
-
-                          if (sortedItems.length === 0) return null;
-
-                          const startItem = sortedItems[0];
-                          if (!startItem) return null;
-
-                          const endItem =
-                            sortedItems.length > 1
-                              ? sortedItems[sortedItems.length - 1]
-                              : null;
-
-                          return (
-                            <>
-                              {/* Show start value */}
-                              <p
-                                key={startItem.id}
-                                className="text-xs text-muted-foreground"
-                              >
-                                {startItem.item.name}:{" "}
-                                {startItem.item.description}
-                              </p>
-                              {/* Show end value only if different from start */}
-                              {endItem && endItem.id !== startItem.id && (
-                                <p
-                                  key={endItem.id}
-                                  className="text-xs text-muted-foreground"
-                                >
-                                  {endItem.item.name}:{" "}
-                                  {endItem.item.description}
-                                </p>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                    )}
+                          {item.description}
+                        </p>
+                      ) : null;
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {!hasNonNumerical && !hasNumerical && (
+                )}
+              </div>
+            );
+          }
+        })
+      ) : (
         <p className="text-sm text-muted-foreground">
           No parameters available.
         </p>

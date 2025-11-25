@@ -2201,7 +2201,7 @@ export default function Scenario({
               readonly={isReadonly}
             />
             {Object.keys(personaParameterMapping).length > 0 && (
-              <div className="pt-4">
+              <div className="pt-2">
                 <ParameterSelector
                   parameterMapping={personaParameterMapping}
                   parameterItemMapping={parameterItemMapping}
@@ -2321,7 +2321,7 @@ export default function Scenario({
             />
             {Object.keys(documentParameterMapping).length > 0 &&
               useDocuments && (
-                <div className="pt-4">
+                <div className="pt-2">
                   <ParameterSelector
                     parameterMapping={documentParameterMapping}
                     parameterItemMapping={parameterItemMapping}
