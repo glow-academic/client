@@ -21,6 +21,7 @@ import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { CreateStaffButton } from "@/components/common/staff/CreateStaffButton";
 import { DocumentUploadButton } from "@/components/documents/DocumentUploadButton";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
+import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
 import {
   BreadcrumbProvider,
@@ -56,7 +57,6 @@ import type {
 function MainLayoutContent({
   children,
   attemptData,
-  activeSettings,
   switchEffectiveProfileAction,
   createFeedbackAction,
   refreshAnalyticsAction,
@@ -67,7 +67,6 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
   attemptData: AttemptFullOut | null;
-  activeSettings: SettingsActiveOut | null;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -455,31 +454,36 @@ export function MainLayoutClient({
   initialCreateStaffData?: CreateStaffDataOut | null;
 }) {
   return (
-    <ProfileProviderClient initial={initial} sessionSnapshot={sessionSnapshot}>
-      <BreadcrumbProvider>
-        <AnalyticsProvider>
-          <MainLayoutContent
-            attemptData={attemptData}
-            activeSettings={activeSettings}
-            switchEffectiveProfileAction={switchEffectiveProfileAction}
-            createFeedbackAction={createFeedbackAction}
-            refreshAnalyticsAction={refreshAnalyticsAction}
-            searchSimulatableProfilesAction={searchSimulatableProfilesAction}
-            {...(processCSVAction !== undefined && {
-              processCSVAction,
-            })}
-            {...(bulkCreateOrUpdateStaffAction !== undefined && {
-              bulkCreateOrUpdateStaffAction,
-            })}
-            {...(initialCreateStaffData !== undefined &&
-              initialCreateStaffData !== null && {
-                initialCreateStaffData,
+    <>
+      <ThemeHydrator activeSettings={activeSettings} />
+      <ProfileProviderClient
+        initial={initial}
+        sessionSnapshot={sessionSnapshot}
+      >
+        <BreadcrumbProvider>
+          <AnalyticsProvider>
+            <MainLayoutContent
+              attemptData={attemptData}
+              switchEffectiveProfileAction={switchEffectiveProfileAction}
+              createFeedbackAction={createFeedbackAction}
+              refreshAnalyticsAction={refreshAnalyticsAction}
+              searchSimulatableProfilesAction={searchSimulatableProfilesAction}
+              {...(processCSVAction !== undefined && {
+                processCSVAction,
               })}
-          >
-            {children}
-          </MainLayoutContent>
-        </AnalyticsProvider>
-      </BreadcrumbProvider>
-    </ProfileProviderClient>
+              {...(bulkCreateOrUpdateStaffAction !== undefined && {
+                bulkCreateOrUpdateStaffAction,
+              })}
+              {...(initialCreateStaffData !== undefined &&
+                initialCreateStaffData !== null && {
+                  initialCreateStaffData,
+                })}
+            >
+              {children}
+            </MainLayoutContent>
+          </AnalyticsProvider>
+        </BreadcrumbProvider>
+      </ProfileProviderClient>
+    </>
   );
 }

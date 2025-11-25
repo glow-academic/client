@@ -25136,6 +25136,19 @@
           "organization_name": {
             "type": "string",
             "title": "Organization Name"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ],
+            "title": "Mode",
+            "default": "light"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/ThemeTokens"
           }
         },
         "type": "object",
@@ -25144,7 +25157,8 @@
           "created_at",
           "active",
           "color",
-          "organization_name"
+          "organization_name",
+          "tokens"
         ],
         "title": "SettingsActiveResponse",
         "description": "Active settings response."
@@ -26396,6 +26410,200 @@
         ],
         "title": "StudentSimReportResponse",
         "description": "Response with student simulation report."
+      },
+      "ThemeTokens": {
+        "properties": {
+          "background": {
+            "type": "string",
+            "title": "Background"
+          },
+          "foreground": {
+            "type": "string",
+            "title": "Foreground"
+          },
+          "card": {
+            "type": "string",
+            "title": "Card"
+          },
+          "cardForeground": {
+            "type": "string",
+            "title": "Cardforeground"
+          },
+          "popover": {
+            "type": "string",
+            "title": "Popover"
+          },
+          "popoverForeground": {
+            "type": "string",
+            "title": "Popoverforeground"
+          },
+          "primary": {
+            "type": "string",
+            "title": "Primary"
+          },
+          "primaryForeground": {
+            "type": "string",
+            "title": "Primaryforeground"
+          },
+          "secondary": {
+            "type": "string",
+            "title": "Secondary"
+          },
+          "secondaryForeground": {
+            "type": "string",
+            "title": "Secondaryforeground"
+          },
+          "muted": {
+            "type": "string",
+            "title": "Muted"
+          },
+          "mutedForeground": {
+            "type": "string",
+            "title": "Mutedforeground"
+          },
+          "accent": {
+            "type": "string",
+            "title": "Accent"
+          },
+          "accentForeground": {
+            "type": "string",
+            "title": "Accentforeground"
+          },
+          "destructive": {
+            "type": "string",
+            "title": "Destructive"
+          },
+          "border": {
+            "type": "string",
+            "title": "Border"
+          },
+          "input": {
+            "type": "string",
+            "title": "Input"
+          },
+          "ring": {
+            "type": "string",
+            "title": "Ring"
+          },
+          "success": {
+            "type": "string",
+            "title": "Success"
+          },
+          "successForeground": {
+            "type": "string",
+            "title": "Successforeground"
+          },
+          "warning": {
+            "type": "string",
+            "title": "Warning"
+          },
+          "warningForeground": {
+            "type": "string",
+            "title": "Warningforeground"
+          },
+          "info": {
+            "type": "string",
+            "title": "Info"
+          },
+          "infoForeground": {
+            "type": "string",
+            "title": "Infoforeground"
+          },
+          "chart1": {
+            "type": "string",
+            "title": "Chart1"
+          },
+          "chart2": {
+            "type": "string",
+            "title": "Chart2"
+          },
+          "chart3": {
+            "type": "string",
+            "title": "Chart3"
+          },
+          "chart4": {
+            "type": "string",
+            "title": "Chart4"
+          },
+          "chart5": {
+            "type": "string",
+            "title": "Chart5"
+          },
+          "sidebar": {
+            "type": "string",
+            "title": "Sidebar"
+          },
+          "sidebarForeground": {
+            "type": "string",
+            "title": "Sidebarforeground"
+          },
+          "sidebarPrimary": {
+            "type": "string",
+            "title": "Sidebarprimary"
+          },
+          "sidebarPrimaryForeground": {
+            "type": "string",
+            "title": "Sidebarprimaryforeground"
+          },
+          "sidebarAccent": {
+            "type": "string",
+            "title": "Sidebaraccent"
+          },
+          "sidebarAccentForeground": {
+            "type": "string",
+            "title": "Sidebaraccentforeground"
+          },
+          "sidebarBorder": {
+            "type": "string",
+            "title": "Sidebarborder"
+          },
+          "sidebarRing": {
+            "type": "string",
+            "title": "Sidebarring"
+          }
+        },
+        "type": "object",
+        "required": [
+          "background",
+          "foreground",
+          "card",
+          "cardForeground",
+          "popover",
+          "popoverForeground",
+          "primary",
+          "primaryForeground",
+          "secondary",
+          "secondaryForeground",
+          "muted",
+          "mutedForeground",
+          "accent",
+          "accentForeground",
+          "destructive",
+          "border",
+          "input",
+          "ring",
+          "success",
+          "successForeground",
+          "warning",
+          "warningForeground",
+          "info",
+          "infoForeground",
+          "chart1",
+          "chart2",
+          "chart3",
+          "chart4",
+          "chart5",
+          "sidebar",
+          "sidebarForeground",
+          "sidebarPrimary",
+          "sidebarPrimaryForeground",
+          "sidebarAccent",
+          "sidebarAccentForeground",
+          "sidebarBorder",
+          "sidebarRing"
+        ],
+        "title": "ThemeTokens",
+        "description": "Full internal design tokens derived from ThemePrimitives.\nThis is what components consume via CSS variables.\nUsers do not edit this directly."
       },
       "Thresholds": {
         "properties": {

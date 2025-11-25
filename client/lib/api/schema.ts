@@ -10416,6 +10416,13 @@ export interface components {
             color: string;
             /** Organization Name */
             organization_name: string;
+            /**
+             * Mode
+             * @default light
+             * @enum {string}
+             */
+            mode: "light" | "dark" | "system";
+            tokens: components["schemas"]["ThemeTokens"];
         };
         /**
          * SettingsDetailRequest
@@ -10946,6 +10953,88 @@ export interface components {
             attempts: {
                 [key: string]: unknown;
             }[];
+        };
+        /**
+         * ThemeTokens
+         * @description Full internal design tokens derived from ThemePrimitives.
+         *     This is what components consume via CSS variables.
+         *     Users do not edit this directly.
+         */
+        ThemeTokens: {
+            /** Background */
+            background: string;
+            /** Foreground */
+            foreground: string;
+            /** Card */
+            card: string;
+            /** Cardforeground */
+            cardForeground: string;
+            /** Popover */
+            popover: string;
+            /** Popoverforeground */
+            popoverForeground: string;
+            /** Primary */
+            primary: string;
+            /** Primaryforeground */
+            primaryForeground: string;
+            /** Secondary */
+            secondary: string;
+            /** Secondaryforeground */
+            secondaryForeground: string;
+            /** Muted */
+            muted: string;
+            /** Mutedforeground */
+            mutedForeground: string;
+            /** Accent */
+            accent: string;
+            /** Accentforeground */
+            accentForeground: string;
+            /** Destructive */
+            destructive: string;
+            /** Border */
+            border: string;
+            /** Input */
+            input: string;
+            /** Ring */
+            ring: string;
+            /** Success */
+            success: string;
+            /** Successforeground */
+            successForeground: string;
+            /** Warning */
+            warning: string;
+            /** Warningforeground */
+            warningForeground: string;
+            /** Info */
+            info: string;
+            /** Infoforeground */
+            infoForeground: string;
+            /** Chart1 */
+            chart1: string;
+            /** Chart2 */
+            chart2: string;
+            /** Chart3 */
+            chart3: string;
+            /** Chart4 */
+            chart4: string;
+            /** Chart5 */
+            chart5: string;
+            /** Sidebar */
+            sidebar: string;
+            /** Sidebarforeground */
+            sidebarForeground: string;
+            /** Sidebarprimary */
+            sidebarPrimary: string;
+            /** Sidebarprimaryforeground */
+            sidebarPrimaryForeground: string;
+            /** Sidebaraccent */
+            sidebarAccent: string;
+            /** Sidebaraccentforeground */
+            sidebarAccentForeground: string;
+            /** Sidebarborder */
+            sidebarBorder: string;
+            /** Sidebarring */
+            sidebarRing: string;
         };
         /**
          * Thresholds
