@@ -185,6 +185,24 @@ export async function generateMetadata(
   _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { profileId } = await params;
+  const session = await getSession();
+  const currentProfileId = session?.effectiveProfileId || profileId;
+
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId: currentProfileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
 
   try {
     const profileData = await getProfileDetail(profileId, {
@@ -198,12 +216,12 @@ export async function generateMetadata(
     const lastName = name.split(" ").slice(1).join(" ") || "";
     return {
       title: `${firstName} ${lastName}`,
-      description: `Reports for individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `Reports for individual staff in GLOW${orgPart}.`,
     };
   } catch {
     return {
       title: "Profile Report",
-      description: `Reports for individual staff in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `Reports for individual staff in GLOW${orgPart}.`,
     };
   }
 }

@@ -53,18 +53,34 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
+
   try {
     const model = await getModel(modelId, profileId);
     return {
       title: `${model?.name || "Model"}`,
       description:
         model?.description ||
-        `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+        `Manage individual AI models in GLOW${orgPart}.`,
     };
   } catch {
     return {
       title: "Model",
-      description: `Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `Manage individual AI models in GLOW${orgPart}.`,
     };
   }
 }

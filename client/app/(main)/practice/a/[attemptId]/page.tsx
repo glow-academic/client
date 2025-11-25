@@ -46,6 +46,22 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "guest-profile-id";
 
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
+
   try {
     const attemptData = await getAttemptFull(attemptId, {
       body: { attemptId, profileId },
@@ -53,12 +69,12 @@ export async function generateMetadata(
     const simulationTitle = attemptData?.simulation?.["title"];
     return {
       title: `Practice ${simulationTitle || "Attempt"}`,
-      description: `Practice ${simulationTitle || "Attempt"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `Practice ${simulationTitle || "Attempt"} in GLOW${orgPart}.`,
     };
   } catch {
     return {
       title: `Practice Attempt ${attemptId.substring(0, 8)}...`,
-      description: `Practice Attempt ${attemptId.substring(0, 8)}... in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `Practice Attempt ${attemptId.substring(0, 8)}... in GLOW${orgPart}.`,
     };
   }
 }

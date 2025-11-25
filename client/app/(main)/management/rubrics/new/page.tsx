@@ -28,10 +28,31 @@ const getRubricDefault = cache(
   },
 );
 
-export const metadata: Metadata = {
-  title: "New Rubric",
-  description: `New rubric creation page using the unified rubric component in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
+
+  return {
+    title: "New Rubric",
+    description: `New rubric creation page using the unified rubric component in GLOW${orgPart}.`,
+  };
+}
 
 /** ---- Server renders client with typed data (mutations in child components) ---- */
 export default async function NewRubricPage() {

@@ -81,10 +81,31 @@ async function randomizeScenario(
   return api.post("/scenarios/randomize", input);
 }
 
-export const metadata: Metadata = {
-  title: "New Scenario",
-  description: `New scenario creation in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
+
+  return {
+    title: "New Scenario",
+    description: `New scenario creation in GLOW${orgPart}.`,
+  };
+}
 
 export default async function NewScenarioPage() {
   const session = await getSession();
