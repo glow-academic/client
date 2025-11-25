@@ -244,14 +244,14 @@ export default function Simulation({
       string,
       {
         hints_enabled?: boolean;
-        objectives_enabled?: boolean;
         input_guardrail_enabled?: boolean;
         output_guardrail_enabled?: boolean;
-        image_input_enabled?: boolean;
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
-        show_scenario?: boolean;
+        show_problem_statement?: boolean;
+        show_objectives?: boolean;
+        show_image?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -263,14 +263,14 @@ export default function Simulation({
         string,
         {
           hints_enabled?: boolean;
-          objectives_enabled?: boolean;
           input_guardrail_enabled?: boolean;
           output_guardrail_enabled?: boolean;
-          image_input_enabled?: boolean;
           copy_paste_allowed?: boolean;
           audio_enabled?: boolean;
           text_enabled?: boolean;
-          show_scenario?: boolean;
+          show_problem_statement?: boolean;
+          show_objectives?: boolean;
+          show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
         }
@@ -488,10 +488,6 @@ export default function Simulation({
           isNew: false,
           hints_enabled:
             switchState?.hints_enabled ?? scenario.hints_enabled ?? false,
-          objectives_enabled:
-            switchState?.objectives_enabled ??
-            scenario.objectives_enabled ??
-            true,
           input_guardrail_enabled:
             switchState?.input_guardrail_enabled ??
             scenario.input_guardrail_enabled ??
@@ -499,10 +495,6 @@ export default function Simulation({
           output_guardrail_enabled:
             switchState?.output_guardrail_enabled ??
             scenario.output_guardrail_enabled ??
-            false,
-          image_input_enabled:
-            switchState?.image_input_enabled ??
-            scenario.image_input_enabled ??
             false,
           copy_paste_allowed:
             switchState?.copy_paste_allowed ??
@@ -512,8 +504,13 @@ export default function Simulation({
             switchState?.audio_enabled ?? scenario.audio_enabled ?? false,
           text_enabled:
             switchState?.text_enabled ?? scenario.text_enabled ?? true,
-          show_scenario:
-            switchState?.show_scenario ?? scenario.show_scenario ?? true,
+          show_problem_statement:
+            switchState?.show_problem_statement ??
+            scenario.show_problem_statement ??
+            true,
+          show_objectives:
+            switchState?.show_objectives ?? scenario.show_objectives ?? true,
+          show_image: switchState?.show_image ?? scenario.show_image ?? true,
           rubric_id: switchState?.rubric_id ?? scenario.rubric_id ?? null,
           time_limit_seconds:
             switchState?.time_limit_seconds ??
@@ -541,14 +538,16 @@ export default function Simulation({
           can_remove: video["can_remove"] as boolean,
           length_seconds: video["length_seconds"] as number,
           isNew: false,
-          objectives_enabled:
-            switchState?.objectives_enabled ??
-            (video["objectives_enabled"] as boolean) ??
+          show_problem_statement:
+            switchState?.show_problem_statement ??
+            (video["show_problem_statement"] as boolean) ??
             true,
-          show_scenario:
-            switchState?.show_scenario ??
-            (video["show_scenario"] as boolean) ??
+          show_objectives:
+            switchState?.show_objectives ??
+            (video["show_objectives"] as boolean) ??
             true,
+          show_image:
+            switchState?.show_image ?? (video["show_image"] as boolean) ?? true,
         });
       });
     }
@@ -618,29 +617,29 @@ export default function Simulation({
           newOriginalActiveStates[key] = scenario.active;
           newSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
-            objectives_enabled: scenario.objectives_enabled ?? true,
             input_guardrail_enabled: scenario.input_guardrail_enabled ?? false,
             output_guardrail_enabled:
               scenario.output_guardrail_enabled ?? false,
-            image_input_enabled: scenario.image_input_enabled ?? false,
             copy_paste_allowed: scenario.copy_paste_allowed ?? false,
             audio_enabled: scenario.audio_enabled ?? false,
             text_enabled: scenario.text_enabled ?? true,
-            show_scenario: scenario.show_scenario ?? true,
+            show_problem_statement: scenario.show_problem_statement ?? true,
+            show_objectives: scenario.show_objectives ?? true,
+            show_image: scenario.show_image ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
           newOriginalSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
-            objectives_enabled: scenario.objectives_enabled ?? true,
             input_guardrail_enabled: scenario.input_guardrail_enabled ?? false,
             output_guardrail_enabled:
               scenario.output_guardrail_enabled ?? false,
-            image_input_enabled: scenario.image_input_enabled ?? false,
             copy_paste_allowed: scenario.copy_paste_allowed ?? false,
             audio_enabled: scenario.audio_enabled ?? false,
             text_enabled: scenario.text_enabled ?? true,
-            show_scenario: scenario.show_scenario ?? true,
+            show_problem_statement: scenario.show_problem_statement ?? true,
+            show_objectives: scenario.show_objectives ?? true,
+            show_image: scenario.show_image ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
           };
@@ -653,16 +652,20 @@ export default function Simulation({
           const key = `video:${video["video_id"]}`;
           newActiveStates[key] = video["active"] as boolean;
           newOriginalActiveStates[key] = video["active"] as boolean;
-          const videoObjectivesEnabled =
-            (video["objectives_enabled"] as boolean) ?? true;
-          const videoShowScenario = (video["show_scenario"] as boolean) ?? true;
+          const videoShowProblemStatement =
+            (video["show_problem_statement"] as boolean) ?? true;
+          const videoShowObjectives =
+            (video["show_objectives"] as boolean) ?? true;
+          const videoShowImage = (video["show_image"] as boolean) ?? true;
           newSwitchStates[key] = {
-            objectives_enabled: videoObjectivesEnabled,
-            show_scenario: videoShowScenario,
+            show_problem_statement: videoShowProblemStatement,
+            show_objectives: videoShowObjectives,
+            show_image: videoShowImage,
           };
           newOriginalSwitchStates[key] = {
-            objectives_enabled: videoObjectivesEnabled,
-            show_scenario: videoShowScenario,
+            show_problem_statement: videoShowProblemStatement,
+            show_objectives: videoShowObjectives,
+            show_image: videoShowImage,
           };
         });
       }
@@ -890,14 +893,14 @@ export default function Simulation({
         id: string;
         active: boolean;
         hints_enabled?: boolean;
-        objectives_enabled?: boolean;
         input_guardrail_enabled?: boolean;
         output_guardrail_enabled?: boolean;
-        image_input_enabled?: boolean;
         copy_paste_allowed?: boolean;
         audio_enabled?: boolean;
         text_enabled?: boolean;
-        show_scenario?: boolean;
+        show_problem_statement?: boolean;
+        show_objectives?: boolean;
+        show_image?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
       }
@@ -915,10 +918,6 @@ export default function Simulation({
           if (item.type === "scenario") {
             baseItem.hints_enabled =
               switchState?.hints_enabled ?? item.hints_enabled ?? false;
-            baseItem.objectives_enabled =
-              switchState?.objectives_enabled ??
-              item.objectives_enabled ??
-              true;
             baseItem.input_guardrail_enabled =
               switchState?.input_guardrail_enabled ??
               item.input_guardrail_enabled ??
@@ -926,10 +925,6 @@ export default function Simulation({
             baseItem.output_guardrail_enabled =
               switchState?.output_guardrail_enabled ??
               item.output_guardrail_enabled ??
-              false;
-            baseItem.image_input_enabled =
-              switchState?.image_input_enabled ??
-              item.image_input_enabled ??
               false;
             baseItem.copy_paste_allowed =
               switchState?.copy_paste_allowed ??
@@ -939,8 +934,14 @@ export default function Simulation({
               switchState?.audio_enabled ?? item.audio_enabled ?? false;
             baseItem.text_enabled =
               switchState?.text_enabled ?? item.text_enabled ?? true;
-            baseItem.show_scenario =
-              switchState?.show_scenario ?? item.show_scenario ?? true;
+            baseItem.show_problem_statement =
+              switchState?.show_problem_statement ??
+              item.show_problem_statement ??
+              true;
+            baseItem.show_objectives =
+              switchState?.show_objectives ?? item.show_objectives ?? true;
+            baseItem.show_image =
+              switchState?.show_image ?? item.show_image ?? true;
             baseItem.rubric_id =
               switchState?.rubric_id ?? item.rubric_id ?? null;
             baseItem.time_limit_seconds =
@@ -948,12 +949,14 @@ export default function Simulation({
               item.time_limit_seconds ??
               null;
           } else if (item.type === "video") {
-            baseItem.objectives_enabled =
-              switchState?.objectives_enabled ??
-              item.objectives_enabled ??
+            baseItem.show_problem_statement =
+              switchState?.show_problem_statement ??
+              item.show_problem_statement ??
               true;
-            baseItem.show_scenario =
-              switchState?.show_scenario ?? item.show_scenario ?? true;
+            baseItem.show_objectives =
+              switchState?.show_objectives ?? item.show_objectives ?? true;
+            baseItem.show_image =
+              switchState?.show_image ?? item.show_image ?? true;
           }
 
           return baseItem;
@@ -1117,19 +1120,6 @@ export default function Simulation({
     []
   );
 
-  const handleObjectivesToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          objectives_enabled: enabled,
-        },
-      }));
-    },
-    []
-  );
-
   const handleInputGuardrailToggle = useCallback(
     (contentId: string, enabled: boolean) => {
       setContentSwitchStates((prev) => ({
@@ -1150,19 +1140,6 @@ export default function Simulation({
         [contentId]: {
           ...prev[contentId],
           output_guardrail_enabled: enabled,
-        },
-      }));
-    },
-    []
-  );
-
-  const handleImageInputToggle = useCallback(
-    (contentId: string, enabled: boolean) => {
-      setContentSwitchStates((prev) => ({
-        ...prev,
-        [contentId]: {
-          ...prev[contentId],
-          image_input_enabled: enabled,
         },
       }));
     },
@@ -1286,13 +1263,39 @@ export default function Simulation({
     []
   );
 
-  const handleShowScenarioToggle = useCallback(
+  const handleShowProblemStatementToggle = useCallback(
     (contentId: string, enabled: boolean) => {
       setContentSwitchStates((prev) => ({
         ...prev,
         [contentId]: {
           ...prev[contentId],
-          show_scenario: enabled,
+          show_problem_statement: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleShowObjectivesToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          show_objectives: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleShowImageToggle = useCallback(
+    (contentId: string, enabled: boolean) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          show_image: enabled,
         },
       }));
     },
@@ -1548,14 +1551,14 @@ export default function Simulation({
             onRemove={handleContentRemove}
             onEditScenario={editScenario}
             onHintsToggle={handleHintsToggle}
-            onObjectivesToggle={handleObjectivesToggle}
             onInputGuardrailToggle={handleInputGuardrailToggle}
             onOutputGuardrailToggle={handleOutputGuardrailToggle}
-            onImageInputToggle={handleImageInputToggle}
             onCopyPasteToggle={handleCopyPasteToggle}
             onAudioToggle={handleAudioToggle}
             onTextToggle={handleTextToggle}
-            onShowScenarioToggle={handleShowScenarioToggle}
+            onShowProblemStatementToggle={handleShowProblemStatementToggle}
+            onShowObjectivesToggle={handleShowObjectivesToggle}
+            onShowImageToggle={handleShowImageToggle}
             onRubricChange={handleRubricChange}
             onTimeLimitChange={handleTimeLimitChange}
             rubricMapping={simulationData?.rubric_mapping || {}}

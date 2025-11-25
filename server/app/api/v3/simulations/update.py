@@ -33,15 +33,15 @@ class ContentItemInRequest(BaseModel):
     type: str  # "scenario" or "video"
     id: str  # scenario_id or video_id
     active: bool = True
-    # Switch fields (scenarios only, except objectives_enabled which applies to both)
+    # Switch fields (scenarios only, except show fields which apply to both)
     hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
     input_guardrail_enabled: bool | None = None
     output_guardrail_enabled: bool | None = None
-    image_input_enabled: bool | None = None
     audio_enabled: bool | None = None  # Scenarios only
     text_enabled: bool | None = None  # Scenarios only
-    show_scenario: bool | None = None  # Scenarios and videos
+    show_problem_statement: bool | None = None  # Scenarios and videos
+    show_objectives: bool | None = None  # Scenarios and videos
+    show_image: bool | None = None  # Scenarios and videos
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
 
@@ -91,19 +91,20 @@ async def update_simulation(
             scenario_ids: list[str] = []
             scenario_active_flags: list[bool] = []
             scenario_hints_enabled: list[bool] = []
-            scenario_objectives_enabled: list[bool] = []
             scenario_input_guardrail_enabled: list[bool] = []
             scenario_output_guardrail_enabled: list[bool] = []
-            scenario_image_input_enabled: list[bool] = []
             scenario_audio_enabled: list[bool] = []
             scenario_text_enabled: list[bool] = []
-            scenario_show_scenario: list[bool] = []
+            scenario_show_problem_statement: list[bool] = []
+            scenario_show_objectives: list[bool] = []
+            scenario_show_image: list[bool] = []
             scenario_rubric_ids: list[str] = []
             scenario_time_limit_seconds: list[int | None] = []
             video_ids: list[str] = []
             video_active_flags: list[bool] = []
-            video_objectives_enabled: list[bool] = []
-            video_show_scenario: list[bool] = []
+            video_show_problem_statement: list[bool] = []
+            video_show_objectives: list[bool] = []
+            video_show_image: list[bool] = []
 
             # Use unified content_items if provided, otherwise fall back to separate arrays
             if request.content_items:
@@ -112,20 +113,21 @@ async def update_simulation(
                         scenario_ids.append(item.id)
                         scenario_active_flags.append(item.active)
                         scenario_hints_enabled.append(item.hints_enabled if item.hints_enabled is not None else False)
-                        scenario_objectives_enabled.append(item.objectives_enabled if item.objectives_enabled is not None else True)
                         scenario_input_guardrail_enabled.append(item.input_guardrail_enabled if item.input_guardrail_enabled is not None else False)
                         scenario_output_guardrail_enabled.append(item.output_guardrail_enabled if item.output_guardrail_enabled is not None else False)
-                        scenario_image_input_enabled.append(item.image_input_enabled if item.image_input_enabled is not None else False)
                         scenario_audio_enabled.append(item.audio_enabled if item.audio_enabled is not None else False)
                         scenario_text_enabled.append(item.text_enabled if item.text_enabled is not None else True)
-                        scenario_show_scenario.append(item.show_scenario if item.show_scenario is not None else True)
+                        scenario_show_problem_statement.append(item.show_problem_statement if item.show_problem_statement is not None else True)
+                        scenario_show_objectives.append(item.show_objectives if item.show_objectives is not None else True)
+                        scenario_show_image.append(item.show_image if item.show_image is not None else True)
                         scenario_rubric_ids.append(item.rubric_id if item.rubric_id else "")
                         scenario_time_limit_seconds.append(item.time_limit_seconds)
                     elif item.type == "video":
                         video_ids.append(item.id)
                         video_active_flags.append(item.active)
-                        video_objectives_enabled.append(item.objectives_enabled if item.objectives_enabled is not None else True)
-                        video_show_scenario.append(item.show_scenario if item.show_scenario is not None else True)
+                        video_show_problem_statement.append(item.show_problem_statement if item.show_problem_statement is not None else True)
+                        video_show_objectives.append(item.show_objectives if item.show_objectives is not None else True)
+                        video_show_image.append(item.show_image if item.show_image is not None else True)
             else:
                 # Legacy support: extract from separate arrays
                 if request.scenario_ids:
@@ -153,19 +155,20 @@ async def update_simulation(
                 scenario_active_flags if scenario_active_flags else []
             )
             scenario_hints_array = scenario_hints_enabled if scenario_hints_enabled else []
-            scenario_objectives_array = scenario_objectives_enabled if scenario_objectives_enabled else []
             scenario_input_guardrail_array = scenario_input_guardrail_enabled if scenario_input_guardrail_enabled else []
             scenario_output_guardrail_array = scenario_output_guardrail_enabled if scenario_output_guardrail_enabled else []
-            scenario_image_input_array = scenario_image_input_enabled if scenario_image_input_enabled else []
             scenario_audio_enabled_array = scenario_audio_enabled if scenario_audio_enabled else []
             scenario_text_enabled_array = scenario_text_enabled if scenario_text_enabled else []
-            scenario_show_scenario_array = scenario_show_scenario if scenario_show_scenario else []
+            scenario_show_problem_statement_array = scenario_show_problem_statement if scenario_show_problem_statement else []
+            scenario_show_objectives_array = scenario_show_objectives if scenario_show_objectives else []
+            scenario_show_image_array = scenario_show_image if scenario_show_image else []
             scenario_rubric_ids_array = scenario_rubric_ids if scenario_rubric_ids else []
             scenario_time_limit_seconds_array = scenario_time_limit_seconds if scenario_time_limit_seconds else []
             video_ids_array = video_ids if video_ids else []
             video_flags_array = video_active_flags if video_active_flags else []
-            video_objectives_array = video_objectives_enabled if video_objectives_enabled else []
-            video_show_scenario_array = video_show_scenario if video_show_scenario else []
+            video_show_problem_statement_array = video_show_problem_statement if video_show_problem_statement else []
+            video_show_objectives_array = video_show_objectives if video_show_objectives else []
+            video_show_image_array = video_show_image if video_show_image else []
 
             # Update simulation with departments, scenarios, and videos in single SQL (DHH style)
             # Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -182,17 +185,18 @@ async def update_simulation(
                 video_ids_array,
                 video_flags_array,
                 scenario_hints_array,
-                scenario_objectives_array,
                 scenario_input_guardrail_array,
                 scenario_output_guardrail_array,
-                scenario_image_input_array,
                 scenario_rubric_ids_array,
                 scenario_time_limit_seconds_array,
-                video_objectives_array,
                 scenario_audio_enabled_array,
                 scenario_text_enabled_array,
-                scenario_show_scenario_array,
-                video_show_scenario_array,
+                scenario_show_problem_statement_array,
+                scenario_show_objectives_array,
+                scenario_show_image_array,
+                video_show_problem_statement_array,
+                video_show_objectives_array,
+                video_show_image_array,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

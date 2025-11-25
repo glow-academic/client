@@ -13,7 +13,9 @@ CREATE TABLE videos (
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
   file_path  TEXT        NOT NULL,
   mime_type  TEXT        NOT NULL,
-  active     BOOLEAN     NOT NULL DEFAULT TRUE
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  image_enabled BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Video → Departments junction table (BCNF normalization)
@@ -52,8 +54,9 @@ CREATE TABLE simulation_videos (
   video_id      UUID NOT NULL REFERENCES videos(id)   ON DELETE CASCADE,
   position      INT  NOT NULL DEFAULT 1,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
-  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  show_scenario BOOLEAN NOT NULL DEFAULT TRUE,
+  show_problem_statement BOOLEAN NOT NULL DEFAULT TRUE,
+  show_objectives BOOLEAN NOT NULL DEFAULT TRUE,
+  show_image BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (simulation_id, video_id)

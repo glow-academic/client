@@ -27,11 +27,10 @@ class CreateScenarioRequest(BaseModel):
     objective_ids: list[str]
     image_ids: list[str] | None = None
     parameters: dict[str, list[str]]
-    hints_enabled: bool = False
+    documents_enabled: bool = False
+    document_vision_enabled: bool = False
     objectives_enabled: bool = True
-    image_input_enabled: bool = False
-    input_guardrail_enabled: bool = False
-    output_guardrail_enabled: bool = False
+    image_enabled: bool = False
 
 
 class CreateScenarioResponse(BaseModel):
@@ -106,11 +105,10 @@ async def create_scenario(
         sql_params = (
             request.name,
             request.active,
-            request.hints_enabled,
+            request.documents_enabled,
+            request.document_vision_enabled,
             request.objectives_enabled,
-            request.image_input_enabled,
-            request.input_guardrail_enabled,
-            request.output_guardrail_enabled,
+            request.image_enabled,
             request.problem_statement,
             request.problem_statement_name,  # Optional problem statement name
             problem_statement_versions,

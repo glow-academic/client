@@ -33,14 +33,14 @@ class ScenarioInSimulation(BaseModel):
 
     # Switch fields from simulation_scenarios junction table
     hints_enabled: bool
-    objectives_enabled: bool
     input_guardrail_enabled: bool
     output_guardrail_enabled: bool
-    image_input_enabled: bool
     copy_paste_allowed: bool
     audio_enabled: bool
     text_enabled: bool
-    show_scenario: bool
+    show_problem_statement: bool
+    show_objectives: bool
+    show_image: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
 
@@ -62,8 +62,9 @@ class VideoInSimulation(BaseModel):
     length_seconds: int  # Video length in seconds
 
     # Switch fields from simulation_videos junction table
-    objectives_enabled: bool
-    show_scenario: bool
+    show_problem_statement: bool
+    show_objectives: bool
+    show_image: bool
 
     # Statistics fields
     usage_count: int  # Number of attempts that included this video via quizzes
@@ -247,14 +248,14 @@ async def get_simulation_detail(
                             position=s_data.get("position", 0),
                             parameter_item_ids=s_data.get("parameter_item_ids", []),
                             hints_enabled=s_data.get("hints_enabled", False),
-                            objectives_enabled=s_data.get("objectives_enabled", True),
                             input_guardrail_enabled=s_data.get("input_guardrail_enabled", False),
                             output_guardrail_enabled=s_data.get("output_guardrail_enabled", False),
-                            image_input_enabled=s_data.get("image_input_enabled", False),
                             copy_paste_allowed=s_data.get("copy_paste_allowed", False),
                             audio_enabled=s_data.get("audio_enabled", False),
                             text_enabled=s_data.get("text_enabled", True),
-                            show_scenario=s_data.get("show_scenario", True),
+                            show_problem_statement=s_data.get("show_problem_statement", True),
+                            show_objectives=s_data.get("show_objectives", True),
+                            show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
@@ -280,8 +281,9 @@ async def get_simulation_detail(
                             active=v_data.get("active", False),
                             position=v_data.get("position", 0),
                             length_seconds=v_data.get("length_seconds", 0),
-                            objectives_enabled=v_data.get("objectives_enabled", True),
-                            show_scenario=v_data.get("show_scenario", True),
+                            show_problem_statement=v_data.get("show_problem_statement", True),
+                            show_objectives=v_data.get("show_objectives", True),
+                            show_image=v_data.get("show_image", True),
                             usage_count=v_data.get("usage_count", 0),
                             success_rate=v_data.get("success_rate", 0),
                             last_used=v_data.get("last_used"),

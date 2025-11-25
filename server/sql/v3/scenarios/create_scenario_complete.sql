@@ -1,25 +1,23 @@
 -- Create scenario with all relationships in a single transaction
--- Parameters: $1=name, $2=active, $3=hints_enabled, $4=objectives_enabled, $5=image_input_enabled, 
---            $6=input_guardrail_enabled, $7=output_guardrail_enabled,
---            $8=problem_statement (text), $9=problem_statement_name (text, nullable - defaults to scenario name),
---            $10=problem_statement_versions (text array, nullable),
---            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
---            $13=document_ids (text array), $14=objective_ids (text array), 
---            $15=parameter_item_ids (text array, flattened from parameters dict),
---            $16=image_ids (text array, nullable)
+-- Parameters: $1=name, $2=active, $3=documents_enabled, $4=document_vision_enabled, $5=objectives_enabled, $6=image_enabled,
+--            $7=problem_statement (text), $8=problem_statement_name (text, nullable - defaults to scenario name),
+--            $9=problem_statement_versions (text array, nullable),
+--            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
+--            $12=document_ids (text array), $13=objective_ids (text array), 
+--            $14=parameter_item_ids (text array, flattened from parameters dict),
+--            $15=image_ids (text array, nullable)
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
 WITH new_scenario AS (
     INSERT INTO scenarios (
         name,
         active,
-        hints_enabled,
+        documents_enabled,
+        document_vision_enabled,
         objectives_enabled,
-        image_input_enabled,
-        input_guardrail_enabled,
-        output_guardrail_enabled
+        image_enabled
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    VALUES ($1, $2, $3, $4, $5, $6)
     RETURNING id::text as scenario_id
 ),
 link_departments AS (
@@ -32,8 +30,8 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($11::text[]) as dept_id
-    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($10::text[]) as dept_id
+    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -48,20 +46,20 @@ problem_statement_versions_data AS (
     -- Prepare problem statement versions
     SELECT DISTINCT version_text
     FROM new_scenario ns
-    CROSS JOIN UNNEST($10::text[]) as version_text
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($9::text[]) as version_text
+    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
     UNION ALL
     -- If no versions provided, use single problem statement
-    SELECT $8::text as version_text
+    SELECT $7::text as version_text
     FROM new_scenario ns
-    WHERE COALESCE(array_length($10::text[], 1), 0) = 0 AND $8::text IS NOT NULL AND $8::text != ''
+    WHERE COALESCE(array_length($9::text[], 1), 0) = 0 AND $7::text IS NOT NULL AND $7::text != ''
 ),
 create_problem_statements AS (
     -- Create problem_statement records first (strong entity)
     -- Always create new records (don't reuse) to allow different names for same text
     INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
     SELECT 
-        COALESCE($9::text, $1::text) as name,  -- Use provided name or scenario name
+        COALESCE($8::text, $1::text) as name,  -- Use provided name or scenario name
         psd.version_text,
         NOW(),
         NOW()
@@ -75,7 +73,7 @@ link_problem_statements AS (
         ns.scenario_id::uuid,
         cps.problem_statement_id,
         CASE 
-            WHEN cps.problem_statement = $8 THEN true  -- Active if matches problem_statement
+            WHEN cps.problem_statement = $7 THEN true  -- Active if matches problem_statement
             ELSE false
         END as active,
         NOW(),
@@ -93,8 +91,8 @@ link_personas AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($12::text[]) as persona_id
-    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($11::text[]) as persona_id
+    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -109,8 +107,8 @@ link_documents AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($13::text[]) as doc_id
-    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($12::text[]) as doc_id
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -120,8 +118,8 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($14::text[]) as obj_text
-    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
+    FROM UNNEST($13::text[]) as obj_text
+    WHERE COALESCE(array_length($13::text[], 1), 0) > 0
 ),
 existing_objectives AS (
     -- Find existing objectives by text
@@ -170,8 +168,8 @@ link_parameters AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($15::text[]) as param_item_id
-    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($14::text[]) as param_item_id
+    WHERE COALESCE(array_length($14::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -186,8 +184,8 @@ link_images AS (
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($16::text[]) as image_id
-    WHERE COALESCE(array_length($16::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($15::text[]) as image_id
+    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

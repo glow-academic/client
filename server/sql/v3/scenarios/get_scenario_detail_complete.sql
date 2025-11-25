@@ -99,11 +99,10 @@ scenario_core AS (
         s.generated,
         st.parent_id::text as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        s.hints_enabled,
+        COALESCE(s.documents_enabled, s.use_documents, false) as documents_enabled,  -- Backward compatibility
+        s.document_vision_enabled,
         s.objectives_enabled,
-        s.image_input_enabled,
-        s.input_guardrail_enabled,
-        s.output_guardrail_enabled
+        s.image_enabled
     FROM scenarios s
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id

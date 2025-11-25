@@ -52,10 +52,13 @@ CREATE TABLE scenarios (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
-  use_documents BOOLEAN NOT NULL DEFAULT FALSE,
+  documents_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  document_vision_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
   active BOOLEAN     NOT NULL DEFAULT TRUE
-  -- Flags moved to simulation_scenarios junction table: hints_enabled, objectives_enabled, image_input_enabled, input_guardrail_enabled, output_guardrail_enabled, copy_paste_allowed
+  -- Flags moved to simulation_scenarios junction table: hints_enabled, input_guardrail_enabled, output_guardrail_enabled, copy_paste_allowed
 );
 
 -- Scenario → Departments junction table (BCNF normalization)

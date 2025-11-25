@@ -1,12 +1,11 @@
 -- Update scenario with all relationships in a single transaction
--- Parameters: $1=scenarioId, $2=name, $3=active, $4=hints_enabled, $5=objectives_enabled,
---            $6=image_input_enabled, $7=input_guardrail_enabled,
---            $8=output_guardrail_enabled, $9=problem_statement (text),
---            $10=problem_statement_name (text, nullable - defaults to scenario name),
---            $11=department_ids (text array, nullable), $12=persona_ids (text array, nullable),
---            $13=document_ids (text array), $14=objective_ids (text array),
---            $15=parameter_item_ids (text array, flattened from parameters dict),
---            $16=image_ids (text array, nullable)
+-- Parameters: $1=scenarioId, $2=name, $3=active, $4=documents_enabled, $5=document_vision_enabled,
+--            $6=objectives_enabled, $7=image_enabled, $8=problem_statement (text),
+--            $9=problem_statement_name (text, nullable - defaults to scenario name),
+--            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
+--            $12=document_ids (text array), $13=objective_ids (text array),
+--            $14=parameter_item_ids (text array, flattened from parameters dict),
+--            $15=image_ids (text array, nullable)
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
 WITH scenario_exists AS (
@@ -21,11 +20,10 @@ update_scenario AS (
     SET 
         name = $2,
         active = $3,
-        hints_enabled = $4,
-        objectives_enabled = $5,
-        image_input_enabled = $6,
-        input_guardrail_enabled = $7,
-        output_guardrail_enabled = $8,
+        documents_enabled = $4,
+        document_vision_enabled = $5,
+        objectives_enabled = $6,
+        image_enabled = $7,
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)
     RETURNING id::text as scenario_id, name
@@ -41,13 +39,13 @@ create_problem_statement AS (
     -- Create new problem_statement record (strong entity)
     INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
     SELECT 
-        COALESCE($10::text, $2::text) as name,  -- Use provided name or scenario name
-        $9::text,
+        COALESCE($9::text, $2::text) as name,  -- Use provided name or scenario name
+        $8::text,
         NOW(),
         NOW()
     WHERE EXISTS (SELECT 1 FROM scenario_exists) 
-      AND $10::text IS NOT NULL 
-      AND $10::text != ''
+      AND $9::text IS NOT NULL 
+      AND $9::text != ''
     RETURNING id as problem_statement_id
 ),
 link_problem_statement AS (
@@ -76,9 +74,9 @@ insert_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($11::text[]) as dept_id
+    FROM UNNEST($10::text[]) as dept_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($11::text[], 1), 0) > 0
+      AND COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -97,9 +95,9 @@ insert_personas AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($12::text[]) as persona_id
+    FROM UNNEST($11::text[]) as persona_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($12::text[], 1), 0) > 0
+      AND COALESCE(array_length($11::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, persona_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -118,7 +116,7 @@ insert_documents AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($13::text[]) as doc_id
+    FROM UNNEST($12::text[]) as doc_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
       AND COALESCE(array_length($13::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
@@ -135,9 +133,9 @@ objectives_with_index AS (
     SELECT 
         obj_text,
         ROW_NUMBER() OVER () - 1 as idx
-    FROM UNNEST($14::text[]) as obj_text
+    FROM UNNEST($13::text[]) as obj_text
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($14::text[], 1), 0) > 0
+      AND COALESCE(array_length($13::text[], 1), 0) > 0
 ),
 existing_objectives AS (
     -- Find existing objectives by text
@@ -189,9 +187,9 @@ insert_parameters AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($15::text[]) as param_item_id
+    FROM UNNEST($14::text[]) as param_item_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($15::text[], 1), 0) > 0
+      AND COALESCE(array_length($14::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, parameter_item_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -210,9 +208,9 @@ link_images AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($16::text[]) as image_id
+    FROM UNNEST($15::text[]) as image_id
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($16::text[], 1), 0) > 0
+      AND COALESCE(array_length($15::text[], 1), 0) > 0
     ON CONFLICT (scenario_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

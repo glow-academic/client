@@ -17,7 +17,7 @@ CREATE TABLE simulations (
   practice_simulation  BOOLEAN     NOT NULL           DEFAULT FALSE
   -- rubric_id moved to simulation_scenarios junction table
   -- time_limit moved to scenario_time_limits junction table (absence = infinite)
-  -- Flags moved to simulation_scenarios junction table: hints_enabled, objectives_enabled, image_input_enabled, input_guardrail_enabled, output_guardrail_enabled
+  -- Flags moved to simulation_scenarios junction table: hints_enabled, input_guardrail_enabled, output_guardrail_enabled
 );
 
 -- Simulation → Departments junction table (BCNF normalization)
@@ -41,14 +41,14 @@ CREATE TABLE simulation_scenarios (
   position      INT  NOT NULL DEFAULT 1,
   active        BOOLEAN NOT NULL DEFAULT TRUE,
   hints_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   input_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   output_guardrail_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  image_input_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   copy_paste_allowed BOOLEAN NOT NULL DEFAULT FALSE,
   audio_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   text_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  show_scenario BOOLEAN NOT NULL DEFAULT TRUE,
+  show_problem_statement BOOLEAN NOT NULL DEFAULT TRUE,
+  show_objectives BOOLEAN NOT NULL DEFAULT TRUE,
+  show_image BOOLEAN NOT NULL DEFAULT TRUE,
   rubric_id UUID REFERENCES rubrics(id) ON DELETE CASCADE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

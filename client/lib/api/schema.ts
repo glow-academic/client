@@ -5195,20 +5195,20 @@ export interface components {
             active: boolean;
             /** Hints Enabled */
             hints_enabled?: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled?: boolean | null;
             /** Input Guardrail Enabled */
             input_guardrail_enabled?: boolean | null;
             /** Output Guardrail Enabled */
             output_guardrail_enabled?: boolean | null;
-            /** Image Input Enabled */
-            image_input_enabled?: boolean | null;
             /** Audio Enabled */
             audio_enabled?: boolean | null;
             /** Text Enabled */
             text_enabled?: boolean | null;
-            /** Show Scenario */
-            show_scenario?: boolean | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Show Image */
+            show_image?: boolean | null;
             /** Rubric Id */
             rubric_id?: string | null;
             /** Time Limit Seconds */
@@ -5758,30 +5758,25 @@ export interface components {
                 [key: string]: string[];
             };
             /**
-             * Hints Enabled
+             * Documents Enabled
              * @default false
              */
-            hints_enabled: boolean;
+            documents_enabled: boolean;
+            /**
+             * Document Vision Enabled
+             * @default false
+             */
+            document_vision_enabled: boolean;
             /**
              * Objectives Enabled
              * @default true
              */
             objectives_enabled: boolean;
             /**
-             * Image Input Enabled
+             * Image Enabled
              * @default false
              */
-            image_input_enabled: boolean;
-            /**
-             * Input Guardrail Enabled
-             * @default false
-             */
-            input_guardrail_enabled: boolean;
-            /**
-             * Output Guardrail Enabled
-             * @default false
-             */
-            output_guardrail_enabled: boolean;
+            image_enabled: boolean;
         };
         /**
          * CreateScenarioResponse
@@ -11417,30 +11412,25 @@ export interface components {
                 [key: string]: string[];
             };
             /**
-             * Hints Enabled
+             * Documents Enabled
              * @default false
              */
-            hints_enabled: boolean;
+            documents_enabled: boolean;
+            /**
+             * Document Vision Enabled
+             * @default false
+             */
+            document_vision_enabled: boolean;
             /**
              * Objectives Enabled
              * @default true
              */
             objectives_enabled: boolean;
             /**
-             * Image Input Enabled
+             * Image Enabled
              * @default false
              */
-            image_input_enabled: boolean;
-            /**
-             * Input Guardrail Enabled
-             * @default false
-             */
-            input_guardrail_enabled: boolean;
-            /**
-             * Output Guardrail Enabled
-             * @default false
-             */
-            output_guardrail_enabled: boolean;
+            image_enabled: boolean;
         };
         /**
          * UpdateScenarioResponse
@@ -11649,10 +11639,12 @@ export interface components {
             position: number;
             /** Length Seconds */
             length_seconds: number;
-            /** Objectives Enabled */
-            objectives_enabled: boolean;
-            /** Show Scenario */
-            show_scenario: boolean;
+            /** Show Problem Statement */
+            show_problem_statement: boolean;
+            /** Show Objectives */
+            show_objectives: boolean;
+            /** Show Image */
+            show_image: boolean;
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -13261,16 +13253,14 @@ export interface components {
             generated: boolean;
             /** Parent Scenario Id */
             parent_scenario_id: string | null;
-            /** Hints Enabled */
-            hints_enabled: boolean;
+            /** Documents Enabled */
+            documents_enabled: boolean;
+            /** Document Vision Enabled */
+            document_vision_enabled: boolean;
             /** Objectives Enabled */
             objectives_enabled: boolean;
-            /** Image Input Enabled */
-            image_input_enabled: boolean;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled: boolean;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled: boolean;
+            /** Image Enabled */
+            image_enabled: boolean;
             /** Department Ids */
             department_ids: string[] | null;
             /** Valid Department Ids */
@@ -13541,22 +13531,22 @@ export interface components {
             parameter_item_ids: string[];
             /** Hints Enabled */
             hints_enabled: boolean;
-            /** Objectives Enabled */
-            objectives_enabled: boolean;
             /** Input Guardrail Enabled */
             input_guardrail_enabled: boolean;
             /** Output Guardrail Enabled */
             output_guardrail_enabled: boolean;
-            /** Image Input Enabled */
-            image_input_enabled: boolean;
             /** Copy Paste Allowed */
             copy_paste_allowed: boolean;
             /** Audio Enabled */
             audio_enabled: boolean;
             /** Text Enabled */
             text_enabled: boolean;
-            /** Show Scenario */
-            show_scenario: boolean;
+            /** Show Problem Statement */
+            show_problem_statement: boolean;
+            /** Show Objectives */
+            show_objectives: boolean;
+            /** Show Image */
+            show_image: boolean;
             /** Rubric Id */
             rubric_id: string | null;
             /** Time Limit Seconds */

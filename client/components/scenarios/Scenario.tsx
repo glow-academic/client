@@ -7,6 +7,7 @@
 "use client";
 import {
   Check,
+  Eye,
   GripVertical,
   Image,
   Loader2,
@@ -402,6 +403,7 @@ export default function Scenario({
   const [regenerateObjectives, setRegenerateObjectives] = useState(true);
   const [originalFormData, setOriginalFormData] = useState(initialFormData);
   const [useDocuments, setUseDocuments] = useState(true);
+  const [documentVisionEnabled, setDocumentVisionEnabled] = useState(false);
   const [useImage, setUseImage] = useState(false);
   const [useObjectives, setUseObjectives] = useState(false);
   const [draggedObjectiveIndex, setDraggedObjectiveIndex] = useState<
@@ -1251,17 +1253,37 @@ export default function Scenario({
           >
         )
       );
-      // Load scenario image (single image - take first if exists)
-      const scenarioImages = (
-        scenarioData as ScenarioDetailOut & {
-          scenario_images?: Array<{
-            id?: string;
-            name?: string;
-            mime_type?: string;
-          }>;
-        }
-      ).scenario_images;
+      // Load scenario flags from server data
+      const scenarioDataWithFlags = scenarioData as ScenarioDetailOut & {
+        documents_enabled?: boolean;
+        use_documents?: boolean; // Backward compatibility
+        document_vision_enabled?: boolean;
+        objectives_enabled?: boolean;
+        image_enabled?: boolean;
+        scenario_images?: Array<{
+          id?: string;
+          name?: string;
+          mime_type?: string;
+        }>;
+      };
+      // Load documents_enabled (with backward compatibility for use_documents)
+      setUseDocuments(
+        scenarioDataWithFlags.documents_enabled ??
+          scenarioDataWithFlags.use_documents ??
+          true
+      );
+      // Load document_vision_enabled
+      setDocumentVisionEnabled(
+        scenarioDataWithFlags.document_vision_enabled ?? false
+      );
+      // Load objectives_enabled
+      setUseObjectives(scenarioDataWithFlags.objectives_enabled ?? false);
+      // Load image_enabled and scenario image (single image - take first if exists)
+      const imageEnabled = scenarioDataWithFlags.image_enabled ?? false;
+      setUseImage(imageEnabled);
+      const scenarioImages = scenarioDataWithFlags.scenario_images;
       if (
+        imageEnabled &&
         scenarioImages &&
         Array.isArray(scenarioImages) &&
         scenarioImages.length > 0
@@ -1277,24 +1299,12 @@ export default function Scenario({
             name: firstImage.name || "",
             mime_type: firstImage.mime_type || "image/png",
           });
-          setUseImage(true);
         } else {
           setImage(null);
-          setUseImage(false);
         }
       } else {
         setImage(null);
-        setUseImage(false);
       }
-      // Initialize useObjectives based on existing objectives
-      const loadedObjectives = getObjectivesFromMapping(
-        scenarioData.objective_ids,
-        (scenarioData.objective_mapping || {}) as Record<
-          string,
-          { name: string }
-        >
-      );
-      setUseObjectives(loadedObjectives.length > 0);
       // Store originals for change tracking
       setOriginalFormData({
         name: scenarioData.name,
@@ -2002,11 +2012,10 @@ export default function Scenario({
                 currentParameterItemIds,
                 parameterItemMapping
               ),
-              hints_enabled: false, // Controlled by simulation page
-              objectives_enabled: true, // Controlled by simulation page
-              image_input_enabled: false, // Controlled by simulation page
-              input_guardrail_enabled: false, // Controlled by simulation page
-              output_guardrail_enabled: false, // Controlled by simulation page
+              documents_enabled: useDocuments,
+              document_vision_enabled: documentVisionEnabled,
+              objectives_enabled: useObjectives,
+              image_enabled: useImage,
             });
             // Query will refetch automatically via mutation's onSuccess invalidation
             // The useEffect watching problem_statement_id will update selectedProblemStatementId
@@ -2101,11 +2110,10 @@ export default function Scenario({
           await updateScenario({
             scenarioId: scenarioId!,
             ...payload,
-            hints_enabled: false, // Controlled by simulation page
-            objectives_enabled: true, // Controlled by simulation page
-            image_input_enabled: false, // Controlled by simulation page
-            input_guardrail_enabled: false, // Controlled by simulation page
-            output_guardrail_enabled: false, // Controlled by simulation page
+            documents_enabled: useDocuments,
+            document_vision_enabled: documentVisionEnabled,
+            objectives_enabled: useObjectives,
+            image_enabled: useImage,
           });
           toast.success("Scenario updated successfully!");
           router.push("/create/scenarios");
@@ -2120,11 +2128,10 @@ export default function Scenario({
         try {
           await createScenario({
             ...payload,
-            hints_enabled: false, // Controlled by simulation page
-            objectives_enabled: true, // Controlled by simulation page
-            image_input_enabled: false, // Controlled by simulation page
-            input_guardrail_enabled: false, // Controlled by simulation page
-            output_guardrail_enabled: false, // Controlled by simulation page
+            documents_enabled: useDocuments,
+            document_vision_enabled: documentVisionEnabled,
+            objectives_enabled: useObjectives,
+            image_enabled: useImage,
           });
           // Clear local versions after successful creation
           setLocalProblemStatementVersions([]);
@@ -2434,6 +2441,23 @@ export default function Scenario({
             </div>
             <div className="ml-auto flex items-center gap-3">
               <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="document-vision"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                  Document Vision
+                </Label>
+                <Switch
+                  id="document-vision"
+                  checked={documentVisionEnabled}
+                  onCheckedChange={(checked) => {
+                    setDocumentVisionEnabled(checked);
+                  }}
+                  disabled={isReadonly || !useDocuments}
+                />
+              </div>
+              <div className="flex items-center gap-2">
                 <Switch
                   id="use-documents"
                   checked={useDocuments}
@@ -2441,6 +2465,7 @@ export default function Scenario({
                     setUseDocuments(checked);
                     if (!checked) {
                       setCurrentDocumentIds([]);
+                      setDocumentVisionEnabled(false);
                     }
                   }}
                   disabled={isReadonly}

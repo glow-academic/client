@@ -71,16 +71,16 @@ export interface ContentItem {
   isNew?: boolean; // For staged items
   // Scenario-specific
   length_seconds?: number; // Video-specific
-  // Switch fields (scenarios only, except objectives_enabled which applies to both)
+  // Switch fields (scenarios only, except show fields which apply to both)
   hints_enabled?: boolean;
-  objectives_enabled?: boolean;
   input_guardrail_enabled?: boolean;
   output_guardrail_enabled?: boolean;
-  image_input_enabled?: boolean;
   copy_paste_allowed?: boolean;
   audio_enabled?: boolean; // Scenarios only
   text_enabled?: boolean; // Scenarios only
-  show_scenario?: boolean; // Scenarios and videos
+  show_problem_statement?: boolean; // Scenarios and videos
+  show_objectives?: boolean; // Scenarios and videos
+  show_image?: boolean; // Scenarios and videos
   rubric_id?: string | null;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
 }
@@ -94,14 +94,14 @@ export interface SimulationContentTableProps {
   onEditScenario?: (scenarioId: string) => void;
   // Switch toggle handlers
   onHintsToggle?: (contentId: string, enabled: boolean) => void;
-  onObjectivesToggle?: (contentId: string, enabled: boolean) => void;
   onInputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
-  onImageInputToggle?: (contentId: string, enabled: boolean) => void;
   onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
   onAudioToggle?: (contentId: string, enabled: boolean) => void;
   onTextToggle?: (contentId: string, enabled: boolean) => void;
-  onShowScenarioToggle?: (contentId: string, enabled: boolean) => void;
+  onShowProblemStatementToggle?: (contentId: string, enabled: boolean) => void;
+  onShowObjectivesToggle?: (contentId: string, enabled: boolean) => void;
+  onShowImageToggle?: (contentId: string, enabled: boolean) => void;
   onRubricChange?: (contentId: string, rubricId: string | null) => void;
   onTimeLimitChange?: (
     contentId: string,
@@ -121,14 +121,14 @@ export function SimulationContentTable({
   onRemove,
   onEditScenario,
   onHintsToggle,
-  onObjectivesToggle,
   onInputGuardrailToggle,
   onOutputGuardrailToggle,
-  onImageInputToggle,
   onCopyPasteToggle,
   onAudioToggle,
   onTextToggle,
-  onShowScenarioToggle,
+  onShowProblemStatementToggle,
+  onShowObjectivesToggle,
+  onShowImageToggle,
   onRubricChange,
   onTimeLimitChange,
   rubricMapping = {},
@@ -390,47 +390,6 @@ export function SimulationContentTable({
         },
       },
       {
-        id: "image_input_enabled",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Image className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs leading-tight text-center">
-                  Image
-                  <br />
-                  Input
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Enable AI vision to analyze visual content in documents</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.image_input_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  onImageInputToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onImageInputToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
         id: "copy_paste_allowed",
         header: () => (
           <Tooltip>
@@ -546,35 +505,54 @@ export function SimulationContentTable({
         },
       },
       {
-        id: "show_scenario",
+        id: "show_fields",
         header: () => (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex flex-col items-center gap-1 cursor-help">
                 <Eye className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs leading-tight text-center">
-                  Show
-                  <br />
-                  Scenario
-                </span>
+                <span className="text-xs">Show</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Display the scenario/problem statement to students</p>
+              <p>Control what information is displayed to students</p>
             </TooltipContent>
           </Tooltip>
         ),
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.show_scenario ?? true}
-                onCheckedChange={(checked) =>
-                  onShowScenarioToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onShowScenarioToggle}
-              />
+            <div className="flex flex-col items-center justify-center gap-2 py-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Problem</span>
+                <Switch
+                  checked={item.show_problem_statement ?? true}
+                  onCheckedChange={(checked) =>
+                    onShowProblemStatementToggle?.(`${item.type}:${item.id}`, checked)
+                  }
+                  disabled={readonly || !onShowProblemStatementToggle}
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Objectives</span>
+                <Switch
+                  checked={item.show_objectives ?? true}
+                  onCheckedChange={(checked) =>
+                    onShowObjectivesToggle?.(`${item.type}:${item.id}`, checked)
+                  }
+                  disabled={readonly || !onShowObjectivesToggle}
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Image</span>
+                <Switch
+                  checked={item.show_image ?? true}
+                  onCheckedChange={(checked) =>
+                    onShowImageToggle?.(`${item.type}:${item.id}`, checked)
+                  }
+                  disabled={readonly || !onShowImageToggle}
+                />
+              </div>
             </div>
           );
         },

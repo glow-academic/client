@@ -11674,17 +11674,6 @@
             ],
             "title": "Hints Enabled"
           },
-          "objectives_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled"
-          },
           "input_guardrail_enabled": {
             "anyOf": [
               {
@@ -11706,17 +11695,6 @@
               }
             ],
             "title": "Output Guardrail Enabled"
-          },
-          "image_input_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Input Enabled"
           },
           "audio_enabled": {
             "anyOf": [
@@ -11740,7 +11718,7 @@
             ],
             "title": "Text Enabled"
           },
-          "show_scenario": {
+          "show_problem_statement": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -11749,7 +11727,29 @@
                 "type": "null"
               }
             ],
-            "title": "Show Scenario"
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_image": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Image"
           },
           "rubric_id": {
             "anyOf": [
@@ -13111,9 +13111,14 @@
             "type": "object",
             "title": "Parameters"
           },
-          "hints_enabled": {
+          "documents_enabled": {
             "type": "boolean",
-            "title": "Hints Enabled",
+            "title": "Documents Enabled",
+            "default": false
+          },
+          "document_vision_enabled": {
+            "type": "boolean",
+            "title": "Document Vision Enabled",
             "default": false
           },
           "objectives_enabled": {
@@ -13121,19 +13126,9 @@
             "title": "Objectives Enabled",
             "default": true
           },
-          "image_input_enabled": {
+          "image_enabled": {
             "type": "boolean",
-            "title": "Image Input Enabled",
-            "default": false
-          },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled",
-            "default": false
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled",
+            "title": "Image Enabled",
             "default": false
           }
         },
@@ -27657,9 +27652,14 @@
             "type": "object",
             "title": "Parameters"
           },
-          "hints_enabled": {
+          "documents_enabled": {
             "type": "boolean",
-            "title": "Hints Enabled",
+            "title": "Documents Enabled",
+            "default": false
+          },
+          "document_vision_enabled": {
+            "type": "boolean",
+            "title": "Document Vision Enabled",
             "default": false
           },
           "objectives_enabled": {
@@ -27667,19 +27667,9 @@
             "title": "Objectives Enabled",
             "default": true
           },
-          "image_input_enabled": {
+          "image_enabled": {
             "type": "boolean",
-            "title": "Image Input Enabled",
-            "default": false
-          },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled",
-            "default": false
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled",
+            "title": "Image Enabled",
             "default": false
           }
         },
@@ -28235,13 +28225,17 @@
             "type": "integer",
             "title": "Length Seconds"
           },
-          "objectives_enabled": {
+          "show_problem_statement": {
             "type": "boolean",
-            "title": "Objectives Enabled"
+            "title": "Show Problem Statement"
           },
-          "show_scenario": {
+          "show_objectives": {
             "type": "boolean",
-            "title": "Show Scenario"
+            "title": "Show Objectives"
+          },
+          "show_image": {
+            "type": "boolean",
+            "title": "Show Image"
           },
           "usage_count": {
             "type": "integer",
@@ -28275,8 +28269,9 @@
           "active",
           "position",
           "length_seconds",
-          "objectives_enabled",
-          "show_scenario",
+          "show_problem_statement",
+          "show_objectives",
+          "show_image",
           "usage_count",
           "success_rate",
           "last_used",
@@ -32777,25 +32772,21 @@
             ],
             "title": "Parent Scenario Id"
           },
-          "hints_enabled": {
+          "documents_enabled": {
             "type": "boolean",
-            "title": "Hints Enabled"
+            "title": "Documents Enabled"
+          },
+          "document_vision_enabled": {
+            "type": "boolean",
+            "title": "Document Vision Enabled"
           },
           "objectives_enabled": {
             "type": "boolean",
             "title": "Objectives Enabled"
           },
-          "image_input_enabled": {
+          "image_enabled": {
             "type": "boolean",
-            "title": "Image Input Enabled"
-          },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled"
+            "title": "Image Enabled"
           },
           "department_ids": {
             "anyOf": [
@@ -32973,11 +32964,10 @@
           "active",
           "generated",
           "parent_scenario_id",
-          "hints_enabled",
+          "documents_enabled",
+          "document_vision_enabled",
           "objectives_enabled",
-          "image_input_enabled",
-          "input_guardrail_enabled",
-          "output_guardrail_enabled",
+          "image_enabled",
           "department_ids",
           "valid_department_ids",
           "persona_ids",
@@ -33542,10 +33532,6 @@
             "type": "boolean",
             "title": "Hints Enabled"
           },
-          "objectives_enabled": {
-            "type": "boolean",
-            "title": "Objectives Enabled"
-          },
           "input_guardrail_enabled": {
             "type": "boolean",
             "title": "Input Guardrail Enabled"
@@ -33553,10 +33539,6 @@
           "output_guardrail_enabled": {
             "type": "boolean",
             "title": "Output Guardrail Enabled"
-          },
-          "image_input_enabled": {
-            "type": "boolean",
-            "title": "Image Input Enabled"
           },
           "copy_paste_allowed": {
             "type": "boolean",
@@ -33570,9 +33552,17 @@
             "type": "boolean",
             "title": "Text Enabled"
           },
-          "show_scenario": {
+          "show_problem_statement": {
             "type": "boolean",
-            "title": "Show Scenario"
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "type": "boolean",
+            "title": "Show Objectives"
+          },
+          "show_image": {
+            "type": "boolean",
+            "title": "Show Image"
           },
           "rubric_id": {
             "anyOf": [
@@ -33629,14 +33619,14 @@
           "position",
           "parameter_item_ids",
           "hints_enabled",
-          "objectives_enabled",
           "input_guardrail_enabled",
           "output_guardrail_enabled",
-          "image_input_enabled",
           "copy_paste_allowed",
           "audio_enabled",
           "text_enabled",
-          "show_scenario",
+          "show_problem_statement",
+          "show_objectives",
+          "show_image",
           "rubric_id",
           "time_limit_seconds",
           "usage_count",

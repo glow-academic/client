@@ -80,11 +80,10 @@ class ScenarioDetailResponse(BaseModel):
     active: bool
     generated: bool
     parent_scenario_id: str | None
-    hints_enabled: bool
+    documents_enabled: bool
+    document_vision_enabled: bool
     objectives_enabled: bool
-    image_input_enabled: bool
-    input_guardrail_enabled: bool
-    output_guardrail_enabled: bool
+    image_enabled: bool
 
     # Department
     department_ids: list[str] | None
@@ -436,11 +435,10 @@ async def get_scenario_detail(
             problem_statement_id=scenario.get("problem_statement_id"),
             active=scenario["active"],
             generated=is_generated,
-            hints_enabled=scenario.get("hints_enabled", False),
+            documents_enabled=scenario.get("documents_enabled", scenario.get("use_documents", False)),  # Backward compatibility
+            document_vision_enabled=scenario.get("document_vision_enabled", False),
             objectives_enabled=scenario.get("objectives_enabled", True),
-            image_input_enabled=scenario.get("image_input_enabled", False),
-            input_guardrail_enabled=scenario.get("input_guardrail_enabled", False),
-            output_guardrail_enabled=scenario.get("output_guardrail_enabled", False),
+            image_enabled=scenario.get("image_enabled", False),
             parent_scenario_id=scenario["parent_scenario_id"],
             department_ids=department_ids,
             valid_department_ids=dept_ids,
