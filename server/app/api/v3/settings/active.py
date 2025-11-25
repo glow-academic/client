@@ -110,6 +110,7 @@ class SettingsActiveResponse(BaseModel):
     created_at: str
     active: bool
     organization_name: str
+    organization_description: str
     mode: Literal["light", "dark", "system"] = "light"
     tokens: ThemeTokens
 
@@ -301,6 +302,7 @@ async def get_active_settings(
             else "",
             active=settings["active"],
             organization_name=settings["organization_name"],
+            organization_description=settings["organization_description"],
             mode="light",
             tokens=theme_tokens,
         )

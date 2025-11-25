@@ -5,6 +5,7 @@ SELECT
     created_at,
     active,
     organization_name,
+    organization_description,
     primary_color,
     accent,
     background,

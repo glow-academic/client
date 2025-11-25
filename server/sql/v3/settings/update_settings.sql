@@ -1,28 +1,29 @@
 -- Update settings: deactivate current active row, insert new active row
 -- Parameters: 
 --   $1 = organization_name (text)
---   $2 = primary_color (text)
---   $3 = accent (text)
---   $4 = background (text)
---   $5 = surface (text)
---   $6 = success (text)
---   $7 = warning (text)
---   $8 = error (text)
---   $9 = sidebar_background (text)
---   $10 = sidebar_primary (text)
---   $11 = chart1 (text)
---   $12 = chart2 (text)
---   $13 = chart3 (text)
---   $14 = chart4 (text)
---   $15 = chart5 (text)
---   $16 = profile_id (uuid or "guest-profile-id")
+--   $2 = organization_description (text)
+--   $3 = primary_color (text)
+--   $4 = accent (text)
+--   $5 = background (text)
+--   $6 = surface (text)
+--   $7 = success (text)
+--   $8 = warning (text)
+--   $9 = error (text)
+--   $10 = sidebar_background (text)
+--   $11 = sidebar_primary (text)
+--   $12 = chart1 (text)
+--   $13 = chart2 (text)
+--   $14 = chart3 (text)
+--   $15 = chart4 (text)
+--   $16 = chart5 (text)
+--   $17 = profile_id (uuid or "guest-profile-id")
 WITH resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $16::text = 'guest-profile-id' THEN
+            WHEN $17::text = 'guest-profile-id' THEN
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            WHEN $16::text IS NULL OR $16::text = '' THEN NULL::uuid
-            ELSE $16::uuid
+            WHEN $17::text IS NULL OR $17::text = '' THEN NULL::uuid
+            ELSE $17::uuid
         END as resolved_profile_id
 ),
 deactivate_current AS (
@@ -36,6 +37,7 @@ insert_new AS (
     INSERT INTO settings (
         active,
         organization_name,
+        organization_description,
         primary_color,
         accent,
         background,
@@ -67,7 +69,8 @@ insert_new AS (
         $12::text,
         $13::text,
         $14::text,
-        $15::text
+        $15::text,
+        $16::text
     )
     RETURNING id::text as settings_id
 )

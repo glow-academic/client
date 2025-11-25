@@ -118,6 +118,7 @@ CREATE TABLE settings (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   active          BOOLEAN     NOT NULL,
   organization_name TEXT      NOT NULL,  -- organization name
+  organization_description TEXT NOT NULL,  -- organization description
   -- Theme primitives (user-editable high-level theme configuration)
   primary_color   TEXT        NOT NULL,   -- Main brand/action color
   accent          TEXT        NOT NULL,   -- Secondary brand color

@@ -28,6 +28,7 @@ class SettingsDetailResponse(BaseModel):
     created_at: str
     active: bool
     organization_name: str
+    organization_description: str
     primary_color: str
     accent: str
     background: str
@@ -88,6 +89,7 @@ async def get_settings_detail(
             else "",
             active=settings["active"],
             organization_name=settings["organization_name"],
+            organization_description=settings["organization_description"],
             primary_color=settings["primary_color"],
             accent=settings["accent"],
             background=settings["background"],

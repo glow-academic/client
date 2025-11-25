@@ -25133,6 +25133,10 @@
             "type": "string",
             "title": "Organization Name"
           },
+          "organization_description": {
+            "type": "string",
+            "title": "Organization Description"
+          },
           "mode": {
             "type": "string",
             "enum": [
@@ -25153,6 +25157,7 @@
           "created_at",
           "active",
           "organization_name",
+          "organization_description",
           "tokens"
         ],
         "title": "SettingsActiveResponse",
@@ -25194,6 +25199,10 @@
           "organization_name": {
             "type": "string",
             "title": "Organization Name"
+          },
+          "organization_description": {
+            "type": "string",
+            "title": "Organization Description"
           },
           "primary_color": {
             "type": "string",
@@ -25258,6 +25267,7 @@
           "created_at",
           "active",
           "organization_name",
+          "organization_description",
           "primary_color",
           "accent",
           "background",
@@ -28071,6 +28081,10 @@
             "type": "string",
             "title": "Organization Name"
           },
+          "organization_description": {
+            "type": "string",
+            "title": "Organization Description"
+          },
           "primary_color": {
             "type": "string",
             "title": "Primary Color"
@@ -28135,6 +28149,7 @@
         "type": "object",
         "required": [
           "organization_name",
+          "organization_description",
           "primary_color",
           "accent",
           "background",

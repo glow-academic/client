@@ -10414,6 +10414,8 @@ export interface components {
             active: boolean;
             /** Organization Name */
             organization_name: string;
+            /** Organization Description */
+            organization_description: string;
             /**
              * Mode
              * @default light
@@ -10445,6 +10447,8 @@ export interface components {
             active: boolean;
             /** Organization Name */
             organization_name: string;
+            /** Organization Description */
+            organization_description: string;
             /** Primary Color */
             primary_color: string;
             /** Accent */
@@ -11604,6 +11608,8 @@ export interface components {
         UpdateSettingsRequest: {
             /** Organization Name */
             organization_name: string;
+            /** Organization Description */
+            organization_description: string;
             /** Primary Color */
             primary_color: string;
             /** Accent */

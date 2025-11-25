@@ -19,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 
 // Type-only import from server pages
 import type {
@@ -72,6 +73,7 @@ export default function Settings({
   // Form data state with all ThemePrimitives
   const [formData, setFormData] = useState({
     organization_name: "",
+    organization_description: "",
     primary_color: "#171717",
     accent: "#f5f5f5",
     background: "#ffffff",
@@ -114,6 +116,7 @@ export default function Settings({
     if (settingsDetail) {
       setFormData({
         organization_name: settingsDetail.organization_name || "",
+        organization_description: settingsDetail.organization_description || "",
         primary_color: settingsDetail.primary_color || "#171717",
         accent: settingsDetail.accent || "#f5f5f5",
         background: settingsDetail.background || "#ffffff",
@@ -163,6 +166,7 @@ export default function Settings({
       const result = await updateSettingsAction({
         body: {
           organization_name: formData.organization_name,
+          organization_description: formData.organization_description,
           primary_color: formData.primary_color,
           accent: formData.accent,
           background: formData.background,
@@ -326,6 +330,27 @@ export default function Settings({
             placeholder="e.g. Purdue University"
             disabled={isSubmitting}
             className="max-w-md"
+          />
+        </div>
+
+        {/* Organization Description */}
+        <div className="space-y-2">
+          <Label htmlFor="organization_description">
+            Organization Description
+          </Label>
+          <Textarea
+            id="organization_description"
+            value={formData.organization_description}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                organization_description: e.target.value,
+              }))
+            }
+            placeholder="Enter organization description..."
+            disabled={isSubmitting}
+            className="max-w-md"
+            rows={4}
           />
         </div>
 

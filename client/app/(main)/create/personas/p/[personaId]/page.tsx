@@ -61,16 +61,33 @@ export async function generateMetadata(
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
+  // Fetch active settings for organization name and description
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
+
   try {
     const persona = await getPersona(personaId, profileId);
     return {
       title: `${persona?.name || "Persona"} Persona`,
-      description: `${persona ? `${persona.name} ${persona.description || ""}` : "Persona"} in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `${persona ? `${persona.name} ${persona.description || ""}` : "Persona"} in GLOW${orgPart}.`,
     };
   } catch {
     return {
       title: "Persona",
-      description: `Persona in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+      description: `Persona in GLOW${orgPart}.`,
     };
   }
 }
