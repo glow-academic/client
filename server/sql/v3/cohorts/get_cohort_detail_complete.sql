@@ -237,7 +237,7 @@ cohort_simulation_stats AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+             WHERE stl.simulation_id = cs.simulation_id AND stl.active = true AND ss.active = true),
             0
         ) as time_limit,
         COUNT(DISTINCT sa.id) as usage_count,
@@ -257,7 +257,7 @@ cohort_simulation_stats AS (
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
     LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
     LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
-    GROUP BY cs.simulation_id, cs.active, s.title, s.description, stl.time_limit_seconds
+    GROUP BY cs.simulation_id, cs.active, s.title, s.description
 ),
 valid_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -426,10 +426,10 @@ SELECT
             'profile_id', cs.profile_id::text,
             'first_name', cs.first_name,
             'last_name', cs.last_name,
-            'email', cs.email,
+            'emails', cs.emails,
+            'primaryEmail', cs.primary_email,
             'name', cs.name,
             'role', cs.role,
-            'email', cs.email,
             'initials', cs.initials,
             'active', cs.active,
             'lastActive', cs.lastActive,

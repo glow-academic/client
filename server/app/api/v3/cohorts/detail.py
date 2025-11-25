@@ -188,7 +188,7 @@ async def get_cohort_detail(
                             primary_department_id = department_ids[0] if isinstance(department_ids, list) and len(department_ids) > 0 else ""
                         
                         emails = s.get("emails") or []
-                        primary_email = s.get("primaryEmail")
+                        primary_email = s.get("primaryEmail") or s.get("primary_email")
                         staff.append(
                             StaffItem(
                                 profile_id=s.get("profile_id", ""),

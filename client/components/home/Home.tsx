@@ -441,8 +441,8 @@ export default function Home({ homeData }: HomeProps) {
                       onClick={() => setCarouselIndex(index)}
                       className={`w-2 h-2 rounded-full transition-colors ${
                         index === carouselIndex
-                          ? "bg-blue-500"
-                          : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                          ? "bg-primary"
+                          : "bg-muted"
                       }`}
                     />
                   ))}

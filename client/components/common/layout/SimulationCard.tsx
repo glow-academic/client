@@ -140,11 +140,9 @@ export default function SimulationCard({
         : "rgb(168, 85, 247)"; // purple-500 default for practice
 
   const backgroundGradient =
-    type === "default"
-      ? "from-gray-900 to-gray-600"
-      : hasPassed
-        ? "from-green-900 to-green-600"
-        : "from-blue-900 to-purple-600";
+    type === "cohort" && hasPassed
+      ? "from-green-900 to-green-600"
+      : "from-gray-900 to-gray-600";
 
   // Determine if we should use persona color for icons (only for default type with color prop)
   const shouldUsePersonaColor = type === "default" && color;
@@ -224,14 +222,6 @@ export default function SimulationCard({
                           variant="outline"
                           size="icon"
                           className="relative z-20"
-                          style={
-                            shouldUsePersonaColor
-                              ? {
-                                  borderColor: iconColor,
-                                  color: iconColor,
-                                }
-                              : undefined
-                          }
                         >
                           <Table className="h-4 w-4" />
                         </Button>
