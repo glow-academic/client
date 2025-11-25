@@ -141,7 +141,8 @@ CREATE TABLE simulation_messages (
   chat_id    UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
   content    TEXT        NOT NULL,
   type  simulation_message_type NOT NULL, -- query or response
-  completed  BOOLEAN     NOT NULL           DEFAULT FALSE
+  completed  BOOLEAN     NOT NULL           DEFAULT FALSE,
+  audio      BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
 -- Simulation hints collection table (BCNF normalization)

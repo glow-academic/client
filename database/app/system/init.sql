@@ -104,3 +104,26 @@ CREATE TABLE prompt_departments (
 CREATE INDEX ON prompt_departments (prompt_id);
 CREATE INDEX ON prompt_departments (department_id);
 CREATE INDEX ON prompt_departments (active);
+
+-- ============================================================================
+-- SETTINGS TABLE
+-- ============================================================================
+
+-- Settings table (read/delete only - snapshot-based configuration)
+-- Read/delete only: no UPDATEs, only INSERTs and DELETEs
+-- Only one active settings row allowed (enforced via UNIQUE INDEX)
+-- Following Chris Date principles: BCNF, No Nulls
+CREATE TABLE settings (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  active          BOOLEAN     NOT NULL,
+  color           TEXT        NOT NULL, -- theme color (e.g., 'blue-500')
+  organization_name TEXT      NOT NULL  -- organization name
+);
+
+CREATE INDEX ON settings (created_at);
+CREATE INDEX ON settings (active);
+
+-- Enforce only one active settings row
+CREATE UNIQUE INDEX settings_one_active
+  ON settings(active) WHERE active = true;
