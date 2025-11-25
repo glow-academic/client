@@ -10,6 +10,7 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import load_sql
 from app.utils.theme.color_utils import ensure_contrast, shade, tint
+from app.utils.theme.oklch_to_hex import hex_to_oklch
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
@@ -117,18 +118,48 @@ class SettingsActiveResponse(BaseModel):
 router = APIRouter()
 
 
+def normalize_color_to_oklch(color: str) -> str:
+    """
+    Normalize color input to oklch format.
+    Accepts hex (e.g., '#ffffff' or 'ffffff') or oklch (e.g., 'oklch(1 0 0)').
+    Always returns oklch format.
+    """
+    color_trimmed = color.strip()
+    
+    # Check if it's already oklch format
+    if color_trimmed.startswith("oklch("):
+        return color_trimmed
+    
+    # Otherwise, assume it's hex and convert
+    # Remove # if present
+    hex_clean = color_trimmed.lstrip("#")
+    
+    # Validate hex format (must be 6 characters)
+    if len(hex_clean) != 6 or not all(c in "0123456789ABCDEFabcdef" for c in hex_clean):
+        raise ValueError(f"Invalid color format: {color}. Expected hex (e.g., '#ffffff') or oklch (e.g., 'oklch(1 0 0)')")
+    
+    return hex_to_oklch(f"#{hex_clean}")
+
+
 def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
     """
     Derive full ThemeTokens from user-editable ThemePrimitives.
     This function computes all internal design tokens from the small set of primitives.
+    
+    Accepts hex or oklch format in primitives, normalizes all to oklch.
     """
-    background = primitives.background
-    surface = primitives.surface
+    # Normalize all color inputs to oklch format (handles hex from color picker)
+    background = normalize_color_to_oklch(primitives.background)
+    surface = normalize_color_to_oklch(primitives.surface)
 
-    primary = primitives.primary
-    accent = primitives.accent
-    sidebar_bg = primitives.sidebarBackground
-    sidebar_primary = primitives.sidebarPrimary
+    primary = normalize_color_to_oklch(primitives.primary)
+    accent = normalize_color_to_oklch(primitives.accent)
+    sidebar_bg = normalize_color_to_oklch(primitives.sidebarBackground)
+    sidebar_primary = normalize_color_to_oklch(primitives.sidebarPrimary)
+    
+    success = normalize_color_to_oklch(primitives.success)
+    warning = normalize_color_to_oklch(primitives.warning)
+    error = normalize_color_to_oklch(primitives.error)
 
     # Foregrounds based on contrast
     foreground = ensure_contrast(background, "oklch(0.145 0 0)")
@@ -137,9 +168,9 @@ def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
     surface_fg = ensure_contrast(surface, foreground)
 
     # Status foregrounds
-    success_fg = ensure_contrast(primitives.success, "oklch(0.985 0 0)")
-    warning_fg = ensure_contrast(primitives.warning, "oklch(0.145 0 0)")
-    error_fg = ensure_contrast(primitives.error, "oklch(0.985 0 0)")
+    success_fg = ensure_contrast(success, "oklch(0.985 0 0)")
+    warning_fg = ensure_contrast(warning, "oklch(0.145 0 0)")
+    error_fg = ensure_contrast(error, "oklch(0.985 0 0)")
 
     # Info derived from primary
     info_color = tint(primary, 0.05)
@@ -179,21 +210,21 @@ def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
         mutedForeground=muted_fg,
         accent=accent,
         accentForeground=accent_fg,
-        destructive=primitives.error,
+        destructive=error,
         border=border_color,
         input=input_color,
         ring=ring_color,
-        success=primitives.success,
+        success=success,
         successForeground=success_fg,
-        warning=primitives.warning,
+        warning=warning,
         warningForeground=warning_fg,
         info=info_color,
         infoForeground=info_fg,
-        chart1=primitives.chart1,
-        chart2=primitives.chart2,
-        chart3=primitives.chart3,
-        chart4=primitives.chart4,
-        chart5=primitives.chart5,
+        chart1=normalize_color_to_oklch(primitives.chart1),
+        chart2=normalize_color_to_oklch(primitives.chart2),
+        chart3=normalize_color_to_oklch(primitives.chart3),
+        chart4=normalize_color_to_oklch(primitives.chart4),
+        chart5=normalize_color_to_oklch(primitives.chart5),
         sidebar=sidebar_bg,
         sidebarForeground=sidebar_fg,
         sidebarPrimary=sidebar_primary,
@@ -241,21 +272,28 @@ async def get_active_settings(
 
         # POC: Hardcoded theme primitives matching original globals.css defaults
         # In production, these would come from the database
+        # 
+        # NOTE: ThemePrimitives accepts BOTH hex and oklch formats:
+        #   - Hex: "#ffffff" or "ffffff" (from color picker)
+        #   - OKLCH: "oklch(1 0 0)" (for precise color control)
+        # All values are normalized to oklch internally via normalize_color_to_oklch()
+        #
+        # TESTING: Using hex values to verify conversion works
         hardcoded_primitives = ThemePrimitives(
-            primary="oklch(0.205 0 0)",  # Dark gray/black (original primary)
-            accent="oklch(0.97 0 0)",  # Very light gray (original accent/secondary)
-            background="oklch(1 0 0)",  # White (original background)
-            surface="oklch(1 0 0)",  # White (original card/popover)
-            success="oklch(0.6 0.2 150)",  # Green (from globals.css)
-            warning="oklch(0.7 0.2 70)",  # Yellow/orange (from globals.css)
-            error="oklch(0.577 0.245 27.325)",  # Red (original destructive)
-            sidebarBackground="oklch(0.985 0 0)",  # Very light gray (original sidebar)
-            sidebarPrimary="oklch(0.205 0 0)",  # Dark gray (original sidebar-primary)
-            chart1="oklch(0.646 0.222 41.116)",  # Original chart-1
-            chart2="oklch(0.6 0.118 184.704)",  # Original chart-2
-            chart3="oklch(0.398 0.07 227.392)",  # Original chart-3
-            chart4="oklch(0.828 0.189 84.429)",  # Original chart-4
-            chart5="oklch(0.769 0.188 70.08)",  # Original chart-5
+            primary="#171717",  # Dark gray/black (original primary)
+            accent="#f5f5f5",  # Very light gray (original accent/secondary)
+            background="#ffffff",  # White (original background)
+            surface="#ffffff",  # White (original card/popover)
+            success="#009e34",  # Green (from globals.css)
+            warning="#ea8100",  # Yellow/orange (from globals.css)
+            error="#e7000b",  # Red (original destructive)
+            sidebarBackground="#fafafa",  # Very light gray (original sidebar)
+            sidebarPrimary="#171717",  # Dark gray (original sidebar-primary)
+            chart1="#f54900",  # Original chart-1
+            chart2="#009689",  # Original chart-2
+            chart3="#104e64",  # Original chart-3
+            chart4="#ffb900",  # Original chart-4
+            chart5="#fe9a00",  # Original chart-5
         )
 
         # Derive full theme tokens from primitives
