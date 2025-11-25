@@ -30,7 +30,6 @@ type SettingsInfo = {
   settings_id: string;
   created_at: string;
   active: boolean;
-  color: string;
   organization_name: string;
 };
 

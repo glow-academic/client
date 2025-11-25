@@ -117,8 +117,22 @@ CREATE TABLE settings (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   active          BOOLEAN     NOT NULL,
-  color           TEXT        NOT NULL, -- theme color (e.g., 'blue-500')
-  organization_name TEXT      NOT NULL  -- organization name
+  organization_name TEXT      NOT NULL,  -- organization name
+  -- Theme primitives (user-editable high-level theme configuration)
+  primary_color   TEXT        NOT NULL,   -- Main brand/action color
+  accent          TEXT        NOT NULL,   -- Secondary brand color
+  background      TEXT        NOT NULL,   -- Page background
+  surface         TEXT        NOT NULL,   -- Cards/panels
+  success         TEXT        NOT NULL,   -- Success status color
+  warning         TEXT        NOT NULL,   -- Warning status color
+  error           TEXT        NOT NULL,   -- Error status color
+  sidebar_background TEXT     NOT NULL,   -- Sidebar background
+  sidebar_primary TEXT        NOT NULL,   -- Sidebar primary color
+  chart1          TEXT        NOT NULL,   -- Chart color 1
+  chart2          TEXT        NOT NULL,   -- Chart color 2
+  chart3          TEXT        NOT NULL,   -- Chart color 3
+  chart4          TEXT        NOT NULL,   -- Chart color 4
+  chart5          TEXT        NOT NULL   -- Chart color 5
 );
 
 CREATE INDEX ON settings (created_at);

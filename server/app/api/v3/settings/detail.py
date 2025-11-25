@@ -27,8 +27,21 @@ class SettingsDetailResponse(BaseModel):
     settings_id: str
     created_at: str
     active: bool
-    color: str
     organization_name: str
+    primary_color: str
+    accent: str
+    background: str
+    surface: str
+    success: str
+    warning: str
+    error: str
+    sidebar_background: str
+    sidebar_primary: str
+    chart1: str
+    chart2: str
+    chart3: str
+    chart4: str
+    chart5: str
 
 
 router = APIRouter()
@@ -74,8 +87,21 @@ async def get_settings_detail(
             if settings["created_at"]
             else "",
             active=settings["active"],
-            color=settings["color"],
             organization_name=settings["organization_name"],
+            primary_color=settings["primary_color"],
+            accent=settings["accent"],
+            background=settings["background"],
+            surface=settings["surface"],
+            success=settings["success"],
+            warning=settings["warning"],
+            error=settings["error"],
+            sidebar_background=settings["sidebar_background"],
+            sidebar_primary=settings["sidebar_primary"],
+            chart1=settings["chart1"],
+            chart2=settings["chart2"],
+            chart3=settings["chart3"],
+            chart4=settings["chart4"],
+            chart5=settings["chart5"],
         )
 
         # Cache response

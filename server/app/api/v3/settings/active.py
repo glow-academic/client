@@ -109,7 +109,6 @@ class SettingsActiveResponse(BaseModel):
     settings_id: str
     created_at: str
     active: bool
-    color: str
     organization_name: str
     mode: Literal["light", "dark", "system"] = "light"
     tokens: ThemeTokens
@@ -270,34 +269,30 @@ async def get_active_settings(
                 status_code=404, detail="No active settings found"
             )
 
-        # POC: Hardcoded theme primitives matching original globals.css defaults
-        # In production, these would come from the database
-        # 
+        # Read ThemePrimitives from database
         # NOTE: ThemePrimitives accepts BOTH hex and oklch formats:
         #   - Hex: "#ffffff" or "ffffff" (from color picker)
         #   - OKLCH: "oklch(1 0 0)" (for precise color control)
         # All values are normalized to oklch internally via normalize_color_to_oklch()
-        #
-        # TESTING: Using hex values to verify conversion works
-        hardcoded_primitives = ThemePrimitives(
-            primary="#171717",  # Dark gray/black (original primary)
-            accent="#f5f5f5",  # Very light gray (original accent/secondary)
-            background="#ffffff",  # White (original background)
-            surface="#ffffff",  # White (original card/popover)
-            success="#009e34",  # Green (from globals.css)
-            warning="#ea8100",  # Yellow/orange (from globals.css)
-            error="#e7000b",  # Red (original destructive)
-            sidebarBackground="#fafafa",  # Very light gray (original sidebar)
-            sidebarPrimary="#171717",  # Dark gray (original sidebar-primary)
-            chart1="#f54900",  # Original chart-1
-            chart2="#009689",  # Original chart-2
-            chart3="#104e64",  # Original chart-3
-            chart4="#ffb900",  # Original chart-4
-            chart5="#fe9a00",  # Original chart-5
+        theme_primitives = ThemePrimitives(
+            primary=settings["primary_color"],
+            accent=settings["accent"],
+            background=settings["background"],
+            surface=settings["surface"],
+            success=settings["success"],
+            warning=settings["warning"],
+            error=settings["error"],
+            sidebarBackground=settings["sidebar_background"],
+            sidebarPrimary=settings["sidebar_primary"],
+            chart1=settings["chart1"],
+            chart2=settings["chart2"],
+            chart3=settings["chart3"],
+            chart4=settings["chart4"],
+            chart5=settings["chart5"],
         )
 
         # Derive full theme tokens from primitives
-        theme_tokens = derive_theme_tokens(hardcoded_primitives)
+        theme_tokens = derive_theme_tokens(theme_primitives)
 
         response_data = SettingsActiveResponse(
             settings_id=settings["settings_id"],
@@ -305,7 +300,6 @@ async def get_active_settings(
             if settings["created_at"]
             else "",
             active=settings["active"],
-            color=settings["color"],
             organization_name=settings["organization_name"],
             mode="light",
             tokens=theme_tokens,

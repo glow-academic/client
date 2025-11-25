@@ -10412,8 +10412,6 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
-            /** Color */
-            color: string;
             /** Organization Name */
             organization_name: string;
             /**
@@ -10445,10 +10443,36 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
-            /** Color */
-            color: string;
             /** Organization Name */
             organization_name: string;
+            /** Primary Color */
+            primary_color: string;
+            /** Accent */
+            accent: string;
+            /** Background */
+            background: string;
+            /** Surface */
+            surface: string;
+            /** Success */
+            success: string;
+            /** Warning */
+            warning: string;
+            /** Error */
+            error: string;
+            /** Sidebar Background */
+            sidebar_background: string;
+            /** Sidebar Primary */
+            sidebar_primary: string;
+            /** Chart1 */
+            chart1: string;
+            /** Chart2 */
+            chart2: string;
+            /** Chart3 */
+            chart3: string;
+            /** Chart4 */
+            chart4: string;
+            /** Chart5 */
+            chart5: string;
         };
         /**
          * SettingsItem
@@ -10461,8 +10485,6 @@ export interface components {
             created_at: string;
             /** Active */
             active: boolean;
-            /** Color */
-            color: string;
             /** Organization Name */
             organization_name: string;
         };
@@ -11580,10 +11602,36 @@ export interface components {
          * @description Request to update settings.
          */
         UpdateSettingsRequest: {
-            /** Color */
-            color: string;
             /** Organization Name */
             organization_name: string;
+            /** Primary Color */
+            primary_color: string;
+            /** Accent */
+            accent: string;
+            /** Background */
+            background: string;
+            /** Surface */
+            surface: string;
+            /** Success */
+            success: string;
+            /** Warning */
+            warning: string;
+            /** Error */
+            error: string;
+            /** Sidebar Background */
+            sidebar_background: string;
+            /** Sidebar Primary */
+            sidebar_primary: string;
+            /** Chart1 */
+            chart1: string;
+            /** Chart2 */
+            chart2: string;
+            /** Chart3 */
+            chart3: string;
+            /** Chart4 */
+            chart4: string;
+            /** Chart5 */
+            chart5: string;
             /** Profileid */
             profileId: string;
         };

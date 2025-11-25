@@ -16,8 +16,21 @@ from app.utils.sql_helper import load_sql
 class UpdateSettingsRequest(BaseModel):
     """Request to update settings."""
 
-    color: str
     organization_name: str
+    primary_color: str
+    accent: str
+    background: str
+    surface: str
+    success: str
+    warning: str
+    error: str
+    sidebar_background: str
+    sidebar_primary: str
+    chart1: str
+    chart2: str
+    chart3: str
+    chart4: str
+    chart5: str
     profileId: str  # Required for auditing/access control
 
 
@@ -50,14 +63,40 @@ async def update_settings(
             # Update settings: deactivate current active, insert new active row
             sql_query = load_sql("sql/v3/settings/update_settings.sql")
             sql_params = (
-                request.color,
                 request.organization_name,
+                request.primary_color,
+                request.accent,
+                request.background,
+                request.surface,
+                request.success,
+                request.warning,
+                request.error,
+                request.sidebar_background,
+                request.sidebar_primary,
+                request.chart1,
+                request.chart2,
+                request.chart3,
+                request.chart4,
+                request.chart5,
                 request.profileId,
             )
             result = await conn.fetchrow(
                 sql_query,
-                request.color,
                 request.organization_name,
+                request.primary_color,
+                request.accent,
+                request.background,
+                request.surface,
+                request.success,
+                request.warning,
+                request.error,
+                request.sidebar_background,
+                request.sidebar_primary,
+                request.chart1,
+                request.chart2,
+                request.chart3,
+                request.chart4,
+                request.chart5,
                 request.profileId,
             )
 
