@@ -195,6 +195,7 @@ async def get_documents_list(
                             description=pdata.get("description", ""),
                             numerical=pdata.get("numerical", False),
                             document_parameter=pdata.get("document_parameter", False),
+                            persona_parameter=pdata.get("persona_parameter", False),
                         )
 
         for row in rows:

@@ -28,12 +28,12 @@ filtered_documents AS (
          OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true))
 ),
 filtered_parameters AS (
-    SELECT DISTINCT p.id, p.name, p.description, p.document_parameter
+    SELECT DISTINCT p.id, p.name, p.description, p.document_parameter, p.persona_parameter
     FROM parameters p
     JOIN parameter_items pi ON pi.parameter_id = p.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.document_parameter
+    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
@@ -99,7 +99,8 @@ SELECT
             'id', fp2.id,
             'name', fp2.name,
             'description', fp2.description,
-            'document_parameter', fp2.document_parameter
+            'document_parameter', fp2.document_parameter,
+            'persona_parameter', fp2.persona_parameter
         )),
         '[]'::json
     ) FROM filtered_parameters fp2) as parameters,

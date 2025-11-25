@@ -71,6 +71,9 @@ async def randomize_scenario_attributes(
         targets = []
 
     # Step 1: Department selection with fallback logic
+    # Track if we should use "all departments" (empty array) vs specific department(s)
+    use_all_departments = not department_ids or len(department_ids) == 0
+    
     selected_department_id: uuid.UUID | None = None
     if department_ids and len(department_ids) > 0:
         # Use provided departments, randomly pick one
@@ -105,7 +108,9 @@ async def randomize_scenario_attributes(
         )
 
     # Step 2: Load randomization data
-    dept_uuids = [selected_department_id]
+    # If department_ids was null/empty (all departments), pass empty array to SQL query
+    # Otherwise pass the selected department for filtering
+    dept_uuids: list[uuid.UUID] = [] if use_all_departments else [selected_department_id]
     sql = load_sql("sql/v3/scenarios/get_randomization_data_complete.sql")
     result = await conn.fetchrow(sql, dept_uuids, scenario_id)
 
@@ -160,6 +165,8 @@ async def randomize_scenario_attributes(
             {
                 **p,
                 "id": uuid.UUID(str(p["id"])),
+                "document_parameter": p.get("document_parameter", False),
+                "persona_parameter": p.get("persona_parameter", False),
             }
         )
 
@@ -205,6 +212,9 @@ async def randomize_scenario_attributes(
 
     # Step 3: Persona selection
     scenario_persona_ids: list[uuid.UUID] = []
+    # Check if persona is in targets - if so, ignore provided persona_ids and randomize
+    should_randomize_persona = not targets or "persona" in [t.lower() for t in targets]
+    
     if scenario_id and existing_persona_ids:
         # Use existing persona links from parent
         scenario_persona_ids = [uuid.UUID(p) for p in existing_persona_ids]
@@ -215,12 +225,12 @@ async def randomize_scenario_attributes(
         if len(scenario_persona_ids) >= 2:
             scenario_persona_ids = [random.choice(scenario_persona_ids)]
             logger.info(f"Randomly selected ONE persona: {scenario_persona_ids}")
-    elif persona_ids:
-        # Use provided personas, but enforce single active
+    elif persona_ids and not should_randomize_persona:
+        # Use provided personas only if persona is NOT in targets
         scenario_persona_ids = persona_ids[:1]  # Take first one only
         logger.info(f"Using provided persona_id: {scenario_persona_ids}")
-    elif not targets or "persona" in [t.lower() for t in targets]:
-        # Random selection from active personas
+    elif should_randomize_persona:
+        # Random selection from active personas (when persona is in targets)
         if active_personas:
             selected_persona = random.choice(active_personas)
             scenario_persona_ids = [selected_persona["id"]]
@@ -230,42 +240,71 @@ async def randomize_scenario_attributes(
 
     # Get single persona_id for agent calls
     persona_id = scenario_persona_ids[0] if scenario_persona_ids else None
+    
+    # Step 3.5: Persona parameter selection (when randomizing personas)
+    persona_param_ids: list[uuid.UUID] = []
+    if not targets or "persona" in [t.lower() for t in targets]:
+        # Randomize persona parameters when randomizing personas
+        persona_parameters = [
+            p for p in active_parameters if p.get("persona_parameter", False)
+        ]
+        if persona_parameters:
+            for param in persona_parameters:
+                param_items = parameter_items_by_param_id.get(param["id"], [])
+                if param_items:
+                    selected_item = random.choice(param_items)
+                    persona_param_ids.append(selected_item["id"])
+            logger.info(
+                f"Randomly selected {len(persona_param_ids)} persona parameter_item_ids: {persona_param_ids}"
+            )
 
     # Step 4: Parameter item selection
     param_ids: list[uuid.UUID] = []
+    # Check if parameters is in targets - if so, ignore provided parameter_item_ids and randomize
+    should_randomize_parameters = not targets or "parameters" in [t.lower() for t in targets]
+    
     if scenario_id and existing_parameter_item_ids:
         # Use existing parameter item links from parent
         param_ids = [uuid.UUID(p) for p in existing_parameter_item_ids]
         logger.info(f"Using {len(param_ids)} existing parameter_item_ids: {param_ids}")
-    elif parameter_item_ids:
-        # Use provided parameter items
+    elif parameter_item_ids and not should_randomize_parameters:
+        # Use provided parameter items only if parameters is NOT in targets
         param_ids = parameter_item_ids
         logger.info(f"Using provided parameter_item_ids: {param_ids}")
-    elif not targets or "parameters" in [t.lower() for t in targets]:
-        # Random selection: one per parameter
-        if active_parameters:
-            for param in active_parameters:
+    elif should_randomize_parameters:
+        # Random selection: one per parameter (excluding persona/document parameters)
+        general_parameters = [
+            p
+            for p in active_parameters
+            if not p.get("document_parameter", False)
+            and not p.get("persona_parameter", False)
+        ]
+        if general_parameters:
+            for param in general_parameters:
                 param_items = parameter_items_by_param_id.get(param["id"], [])
                 if param_items:
                     selected_item = random.choice(param_items)
                     param_ids.append(selected_item["id"])
             logger.info(
-                f"Randomly selected {len(param_ids)} parameter_item_ids: {param_ids}"
+                f"Randomly selected {len(param_ids)} general parameter_item_ids: {param_ids}"
             )
         else:
-            logger.info("No active parameters found")
+            logger.info("No active general parameters found")
 
     # Step 5: Document selection (with document_parameter_items junction logic)
     doc_ids: list[uuid.UUID] = []
+    # Check if documents is in targets - if so, ignore provided document_ids and randomize
+    should_randomize_documents = not targets or "documents" in [t.lower() for t in targets]
+    
     if scenario_id and existing_document_ids:
         # Use existing document links from parent
         doc_ids = [uuid.UUID(d) for d in existing_document_ids]
         logger.info(f"Using {len(doc_ids)} existing document_ids: {doc_ids}")
-    elif document_ids:
-        # Use provided documents
+    elif document_ids and not should_randomize_documents:
+        # Use provided documents only if documents is NOT in targets
         doc_ids = document_ids
         logger.info(f"Using provided document_ids: {doc_ids}")
-    elif not targets or "documents" in [t.lower() for t in targets]:
+    elif should_randomize_documents:
         # Get parameter items for document matching
         doc_matching_param_item_ids = param_ids.copy() if param_ids else []
 
@@ -305,6 +344,32 @@ async def randomize_scenario_attributes(
             logger.info(f"Randomly selected document: {selected_doc['id']}")
         else:
             logger.info("No active documents found")
+    
+    # Step 5.5: Document parameter extraction (when randomizing documents)
+    document_param_ids: list[uuid.UUID] = []
+    if doc_ids and (not targets or "documents" in [t.lower() for t in targets]):
+        # Extract document parameters from selected documents via document_parameter_items junction
+        for doc_id in doc_ids:
+            doc_param_items = [
+                j["parameter_item_id"]
+                for j in document_parameter_items_junction
+                if j["document_id"] == doc_id
+            ]
+            # Only include if they're document parameters
+            for param_item_id in doc_param_items:
+                param_item = parameter_items_by_id.get(param_item_id)
+                if param_item:
+                    param_id = param_item["parameter_id"]
+                    # Check if this parameter is a document parameter
+                    param = next(
+                        (p for p in active_parameters if p["id"] == param_id), None
+                    )
+                    if param and param.get("document_parameter", False):
+                        if param_item_id not in document_param_ids:
+                            document_param_ids.append(param_item_id)
+        logger.info(
+            f"Extracted {len(document_param_ids)} document parameter_item_ids from selected documents: {document_param_ids}"
+        )
 
     # Step 6: Child scenario creation (if scenario_id provided)
     child_scenario_id: uuid.UUID | None = None
@@ -428,12 +493,22 @@ async def randomize_scenario_attributes(
             f"Linked department {selected_department_id} to child scenario {child_scenario_id}"
         )
 
+    # Combine all parameter item IDs: general + persona + document
+    all_param_item_ids = list(param_ids) + list(persona_param_ids) + list(document_param_ids)
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_param_item_ids = []
+    for pid in all_param_item_ids:
+        if pid not in seen:
+            seen.add(pid)
+            unique_param_item_ids.append(pid)
+    
     return {
         "department_id": selected_department_id,
         "persona_id": persona_id,
         "persona_ids": scenario_persona_ids,
         "document_ids": doc_ids,
-        "parameter_item_ids": param_ids,
+        "parameter_item_ids": unique_param_item_ids,
         "child_scenario_id": child_scenario_id,
     }
 

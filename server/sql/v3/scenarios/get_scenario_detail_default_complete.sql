@@ -229,7 +229,34 @@ parameters_structure AS (
     FROM parameter_data pd
 ),
 document_details_data AS (
-    SELECT '[]'::jsonb as document_details
+    SELECT COALESCE(
+        (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'document_id', d.id::text,
+                    'name', d.name,
+                    'type', d.type,
+                    'updatedAt', d.updated_at::text,
+                    'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                    'scenario_ids', '[]'::jsonb,
+                    'can_edit', true,
+                    'can_delete', true,
+                    'active', d.active,
+                    'file_path', d.file_path,
+                    'mime_type', d.mime_type,
+                    'parameter_item_ids', COALESCE((
+                        SELECT jsonb_agg(dpi.parameter_item_id::text)
+                        FROM document_parameter_items dpi
+                        WHERE dpi.document_id = d.id AND dpi.active = true
+                    ), '[]'::jsonb)
+                ) ORDER BY d.name
+            )
+            FROM documents d
+            WHERE d.id IN (SELECT id FROM document_data)
+            AND d.active = true
+        ),
+        '[]'::jsonb
+    ) as document_details
 ),
 accessible_scenarios_default AS (
     SELECT DISTINCT s.id as scenario_id

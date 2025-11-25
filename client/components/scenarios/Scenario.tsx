@@ -589,6 +589,7 @@ export default function Scenario({
 
   // Extract valid document IDs from V2 response, filtered by selected departments
   // Includes: items from selected departments + cross-department items + currently selected items
+  // Also filters by selected document parameter items (bidirectional filtering)
   const validDocumentIds = useMemo(() => {
     const baseIds = scenarioData?.valid_document_ids || [];
     const selectedDeptIds = formData.departmentIds || [];
@@ -598,7 +599,57 @@ export default function Scenario({
 
     // If no departments selected, return all valid IDs plus selected ones
     if (selectedDeptIds.length === 0) {
-      return Array.from(new Set([...baseIds, ...selectedDocIds]));
+      const allValidIds = Array.from(new Set([...baseIds, ...selectedDocIds]));
+
+      // Filter by selected document parameter items if any are selected
+      // Compute documentParameterItemIds inline to avoid dependency order issue
+      const currentDocParamItemIds = currentParameterItemIds.filter(
+        (itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return false;
+          const paramId = item.parameter_id;
+          // Check if this is a document parameter by checking parameterMapping
+          const param = parameterMapping[paramId];
+          return param?.document_parameter === true;
+        }
+      );
+
+      if (currentDocParamItemIds.length > 0) {
+        // If document_details is empty/missing, can't filter - show all documents
+        if (
+          !scenarioData?.document_details ||
+          scenarioData.document_details.length === 0
+        ) {
+          return allValidIds;
+        }
+
+        const docsWithSelectedParams = new Set<string>();
+        scenarioData.document_details.forEach((doc) => {
+          if (doc.parameter_item_ids) {
+            // Check if document has all selected document parameter items
+            const docParamItemsSet = new Set(doc.parameter_item_ids);
+            const hasAllSelectedParams = currentDocParamItemIds.every(
+              (paramId) => docParamItemsSet.has(paramId)
+            );
+            if (hasAllSelectedParams) {
+              docsWithSelectedParams.add(doc.document_id);
+            }
+          }
+        });
+
+        // If no documents match, show all (document_details might be incomplete)
+        if (docsWithSelectedParams.size === 0) {
+          return allValidIds;
+        }
+
+        // Intersect: only show documents that have the selected parameter items
+        // Also include currently selected documents
+        return allValidIds.filter(
+          (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
+        );
+      }
+
+      return allValidIds;
     }
 
     // Get union of document_ids from ALL departments (to identify cross-department items)
@@ -628,12 +679,66 @@ export default function Scenario({
       return inSelectedDepts || isCrossDept;
     });
 
-    return Array.from(new Set([...filtered, ...selectedDocIds]));
+    const deptFilteredIds = Array.from(
+      new Set([...filtered, ...selectedDocIds])
+    );
+
+    // Filter by selected document parameter items if any are selected
+    // Compute documentParameterItemIds inline to avoid dependency order issue
+    const currentDocParamItemIds = currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      // Check if this is a document parameter by checking parameterMapping
+      const param = parameterMapping[paramId];
+      return param?.document_parameter === true;
+    });
+
+    if (currentDocParamItemIds.length > 0) {
+      // If document_details is empty/missing, can't filter - show all documents
+      if (
+        !scenarioData?.document_details ||
+        scenarioData.document_details.length === 0
+      ) {
+        return deptFilteredIds;
+      }
+
+      const docsWithSelectedParams = new Set<string>();
+      scenarioData.document_details.forEach((doc) => {
+        if (doc.parameter_item_ids) {
+          // Check if document has all selected document parameter items
+          const docParamItemsSet = new Set(doc.parameter_item_ids);
+          const hasAllSelectedParams = currentDocParamItemIds.every((paramId) =>
+            docParamItemsSet.has(paramId)
+          );
+          if (hasAllSelectedParams) {
+            docsWithSelectedParams.add(doc.document_id);
+          }
+        }
+      });
+
+      // If no documents match, show all (document_details might be incomplete)
+      if (docsWithSelectedParams.size === 0) {
+        return deptFilteredIds;
+      }
+
+      // Intersect: only show documents that have the selected parameter items
+      // Also include currently selected documents
+      return deptFilteredIds.filter(
+        (id) => docsWithSelectedParams.has(id) || selectedDocIds.has(id)
+      );
+    }
+
+    return deptFilteredIds;
   }, [
     scenarioData?.valid_document_ids,
     formData.departmentIds,
     departmentMapping,
     currentDocumentIds,
+    currentParameterItemIds,
+    parameterItemMapping,
+    parameterMapping,
+    scenarioData?.document_details,
   ]);
 
   // Extract valid parameter item IDs, filtered by selected departments
@@ -749,13 +854,68 @@ export default function Scenario({
 
   // Filter valid parameter item IDs by parameter type
   const validDocumentParameterItemIds = useMemo(() => {
-    return validParameterItemIds.filter((itemId) => {
+    // First filter by document parameter type
+    const documentParamItems = validParameterItemIds.filter((itemId) => {
       const item = parameterItemMapping[itemId];
       if (!item) return false;
       const paramId = item.parameter_id;
       return documentParameterIds.includes(paramId);
     });
-  }, [validParameterItemIds, parameterItemMapping, documentParameterIds]);
+
+    // If no documents selected, show all document parameter items
+    if (currentDocumentIds.length === 0) {
+      return documentParamItems;
+    }
+
+    // If documents are selected, only show parameter items linked to those documents
+    // But if document_details is empty/missing, show all document parameter items
+    if (
+      !scenarioData?.document_details ||
+      scenarioData.document_details.length === 0
+    ) {
+      return documentParamItems;
+    }
+
+    const paramItemsFromSelectedDocs = new Set<string>();
+    currentDocumentIds.forEach((docId) => {
+      const docDetails = scenarioData.document_details.find(
+        (d) => d.document_id === docId
+      );
+      if (docDetails?.parameter_item_ids) {
+        docDetails.parameter_item_ids.forEach((paramItemId) => {
+          // Only include if it's a document parameter
+          const item = parameterItemMapping[paramItemId];
+          if (item) {
+            const paramId = item.parameter_id;
+            if (documentParameterIds.includes(paramId)) {
+              paramItemsFromSelectedDocs.add(paramItemId);
+            }
+          }
+        });
+      }
+    });
+
+    // If no parameter items found from selected documents, show all (document_details might be incomplete)
+    if (paramItemsFromSelectedDocs.size === 0) {
+      return documentParamItems;
+    }
+
+    // Intersect: only show items that are both document parameters AND linked to selected documents
+    // Also include currently selected items to prevent them from disappearing
+    const selectedDocParamItems = new Set(documentParameterItemIds);
+    return documentParamItems.filter(
+      (itemId) =>
+        paramItemsFromSelectedDocs.has(itemId) ||
+        selectedDocParamItems.has(itemId)
+    );
+  }, [
+    validParameterItemIds,
+    parameterItemMapping,
+    documentParameterIds,
+    currentDocumentIds,
+    scenarioData?.document_details,
+    documentParameterItemIds,
+  ]);
 
   const validPersonaParameterItemIds = useMemo(() => {
     return validParameterItemIds.filter((itemId) => {
@@ -959,18 +1119,23 @@ export default function Scenario({
   }, [currentDocumentIds, validDocumentIds]);
 
   // Sync document parameters when documents change (integrity constraint)
+  // Note: This only runs when documents change, not when parameters change manually
   useEffect(() => {
     if (currentDocumentIds.length === 0) {
       // Clear document parameters if no documents selected
-      const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
-        const item = parameterItemMapping[itemId];
-        if (!item) return true;
-        const paramId = item.parameter_id;
-        return !documentParameterIds.includes(paramId);
+      setCurrentParameterItemIds((prev) => {
+        const nonDocumentParamIds = prev.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return true;
+          const paramId = item.parameter_id;
+          return !documentParameterIds.includes(paramId);
+        });
+        // Only update if something changed
+        if (nonDocumentParamIds.length !== prev.length) {
+          return nonDocumentParamIds;
+        }
+        return prev;
       });
-      if (nonDocumentParamIds.length !== currentParameterItemIds.length) {
-        setCurrentParameterItemIds(nonDocumentParamIds);
-      }
       return;
     }
 
@@ -994,40 +1159,53 @@ export default function Scenario({
       }
     });
 
-    // Update document parameters to match documents
-    const currentDocumentParamItemIdsSet = new Set(documentParameterItemIds);
     const newDocumentParamItemIdsArray = Array.from(
       documentParamItemIdsFromDocs
     );
-    const newDocumentParamItemIdsSet = new Set(newDocumentParamItemIdsArray);
 
-    // Check if they're different
-    const isDifferent =
-      currentDocumentParamItemIdsSet.size !== newDocumentParamItemIdsSet.size ||
-      !Array.from(currentDocumentParamItemIdsSet).every((id) =>
-        newDocumentParamItemIdsSet.has(id)
-      );
-
-    if (isDifferent) {
-      // Remove old document parameter items and add new ones
-      const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
+    // Update document parameters to match documents
+    // Use functional update to avoid dependency on currentParameterItemIds
+    setCurrentParameterItemIds((prev) => {
+      // Get current document parameter items
+      const currentDocumentParamItemIds = prev.filter((itemId) => {
         const item = parameterItemMapping[itemId];
-        if (!item) return true;
+        if (!item) return false;
         const paramId = item.parameter_id;
-        return !documentParameterIds.includes(paramId);
+        return documentParameterIds.includes(paramId);
       });
-      setCurrentParameterItemIds([
-        ...nonDocumentParamIds,
-        ...newDocumentParamItemIdsArray,
-      ]);
-    }
+      const currentDocumentParamItemIdsSet = new Set(
+        currentDocumentParamItemIds
+      );
+      const newDocumentParamItemIdsSet = new Set(newDocumentParamItemIdsArray);
+
+      // Check if they're different
+      const isDifferent =
+        currentDocumentParamItemIdsSet.size !==
+          newDocumentParamItemIdsSet.size ||
+        !Array.from(currentDocumentParamItemIdsSet).every((id) =>
+          newDocumentParamItemIdsSet.has(id)
+        );
+
+      if (isDifferent) {
+        // Remove old document parameter items and add new ones
+        const nonDocumentParamIds = prev.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return true;
+          const paramId = item.parameter_id;
+          return !documentParameterIds.includes(paramId);
+        });
+        return [...nonDocumentParamIds, ...newDocumentParamItemIdsArray];
+      }
+      return prev;
+    });
   }, [
     currentDocumentIds,
     scenarioData?.document_details,
     parameterItemMapping,
     documentParameterIds,
-    currentParameterItemIds,
-    documentParameterItemIds,
+    // Note: intentionally NOT including currentParameterItemIds or documentParameterItemIds
+    // to avoid overwriting user's manual parameter selections
+    // Using functional setState updates to access current state without dependency
   ]);
 
   useEffect(() => {
@@ -1351,7 +1529,8 @@ export default function Scenario({
     }
   };
 
-  // Handler for document parameters - maintains integrity with documents
+  // Handler for document parameters
+  // With bidirectional filtering, we just update state - the UI prevents invalid selections
   const handleDocumentParameterItemIdsChange = (
     newDocumentParamItemIds: string[]
   ) => {
@@ -1360,7 +1539,9 @@ export default function Scenario({
       const item = parameterItemMapping[itemId];
       if (!item) return true;
       const paramId = item.parameter_id;
-      return !documentParameterIds.includes(paramId);
+      // Check if this is a document parameter by checking parameterMapping
+      const param = parameterMapping[paramId];
+      return param?.document_parameter !== true;
     });
 
     // Combine with new document parameter items
@@ -1370,42 +1551,8 @@ export default function Scenario({
     ];
     setCurrentParameterItemIds(updatedParameterItemIds);
 
-    // Integrity check: if document parameters changed, check if documents still match
-    // Extract parameter items from current documents
-    const documentParamItemIdsFromDocs = new Set<string>();
-    currentDocumentIds.forEach((docId) => {
-      const docDetails = scenarioData?.document_details?.find(
-        (d) => d.document_id === docId
-      );
-      if (docDetails?.parameter_item_ids) {
-        docDetails.parameter_item_ids.forEach((paramItemId) => {
-          // Only include if it's a document parameter
-          const item = parameterItemMapping[paramItemId];
-          if (item) {
-            const paramId = item.parameter_id;
-            if (documentParameterIds.includes(paramId)) {
-              documentParamItemIdsFromDocs.add(paramItemId);
-            }
-          }
-        });
-      }
-    });
-
-    // Check if new document parameters match document parameter items
-    const newDocumentParamItemIdsSet = new Set(newDocumentParamItemIds);
-    const matches =
-      Array.from(documentParamItemIdsFromDocs).every((id) =>
-        newDocumentParamItemIdsSet.has(id)
-      ) &&
-      Array.from(newDocumentParamItemIdsSet).every((id) =>
-        documentParamItemIdsFromDocs.has(id)
-      );
-
-    // If documents don't match new parameters, clear documents to maintain integrity
-    if (!matches && currentDocumentIds.length > 0) {
-      setCurrentDocumentIds([]);
-      toast.info("Documents cleared to maintain parameter integrity");
-    }
+    // Note: No integrity checks needed - bidirectional filtering in validDocumentIds
+    // will automatically filter out documents that don't match the selected parameters
   };
 
   // Handler for persona parameters
@@ -1455,40 +1602,43 @@ export default function Scenario({
   const handleRandomizePersona = async () => {
     try {
       setIsRandomizingPersona(true);
+      // Only send non-persona parameters to backend (like general parameters does)
+      // This prevents old persona parameters from being included in the request
+      const nonPersonaParamItemIds = currentParameterItemIds.filter(
+        (itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return true;
+          const paramId = item.parameter_id;
+          return !personaParameterIds.includes(paramId);
+        }
+      );
       const resp = await handleRandomizeScenario({
         name: formData.name || "",
-        personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
+        personaIds: null, // Send null to force randomization
         documentIds: currentDocumentIds,
-        parameterItemIds: currentParameterItemIds,
+        parameterItemIds: nonPersonaParamItemIds,
         departmentIds: formData.departmentIds || null,
         targets: ["persona"],
       });
       if (!resp.success) throw new Error(resp.message);
       // Overwrite (not merge) personas - completely replace existing selection
       setSelectedPersonaIds(resp.personaIds || []);
-      // Update persona parameters if returned
-      if (resp.parameterItemIds && resp.parameterItemIds.length > 0) {
-        // Extract persona parameters from response
-        const newPersonaParamItemIds = resp.parameterItemIds.filter(
-          (itemId) => {
-            const item = parameterItemMapping[itemId];
-            if (!item) return false;
-            const paramId = item.parameter_id;
-            return personaParameterIds.includes(paramId);
-          }
-        );
-        // Update persona parameters while keeping document and general parameters
-        const nonPersonaParamIds = currentParameterItemIds.filter((itemId) => {
-          const item = parameterItemMapping[itemId];
-          if (!item) return true;
-          const paramId = item.parameter_id;
-          return !personaParameterIds.includes(paramId);
-        });
-        setCurrentParameterItemIds([
-          ...nonPersonaParamIds,
-          ...newPersonaParamItemIds,
-        ]);
-      }
+      // Clear persona parameters FIRST, then add new ones from response
+      // Extract persona parameters from response (even if empty)
+      const returnedPersonaParamItemIds =
+        resp.parameterItemIds && resp.parameterItemIds.length > 0
+          ? resp.parameterItemIds.filter((itemId) => {
+              const item = parameterItemMapping[itemId];
+              if (!item) return false;
+              const paramId = item.parameter_id;
+              return personaParameterIds.includes(paramId);
+            })
+          : [];
+      // Combine: keep document/general (from nonPersonaParamItemIds) + new persona parameters
+      setCurrentParameterItemIds([
+        ...nonPersonaParamItemIds,
+        ...returnedPersonaParamItemIds,
+      ]);
       toast.success("Persona suggestion applied");
     } catch {
       toast.error("Failed to randomize persona");
@@ -1522,11 +1672,21 @@ export default function Scenario({
         toast("Documents disabled by choice");
         return;
       }
+      // Only send non-document parameters to backend (like persona randomization does)
+      // This prevents old document parameters from being included in the request
+      const nonDocumentParamItemIds = currentParameterItemIds.filter(
+        (itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return true;
+          const paramId = item.parameter_id;
+          return !documentParameterIds.includes(paramId);
+        }
+      );
       const resp = await handleRandomizeScenario({
         name: formData.name || "",
         personaIds: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
-        documentIds: currentDocumentIds,
-        parameterItemIds: currentParameterItemIds,
+        documentIds: null, // Send null to force randomization
+        parameterItemIds: nonDocumentParamItemIds,
         departmentIds: formData.departmentIds || null,
         targets: ["documents"],
       });
@@ -1535,7 +1695,30 @@ export default function Scenario({
       // Deduplicate to prevent React key errors
       const uniqueDocumentIds = Array.from(new Set(resp.documentIds || []));
       setCurrentDocumentIds(uniqueDocumentIds);
-      // Document parameters will be synced automatically via useEffect when documents change
+      // Update parameters: backend returns all parameters (general + persona + document)
+      // Extract document parameters from response and keep persona/general from current
+      if (resp.parameterItemIds && resp.parameterItemIds.length > 0) {
+        const returnedDocumentParamItemIds = resp.parameterItemIds.filter(
+          (itemId) => {
+            const item = parameterItemMapping[itemId];
+            if (!item) return false;
+            const paramId = item.parameter_id;
+            return documentParameterIds.includes(paramId);
+          }
+        );
+        // Keep persona and general parameters from current selection
+        const nonDocumentParamIds = currentParameterItemIds.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          if (!item) return true;
+          const paramId = item.parameter_id;
+          return !documentParameterIds.includes(paramId);
+        });
+        // Combine: keep persona/general + new document parameters
+        setCurrentParameterItemIds([
+          ...nonDocumentParamIds,
+          ...returnedDocumentParamItemIds,
+        ]);
+      }
       toast.success("Document suggestions applied");
     } catch {
       toast.error("Failed to randomize documents");

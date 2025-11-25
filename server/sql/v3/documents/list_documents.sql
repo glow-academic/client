@@ -204,12 +204,13 @@ parameter_data AS (
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.document_parameter
+        p.document_parameter,
+        p.persona_parameter
     FROM parameters p
     JOIN parameter_items pi ON pi.parameter_id = p.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter
+    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
     HAVING 
         COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
@@ -225,7 +226,8 @@ parameter_mapping_data AS (
                 'name', p.name,
                 'description', p.description,
                 'numerical', p.numerical,
-                'document_parameter', p.document_parameter
+                'document_parameter', p.document_parameter,
+                'persona_parameter', p.persona_parameter
             )
         ),
         '{}'::jsonb
