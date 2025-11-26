@@ -9,39 +9,12 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
+from app.utils.schema import AttemptHistoryRow
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 router = APIRouter()
-
-
-class AttemptHistoryRow(BaseModel):
-    """Attempt history row."""
-
-    attemptId: str
-    date: str
-    profileId: str
-    profileName: str
-    simulationName: str
-    numScenarios: int | None = None
-    numScenariosCompleted: int
-    infiniteMode: bool
-    timeLimit: int | None = None
-    personaNames: list[str]
-    personaColors: list[str]
-    score: int | None = None
-    simulation_id: str
-    scenario_ids: list[str]
-    scenario_titles: list[str]
-    isArchived: bool
-    showView: bool
-    showContinue: bool
-    practiceSimulation: bool
-    passPct: int | None = None
-    department_ids: list[str] | None = None
-    cohortNames: list[str]
-    practiceScenarioId: str | None = None
 
 
 class PracticeHistoryFilters(BaseModel):

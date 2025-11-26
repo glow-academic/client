@@ -1073,13 +1073,13 @@ export default function SimulationHistory({
               </div>
             );
           }
-          // Use server-computed status for badge styling
+          // Use server-computed status for badge styling - map to shadcn color tokens
           const badgeClassName = scoreStatus === "high"
-            ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+            ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
             : scoreStatus === "medium"
-              ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+              ? "bg-warning/10 text-warning border-warning/30 hover:bg-warning/20"
               : scoreStatus === "low"
-                ? "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
+                ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
                 : ""; // fallback to default badge styling if status is null
           return (
             <div className="text-center min-w-0 max-w-[100px]">
