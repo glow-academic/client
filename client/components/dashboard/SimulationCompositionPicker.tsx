@@ -6,14 +6,8 @@
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { useMemo } from "react";
 
 export interface SimulationCompositionConfig {
   method: "percentile" | "standard_deviation" | "quartile";
@@ -54,61 +48,66 @@ const PRESET_CONFIGS: SimulationCompositionConfig[] = [
   },
 ];
 
+// Helper to create a unique ID for a config
+const getConfigId = (config: SimulationCompositionConfig): string => {
+  return `${config.method}-${config.topPercentage}-${config.bottomPercentage}`;
+};
+
 export default function SimulationCompositionPicker({
   onConfigChange,
   currentConfig,
 }: SimulationCompositionPickerProps) {
-  const selectedConfig = (PRESET_CONFIGS.find(
-    (config) =>
-      config.method === currentConfig.method &&
-      config.topPercentage === currentConfig.topPercentage &&
-      config.bottomPercentage === currentConfig.bottomPercentage,
-  ) ?? PRESET_CONFIGS[0]) as SimulationCompositionConfig;
+  // Build mapping for GenericPicker
+  const configMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    PRESET_CONFIGS.forEach((config) => {
+      const id = getConfigId(config);
+      const getConfigLabel = (c: SimulationCompositionConfig) => {
+        switch (c.method) {
+          case "percentile":
+            return `Top ${c.topPercentage}% vs Bottom ${c.bottomPercentage}%`;
+          case "quartile":
+            return "Q1 vs Q4 - Quartile Analysis";
+          case "standard_deviation":
+            return "±1σ - Statistical Outliers";
+          default:
+            return c.description;
+        }
+      };
+      mapping[id] = {
+        name: getConfigLabel(config),
+        description: config.description.split(" - ")[1] || config.description,
+      };
+    });
+    return mapping;
+  }, []);
 
-  const getConfigLabel = (config: SimulationCompositionConfig) => {
-    switch (config.method) {
-      case "percentile":
-        return `Top ${config.topPercentage}% vs Bottom ${config.bottomPercentage}%`;
-      case "quartile":
-        return "Q1 vs Q4 - Quartile Analysis";
-      case "standard_deviation":
-        return "±1σ - Statistical Outliers";
-      default:
-        return config.description;
+  const validConfigIds = useMemo(() => {
+    return PRESET_CONFIGS.map((config) => getConfigId(config));
+  }, []);
+
+  const selectedConfigId = useMemo(() => {
+    return getConfigId(currentConfig);
+  }, [currentConfig]);
+
+  const handleSelect = (id: string) => {
+    const config = PRESET_CONFIGS.find((c) => getConfigId(c) === id);
+    if (config) {
+      onConfigChange(config);
     }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8">
-          {getConfigLabel(selectedConfig)}
-          <ChevronDown className="h-4 w-4 ml-2" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        {PRESET_CONFIGS.map((config, index) => (
-          <DropdownMenuItem
-            key={index}
-            onClick={() => onConfigChange(config)}
-            className="flex items-start gap-3 p-3 cursor-pointer"
-          >
-            <div className="flex items-center gap-2 flex-1">
-              <div className="flex flex-col">
-                <span className="font-medium">{getConfigLabel(config)}</span>
-                <span className="text-xs text-muted-foreground">
-                  {config.description.split(" - ")[1]}
-                </span>
-              </div>
-            </div>
-            {selectedConfig.method === config.method &&
-              selectedConfig.topPercentage === config.topPercentage &&
-              selectedConfig.bottomPercentage === config.bottomPercentage && (
-                <div className="w-2 h-2 bg-primary rounded-full" />
-              )}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <GenericPicker
+      mapping={configMapping}
+      validIds={validConfigIds}
+      selectedId={selectedConfigId}
+      onSelect={handleSelect}
+      placeholder="Select configuration..."
+      searchPlaceholder="Search configurations..."
+      emptyMessage="No configuration found."
+      groupHeading="Configurations"
+      buttonClassName="w-64"
+    />
   );
 }

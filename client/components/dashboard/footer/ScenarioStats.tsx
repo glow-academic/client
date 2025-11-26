@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   Card,
   CardContent,
@@ -15,26 +15,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { TruncatedInsight } from "../TruncatedInsight";
-import { cn } from "@/lib/utils";
-import { BarChart3, Check, ChevronsUpDown, Info } from "lucide-react";
+import { BarChart3, Info } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
@@ -47,6 +33,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type NumericAttemptFact = {
   parameterId: string;
@@ -154,30 +141,38 @@ export default function ScenarioStats({
         numerical: true,
         active: true,
       })),
-    [parameterMapping, validNumericParameterIds],
+    [parameterMapping, validNumericParameterIds]
   );
 
-  const metricOptions = useMemo(
-    () =>
-      allParameters
-        .filter((p) => p.numerical && p.active)
-        .map((p) => ({
-          id: p.id,
+  // Build parameter mapping for GenericPicker
+  const parameterMappingForPicker = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    allParameters
+      .filter((p) => p.numerical && p.active)
+      .forEach((p) => {
+        mapping[p.id] = {
           name: p.name,
           description: `Performance by ${p.name.toLowerCase()} value`,
-        })),
-    [allParameters],
-  );
+        };
+      });
+    return mapping;
+  }, [allParameters]);
+
+  const validParameterIdsForPicker = useMemo(() => {
+    return allParameters
+      .filter((p) => p.numerical && p.active)
+      .map((p) => p.id);
+  }, [allParameters]);
 
   const activeParamId = useMemo(
-    () => selectedParameterId || metricOptions[0]?.id || "",
-    [selectedParameterId, metricOptions],
+    () => selectedParameterId || validParameterIdsForPicker[0] || "",
+    [selectedParameterId, validParameterIdsForPicker]
   );
 
   // Build chart rows + scenarioCount using facts
   const chartRows = useMemo(() => {
     const facts = numericAttemptFacts.filter(
-      (f) => f.parameterId === activeParamId,
+      (f) => f.parameterId === activeParamId
     );
     const byLevel = new Map<
       string,
@@ -206,13 +201,13 @@ export default function ScenarioStats({
 
     // scenario counts per level
     const scen = numericScenarioFacts.filter(
-      (s) => s.parameterId === activeParamId,
+      (s) => s.parameterId === activeParamId
     );
     const scenCountByLevel = new Map<string, number>();
     for (const s of scen) {
       scenCountByLevel.set(
         s.levelLabel,
-        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1,
+        (scenCountByLevel.get(s.levelLabel) ?? 0) + 1
       );
     }
 
@@ -231,7 +226,7 @@ export default function ScenarioStats({
   // Weighted Pearson correlation between levelValue and score using attempt counts as weights
   const { correlation, pValue } = useMemo(() => {
     const rows = numericAttemptFacts.filter(
-      (f) => f.parameterId === activeParamId,
+      (f) => f.parameterId === activeParamId
     );
     if (rows.length === 0) return { correlation: 0, pValue: 1 };
 
@@ -277,7 +272,7 @@ export default function ScenarioStats({
   // Create lookup for custom tooltip
   const chartRowsByName = useMemo(
     () => Object.fromEntries(chartRows.map((r) => [r.metricLevel, r] as const)),
-    [chartRows],
+    [chartRows]
   );
 
   return (
@@ -307,10 +302,15 @@ export default function ScenarioStats({
               </CardDescription>
             </div>
 
-            <MetricPicker
-              options={metricOptions}
-              value={activeParamId}
-              onChange={setSelectedParameterId}
+            <GenericPicker
+              mapping={parameterMappingForPicker}
+              validIds={validParameterIdsForPicker}
+              selectedId={activeParamId}
+              onSelect={setSelectedParameterId}
+              placeholder="Select Parameter"
+              searchPlaceholder="Search parameters..."
+              emptyMessage="No parameter found."
+              groupHeading="Parameters"
             />
           </div>
         </CardHeader>
@@ -383,67 +383,6 @@ export default function ScenarioStats({
         </CardContent>
       </Card>
     </TooltipProvider>
-  );
-}
-
-function MetricPicker({
-  options,
-  value,
-  onChange,
-}: {
-  options: { id: string; name: string; description: string }[];
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.id === value);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-48 justify-between"
-        >
-          <span className="truncate">
-            {selected?.name || "Select Parameter"}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-0">
-        <Command>
-          <CommandInput placeholder="Search parameters..." />
-          <CommandEmpty>No parameter found.</CommandEmpty>
-          <CommandGroup>
-            {options.map((m) => (
-              <CommandItem
-                key={m.id}
-                value={m.id}
-                onSelect={() => {
-                  onChange(m.id);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === m.id ? "opacity-100" : "opacity-0",
-                  )}
-                />
-                <div>
-                  <div className="font-medium">{m.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {m.description}
-                  </div>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }
 

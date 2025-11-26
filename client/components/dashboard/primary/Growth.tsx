@@ -50,6 +50,7 @@ type GrowthDataResponse = {
   windowAverages: GrowthWindowAverages;
 };
 
+import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -62,7 +63,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import GrowthPicker from "../GrowthPicker";
 
 // Type for metrics with formatter functions
 type GrowthMetricWithFormatter = GrowthMetric & {
@@ -125,6 +125,22 @@ export default function Growth({
     })) as GrowthMetricWithFormatter[];
   }, [availableMetrics]);
 
+  // Build metric mapping for RubricPicker
+  const metricMapping = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    metricsWithFormatters.forEach((metric) => {
+      mapping[metric.id] = {
+        name: metric.name,
+        description: metric.description || `${metric.name} (${metric.unit})`,
+      };
+    });
+    return mapping;
+  }, [metricsWithFormatters]);
+
+  const validMetricIds = useMemo(() => {
+    return metricsWithFormatters.map((m) => m.id);
+  }, [metricsWithFormatters]);
+
   // Ensure at least one metric is always selected
   useEffect(() => {
     if (
@@ -135,6 +151,16 @@ export default function Growth({
       setSelectedMetrics([metricsWithFormatters[0].id]);
     }
   }, [selectedMetrics.length, metricsWithFormatters]);
+
+  // Handle metric selection with validation (prevent deselecting all)
+  const handleMetricsSelect = (ids: string[]) => {
+    // If "Clear All" is clicked (empty array), reset to just the first metric
+    if (ids.length === 0 && metricsWithFormatters.length > 0) {
+      setSelectedMetrics([metricsWithFormatters[0]!.id]);
+      return;
+    }
+    setSelectedMetrics(ids);
+  };
 
   // Get selected metric objects
   const selectedMetricObjects = useMemo(() => {
@@ -197,10 +223,15 @@ export default function Growth({
               Platform-wide performance metrics over time
             </CardDescription>
           </div>
-          <GrowthPicker
-            availableMetrics={metricsWithFormatters}
-            selectedMetrics={selectedMetrics}
-            onMetricsChange={setSelectedMetrics}
+          <RubricPicker
+            mapping={metricMapping}
+            validIds={validMetricIds}
+            selectedIds={selectedMetrics}
+            onSelect={handleMetricsSelect}
+            multiSelect={true}
+            placeholder="Select metrics..."
+            hideSelectedChips={true}
+            buttonClassName="w-48"
           />
         </div>
       </CardHeader>

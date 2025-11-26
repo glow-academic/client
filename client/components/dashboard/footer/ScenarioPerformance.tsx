@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import {
   Card,
   CardContent,
@@ -16,13 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,13 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { TruncatedInsight } from "../TruncatedInsight";
-import { cn } from "@/lib/utils";
 
 type ScenarioAttributeAttemptFact = {
   parameterId: string;
@@ -54,7 +41,7 @@ type ScenarioAttributeScenarioFact = {
   scenarioId: string;
 };
 
-import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
@@ -197,7 +184,7 @@ export default function ScenarioPerformance({
         active: true,
         departmentId: "",
       })),
-    [parameterMapping, validParameterIds],
+    [parameterMapping, validParameterIds]
   );
 
   // Build parameter items from mapping
@@ -211,39 +198,49 @@ export default function ScenarioPerformance({
           description: item.description || "",
           parameterId: item.parameter_id,
         })),
-    [parameterItemMapping, validParameterIds],
+    [parameterItemMapping, validParameterIds]
   );
 
-  const parameterOptions = useMemo(() => {
+  // Build parameter mapping for GenericPicker
+  const parameterMappingForPicker = useMemo(() => {
+    const mapping: Record<string, { name: string; description: string }> = {};
+    allParameters
+      .filter((p) => !p.numerical && p.active)
+      .forEach((p) => {
+        mapping[p.id] = {
+          name: p.name,
+          description: `Performance by ${p.name.toLowerCase()} value`,
+        };
+      });
+    return mapping;
+  }, [allParameters]);
+
+  const validParameterIdsForPicker = useMemo(() => {
     return allParameters
       .filter((p) => !p.numerical && p.active)
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: `Performance by ${p.name.toLowerCase()} value`,
-      }));
+      .map((p) => p.id);
   }, [allParameters]);
 
   // pick default
   const activeParameterId = useMemo(() => {
-    return selectedParameterId || parameterOptions[0]?.id || "";
-  }, [selectedParameterId, parameterOptions]);
+    return selectedParameterId || validParameterIdsForPicker[0] || "";
+  }, [selectedParameterId, validParameterIdsForPicker]);
 
   const itemsForParameter = useMemo(
     () =>
       allParameterItems.filter(
         (it) =>
           it.parameterId === activeParameterId &&
-          attributeScenarioFacts.some((f) => f.parameterItemId === it.id),
+          attributeScenarioFacts.some((f) => f.parameterItemId === it.id)
       ),
-    [allParameterItems, attributeScenarioFacts, activeParameterId],
+    [allParameterItems, attributeScenarioFacts, activeParameterId]
   );
 
   const totalScenariosForParam = useMemo(() => {
     const set = new Set(
       attributeScenarioFacts
         .filter((f) => f.parameterId === activeParameterId)
-        .map((f) => f.scenarioId),
+        .map((f) => f.scenarioId)
     );
     return set.size || 1; // avoid /0
   }, [attributeScenarioFacts, activeParameterId]);
@@ -251,12 +248,12 @@ export default function ScenarioPerformance({
   const elements: AttributeElement[] = useMemo(() => {
     const mapped = itemsForParameter.map((it, idx) => {
       const scen = attributeScenarioFacts.filter(
-        (f) => f.parameterItemId === it.id,
+        (f) => f.parameterItemId === it.id
       );
       const scenCount = new Set(scen.map((s) => s.scenarioId)).size;
 
       const attempts = attributeAttemptFacts.filter(
-        (f) => f.parameterItemId === it.id,
+        (f) => f.parameterItemId === it.id
       );
       const totalAttempts = attempts.reduce((s, a) => s + a.attempts, 0);
       const passed = attempts.reduce((s, a) => s + a.passedAttempts, 0);
@@ -264,7 +261,7 @@ export default function ScenarioPerformance({
         totalAttempts > 0
           ? Math.round(
               attempts.reduce((s, a) => s + a.avgScore * a.attempts, 0) /
-                totalAttempts,
+                totalAttempts
             )
           : 0;
       const completionRate =
@@ -323,7 +320,7 @@ export default function ScenarioPerformance({
   // Create lookup for custom tooltip
   const elementsByName = useMemo(
     () => Object.fromEntries(elements.map((e) => [e.name, e] as const)),
-    [elements],
+    [elements]
   );
 
   // Compact legend renderer for single-line layout
@@ -450,10 +447,15 @@ export default function ScenarioPerformance({
           </div>
 
           {/* Parameter Picker */}
-          <ParamPicker
-            options={parameterOptions}
-            value={activeParameterId}
-            onChange={setSelectedParameterId}
+          <GenericPicker
+            mapping={parameterMappingForPicker}
+            validIds={validParameterIdsForPicker}
+            selectedId={activeParameterId}
+            onSelect={setSelectedParameterId}
+            placeholder="Select Parameter"
+            searchPlaceholder="Search parameters..."
+            emptyMessage="No parameter found."
+            groupHeading="Parameters"
           />
         </div>
       </CardHeader>
@@ -507,66 +509,5 @@ export default function ScenarioPerformance({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function ParamPicker({
-  options,
-  value,
-  onChange,
-}: {
-  options: { id: string; name: string; description: string }[];
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.id === value);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-48 justify-between"
-        >
-          <span className="truncate">
-            {selected?.name || "Select Parameter"}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-48 p-0">
-        <Command>
-          <CommandInput placeholder="Search parameters..." />
-          <CommandEmpty>No parameter found.</CommandEmpty>
-          <CommandGroup>
-            {options.map((p) => (
-              <CommandItem
-                key={p.id}
-                value={p.id}
-                onSelect={() => {
-                  onChange(p.id);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === p.id ? "opacity-100" : "opacity-0",
-                  )}
-                />
-                <div>
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {p.description}
-                  </div>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }

@@ -21,16 +21,10 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useMutationObserver } from "@/hooks/use-mutation-observer";
 import { cn } from "@/lib/utils";
 
 export interface Cohort {
@@ -57,9 +51,6 @@ export function CohortSelector({
   ...props
 }: CohortSelectorProps) {
   const [open, setOpen] = React.useState(false);
-  const [peekedCohort, setPeekedCohort] = React.useState<Cohort | undefined>(
-    cohorts[0],
-  );
 
   const handleSelect = (cohort: Cohort) => {
     const isSelected = selectedCohorts.some((c) => c.id === cohort.id);
@@ -144,62 +135,35 @@ export function CohortSelector({
             <ChevronsUpDown className="opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[300px] p-0">
-          <HoverCard>
-            <HoverCardContent
-              side="left"
-              align="start"
-              forceMount
-              className="min-h-[200px]"
-            >
-              <div className="grid gap-2">
-                <h4 className="font-medium leading-none">
-                  {typeof peekedCohort?.title === "string"
-                    ? peekedCohort.title
-                    : "Cohort selected"}
-                </h4>
-                <div className="text-sm text-muted-foreground">
-                  {peekedCohort?.description || "No description available"}
-                </div>
-                {peekedCohort?.memberCount !== undefined && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    {peekedCohort.memberCount} member
-                    {peekedCohort.memberCount !== 1 ? "s" : ""}
-                  </div>
-                )}
-              </div>
-            </HoverCardContent>
-            <Command loop>
-              <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
-                <CommandInput placeholder="Search cohorts..." />
-                <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
-                <HoverCardTrigger />
-                {selectedCohorts.length > 0 && (
-                  <CommandGroup heading="Actions">
-                    <CommandItem
-                      onSelect={handleClear}
-                      className="text-muted-foreground"
-                    >
-                      Clear All
-                    </CommandItem>
-                  </CommandGroup>
-                )}
-                <CommandGroup heading="Cohorts">
-                  {cohorts.map((cohort) => (
-                    <CohortItem
-                      key={cohort.id}
-                      cohort={cohort}
-                      isSelected={selectedCohorts.some(
-                        (c) => c.id === cohort.id,
-                      )}
-                      onPeek={(cohort) => setPeekedCohort(cohort)}
-                      onSelect={() => handleSelect(cohort)}
-                    />
-                  ))}
+        <PopoverContent align="end" className="w-[220px] p-0">
+          <Command loop>
+            <CommandList className="h-[var(--cmdk-list-height)] max-h-[250px]">
+              <CommandInput placeholder="Search cohorts..." />
+              <CommandEmpty>{getSearchNotFoundMessage()}</CommandEmpty>
+              {selectedCohorts.length > 0 && (
+                <CommandGroup heading="Actions">
+                  <CommandItem
+                    onSelect={handleClear}
+                    className="text-muted-foreground"
+                  >
+                    Clear All
+                  </CommandItem>
                 </CommandGroup>
-              </CommandList>
-            </Command>
-          </HoverCard>
+              )}
+              <CommandGroup heading="Cohorts">
+                {cohorts.map((cohort) => (
+                  <CohortItem
+                    key={cohort.id}
+                    cohort={cohort}
+                    isSelected={selectedCohorts.some(
+                      (c) => c.id === cohort.id,
+                    )}
+                    onSelect={() => handleSelect(cohort)}
+                  />
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
         </PopoverContent>
       </Popover>
     </div>
@@ -210,31 +174,11 @@ interface CohortItemProps {
   cohort: Cohort;
   isSelected: boolean;
   onSelect: () => void;
-  onPeek: (cohort: Cohort) => void;
 }
 
-function CohortItem({ cohort, isSelected, onSelect, onPeek }: CohortItemProps) {
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  useMutationObserver(ref, (mutations) => {
-    mutations.forEach((mutation) => {
-      if (
-        mutation.type === "attributes" &&
-        mutation.attributeName === "aria-selected" &&
-        ref.current?.getAttribute("aria-selected") === "true"
-      ) {
-        onPeek(cohort);
-      }
-    });
-  });
-
+function CohortItem({ cohort, isSelected, onSelect }: CohortItemProps) {
   return (
-    <CommandItem
-      key={cohort.id}
-      onSelect={onSelect}
-      ref={ref}
-      className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
-    >
+    <CommandItem key={cohort.id} onSelect={onSelect}>
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2">{cohort.title}</div>
         <Check

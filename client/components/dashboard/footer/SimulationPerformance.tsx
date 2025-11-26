@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
 import {
   Card,
   CardContent,
@@ -14,20 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { BarChart3, Check, ChevronsUpDown } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
@@ -182,26 +170,16 @@ export default function SimulationPerformance({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Build picker options from mapping
-  const pickerOptions = useMemo(
-    () =>
-      validSimulationIds.map((id) => ({
-        id,
-        title: simulationMapping[id]?.name || "Unknown",
-      })),
-    [simulationMapping, validSimulationIds]
-  );
-
   useEffect(() => {
-    if (!selectedSimulationId && pickerOptions[0]) {
-      setSelectedSimulationId(pickerOptions[0].id);
+    if (!selectedSimulationId && validSimulationIds[0]) {
+      setSelectedSimulationId(validSimulationIds[0]);
     } else if (
       selectedSimulationId &&
-      !pickerOptions.some((s) => s.id === selectedSimulationId)
+      !validSimulationIds.includes(selectedSimulationId)
     ) {
-      setSelectedSimulationId(pickerOptions[0]?.id || "");
+      setSelectedSimulationId(validSimulationIds[0] || "");
     }
-  }, [pickerOptions, selectedSimulationId]);
+  }, [validSimulationIds, selectedSimulationId]);
 
   const data = useMemo(
     () =>
@@ -234,48 +212,63 @@ export default function SimulationPerformance({
         }`}
       />
       <CardHeader className={cn("pb-3", isMobile && "pb-2")}>
-        <div className={cn(
-          "flex",
-          isMobile ? "flex-col gap-2" : "items-center justify-between"
-        )}>
+        <div
+          className={cn(
+            "flex",
+            isMobile ? "flex-col gap-2" : "items-center justify-between"
+          )}
+        >
           <div>
-            <CardTitle className={cn(
-              "flex items-center gap-2",
-              isMobile ? "text-sm" : "text-base"
-            )}>
+            <CardTitle
+              className={cn(
+                "flex items-center gap-2",
+                isMobile ? "text-sm" : "text-base"
+              )}
+            >
               <BarChart3 className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
               Simulation Performance
             </CardTitle>
-            <CardDescription className={cn(
-              isMobile ? "text-[10px]" : "text-sm"
-            )}>
+            <CardDescription
+              className={cn(isMobile ? "text-[10px]" : "text-sm")}
+            >
               Performance trends for simulations
             </CardDescription>
           </div>
 
-          <SimPicker
-            options={pickerOptions}
-            value={selectedSimulationId}
-            onChange={setSelectedSimulationId}
-            isMobile={isMobile}
+          <SimulationPicker
+            simulationMapping={simulationMapping}
+            validSimulationIds={validSimulationIds}
+            selectedSimulationIds={
+              selectedSimulationId ? [selectedSimulationId] : []
+            }
+            onSelect={(ids) => setSelectedSimulationId(ids[0] || "")}
+            multiSelect={false}
+            placeholder="Select simulation..."
+            hideSelectedChips={true}
+            showLabel={false}
+            buttonClassName={cn(
+              isMobile ? "w-full text-xs h-8" : "w-64 text-sm"
+            )}
           />
         </div>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-2">
         {/* Chart */}
-        <div className={cn(
-          "flex-1 min-h-0",
-          isMobile ? "min-h-[250px]" : "min-h-[300px]"
-        )}>
+        <div
+          className={cn(
+            "flex-1 min-h-0",
+            isMobile ? "min-h-[250px]" : "min-h-[300px]"
+          )}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
-              margin={{ 
-                top: 10, 
-                right: isMobile ? 5 : 10, 
-                bottom: X_AXIS_HEIGHT, 
-                left: isMobile ? 5 : 10 
+              margin={{
+                top: 10,
+                right: isMobile ? 5 : 10,
+                bottom: X_AXIS_HEIGHT,
+                left: isMobile ? 5 : 10,
               }}
             >
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -309,10 +302,12 @@ export default function SimulationPerformance({
                     ["Average Score", "Success Rate"].includes(String(p.value))
                   );
                   return (
-                    <div className={cn(
-                      "flex flex-col rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm",
-                      isMobile ? "gap-0.5 p-1" : "gap-1 p-2"
-                    )}>
+                    <div
+                      className={cn(
+                        "flex flex-col rounded-md bg-muted/70 backdrop-blur border border-border shadow-sm",
+                        isMobile ? "gap-0.5 p-1" : "gap-1 p-2"
+                      )}
+                    >
                       {items.map((p) => (
                         <div
                           key={String(p.value)}
@@ -361,78 +356,5 @@ export default function SimulationPerformance({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function SimPicker({
-  options,
-  value,
-  onChange,
-  isMobile = false,
-}: {
-  options: { id: string; title: string }[];
-  value: string;
-  onChange: (id: string) => void;
-  isMobile?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.id === value);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "justify-between h-8",
-            isMobile ? "w-full text-xs" : "w-64 text-sm"
-          )}
-        >
-          <span className="truncate text-left">
-            {selected ? selected.title : "Select simulation..."}
-          </span>
-          <ChevronsUpDown className={cn(
-            "ml-2 shrink-0 opacity-50",
-            isMobile ? "h-2.5 w-2.5" : "h-3 w-3"
-          )} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className={cn(
-        "p-0",
-        isMobile ? "w-[calc(100vw-2rem)]" : "w-64"
-      )}>
-        <Command>
-          <CommandInput placeholder="Search simulations..." />
-          <CommandEmpty>No simulation found.</CommandEmpty>
-          <CommandGroup>
-            {options.map((s) => (
-              <CommandItem
-                key={s.id}
-                value={s.id}
-                onSelect={() => {
-                  onChange(s.id);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 shrink-0",
-                    isMobile ? "h-3 w-3" : "h-4 w-4",
-                    value === s.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className={cn(
-                    "font-medium truncate",
-                    isMobile ? "text-xs" : "text-sm"
-                  )}>{s.title}</div>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
   );
 }
