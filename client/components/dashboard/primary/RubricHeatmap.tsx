@@ -73,11 +73,7 @@ export interface RubricHeatmapProps {
   validRubricIds: string[];
   hasDataAvailable: boolean;
   actionableInsight?: string | null | undefined;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function RubricHeatmap({
@@ -86,7 +82,7 @@ export default function RubricHeatmap({
   validRubricIds,
   hasDataAvailable,
   actionableInsight,
-  thresholds,
+  status,
 }: RubricHeatmapProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
 

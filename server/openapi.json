@@ -9732,13 +9732,24 @@
             },
             "type": "array",
             "title": "Validsimulationids"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "chartData",
           "facts",
-          "validSimulationIds"
+          "validSimulationIds",
+          "status"
         ],
         "title": "AttemptImprovementResponse",
         "description": "Attempt improvement response."
@@ -11504,6 +11515,16 @@
             },
             "type": "array",
             "title": "Validsimulationids"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
@@ -11512,7 +11533,8 @@
           "dailyData",
           "cohortFacts",
           "dailyFacts",
-          "validSimulationIds"
+          "validSimulationIds",
+          "status"
         ],
         "title": "CohortPerformanceResponse",
         "description": "Cohort performance response."
@@ -16859,13 +16881,24 @@
           },
           "windowAverages": {
             "$ref": "#/components/schemas/GrowthWindowAverages"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "chartData",
           "availableMetrics",
-          "windowAverages"
+          "windowAverages",
+          "status"
         ],
         "title": "GrowthDataResponse",
         "description": "Growth data response."
@@ -18362,11 +18395,16 @@
             },
             "type": "array",
             "title": "Providers"
+          },
+          "guest_login_enabled": {
+            "type": "boolean",
+            "title": "Guest Login Enabled"
           }
         },
         "type": "object",
         "required": [
-          "providers"
+          "providers",
+          "guest_login_enabled"
         ],
         "title": "LoginProvidersResponse",
         "description": "Response with list of active provider options."
@@ -18696,19 +18734,12 @@
             "title": "Currentvalue"
           },
           "status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "success",
-                  "warning",
-                  "danger",
-                  "neutral"
-                ]
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
             ],
             "title": "Status"
           },
@@ -18777,6 +18808,7 @@
           "hasData",
           "method",
           "currentValue",
+          "status",
           "trendData",
           "dataPoints"
         ],
@@ -23996,12 +24028,23 @@
             },
             "type": "array",
             "title": "Validrubricids"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "matrices",
-          "validRubricIds"
+          "validRubricIds",
+          "status"
         ],
         "title": "RubricHeatmapResponse",
         "description": "Rubric heatmap response."
@@ -24680,13 +24723,24 @@
             },
             "type": "array",
             "title": "Attributescenariofacts"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "validParameterIds",
           "attributeAttemptFacts",
-          "attributeScenarioFacts"
+          "attributeScenarioFacts",
+          "status"
         ],
         "title": "ScenarioPerformanceResponse",
         "description": "Scenario performance response."
@@ -24773,13 +24827,24 @@
             },
             "type": "array",
             "title": "Numericscenariofacts"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "validNumericParameterIds",
           "numericAttemptFacts",
-          "numericScenarioFacts"
+          "numericScenarioFacts",
+          "status"
         ],
         "title": "ScenarioStatsResponse",
         "description": "Scenario stats response."
@@ -25166,6 +25231,22 @@
           },
           "tokens": {
             "$ref": "#/components/schemas/ThemeTokens"
+          },
+          "guest_login_enabled": {
+            "type": "boolean",
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "type": "integer",
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "type": "integer",
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "type": "integer",
+            "title": "Danger Threshold"
           }
         },
         "type": "object",
@@ -25175,7 +25256,11 @@
           "active",
           "organization_name",
           "organization_description",
-          "tokens"
+          "tokens",
+          "guest_login_enabled",
+          "success_threshold",
+          "warning_threshold",
+          "danger_threshold"
         ],
         "title": "SettingsActiveResponse",
         "description": "Active settings response."
@@ -25276,6 +25361,22 @@
           "chart5": {
             "type": "string",
             "title": "Chart5"
+          },
+          "guest_login_enabled": {
+            "type": "boolean",
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "type": "integer",
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "type": "integer",
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "type": "integer",
+            "title": "Danger Threshold"
           }
         },
         "type": "object",
@@ -25298,7 +25399,11 @@
           "chart2",
           "chart3",
           "chart4",
-          "chart5"
+          "chart5",
+          "guest_login_enabled",
+          "success_threshold",
+          "warning_threshold",
+          "danger_threshold"
         ],
         "title": "SettingsDetailResponse",
         "description": "Detailed settings response."
@@ -25473,6 +25578,16 @@
           "hasData": {
             "type": "boolean",
             "title": "Hasdata"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
@@ -25481,7 +25596,8 @@
           "simulationFacts",
           "simulationParameterFactsCategorical",
           "simulationParameterFactsNumeric",
-          "hasData"
+          "hasData",
+          "status"
         ],
         "title": "SimulationCompositionResponse",
         "description": "Simulation composition response."
@@ -25884,12 +26000,23 @@
             },
             "type": "array",
             "title": "Scenariofacts"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "validSimulationIds",
-          "scenarioFacts"
+          "scenarioFacts",
+          "status"
         ],
         "title": "SimulationPerformanceResponse",
         "description": "Simulation performance response."
@@ -26112,12 +26239,23 @@
             },
             "type": "array",
             "title": "Validrubricids"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "packages",
-          "validRubricIds"
+          "validRubricIds",
+          "status"
         ],
         "title": "SkillPerformanceResponse",
         "description": "Skill performance response."
@@ -28158,6 +28296,22 @@
             "type": "string",
             "title": "Chart5"
           },
+          "guest_login_enabled": {
+            "type": "boolean",
+            "title": "Guest Login Enabled"
+          },
+          "success_threshold": {
+            "type": "integer",
+            "title": "Success Threshold"
+          },
+          "warning_threshold": {
+            "type": "integer",
+            "title": "Warning Threshold"
+          },
+          "danger_threshold": {
+            "type": "integer",
+            "title": "Danger Threshold"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -28181,6 +28335,10 @@
           "chart3",
           "chart4",
           "chart5",
+          "guest_login_enabled",
+          "success_threshold",
+          "warning_threshold",
+          "danger_threshold",
           "profileId"
         ],
         "title": "UpdateSettingsRequest",

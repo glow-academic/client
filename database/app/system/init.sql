@@ -133,7 +133,12 @@ CREATE TABLE settings (
   chart2          TEXT        NOT NULL,   -- Chart color 2
   chart3          TEXT        NOT NULL,   -- Chart color 3
   chart4          TEXT        NOT NULL,   -- Chart color 4
-  chart5          TEXT        NOT NULL   -- Chart color 5
+  chart5          TEXT        NOT NULL,  -- Chart color 5
+  -- Authentication and analytics settings
+  guest_login_enabled BOOLEAN NOT NULL DEFAULT TRUE,  -- Enable guest login button
+  success_threshold INTEGER NOT NULL DEFAULT 85,       -- Success threshold for analytics (0-100)
+  warning_threshold INTEGER NOT NULL DEFAULT 80,       -- Warning threshold for analytics (0-100)
+  danger_threshold INTEGER NOT NULL DEFAULT 70         -- Danger threshold for analytics (0-100)
 );
 
 CREATE INDEX ON settings (created_at);

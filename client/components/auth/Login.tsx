@@ -221,9 +221,10 @@ interface ProviderOption {
 
 interface LoginProps {
   providers?: ProviderOption[]; // Updated to accept ProviderOption array
+  guest_login_enabled?: boolean; // Whether guest login button should be shown
 }
 
-export default function Login({ providers = [] }: LoginProps) {
+export default function Login({ providers = [], guest_login_enabled = true }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const router = useRouter();
@@ -450,8 +451,8 @@ export default function Login({ providers = [] }: LoginProps) {
                 </motion.div>
               ))}
 
-              {/* Divider - only show if there are SSO providers */}
-              {providers.length > 0 && (
+              {/* Divider - only show if there are SSO providers and guest login is enabled */}
+              {providers.length > 0 && guest_login_enabled && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -469,7 +470,8 @@ export default function Login({ providers = [] }: LoginProps) {
                 </motion.div>
               )}
 
-              {/* Guest Access Button */}
+              {/* Guest Access Button - only show if guest_login_enabled is true */}
+              {guest_login_enabled && (
               <motion.div variants={cardVariants} whileHover="hover">
                 <Button
                   type="button"
@@ -511,6 +513,7 @@ export default function Login({ providers = [] }: LoginProps) {
                   </div>
                 </Button>
               </motion.div>
+              )}
             </div>
           </motion.div>
         </div>

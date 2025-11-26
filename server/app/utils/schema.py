@@ -234,7 +234,7 @@ class MetricResponse(BaseModel):
     hasData: bool
     method: Method
     currentValue: int
-    status: Literal["success", "warning", "danger", "neutral"] | None = None
+    status: Literal["success", "warning", "danger", "neutral"]
     trendAnalysis: str | None = None
     valueField: str | None = None
     keyField: str | None = None

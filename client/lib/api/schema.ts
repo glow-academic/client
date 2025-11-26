@@ -4451,6 +4451,11 @@ export interface components {
             facts: components["schemas"]["AttemptImprovementFact"][];
             /** Validsimulationids */
             validSimulationIds: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /** AttemptItem */
         AttemptItem: {
@@ -5120,6 +5125,11 @@ export interface components {
             dailyFacts: components["schemas"]["CohortDailyFact"][];
             /** Validsimulationids */
             validSimulationIds: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * CohortSearchResult
@@ -7275,6 +7285,11 @@ export interface components {
             /** Availablemetrics */
             availableMetrics: components["schemas"]["GrowthMetric"][];
             windowAverages: components["schemas"]["GrowthWindowAverages"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * GrowthMetric
@@ -7826,6 +7841,8 @@ export interface components {
         LoginProvidersResponse: {
             /** Providers */
             providers: components["schemas"]["ProviderOption"][];
+            /** Guest Login Enabled */
+            guest_login_enabled: boolean;
         };
         /**
          * LogsBundleRequest
@@ -7954,8 +7971,11 @@ export interface components {
             method: components["schemas"]["Method"];
             /** Currentvalue */
             currentValue: number;
-            /** Status */
-            status?: ("success" | "warning" | "danger" | "neutral") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
             /** Trendanalysis */
             trendAnalysis?: string | null;
             /** Valuefield */
@@ -9924,6 +9944,11 @@ export interface components {
             matrices: components["schemas"]["RubricMatrixPackage"][];
             /** Validrubricids */
             validRubricIds: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * RubricItem
@@ -10215,6 +10240,11 @@ export interface components {
             attributeAttemptFacts: components["schemas"]["ScenarioAttributeAttemptFact"][];
             /** Attributescenariofacts */
             attributeScenarioFacts: components["schemas"]["ScenarioAttributeScenarioFact"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * ScenarioSearchResult
@@ -10245,6 +10275,11 @@ export interface components {
             numericAttemptFacts: components["schemas"]["NumericAttemptFact"][];
             /** Numericscenariofacts */
             numericScenarioFacts: components["schemas"]["NumericScenarioFact"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * ScenariosFilters
@@ -10425,6 +10460,14 @@ export interface components {
              */
             mode: "light" | "dark" | "system";
             tokens: components["schemas"]["ThemeTokens"];
+            /** Guest Login Enabled */
+            guest_login_enabled: boolean;
+            /** Success Threshold */
+            success_threshold: number;
+            /** Warning Threshold */
+            warning_threshold: number;
+            /** Danger Threshold */
+            danger_threshold: number;
         };
         /**
          * SettingsDetailRequest
@@ -10479,6 +10522,14 @@ export interface components {
             chart4: string;
             /** Chart5 */
             chart5: string;
+            /** Guest Login Enabled */
+            guest_login_enabled: boolean;
+            /** Success Threshold */
+            success_threshold: number;
+            /** Warning Threshold */
+            warning_threshold: number;
+            /** Danger Threshold */
+            danger_threshold: number;
         };
         /**
          * SettingsItem
@@ -10550,6 +10601,11 @@ export interface components {
             simulationParameterFactsNumeric: components["schemas"]["SimulationParameterFactNumeric"][];
             /** Hasdata */
             hasData: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * SimulationContextItem
@@ -10724,6 +10780,11 @@ export interface components {
             validSimulationIds: string[];
             /** Scenariofacts */
             scenarioFacts: components["schemas"]["ScenarioFact"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * SimulationSearchResult
@@ -10816,6 +10877,11 @@ export interface components {
             packages: components["schemas"]["SkillPackage"][];
             /** Validrubricids */
             validRubricIds: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * SkillRadarData
@@ -11640,6 +11706,14 @@ export interface components {
             chart4: string;
             /** Chart5 */
             chart5: string;
+            /** Guest Login Enabled */
+            guest_login_enabled: boolean;
+            /** Success Threshold */
+            success_threshold: number;
+            /** Warning Threshold */
+            warning_threshold: number;
+            /** Danger Threshold */
+            danger_threshold: number;
             /** Profileid */
             profileId: string;
         };

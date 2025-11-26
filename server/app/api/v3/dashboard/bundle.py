@@ -90,6 +90,7 @@ class RubricHeatmapResponse(BaseModel):
 
     matrices: list[RubricMatrixPackage]
     validRubricIds: list[str]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class GrowthDataPoint(BaseModel):
@@ -139,6 +140,7 @@ class GrowthDataResponse(BaseModel):
     chartData: list[GrowthDataPoint]
     availableMetrics: list[GrowthMetric]
     windowAverages: GrowthWindowAverages
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class PersonaTrendData(BaseModel):
@@ -196,6 +198,7 @@ class AttemptImprovementResponse(BaseModel):
     chartData: list[AttemptImprovementData]
     facts: list[AttemptImprovementFact]
     validSimulationIds: list[str]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class CohortData(BaseModel):
@@ -247,6 +250,7 @@ class CohortPerformanceResponse(BaseModel):
     cohortFacts: list[CohortFact]
     dailyFacts: list[CohortDailyFact]
     validSimulationIds: list[str]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class SkillRadarData(BaseModel):
@@ -283,6 +287,7 @@ class SkillPerformanceResponse(BaseModel):
 
     packages: list[SkillPackage]
     validRubricIds: list[str]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class ScenarioAttributeAttemptFact(BaseModel):
@@ -311,6 +316,7 @@ class ScenarioPerformanceResponse(BaseModel):
     validParameterIds: list[str]
     attributeAttemptFacts: list[ScenarioAttributeAttemptFact]
     attributeScenarioFacts: list[ScenarioAttributeScenarioFact]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class NumericAttemptFact(BaseModel):
@@ -338,6 +344,7 @@ class ScenarioStatsResponse(BaseModel):
     validNumericParameterIds: list[str]
     numericAttemptFacts: list[NumericAttemptFact]
     numericScenarioFacts: list[NumericScenarioFact]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class SimulationFact(BaseModel):
@@ -378,6 +385,7 @@ class SimulationCompositionResponse(BaseModel):
     simulationParameterFactsCategorical: list[SimulationParameterFactCategorical]
     simulationParameterFactsNumeric: list[SimulationParameterFactNumeric]
     hasData: bool
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class ScenarioFact(BaseModel):
@@ -397,6 +405,7 @@ class SimulationPerformanceResponse(BaseModel):
 
     validSimulationIds: list[str]
     scenarioFacts: list[ScenarioFact]
+    status: Literal["success", "warning", "danger", "neutral"]
 
 
 class DashboardHeaderMetrics(BaseModel):
@@ -595,19 +604,22 @@ def _parse_metric(
                         attemptId=dp.get("attemptId"),
                         simulationId=dp.get("simulationId"),
                         scenarioId=dp.get("scenarioId"),
-                        count=dp.get("count"),
+                        count=dp.get("count") or 0,
                     )
                 )
 
     has_data = metric_data.get("hasData", False)
     current_value = metric_data.get("currentValue", 0)
 
-    # Calculate status if thresholds provided, otherwise use from SQL if available
-    status: Literal["success", "warning", "danger", "neutral"] | None = None
-    if "status" in metric_data:
-        status = metric_data.get("status")
+    # Get status from SQL (should always be present), fallback to calculation if missing
+    status: Literal["success", "warning", "danger", "neutral"] = "neutral"
+    if "status" in metric_data and metric_data.get("status") is not None:
+        status = metric_data.get("status")  # type: ignore[assignment]
     elif thresholds:
         status = _calculate_status(current_value, has_data, thresholds, invert)
+    else:
+        # Default to neutral if no status and no thresholds
+        status = "neutral"
 
     return MetricResponse(
         hasData=has_data,
@@ -1048,8 +1060,13 @@ def _compute_simulation_composition_insight(
 
 def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     """Parse dashboard bundle from SQL result (same logic as v2 DashboardService)."""
-    # Standard thresholds for all metrics
-    thresholds = Thresholds(danger=60, warning=75, success=85)
+    # Get thresholds from settings (defaults if not present)
+    thresholds_data = data.get("thresholds", {})
+    thresholds = Thresholds(
+        danger=thresholds_data.get("danger", 70),
+        warning=thresholds_data.get("warning", 80),
+        success=thresholds_data.get("success", 85),
+    )
 
     # Parse header metrics
     header_data = data.get("header", {})
@@ -1103,6 +1120,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
                 growth_data_raw.get("windowAverages", {}).get("averageScore", {})
             )
         ),
+        status=growth_data_raw.get("status", "neutral"),
     )
 
     # Persona performance
@@ -1149,6 +1167,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     rubric_heatmap = RubricHeatmapResponse(
         matrices=rubric_matrices,
         validRubricIds=rubric_heatmap_raw.get("validRubricIds", []),
+        status=rubric_heatmap_raw.get("status", "neutral"),
     )
 
     primary = DashboardPrimaryMetrics(
@@ -1174,6 +1193,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         ],
         facts=attempt_imp_raw.get("facts", []),
         validSimulationIds=attempt_imp_raw.get("validSimulationIds", []),
+        status=attempt_imp_raw.get("status", "neutral"),
     )
 
     # Cohort performance
@@ -1200,6 +1220,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         cohortFacts=cohort_perf_raw.get("cohortFacts", []),
         dailyFacts=cohort_perf_raw.get("dailyFacts", []),
         validSimulationIds=cohort_perf_raw.get("validSimulationIds", []),
+        status=cohort_perf_raw.get("status", "neutral"),
     )
 
     # Skill performance
@@ -1239,6 +1260,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     skill_performance = SkillPerformanceResponse(
         packages=skill_packages,
         validRubricIds=skill_perf_raw.get("validRubricIds", []),
+        status=skill_perf_raw.get("status", "neutral"),
     )
 
     secondary = DashboardSecondaryMetrics(
@@ -1269,6 +1291,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         validParameterIds=scenario_perf_raw.get("validParameterIds", []),
         attributeAttemptFacts=attr_attempt_facts,
         attributeScenarioFacts=scenario_perf_raw.get("attributeScenarioFacts", []),
+        status=scenario_perf_raw.get("status", "neutral"),
     )
 
     # Scenario stats
@@ -1288,6 +1311,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
         validNumericParameterIds=scenario_stats_raw.get("validNumericParameterIds", []),
         numericAttemptFacts=numeric_attempt_facts,
         numericScenarioFacts=scenario_stats_raw.get("numericScenarioFacts", []),
+        status=scenario_stats_raw.get("status", "neutral"),
     )
 
     # Simulation performance
@@ -1306,6 +1330,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             )
             for sf in sim_perf_raw.get("scenarioFacts", [])
         ],
+        status=sim_perf_raw.get("status", "neutral"),
     )
 
     # Simulation composition

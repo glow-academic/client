@@ -107,11 +107,7 @@ export interface SimulationCompositionProps {
   /** Valid simulation IDs */
   validSimulationIds: string[];
   actionableInsight?: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function SimulationComposition({
@@ -123,7 +119,7 @@ export default function SimulationComposition({
   parameterItemMapping,
   validSimulationIds: _validSimulationIds,
   actionableInsight,
-  thresholds,
+  status,
 }: SimulationCompositionProps) {
   // Build entities from mappings
   const allParameters = useMemo(
@@ -326,23 +322,8 @@ export default function SimulationComposition({
     parameterItemColorMap,
   ]);
 
-  // Compute threshold status
-  const getThresholdStatus = () => {
-    if (simulationFacts.length === 0) return "neutral";
-
-    const avgScore =
-      simulationFacts.reduce((sum, sim) => sum + sim.avgScore, 0) /
-      simulationFacts.length;
-    const avgCompletion =
-      simulationFacts.reduce((sum, sim) => sum + sim.completionRate, 0) /
-      simulationFacts.length;
-
-    if (avgScore >= thresholds.success && avgCompletion >= 80) return "success";
-    if (avgScore >= thresholds.warning || avgCompletion >= 70) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
+  // Use status from server
+  const thresholdStatus = status;
 
   // Get method label for dialog titles
   const getMethodLabel = (isHigh: boolean) => {

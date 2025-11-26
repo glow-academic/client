@@ -39,17 +39,22 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strong types from OpenAPI ---- */
 type LoginProvidersOut = OutputOf<"/api/v3/auth/login", "get">;
 
-async function getLoginProviders(): Promise<LoginProvidersOut["providers"]> {
+async function getLoginProviders(): Promise<LoginProvidersOut> {
   try {
     const response = await api.get("/auth/login");
-    return response.providers;
+    return response;
   } catch {
-    // Return empty array if endpoint fails
-    return [];
+    // Return empty array and default guest_login_enabled if endpoint fails
+    return { providers: [], guest_login_enabled: true };
   }
 }
 
 export default async function LoginPage() {
-  const providers = await getLoginProviders();
-  return <Login providers={providers} />;
+  const loginData = await getLoginProviders();
+  return (
+    <Login
+      providers={loginData.providers}
+      guest_login_enabled={loginData.guest_login_enabled}
+    />
+  );
 }

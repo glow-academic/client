@@ -43,6 +43,10 @@ class SettingsDetailResponse(BaseModel):
     chart3: str
     chart4: str
     chart5: str
+    guest_login_enabled: bool
+    success_threshold: int
+    warning_threshold: int
+    danger_threshold: int
 
 
 router = APIRouter()
@@ -104,6 +108,10 @@ async def get_settings_detail(
             chart3=settings["chart3"],
             chart4=settings["chart4"],
             chart5=settings["chart5"],
+            guest_login_enabled=settings["guest_login_enabled"],
+            success_threshold=settings["success_threshold"],
+            warning_threshold=settings["warning_threshold"],
+            danger_threshold=settings["danger_threshold"],
         )
 
         # Cache response

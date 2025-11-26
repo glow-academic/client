@@ -36,12 +36,7 @@ export interface StagnationRateProps {
   stagnationTrend: TrendData[];
   hasDataAvailable: boolean;
   trendAnalysis: string | null;
-  status?: "success" | "warning" | "danger" | "neutral";
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function StagnationRate({
@@ -50,20 +45,11 @@ export default function StagnationRate({
   hasDataAvailable,
   trendAnalysis,
   status,
-  thresholds,
 }: StagnationRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Determine status (use prop if provided, otherwise calculate)
-  // Note: Lower is better for stagnation rate, so logic is inverted
-  const currentStatus =
-    status ??
-    (() => {
-      if (!hasDataAvailable) return "neutral";
-      if (stagnationRate > thresholds.danger) return "danger";
-      if (stagnationRate > thresholds.warning) return "warning";
-      return "success";
-    })();
+  // Use status from server
+  const currentStatus = status;
 
   // Get color values for Recharts
   const getChartColor = () => {

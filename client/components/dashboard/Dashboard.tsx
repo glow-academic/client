@@ -61,12 +61,6 @@ export default function Dashboard({
 
   const bundle = dashboardData;
 
-  // Get thresholds from server (or use defaults if not available)
-  const thresholds = useMemo(
-    () => bundle?.thresholds ?? { danger: 60, warning: 75, success: 85 },
-    [bundle?.thresholds]
-  );
-
   // Get trend analysis from server (computed server-side)
   const trendAnalysis = useMemo(() => {
     if (!bundle) {
@@ -109,10 +103,7 @@ export default function Dashboard({
         scoreTrend={bundle.header.averageScore.trendData}
         hasDataAvailable={bundle.header.averageScore.hasData}
         trendAnalysis={trendAnalysis.averageScore}
-        {...(bundle.header.averageScore.status && {
-          status: bundle.header.averageScore.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.averageScore.status ?? "neutral"}
       />,
       <CompletionPercentage
         key="completion-percentage"
@@ -120,10 +111,7 @@ export default function Dashboard({
         completionTrend={bundle.header.completionPercentage.trendData}
         hasDataAvailable={bundle.header.completionPercentage.hasData}
         trendAnalysis={trendAnalysis.completion}
-        {...(bundle.header.completionPercentage.status && {
-          status: bundle.header.completionPercentage.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.completionPercentage.status ?? "neutral"}
       />,
       <FirstAttemptPassRate
         key="first-attempt-pass-rate"
@@ -131,10 +119,7 @@ export default function Dashboard({
         passRateTrend={bundle.header.firstAttemptPassRate.trendData}
         hasDataAvailable={bundle.header.firstAttemptPassRate.hasData}
         trendAnalysis={trendAnalysis.passRate}
-        {...(bundle.header.firstAttemptPassRate.status && {
-          status: bundle.header.firstAttemptPassRate.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.firstAttemptPassRate.status ?? "neutral"}
       />,
       <HighestScore
         key="highest-score"
@@ -142,10 +127,7 @@ export default function Dashboard({
         scoreTrend={bundle.header.highestScore.trendData}
         hasDataAvailable={bundle.header.highestScore.hasData}
         trendAnalysis={trendAnalysis.highestScore}
-        {...(bundle.header.highestScore.status && {
-          status: bundle.header.highestScore.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.highestScore.status ?? "neutral"}
       />,
       <MessagesPerSession
         key="messages-per-session"
@@ -155,10 +137,7 @@ export default function Dashboard({
         messagesTrend={bundle.header.messagesPerSession.trendData}
         hasDataAvailable={bundle.header.messagesPerSession.hasData}
         trendAnalysis={trendAnalysis.messages}
-        {...(bundle.header.messagesPerSession.status && {
-          status: bundle.header.messagesPerSession.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.messagesPerSession.status ?? "neutral"}
       />,
       <PersonaResponseTimes
         key="persona-response-times"
@@ -166,10 +145,7 @@ export default function Dashboard({
         responseTimeTrend={bundle.header.personaResponseTimes.trendData}
         hasDataAvailable={bundle.header.personaResponseTimes.hasData}
         trendAnalysis={trendAnalysis.responseTime}
-        {...(bundle.header.personaResponseTimes.status && {
-          status: bundle.header.personaResponseTimes.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.personaResponseTimes.status ?? "neutral"}
       />,
       <SessionEfficiency
         key="session-efficiency"
@@ -177,10 +153,7 @@ export default function Dashboard({
         efficiencyTrend={bundle.header.sessionEfficiency.trendData}
         hasDataAvailable={bundle.header.sessionEfficiency.hasData}
         trendAnalysis={trendAnalysis.sessionEfficiency}
-        {...(bundle.header.sessionEfficiency.status && {
-          status: bundle.header.sessionEfficiency.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.sessionEfficiency.status ?? "neutral"}
       />,
       <StagnationRate
         key="stagnation-rate"
@@ -188,10 +161,7 @@ export default function Dashboard({
         stagnationTrend={bundle.header.stagnationRate.trendData}
         hasDataAvailable={bundle.header.stagnationRate.hasData}
         trendAnalysis={trendAnalysis.stagnationRate}
-        {...(bundle.header.stagnationRate.status && {
-          status: bundle.header.stagnationRate.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.stagnationRate.status ?? "neutral"}
       />,
       <TimeSpent
         key="time-spent"
@@ -202,10 +172,7 @@ export default function Dashboard({
         }))}
         hasDataAvailable={bundle.header.timeSpent.hasData}
         trendAnalysis={trendAnalysis.timeSpent}
-        {...(bundle.header.timeSpent.status && {
-          status: bundle.header.timeSpent.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.timeSpent.status ?? "neutral"}
       />,
       <TotalAttempts
         key="total-attempts"
@@ -213,13 +180,10 @@ export default function Dashboard({
         attemptsTrend={bundle.header.totalAttempts.trendData}
         hasDataAvailable={bundle.header.totalAttempts.hasData}
         trendAnalysis={trendAnalysis.totalAttempts}
-        {...(bundle.header.totalAttempts.status && {
-          status: bundle.header.totalAttempts.status,
-        })}
-        thresholds={thresholds}
+        status={bundle.header.totalAttempts.status ?? "neutral"}
       />,
     ];
-  }, [bundle, trendAnalysis, thresholds]);
+  }, [bundle, trendAnalysis]);
 
   // Build primary components from bundle data
   const primaryComponents = useMemo(() => {
@@ -294,7 +258,7 @@ export default function Dashboard({
         windowAverages={normalizedWindowAverages}
         hasDataAvailable={bundle.primary.growthData.chartData.length > 0}
         actionableInsight={bundle.insights.growth ?? null}
-        thresholds={thresholds}
+        status={bundle.primary.growthData.status ?? "neutral"}
       />,
       <PersonaPerformance
         key="persona-performance"
@@ -308,8 +272,8 @@ export default function Dashboard({
           bundle.primary.personaPerformance.chartData.length > 0
         }
         actionableInsights={bundle.insights.persona}
-        thresholds={thresholds}
         performanceStatus="neutral"
+        thresholds={bundle.thresholds}
       />,
       <RubricHeatmap
         key="rubric-heatmap"
@@ -318,10 +282,10 @@ export default function Dashboard({
         validRubricIds={bundle.primary.rubricHeatmap.validRubricIds}
         hasDataAvailable={bundle.primary.rubricHeatmap.matrices.length > 0}
         actionableInsight={bundle.insights.rubric_heatmap ?? null}
-        thresholds={thresholds}
+        status={bundle.primary.rubricHeatmap.status ?? "neutral"}
       />,
     ];
-  }, [bundle, thresholds]);
+  }, [bundle]);
 
   // Build secondary components from bundle data
   const secondaryComponents = useMemo(() => {
@@ -418,7 +382,7 @@ export default function Dashboard({
         }
         profileId={profileId}
         actionableInsights={bundle.insights.cohort}
-        thresholds={thresholds}
+        status={bundle.secondary.cohortPerformance.status ?? "neutral"}
       />,
       <AttemptImprovement
         key="attempt-improvement"
@@ -429,7 +393,7 @@ export default function Dashboard({
           bundle.secondary.attemptImprovement.validSimulationIds
         }
         actionableInsight={bundle.insights.attempt_improvement ?? null}
-        thresholds={thresholds}
+        status={bundle.secondary.attemptImprovement.status ?? "neutral"}
       />,
       <SkillPerformance
         key="skill-performance"
@@ -437,10 +401,10 @@ export default function Dashboard({
         rubricMapping={bundle.rubric_mapping}
         validRubricIds={bundle.secondary.skillPerformance.validRubricIds}
         actionableInsight={bundle.insights.skill_performance ?? null}
-        thresholds={thresholds}
+        status={bundle.secondary.skillPerformance.status ?? "neutral"}
       />,
     ];
-  }, [bundle, profileId, thresholds]);
+  }, [bundle, profileId]);
 
   // Build footer components from bundle data
   const leftFooterComponents = useMemo(() => {
@@ -459,7 +423,7 @@ export default function Dashboard({
         parameterItemMapping={bundle.parameter_item_mapping}
         validParameterIds={bundle.footer.scenarioPerformance.validParameterIds}
         actionableInsight={bundle.insights.scenario_performance ?? null}
-        thresholds={thresholds}
+        status={bundle.footer.scenarioPerformance.status ?? "neutral"}
       />,
       <ScenarioStats
         key="scenario-stats"
@@ -470,10 +434,10 @@ export default function Dashboard({
           bundle.footer.scenarioStats.validNumericParameterIds
         }
         actionableInsight={bundle.insights.scenario_stats ?? null}
-        thresholds={thresholds}
+        status={bundle.footer.scenarioStats.status ?? "neutral"}
       />,
     ];
-  }, [bundle, thresholds]);
+  }, [bundle]);
 
   const rightFooterComponents = useMemo(() => {
     if (!bundle) return [];
@@ -487,7 +451,7 @@ export default function Dashboard({
         scenarioFacts={bundle.footer.simulationPerformance.scenarioFacts}
         simulationMapping={bundle.simulation_mapping}
         actionableInsight={bundle.insights.simulation_performance ?? null}
-        thresholds={thresholds}
+        status={bundle.footer.simulationPerformance.status ?? "neutral"}
       />,
       <SimulationComposition
         key="simulation-composition"
@@ -506,10 +470,10 @@ export default function Dashboard({
           bundle.footer.simulationComposition.validSimulationIds
         }
         actionableInsight={bundle.insights.simulation_composition ?? null}
-        thresholds={thresholds}
+        status={bundle.footer.simulationComposition.status ?? "neutral"}
       />,
     ];
-  }, [bundle, thresholds]);
+  }, [bundle]);
 
   // Header pagination logic - responsive cards per page
   // Mobile: 2 cards per page, Desktop: 5 cards per page

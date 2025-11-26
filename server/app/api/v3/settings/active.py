@@ -113,6 +113,10 @@ class SettingsActiveResponse(BaseModel):
     organization_description: str
     mode: Literal["light", "dark", "system"] = "light"
     tokens: ThemeTokens
+    guest_login_enabled: bool
+    success_threshold: int
+    warning_threshold: int
+    danger_threshold: int
 
 
 router = APIRouter()
@@ -305,6 +309,10 @@ async def get_active_settings(
             organization_description=settings["organization_description"],
             mode="light",
             tokens=theme_tokens,
+            guest_login_enabled=settings["guest_login_enabled"],
+            success_threshold=settings["success_threshold"],
+            warning_threshold=settings["warning_threshold"],
+            danger_threshold=settings["danger_threshold"],
         )
 
         # Cache response

@@ -36,12 +36,7 @@ export interface CompletionPercentageProps {
   completionTrend: TrendData[];
   hasDataAvailable: boolean;
   trendAnalysis: string | null;
-  status?: "success" | "warning" | "danger" | "neutral";
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function CompletionPercentage({
@@ -50,19 +45,11 @@ export default function CompletionPercentage({
   hasDataAvailable,
   trendAnalysis,
   status,
-  thresholds,
 }: CompletionPercentageProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Determine status (use prop if provided, otherwise calculate)
-  const currentStatus =
-    status ??
-    (() => {
-      if (!hasDataAvailable) return "neutral";
-      if (completionPercentage < thresholds.danger) return "danger";
-      if (completionPercentage < thresholds.warning) return "warning";
-      return "success";
-    })();
+  // Use status from server
+  const currentStatus = status;
 
   // Get color values for Recharts
   const getChartColor = () => {

@@ -162,11 +162,7 @@ export interface ScenarioPerformanceProps {
   /** Valid parameter IDs */
   validParameterIds: string[];
   actionableInsight?: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function ScenarioPerformance({
@@ -176,7 +172,7 @@ export default function ScenarioPerformance({
   parameterItemMapping,
   validParameterIds,
   actionableInsight,
-  thresholds,
+  status,
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
@@ -321,17 +317,8 @@ export default function ScenarioPerformance({
     allParameters,
   ]);
 
-  const avgPerf = elements.length
-    ? elements.reduce((s, e) => s + e.avgScore, 0) / elements.length
-    : 0;
-  const status =
-    elements.length === 0
-      ? "neutral"
-      : avgPerf >= thresholds.success
-        ? "success"
-        : avgPerf >= thresholds.warning
-          ? "warning"
-          : "danger";
+  // Use status from server
+  const thresholdStatus = status;
 
   // Create lookup for custom tooltip
   const elementsByName = useMemo(
@@ -441,11 +428,11 @@ export default function ScenarioPerformance({
       <div
         data-testid="status-indicator"
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-          status === "success"
+          thresholdStatus === "success"
             ? "bg-success"
-            : status === "warning"
+            : thresholdStatus === "warning"
               ? "bg-warning"
-              : status === "danger"
+              : thresholdStatus === "danger"
                 ? "bg-destructive"
                 : "bg-muted-foreground"
         }`}

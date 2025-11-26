@@ -36,12 +36,7 @@ export interface PersonaResponseTimesProps {
   responseTimeTrend: TrendData[];
   hasDataAvailable: boolean;
   trendAnalysis: string | null;
-  status?: "success" | "warning" | "danger" | "neutral";
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function PersonaResponseTimes({
@@ -50,20 +45,11 @@ export default function PersonaResponseTimes({
   hasDataAvailable,
   trendAnalysis,
   status,
-  thresholds,
 }: PersonaResponseTimesProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Determine status (use prop if provided, otherwise calculate)
-  // Note: Lower is better for response times, so logic is inverted
-  const currentStatus =
-    status ??
-    (() => {
-      if (!hasDataAvailable) return "neutral";
-      if (averageResponseTime > thresholds.danger) return "danger";
-      if (averageResponseTime > thresholds.warning) return "warning";
-      return "success";
-    })();
+  // Use status from server
+  const currentStatus = status;
 
   // Get color values for Recharts
   const getChartColor = () => {

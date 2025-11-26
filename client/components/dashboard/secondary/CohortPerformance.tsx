@@ -75,11 +75,7 @@ export interface CohortPerformanceProps {
   /** If rendering for a single learner detail view */
   profileId?: string | undefined;
   actionableInsights?: Record<string, string | null>; // Key: cohort_id, Value: insight text
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function CohortPerformance({
@@ -91,7 +87,7 @@ export default function CohortPerformance({
   validSimulationIds,
   profileId,
   actionableInsights,
-  thresholds,
+  status,
 }: CohortPerformanceProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const isSingleProfileMode = !!profileId;
@@ -165,21 +161,8 @@ export default function CohortPerformance({
     }));
   }, [selected, cohortData, cohortFacts]);
 
-  // Calculate threshold status based on cohort performance data
-  const getThresholdStatus = () => {
-    if (displayCohorts.length === 0) return "neutral";
-
-    // Calculate average pass rate across all cohorts
-    const avgPassRate =
-      displayCohorts.reduce((sum, cohort) => sum + cohort.passRate, 0) /
-      displayCohorts.length;
-
-    if (avgPassRate >= thresholds.success) return "success";
-    if (avgPassRate >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
+  // Use status from server
+  const thresholdStatus = status;
 
   return (
     <Card className="w-full h-full flex flex-col relative">

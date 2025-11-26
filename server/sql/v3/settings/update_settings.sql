@@ -16,14 +16,18 @@
 --   $14 = chart3 (text)
 --   $15 = chart4 (text)
 --   $16 = chart5 (text)
---   $17 = profile_id (uuid or "guest-profile-id")
+--   $17 = guest_login_enabled (boolean)
+--   $18 = success_threshold (integer)
+--   $19 = warning_threshold (integer)
+--   $20 = danger_threshold (integer)
+--   $21 = profile_id (uuid or "guest-profile-id")
 WITH resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $17::text = 'guest-profile-id' THEN
+            WHEN $21::text = 'guest-profile-id' THEN
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            WHEN $17::text IS NULL OR $17::text = '' THEN NULL::uuid
-            ELSE $17::uuid
+            WHEN $21::text IS NULL OR $21::text = '' THEN NULL::uuid
+            ELSE $21::uuid
         END as resolved_profile_id
 ),
 deactivate_current AS (
@@ -51,7 +55,11 @@ insert_new AS (
         chart2,
         chart3,
         chart4,
-        chart5
+        chart5,
+        guest_login_enabled,
+        success_threshold,
+        warning_threshold,
+        danger_threshold
     )
     VALUES (
         true,
@@ -70,7 +78,11 @@ insert_new AS (
         $13::text,
         $14::text,
         $15::text,
-        $16::text
+        $16::text,
+        $17::boolean,
+        $18::integer,
+        $19::integer,
+        $20::integer
     )
     RETURNING id::text as settings_id
 )

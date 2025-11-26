@@ -281,14 +281,14 @@ export default function Reports({
     };
 
     const getBgColor = (
-      metric: (typeof profiles)[number]["metrics"][keyof (typeof profiles)[number]["metrics"]],
-      thresholds: { gray: number; red: number; yellow: number; green: number }
+      metric: (typeof profiles)[number]["metrics"][keyof (typeof profiles)[number]["metrics"]]
     ): string => {
-      if (!metric.hasData || metric.currentValue == null) return "bg-gray-50";
-      const value = metric.currentValue;
-      if (value >= thresholds.green) return "bg-green-50";
-      if (value >= thresholds.yellow) return "bg-yellow-50";
-      return "bg-red-50";
+      if (!metric.hasData || metric.currentValue == null) return "bg-muted";
+      const status = metric.status;
+      if (status === "success") return "bg-success/10 dark:bg-success/20";
+      if (status === "warning") return "bg-warning/10 dark:bg-warning/20";
+      if (status === "danger") return "bg-destructive/10 dark:bg-destructive/20";
+      return "bg-muted";
     };
 
     const getHoverBullets = (
@@ -515,12 +515,7 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.averageScore;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 60,
-            yellow: 75,
-            green: 85,
-          });
+          const bgColor = getBgColor(metric);
           const bullets = getHoverBullets("averageScore", profile);
           const content = (
             <div
@@ -609,12 +604,7 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.completionPercentage;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 60,
-            yellow: 75,
-            green: 85,
-          });
+          const bgColor = getBgColor(metric);
           const bullets = getHoverBullets("completionPercentage", profile);
           const content = (
             <div
@@ -656,12 +646,7 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.firstAttemptPassRate;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 60,
-            yellow: 75,
-            green: 85,
-          });
+          const bgColor = getBgColor(metric);
           const bullets = getHoverBullets("firstAttemptPassRate", profile);
           const content = (
             <div
@@ -802,12 +787,7 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.sessionEfficiency;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 60,
-            yellow: 75,
-            green: 85,
-          });
+          const bgColor = getBgColor(metric);
           const bullets = getHoverBullets("sessionEfficiency", profile);
           const content = (
             <div

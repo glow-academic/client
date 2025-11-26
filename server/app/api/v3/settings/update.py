@@ -32,6 +32,10 @@ class UpdateSettingsRequest(BaseModel):
     chart3: str
     chart4: str
     chart5: str
+    guest_login_enabled: bool
+    success_threshold: int
+    warning_threshold: int
+    danger_threshold: int
     profileId: str  # Required for auditing/access control
 
 
@@ -80,6 +84,10 @@ async def update_settings(
                 request.chart3,
                 request.chart4,
                 request.chart5,
+                request.guest_login_enabled,
+                request.success_threshold,
+                request.warning_threshold,
+                request.danger_threshold,
                 request.profileId,
             )
             result = await conn.fetchrow(
@@ -100,6 +108,10 @@ async def update_settings(
                 request.chart3,
                 request.chart4,
                 request.chart5,
+                request.guest_login_enabled,
+                request.success_threshold,
+                request.warning_threshold,
+                request.danger_threshold,
                 request.profileId,
             )
 

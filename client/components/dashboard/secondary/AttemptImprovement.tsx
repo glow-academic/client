@@ -48,11 +48,7 @@ export interface AttemptImprovementProps {
   /** Valid simulation IDs */
   validSimulationIds: string[];
   actionableInsight?: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function AttemptImprovement({
@@ -61,7 +57,7 @@ export default function AttemptImprovement({
   simulationMapping,
   validSimulationIds,
   actionableInsight,
-  thresholds,
+  status,
 }: AttemptImprovementProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);

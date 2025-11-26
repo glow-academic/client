@@ -36,12 +36,7 @@ export interface SessionEfficiencyProps {
   efficiencyTrend: TrendData[];
   hasDataAvailable: boolean;
   trendAnalysis: string | null;
-  status?: "success" | "warning" | "danger" | "neutral";
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function SessionEfficiency({
@@ -50,19 +45,11 @@ export default function SessionEfficiency({
   hasDataAvailable,
   trendAnalysis,
   status,
-  thresholds,
 }: SessionEfficiencyProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Determine status (use prop if provided, otherwise calculate)
-  const currentStatus =
-    status ??
-    (() => {
-      if (!hasDataAvailable) return "neutral";
-      if (sessionEfficiency < thresholds.danger) return "danger";
-      if (sessionEfficiency < thresholds.warning) return "warning";
-      return "success";
-    })();
+  // Use status from server
+  const currentStatus = status;
 
   // Get color values for Recharts
   const getChartColor = () => {

@@ -80,11 +80,7 @@ export interface GrowthProps {
   windowAverages: GrowthDataResponse["windowAverages"];
   hasDataAvailable: boolean;
   actionableInsight: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function Growth({
@@ -93,7 +89,7 @@ export default function Growth({
   windowAverages,
   hasDataAvailable,
   actionableInsight,
-  thresholds,
+  status,
 }: GrowthProps) {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
     "averageScore",
@@ -152,25 +148,8 @@ export default function Growth({
     );
   }, [metricsWithFormatters, selectedMetrics]);
 
-  // Calculate threshold status based on window averages
-  const getThresholdStatus = () => {
-    if (!hasDataAvailable) return "neutral";
-
-    const last = windowAverages?.averageScore?.last;
-    const prev = windowAverages?.averageScore?.prev;
-
-    if (last == null || prev == null) {
-      return "neutral";
-    }
-
-    const improvement = last - prev;
-
-    if (improvement >= thresholds.success) return "success";
-    if (improvement >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
+  // Use status from server
+  const thresholdStatus = status;
 
   // Normalize to a string once
   const normalizedInsight = useMemo(

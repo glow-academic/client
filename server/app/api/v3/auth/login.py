@@ -21,6 +21,7 @@ class LoginProvidersResponse(BaseModel):
     """Response with list of active provider options."""
 
     providers: list[ProviderOption]
+    guest_login_enabled: bool
 
 
 router = APIRouter()
@@ -37,5 +38,9 @@ async def get_login_providers(
         ProviderOption(id=row["id"], name=row["name"], icon=row["icon"])
         for row in rows
     ]
-    return LoginProvidersResponse(providers=providers)
+    # Get guest_login_enabled from first row (all rows have same value from CROSS JOIN)
+    guest_login_enabled = rows[0]["guest_login_enabled"] if rows else True
+    return LoginProvidersResponse(
+        providers=providers, guest_login_enabled=guest_login_enabled
+    )
 

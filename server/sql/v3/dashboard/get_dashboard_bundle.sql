@@ -4,6 +4,16 @@
             -- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: department_ids
             -- =====================================================
             WITH
+            -- Get thresholds from active settings (defaults if no settings found)
+            settings_thresholds AS (
+                SELECT 
+                    COALESCE(success_threshold, 85) AS success_threshold,
+                    COALESCE(warning_threshold, 80) AS warning_threshold,
+                    COALESCE(danger_threshold, 70) AS danger_threshold
+                FROM settings
+                WHERE active = true
+                LIMIT 1
+            ),
             -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
             -- Gets simulations linked to cohorts + practice simulations without cohorts
             filtered_simulation_ids AS (
@@ -828,6 +838,14 @@
                 FROM enriched_corrs
                 GROUP BY rubric_id
             ),
+            rubric_avg_correlation AS (
+                SELECT 
+                    rubric_id,
+                    AVG(ABS(r)) AS avg_correlation_strength
+                FROM enriched_corrs
+                WHERE g1 != g2 AND n >= 3
+                GROUP BY rubric_id
+            ),
             per_rubric_heatmap AS (
                 SELECT
                     r.rubric_id,
@@ -854,7 +872,15 @@
                     'validRubricIds', COALESCE(
                         (SELECT json_agg(rubric_id::text ORDER BY rubric_id::text) FROM valid_rubric_ids_list),
                         '[]'::json
-                    )
+                    ),
+                    'status', CASE
+                        WHEN (SELECT COUNT(*) FROM rubric_avg_correlation) = 0 THEN 'neutral'
+                        WHEN (SELECT AVG(avg_correlation_strength * 100) FROM rubric_avg_correlation) >= 
+                             (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                        WHEN (SELECT AVG(avg_correlation_strength * 100) FROM rubric_avg_correlation) >= 
+                             (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                        ELSE 'danger'
+                    END
                 ) AS rubric_data
             ),
             
@@ -1636,7 +1662,13 @@
                                 'last', (SELECT ROUND(last_avg) FROM growth_window),
                                 'prev', (SELECT ROUND(prev_avg) FROM growth_window)
                             )
-                        )
+                        ),
+                        'status', CASE
+                            WHEN (SELECT last_avg FROM growth_window) IS NULL OR (SELECT prev_avg FROM growth_window) IS NULL THEN 'neutral'
+                            WHEN (SELECT ROUND(last_avg - prev_avg) FROM growth_window) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT ROUND(last_avg - prev_avg) FROM growth_window) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     ),
                     'personaPerformance', json_build_object(
                         'chartData', COALESCE((SELECT json_agg(json_build_object(
@@ -1678,7 +1710,19 @@
                         )) FROM attempt_facts), '[]'::json),
                         'validSimulationIds', COALESCE((
                             SELECT json_agg(DISTINCT simulation_id::text) FROM filt WHERE simulation_id IS NOT NULL
-                        ), '[]'::json)
+                        ), '[]'::json),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM attempt_rows) < 2 THEN 'neutral'
+                            WHEN (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MAX(attempt_no) FROM attempt_rows)) IS NULL 
+                                 OR (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MIN(attempt_no) FROM attempt_rows)) IS NULL THEN 'neutral'
+                            WHEN (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MAX(attempt_no) FROM attempt_rows)) - 
+                                 (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MIN(attempt_no) FROM attempt_rows)) >= 
+                                 (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MAX(attempt_no) FROM attempt_rows)) - 
+                                 (SELECT avg_grade FROM attempt_rows WHERE attempt_no = (SELECT MIN(attempt_no) FROM attempt_rows)) >= 
+                                 (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     ),
                     'cohortPerformance', json_build_object(
                         'cohortData', COALESCE((SELECT json_agg(json_build_object(
@@ -1709,7 +1753,25 @@
                         'dailyFacts', '[]'::json,
                         'validSimulationIds', COALESCE((
                             SELECT json_agg(DISTINCT simulation_id::text) FROM filt WHERE simulation_id IS NOT NULL
-                        ), '[]'::json)
+                        ), '[]'::json),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM cohort_agg) = 0 THEN 'neutral'
+                            WHEN (SELECT AVG(
+                                CASE 
+                                    WHEN total_students_seen > 0 THEN 
+                                        (100.0 * passed_students / total_students_seen)::numeric
+                                    ELSE 0
+                                END
+                            ) FROM cohort_agg) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT AVG(
+                                CASE 
+                                    WHEN total_students_seen > 0 THEN 
+                                        (100.0 * passed_students / total_students_seen)::numeric
+                                    ELSE 0
+                                END
+                            ) FROM cohort_agg) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     ),
                     'skillPerformance', json_build_object(
                         'packages', COALESCE((
@@ -1724,7 +1786,22 @@
                         ), '[]'::json),
                         'validRubricIds', COALESCE((
                             SELECT json_agg(rubric_id::text ORDER BY rubric_id::text) FROM skill_valid_rubrics
-                        ), '[]'::json)
+                        ), '[]'::json),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM skill_valid_rubrics) = 0 THEN 'neutral'
+                            WHEN (SELECT AVG((rd->>'value')::float * 100) FROM skill_valid_rubrics vr
+                                  LEFT JOIN radar_per_rubric rpr ON rpr.rubric_id = vr.rubric_id,
+                                  json_array_elements(COALESCE(rpr.radar, '[]'::json)) rd) IS NULL THEN 'neutral'
+                            WHEN (SELECT AVG((rd->>'value')::float * 100) FROM skill_valid_rubrics vr
+                                  LEFT JOIN radar_per_rubric rpr ON rpr.rubric_id = vr.rubric_id,
+                                  json_array_elements(COALESCE(rpr.radar, '[]'::json)) rd) >= 
+                                 (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT AVG((rd->>'value')::float * 100) FROM skill_valid_rubrics vr
+                                  LEFT JOIN radar_per_rubric rpr ON rpr.rubric_id = vr.rubric_id,
+                                  json_array_elements(COALESCE(rpr.radar, '[]'::json)) rd) >= 
+                                 (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     )
                 ),
                 'footer', json_build_object(
@@ -1754,7 +1831,15 @@
                                     'scenarioId', scenario_id::text
                                 )
                             ) FROM (SELECT DISTINCT * FROM cat_map_seen) d
-                        ), '[]'::json)
+                        ), '[]'::json),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM attempt_daily_categorical) = 0 THEN 'neutral'
+                            WHEN (SELECT AVG(avg_score) FROM attempt_daily_categorical) >= 
+                                 (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT AVG(avg_score) FROM attempt_daily_categorical) >= 
+                                 (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     ),
                     'scenarioStats', json_build_object(
                         'validNumericParameterIds', COALESCE((
@@ -1787,7 +1872,15 @@
                                     END
                                 )
                             ) FROM (SELECT DISTINCT * FROM num_map_seen) d
-                        ), '[]'::json)
+                        ), '[]'::json),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM numeric_agg) = 0 THEN 'neutral'
+                            WHEN (SELECT AVG(avg_score) FROM numeric_agg) >= 
+                                 (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT AVG(avg_score) FROM numeric_agg) >= 
+                                 (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     ),
                     'simulationPerformance', json_build_object(
                         'validSimulationIds', COALESCE((SELECT json_agg(DISTINCT simulation_id::text) FROM sim_perf), '[]'::json),
@@ -1799,7 +1892,15 @@
                             'successRate', ROUND(success_rate)::int,
                             'totalAttempts', total_attempts,
                             'completedAttempts', completed_attempts
-                        )) FROM sim_perf), '[]'::json)
+                        )) FROM sim_perf), '[]'::json),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM sim_perf) = 0 THEN 'neutral'
+                            WHEN (SELECT (0.7 * AVG(avg_score) + 0.3 * AVG(success_rate)) FROM sim_perf) >= 
+                                 (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                            WHEN (SELECT (0.7 * AVG(avg_score) + 0.3 * AVG(success_rate)) FROM sim_perf) >= 
+                                 (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                            ELSE 'danger'
+                        END
                     ),
                     'simulationComposition', json_build_object(
                         'validSimulationIds', COALESCE((
@@ -1840,12 +1941,27 @@
                                 )
                             ) FROM param_facts_num
                         ), '[]'::json),
-                        'hasData', EXISTS (SELECT 1 FROM sim_summary)
+                        'hasData', EXISTS (SELECT 1 FROM sim_summary),
+                        'status', CASE
+                            WHEN (SELECT COUNT(*) FROM simulation_facts) = 0 THEN 'neutral'
+                            WHEN (SELECT AVG(avg_score) FROM simulation_facts) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) 
+                                 AND (SELECT AVG(completion_rate) FROM simulation_facts) >= 80 THEN 'success'
+                            WHEN (SELECT AVG(avg_score) FROM simulation_facts) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) 
+                                 OR (SELECT AVG(completion_rate) FROM simulation_facts) >= 70 THEN 'warning'
+                            ELSE 'danger'
+                        END
                     )
                 ),
                 'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping LIMIT 1), '{}'::jsonb),
                 'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping LIMIT 1), '{}'::jsonb),
                 'parameterMapping', COALESCE((SELECT mapping FROM parameter_mapping LIMIT 1), '{}'::jsonb),
-                'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping LIMIT 1), '{}'::jsonb)
+                'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping LIMIT 1), '{}'::jsonb),
+                'thresholds', COALESCE((
+                    SELECT json_build_object(
+                        'success', success_threshold,
+                        'warning', warning_threshold,
+                        'danger', danger_threshold
+                    ) FROM settings_thresholds LIMIT 1
+                ), json_build_object('success', 85, 'warning', 80, 'danger', 70))
             ) AS result
         

@@ -49,11 +49,7 @@ export interface SkillPerformanceProps {
   /** Valid rubric IDs */
   validRubricIds: string[];
   actionableInsight?: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function SkillPerformance({
@@ -61,7 +57,7 @@ export default function SkillPerformance({
   rubricMapping,
   validRubricIds,
   actionableInsight,
-  thresholds,
+  status,
 }: SkillPerformanceProps) {
   const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -86,22 +82,8 @@ export default function SkillPerformance({
     [packages, activeRubricId],
   );
 
-  // Calculate threshold status based on skill performance data
-  const getThresholdStatus = () => {
-    if (!activePackage?.radarData || activePackage.radarData.length === 0)
-      return "neutral";
-
-    // Calculate average skill performance across all skills
-    const avgSkillPerformance =
-      activePackage.radarData.reduce((sum, skill) => sum + skill.value, 0) /
-      activePackage.radarData.length;
-
-    if (avgSkillPerformance >= thresholds.success) return "success";
-    if (avgSkillPerformance >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
+  // Use status from server
+  const thresholdStatus = status;
 
   return (
     <Card className="w-full h-full flex flex-col relative">

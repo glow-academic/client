@@ -4,6 +4,16 @@
 -- Parameters: $1-$2: dates, $3: cohort_ids, $4: roles, $5: sim_filters, $6: profile_id (required, may be "guest-profile-id"), $7: department_ids
 -- =====================================================
 WITH
+-- Get thresholds from active settings (defaults if no settings found)
+settings_thresholds AS (
+    SELECT 
+        COALESCE(success_threshold, 85) AS success_threshold,
+        COALESCE(warning_threshold, 80) AS warning_threshold,
+        COALESCE(danger_threshold, 70) AS danger_threshold
+    FROM settings
+    WHERE active = true
+    LIMIT 1
+),
 -- Resolve guest-profile-id to actual profile ID
 resolve_profile_id AS (
     SELECT 
@@ -1477,70 +1487,130 @@ SELECT json_build_object(
             'method', 'avg',
             'currentValue', COALESCE((SELECT current_value FROM header_avg_score), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_avg_score_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_avg_score_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_avg_score_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_avg_score), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_avg_score), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_avg_score), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'completionPercentage', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_completion), false),
             'method', 'avg',
             'currentValue', COALESCE((SELECT current_value FROM header_completion), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_completion_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_completion_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_completion_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_completion), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_completion), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_completion), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'firstAttemptPassRate', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_first_pass), false),
             'method', 'rate',
             'currentValue', COALESCE((SELECT current_value FROM header_first_pass), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_first_pass_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_first_pass_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_first_pass_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_first_pass), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_first_pass), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_first_pass), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'highestScore', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_highest), false),
             'method', 'max',
             'currentValue', COALESCE((SELECT current_value FROM header_highest), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_highest_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_highest_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_highest_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_highest), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_highest), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_highest), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'messagesPerSession', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_messages), false),
             'method', 'avg',
             'currentValue', COALESCE((SELECT current_value FROM header_messages), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_messages_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_messages_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_messages_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_messages), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_messages), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_messages), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'personaResponseTimes', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_persona_times), false),
             'method', 'avg',
             'currentValue', COALESCE((SELECT current_value FROM header_persona_times), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_persona_times_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_persona_times_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_persona_times_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_persona_times), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_persona_times), 0) <= (SELECT danger_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_persona_times), 0) <= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'sessionEfficiency', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_efficiency), false),
             'method', 'avg',
             'currentValue', COALESCE((SELECT current_value FROM header_efficiency), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_efficiency_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_efficiency_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_efficiency_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_efficiency), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_efficiency), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_efficiency), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'stagnationRate', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_stagnation), false),
             'method', 'rate',
             'currentValue', COALESCE((SELECT current_value FROM header_stagnation), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_stagnation_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_stagnation_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_stagnation_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_stagnation), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_stagnation), 0) <= (SELECT danger_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_stagnation), 0) <= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'timeSpent', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_time), false),
             'method', 'avg',
             'currentValue', COALESCE((SELECT current_value FROM header_time), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_time_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_time_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_time_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_time), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_time), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_time), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         ),
         'totalAttempts', json_build_object(
             'hasData', COALESCE((SELECT has_data FROM header_attempts), false),
             'method', 'countDistinct',
             'currentValue', COALESCE((SELECT current_value FROM header_attempts), 0),
             'trendData', COALESCE((SELECT json_agg(json_build_object('date', date, 'value', value, 'count', count)) FROM header_attempts_trend), '[]'::json),
-            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_attempts_points), '[]'::json)
+            'dataPoints', COALESCE((SELECT json_agg(json_build_object('profileId', profile_id, 'date', date, 'value', value, 'attemptId', attempt_id, 'simulationId', simulation_id, 'scenarioId', scenario_id)) FROM header_attempts_points), '[]'::json),
+            'status', CASE
+                WHEN NOT COALESCE((SELECT has_data FROM header_attempts), false) THEN 'neutral'
+                WHEN COALESCE((SELECT current_value FROM header_attempts), 0) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                WHEN COALESCE((SELECT current_value FROM header_attempts), 0) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                ELSE 'danger'
+            END
         )
     ),
     'primary', json_build_object(
@@ -1648,16 +1718,21 @@ SELECT json_build_object(
                 )
             )
         ),
-        'personaPerformance', json_build_object(
+            'personaPerformance', json_build_object(
             'chartData', COALESCE((SELECT json_agg(json_build_object(
-                'name', pa.name,
-                'score', ROUND(COALESCE(pa.avg_score, 0))::int,
-                'sessions', pa.sessions,
-                'color', pa.color,
-                'simulationIds', pa.simulation_ids,
-                'trendData', COALESCE(pta.trends, '[]'::json)
-            ) ORDER BY pa.avg_score DESC) FROM persona_agg pa 
-            LEFT JOIN persona_trends_agg pta ON pta.persona_id = pa.persona_id), '[]'::json),
+                'name', sub.name,
+                'score', ROUND(COALESCE(sub.avg_score, 0))::int,
+                'sessions', sub.sessions,
+                'color', sub.color,
+                'simulationIds', sub.simulation_ids,
+                'trendData', COALESCE(sub.trends, '[]'::json)
+            )) FROM (
+                SELECT pa.name, pa.avg_score, pa.sessions, pa.color, pa.simulation_ids, pta.trends
+                FROM persona_agg pa 
+                LEFT JOIN persona_trends_agg pta ON pta.persona_id = pa.persona_id
+                ORDER BY pa.avg_score DESC
+                LIMIT 5
+            ) sub), '[]'::json),
             'validSimulationIds', COALESCE((
                 SELECT json_agg(DISTINCT simulation_id::text ORDER BY simulation_id::text) 
                 FROM filt WHERE simulation_id IS NOT NULL
@@ -1851,6 +1926,13 @@ SELECT json_build_object(
     'simulationMapping', COALESCE((SELECT mapping FROM simulation_mapping LIMIT 1), '{}'::jsonb),
     'rubricMapping', COALESCE((SELECT mapping FROM rubric_mapping LIMIT 1), '{}'::jsonb),
     'parameterMapping', COALESCE((SELECT mapping FROM parameter_mapping LIMIT 1), '{}'::jsonb),
-    'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping LIMIT 1), '{}'::jsonb)
+    'parameterItemMapping', COALESCE((SELECT mapping FROM parameter_item_mapping LIMIT 1), '{}'::jsonb),
+    'thresholds', COALESCE((
+        SELECT json_build_object(
+            'success', success_threshold,
+            'warning', warning_threshold,
+            'danger', danger_threshold
+        ) FROM settings_thresholds LIMIT 1
+    ), json_build_object('success', 85, 'warning', 80, 'danger', 70))
 ) AS result
 

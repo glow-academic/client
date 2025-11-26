@@ -19,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 // Type-only import from server pages
@@ -70,7 +71,7 @@ export default function Settings({
     return mapping;
   }, [settingsList]);
 
-  // Form data state with all ThemePrimitives
+  // Form data state with all ThemePrimitives and new settings
   const [formData, setFormData] = useState({
     organization_name: "",
     organization_description: "",
@@ -88,6 +89,10 @@ export default function Settings({
     chart3: "#104e64",
     chart4: "#ffb900",
     chart5: "#fe9a00",
+    guest_login_enabled: true,
+    success_threshold: 85,
+    warning_threshold: 80,
+    danger_threshold: 70,
   });
 
   // Preset colors (same as persona colors)
@@ -131,6 +136,10 @@ export default function Settings({
         chart3: settingsDetail.chart3 || "#104e64",
         chart4: settingsDetail.chart4 || "#ffb900",
         chart5: settingsDetail.chart5 || "#fe9a00",
+        guest_login_enabled: settingsDetail.guest_login_enabled ?? true,
+        success_threshold: settingsDetail.success_threshold ?? 85,
+        warning_threshold: settingsDetail.warning_threshold ?? 80,
+        danger_threshold: settingsDetail.danger_threshold ?? 70,
       });
     }
   }, [settingsDetail]);
@@ -181,6 +190,10 @@ export default function Settings({
           chart3: formData.chart3,
           chart4: formData.chart4,
           chart5: formData.chart5,
+          guest_login_enabled: formData.guest_login_enabled,
+          success_threshold: formData.success_threshold,
+          warning_threshold: formData.warning_threshold,
+          danger_threshold: formData.danger_threshold,
           profileId,
         },
       });
@@ -456,6 +469,105 @@ export default function Settings({
               fieldName="chart5"
               value={formData.chart5}
             />
+          </div>
+        </div>
+
+        {/* Authentication & Analytics */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Authentication & Analytics</h3>
+          
+          {/* Guest Login Enabled */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="guest_login_enabled">Enable Guest Login</Label>
+              <Switch
+                id="guest_login_enabled"
+                checked={formData.guest_login_enabled}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    guest_login_enabled: checked,
+                  }))
+                }
+                disabled={isSubmitting}
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              When enabled, users can access the application as a guest without signing in.
+            </p>
+          </div>
+
+          {/* Analytics Thresholds */}
+          <div className="space-y-4">
+            <h4 className="text-md font-medium">Analytics Thresholds</h4>
+            <p className="text-sm text-muted-foreground">
+              Configure thresholds for dashboard metrics (0-100). These values determine when metrics are displayed as success, warning, or danger.
+            </p>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="success_threshold">Success Threshold</Label>
+                <Input
+                  id="success_threshold"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.success_threshold}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      success_threshold: Math.min(
+                        100,
+                        Math.max(0, parseInt(e.target.value) || 85)
+                      ),
+                    }))
+                  }
+                  disabled={isSubmitting}
+                  className="max-w-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="warning_threshold">Warning Threshold</Label>
+                <Input
+                  id="warning_threshold"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.warning_threshold}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      warning_threshold: Math.min(
+                        100,
+                        Math.max(0, parseInt(e.target.value) || 80)
+                      ),
+                    }))
+                  }
+                  disabled={isSubmitting}
+                  className="max-w-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="danger_threshold">Danger Threshold</Label>
+                <Input
+                  id="danger_threshold"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.danger_threshold}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      danger_threshold: Math.min(
+                        100,
+                        Math.max(0, parseInt(e.target.value) || 70)
+                      ),
+                    }))
+                  }
+                  disabled={isSubmitting}
+                  className="max-w-md"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

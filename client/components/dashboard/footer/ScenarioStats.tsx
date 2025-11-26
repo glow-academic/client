@@ -121,11 +121,7 @@ export interface ScenarioStatsProps {
   /** Valid numeric parameter IDs */
   validNumericParameterIds: string[];
   actionableInsight?: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function ScenarioStats({
@@ -134,7 +130,7 @@ export default function ScenarioStats({
   parameterMapping,
   validNumericParameterIds,
   actionableInsight,
-  thresholds,
+  status,
 }: ScenarioStatsProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
@@ -275,14 +271,8 @@ export default function ScenarioStats({
     return { correlation: r, pValue: p };
   }, [numericAttemptFacts, activeParamId]);
 
-  const status = useMemo(() => {
-    if (chartRows.length === 0) return "neutral";
-    const avg =
-      chartRows.reduce((s, r) => s + r.avgScore, 0) / chartRows.length;
-    if (avg >= thresholds.success) return "success";
-    if (avg >= thresholds.warning) return "warning";
-    return "danger";
-  }, [chartRows, thresholds]);
+  // Use status from server
+  const thresholdStatus = status;
 
   // Create lookup for custom tooltip
   const chartRowsByName = useMemo(
@@ -296,11 +286,11 @@ export default function ScenarioStats({
         <div
           data-testid="status-indicator"
           className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-            status === "success"
+            thresholdStatus === "success"
               ? "bg-success"
-              : status === "warning"
+              : thresholdStatus === "warning"
                 ? "bg-warning"
-                : status === "danger"
+                : thresholdStatus === "danger"
                   ? "bg-destructive"
                   : "bg-muted-foreground"
           }`}

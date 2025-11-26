@@ -160,11 +160,7 @@ export interface SimulationPerformanceProps {
   /** Simulation mapping object */
   simulationMapping: Record<string, { name: string; description: string }>;
   actionableInsight?: string | null;
-  thresholds: {
-    danger: number;
-    warning: number;
-    success: number;
-  };
+  status: "success" | "warning" | "danger" | "neutral";
 }
 
 export default function SimulationPerformance({
@@ -172,7 +168,7 @@ export default function SimulationPerformance({
   scenarioFacts,
   simulationMapping,
   actionableInsight,
-  thresholds,
+  status,
 }: SimulationPerformanceProps) {
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
@@ -215,15 +211,8 @@ export default function SimulationPerformance({
     [scenarioFacts, selectedSimulationId]
   );
 
-  const status = useMemo(() => {
-    if (!data.length) return "neutral";
-    const avgScore = data.reduce((s, d) => s + d.avgScore, 0) / data.length;
-    const avgSucc = data.reduce((s, d) => s + d.successRate, 0) / data.length;
-    const combined = 0.7 * avgScore + 0.3 * avgSucc;
-    if (combined >= thresholds.success) return "success";
-    if (combined >= thresholds.warning) return "warning";
-    return "danger";
-  }, [data, thresholds]);
+  // Use status from server
+  const thresholdStatus = status;
 
   // Create lookup for custom tooltip
   const dataByName = useMemo(
