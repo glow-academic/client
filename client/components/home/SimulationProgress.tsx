@@ -50,19 +50,19 @@ export default function SimulationProgress({
         return {
           text: "Passed",
           badgeVariant: "secondary" as const,
-          badgeClassName: "text-green-600 dark:text-green-400 ring-1 ring-green-500/30",
+          badgeClassName: "text-success ring-1 ring-success/30",
         };
       } else if (status === "in-progress") {
         return {
           text: "In Progress",
           badgeVariant: "secondary" as const,
-          badgeClassName: "text-blue-500 dark:text-blue-400 ring-1 ring-blue-500/30",
+          badgeClassName: "text-warning ring-1 ring-warning/30",
         };
       } else {
         return {
           text: "Not Started",
           badgeVariant: "secondary" as const,
-          badgeClassName: "text-muted-foreground ring-1 ring-border",
+          badgeClassName: "text-destructive ring-1 ring-destructive/30",
         };
       }
     } else {
@@ -71,19 +71,19 @@ export default function SimulationProgress({
         return {
           text: "Complete",
           badgeVariant: "secondary" as const,
-          badgeClassName: "text-green-600 dark:text-green-400 ring-1 ring-green-500/30",
+          badgeClassName: "text-success ring-1 ring-success/30",
         };
       } else if (status === "in-progress") {
         return {
           text: "In Progress",
           badgeVariant: "secondary" as const,
-          badgeClassName: "text-blue-500 dark:text-blue-400 ring-1 ring-blue-500/30",
+          badgeClassName: "text-warning ring-1 ring-warning/30",
         };
       } else {
         return {
           text: "Not Started",
           badgeVariant: "secondary" as const,
-          badgeClassName: "text-muted-foreground ring-1 ring-border",
+          badgeClassName: "text-destructive ring-1 ring-destructive/30",
         };
       }
     }
@@ -114,13 +114,7 @@ export default function SimulationProgress({
         {/* Progress Bar */}
         <div className="w-full bg-muted rounded-full h-2.5 ring-2 ring-border">
           <div
-            className={`h-2.5 rounded-full transition-all duration-300 ${
-              isComplete
-                ? "bg-green-500 ring-2 ring-green-500/30"
-                : status === "in-progress"
-                  ? "bg-blue-500 ring-2 ring-blue-500/30"
-                  : "bg-secondary ring-2 ring-secondary-foreground/20"
-            }`}
+            className="h-2.5 rounded-full transition-all duration-300 bg-primary ring-2 ring-primary/30"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -151,18 +145,18 @@ export default function SimulationProgress({
           ) : (
             <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
               <span className="inline-flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>
+                <span className="w-2 h-2 bg-success rounded-full mr-1.5"></span>
                 {passedCount || 0} passed
               </span>
               {(inProgressCount || 0) > 0 && (
                 <span className="inline-flex items-center">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-1.5"></span>
+                  <span className="w-2 h-2 bg-warning rounded-full mr-1.5"></span>
                   {inProgressCount} in progress
                 </span>
               )}
               {(notStartedCount || 0) > 0 && (
                 <span className="inline-flex items-center">
-                  <span className="w-2 h-2 bg-secondary rounded-full mr-1.5 ring-1 ring-secondary-foreground/20"></span>
+                  <span className="w-2 h-2 bg-destructive rounded-full mr-1.5"></span>
                   {notStartedCount} not started
                 </span>
               )}
@@ -188,13 +182,7 @@ export default function SimulationProgress({
         {/* Progress Bar */}
         <div className="flex-1 bg-muted rounded-full h-2 ring-2 ring-border">
           <div
-            className={`h-2 rounded-full transition-all duration-300 ${
-              isComplete
-                ? "bg-green-500 ring-2 ring-green-500/30"
-                : status === "in-progress"
-                  ? "bg-blue-500 ring-2 ring-blue-500/30"
-                  : "bg-secondary ring-2 ring-secondary-foreground/20"
-            }`}
+            className="h-2 rounded-full transition-all duration-300 bg-primary ring-2 ring-primary/30"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -223,18 +211,18 @@ export default function SimulationProgress({
         ) : (
           <div className="text-xs text-muted-foreground space-x-2">
             <span className="inline-flex items-center">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+              <span className="w-2 h-2 bg-success rounded-full mr-1"></span>
               {passedCount || 0} passed
             </span>
             {(inProgressCount || 0) > 0 && (
               <span className="inline-flex items-center">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+                <span className="w-2 h-2 bg-warning rounded-full mr-1"></span>
                 {inProgressCount} in progress
               </span>
             )}
             {(notStartedCount || 0) > 0 && (
               <span className="inline-flex items-center">
-                <span className="w-2 h-2 bg-secondary rounded-full mr-1 ring-1 ring-secondary-foreground/20"></span>
+                <span className="w-2 h-2 bg-destructive rounded-full mr-1"></span>
                 {notStartedCount} not started
               </span>
             )}

@@ -1012,7 +1012,7 @@ export default function SimulationHistory({
           }
 
           return (
-            <div className="flex flex-nowrap gap-1 overflow-x-auto max-w-[175px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex flex-wrap gap-1 overflow-hidden max-w-[175px] max-h-[52px]">
               {personaNames.map((personaName, index) => {
                 const baseHex = personaColors?.[index] || "#9CA3AF"; // gray-400 fallback
 
