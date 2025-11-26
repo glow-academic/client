@@ -1640,14 +1640,19 @@
                     ),
                     'personaPerformance', json_build_object(
                         'chartData', COALESCE((SELECT json_agg(json_build_object(
-                            'name', pa.name,
-                            'score', ROUND(COALESCE(pa.avg_score, 0))::int,
-                            'sessions', pa.sessions,
-                            'color', pa.color,
-                            'simulationIds', pa.simulation_ids,
-                            'trendData', COALESCE(pta.trends, '[]'::json)
-                        ) ORDER BY pa.avg_score DESC) FROM persona_agg pa 
-                        LEFT JOIN persona_trends_agg pta ON pta.persona_id = pa.persona_id), '[]'::json),
+                            'name', sub.name,
+                            'score', ROUND(COALESCE(sub.avg_score, 0))::int,
+                            'sessions', sub.sessions,
+                            'color', sub.color,
+                            'simulationIds', sub.simulation_ids,
+                            'trendData', COALESCE(sub.trends, '[]'::json)
+                        )) FROM (
+                            SELECT pa.name, pa.avg_score, pa.sessions, pa.color, pa.simulation_ids, pta.trends
+                            FROM persona_agg pa 
+                            LEFT JOIN persona_trends_agg pta ON pta.persona_id = pa.persona_id
+                            ORDER BY pa.avg_score DESC
+                            LIMIT 5
+                        ) sub), '[]'::json),
                         'validSimulationIds', COALESCE((
                             SELECT json_agg(DISTINCT simulation_id::text ORDER BY simulation_id::text) 
                             FROM filt WHERE simulation_id IS NOT NULL

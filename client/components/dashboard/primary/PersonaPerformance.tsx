@@ -94,17 +94,49 @@ export default function PersonaPerformance({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Filter chart data based on selected simulations
-  const filteredChartData = useMemo(() => {
-    if (selectedSimulations.length === 0) return chartData;
+  // Chart palette using shadcn chart colors (limited to top 5)
+  const CHART_PALETTE = [
+    "hsl(var(--chart-1))",
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--chart-5))",
+  ];
 
-    // Note: This is a simplified filter - in a real implementation,
-    // you might need to filter based on which simulations each persona appears in
-    return chartData;
+  // Filter chart data based on selected simulations and limit to top 5
+  const filteredChartData = useMemo(() => {
+    let data = chartData;
+    if (selectedSimulations.length === 0) {
+      data = chartData;
+    } else {
+      // Note: This is a simplified filter - in a real implementation,
+      // you might need to filter based on which simulations each persona appears in
+      data = chartData;
+    }
+
+    // Sort by score descending and limit to top 5
+    const sorted = [...data].sort((a, b) => b.score - a.score);
+    const limited = sorted.slice(0, 5);
+
+    // Assign chart colors
+    return limited.map((persona, idx) => ({
+      ...persona,
+      color: CHART_PALETTE[idx % CHART_PALETTE.length],
+    }));
   }, [chartData, selectedSimulations]);
 
   // Use hasDataAvailable to determine threshold status
   const thresholdStatus = hasDataAvailable ? performanceStatus : "neutral";
+
+  // Status color classes
+  const statusIndicatorClass =
+    thresholdStatus === "success"
+      ? "bg-success"
+      : thresholdStatus === "warning"
+        ? "bg-warning"
+        : thresholdStatus === "danger"
+          ? "bg-destructive"
+          : "bg-muted-foreground";
 
   // Filter trend data for each persona based on selected simulations
   const getFilteredTrendData = (persona: PersonaPerformanceData) => {
@@ -116,11 +148,11 @@ export default function PersonaPerformance({
     );
   };
 
-  // Background color by thresholds
+  // Background color by thresholds using shadcn colors
   const getBackgroundColor = (score: number) => {
-    if (score >= thresholds.success) return "bg-green-50 dark:bg-green-950";
-    if (score >= thresholds.warning) return "bg-yellow-50 dark:bg-yellow-950";
-    return "bg-red-50 dark:bg-red-950";
+    if (score >= thresholds.success) return "bg-success/10 dark:bg-success/20";
+    if (score >= thresholds.warning) return "bg-warning/10 dark:bg-warning/20";
+    return "bg-destructive/10 dark:bg-destructive/20";
   };
 
   if (!hasDataAvailable) {
@@ -147,15 +179,7 @@ export default function PersonaPerformance({
   return (
     <Card className="w-full h-full flex flex-col relative">
       <div
-        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
-          thresholdStatus === "success"
-            ? "bg-green-500"
-            : thresholdStatus === "warning"
-              ? "bg-yellow-500"
-              : thresholdStatus === "danger"
-                ? "bg-red-500"
-                : "bg-gray-400"
-        }`}
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${statusIndicatorClass}`}
       />
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -226,9 +250,7 @@ export default function PersonaPerformance({
                   {filteredChartData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={
-                        personaColors[entry.name] ?? entry.color ?? "#999999"
-                      }
+                      fill={entry.color}
                       className="hover:opacity-80 transition-opacity"
                     />
                   ))}
@@ -252,10 +274,7 @@ export default function PersonaPerformance({
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{
-                          backgroundColor:
-                            personaColors[persona.name] ??
-                            persona.color ??
-                            "#999999",
+                          backgroundColor: persona.color,
                         }}
                       />
                       <div>
@@ -276,10 +295,7 @@ export default function PersonaPerformance({
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{
-                          backgroundColor:
-                            personaColors[persona.name] ??
-                            persona.color ??
-                            "#999999",
+                          backgroundColor: persona.color,
                         }}
                       />
                       {persona.name} Student Performance
@@ -333,11 +349,7 @@ export default function PersonaPerformance({
                           <Line
                             type="monotone"
                             dataKey="score"
-                            stroke={
-                              personaColors[persona.name] ??
-                              persona.color ??
-                              "#999999"
-                            }
+                            stroke={persona.color}
                             strokeWidth={2}
                             dot={{ r: 4 }}
                             name="Score"

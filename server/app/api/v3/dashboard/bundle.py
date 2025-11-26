@@ -533,7 +533,34 @@ class DashboardBundleResponse(BaseModel):
 # ==============================================================
 
 
-def _parse_metric(metric_data: dict[str, Any]) -> MetricResponse:
+def _calculate_status(
+    current_value: int, has_data: bool, thresholds: Thresholds, invert: bool = False
+) -> Literal["success", "warning", "danger", "neutral"]:
+    """Calculate status based on current value and thresholds."""
+    if not has_data:
+        return "neutral"
+
+    # For metrics where lower is better (e.g., response times, stagnation rate)
+    if invert:
+        if current_value > thresholds.danger:
+            return "danger"
+        if current_value > thresholds.warning:
+            return "warning"
+        return "success"
+
+    # For metrics where higher is better (default)
+    if current_value >= thresholds.success:
+        return "success"
+    if current_value >= thresholds.warning:
+        return "warning"
+    return "danger"
+
+
+def _parse_metric(
+    metric_data: dict[str, Any],
+    thresholds: Thresholds | None = None,
+    invert: bool = False,
+) -> MetricResponse:
     """Parse a metric response from JSON data."""
     # Parse trendData
     trend_data_raw = metric_data.get("trendData", [])
@@ -572,10 +599,21 @@ def _parse_metric(metric_data: dict[str, Any]) -> MetricResponse:
                     )
                 )
 
+    has_data = metric_data.get("hasData", False)
+    current_value = metric_data.get("currentValue", 0)
+
+    # Calculate status if thresholds provided, otherwise use from SQL if available
+    status: Literal["success", "warning", "danger", "neutral"] | None = None
+    if "status" in metric_data:
+        status = metric_data.get("status")
+    elif thresholds:
+        status = _calculate_status(current_value, has_data, thresholds, invert)
+
     return MetricResponse(
-        hasData=metric_data.get("hasData", False),
+        hasData=has_data,
         method=Method(metric_data.get("method", "avg")),
-        currentValue=metric_data.get("currentValue", 0),
+        currentValue=current_value,
+        status=status,
         trendAnalysis=metric_data.get("trendAnalysis"),
         valueField=metric_data.get("valueField"),
         keyField=metric_data.get("keyField"),
@@ -1010,19 +1048,46 @@ def _compute_simulation_composition_insight(
 
 def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
     """Parse dashboard bundle from SQL result (same logic as v2 DashboardService)."""
+    # Standard thresholds for all metrics
+    thresholds = Thresholds(danger=60, warning=75, success=85)
+
     # Parse header metrics
     header_data = data.get("header", {})
     header = DashboardHeaderMetrics(
-        averageScore=_parse_metric(header_data.get("averageScore", {})),
-        completionPercentage=_parse_metric(header_data.get("completionPercentage", {})),
-        firstAttemptPassRate=_parse_metric(header_data.get("firstAttemptPassRate", {})),
-        highestScore=_parse_metric(header_data.get("highestScore", {})),
-        messagesPerSession=_parse_metric(header_data.get("messagesPerSession", {})),
-        personaResponseTimes=_parse_metric(header_data.get("personaResponseTimes", {})),
-        sessionEfficiency=_parse_metric(header_data.get("sessionEfficiency", {})),
-        stagnationRate=_parse_metric(header_data.get("stagnationRate", {})),
-        timeSpent=_parse_metric(header_data.get("timeSpent", {})),
-        totalAttempts=_parse_metric(header_data.get("totalAttempts", {})),
+        averageScore=_parse_metric(
+            header_data.get("averageScore", {}), thresholds=thresholds
+        ),
+        completionPercentage=_parse_metric(
+            header_data.get("completionPercentage", {}), thresholds=thresholds
+        ),
+        firstAttemptPassRate=_parse_metric(
+            header_data.get("firstAttemptPassRate", {}), thresholds=thresholds
+        ),
+        highestScore=_parse_metric(
+            header_data.get("highestScore", {}), thresholds=thresholds
+        ),
+        messagesPerSession=_parse_metric(
+            header_data.get("messagesPerSession", {}), thresholds=thresholds
+        ),
+        personaResponseTimes=_parse_metric(
+            header_data.get("personaResponseTimes", {}),
+            thresholds=thresholds,
+            invert=True,  # Lower is better for response times
+        ),
+        sessionEfficiency=_parse_metric(
+            header_data.get("sessionEfficiency", {}), thresholds=thresholds
+        ),
+        stagnationRate=_parse_metric(
+            header_data.get("stagnationRate", {}),
+            thresholds=thresholds,
+            invert=True,  # Lower is better for stagnation rate
+        ),
+        timeSpent=_parse_metric(
+            header_data.get("timeSpent", {}), thresholds=thresholds
+        ),
+        totalAttempts=_parse_metric(
+            header_data.get("totalAttempts", {}), thresholds=thresholds
+        ),
     )
 
     # Parse primary metrics
@@ -1364,9 +1429,6 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             simulation_composition.simulationFacts
         ),
     )
-
-    # Standard thresholds for all metrics
-    thresholds = Thresholds(danger=60, warning=75, success=85)
 
     return DashboardBundleResponse(
         header=header,

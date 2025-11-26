@@ -5,7 +5,7 @@ Resource-specific schemas should be defined inline in route files.
 """
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -234,6 +234,7 @@ class MetricResponse(BaseModel):
     hasData: bool
     method: Method
     currentValue: int
+    status: Literal["success", "warning", "danger", "neutral"] | None = None
     trendAnalysis: str | None = None
     valueField: str | None = None
     keyField: str | None = None

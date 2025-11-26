@@ -109,6 +109,9 @@ export default function Dashboard({
         scoreTrend={bundle.header.averageScore.trendData}
         hasDataAvailable={bundle.header.averageScore.hasData}
         trendAnalysis={trendAnalysis.averageScore}
+        {...(bundle.header.averageScore.status && {
+          status: bundle.header.averageScore.status,
+        })}
         thresholds={thresholds}
       />,
       <CompletionPercentage
@@ -117,6 +120,9 @@ export default function Dashboard({
         completionTrend={bundle.header.completionPercentage.trendData}
         hasDataAvailable={bundle.header.completionPercentage.hasData}
         trendAnalysis={trendAnalysis.completion}
+        {...(bundle.header.completionPercentage.status && {
+          status: bundle.header.completionPercentage.status,
+        })}
         thresholds={thresholds}
       />,
       <FirstAttemptPassRate
@@ -125,6 +131,9 @@ export default function Dashboard({
         passRateTrend={bundle.header.firstAttemptPassRate.trendData}
         hasDataAvailable={bundle.header.firstAttemptPassRate.hasData}
         trendAnalysis={trendAnalysis.passRate}
+        {...(bundle.header.firstAttemptPassRate.status && {
+          status: bundle.header.firstAttemptPassRate.status,
+        })}
         thresholds={thresholds}
       />,
       <HighestScore
@@ -133,6 +142,9 @@ export default function Dashboard({
         scoreTrend={bundle.header.highestScore.trendData}
         hasDataAvailable={bundle.header.highestScore.hasData}
         trendAnalysis={trendAnalysis.highestScore}
+        {...(bundle.header.highestScore.status && {
+          status: bundle.header.highestScore.status,
+        })}
         thresholds={thresholds}
       />,
       <MessagesPerSession
@@ -143,6 +155,9 @@ export default function Dashboard({
         messagesTrend={bundle.header.messagesPerSession.trendData}
         hasDataAvailable={bundle.header.messagesPerSession.hasData}
         trendAnalysis={trendAnalysis.messages}
+        {...(bundle.header.messagesPerSession.status && {
+          status: bundle.header.messagesPerSession.status,
+        })}
         thresholds={thresholds}
       />,
       <PersonaResponseTimes
@@ -151,6 +166,9 @@ export default function Dashboard({
         responseTimeTrend={bundle.header.personaResponseTimes.trendData}
         hasDataAvailable={bundle.header.personaResponseTimes.hasData}
         trendAnalysis={trendAnalysis.responseTime}
+        {...(bundle.header.personaResponseTimes.status && {
+          status: bundle.header.personaResponseTimes.status,
+        })}
         thresholds={thresholds}
       />,
       <SessionEfficiency
@@ -159,6 +177,9 @@ export default function Dashboard({
         efficiencyTrend={bundle.header.sessionEfficiency.trendData}
         hasDataAvailable={bundle.header.sessionEfficiency.hasData}
         trendAnalysis={trendAnalysis.sessionEfficiency}
+        {...(bundle.header.sessionEfficiency.status && {
+          status: bundle.header.sessionEfficiency.status,
+        })}
         thresholds={thresholds}
       />,
       <StagnationRate
@@ -167,6 +188,9 @@ export default function Dashboard({
         stagnationTrend={bundle.header.stagnationRate.trendData}
         hasDataAvailable={bundle.header.stagnationRate.hasData}
         trendAnalysis={trendAnalysis.stagnationRate}
+        {...(bundle.header.stagnationRate.status && {
+          status: bundle.header.stagnationRate.status,
+        })}
         thresholds={thresholds}
       />,
       <TimeSpent
@@ -178,6 +202,9 @@ export default function Dashboard({
         }))}
         hasDataAvailable={bundle.header.timeSpent.hasData}
         trendAnalysis={trendAnalysis.timeSpent}
+        {...(bundle.header.timeSpent.status && {
+          status: bundle.header.timeSpent.status,
+        })}
         thresholds={thresholds}
       />,
       <TotalAttempts
@@ -186,6 +213,9 @@ export default function Dashboard({
         attemptsTrend={bundle.header.totalAttempts.trendData}
         hasDataAvailable={bundle.header.totalAttempts.hasData}
         trendAnalysis={trendAnalysis.totalAttempts}
+        {...(bundle.header.totalAttempts.status && {
+          status: bundle.header.totalAttempts.status,
+        })}
         thresholds={thresholds}
       />,
     ];

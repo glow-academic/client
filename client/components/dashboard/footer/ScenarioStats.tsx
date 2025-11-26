@@ -63,22 +63,19 @@ type NumericScenarioFact = {
   levelValue: number;
 };
 
-// Static chart palette for reliable colors
+// Chart palette using shadcn chart colors (limited to top 5)
 const CHART_PALETTE = [
-  "#2563eb", // blue
-  "#7c3aed", // purple
-  "#10b981", // green
-  "#f59e0b", // orange
-  "#ef4444", // red
-  "#06b6d4", // teal
-  "#84cc16", // lime
-  "#a855f7", // violet
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
 ];
 
 function pickColor(fallbackIndex = 0): string {
-  // Use the fallbackIndex directly to ensure different colors
+  // Use the fallbackIndex directly, limit to top 5 colors
   const idx = fallbackIndex % CHART_PALETTE.length;
-  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "#2563eb";
+  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "hsl(var(--chart-1))";
 }
 
 function CustomBarTooltip({
@@ -225,6 +222,7 @@ export default function ScenarioStats({
 
     return [...byLevel.values()]
       .sort((a, b) => a.value - b.value)
+      .slice(0, 5) // Limit to top 5
       .map((r, idx) => ({
         metricLevel: r.label,
         avgScore: r.sumW ? Math.round(r.sumScore / r.sumW) : 0,
@@ -299,12 +297,12 @@ export default function ScenarioStats({
           data-testid="status-indicator"
           className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
             status === "success"
-              ? "bg-green-500"
+              ? "bg-success"
               : status === "warning"
-                ? "bg-yellow-500"
+                ? "bg-warning"
                 : status === "danger"
-                  ? "bg-red-500"
-                  : "bg-gray-400"
+                  ? "bg-destructive"
+                  : "bg-muted-foreground"
           }`}
         />
         <CardHeader>

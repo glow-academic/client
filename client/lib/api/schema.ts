@@ -7954,6 +7954,8 @@ export interface components {
             method: components["schemas"]["Method"];
             /** Currentvalue */
             currentValue: number;
+            /** Status */
+            status?: ("success" | "warning" | "danger" | "neutral") | null;
             /** Trendanalysis */
             trendAnalysis?: string | null;
             /** Valuefield */

@@ -236,12 +236,12 @@ export default function SimulationPerformance({
       <div
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
           status === "success"
-            ? "bg-green-500"
+            ? "bg-success"
             : status === "warning"
-              ? "bg-yellow-500"
+              ? "bg-warning"
               : status === "danger"
-                ? "bg-red-500"
-                : "bg-gray-400"
+                ? "bg-destructive"
+                : "bg-muted-foreground"
         }`}
       />
       <CardHeader className={cn("pb-3", isMobile && "pb-2")}>

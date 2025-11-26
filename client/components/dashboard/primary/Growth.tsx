@@ -204,12 +204,12 @@ export default function Growth({
       <div
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
           thresholdStatus === "success"
-            ? "bg-green-500"
+            ? "bg-success"
             : thresholdStatus === "warning"
-              ? "bg-yellow-500"
+              ? "bg-warning"
               : thresholdStatus === "danger"
-                ? "bg-red-500"
-                : "bg-gray-400"
+                ? "bg-destructive"
+                : "bg-muted-foreground"
         }`}
       />
       <CardHeader className="flex-shrink-0">

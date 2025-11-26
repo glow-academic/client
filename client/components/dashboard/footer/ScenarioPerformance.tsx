@@ -70,22 +70,19 @@ import {
   YAxis,
 } from "recharts";
 
-// Static chart palette for reliable colors
+// Chart palette using shadcn chart colors (limited to top 5)
 const CHART_PALETTE = [
-  "#2563eb", // blue
-  "#7c3aed", // purple
-  "#10b981", // green
-  "#f59e0b", // orange
-  "#ef4444", // red
-  "#06b6d4", // teal
-  "#84cc16", // lime
-  "#a855f7", // violet
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
 ];
 
 function pickColor(fallbackIndex = 0): string {
-  // Use the fallbackIndex directly to ensure different colors
+  // Use the fallbackIndex directly, limit to top 5 colors
   const idx = fallbackIndex % CHART_PALETTE.length;
-  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "#2563eb";
+  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "hsl(var(--chart-1))";
 }
 
 function iconFor(paramName: string, itemName: string) {
@@ -256,7 +253,7 @@ export default function ScenarioPerformance({
   }, [attributeScenarioFacts, activeParameterId]);
 
   const elements: AttributeElement[] = useMemo(() => {
-    return itemsForParameter.map((it, idx) => {
+    const mapped = itemsForParameter.map((it, idx) => {
       const scen = attributeScenarioFacts.filter(
         (f) => f.parameterItemId === it.id,
       );
@@ -286,7 +283,6 @@ export default function ScenarioPerformance({
           timestamp: a.timestamp,
         }));
 
-      const color = pickColor(idx);
       const paramName =
         allParameters.find((p) => p.id === activeParameterId)?.name ?? "";
 
@@ -295,7 +291,7 @@ export default function ScenarioPerformance({
         name: it.name,
         displayName: it.name,
         icon: iconFor(paramName, it.name),
-        color,
+        color: "", // Will be set after sorting/limiting
         count: scenCount,
         percentage:
           Math.round((1000 * scenCount) / totalScenariosForParam) / 10, // 1 decimal
@@ -305,6 +301,17 @@ export default function ScenarioPerformance({
         trendData,
       };
     });
+
+    // Sort by usage (percentage) descending, then limit to top 5
+    const sorted = mapped
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 5);
+
+    // Assign colors after limiting
+    return sorted.map((el, idx) => ({
+      ...el,
+      color: pickColor(idx),
+    }));
   }, [
     itemsForParameter,
     attributeAttemptFacts,
@@ -435,12 +442,12 @@ export default function ScenarioPerformance({
         data-testid="status-indicator"
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${
           status === "success"
-            ? "bg-green-500"
+            ? "bg-success"
             : status === "warning"
-              ? "bg-yellow-500"
+              ? "bg-warning"
               : status === "danger"
-                ? "bg-red-500"
-                : "bg-gray-400"
+                ? "bg-destructive"
+                : "bg-muted-foreground"
         }`}
       />
       <CardHeader>

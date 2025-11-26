@@ -36,6 +36,7 @@ export interface FirstAttemptPassRateProps {
   passRateTrend: TrendData[];
   hasDataAvailable: boolean;
   trendAnalysis: string | null;
+  status?: "success" | "warning" | "danger" | "neutral";
   thresholds: {
     danger: number;
     warning: number;
@@ -43,71 +44,82 @@ export interface FirstAttemptPassRateProps {
   };
 }
 
-const COLOR_CONFIGS = {
-  neutral: {
-    gradient: "from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900",
-    border: "border-gray-200",
-    text: "text-gray-700",
-    icon: "text-gray-600",
-    primary: "#6b7280",
-  },
-  danger: {
-    gradient: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
-    border: "border-red-200",
-    text: "text-red-700",
-    icon: "text-red-600",
-    primary: "#ef4444",
-  },
-  warning: {
-    gradient:
-      "from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900",
-    border: "border-yellow-200",
-    text: "text-yellow-700",
-    icon: "text-yellow-600",
-    primary: "#3b82f6",
-  },
-  success: {
-    gradient:
-      "from-green-50 to-green-100 dark:from-green-950 dark:to-green-900",
-    border: "border-green-200",
-    text: "text-green-700",
-    icon: "text-green-600",
-    primary: "#10b981",
-  },
-};
-
 export default function FirstAttemptPassRate({
   firstAttemptPassRate,
   passRateTrend,
   hasDataAvailable,
   trendAnalysis,
+  status,
   thresholds,
 }: FirstAttemptPassRateProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Color config based on score and thresholds
-  const colorConfig = (() => {
-    if (!hasDataAvailable) return COLOR_CONFIGS.neutral;
-    if (firstAttemptPassRate < thresholds.danger) return COLOR_CONFIGS.danger;
-    if (firstAttemptPassRate < thresholds.warning) return COLOR_CONFIGS.warning;
-    return COLOR_CONFIGS.success;
-  })();
+  // Determine status (use prop if provided, otherwise calculate)
+  const currentStatus =
+    status ??
+    (() => {
+      if (!hasDataAvailable) return "neutral";
+      if (firstAttemptPassRate < thresholds.danger) return "danger";
+      if (firstAttemptPassRate < thresholds.warning) return "warning";
+      return "success";
+    })();
+
+  // Get color values for Recharts
+  const getChartColor = () => {
+    switch (currentStatus) {
+      case "success":
+        return "hsl(var(--success))";
+      case "warning":
+        return "hsl(var(--warning))";
+      case "danger":
+        return "hsl(var(--destructive))";
+      default:
+        return "hsl(var(--muted-foreground))";
+    }
+  };
+
+  const gradientClasses =
+    currentStatus === "success"
+      ? "bg-gradient-to-br from-success/10 to-success/5 dark:from-success/20 dark:to-success/10 border-success/30"
+      : currentStatus === "warning"
+        ? "bg-gradient-to-br from-warning/10 to-warning/5 dark:from-warning/20 dark:to-warning/10 border-warning/30"
+        : currentStatus === "danger"
+          ? "bg-gradient-to-br from-destructive/10 to-destructive/5 dark:from-destructive/20 dark:to-destructive/10 border-destructive/30"
+          : "bg-gradient-to-br from-muted to-muted/50 dark:from-muted dark:to-muted/50 border-border";
+
+  const textClasses =
+    currentStatus === "success"
+      ? "text-success"
+      : currentStatus === "warning"
+        ? "text-warning"
+        : currentStatus === "danger"
+          ? "text-destructive"
+          : "text-muted-foreground";
+
+  const iconClasses =
+    currentStatus === "success"
+      ? "text-success"
+      : currentStatus === "warning"
+        ? "text-warning"
+        : currentStatus === "danger"
+          ? "text-destructive"
+          : "text-muted-foreground";
 
   // Render
   return (
     <>
       <Card
-        className={`bg-gradient-to-br ${colorConfig.gradient} ${colorConfig.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
+        className={`${gradientClasses} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
         onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
             First Attempt Pass Rate
           </CardTitle>
-          <Award className={`h-4 w-4 ${colorConfig.icon}`} />
+          <Award className={`h-4 w-4 ${iconClasses}`} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
-          <div className={`text-2xl font-bold ${colorConfig.text}`}>
+          <div className={`text-2xl font-bold ${textClasses}`}>
             {hasDataAvailable ? `${firstAttemptPassRate}%` : "0%"}
           </div>
         </CardContent>
@@ -135,7 +147,7 @@ export default function FirstAttemptPassRate({
                 />
                 <Bar
                   dataKey="value"
-                  fill={colorConfig.primary}
+                  fill={getChartColor()}
                   name="value"
                   radius={[4, 4, 0, 0]}
                 />
