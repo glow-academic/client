@@ -130,9 +130,27 @@ export default function TimeSpent({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={timeSpentTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(value: string) => {
+                    // Format YYYY-MM-DD to MM-DD
+                    const parts = value.split("-");
+                    if (parts.length === 3) {
+                      return `${parts[1]}-${parts[2]}`;
+                    }
+                    return value;
+                  }}
+                />
                 <YAxis />
                 <Tooltip
+                  labelFormatter={(label: string) => {
+                    // Format YYYY-MM-DD to MM-DD
+                    const parts = label.split("-");
+                    if (parts.length === 3) {
+                      return `${parts[1]}-${parts[2]}`;
+                    }
+                    return label;
+                  }}
                   formatter={(value: number, name: string) => [
                     name === "value" ? formatTime(value) : value,
                     name === "value" ? "Time Spent" : "Sessions",

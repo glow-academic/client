@@ -385,427 +385,439 @@ export default function SimulationComposition({
           />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 flex-1 flex flex-col">
-        {/* Show fallback message if no meaningful differences found */}
-        {highPerforming.length === 0 &&
-          lowPerforming.length === 0 &&
-          simulationFacts.length > 0 && (
-            <div
-              className={cn(
-                "text-center bg-muted/50 rounded-lg",
-                isMobile ? "p-2" : "p-4"
-              )}
-            >
-              <p
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="space-y-4 flex flex-col h-full">
+          {/* Show fallback message if no meaningful differences found */}
+          {highPerforming.length === 0 &&
+            lowPerforming.length === 0 &&
+            simulationFacts.length > 0 && (
+              <div
                 className={cn(
-                  "text-muted-foreground",
-                  isMobile ? "text-xs mb-1" : "text-sm mb-2"
+                  "text-center bg-muted/50 rounded-lg flex-shrink-0",
+                  isMobile ? "p-2" : "p-4"
                 )}
               >
-                No significant differences found between high and low performing
-                simulations.
-              </p>
-              <p
-                className={cn(
-                  "text-muted-foreground",
-                  isMobile ? "text-[10px]" : "text-xs"
-                )}
-              >
-                Showing top 3 most common attributes across all simulations.
-              </p>
-            </div>
-          )}
+                <p
+                  className={cn(
+                    "text-muted-foreground",
+                    isMobile ? "text-xs mb-1" : "text-sm mb-2"
+                  )}
+                >
+                  No significant differences found between high and low
+                  performing simulations.
+                </p>
+                <p
+                  className={cn(
+                    "text-muted-foreground",
+                    isMobile ? "text-[10px]" : "text-xs"
+                  )}
+                >
+                  Showing top 3 most common attributes across all simulations.
+                </p>
+              </div>
+            )}
 
-        {/* Parameter Comparison Table */}
-        <div
-          className={cn("flex-1", isMobile ? "min-h-[180px]" : "min-h-[260px]")}
-        >
+          {/* Parameter Comparison Table */}
           <div
             className={cn(
-              "grid items-start",
-              isMobile
-                ? "grid-cols-1 gap-2"
-                : "grid-cols-1 lg:grid-cols-2 gap-4"
+              "flex-1 min-h-0 overflow-auto",
+              isMobile ? "min-h-[180px]" : "min-h-[260px]"
             )}
           >
-            {/* High Performing Side */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <div
-                  className={cn(
-                    "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm",
-                    isMobile ? "p-2" : "p-3"
-                  )}
-                >
+            <div
+              className={cn(
+                "grid items-start",
+                isMobile
+                  ? "grid-cols-1 gap-2"
+                  : "grid-cols-1 lg:grid-cols-2 gap-4"
+              )}
+            >
+              {/* High Performing Side */}
+              <Dialog>
+                <DialogTrigger asChild>
                   <div
-                    className={cn("text-center", isMobile ? "mb-2" : "mb-3")}
+                    className={cn(
+                      "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-green-200 hover:shadow-sm",
+                      isMobile ? "p-2" : "p-3"
+                    )}
                   >
-                    <h3
-                      className={cn(
-                        "font-semibold text-green-600 flex items-center justify-center gap-1",
-                        isMobile ? "text-xs" : "text-sm"
-                      )}
-                    >
-                      <TrendingUp
-                        className={cn(isMobile ? "h-2.5 w-2.5" : "h-3 w-3")}
-                      />
-                      {getMethodLabel(true)}
-                    </h3>
-                    <p
-                      className={cn(
-                        "text-muted-foreground",
-                        isMobile ? "text-[10px]" : "text-xs"
-                      )}
-                    >
-                      {highPerformingDetails.length} simulations
-                    </p>
-                  </div>
-                  <div className="flex-1">
                     <div
-                      className={cn(
-                        "overflow-auto rounded-md",
-                        isMobile ? "max-h-48" : "max-h-64"
-                      )}
+                      className={cn("text-center", isMobile ? "mb-2" : "mb-3")}
                     >
-                      <Table className="w-full table-fixed">
-                        <colgroup>
-                          <col className="w-[75%]" />
-                          <col className="w-[25%]" />
-                        </colgroup>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead
-                              className={cn(
-                                "leading-snug",
-                                isMobile ? "p-1 text-[10px]" : "p-2 text-xs"
-                              )}
-                            >
-                              Parameter
-                            </TableHead>
-                            <TableHead
-                              className={cn(
-                                "leading-snug text-right shrink-0",
-                                isMobile
-                                  ? "p-1 text-[10px] w-12"
-                                  : "p-2 text-xs w-16"
-                              )}
-                            >
-                              Count
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {highPerforming
-                            .slice(0, isMobile ? 4 : 5)
-                            .map((item, index) => (
-                              <TableRow
-                                key={`high-${index}`}
-                                className="hover:bg-muted/50"
-                              >
-                                <TableCell
-                                  className={cn(
-                                    "leading-snug",
-                                    isMobile ? "p-1" : "p-2"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <div
-                                      className={cn(
-                                        "rounded-full shrink-0",
-                                        isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
-                                      )}
-                                      style={{ backgroundColor: item.color }}
-                                    />
-                                    <span
-                                      className={cn(
-                                        "truncate",
-                                        isMobile ? "text-[10px]" : "text-xs"
-                                      )}
-                                      title={item.name}
-                                    >
-                                      {item.name}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell
-                                  className={cn(
-                                    "font-mono tabular-nums text-right shrink-0",
-                                    isMobile
-                                      ? "p-1 text-[10px] w-12"
-                                      : "p-2 text-xs w-16"
-                                  )}
-                                >
-                                  {item.value}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
+                      <h3
+                        className={cn(
+                          "font-semibold text-green-600 flex items-center justify-center gap-1",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <TrendingUp
+                          className={cn(isMobile ? "h-2.5 w-2.5" : "h-3 w-3")}
+                        />
+                        {getMethodLabel(true)}
+                      </h3>
+                      <p
+                        className={cn(
+                          "text-muted-foreground",
+                          isMobile ? "text-[10px]" : "text-xs"
+                        )}
+                      >
+                        {highPerformingDetails.length} simulations
+                      </p>
                     </div>
-                  </div>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    {getMethodLabel(true)} Performing Simulations
-                  </DialogTitle>
-                  <DialogDescription hidden>
-                    Detailed breakdown of top performing simulations and their
-                    characteristics
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {/* Simulation List */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium">
-                      Simulations ({highPerformingDetails.length})
-                    </h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {highPerformingDetails.map((sim) => (
-                        <div
-                          key={sim.id}
-                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                        >
-                          <div>
-                            <p className="font-medium text-sm">{sim.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
-                              scenarios
-                            </p>
-                            {/* Parameter breakdown */}
-                            {sim.parameterBreakdown.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {sim.parameterBreakdown
-                                  .slice(0, 3)
-                                  .map((param, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
-                                    >
-                                      {param.parameterName}:{" "}
-                                      {param.parameterValue}
-                                    </span>
-                                  ))}
-                                {sim.parameterBreakdown.length > 3 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    +{sim.parameterBreakdown.length - 3} more
-                                  </span>
+                    <div className="flex-1">
+                      <div
+                        className={cn(
+                          "overflow-auto rounded-md",
+                          isMobile ? "max-h-48" : "max-h-64"
+                        )}
+                      >
+                        <Table className="w-full table-fixed">
+                          <colgroup>
+                            <col className="w-[75%]" />
+                            <col className="w-[25%]" />
+                          </colgroup>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead
+                                className={cn(
+                                  "leading-snug",
+                                  isMobile ? "p-1 text-[10px]" : "p-2 text-xs"
                                 )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">
-                              {sim.avgScore}% avg
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {sim.completionRate}% completion
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                              >
+                                Parameter
+                              </TableHead>
+                              <TableHead
+                                className={cn(
+                                  "leading-snug text-right shrink-0",
+                                  isMobile
+                                    ? "p-1 text-[10px] w-12"
+                                    : "p-2 text-xs w-16"
+                                )}
+                              >
+                                Count
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {highPerforming
+                              .slice(0, isMobile ? 4 : 5)
+                              .map((item, index) => (
+                                <TableRow
+                                  key={`high-${index}`}
+                                  className="hover:bg-muted/50"
+                                >
+                                  <TableCell
+                                    className={cn(
+                                      "leading-snug",
+                                      isMobile ? "p-1" : "p-2"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <div
+                                        className={cn(
+                                          "rounded-full shrink-0",
+                                          isMobile ? "w-1.5 h-1.5" : "w-2 h-2"
+                                        )}
+                                        style={{ backgroundColor: item.color }}
+                                      />
+                                      <span
+                                        className={cn(
+                                          "truncate",
+                                          isMobile ? "text-[10px]" : "text-xs"
+                                        )}
+                                        title={item.name}
+                                      >
+                                        {item.name}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell
+                                    className={cn(
+                                      "font-mono tabular-nums text-right shrink-0",
+                                      isMobile
+                                        ? "p-1 text-[10px] w-12"
+                                        : "p-2 text-xs w-16"
+                                    )}
+                                  >
+                                    {item.value}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      {getMethodLabel(true)} Performing Simulations
+                    </DialogTitle>
+                    <DialogDescription hidden>
+                      Detailed breakdown of top performing simulations and their
+                      characteristics
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    {/* Simulation List */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium">
+                        Simulations ({highPerformingDetails.length})
+                      </h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {highPerformingDetails.map((sim) => (
+                          <div
+                            key={sim.id}
+                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{sim.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.totalAttempts} attempts •{" "}
+                                {sim.scenarioCount} scenarios
+                              </p>
+                              {/* Parameter breakdown */}
+                              {sim.parameterBreakdown.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {sim.parameterBreakdown
+                                    .slice(0, 3)
+                                    .map((param, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-xs bg-blue-100 dark:bg-blue-900 px-1 rounded"
+                                      >
+                                        {param.parameterName}:{" "}
+                                        {param.parameterValue}
+                                      </span>
+                                    ))}
+                                  {sim.parameterBreakdown.length > 3 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      +{sim.parameterBreakdown.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {sim.avgScore}% avg
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.completionRate}% completion
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-            {/* Low Performing Side */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <div
-                  className={cn(
-                    "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm",
-                    isMobile ? "p-1.5" : "p-3"
-                  )}
-                >
+              {/* Low Performing Side */}
+              <Dialog>
+                <DialogTrigger asChild>
                   <div
-                    className={cn("text-center", isMobile ? "mb-1.5" : "mb-3")}
+                    className={cn(
+                      "cursor-pointer hover:bg-muted/50 rounded-lg transition-all duration-200 border-2 border-transparent hover:border-red-200 hover:shadow-sm",
+                      isMobile ? "p-1.5" : "p-3"
+                    )}
                   >
-                    <h3
-                      className={cn(
-                        "font-semibold text-red-600 flex items-center justify-center gap-0.5",
-                        isMobile ? "text-[10px]" : "text-sm"
-                      )}
-                    >
-                      <TrendingDown
-                        className={cn(isMobile ? "h-2 w-2" : "h-3 w-3")}
-                      />
-                      <span className="truncate">{getMethodLabel(false)}</span>
-                    </h3>
-                    <p
-                      className={cn(
-                        "text-muted-foreground",
-                        isMobile ? "text-[9px] mt-0.5" : "text-xs"
-                      )}
-                    >
-                      {lowPerformingDetails.length} sims
-                    </p>
-                  </div>
-                  <div className="flex-1">
                     <div
                       className={cn(
-                        "overflow-auto rounded-md",
-                        isMobile ? "max-h-36" : "max-h-64"
+                        "text-center",
+                        isMobile ? "mb-1.5" : "mb-3"
                       )}
                     >
-                      <Table className="w-full table-fixed">
-                        <colgroup>
-                          <col
-                            className={cn(isMobile ? "w-[70%]" : "w-[75%]")}
-                          />
-                          <col
-                            className={cn(isMobile ? "w-[30%]" : "w-[25%]")}
-                          />
-                        </colgroup>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead
-                              className={cn(
-                                "leading-tight",
-                                isMobile ? "p-0.5 text-[9px]" : "p-2 text-xs"
-                              )}
-                            >
-                              {isMobile ? "Param" : "Parameter"}
-                            </TableHead>
-                            <TableHead
-                              className={cn(
-                                "leading-tight text-right shrink-0",
-                                isMobile
-                                  ? "p-0.5 text-[9px] w-8"
-                                  : "p-2 text-xs w-16"
-                              )}
-                            >
-                              #
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {lowPerforming
-                            .slice(0, isMobile ? 3 : 5)
-                            .map((item, index) => (
-                              <TableRow
-                                key={`low-${index}`}
-                                className="hover:bg-muted/50"
-                              >
-                                <TableCell
-                                  className={cn(
-                                    "leading-tight",
-                                    isMobile ? "p-0.5" : "p-2"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-1 min-w-0">
-                                    <div
-                                      className={cn(
-                                        "rounded-full shrink-0",
-                                        isMobile ? "w-1 h-1" : "w-2 h-2"
-                                      )}
-                                      style={{ backgroundColor: item.color }}
-                                    />
-                                    <span
-                                      className={cn(
-                                        "truncate",
-                                        isMobile ? "text-[9px]" : "text-xs"
-                                      )}
-                                      title={item.name}
-                                    >
-                                      {item.name}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell
-                                  className={cn(
-                                    "font-mono tabular-nums text-right shrink-0",
-                                    isMobile
-                                      ? "p-0.5 text-[9px] w-8"
-                                      : "p-2 text-xs w-16"
-                                  )}
-                                >
-                                  {item.value}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                        </TableBody>
-                      </Table>
+                      <h3
+                        className={cn(
+                          "font-semibold text-red-600 flex items-center justify-center gap-0.5",
+                          isMobile ? "text-[10px]" : "text-sm"
+                        )}
+                      >
+                        <TrendingDown
+                          className={cn(isMobile ? "h-2 w-2" : "h-3 w-3")}
+                        />
+                        <span className="truncate">
+                          {getMethodLabel(false)}
+                        </span>
+                      </h3>
+                      <p
+                        className={cn(
+                          "text-muted-foreground",
+                          isMobile ? "text-[9px] mt-0.5" : "text-xs"
+                        )}
+                      >
+                        {lowPerformingDetails.length} sims
+                      </p>
                     </div>
-                  </div>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5 text-red-600" />
-                    {getMethodLabel(false)} Performing Simulations
-                  </DialogTitle>
-                  <DialogDescription hidden>
-                    Detailed breakdown of low performing simulations and their
-                    characteristics
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {/* Simulation List */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium">
-                      Simulations ({lowPerformingDetails.length})
-                    </h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {lowPerformingDetails.map((sim) => (
-                        <div
-                          key={sim.id}
-                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                        >
-                          <div>
-                            <p className="font-medium text-sm">{sim.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {sim.totalAttempts} attempts • {sim.scenarioCount}{" "}
-                              scenarios
-                            </p>
-                            {/* Parameter breakdown */}
-                            {sim.parameterBreakdown.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {sim.parameterBreakdown
-                                  .slice(0, 3)
-                                  .map((param, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-xs bg-red-100 dark:bg-red-900 px-1 rounded"
-                                    >
-                                      {param.parameterName}:{" "}
-                                      {param.parameterValue}
-                                    </span>
-                                  ))}
-                                {sim.parameterBreakdown.length > 3 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    +{sim.parameterBreakdown.length - 3} more
-                                  </span>
+                    <div className="flex-1">
+                      <div
+                        className={cn(
+                          "overflow-auto rounded-md",
+                          isMobile ? "max-h-36" : "max-h-64"
+                        )}
+                      >
+                        <Table className="w-full table-fixed">
+                          <colgroup>
+                            <col
+                              className={cn(isMobile ? "w-[70%]" : "w-[75%]")}
+                            />
+                            <col
+                              className={cn(isMobile ? "w-[30%]" : "w-[25%]")}
+                            />
+                          </colgroup>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead
+                                className={cn(
+                                  "leading-tight",
+                                  isMobile ? "p-0.5 text-[9px]" : "p-2 text-xs"
                                 )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">
-                              {sim.avgScore}% avg
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {sim.completionRate}% completion
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                              >
+                                {isMobile ? "Param" : "Parameter"}
+                              </TableHead>
+                              <TableHead
+                                className={cn(
+                                  "leading-tight text-right shrink-0",
+                                  isMobile
+                                    ? "p-0.5 text-[9px] w-8"
+                                    : "p-2 text-xs w-16"
+                                )}
+                              >
+                                #
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {lowPerforming
+                              .slice(0, isMobile ? 3 : 5)
+                              .map((item, index) => (
+                                <TableRow
+                                  key={`low-${index}`}
+                                  className="hover:bg-muted/50"
+                                >
+                                  <TableCell
+                                    className={cn(
+                                      "leading-tight",
+                                      isMobile ? "p-0.5" : "p-2"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      <div
+                                        className={cn(
+                                          "rounded-full shrink-0",
+                                          isMobile ? "w-1 h-1" : "w-2 h-2"
+                                        )}
+                                        style={{ backgroundColor: item.color }}
+                                      />
+                                      <span
+                                        className={cn(
+                                          "truncate",
+                                          isMobile ? "text-[9px]" : "text-xs"
+                                        )}
+                                        title={item.name}
+                                      >
+                                        {item.name}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell
+                                    className={cn(
+                                      "font-mono tabular-nums text-right shrink-0",
+                                      isMobile
+                                        ? "p-0.5 text-[9px] w-8"
+                                        : "p-2 text-xs w-16"
+                                    )}
+                                  >
+                                    {item.value}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <TrendingDown className="h-5 w-5 text-red-600" />
+                      {getMethodLabel(false)} Performing Simulations
+                    </DialogTitle>
+                    <DialogDescription hidden>
+                      Detailed breakdown of low performing simulations and their
+                      characteristics
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    {/* Simulation List */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium">
+                        Simulations ({lowPerformingDetails.length})
+                      </h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {lowPerformingDetails.map((sim) => (
+                          <div
+                            key={sim.id}
+                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                          >
+                            <div>
+                              <p className="font-medium text-sm">{sim.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.totalAttempts} attempts •{" "}
+                                {sim.scenarioCount} scenarios
+                              </p>
+                              {/* Parameter breakdown */}
+                              {sim.parameterBreakdown.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {sim.parameterBreakdown
+                                    .slice(0, 3)
+                                    .map((param, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-xs bg-red-100 dark:bg-red-900 px-1 rounded"
+                                      >
+                                        {param.parameterName}:{" "}
+                                        {param.parameterValue}
+                                      </span>
+                                    ))}
+                                  {sim.parameterBreakdown.length > 3 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      +{sim.parameterBreakdown.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium">
+                                {sim.avgScore}% avg
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {sim.completionRate}% completion
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
-        </div>
 
-        {/* Actionable Insights */}
-        {actionableInsight && (
-          <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
-        )}
+          {/* Actionable Insights */}
+          {!actionableInsight && (
+            <div className="flex-shrink-0 w-full pt-2">
+              <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

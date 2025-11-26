@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { useChartColors, useStatusColor } from "@/lib/utils/chartColors";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { TooltipProps } from "recharts";
 import {
   Bar,
   BarChart,
@@ -39,6 +40,25 @@ import {
   YAxis,
 } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
+
+// Custom tooltip component with liquid glass styling
+function CustomBarTooltip({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, string>) {
+  if (!active || !payload || !payload.length || !label) return null;
+
+  const value = payload[0]?.value;
+  if (typeof value !== "number") return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">{label} Students</div>
+      <div className="mt-1 text-xs">Average Score: {value}%</div>
+    </div>
+  );
+}
 
 // Helper component for persona trend chart to use hooks properly
 function PersonaTrendChart({
@@ -68,20 +88,29 @@ function PersonaTrendChart({
             angle={-45}
             textAnchor="end"
             height={60}
+            tickFormatter={(value: string) => {
+              // Format YYYY-MM-DD to MM-DD
+              const parts = value.split("-");
+              if (parts.length === 3) {
+                return `${parts[1]}-${parts[2]}`;
+              }
+              return value;
+            }}
           />
           <YAxis className="text-xs" domain={[0, 100]} />
           <Tooltip
             contentStyle={{
-              backgroundColor: "black",
-              border: "1px solid black",
-              color: "white",
+              backgroundColor: "white",
+              border: "1px solid #e5e7eb",
               borderRadius: "6px",
             }}
-            labelStyle={{
-              color: "white",
-            }}
-            itemStyle={{
-              color: "white",
+            labelFormatter={(label: string) => {
+              // Format YYYY-MM-DD to MM-DD
+              const parts = label.split("-");
+              if (parts.length === 3) {
+                return `${parts[1]}-${parts[2]}`;
+              }
+              return label;
             }}
             formatter={(value: number) => [`${value}%`, "Score"]}
           />
@@ -285,22 +314,7 @@ export default function PersonaPerformance({
                   width={80}
                   className="text-xs"
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "black",
-                    border: "1px solid black",
-                    color: "white",
-                    borderRadius: "6px",
-                  }}
-                  labelStyle={{
-                    color: "white",
-                  }}
-                  itemStyle={{
-                    color: "white",
-                  }}
-                  formatter={(value: number) => [`${value}%`, "Average Score"]}
-                  labelFormatter={(label) => `${label} Students`}
-                />
+                <Tooltip content={<CustomBarTooltip />} />
                 <Bar
                   dataKey="score"
                   radius={[0, 4, 4, 0]}

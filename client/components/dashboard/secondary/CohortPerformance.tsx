@@ -326,13 +326,32 @@ export default function CohortPerformance({
                                 strokeDasharray="3 3"
                                 className="stroke-muted"
                               />
-                              <XAxis dataKey="date" className="text-xs" />
+                              <XAxis
+                                dataKey="date"
+                                className="text-xs"
+                                tickFormatter={(value: string) => {
+                                  // Format YYYY-MM-DD to MM-DD
+                                  const parts = value.split("-");
+                                  if (parts.length === 3) {
+                                    return `${parts[1]}-${parts[2]}`;
+                                  }
+                                  return value;
+                                }}
+                              />
                               <YAxis domain={[0, 100]} className="text-xs" />
                               <Tooltip
                                 contentStyle={{
                                   backgroundColor: "white",
                                   border: "1px solid #e5e7eb",
                                   borderRadius: "6px",
+                                }}
+                                labelFormatter={(label: string) => {
+                                  // Format YYYY-MM-DD to MM-DD
+                                  const parts = label.split("-");
+                                  if (parts.length === 3) {
+                                    return `${parts[1]}-${parts[2]}`;
+                                  }
+                                  return label;
                                 }}
                                 formatter={(value: number) => [
                                   `${value}%`,

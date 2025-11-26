@@ -14,7 +14,20 @@ export function useCSSVariable(
   variableName: string,
   fallback: string = ""
 ): string {
-  const [value, setValue] = useState<string>(fallback);
+  // Read CSS variable synchronously on first render (client-side only)
+  // This prevents flashing when components mount with fallback values
+  const getInitialValue = () => {
+    // SSR safety check
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return fallback;
+    }
+
+    const root = document.documentElement;
+    const computedValue = getComputedStyle(root).getPropertyValue(variableName);
+    return computedValue.trim() || fallback;
+  };
+
+  const [value, setValue] = useState<string>(getInitialValue);
 
   useEffect(() => {
     // SSR safety check
@@ -29,7 +42,7 @@ export function useCSSVariable(
       return computedValue.trim() || fallback;
     };
 
-    // Get initial value
+    // Update value in case it changed (e.g., theme was applied after initial render)
     setValue(getComputedValue());
 
     // Watch for dark mode changes by observing class changes on documentElement

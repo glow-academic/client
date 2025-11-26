@@ -64,6 +64,52 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { TooltipProps } from "recharts";
+
+// Custom tooltip component with liquid glass styling
+function CustomLineTooltip({
+  active,
+  payload,
+  label,
+  metricsWithFormatters,
+}: TooltipProps<number, string> & {
+  metricsWithFormatters: Array<{
+    id: string;
+    name: string;
+    formatter: (value: number) => string;
+  }>;
+}) {
+  if (!active || !payload || !payload.length || !label) return null;
+
+  // Format date label
+  const formatDate = (date: string) => {
+    const parts = date.split("-");
+    if (parts.length === 3) {
+      return `${parts[1]}-${parts[2]}`;
+    }
+    return date;
+  };
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">{formatDate(label)}</div>
+      <div className="mt-1 text-xs space-y-1">
+        {payload.map((item, index) => {
+          const dataKey = String(item.dataKey ?? "");
+          const metric = metricsWithFormatters.find((m) => m.id === dataKey);
+          const formattedValue = metric?.formatter
+            ? metric.formatter(Number(item.value))
+            : `${Math.round(Number(item.value))}%`;
+          return (
+            <div key={index}>
+              {metric?.name ?? dataKey}: {formattedValue}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // Type for metrics with formatter functions
 type GrowthMetricWithFormatter = GrowthMetric & {
@@ -276,44 +322,12 @@ export default function Growth({
                 />
                 <YAxis className="text-xs" domain={[0, 100]} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "black",
-                    border: "1px solid black",
-                    color: "white",
-                    borderRadius: "6px",
-                  }}
-                  labelStyle={{
-                    color: "white",
-                  }}
-                  itemStyle={{
-                    color: "white",
-                  }}
-                  labelFormatter={(label: string) => {
-                    // Format YYYY-MM-DD to MM-DD
-                    const parts = label.split("-");
-                    if (parts.length === 3) {
-                      return `${parts[1]}-${parts[2]}`;
-                    }
-                    return label;
-                  }}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={(value: number, _name: string, item: any) => {
-                    const id = String(item?.dataKey ?? "");
-                    const metric = metricsWithFormatters.find(
-                      (m) => m.id === id
-                    );
-
-                    // Prefer the metric's own formatter if present
-                    if (metric?.formatter) {
-                      return [metric.formatter(value), metric.name];
-                    }
-
-                    // Smart fallback based on metric id (NOT name)
-                    // All remaining metrics are percentages (0-100)
-                    const formattedValue = `${Math.round(value)}%`;
-
-                    return [formattedValue, metric?.name ?? id];
-                  }}
+                  content={(props) => (
+                    <CustomLineTooltip
+                      {...props}
+                      metricsWithFormatters={metricsWithFormatters}
+                    />
+                  )}
                 />
                 <Legend />
                 {selectedMetricObjects.map((metric) => (

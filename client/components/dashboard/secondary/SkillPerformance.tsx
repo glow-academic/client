@@ -20,7 +20,40 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
+
+// Custom tooltip component with liquid glass styling
+function CustomRadarTooltip({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, string>) {
+  if (!active || !payload || !payload.length || !label) return null;
+
+  const item = payload[0];
+  const value = item?.value;
+  const score = item?.payload?.score;
+  const points = item?.payload?.points;
+
+  let displayValue = "";
+  if (typeof score === "number" && typeof points === "number") {
+    displayValue = `${score.toFixed(2)}/${points}`;
+  } else if (typeof value === "number") {
+    displayValue = `${(value * 100).toFixed(1)}%`;
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">{label}</div>
+      <div className="mt-1 text-xs">
+        {typeof score === "number" && typeof points === "number"
+          ? `Score: ${displayValue}`
+          : `Performance: ${displayValue}`}
+      </div>
+    </div>
+  );
+}
 
 type RadarDatum = {
   metric: string;
@@ -184,41 +217,7 @@ export default function SkillPerformance({
               />
               <PolarGrid />
               <PolarRadiusAxis domain={[0, 1]} axisLine={false} tick={false} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "black",
-                  border: "1px solid black",
-                  color: "white",
-                  borderRadius: "6px",
-                }}
-                labelStyle={{
-                  color: "white",
-                }}
-                itemStyle={{
-                  color: "white",
-                }}
-                formatter={(
-                  value: number,
-                  name: string,
-                  props: { payload?: { score?: number; points?: number } }
-                ) => {
-                  if (name === "value") {
-                    const score = props?.payload?.score;
-                    const points = props?.payload?.points;
-                    if (
-                      typeof score === "number" &&
-                      typeof points === "number"
-                    ) {
-                      return [`${score.toFixed(2)}/${points}`, "Score"];
-                    }
-                    // fallback: show percent for the normalized "value"
-                    const v = typeof value === "number" ? value : Number(value);
-                    return [`${(v * 100).toFixed(1)}%`, "Performance"];
-                  }
-                  return [value, name];
-                }}
-                labelFormatter={(label: string) => label}
-              />
+              <Tooltip content={<CustomRadarTooltip />} />
               <Radar
                 dataKey="value"
                 fill={chartColors[0]}

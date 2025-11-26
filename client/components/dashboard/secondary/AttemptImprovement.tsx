@@ -22,7 +22,38 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
+
+// Custom tooltip component with liquid glass styling
+function CustomComposedTooltip({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, string>) {
+  if (!active || !payload || !payload.length || !label) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/70 backdrop-blur px-3 py-2 shadow-sm">
+      <div className="font-medium">{label}</div>
+      <div className="mt-1 text-xs space-y-1">
+        {payload.map((item, index) => {
+          const name = item.name || "";
+          const value = item.value;
+          const formattedValue =
+            name === "Average Time"
+              ? `${value} min`
+              : `${value}%`;
+          return (
+            <div key={index}>
+              {name}: {formattedValue}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 type AttemptRow = {
   attempt: string;
@@ -177,24 +208,7 @@ export default function AttemptImprovement({
                     dx: 10,
                   }}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "black",
-                    border: "1px solid black",
-                    color: "white",
-                    borderRadius: "6px",
-                  }}
-                  labelStyle={{
-                    color: "white",
-                  }}
-                  itemStyle={{
-                    color: "white",
-                  }}
-                  formatter={(value: number, name: string) => [
-                    name === "Average Time" ? `${value} min` : `${value}%`,
-                    name,
-                  ]}
-                />
+                <Tooltip content={<CustomComposedTooltip />} />
                 <Legend />
                 <Bar
                   dataKey="average_score"

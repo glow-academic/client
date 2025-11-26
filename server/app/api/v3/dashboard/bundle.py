@@ -666,8 +666,23 @@ def _compute_growth_insight(window_averages: GrowthWindowAverages) -> str | None
             )
         if improvement < -2:
             return f"Slight decline of {abs(improvement):.1f}% - adjust study strategy."
+        # Small change - still provide insight
+        if improvement > 0:
+            return f"Performance trending upward ({improvement:.1f}% improvement) - maintain current approach."
+        elif improvement < 0:
+            return f"Performance trending downward ({abs(improvement):.1f}% decline) - monitor closely."
+        else:
+            return f"Performance stable at {current:.1f}% - consider introducing new challenges to maintain engagement."
 
-    return None
+    # No previous data - provide insight based on current value alone
+    if current >= 85:
+        return f"Current performance at {current:.1f}% exceeds success threshold - maintain excellence."
+    elif current >= 80:
+        return f"Current performance at {current:.1f}% meets target - continue building on success."
+    elif current >= 70:
+        return f"Current performance at {current:.1f}% is below target - focus on improvement areas."
+    else:
+        return f"Current performance at {current:.1f}% needs attention - review fundamentals and provide support."
 
 
 def _compute_persona_insight(
@@ -676,27 +691,37 @@ def _compute_persona_insight(
     current_score: float,
 ) -> str | None:
     """Compute actionable insight for a persona."""
-    if len(trend_data) < 2:
-        return None
+    if len(trend_data) >= 2:
+        recent_scores = trend_data[-3:]
+        earlier_scores = trend_data[:3]
 
-    recent_scores = trend_data[-3:]
-    earlier_scores = trend_data[:3]
+        if len(recent_scores) > 0 and len(earlier_scores) > 0:
+            recent_avg = sum(item.score or 0 for item in recent_scores) / len(recent_scores)
+            earlier_avg = sum(item.score or 0 for item in earlier_scores) / len(earlier_scores)
+            improvement = recent_avg - earlier_avg
 
-    if len(recent_scores) == 0 or len(earlier_scores) == 0:
-        return None
+            if improvement > 5:
+                return f"Performance improved {round(improvement)}% recently - consider advancing to more challenging scenarios."
+            elif improvement < -5:
+                return f"Performance declined {round(abs(improvement))}% recently - review training approach."
+            elif improvement > 2:
+                return f"Performance improving ({round(improvement)}% increase) - continue current approach."
+            elif improvement < -2:
+                return f"Performance declining ({round(abs(improvement))}% decrease) - monitor closely."
 
-    recent_avg = sum(item.score or 0 for item in recent_scores) / len(recent_scores)
-    earlier_avg = sum(item.score or 0 for item in earlier_scores) / len(earlier_scores)
-    improvement = recent_avg - earlier_avg
-
-    if improvement > 5:
-        return f"Performance improved {round(improvement)}% recently - consider advancing to more challenging scenarios."
-    elif improvement < -5:
-        return f"Performance declined {round(abs(improvement))}% recently - review training approach."
-    elif current_score >= 90:
+    # Fallback to current score-based insights if trend data is insufficient
+    if current_score >= 90:
         return f"Excellent performance at {round(current_score)}% - maintain high standards."
-    elif current_score < 60:
-        return f"Performance at {round(current_score)}% needs attention - review fundamentals."
+    elif current_score >= 85:
+        return f"Strong performance at {round(current_score)}% - continue building on success."
+    elif current_score >= 80:
+        return f"Good performance at {round(current_score)}% - focus on maintaining consistency."
+    elif current_score >= 70:
+        return f"Moderate performance at {round(current_score)}% - identify improvement opportunities."
+    elif current_score >= 60:
+        return f"Performance at {round(current_score)}% is below target - review training approach."
+    else:
+        return f"Performance at {round(current_score)}% needs attention - review fundamentals and provide additional support."
 
     return None
 
@@ -758,13 +783,24 @@ def _compute_attempt_improvement_insight(
         return None
 
     score_improvement = last_attempt.average_score - first_attempt.average_score
+    avg_score = sum(attempt.average_score for attempt in chart_data) / len(chart_data)
 
     if score_improvement > 5:
         return f"Users improve by {score_improvement}% on average between attempts. Consider advancing to more challenging scenarios."
     elif score_improvement < -5:
         return f"Performance declined by {abs(score_improvement)}% between attempts. Review training approach."
-
-    return None
+    elif score_improvement > 0:
+        return f"Users show improvement ({score_improvement}% increase) across attempts. Average performance is {avg_score:.0f}% - continue supporting learning progression."
+    elif score_improvement < 0:
+        return f"Performance decreased by {abs(score_improvement)}% across attempts. Average performance is {avg_score:.0f}% - review training materials and provide additional support."
+    else:
+        # Stable performance
+        if avg_score >= 80:
+            return f"Performance remains stable at {avg_score:.0f}% across attempts - users maintain consistent performance."
+        elif avg_score >= 70:
+            return f"Performance remains stable at {avg_score:.0f}% across attempts - consider introducing new challenges to drive improvement."
+        else:
+            return f"Performance remains stable at {avg_score:.0f}% across attempts - below target. Review fundamentals and provide targeted support."
 
 
 def _compute_cohort_insights(cohort_data: list[CohortData]) -> dict[str, str | None]:
