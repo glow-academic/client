@@ -1355,6 +1355,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
             "simulationParameterFactsNumeric", []
         ),
         hasData=sim_comp_raw.get("hasData", False),
+        status=sim_comp_raw.get("status", "neutral"),
     )
 
     footer = DashboardFooterMetrics(

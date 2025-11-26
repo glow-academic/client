@@ -106,29 +106,8 @@ export default function AttemptImprovement({
       }));
   }, [selected, chartData, facts]);
 
-  // Calculate threshold status based on improvement data
-  const getThresholdStatus = () => {
-    if (displayData.length < 2) return "neutral";
-
-    const firstAttempt = displayData[0];
-    const lastAttempt = displayData[displayData.length - 1];
-
-    if (!firstAttempt || !lastAttempt) return "neutral";
-
-    const firstScore = firstAttempt.average_score;
-    const lastScore = lastAttempt.average_score;
-
-    if (typeof firstScore !== "number" || typeof lastScore !== "number")
-      return "neutral";
-
-    const scoreImprovement = lastScore - firstScore;
-
-    if (scoreImprovement >= thresholds.success) return "success";
-    if (scoreImprovement >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
+  // Use status from server
+  const thresholdStatus = status;
 
   return (
     <Card className="w-full h-full flex flex-col relative">

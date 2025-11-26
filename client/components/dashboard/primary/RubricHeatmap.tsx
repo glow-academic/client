@@ -129,46 +129,8 @@ export default function RubricHeatmap({
     });
   }, []);
 
-  // Calculate threshold status based on correlation matrix data
-  const getThresholdStatus = () => {
-    if (!deferredMatrix) return "neutral";
-    if (!deferredMatrix.hasData) return "neutral";
-    if (!deferredMatrix.matrix || deferredMatrix.matrix.length === 0)
-      return "neutral";
-
-    // Calculate average correlation strength across all non-diagonal cells
-    let totalCorrelation = 0;
-    let correlationCount = 0;
-
-    for (let i = 0; i < deferredMatrix.matrix.length; i++) {
-      const row = deferredMatrix.matrix[i];
-      if (!row) continue;
-
-      for (let j = 0; j < row.length; j++) {
-        if (i !== j) {
-          // Skip diagonal cells (self-correlation)
-          const cell = row[j];
-          if (cell && cell.dataPoints > 0) {
-            totalCorrelation += Math.abs(cell.correlation);
-            correlationCount++;
-          }
-        }
-      }
-    }
-
-    if (correlationCount === 0) return "neutral";
-
-    const avgCorrelationStrength = totalCorrelation / correlationCount;
-
-    // Convert correlation strength to a 0-100 scale for threshold comparison
-    const correlationScore = avgCorrelationStrength * 100;
-
-    if (correlationScore >= thresholds.success) return "success";
-    if (correlationScore >= thresholds.warning) return "warning";
-    return "danger";
-  };
-
-  const thresholdStatus = getThresholdStatus();
+  // Use status from server
+  const thresholdStatus = status;
 
   // Show no data state
   if (!hasDataAvailable || !deferredMatrix) {
