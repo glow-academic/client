@@ -57,7 +57,7 @@ type RubricMatrixPackage = {
 
 type RubricMapping = Record<string, { name: string; description: string }>;
 
-import { Info, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import {
   useCallback,
   useDeferredValue,
@@ -356,84 +356,6 @@ export default function RubricHeatmap({
               </Table>
             </div>
           </TooltipProvider>
-
-          {/* Legend and Correlation Info */}
-          <div
-            className={cn(
-              "flex flex-shrink-0 w-full text-muted-foreground",
-              isMobile
-                ? "flex-col gap-2 text-[10px]"
-                : "items-center justify-between text-xs"
-            )}
-          >
-            {/* Legend */}
-            <div
-              className={cn(
-                "flex items-center",
-                isMobile ? "gap-2 flex-wrap" : "gap-3"
-              )}
-            >
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span>{isMobile ? "Strong +" : "Strong Positive"}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-destructive" />
-                <span>{isMobile ? "Strong -" : "Strong Negative"}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-gray-300" />
-                <span>{isMobile ? "Weak" : "Weak/No Correlation"}</span>
-              </div>
-            </div>
-
-            {/* Correlation Info */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn(
-                    "bg-background/90 backdrop-blur-sm border rounded-md shadow-sm",
-                    isMobile ? "px-1.5 py-0.5" : "px-2 py-1"
-                  )}
-                >
-                  <div className="flex items-center gap-1">
-                    <span
-                      className={cn(
-                        "font-medium",
-                        isMobile ? "text-[10px]" : "text-xs"
-                      )}
-                    >
-                      Pearson r:
-                    </span>
-                    <span
-                      className={cn(
-                        "font-bold",
-                        isMobile ? "text-[10px]" : "text-xs"
-                      )}
-                    >
-                      Matrix
-                    </span>
-                    <Info
-                      className={cn(
-                        "text-muted-foreground",
-                        isMobile ? "h-2.5 w-2.5" : "h-3 w-3"
-                      )}
-                    />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="w-64 p-3">
-                <p className="text-sm">
-                  Pearson correlation coefficient matrix showing relationships
-                  between skill areas.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Values range from -1 (perfect negative) to +1 (perfect
-                  positive). P-values indicate statistical significance.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
 
           {/* Actionable Insights */}
           {actionableInsight && (

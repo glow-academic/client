@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { BarChart3, Info } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
@@ -223,49 +223,6 @@ export default function ScenarioStats({
       }));
   }, [numericAttemptFacts, numericScenarioFacts, activeParamId]);
 
-  // Weighted Pearson correlation between levelValue and score using attempt counts as weights
-  const { correlation, pValue } = useMemo(() => {
-    const rows = numericAttemptFacts.filter(
-      (f) => f.parameterId === activeParamId
-    );
-    if (rows.length === 0) return { correlation: 0, pValue: 1 };
-
-    let wSum = 0,
-      xSum = 0,
-      ySum = 0,
-      xxSum = 0,
-      yySum = 0,
-      xySum = 0;
-    let nEff = 0; // effective df count (distinct groups)
-    const groups = new Set<string>();
-
-    for (const r of rows) {
-      const w = Math.max(1, r.attempts);
-      const x = r.levelValue;
-      const y = r.score;
-      wSum += w;
-      xSum += w * x;
-      ySum += w * y;
-      xxSum += w * x * x;
-      yySum += w * y * y;
-      xySum += w * x * y;
-      groups.add(r.levelLabel);
-    }
-    nEff = groups.size;
-
-    const cov = xySum - (xSum * ySum) / wSum;
-    const varX = xxSum - (xSum * xSum) / wSum;
-    const varY = yySum - (ySum * ySum) / wSum;
-    const r = varX <= 0 || varY <= 0 ? 0 : cov / Math.sqrt(varX * varY);
-
-    // approximate two-sided p-value via t distribution with nEff-2 dof
-    const df = Math.max(1, nEff - 2);
-    const t = Math.abs(r) * Math.sqrt(df / Math.max(1e-9, 1 - r * r));
-    // simple survival approx using Student's t CDF ~ not exact; fine for UI hint
-    const p = approxTPValue(t, df);
-    return { correlation: r, pValue: p };
-  }, [numericAttemptFacts, activeParamId]);
-
   // Use status from server
   const thresholdStatus = status;
 
@@ -349,33 +306,6 @@ export default function ScenarioStats({
             </ResponsiveContainer>
           </div>
 
-          {/* Correlation */}
-          <div className="flex items-center justify-end">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="bg-background/90 backdrop-blur-sm border rounded-md px-2 py-1 shadow-sm">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-medium">Pearson r:</span>
-                    <span className="text-xs font-bold">
-                      {correlation > 0 ? "+" : ""}
-                      {correlation.toFixed(2)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      (p={pValue.toFixed(3)})
-                    </span>
-                    <Info className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="w-64 p-3">
-                <p className="text-sm">
-                  Relationship between the numeric parameter level and average
-                  score (weighted by attempts).
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
           {/* Actionable Insights */}
           {actionableInsight && (
             <TruncatedInsight text={actionableInsight} isMobile={isMobile} />
@@ -384,12 +314,4 @@ export default function ScenarioStats({
       </Card>
     </TooltipProvider>
   );
-}
-
-/** quick t-dist tail approximation for p-value (two-sided) */
-function approxTPValue(t: number, df: number) {
-  // simple logistic-ish approximation (good enough for UI)
-  const x = Math.log1p((t * t) / df);
-  const pOneSide = 1 / (1 + Math.exp(1.2 + 1.4 * x));
-  return Math.min(1, 2 * pOneSide);
 }
