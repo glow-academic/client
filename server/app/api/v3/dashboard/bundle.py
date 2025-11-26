@@ -1071,7 +1071,8 @@ def _compute_simulation_composition_insight(
     top_performer = sorted_by_score[0] if sorted_by_score else None
     bottom_performer = sorted_by_score[-1] if sorted_by_score else None
 
-    if top_performer and bottom_performer:
+    # Check for performance gaps when we have multiple simulations
+    if top_performer and bottom_performer and top_performer != bottom_performer:
         performance_gap = top_performer.avgScore - bottom_performer.avgScore
 
         if performance_gap > 30:
@@ -1081,12 +1082,39 @@ def _compute_simulation_composition_insight(
                 f'and bottom performer "{bottom_performer.title}" ({bottom_performer.avgScore}%). '
                 "Consider analyzing composition differences."
             )
+        elif performance_gap > 15:
+            return (
+                f"Moderate performance gap ({performance_gap:.0f}%) between "
+                f'top performer "{top_performer.title}" ({top_performer.avgScore}%) '
+                f'and bottom performer "{bottom_performer.title}" ({bottom_performer.avgScore}%). '
+                "Review composition differences to identify success factors."
+            )
 
+    # Check completion rate issues
     if avg_completion < 60:
         return f"Average completion rate is {avg_completion:.0f}%. Consider reviewing simulation length and difficulty."
 
+    # Check score-based insights
     if avg_score < 60:
         return f"Average score is {avg_score:.0f}%. Review simulation difficulty and training materials."
+    elif avg_score >= 90:
+        return f"Excellent average performance ({avg_score:.0f}%) across simulations. Consider advancing to more challenging scenarios."
+    elif avg_score >= 85:
+        return f"Strong average performance ({avg_score:.0f}%) across simulations. Continue building on success."
+    elif avg_score >= 80:
+        return f"Good average performance ({avg_score:.0f}%) across simulations. Focus on maintaining consistency."
+    elif avg_score >= 70:
+        return f"Moderate average performance ({avg_score:.0f}%) across simulations. Identify improvement opportunities."
+
+    # Fallback for single simulation or edge cases
+    if len(simulation_facts) == 1:
+        single_sim = simulation_facts[0]
+        if single_sim.avgScore >= 85:
+            return f'Strong performance ({single_sim.avgScore:.0f}%) on "{single_sim.title}". Consider exploring additional simulations.'
+        elif single_sim.avgScore >= 70:
+            return f'Performance ({single_sim.avgScore:.0f}%) on "{single_sim.title}". Explore more simulations to identify patterns.'
+        else:
+            return f'Performance ({single_sim.avgScore:.0f}%) on "{single_sim.title}" needs improvement. Review training approach.'
 
     return None
 
