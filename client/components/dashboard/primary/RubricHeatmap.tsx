@@ -137,13 +137,17 @@ export default function RubricHeatmap({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Skill Area Correlation Matrix
-          </CardTitle>
-          <CardDescription>
-            Statistical correlation between skill areas (standard groups)
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col items-start">
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Skill Area Correlation Matrix
+              </CardTitle>
+              <CardDescription className="text-sm line-clamp-2">
+                Statistical correlation between skill areas (standard groups)
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">
@@ -168,22 +172,15 @@ export default function RubricHeatmap({
         }`}
       />
       <CardHeader className={cn("pb-3", isMobile && "pb-2")}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <CardTitle
-              className={cn(
-                "flex items-center gap-2",
-                isMobile ? "text-sm" : "text-base"
-              )}
-            >
-              <TrendingUp className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div className="flex flex-col items-start">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
               {isMobile
                 ? "Correlation Matrix"
                 : "Skill Area Correlation Matrix"}
             </CardTitle>
-            <CardDescription
-              className={cn(isMobile ? "text-[10px]" : "text-xs")}
-            >
+            <CardDescription className="text-sm line-clamp-2">
               {isMobile
                 ? "Correlation between skill areas"
                 : "Correlation between skill areas (standard groups)"}

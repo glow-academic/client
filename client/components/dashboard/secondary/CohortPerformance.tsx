@@ -178,13 +178,13 @@ export default function CohortPerformance({
         }`}
       />
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4" />
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
               Cohort Performance
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-sm line-clamp-2">
               Pass rates by cohort
             </CardDescription>
           </div>

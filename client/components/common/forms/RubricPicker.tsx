@@ -159,7 +159,6 @@ export function RubricPicker<T extends MappingItem = MappingItem>({
             aria-expanded={open}
             aria-label="Select rubrics"
             className={cn("w-full justify-between", buttonClassName)}
-            size="sm"
           >
             <span className="truncate text-left">{getButtonText()}</span>
             <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2" />

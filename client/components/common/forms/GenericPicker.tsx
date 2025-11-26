@@ -113,7 +113,6 @@ export function GenericPicker<T extends MappingItem = MappingItem>({
             aria-expanded={open}
             aria-label="Select item"
             className={cn("w-48 justify-between", buttonClassName)}
-            size="sm"
             disabled={disabled}
           >
             <span className="truncate text-left">{getButtonText()}</span>

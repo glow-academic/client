@@ -123,13 +123,13 @@ export default function AttemptImprovement({
         }`}
       />
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start">
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               Attempt Improvement
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm line-clamp-2">
               Performance improvement across multiple attempts
             </CardDescription>
           </div>

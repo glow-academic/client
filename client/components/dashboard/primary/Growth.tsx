@@ -182,13 +182,17 @@ export default function Growth({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Platform Growth
-          </CardTitle>
-          <CardDescription>
-            Platform-wide performance metrics over time
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col items-start">
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Platform Growth
+              </CardTitle>
+              <CardDescription className="text-sm line-clamp-2">
+                Platform-wide performance metrics over time
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">
@@ -213,13 +217,13 @@ export default function Growth({
         }`}
       />
       <CardHeader className="flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start">
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" data-testid="trending-up-icon" />
               Platform Growth
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm line-clamp-2">
               Platform-wide performance metrics over time
             </CardDescription>
           </div>

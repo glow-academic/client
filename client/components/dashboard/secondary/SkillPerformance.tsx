@@ -99,13 +99,13 @@ export default function SkillPerformance({
         }`}
       />
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start">
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
               Skill Performance
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm line-clamp-2">
               Performance across key teaching competencies
             </CardDescription>
           </div>

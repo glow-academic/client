@@ -159,13 +159,17 @@ export default function PersonaPerformance({
     return (
       <Card className="w-full h-full flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Persona Performance
-          </CardTitle>
-          <CardDescription>
-            Performance analysis by student persona type
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col items-start">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Persona Performance
+              </CardTitle>
+              <CardDescription className="text-sm line-clamp-2">
+                Performance analysis by student persona type
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">
@@ -182,13 +186,13 @@ export default function PersonaPerformance({
         className={`absolute top-2 right-2 w-2 h-2 rounded-full ${statusIndicatorClass}`}
       />
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start">
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Persona Performance
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm line-clamp-2">
               Performance analysis by student persona type
             </CardDescription>
           </div>

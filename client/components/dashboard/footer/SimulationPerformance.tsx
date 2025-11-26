@@ -215,22 +215,15 @@ export default function SimulationPerformance({
         <div
           className={cn(
             "flex",
-            isMobile ? "flex-col gap-2" : "items-center justify-between"
+            isMobile ? "flex-col gap-2" : "items-start justify-between"
           )}
         >
-          <div>
-            <CardTitle
-              className={cn(
-                "flex items-center gap-2",
-                isMobile ? "text-sm" : "text-base"
-              )}
-            >
-              <BarChart3 className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+          <div className="flex flex-col items-start">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
               Simulation Performance
             </CardTitle>
-            <CardDescription
-              className={cn(isMobile ? "text-[10px]" : "text-sm")}
-            >
+            <CardDescription className="text-sm line-clamp-2">
               Performance trends for simulations
             </CardDescription>
           </div>
@@ -246,9 +239,7 @@ export default function SimulationPerformance({
             placeholder="Select simulation..."
             hideSelectedChips={true}
             showLabel={false}
-            buttonClassName={cn(
-              isMobile ? "w-full text-xs h-8" : "w-64 text-sm"
-            )}
+            buttonClassName={cn(isMobile ? "w-full" : "w-64")}
           />
         </div>
       </CardHeader>

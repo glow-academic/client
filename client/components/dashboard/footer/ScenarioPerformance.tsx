@@ -435,13 +435,13 @@ export default function ScenarioPerformance({
         }`}
       />
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col items-start">
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
               Scenario Attribute Breakdown
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm line-clamp-2">
               Performance analysis by scenario attributes
             </CardDescription>
           </div>
