@@ -890,7 +890,7 @@ export default function SimulationHistory({
               cell: ({ row }: { row: Row<HistoryDataItem> }) => {
                 const profileName = row.original.profileName;
                 return (
-                  <div className="flex items-center min-w-0 max-w-[125px]">
+                  <div className="flex items-center min-w-0 max-w-[200px]">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="truncate">{profileName}</span>
@@ -925,7 +925,7 @@ export default function SimulationHistory({
           const isInfinite = row.original.infiniteMode;
 
           return (
-            <div className="flex items-center space-x-1 min-w-0 max-w-[160px]">
+            <div className="flex items-center space-x-1 min-w-0 max-w-[280px]">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="truncate font-medium">{simulationName}</span>
@@ -961,6 +961,8 @@ export default function SimulationHistory({
           const completedCount = row.original.numScenariosCompleted;
           const totalCount = row.original.numScenarios;
           const isInfinite = row.original.infiniteMode;
+          const personaNames = row.original.personaNames;
+          const personaColors = row.original.personaColors;
 
           return (
             <div className="text-center">
@@ -974,6 +976,33 @@ export default function SimulationHistory({
                 )}
               </span>
               <div className="text-xs text-muted-foreground">completed</div>
+              {/* Persona dots */}
+              {personaNames &&
+                Array.isArray(personaNames) &&
+                personaNames.length > 0 && (
+                  <div className="flex items-center justify-center gap-1 mt-1.5">
+                    {personaNames.map((personaName, index) => {
+                      const personaColor = personaColors?.[index] || "#9CA3AF"; // gray-400 fallback
+
+                      return (
+                        <Tooltip key={index}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="w-2 h-2 rounded-full cursor-pointer"
+                              style={{
+                                backgroundColor: personaColor,
+                              }}
+                              aria-label={personaName}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{personaName}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                )}
             </div>
           );
         },
@@ -993,59 +1022,14 @@ export default function SimulationHistory({
           );
         },
       },
-      // Personas tested column
+      // Hidden faceting column for Personas (for filtering)
       {
-        accessorKey: "personaNames",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Personas" />
-        ),
-        cell: ({ row }) => {
-          const personaNames = row.getValue("personaNames") as string[];
-          const personaColors = row.original.personaColors;
-
-          if (
-            !personaNames ||
-            !Array.isArray(personaNames) ||
-            personaNames.length === 0
-          ) {
-            return <span className="text-muted-foreground">None</span>;
-          }
-
-          return (
-            <div className="flex flex-wrap gap-1 overflow-hidden max-w-[175px] max-h-[52px]">
-              {personaNames.map((personaName, index) => {
-                const baseHex = personaColors?.[index] || "#9CA3AF"; // gray-400 fallback
-
-                // Simple color utility (you might want to use the more complex one from the original)
-                const getBadgeColors = (hex: string) => {
-                  // Simplified color logic - you can enhance this
-                  return {
-                    bg: `${hex}20`,
-                    border: hex,
-                    text: hex,
-                  };
-                };
-
-                const { bg, border, text } = getBadgeColors(baseHex);
-
-                return (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="text-xs"
-                    style={{
-                      backgroundColor: bg,
-                      borderColor: border,
-                      color: text,
-                    }}
-                  >
-                    {personaName}
-                  </Badge>
-                );
-              })}
-            </div>
-          );
-        },
+        id: "personaNames",
+        header: () => null,
+        cell: () => null,
+        enableHiding: true,
+        enableSorting: false,
+        accessorFn: (row: HistoryDataItem) => row.personaNames ?? [],
         filterFn: (row, id, value) => {
           const personaNames = row.getValue(id) as string[];
           if (!value || !Array.isArray(value) || value.length === 0)
@@ -1074,12 +1058,13 @@ export default function SimulationHistory({
             );
           }
           // Use server-computed status for badge styling - map to shadcn color tokens
-          const badgeClassName = scoreStatus === "high"
-            ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
+          const badgeClassName =
+            scoreStatus === "high"
+              ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
             : scoreStatus === "medium"
-              ? "bg-warning/10 text-warning border-warning/30 hover:bg-warning/20"
+                ? "bg-warning/10 text-warning border-warning/30 hover:bg-warning/20"
               : scoreStatus === "low"
-                ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
+                  ? "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
                 : ""; // fallback to default badge styling if status is null
           return (
             <div className="text-center min-w-0 max-w-[100px]">
@@ -1764,18 +1749,6 @@ export default function SimulationHistory({
                           <div className="flex flex-col items-center gap-1">
                             <Skeleton className="h-4 w-16" />
                             <Skeleton className="h-3 w-20" />
-                          </div>
-                        </TableCell>
-                      );
-                    }
-
-                    if (id === "personaNames") {
-                      return (
-                        <TableCell key={id} className="px-6">
-                          <div className="flex gap-1 max-w-[175px] overflow-hidden">
-                            <Skeleton className="h-5 w-14 rounded-full" />
-                            <Skeleton className="h-5 w-14 rounded-full" />
-                            <Skeleton className="h-5 w-10 rounded-full" />
                           </div>
                         </TableCell>
                       );
