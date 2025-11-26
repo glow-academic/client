@@ -58,6 +58,7 @@ type SimulationParameterFactNumeric = {
 };
 
 import { cn } from "@/lib/utils";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { useEffect, useMemo, useState } from "react";
 import SimulationCompositionPicker, {
   SimulationCompositionConfig,
@@ -153,6 +154,9 @@ export default function SimulationComposition({
   // Track mobile viewport for responsive design
   const [isMobile, setIsMobile] = useState(false);
 
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024); // lg breakpoint
@@ -170,7 +174,7 @@ export default function SimulationComposition({
     [
       ...simulationParameterFactsCategorical,
       ...simulationParameterFactsNumeric,
-    ].forEach((fact) => {
+    ].forEach((fact, index) => {
       let key: string;
       if ("parameterItemId" in fact) {
         key = fact.parameterId + ":" + fact.parameterItemId;
@@ -179,15 +183,17 @@ export default function SimulationComposition({
       }
 
       if (!colorMap.has(key)) {
-        const isNumeric = simulationParameterFactsNumeric.some(
-          (nf) => nf.parameterId === fact.parameterId
-        );
-        colorMap.set(key, getParameterColor(key, isNumeric));
+        // Use chart colors cycling through them
+        colorMap.set(key, chartColors[index % chartColors.length]);
       }
     });
 
     return colorMap;
-  }, [simulationParameterFactsCategorical, simulationParameterFactsNumeric]);
+  }, [
+    simulationParameterFactsCategorical,
+    simulationParameterFactsNumeric,
+    chartColors,
+  ]);
 
   // Compute high and low performing simulations based on config
   const {
@@ -803,44 +809,6 @@ export default function SimulationComposition({
       </CardContent>
     </Card>
   );
-}
-
-// Helper function to get color based on parameter ID
-function getParameterColor(parameterId: string, isNumeric: boolean): string {
-  const colors = {
-    numeric: [
-      "#3b82f6", // blue
-      "#10b981", // emerald
-      "#f59e0b", // amber
-      "#ef4444", // red
-      "#8b5cf6", // violet
-      "#06b6d4", // cyan
-      "#84cc16", // lime
-      "#f97316", // orange
-    ],
-    categorical: [
-      "#ec4899", // pink
-      "#14b8a6", // teal
-      "#6366f1", // indigo
-      "#f43f5e", // rose
-      "#8b5cf6", // purple
-      "#06b6d4", // sky
-      "#10b981", // green
-      "#f59e0b", // yellow
-    ],
-  };
-
-  // Use parameter ID as seed for consistent color selection
-  let hash = 0;
-  for (let i = 0; i < parameterId.length; i++) {
-    const char = parameterId.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-
-  const colorSet = isNumeric ? colors.numeric : colors.categorical;
-  const index = Math.abs(hash) % colorSet.length;
-  return colorSet[index] || "#6b7280";
 }
 
 // Helper function to build parameter composition

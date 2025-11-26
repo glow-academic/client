@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
@@ -160,6 +161,9 @@ export default function SimulationPerformance({
 }: SimulationPerformanceProps) {
   const [selectedSimulationId, setSelectedSimulationId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
+
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -325,13 +329,13 @@ export default function SimulationPerformance({
               />
               <Bar
                 dataKey="avgScore"
-                fill="#3b82f6"
+                fill={chartColors[0]}
                 name="Average Score"
                 radius={[2, 2, 0, 0]}
               />
               <Bar
                 dataKey="successRate"
-                fill="#10b981"
+                fill={chartColors[1]}
                 name="Success Rate"
                 radius={[2, 2, 0, 0]}
               />

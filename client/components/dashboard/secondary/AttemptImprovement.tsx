@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -61,6 +62,9 @@ export default function AttemptImprovement({
 }: AttemptImprovementProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -194,22 +198,22 @@ export default function AttemptImprovement({
                 <Legend />
                 <Bar
                   dataKey="average_score"
-                  fill="hsl(120, 70%, 50%)"
+                  fill={chartColors[0]}
                   name="Average Score"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="pass_rate"
-                  fill="hsl(280, 70%, 50%)"
+                  fill={chartColors[1]}
                   name="Pass Rate"
                   radius={[4, 4, 0, 0]}
                 />
                 <Line
                   type="monotone"
                   dataKey="average_time"
-                  stroke="hsl(200, 70%, 50%)"
+                  stroke={chartColors[2]}
                   strokeWidth={2}
-                  dot={{ fill: "hsl(200, 70%, 50%)", strokeWidth: 2, r: 4 }}
+                  dot={{ fill: chartColors[2], strokeWidth: 2, r: 4 }}
                   yAxisId="right"
                   name="Average Time"
                 />

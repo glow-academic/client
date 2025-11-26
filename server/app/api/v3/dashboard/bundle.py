@@ -156,6 +156,7 @@ class PersonaPerformanceData(BaseModel):
     color: str
     simulationIds: list[str] | None = None
     trendData: list[PersonaTrendData]
+    status: Literal["success", "warning", "danger", "neutral"] = "neutral"
 
 
 class PersonaPerformanceResponse(BaseModel):
@@ -209,6 +210,7 @@ class CohortData(BaseModel):
     passedAttempts: int
     simulationCount: int
     requiredSimulations: int
+    status: Literal["success", "warning", "danger", "neutral"] = "neutral"
 
 
 class DailyData(BaseModel):
@@ -1138,6 +1140,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
                     )
                     for td in p_data.get("trendData", [])
                 ],
+                status=p_data.get("status", "neutral"),
             )
         )
     persona_performance = PersonaPerformanceResponse(
@@ -1207,6 +1210,7 @@ def _parse_dashboard_bundle(data: dict[str, Any]) -> DashboardBundleResponse:
                 passedAttempts=c_data.get("passedAttempts", 0),
                 simulationCount=c_data.get("simulationCount", 0),
                 requiredSimulations=c_data.get("requiredSimulations", 0),
+                status=c_data.get("status", "neutral"),
             )
         )
     cohort_performance = CohortPerformanceResponse(

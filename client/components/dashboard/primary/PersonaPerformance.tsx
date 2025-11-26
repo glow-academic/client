@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useChartColors, useStatusColor } from "@/lib/utils/chartColors";
 import { Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -39,6 +40,65 @@ import {
 } from "recharts";
 import { TruncatedInsight } from "../TruncatedInsight";
 
+// Helper component for persona trend chart to use hooks properly
+function PersonaTrendChart({
+  persona,
+  trendData,
+}: {
+  persona: PersonaPerformanceData;
+  trendData: PersonaTrendData[];
+}) {
+  const personaStatusColor = useStatusColor(persona.status);
+
+  return (
+    <div
+      className="h-64"
+      style={
+        process.env.NODE_ENV === "test"
+          ? { minWidth: 400, minHeight: 300 }
+          : undefined
+      }
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={trendData}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <XAxis
+            dataKey="date"
+            className="text-xs"
+            angle={-45}
+            textAnchor="end"
+            height={60}
+          />
+          <YAxis className="text-xs" domain={[0, 100]} />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "black",
+              border: "1px solid black",
+              color: "white",
+              borderRadius: "6px",
+            }}
+            labelStyle={{
+              color: "white",
+            }}
+            itemStyle={{
+              color: "white",
+            }}
+            formatter={(value: number) => [`${value}%`, "Score"]}
+          />
+          <Line
+            type="monotone"
+            dataKey="score"
+            stroke={personaStatusColor}
+            strokeWidth={2}
+            dot={{ r: 4, fill: personaStatusColor }}
+            name="Score"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 type PersonaTrendData = {
   date: string;
   score: number | null;
@@ -53,6 +113,7 @@ type PersonaPerformanceData = {
   color: string;
   simulationIds?: string[];
   trendData: PersonaTrendData[];
+  status: "success" | "warning" | "danger" | "neutral";
 };
 
 type SimulationMapping = Record<string, { name: string; description: string }>;
@@ -85,6 +146,9 @@ export default function PersonaPerformance({
   const [selectedSimulations, setSelectedSimulations] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024); // lg breakpoint
@@ -93,15 +157,6 @@ export default function PersonaPerformance({
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  // Chart palette using shadcn chart colors (limited to top 5)
-  const CHART_PALETTE = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-  ];
 
   // Filter chart data based on selected simulations and limit to top 5
   const filteredChartData = useMemo(() => {
@@ -118,12 +173,13 @@ export default function PersonaPerformance({
     const sorted = [...data].sort((a, b) => b.score - a.score);
     const limited = sorted.slice(0, 5);
 
-    // Assign chart colors
+    // Assign chart colors for bars (keep persona colors for dots)
     return limited.map((persona, idx) => ({
       ...persona,
-      color: CHART_PALETTE[idx % CHART_PALETTE.length],
+      barColor: chartColors[idx % chartColors.length], // For bar chart
+      // Keep original persona.color for the dot indicator
     }));
-  }, [chartData, selectedSimulations]);
+  }, [chartData, selectedSimulations, chartColors]);
 
   // Use hasDataAvailable to determine threshold status
   const thresholdStatus = hasDataAvailable ? performanceStatus : "neutral";
@@ -251,13 +307,20 @@ export default function PersonaPerformance({
                   name="Average Score"
                   className="cursor-pointer"
                 >
-                  {filteredChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.color}
-                      className="hover:opacity-80 transition-opacity"
-                    />
-                  ))}
+                  {filteredChartData.map((entry, index) => {
+                    const entryWithBarColor =
+                      entry as PersonaPerformanceData & { barColor?: string };
+                    return (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          entryWithBarColor.barColor ||
+                          chartColors[index % chartColors.length]
+                        }
+                        className="hover:opacity-80 transition-opacity"
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -278,7 +341,8 @@ export default function PersonaPerformance({
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{
-                          backgroundColor: persona.color,
+                          backgroundColor:
+                            personaColors[persona.name] || persona.color,
                         }}
                       />
                       <div>
@@ -299,7 +363,8 @@ export default function PersonaPerformance({
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{
-                          backgroundColor: persona.color,
+                          backgroundColor:
+                            personaColors[persona.name] || persona.color,
                         }}
                       />
                       {persona.name} Student Performance
@@ -310,57 +375,10 @@ export default function PersonaPerformance({
                   </DialogHeader>
                   <div className="space-y-6">
                     {/* Performance Trend Chart */}
-                    <div
-                      className="h-64"
-                      style={
-                        process.env.NODE_ENV === "test"
-                          ? { minWidth: 400, minHeight: 300 }
-                          : undefined
-                      }
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={getFilteredTrendData(persona)}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            className="stroke-muted"
-                          />
-                          <XAxis
-                            dataKey="date"
-                            className="text-xs"
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                          />
-                          <YAxis className="text-xs" domain={[0, 100]} />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "black",
-                              border: "1px solid black",
-                              color: "white",
-                              borderRadius: "6px",
-                            }}
-                            labelStyle={{
-                              color: "white",
-                            }}
-                            itemStyle={{
-                              color: "white",
-                            }}
-                            formatter={(value: number) => [
-                              `${value}%`,
-                              "Score",
-                            ]}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="score"
-                            stroke={persona.color}
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                            name="Score"
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
+                    <PersonaTrendChart
+                      persona={persona}
+                      trendData={getFilteredTrendData(persona)}
+                    />
 
                     {/* Actionable Insights */}
                     {actionableInsights && actionableInsights[persona.name] && (

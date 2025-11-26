@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useStatusColor } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
 import { useState } from "react";
 import {
@@ -51,19 +52,8 @@ export default function AverageScore({
   // Use status from server
   const currentStatus = status;
 
-  // Get color values for Recharts
-  const getChartColor = () => {
-    switch (currentStatus) {
-      case "success":
-        return "hsl(var(--success))";
-      case "warning":
-        return "hsl(var(--warning))";
-      case "danger":
-        return "hsl(var(--destructive))";
-      default:
-        return "hsl(var(--muted-foreground))";
-    }
-  };
+  // Get color values for Recharts using computed CSS variables
+  const chartColor = useStatusColor(currentStatus);
 
   // Render
   const gradientClasses =
@@ -134,8 +124,8 @@ export default function AverageScore({
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke={getChartColor()}
-                  fill={getChartColor()}
+                  stroke={chartColor}
+                  fill={chartColor}
                   fillOpacity={0.3}
                   name="value"
                 />

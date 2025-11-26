@@ -29,6 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useStatusColor } from "@/lib/utils/chartColors";
 import { TruncatedInsight } from "../TruncatedInsight";
 
 type RubricHeatmapCell = {
@@ -131,6 +132,21 @@ export default function RubricHeatmap({
 
   // Use status from server
   const thresholdStatus = status;
+
+  // Get status colors for correlation-based coloring
+  const successColor = useStatusColor("success");
+  const dangerColor = useStatusColor("danger");
+  const neutralColor = useStatusColor("neutral");
+
+  // Helper function to get color based on correlation
+  const getCorrelationColor = (correlation: number): string => {
+    // Positive correlation = success (green)
+    // Negative correlation = danger (red)
+    // Near zero = neutral (grey)
+    if (correlation > 0.1) return successColor;
+    if (correlation < -0.1) return dangerColor;
+    return neutralColor;
+  };
 
   // Show no data state
   if (!hasDataAvailable || !deferredMatrix) {
@@ -296,7 +312,11 @@ export default function RubricHeatmap({
                                             ? "w-12 h-5 text-[10px]"
                                             : "w-20 h-6 text-xs"
                                         )}
-                                        style={{ backgroundColor: cell.color }}
+                                        style={{
+                                          backgroundColor: getCorrelationColor(
+                                            cell.correlation
+                                          ),
+                                        }}
                                       >
                                         <span
                                           className={cn(

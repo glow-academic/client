@@ -51,6 +51,7 @@ type GrowthDataResponse = {
 };
 
 import { RubricPicker } from "@/components/common/forms/RubricPicker";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -91,6 +92,9 @@ export default function Growth({
   ]);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024); // lg breakpoint
@@ -100,7 +104,7 @@ export default function Growth({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Transform availableMetrics to include formatter functions
+  // Transform availableMetrics to include formatter functions and chart colors
   const metricsWithFormatters = useMemo(() => {
     const fmt = {
       percent: (v: number) => `${Math.round(v)}%`,
@@ -119,11 +123,13 @@ export default function Growth({
       },
     };
 
-    return availableMetrics.map(({ formatterId, ...rest }) => ({
+    return availableMetrics.map(({ formatterId, ...rest }, index) => ({
       ...rest,
       formatter: fmt[formatterId],
+      // Override color with chart colors 1-5, cycling if more than 5 metrics
+      color: chartColors[index % chartColors.length],
     })) as GrowthMetricWithFormatter[];
-  }, [availableMetrics]);
+  }, [availableMetrics, chartColors]);
 
   // Build metric mapping for RubricPicker
   const metricMapping = useMemo(() => {

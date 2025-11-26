@@ -4915,6 +4915,12 @@ export interface components {
             simulationCount: number;
             /** Requiredsimulations */
             requiredSimulations: number;
+            /**
+             * Status
+             * @default neutral
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * CohortDetailDefaultRequest
@@ -8431,6 +8437,12 @@ export interface components {
             simulationIds?: string[] | null;
             /** Trenddata */
             trendData: components["schemas"]["PersonaTrendData"][];
+            /**
+             * Status
+             * @default neutral
+             * @enum {string}
+             */
+            status: "success" | "warning" | "danger" | "neutral";
         };
         /**
          * PersonaPerformanceResponse

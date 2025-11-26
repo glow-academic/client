@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useStatusColor } from "@/lib/utils/chartColors";
 import { Clock } from "lucide-react";
 import { useState } from "react";
 import {
@@ -51,19 +52,8 @@ export default function PersonaResponseTimes({
   // Use status from server
   const currentStatus = status;
 
-  // Get color values for Recharts
-  const getChartColor = () => {
-    switch (currentStatus) {
-      case "success":
-        return "hsl(var(--success))";
-      case "warning":
-        return "hsl(var(--warning))";
-      case "danger":
-        return "hsl(var(--destructive))";
-      default:
-        return "hsl(var(--muted-foreground))";
-    }
-  };
+  // Get color values for Recharts using computed CSS variables
+  const chartColor = useStatusColor(currentStatus);
 
   const gradientClasses =
     currentStatus === "success"
@@ -143,7 +133,7 @@ export default function PersonaResponseTimes({
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke={getChartColor()}
+                  stroke={chartColor}
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   name="value"

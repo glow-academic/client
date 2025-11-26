@@ -11012,6 +11012,17 @@
           "requiredSimulations": {
             "type": "integer",
             "title": "Requiredsimulations"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status",
+            "default": "neutral"
           }
         },
         "type": "object",
@@ -19887,6 +19898,17 @@
             },
             "type": "array",
             "title": "Trenddata"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "warning",
+              "danger",
+              "neutral"
+            ],
+            "title": "Status",
+            "default": "neutral"
           }
         },
         "type": "object",

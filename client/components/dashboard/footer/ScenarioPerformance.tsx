@@ -41,6 +41,7 @@ type ScenarioAttributeScenarioFact = {
   scenarioId: string;
 };
 
+import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
@@ -56,21 +57,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
-// Chart palette using shadcn chart colors (limited to top 5)
-const CHART_PALETTE = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-];
-
-function pickColor(fallbackIndex = 0): string {
-  // Use the fallbackIndex directly, limit to top 5 colors
-  const idx = fallbackIndex % CHART_PALETTE.length;
-  return CHART_PALETTE[idx] ?? CHART_PALETTE[0] ?? "hsl(var(--chart-1))";
-}
 
 function iconFor(paramName: string, itemName: string) {
   const p = paramName.toLowerCase();
@@ -163,6 +149,9 @@ export default function ScenarioPerformance({
 }: ScenarioPerformanceProps) {
   const [selectedParameterId, setSelectedParameterId] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
+
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -303,7 +292,7 @@ export default function ScenarioPerformance({
     // Assign colors after limiting
     return sorted.map((el, idx) => ({
       ...el,
-      color: pickColor(idx),
+      color: chartColors[idx % chartColors.length],
     }));
   }, [
     itemsForParameter,
@@ -312,6 +301,7 @@ export default function ScenarioPerformance({
     totalScenariosForParam,
     activeParameterId,
     allParameters,
+    chartColors,
   ]);
 
   // Use status from server

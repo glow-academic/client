@@ -641,7 +641,12 @@
                        COALESCE(p.color, '#3b82f6') AS color,
                        AVG(f.grade_percent)::float AS avg_score,
                        COUNT(DISTINCT f.chat_id)::int AS sessions,
-                       ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids
+                       ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids,
+                       CASE
+                           WHEN AVG(f.grade_percent)::float >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                           WHEN AVG(f.grade_percent)::float >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                           ELSE 'danger'
+                       END AS status
                 FROM filt f
                 JOIN personas p ON p.id = f.persona_id
                 WHERE f.grade_percent IS NOT NULL AND f.persona_id IS NOT NULL
@@ -1623,9 +1628,10 @@
                             'sessions', sub.sessions,
                             'color', sub.color,
                             'simulationIds', sub.simulation_ids,
-                            'trendData', COALESCE(sub.trends, '[]'::json)
+                            'trendData', COALESCE(sub.trends, '[]'::json),
+                            'status', sub.status
                         )) FROM (
-                            SELECT pa.name, pa.avg_score, pa.sessions, pa.color, pa.simulation_ids, pta.trends
+                            SELECT pa.name, pa.avg_score, pa.sessions, pa.color, pa.simulation_ids, pta.trends, pa.status
                             FROM persona_agg pa 
                             LEFT JOIN persona_trends_agg pta ON pta.persona_id = pa.persona_id
                             ORDER BY pa.avg_score DESC
@@ -1688,7 +1694,13 @@
                             'totalAttempts', COALESCE(total_attempts, 0),
                             'passedAttempts', COALESCE(passed_attempts, 0),
                             'simulationCount', COALESCE(simulation_count, 0),
-                            'requiredSimulations', COALESCE(required_simulations, 0)
+                            'requiredSimulations', COALESCE(required_simulations, 0),
+                            'status', CASE
+                                WHEN total_students_seen = 0 THEN 'neutral'
+                                WHEN (100.0 * passed_students / NULLIF(total_students_seen, 0)) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN (100.0 * passed_students / NULLIF(total_students_seen, 0)) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ) ORDER BY cohort_name) FROM cohort_agg), '[]'::json),
                         'dailyData', COALESCE((SELECT json_agg(json_build_object(
                             'date', date,

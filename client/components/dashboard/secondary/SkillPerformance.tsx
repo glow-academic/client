@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TruncatedInsight } from "../TruncatedInsight";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { GraduationCap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -20,6 +20,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { TruncatedInsight } from "../TruncatedInsight";
 
 type RadarDatum = {
   metric: string;
@@ -62,6 +63,9 @@ export default function SkillPerformance({
   const [selectedRubrics, setSelectedRubrics] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Get chart colors 1-5 from CSS variables
+  const chartColors = useChartColors();
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024); // lg breakpoint
@@ -79,7 +83,7 @@ export default function SkillPerformance({
 
   const activePackage = useMemo(
     () => packages.find((p) => p.rubricId === activeRubricId),
-    [packages, activeRubricId],
+    [packages, activeRubricId]
   );
 
   // Use status from server
@@ -133,7 +137,7 @@ export default function SkillPerformance({
                 tick={({ payload, x, y }) => {
                   const dataIndex =
                     activePackage?.radarData?.findIndex(
-                      (item) => item.metric === payload.value,
+                      (item) => item.metric === payload.value
                     ) ?? 0;
                   const totalItems = activePackage?.radarData?.length ?? 1;
                   const angle = (dataIndex * 360) / totalItems;
@@ -196,7 +200,7 @@ export default function SkillPerformance({
                 formatter={(
                   value: number,
                   name: string,
-                  props: { payload?: { score?: number; points?: number } },
+                  props: { payload?: { score?: number; points?: number } }
                 ) => {
                   if (name === "value") {
                     const score = props?.payload?.score;
@@ -217,14 +221,14 @@ export default function SkillPerformance({
               />
               <Radar
                 dataKey="value"
-                fill="#3b82f6"
+                fill={chartColors[0]}
                 fillOpacity={0.6}
-                stroke="#3b82f6"
+                stroke={chartColors[0]}
                 strokeWidth={2}
                 dot={{
                   r: 4,
                   fillOpacity: 1,
-                  fill: "#3b82f6",
+                  fill: chartColors[0],
                 }}
               />
             </RadarChart>
