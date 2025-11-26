@@ -98,15 +98,10 @@ class GrowthDataPoint(BaseModel):
 
     date: str
     averageScore: float | None = None
-    passRate: float | None = None
     completionRate: float | None = None
     firstAttemptPassRate: float | None = None
-    messagesPerSession: float | None = None
-    personaResponseTimes: float | None = None
     sessionEfficiency: float | None = None
     stagnationRate: float | None = None
-    timeSpent: float | None = None
-    totalAttempts: float | None = None
 
 
 class GrowthMetric(BaseModel):

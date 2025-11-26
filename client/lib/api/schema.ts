@@ -7256,24 +7256,14 @@ export interface components {
             date: string;
             /** Averagescore */
             averageScore?: number | null;
-            /** Passrate */
-            passRate?: number | null;
             /** Completionrate */
             completionRate?: number | null;
             /** Firstattemptpassrate */
             firstAttemptPassRate?: number | null;
-            /** Messagespersession */
-            messagesPerSession?: number | null;
-            /** Personaresponsetimes */
-            personaResponseTimes?: number | null;
             /** Sessionefficiency */
             sessionEfficiency?: number | null;
             /** Stagnationrate */
             stagnationRate?: number | null;
-            /** Timespent */
-            timeSpent?: number | null;
-            /** Totalattempts */
-            totalAttempts?: number | null;
         };
         /**
          * GrowthDataResponse

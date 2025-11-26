@@ -16756,17 +16756,6 @@
             ],
             "title": "Averagescore"
           },
-          "passRate": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passrate"
-          },
           "completionRate": {
             "anyOf": [
               {
@@ -16789,28 +16778,6 @@
             ],
             "title": "Firstattemptpassrate"
           },
-          "messagesPerSession": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Messagespersession"
-          },
-          "personaResponseTimes": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Personaresponsetimes"
-          },
           "sessionEfficiency": {
             "anyOf": [
               {
@@ -16832,28 +16799,6 @@
               }
             ],
             "title": "Stagnationrate"
-          },
-          "timeSpent": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Timespent"
-          },
-          "totalAttempts": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Totalattempts"
           }
         },
         "type": "object",

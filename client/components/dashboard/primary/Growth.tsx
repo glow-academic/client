@@ -19,15 +19,10 @@ import { TruncatedInsight } from "../TruncatedInsight";
 type GrowthDataPoint = {
   date: string;
   averageScore: number | null;
-  passRate: number | null;
   completionRate: number | null;
   firstAttemptPassRate: number | null;
-  messagesPerSession: number | null;
-  personaResponseTimes: number | null;
   sessionEfficiency: number | null;
   stagnationRate: number | null;
-  timeSpent: number | null;
-  totalAttempts: number | null;
 };
 
 type GrowthMetric = {
@@ -86,7 +81,7 @@ export interface GrowthProps {
 export default function Growth({
   chartData,
   availableMetrics,
-  windowAverages,
+  windowAverages: _windowAverages,
   hasDataAvailable,
   actionableInsight,
   status,
@@ -229,6 +224,14 @@ export default function Growth({
                   angle={-45}
                   textAnchor="end"
                   height={60}
+                  tickFormatter={(value: string) => {
+                    // Format YYYY-MM-DD to MM-DD
+                    const parts = value.split("-");
+                    if (parts.length === 3) {
+                      return `${parts[1]}-${parts[2]}`;
+                    }
+                    return value;
+                  }}
                 />
                 <YAxis className="text-xs" domain={[0, 100]} />
                 <Tooltip
@@ -244,6 +247,14 @@ export default function Growth({
                   itemStyle={{
                     color: "white",
                   }}
+                  labelFormatter={(label: string) => {
+                    // Format YYYY-MM-DD to MM-DD
+                    const parts = label.split("-");
+                    if (parts.length === 3) {
+                      return `${parts[1]}-${parts[2]}`;
+                    }
+                    return label;
+                  }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(value: number, _name: string, item: any) => {
                     const id = String(item?.dataKey ?? "");
@@ -257,14 +268,8 @@ export default function Growth({
                     }
 
                     // Smart fallback based on metric id (NOT name)
-                    const formattedValue =
-                      /Rate|Score|Efficiency|Stagnation/i.test(id)
-                        ? `${Math.round(value)}%`
-                        : id === "personaResponseTimes"
-                          ? `${Math.round(value)}s`
-                          : id === "timeSpent"
-                            ? `${Math.round(value)}m`
-                            : `${Math.round(value)}`;
+                    // All remaining metrics are percentages (0-100)
+                    const formattedValue = `${Math.round(value)}%`;
 
                     return [formattedValue, metric?.name ?? id];
                   }}

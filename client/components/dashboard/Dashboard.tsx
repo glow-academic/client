@@ -194,15 +194,10 @@ export default function Dashboard({
       (point) => ({
         date: point.date,
         averageScore: point.averageScore ?? null,
-        passRate: point.passRate ?? null,
         completionRate: point.completionRate ?? null,
         firstAttemptPassRate: point.firstAttemptPassRate ?? null,
-        messagesPerSession: point.messagesPerSession ?? null,
-        personaResponseTimes: point.personaResponseTimes ?? null,
         sessionEfficiency: point.sessionEfficiency ?? null,
         stagnationRate: point.stagnationRate ?? null,
-        timeSpent: point.timeSpent ?? null,
-        totalAttempts: point.totalAttempts ?? null,
       })
     );
 

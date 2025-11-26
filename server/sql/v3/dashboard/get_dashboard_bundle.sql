@@ -578,9 +578,15 @@
                 GROUP BY date
             ),
             growth_efficiency AS (
-                SELECT to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
-                       AVG(grade_percent / NULLIF(time_taken_seconds / 60.0, 0))::float AS value
-                FROM filt WHERE time_taken_seconds > 0 AND grade_percent IS NOT NULL
+                SELECT 
+                    to_char(attempt_created_at, 'YYYY-MM-DD') AS date,
+                    GREATEST(0, LEAST(100, ROUND(
+                        AVG(grade_percent) FILTER (WHERE grade_percent IS NOT NULL) * 
+                        (1.0 - LEAST(1.0, (SUM(time_taken_seconds / 60.0) FILTER (WHERE time_taken_seconds IS NOT NULL) / 
+                         NULLIF(COUNT(DISTINCT chat_id), 0)) / 120.0))
+                    )))::float AS value
+                FROM filt 
+                WHERE time_taken_seconds > 0 AND grade_percent IS NOT NULL
                 GROUP BY date
             ),
             growth_stagnation AS (
@@ -605,36 +611,21 @@
                 SELECT s.d AS date_val,
                        to_char(s.d, 'YYYY-MM-DD') AS date,
                        ROUND(COALESCE(gas.value, 0))::int AS average_score,
-                       ROUND(COALESCE(gpr.value, 0))::int AS pass_rate,
                        ROUND(COALESCE(gcr.value, 0))::int AS completion_rate,
                        ROUND(COALESCE(gfapr.value, 0))::int AS first_attempt_pass_rate,
-                       ROUND(COALESCE(gm.value, 0))::int AS messages_per_session,
-                       ROUND(COALESCE(gpt.value, 0))::int AS persona_response_times,
                        ROUND(COALESCE(ge.value, 0))::int AS session_efficiency,
-                       ROUND(COALESCE(gst.value, 0))::int AS stagnation_rate,
-                       ROUND(COALESCE(gts.value, 0))::int AS time_spent,
-                       ROUND(COALESCE(gta.value, 0))::int AS total_attempts
+                       ROUND(COALESCE(gst.value, 0))::int AS stagnation_rate
                 FROM spine s
                 LEFT JOIN growth_avg_score gas ON gas.date = to_char(s.d, 'YYYY-MM-DD')
-                LEFT JOIN growth_pass_rate gpr ON gpr.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_completion_rate gcr ON gcr.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_first_attempt_pass_rate gfapr ON gfapr.date = to_char(s.d, 'YYYY-MM-DD')
-                LEFT JOIN growth_messages gm ON gm.date = to_char(s.d, 'YYYY-MM-DD')
-                LEFT JOIN growth_persona_times_daily gpt ON gpt.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_efficiency ge ON ge.date = to_char(s.d, 'YYYY-MM-DD')
                 LEFT JOIN growth_stagnation gst ON gst.date = to_char(s.d, 'YYYY-MM-DD')
-                LEFT JOIN growth_time_spent gts ON gts.date = to_char(s.d, 'YYYY-MM-DD')
-                LEFT JOIN growth_total_attempts gta ON gta.date = to_char(s.d, 'YYYY-MM-DD')
                 WHERE gas.value IS NOT NULL 
-                   OR gpr.value IS NOT NULL 
                    OR gcr.value IS NOT NULL 
                    OR gfapr.value IS NOT NULL 
-                   OR gm.value IS NOT NULL 
-                   OR gpt.value IS NOT NULL 
                    OR ge.value IS NOT NULL 
-                   OR gst.value IS NOT NULL 
-                   OR gts.value IS NOT NULL 
-                   OR gta.value IS NOT NULL
+                   OR gst.value IS NOT NULL
             ),
             growth_window AS (
                 SELECT AVG(average_score) FILTER (WHERE date_val >= (SELECT MAX(date_val) FROM growth_chart_dates) - interval '7 days') AS last_avg,
@@ -1564,15 +1555,10 @@
                         'chartData', COALESCE((SELECT json_agg(json_build_object(
                             'date', date,
                             'averageScore', average_score,
-                            'passRate', pass_rate,
                             'completionRate', completion_rate,
                             'firstAttemptPassRate', first_attempt_pass_rate,
-                            'messagesPerSession', messages_per_session,
-                            'personaResponseTimes', persona_response_times,
                             'sessionEfficiency', session_efficiency,
-                            'stagnationRate', stagnation_rate,
-                            'timeSpent', time_spent,
-                            'totalAttempts', total_attempts
+                            'stagnationRate', stagnation_rate
                         ) ORDER BY date_val) FROM growth_chart_dates), '[]'::json),
                         'availableMetrics', json_build_array(
                             json_build_object(
@@ -1581,14 +1567,6 @@
                                 'color', '#3b82f6',
                                 'unit', '%',
                                 'description', 'Average score across all attempts',
-                                'formatterId', 'percent'
-                            ),
-                            json_build_object(
-                                'id', 'passRate',
-                                'name', 'Pass Rate',
-                                'color', '#10b981',
-                                'unit', '%',
-                                'description', 'Percentage of first attempts that passed',
                                 'formatterId', 'percent'
                             ),
                             json_build_object(
@@ -1608,28 +1586,12 @@
                                 'formatterId', 'percent'
                             ),
                             json_build_object(
-                                'id', 'messagesPerSession',
-                                'name', 'Messages Per Session',
-                                'color', '#f59e0b',
-                                'unit', 'messages',
-                                'description', 'Average messages per session',
-                                'formatterId', 'int'
-                            ),
-                            json_build_object(
-                                'id', 'personaResponseTimes',
-                                'name', 'Persona Response Times',
-                                'color', '#ef4444',
-                                'unit', 'seconds',
-                                'description', 'Average persona response time',
-                                'formatterId', 'sec'
-                            ),
-                            json_build_object(
                                 'id', 'sessionEfficiency',
                                 'name', 'Session Efficiency',
                                 'color', '#84cc16',
-                                'unit', 'pts/min',
-                                'description', 'Score per minute ratio',
-                                'formatterId', 'int'
+                                'unit', '%',
+                                'description', 'Efficiency index based on score and time (0-100)',
+                                'formatterId', 'percent'
                             ),
                             json_build_object(
                                 'id', 'stagnationRate',
@@ -1638,22 +1600,6 @@
                                 'unit', '%',
                                 'description', 'Percentage of attempts with no improvement',
                                 'formatterId', 'percent'
-                            ),
-                            json_build_object(
-                                'id', 'timeSpent',
-                                'name', 'Time Spent',
-                                'color', '#a855f7',
-                                'unit', 'seconds',
-                                'description', 'Average time per session',
-                                'formatterId', 'sec'
-                            ),
-                            json_build_object(
-                                'id', 'totalAttempts',
-                                'name', 'Total Attempts',
-                                'color', '#14b8a6',
-                                'unit', 'attempts',
-                                'description', 'Total number of attempts',
-                                'formatterId', 'int'
                             )
                         ),
                         'windowAverages', json_build_object(
