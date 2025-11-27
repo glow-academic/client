@@ -355,19 +355,20 @@ export function ParameterItemPicker<
                       key={item.id}
                       onSelect={() => handleItemSelect(item.id)}
                       value={`${item.name} ${item.description ?? ""}`}
+                      className="group data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
                     >
                       <div className="flex items-center gap-3 w-full">
                         <div className="flex-1 min-w-0">
                           <div className="truncate">{item.name}</div>
                           {item.description && (
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                               {item.description}
                             </div>
                           )}
                         </div>
                         <Check
                           className={cn(
-                            "ml-auto",
+                            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
                             selectedIds.includes(item.id)
                               ? "opacity-100"
                               : "opacity-0",

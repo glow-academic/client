@@ -340,14 +340,14 @@ function MetricItem({ metric, isSelected, onSelect, onPeek }: MetricItemProps) {
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{metric.label}</div>
           {metric.description && (
-            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground/80">
+            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
               {metric.description}
             </div>
           )}
         </div>
         <Check
           className={cn(
-            "ml-auto stroke-current",
+            "ml-auto flex-shrink-0 stroke-current group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
             isSelected ? "opacity-100" : "opacity-0"
           )}
         />

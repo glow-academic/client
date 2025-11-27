@@ -33,6 +33,16 @@ import {
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
 import { VoicePicker } from "@/components/common/forms/VoicePicker";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,6 +86,7 @@ import {
   Eye,
   Power,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -302,6 +313,7 @@ export default function Persona({
   personaDetailDefault: serverPersonaDetailDefault,
   createPersonaAction,
   updatePersonaAction,
+  deletePersonaPromptAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
@@ -345,6 +357,11 @@ export default function Persona({
     "editor"
   );
   const prevDepartmentIdsRef = React.useRef<string[]>([]);
+  const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
+  const [promptToDelete, setPromptToDelete] = useState<{
+    promptId: string;
+    isDepartmentSpecific: boolean;
+  } | null>(null);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -374,6 +391,19 @@ export default function Persona({
       throw new Error("updatePersonaAction is required");
     }
     await updatePersonaAction({ body });
+  };
+
+  const handleDeletePersonaPrompt = async (
+    personaId: string,
+    promptId: string,
+    departmentId: string | null
+  ) => {
+    if (!deletePersonaPromptAction) {
+      throw new Error("deletePersonaPromptAction is required");
+    }
+    await deletePersonaPromptAction({
+      body: { personaId, promptId, departmentId },
+    });
   };
 
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
@@ -1423,6 +1453,40 @@ export default function Persona({
                             </TooltipContent>
                           </Tooltip>
                         )}
+                      {isEditMode &&
+                        !isReadonly &&
+                        formData?.promptId &&
+                        filteredPromptMapping[formData.promptId]
+                          ?.can_delete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  const promptId = formData.promptId!;
+                                  const promptInfo =
+                                    filteredPromptMapping[promptId];
+                                  if (!promptInfo) return;
+                                  setPromptToDelete({
+                                    promptId,
+                                    isDepartmentSpecific:
+                                      !!promptInfo.department_ids &&
+                                      promptInfo.department_ids.length > 0,
+                                  });
+                                  setShowDeletePromptDialog(true);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                     </>
                   )}
                 </div>
@@ -1484,6 +1548,71 @@ export default function Persona({
             </div>
           </form>
         </div>
+
+        {/* Delete Prompt Confirmation Dialog */}
+        <AlertDialog
+          open={showDeletePromptDialog}
+          onOpenChange={setShowDeletePromptDialog}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
+              <AlertDialogDescription>
+                {promptToDelete?.isDepartmentSpecific ? (
+                  <>
+                    Are you sure you want to delete this department-specific
+                    prompt? This will delete the prompt and fall back to the
+                    default prompt for this department.
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to delete this prompt? This will
+                    delete the prompt and set the latest prompt as active.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setShowDeletePromptDialog(false);
+                  setPromptToDelete(null);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (!promptToDelete || !personaId) return;
+
+                  try {
+                    await handleDeletePersonaPrompt(
+                      personaId,
+                      promptToDelete.promptId,
+                      promptToDelete.isDepartmentSpecific
+                        ? formData?.departmentIds && formData.departmentIds.length > 0
+                          ? formData.departmentIds[0]!
+                          : null
+                        : null
+                    );
+                    toast.success("Prompt deleted successfully");
+                    setShowDeletePromptDialog(false);
+                    setPromptToDelete(null);
+                    // Refresh the page to get updated data
+                    router.refresh();
+                  } catch (error) {
+                    const msg =
+                      error instanceof Error ? error.message : "Unknown error";
+                    toast.error(`Failed to delete prompt: ${msg}`);
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );

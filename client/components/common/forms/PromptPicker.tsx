@@ -146,7 +146,7 @@ export function PromptPicker({
                     <CommandItem
                       key={prompt.id}
                       onSelect={() => handleSelect(prompt.id)}
-                      className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
+                      className="group data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
                       data-testid="prompt-option"
                       data-prompt-id={prompt.id}
                     >
@@ -163,7 +163,7 @@ export function PromptPicker({
                             </div>
                         </div>
                           {prompt.description && (
-                            <div className="text-sm text-muted-foreground truncate">
+                            <div className="text-sm text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
                               {prompt.description}
                       </div>
                           )}
@@ -177,7 +177,7 @@ export function PromptPicker({
                         </div>
                         <Check
                           className={cn(
-                            "ml-auto",
+                            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
                             isSelected ? "opacity-100" : "opacity-0"
                           )}
                         />

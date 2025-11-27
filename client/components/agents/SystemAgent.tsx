@@ -934,6 +934,7 @@ export default function SystemAgent({
                         </Tooltip>
                       )}
                       {isEditMode &&
+                        !isReadonly &&
                         formData?.promptId &&
                         filteredPromptMapping[formData.promptId]
                           ?.can_delete && (
@@ -1095,7 +1096,8 @@ export default function SystemAgent({
                     toast.success("Prompt deleted successfully");
                     setShowDeletePromptDialog(false);
                     setPromptToDelete(null);
-                    // Refresh agent detail - the query will automatically refetch
+                    // Refresh the page to get updated data
+                    router.refresh();
                   } catch (error) {
                     const msg =
                       error instanceof Error ? error.message : "Unknown error";

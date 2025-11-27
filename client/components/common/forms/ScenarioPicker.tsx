@@ -798,21 +798,21 @@ function ScenarioItem<T extends ScenarioMappingItem>({
       key={scenario.id}
       onSelect={onSelect}
       ref={ref}
-      className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
+      className="group data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Play className="h-4 w-4 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="truncate">{scenario.name}</div>
-            <div className="mt-1 text-xs text-muted-foreground truncate">
+            <div className="mt-1 text-xs text-muted-foreground truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
               {scenario.description || "No description available"}
             </div>
           </div>
         </div>
         <Check
           className={cn(
-            "ml-auto flex-shrink-0",
+            "ml-auto flex-shrink-0 group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground",
             isSelected ? "opacity-100" : "opacity-0",
           )}
         />
