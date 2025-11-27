@@ -71,7 +71,7 @@ import type {
   GenerateAIScenarioOut,
   RandomizeScenarioIn,
   RandomizeScenarioOut,
-  ScenarioDetailDefaultOut,
+  ScenarioNewOut,
   ScenarioDetailOut,
   UpdateScenarioIn,
   UpdateScenarioOut,
@@ -232,7 +232,7 @@ export interface ScenarioProps {
   mode?: "create" | "edit";
   // Server-provided data (for server-side rendering)
   scenarioDetail?: ScenarioDetailOut;
-  scenarioDetailDefault?: ScenarioDetailDefaultOut;
+  scenarioDetailDefault?: ScenarioNewOut;
   // Server actions (replaces useMutation)
   createScenarioAction?: (
     input: CreateScenarioIn

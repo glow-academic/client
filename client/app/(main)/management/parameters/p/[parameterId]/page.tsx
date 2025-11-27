@@ -17,12 +17,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 type ParameterDetailIn = InputOf<"/api/v3/parameters/detail", "post">;
 type ParameterDetailOut = OutputOf<"/api/v3/parameters/detail", "post">;
 
-type ParameterDetailDefaultIn = InputOf<
-  "/api/v3/parameters/detail-default",
+type ParameterNewIn = InputOf<
+  "/api/v3/parameters/new",
   "post"
 >;
-type ParameterDetailDefaultOut = OutputOf<
-  "/api/v3/parameters/detail-default",
+type ParameterNewOut = OutputOf<
+  "/api/v3/parameters/new",
   "post"
 >;
 
@@ -170,8 +170,8 @@ export default async function ParameterEditPage({
 export type {
   CreateParameterIn,
   CreateParameterOut,
-  ParameterDetailDefaultIn,
-  ParameterDetailDefaultOut,
+  ParameterNewIn,
+  ParameterNewOut,
   ParameterDetailIn,
   ParameterDetailOut,
   UpdateParameterIn,

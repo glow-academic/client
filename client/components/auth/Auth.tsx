@@ -25,7 +25,7 @@ import { Plus, Power, Trash2 } from "lucide-react";
 
 // Type-only import from server page
 import type {
-  AuthDetailDefaultOut,
+  AuthNewOut,
   AuthDetailOut,
   CreateAuthIn,
   CreateAuthOut,
@@ -60,7 +60,7 @@ interface AuthProps {
   authId?: string;
   mode?: "create" | "edit";
   authDetail?: AuthDetailOut;
-  authDetailDefault?: AuthDetailDefaultOut;
+  authDetailDefault?: AuthNewOut;
   createAuthAction?: (input: CreateAuthIn) => Promise<CreateAuthOut>;
   updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
 }

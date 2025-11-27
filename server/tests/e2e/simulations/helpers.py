@@ -148,7 +148,7 @@ def fetch_simulation_detail_default(
     )
     return _post_json(
         request,
-        "/api/v3/simulations/detail-default",
+        "/api/v3/simulations/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

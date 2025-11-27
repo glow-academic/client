@@ -16,12 +16,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type ScenarioDetailIn = InputOf<"/api/v3/scenarios/detail", "post">;
 type ScenarioDetailOut = OutputOf<"/api/v3/scenarios/detail", "post">;
-type ScenarioDetailDefaultIn = InputOf<
-  "/api/v3/scenarios/detail-default",
+type ScenarioNewIn = InputOf<
+  "/api/v3/scenarios/new",
   "post"
 >;
-type ScenarioDetailDefaultOut = OutputOf<
-  "/api/v3/scenarios/detail-default",
+type ScenarioNewOut = OutputOf<
+  "/api/v3/scenarios/new",
   "post"
 >;
 type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
@@ -183,8 +183,8 @@ export type {
   GenerateAIScenarioOut,
   RandomizeScenarioIn,
   RandomizeScenarioOut,
-  ScenarioDetailDefaultIn,
-  ScenarioDetailDefaultOut,
+  ScenarioNewIn,
+  ScenarioNewOut,
   ScenarioDetailIn,
   ScenarioDetailOut,
   UpdateScenarioIn,

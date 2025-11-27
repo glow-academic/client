@@ -61,7 +61,7 @@ import type {
   CreateModelOut,
   DecryptKeyIn,
   DecryptKeyOut,
-  ModelDetailDefaultOut,
+  ModelNewOut,
   UpdateKeyIn,
   UpdateKeyOut,
 } from "@/app/(main)/engine/models/new/page";
@@ -69,7 +69,7 @@ import type {
 export interface ModelProps {
   modelId?: string;
   // For create mode: default model detail with provider mapping
-  modelDetailDefault?: ModelDetailDefaultOut;
+  modelDetailDefault?: ModelNewOut;
   // For edit mode: model detail with provider mapping
   modelDetail?: ModelDetailOut;
   createModelAction?: (input: CreateModelIn) => Promise<CreateModelOut>;

@@ -17,12 +17,12 @@ import type {
 } from "@/app/(main)/system/auth/page";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthDetailDefaultIn = InputOf<
-  "/api/v3/auth/detail-default",
+type AuthNewIn = InputOf<
+  "/api/v3/auth/new",
   "post"
 >;
-type AuthDetailDefaultOut = OutputOf<
-  "/api/v3/auth/detail-default",
+type AuthNewOut = OutputOf<
+  "/api/v3/auth/new",
   "post"
 >;
 
@@ -34,9 +34,9 @@ type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
  */
 const getAuthDefault = async (
   profileId: string
-): Promise<AuthDetailDefaultOut> => {
+): Promise<AuthNewOut> => {
   return api.post(
-    "/auth/detail-default",
+    "/auth/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -130,8 +130,8 @@ export default async function AuthCreatePage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AuthDetailDefaultIn,
-  AuthDetailDefaultOut,
+  AuthNewIn,
+  AuthNewOut,
   CreateAuthIn,
   CreateAuthOut,
 };

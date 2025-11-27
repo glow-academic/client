@@ -28,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Import types from new page (create action)
 import type {
-  CohortDetailDefaultOut,
+  CohortNewOut,
   CreateCohortIn,
   CreateCohortOut,
 } from "@/app/(main)/cohorts/new/page";
@@ -107,7 +107,7 @@ export interface CohortProps {
   cohortId?: string;
   // Server-provided data (for server-side rendering)
   cohortDetail?: CohortDetailOut;
-  cohortDetailDefault?: CohortDetailDefaultOut;
+  cohortDetailDefault?: CohortNewOut;
   // Server actions (replaces useMutation)
   createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
   updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;

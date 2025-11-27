@@ -21,9 +21,9 @@ import {
 } from "@/app/(main)/system/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortDetailDefaultIn = InputOf<"/api/v3/cohorts/detail-default", "post">;
-type CohortDetailDefaultOut = OutputOf<
-  "/api/v3/cohorts/detail-default",
+type CohortNewIn = InputOf<"/api/v3/cohorts/new", "post">;
+type CohortNewOut = OutputOf<
+  "/api/v3/cohorts/new",
   "post"
 >;
 type CreateCohortIn = InputOf<"/api/v3/cohorts/create", "post">;
@@ -34,9 +34,9 @@ type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
  */
 const getCohortDefault = async (
   profileId: string
-): Promise<CohortDetailDefaultOut> => {
+): Promise<CohortNewOut> => {
   return api.post(
-    "/cohorts/detail-default",
+    "/cohorts/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -128,13 +128,13 @@ export default async function NewCohortPage() {
 }
 
 /** ---- Derived types from server responses ---- */
-type CohortDefaultStaffItem = CohortDetailDefaultOut["staff"][number];
+type CohortDefaultStaffItem = CohortNewOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   CohortDefaultStaffItem,
-  CohortDetailDefaultIn,
-  CohortDetailDefaultOut,
+  CohortNewIn,
+  CohortNewOut,
   CreateCohortIn,
   CreateCohortOut,
 };

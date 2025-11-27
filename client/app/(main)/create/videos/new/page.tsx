@@ -13,8 +13,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type VideoDetailDefaultIn = InputOf<"/api/v3/videos/detail-default", "post">;
-type VideoDetailDefaultOut = OutputOf<"/api/v3/videos/detail-default", "post">;
+type VideoNewIn = InputOf<"/api/v3/videos/new", "post">;
+type VideoNewOut = OutputOf<"/api/v3/videos/new", "post">;
 type CreateVideoIn = InputOf<"/api/v3/videos/create", "post">;
 type CreateVideoOut = OutputOf<"/api/v3/videos/create", "post">;
 type UpdateVideoIn = InputOf<"/api/v3/videos/update", "post">;
@@ -26,9 +26,9 @@ type RandomizeVideoOut = OutputOf<"/api/v3/videos/randomize", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getVideoDefault = async (
-  input: VideoDetailDefaultIn
-): Promise<VideoDetailDefaultOut> => {
-  return api.post("/videos/detail-default", input, {
+  input: VideoNewIn
+): Promise<VideoNewOut> => {
+  return api.post("/videos/new", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -117,6 +117,6 @@ export type {
   RandomizeVideoOut,
   UpdateVideoIn,
   UpdateVideoOut,
-  VideoDetailDefaultIn,
-  VideoDetailDefaultOut,
+  VideoNewIn,
+  VideoNewOut,
 };

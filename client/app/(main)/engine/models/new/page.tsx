@@ -13,8 +13,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelDetailDefaultIn = InputOf<"/api/v3/models/detail-default", "post">;
-type ModelDetailDefaultOut = OutputOf<"/api/v3/models/detail-default", "post">;
+type ModelNewIn = InputOf<"/api/v3/models/new", "post">;
+type ModelNewOut = OutputOf<"/api/v3/models/new", "post">;
 type CreateModelIn = InputOf<"/api/v3/models/create", "post">;
 type CreateModelOut = OutputOf<"/api/v3/models/create", "post">;
 type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
@@ -27,9 +27,9 @@ type UpdateKeyOut = OutputOf<"/api/v3/keys/update", "post">;
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
   profileId: string
-): Promise<ModelDetailDefaultOut> => {
+): Promise<ModelNewOut> => {
   return api.post(
-    "/models/detail-default",
+    "/models/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -131,8 +131,8 @@ export default async function NewModelPage() {
 export type {
   CreateModelIn,
   CreateModelOut,
-  ModelDetailDefaultIn,
-  ModelDetailDefaultOut,
+  ModelNewIn,
+  ModelNewOut,
   CreateKeyIn,
   CreateKeyOut,
   DecryptKeyIn,

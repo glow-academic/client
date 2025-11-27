@@ -148,7 +148,7 @@ def fetch_scenario_detail_default(
     )
     return _post_json(
         request,
-        "/api/v3/scenarios/detail-default",
+        "/api/v3/scenarios/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

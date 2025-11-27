@@ -13,8 +13,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationDetailDefaultOut = OutputOf<
-  "/api/v3/simulations/detail-default",
+type SimulationNewOut = OutputOf<
+  "/api/v3/simulations/new",
   "post"
 >;
 type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
@@ -31,9 +31,9 @@ type SearchVideoOut = OutputOf<"/api/v3/videos/search", "post">;
  */
 const getSimulationDefault = async (
   profileId: string
-): Promise<SimulationDetailDefaultOut> => {
+): Promise<SimulationNewOut> => {
   return api.post(
-    "/simulations/detail-default",
+    "/simulations/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -120,5 +120,5 @@ export default async function NewSimulationPage() {
 export type {
   CreateSimulationIn,
   CreateSimulationOut,
-  SimulationDetailDefaultOut,
+  SimulationNewOut,
 };

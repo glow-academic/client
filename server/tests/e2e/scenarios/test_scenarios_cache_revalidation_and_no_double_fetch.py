@@ -60,7 +60,7 @@ def test_scenarios_cache_revalidation_and_no_double_fetch(
 ) -> None:
     """Ensure default detail fetch happens once and mutations revalidate list data."""
     detail_counter, stop_counter = _set_request_counter(
-        page, "/api/v3/scenarios/detail-default"
+        page, "/api/v3/scenarios/new"
     )
     page.goto(f"{base_url}/create/scenarios/new")
     page.wait_for_load_state("networkidle")

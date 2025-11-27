@@ -27,7 +27,7 @@ type CreateAuthOut = OutputOf<"/api/v3/auth/create", "post">;
 
 type UpdateAuthIn = InputOf<"/api/v3/auth/update", "post">;
 type UpdateAuthOut = OutputOf<"/api/v3/auth/update", "post">;
-type AuthDetailDefaultOut = OutputOf<"/api/v3/auth/detail-default", "post">;
+type AuthNewOut = OutputOf<"/api/v3/auth/new", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -191,7 +191,7 @@ export default async function AuthEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AuthDetailDefaultOut,
+  AuthNewOut,
   AuthDetailIn,
   AuthDetailOut,
   CreateAuthIn,

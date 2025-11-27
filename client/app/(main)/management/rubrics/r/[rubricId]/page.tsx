@@ -17,9 +17,9 @@ import type { Metadata, ResolvingMetadata } from "next";
 type RubricDetailIn = InputOf<"/api/v3/rubrics/detail", "post">;
 type RubricDetailOut = OutputOf<"/api/v3/rubrics/detail", "post">;
 
-type RubricDetailDefaultIn = InputOf<"/api/v3/rubrics/detail-default", "post">;
-type RubricDetailDefaultOut = OutputOf<
-  "/api/v3/rubrics/detail-default",
+type RubricNewIn = InputOf<"/api/v3/rubrics/new", "post">;
+type RubricNewOut = OutputOf<
+  "/api/v3/rubrics/new",
   "post"
 >;
 type UpdateRubricIn = InputOf<"/api/v3/rubrics/update", "post">;
@@ -46,9 +46,9 @@ const getRubric = async (
 
 const getRubricDefault = async (
   profileId: string
-): Promise<RubricDetailDefaultOut> => {
+): Promise<RubricNewOut> => {
   return api.post(
-    "/rubrics/detail-default",
+    "/rubrics/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -110,7 +110,7 @@ export default async function EditRubricPage({
 
   // Fetch data based on mode (edit vs create)
   try {
-    const [rubricDetail, rubricDetailDefault] = await Promise.all([
+    const [rubricDetail, rubricNew] = await Promise.all([
       rubricId
         ? getRubric(rubricId, profileId).catch(() => null)
         : Promise.resolve(null),
@@ -128,7 +128,7 @@ export default async function EditRubricPage({
         <Rubric
           rubricId={rubricId}
           {...(rubricDetail && { rubricDetail })}
-          {...(rubricDetailDefault && { rubricDetailDefault })}
+          {...(rubricNew && { rubricDetailDefault: rubricNew })}
           updateRubricAction={updateRubric}
         />
       </div>
@@ -169,8 +169,8 @@ async function updateRubric(
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  RubricDetailDefaultIn,
-  RubricDetailDefaultOut,
+  RubricNewIn,
+  RubricNewOut,
   RubricDetailIn,
   RubricDetailOut,
   UpdateRubricIn,

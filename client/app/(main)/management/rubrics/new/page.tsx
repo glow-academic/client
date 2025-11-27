@@ -15,16 +15,16 @@ import type { Metadata } from "next";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricDetailDefaultIn = InputOf<"/api/v3/rubrics/detail-default", "post">;
-type RubricDetailDefaultOut = OutputOf<
-  "/api/v3/rubrics/detail-default",
+type RubricNewIn = InputOf<"/api/v3/rubrics/new", "post">;
+type RubricNewOut = OutputOf<
+  "/api/v3/rubrics/new",
   "post"
 >;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getRubricDefault = cache(
-  async (input: RubricDetailDefaultIn): Promise<RubricDetailDefaultOut> => {
-    return api.post("/rubrics/detail-default", input);
+  async (input: RubricNewIn): Promise<RubricNewOut> => {
+    return api.post("/rubrics/new", input);
   },
 );
 
@@ -60,14 +60,14 @@ export default async function NewRubricPage() {
   const profileId = session?.effectiveProfileId || "";
 
   // Fetch default rubric detail server-side
-  const rubricDetailDefault = await getRubricDefault({
+  const rubricNew = await getRubricDefault({
     body: { profileId },
   });
 
   return (
     <div className="space-y-6">
       <Rubric
-        rubricDetailDefault={rubricDetailDefault}
+        rubricDetailDefault={rubricNew}
         createRubricAction={createRubric}
       />
     </div>
@@ -75,4 +75,4 @@ export default async function NewRubricPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { RubricDetailDefaultIn, RubricDetailDefaultOut };
+export type { RubricNewIn, RubricNewOut };

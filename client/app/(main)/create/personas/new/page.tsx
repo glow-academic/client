@@ -13,8 +13,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaDetailDefaultOut = OutputOf<
-  "/api/v3/personas/detail-default",
+type PersonaNewOut = OutputOf<
+  "/api/v3/personas/new",
   "post"
 >;
 type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
@@ -25,9 +25,9 @@ type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
  */
 const getPersonaDefault = async (
   profileId: string
-): Promise<PersonaDetailDefaultOut> => {
+): Promise<PersonaNewOut> => {
   return api.post(
-    "/personas/detail-default",
+    "/personas/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -101,4 +101,4 @@ export default async function NewPersonaPage() {
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { CreatePersonaIn, CreatePersonaOut, PersonaDetailDefaultOut };
+export type { CreatePersonaIn, CreatePersonaOut, PersonaNewOut };

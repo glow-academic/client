@@ -21,7 +21,7 @@ import type {
   CreateRubricOut,
 } from "@/app/(main)/management/rubrics/page";
 import type {
-  RubricDetailDefaultOut,
+  RubricNewOut,
   RubricDetailOut,
   UpdateRubricIn,
   UpdateRubricOut,
@@ -44,7 +44,7 @@ export interface RubricProps {
   rubricId?: string;
   // Optional server-provided data (for server-side rendering)
   rubricDetail?: RubricDetailOut;
-  rubricDetailDefault?: RubricDetailDefaultOut;
+  rubricDetailDefault?: RubricNewOut;
   // Server actions for mutations
   updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
   createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;

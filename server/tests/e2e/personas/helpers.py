@@ -148,7 +148,7 @@ def fetch_persona_detail_default(
     )
     return _post_json(
         request,
-        "/api/v3/personas/detail-default",
+        "/api/v3/personas/new",
         {"profileId": resolved_effective},
         profile_id=resolved_actual,
         effective_profile_id=resolved_effective,

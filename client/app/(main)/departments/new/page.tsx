@@ -23,12 +23,12 @@ import {
 } from "@/app/(main)/system/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentDetailDefaultIn = InputOf<
-  "/api/v3/departments/detail-default",
+type DepartmentNewIn = InputOf<
+  "/api/v3/departments/new",
   "post"
 >;
-type DepartmentDetailDefaultOut = OutputOf<
-  "/api/v3/departments/detail-default",
+type DepartmentNewOut = OutputOf<
+  "/api/v3/departments/new",
   "post"
 >;
 
@@ -38,9 +38,9 @@ type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
   async (
-    input: DepartmentDetailDefaultIn,
-  ): Promise<DepartmentDetailDefaultOut> => {
-    return api.post("/departments/detail-default", input);
+    input: DepartmentNewIn,
+  ): Promise<DepartmentNewOut> => {
+    return api.post("/departments/new", input);
   },
 );
 
@@ -126,13 +126,13 @@ export default async function NewDepartmentPage() {
 
 /** ---- Derived types from server responses ---- */
 type DepartmentDefaultStaffItem =
-  DepartmentDetailDefaultOut["staff"][number];
+  DepartmentNewOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   CreateDepartmentIn,
   CreateDepartmentOut,
-  DepartmentDetailDefaultIn,
-  DepartmentDetailDefaultOut,
+  DepartmentNewIn,
+  DepartmentNewOut,
   DepartmentDefaultStaffItem,
 };

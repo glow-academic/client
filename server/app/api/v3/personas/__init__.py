@@ -6,7 +6,7 @@ from app.api.v3.personas.create import router as create_router
 from app.api.v3.personas.delete import router as delete_router
 from app.api.v3.personas.delete_prompt import router as delete_prompt_router
 from app.api.v3.personas.detail import router as detail_router
-from app.api.v3.personas.detail_default import router as detail_default_router
+from app.api.v3.personas.new import router as new_router
 from app.api.v3.personas.duplicate import router as duplicate_router
 from app.api.v3.personas.list import router as list_router
 from app.api.v3.personas.overview import router as overview_router
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/personas", tags=["personas"])
 # Include all persona endpoint routers
 router.include_router(list_router)
 router.include_router(detail_router)
-router.include_router(detail_default_router)
+router.include_router(new_router)
 router.include_router(create_router)
 router.include_router(update_router)
 router.include_router(duplicate_router)

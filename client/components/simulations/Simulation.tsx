@@ -53,7 +53,7 @@ import { useRouter } from "next/navigation";
 import type {
   CreateSimulationIn,
   CreateSimulationOut,
-  SimulationDetailDefaultOut,
+  SimulationNewOut,
   SimulationDetailOut,
   UpdateSimulationIn,
   UpdateSimulationOut,
@@ -63,7 +63,7 @@ export interface SimulationProps {
   simulationId?: string;
   // Optional server-provided data and actions (for server-side rendering)
   simulationDetail?: SimulationDetailOut;
-  simulationDetailDefault?: SimulationDetailDefaultOut;
+  simulationDetailDefault?: SimulationNewOut;
   createSimulationAction?: (
     input: CreateSimulationIn
   ) => Promise<CreateSimulationOut>;
@@ -140,12 +140,12 @@ export default function Simulation({
     ? simulationDetail
     : simulationDetailDefault;
 
-  // Extract strongly typed scenario from SimulationDetailOut or SimulationDetailDefaultOut
+  // Extract strongly typed scenario from SimulationDetailOut or SimulationNewOut
   type ScenarioInSimulation = NonNullable<
     SimulationDetailOut["scenarios"]
   >[number] extends infer S
     ? S
-    : NonNullable<SimulationDetailDefaultOut["scenarios"]>[number];
+    : NonNullable<SimulationNewOut["scenarios"]>[number];
 
   // Extract body types from server action types for type safety
   type CreateSimulationBody = CreateSimulationIn extends { body: infer B }

@@ -539,7 +539,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/scenarios/detail-default": {
+    "/api/v3/scenarios/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -549,10 +549,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Scenario Detail Default
+         * Get Scenario New
          * @description Get default scenario structure for creation mode.
          */
-        post: operations["get_scenario_detail_default_api_v3_scenarios_detail_default_post"];
+        post: operations["get_scenario_new_api_v3_scenarios_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -818,7 +818,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/simulations/detail-default": {
+    "/api/v3/simulations/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -828,10 +828,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Simulation Detail Default
+         * Get Simulation New
          * @description Get default simulation details based on profile.
          */
-        post: operations["get_simulation_detail_default_api_v3_simulations_detail_default_post"];
+        post: operations["get_simulation_new_api_v3_simulations_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1071,7 +1071,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/detail-default": {
+    "/api/v3/personas/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1081,10 +1081,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Persona Detail Default
+         * Get Persona New
          * @description Get default persona structure for creation mode.
          */
-        post: operations["get_persona_detail_default_api_v3_personas_detail_default_post"];
+        post: operations["get_persona_new_api_v3_personas_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1335,7 +1335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/videos/detail-default": {
+    "/api/v3/videos/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1345,10 +1345,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Video Detail Default
+         * Get Video New
          * @description Get default video structure for creation mode.
          */
-        post: operations["get_video_detail_default_api_v3_videos_detail_default_post"];
+        post: operations["get_video_new_api_v3_videos_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1536,7 +1536,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/auth/detail-default": {
+    "/api/v3/auth/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1546,10 +1546,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Auth Detail Default
+         * Get Auth New
          * @description Get default auth detail for creation mode.
          */
-        post: operations["get_auth_detail_default_api_v3_auth_detail_default_post"];
+        post: operations["get_auth_new_api_v3_auth_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1696,7 +1696,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/departments/detail-default": {
+    "/api/v3/departments/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1706,10 +1706,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Department Detail Default
+         * Get Department New
          * @description Get default department detail for creation mode.
          */
-        post: operations["get_department_detail_default_api_v3_departments_detail_default_post"];
+        post: operations["get_department_new_api_v3_departments_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1856,7 +1856,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/cohorts/detail-default": {
+    "/api/v3/cohorts/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -1866,10 +1866,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Cohort Detail Default
+         * Get Cohort New
          * @description Get default cohort detail with staff, simulations, and mappings.
          */
-        post: operations["get_cohort_detail_default_api_v3_cohorts_detail_default_post"];
+        post: operations["get_cohort_new_api_v3_cohorts_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2568,7 +2568,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/rubrics/detail-default": {
+    "/api/v3/rubrics/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2578,10 +2578,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Rubric Detail Default
+         * Get Rubric New
          * @description Get default rubric detail information.
          */
-        post: operations["get_rubric_detail_default_api_v3_rubrics_detail_default_post"];
+        post: operations["get_rubric_new_api_v3_rubrics_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2968,7 +2968,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/agents/detail-default": {
+    "/api/v3/agents/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -2978,10 +2978,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Agent Detail Default
+         * Get Agent New
          * @description Get default agent detail metadata for creating new agents.
          */
-        post: operations["get_agent_detail_default_api_v3_agents_detail_default_post"];
+        post: operations["get_agent_new_api_v3_agents_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3128,7 +3128,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/keys/detail-default": {
+    "/api/v3/keys/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -3138,10 +3138,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Key Detail Default
+         * Get Key New
          * @description Get default key detail information for new key creation.
          */
-        post: operations["get_key_detail_default_api_v3_keys_detail_default_post"];
+        post: operations["get_key_new_api_v3_keys_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3268,7 +3268,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/models/detail-default": {
+    "/api/v3/models/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -3278,10 +3278,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Model Detail Default
+         * Get Model New
          * @description Get default model detail for creation mode (provider mapping).
          */
-        post: operations["get_model_detail_default_api_v3_models_detail_default_post"];
+        post: operations["get_model_new_api_v3_models_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3408,7 +3408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/parameters/detail-default": {
+    "/api/v3/parameters/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -3418,10 +3418,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Parameter Detail Default
+         * Get Parameter New
          * @description Get default parameter detail for creation mode.
          */
-        post: operations["get_parameter_detail_default_api_v3_parameters_detail_default_post"];
+        post: operations["get_parameter_new_api_v3_parameters_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3568,7 +3568,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/prompts/detail-default": {
+    "/api/v3/prompts/new": {
         parameters: {
             query?: never;
             header?: never;
@@ -3578,10 +3578,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Prompt Detail Default
+         * Get Prompt New
          * @description Get default prompt detail information for new prompt creation.
          */
-        post: operations["get_prompt_detail_default_api_v3_prompts_detail_default_post"];
+        post: operations["get_prompt_new_api_v3_prompts_new_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4251,11 +4251,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** AgentDetailDefaultRequest */
-        AgentDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
         /** AgentDetailRequest */
         AgentDetailRequest: {
             /** Agentid */
@@ -4289,6 +4284,11 @@ export interface components {
             can_duplicate: boolean;
             /** Can Delete */
             can_delete: boolean;
+        };
+        /** AgentNewRequest */
+        AgentNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /** AgentsListRequest */
         AgentsListRequest: {
@@ -4481,11 +4481,6 @@ export interface components {
             /** Active */
             active: boolean;
         };
-        /** AuthDetailDefaultRequest */
-        AuthDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
         /** AuthDetailRequest */
         AuthDetailRequest: {
             /** Authid */
@@ -4564,6 +4559,11 @@ export interface components {
         AuthListResponse: {
             /** Auths */
             auths: components["schemas"]["AuthItem"][];
+        };
+        /** AuthNewRequest */
+        AuthNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /** AuthSampleItem */
         AuthSampleItem: {
@@ -4923,14 +4923,6 @@ export interface components {
             status: "success" | "warning" | "danger" | "neutral";
         };
         /**
-         * CohortDetailDefaultRequest
-         * @description Request for default cohort detail.
-         */
-        CohortDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * CohortDetailRequest
          * @description Request for cohort detail.
          */
@@ -5055,6 +5047,14 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+        };
+        /**
+         * CohortNewRequest
+         * @description Request for default cohort detail.
+         */
+        CohortNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * CohortOverviewRequest
@@ -6554,20 +6554,20 @@ export interface components {
             message: string;
         };
         /**
-         * DepartmentDetailDefaultRequest
-         * @description Request for default department detail.
-         */
-        DepartmentDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * DepartmentDetailRequest
          * @description Request for department detail.
          */
         DepartmentDetailRequest: {
             /** Departmentid */
             departmentId: string;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DepartmentNewRequest
+         * @description Request for default department detail.
+         */
+        DepartmentNewRequest: {
             /** Profileid */
             profileId: string;
         };
@@ -7552,14 +7552,6 @@ export interface components {
             cohortNames?: string | null;
         };
         /**
-         * KeyDetailDefaultRequest
-         * @description Request for default key detail.
-         */
-        KeyDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * KeyDetailRequest
          * @description Request for key detail.
          */
@@ -7636,6 +7628,14 @@ export interface components {
             can_delete: boolean;
             /** Can Duplicate */
             can_duplicate: boolean;
+        };
+        /**
+         * KeyNewRequest
+         * @description Request for default key detail.
+         */
+        KeyNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * KeysListRequest
@@ -8007,42 +8007,6 @@ export interface components {
             /** Sample Count */
             sample_count: number;
         };
-        /** ModelDetailDefaultRequest */
-        ModelDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /** ModelDetailDefaultResponse */
-        ModelDetailDefaultResponse: {
-            /** Valid Provider Ids */
-            valid_provider_ids: string[];
-            /** Provider Mapping */
-            provider_mapping: {
-                [key: string]: components["schemas"]["ProviderMappingItem"];
-            };
-            /** Valid Department Ids */
-            valid_department_ids: string[];
-            /** Department Mapping */
-            department_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__detail_default__DepartmentMappingItem"];
-            };
-            /** Valid Model Ids */
-            valid_model_ids: string[];
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__detail_default__ModelMappingItem"];
-            };
-            /** Valid Key Ids */
-            valid_key_ids: string[];
-            /** Key Mapping */
-            key_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__models__detail_default__KeyMappingItem"];
-            };
-            /** User Role */
-            user_role: string;
-            /** Primary Department Id */
-            primary_department_id: string | null;
-        };
         /** ModelDetailRequest */
         ModelDetailRequest: {
             /** Modelid */
@@ -8124,6 +8088,42 @@ export interface components {
             /** Output Ppm */
             output_ppm: number;
         };
+        /** ModelNewRequest */
+        ModelNewRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** ModelNewResponse */
+        ModelNewResponse: {
+            /** Valid Provider Ids */
+            valid_provider_ids: string[];
+            /** Provider Mapping */
+            provider_mapping: {
+                [key: string]: components["schemas"]["ProviderMappingItem"];
+            };
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__new__DepartmentMappingItem"];
+            };
+            /** Valid Model Ids */
+            valid_model_ids: string[];
+            /** Model Mapping */
+            model_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__new__ModelMappingItem"];
+            };
+            /** Valid Key Ids */
+            valid_key_ids: string[];
+            /** Key Mapping */
+            key_mapping: {
+                [key: string]: components["schemas"]["app__api__v3__models__new__KeyMappingItem"];
+            };
+            /** User Role */
+            user_role: string;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+        };
         /** ModelsFilters */
         ModelsFilters: {
             /** Profileid */
@@ -8191,11 +8191,6 @@ export interface components {
             parameter_item_ids: string[];
             /** Valid Parameter Item Ids */
             valid_parameter_item_ids: string[];
-        };
-        /** ParameterDetailDefaultRequest */
-        ParameterDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
         };
         /** ParameterDetailRequest */
         ParameterDetailRequest: {
@@ -8279,6 +8274,11 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean;
         };
+        /** ParameterNewRequest */
+        ParameterNewRequest: {
+            /** Profileid */
+            profileId: string;
+        };
         /** ParameterSampleItem */
         ParameterSampleItem: {
             /** Parameter Item Id */
@@ -8321,14 +8321,6 @@ export interface components {
             document_options: {
                 [key: string]: string;
             }[];
-        };
-        /**
-         * PersonaDetailDefaultRequest
-         * @description Request to get default persona details.
-         */
-        PersonaDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
         };
         /**
          * PersonaDetailRequest
@@ -8397,6 +8389,14 @@ export interface components {
             icon: string;
             /** Image Model */
             image_model?: boolean | null;
+        };
+        /**
+         * PersonaNewRequest
+         * @description Request to get default persona details.
+         */
+        PersonaNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * PersonaOverviewRequest
@@ -9283,14 +9283,6 @@ export interface components {
             score: number;
         };
         /**
-         * PromptDetailDefaultRequest
-         * @description Request for default prompt detail.
-         */
-        PromptDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * PromptDetailRequest
          * @description Request for prompt detail.
          */
@@ -9377,6 +9369,14 @@ export interface components {
             can_edit: boolean;
             /** Can Delete */
             can_delete: boolean;
+        };
+        /**
+         * PromptNewRequest
+         * @description Request for default prompt detail.
+         */
+        PromptNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * PromptsListRequest
@@ -9860,14 +9860,6 @@ export interface components {
             departmentIds?: string[] | null;
         };
         /**
-         * RubricDetailDefaultRequest
-         * @description Request for default rubric detail.
-         */
-        RubricDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * RubricDetailRequest
          * @description Request for rubric detail.
          */
@@ -10014,6 +10006,14 @@ export interface components {
             /** Hasdata */
             hasData: boolean;
         };
+        /**
+         * RubricNewRequest
+         * @description Request for default rubric detail.
+         */
+        RubricNewRequest: {
+            /** Profileid */
+            profileId: string;
+        };
         /** RubricStructure */
         RubricStructure: {
             /** Standardgroups */
@@ -10098,14 +10098,6 @@ export interface components {
             parameterItemId: string;
             /** Scenarioid */
             scenarioId: string;
-        };
-        /**
-         * ScenarioDetailDefaultRequest
-         * @description Request to get default scenario details.
-         */
-        ScenarioDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
         };
         /**
          * ScenarioDetailRequest
@@ -10206,6 +10198,14 @@ export interface components {
             parameter_item_ids: string[];
             /** Document Ids */
             document_ids: string[];
+        };
+        /**
+         * ScenarioNewRequest
+         * @description Request to get default scenario details.
+         */
+        ScenarioNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * ScenarioOverviewRequest
@@ -10630,14 +10630,6 @@ export interface components {
             practiceSimulation: boolean;
         };
         /**
-         * SimulationDetailDefaultRequest
-         * @description Request to get default simulation details.
-         */
-        SimulationDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * SimulationDetailRequest
          * @description Request to get simulation details.
          */
@@ -10708,6 +10700,14 @@ export interface components {
             time_limit?: number | null;
             /** Department Ids */
             department_ids?: string[] | null;
+        };
+        /**
+         * SimulationNewRequest
+         * @description Request to get default simulation details.
+         */
+        SimulationNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * SimulationOverviewRequest
@@ -11857,14 +11857,6 @@ export interface components {
             type: string;
         };
         /**
-         * VideoDetailDefaultRequest
-         * @description Request to get default video details.
-         */
-        VideoDetailDefaultRequest: {
-            /** Profileid */
-            profileId: string;
-        };
-        /**
          * VideoDetailRequest
          * @description Request to get video detail.
          */
@@ -11956,6 +11948,14 @@ export interface components {
             length_seconds?: number | null;
             /** Active */
             active?: boolean | null;
+        };
+        /**
+         * VideoNewRequest
+         * @description Request to get default video details.
+         */
+        VideoNewRequest: {
+            /** Profileid */
+            profileId: string;
         };
         /**
          * VideoSearchResult
@@ -12089,7 +12089,7 @@ export interface components {
             can_delete: boolean;
         };
         /** AgentDetailResponse */
-        app__api__v3__agents__detail_default__AgentDetailResponse: {
+        app__api__v3__agents__new__AgentDetailResponse: {
             /** Name */
             name: string;
             /** Description */
@@ -12443,10 +12443,40 @@ export interface components {
             can_remove: boolean;
         };
         /**
+         * DepartmentItem
+         * @description Department item for list view.
+         */
+        app__api__v3__departments__list__DepartmentItem: {
+            /** Department Id */
+            department_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Updated At */
+            updated_at: string;
+            /** Total Price Spent */
+            total_price_spent: number;
+            /** Staff Count */
+            staff_count: number;
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+        };
+        /**
          * DepartmentDetailResponse
          * @description Response for department detail.
          */
-        app__api__v3__departments__detail_default__DepartmentDetailResponse: {
+        app__api__v3__departments__new__DepartmentDetailResponse: {
             /** Title */
             title: string;
             /** Description */
@@ -12466,7 +12496,7 @@ export interface components {
             /** Total Price Spent */
             total_price_spent: number;
             /** Staff */
-            staff: components["schemas"]["app__api__v3__departments__detail_default__StaffItem"][];
+            staff: components["schemas"]["app__api__v3__departments__new__StaffItem"][];
             /** Cohort Mapping */
             cohort_mapping: {
                 [key: string]: components["schemas"]["CohortMappingItem"];
@@ -12480,7 +12510,7 @@ export interface components {
          * StaffItem
          * @description Staff item from department detail.
          */
-        app__api__v3__departments__detail_default__StaffItem: {
+        app__api__v3__departments__new__StaffItem: {
             /** Profile Id */
             profile_id: string;
             /** First Name */
@@ -12531,36 +12561,6 @@ export interface components {
             can_delete: boolean;
             /** Can Remove */
             can_remove: boolean;
-        };
-        /**
-         * DepartmentItem
-         * @description Department item for list view.
-         */
-        app__api__v3__departments__list__DepartmentItem: {
-            /** Department Id */
-            department_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Updated At */
-            updated_at: string;
-            /** Total Price Spent */
-            total_price_spent: number;
-            /** Staff Count */
-            staff_count: number;
-            /** Cohort Ids */
-            cohort_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
         };
         /**
          * UploadFinalizeRequest
@@ -12818,14 +12818,14 @@ export interface components {
             department_ids: string[] | null;
         };
         /** DepartmentMappingItem */
-        app__api__v3__models__detail_default__DepartmentMappingItem: {
+        app__api__v3__models__new__DepartmentMappingItem: {
             /** Name */
             name: string;
             /** Description */
             description: string;
         };
         /** KeyMappingItem */
-        app__api__v3__models__detail_default__KeyMappingItem: {
+        app__api__v3__models__new__KeyMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -12838,7 +12838,7 @@ export interface components {
             department_ids: string[] | null;
         };
         /** ModelMappingItem */
-        app__api__v3__models__detail_default__ModelMappingItem: {
+        app__api__v3__models__new__ModelMappingItem: {
             /** Name */
             name: string;
             /** Description */
@@ -13008,7 +13008,7 @@ export interface components {
          * DebugInfoItem
          * @description Debug info item.
          */
-        app__api__v3__personas__detail_default__DebugInfoItem: {
+        app__api__v3__personas__new__DebugInfoItem: {
             /** Timestamp */
             timestamp: string;
             /** Message */
@@ -13018,7 +13018,7 @@ export interface components {
          * PersonaDetailResponse
          * @description Detailed persona response with all fields and metadata.
          */
-        app__api__v3__personas__detail_default__PersonaDetailResponse: {
+        app__api__v3__personas__new__PersonaDetailResponse: {
             /** Name */
             name: string;
             /** Description */
@@ -13075,7 +13075,7 @@ export interface components {
             temperature_upper: number;
             /** Prompt Mapping */
             prompt_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__detail_default__PromptInfo"];
+                [key: string]: components["schemas"]["app__api__v3__personas__new__PromptInfo"];
             };
             /** Department Prompt Links */
             department_prompt_links: {
@@ -13098,13 +13098,13 @@ export interface components {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
             /** Debug Info */
-            debug_info: components["schemas"]["app__api__v3__personas__detail_default__DebugInfoItem"][];
+            debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
         };
         /**
          * PromptInfo
          * @description Prompt information.
          */
-        app__api__v3__personas__detail_default__PromptInfo: {
+        app__api__v3__personas__new__PromptInfo: {
             /** System Prompt */
             system_prompt: string;
             /** Name */
@@ -13544,10 +13544,50 @@ export interface components {
             };
         };
         /**
+         * ScenarioItem
+         * @description Individual scenario item in the response.
+         */
+        app__api__v3__scenarios__list__ScenarioItem: {
+            /** Scenario Id */
+            scenario_id: string;
+            /** Title */
+            title: string;
+            /** Problem Statement */
+            problem_statement: string;
+            /** Active */
+            active: boolean;
+            /** Generated */
+            generated: boolean;
+            /** Parent Scenario Id */
+            parent_scenario_id: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
+            /** Parameter Items */
+            parameter_items: components["schemas"]["ParameterItemMappingItem"][];
+            /** Simulation Ids */
+            simulation_ids: string[];
+            /** Num Simulations */
+            num_simulations: number;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Cohort Ids */
+            cohort_ids: string[];
+        };
+        /**
          * ObjectiveWithDepartments
          * @description Objective with department IDs.
          */
-        app__api__v3__scenarios__detail_default__ObjectiveWithDepartments: {
+        app__api__v3__scenarios__new__ObjectiveWithDepartments: {
             /** Objective */
             objective: string;
             /** Department Ids */
@@ -13557,7 +13597,7 @@ export interface components {
          * ProblemStatementInfo
          * @description Problem statement version info.
          */
-        app__api__v3__scenarios__detail_default__ProblemStatementInfo: {
+        app__api__v3__scenarios__new__ProblemStatementInfo: {
             /** Problem Statement */
             problem_statement: string;
             /** Created At */
@@ -13569,7 +13609,7 @@ export interface components {
          * ScenarioDetailResponse
          * @description Response for scenario detail.
          */
-        app__api__v3__scenarios__detail_default__ScenarioDetailResponse: {
+        app__api__v3__scenarios__new__ScenarioDetailResponse: {
             /** Name */
             name: string;
             /** Problem Statement */
@@ -13609,7 +13649,7 @@ export interface components {
             /** Valid Objectives */
             valid_objectives: string[];
             /** Objectives History */
-            objectives_history: components["schemas"]["app__api__v3__scenarios__detail_default__ObjectiveWithDepartments"][];
+            objectives_history: components["schemas"]["app__api__v3__scenarios__new__ObjectiveWithDepartments"][];
             /** Parameters */
             parameters: {
                 [key: string]: components["schemas"]["ParameterDetail"];
@@ -13654,48 +13694,8 @@ export interface components {
             };
             /** Problem Statement Mapping */
             problem_statement_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__scenarios__detail_default__ProblemStatementInfo"];
+                [key: string]: components["schemas"]["app__api__v3__scenarios__new__ProblemStatementInfo"];
             };
-        };
-        /**
-         * ScenarioItem
-         * @description Individual scenario item in the response.
-         */
-        app__api__v3__scenarios__list__ScenarioItem: {
-            /** Scenario Id */
-            scenario_id: string;
-            /** Title */
-            title: string;
-            /** Problem Statement */
-            problem_statement: string;
-            /** Active */
-            active: boolean;
-            /** Generated */
-            generated: boolean;
-            /** Parent Scenario Id */
-            parent_scenario_id: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Objective Ids */
-            objective_ids: string[];
-            /** Persona Ids */
-            persona_ids: string[];
-            /** Parameter Item Ids */
-            parameter_item_ids: string[];
-            /** Parameter Items */
-            parameter_items: components["schemas"]["ParameterItemMappingItem"][];
-            /** Simulation Ids */
-            simulation_ids: string[];
-            /** Num Simulations */
-            num_simulations: number;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Cohort Ids */
-            cohort_ids: string[];
         };
         /**
          * ParameterItem
@@ -13850,10 +13850,44 @@ export interface components {
             };
         };
         /**
+         * SimulationItem
+         * @description Simulation item in list response.
+         */
+        app__api__v3__simulations__list__SimulationItem: {
+            /** Simulation Id */
+            simulation_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Active */
+            active: boolean;
+            /** Practice Simulation */
+            practice_simulation: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Rubric Id */
+            rubric_id: string;
+            /** Num Cohorts */
+            num_cohorts: number;
+            /** Cohort Ids */
+            cohort_ids: string[];
+        };
+        /**
          * ParameterItem
          * @description Parameter data for dropdown.
          */
-        app__api__v3__simulations__detail_default__ParameterItem: {
+        app__api__v3__simulations__new__ParameterItem: {
             /** Id */
             id: string;
             /** Parameter Id */
@@ -13867,7 +13901,7 @@ export interface components {
          * ParameterItemDetail
          * @description Full parameter item details.
          */
-        app__api__v3__simulations__detail_default__ParameterItemDetail: {
+        app__api__v3__simulations__new__ParameterItemDetail: {
             /** Id */
             id: string;
             /** Name */
@@ -13881,7 +13915,7 @@ export interface components {
          * ScenarioInSimulation
          * @description Scenario with position in simulation.
          */
-        app__api__v3__simulations__detail_default__ScenarioInSimulation: {
+        app__api__v3__simulations__new__ScenarioInSimulation: {
             /** Scenario Id */
             scenario_id: string;
             /** Title */
@@ -13921,7 +13955,7 @@ export interface components {
          * SimulationDetailResponse
          * @description Response for simulation detail endpoint.
          */
-        app__api__v3__simulations__detail_default__SimulationDetailResponse: {
+        app__api__v3__simulations__new__SimulationDetailResponse: {
             /** Name */
             name: string;
             /** Description */
@@ -13959,15 +13993,15 @@ export interface components {
             /** Cohort Count */
             cohort_count: number;
             /** Scenarios */
-            scenarios: components["schemas"]["app__api__v3__simulations__detail_default__ScenarioInSimulation"][];
+            scenarios: components["schemas"]["app__api__v3__simulations__new__ScenarioInSimulation"][];
             /** Videos */
             videos: {
                 [key: string]: unknown;
             }[];
             /** Parameters */
-            parameters: components["schemas"]["app__api__v3__simulations__detail_default__ParameterItem"][];
+            parameters: components["schemas"]["app__api__v3__simulations__new__ParameterItem"][];
             /** Parameter Items */
-            parameter_items: components["schemas"]["app__api__v3__simulations__detail_default__ParameterItemDetail"][];
+            parameter_items: components["schemas"]["app__api__v3__simulations__new__ParameterItemDetail"][];
             /** Parameter Mapping */
             parameter_mapping: {
                 [key: string]: components["schemas"]["ParameterMappingItem"];
@@ -13994,40 +14028,6 @@ export interface components {
             parameter_item_mapping: {
                 [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
-        };
-        /**
-         * SimulationItem
-         * @description Simulation item in list response.
-         */
-        app__api__v3__simulations__list__SimulationItem: {
-            /** Simulation Id */
-            simulation_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Rubric Id */
-            rubric_id: string;
-            /** Num Cohorts */
-            num_cohorts: number;
-            /** Cohort Ids */
-            cohort_ids: string[];
         };
         /**
          * QuestionItem
@@ -14122,7 +14122,7 @@ export interface components {
          * ProblemStatementInfo
          * @description Problem statement info for mapping.
          */
-        app__api__v3__videos__detail_default__ProblemStatementInfo: {
+        app__api__v3__videos__new__ProblemStatementInfo: {
             /** Problem Statement */
             problem_statement: string;
             /** Created At */
@@ -14134,7 +14134,7 @@ export interface components {
          * VideoDetailResponse
          * @description Response for video detail.
          */
-        app__api__v3__videos__detail_default__VideoDetailResponse: {
+        app__api__v3__videos__new__VideoDetailResponse: {
             /** Name */
             name: string;
             /** Length Seconds */
@@ -14149,7 +14149,7 @@ export interface components {
             problem_statement_ids: string[];
             /** Problem Statement Mapping */
             problem_statement_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__videos__detail_default__ProblemStatementInfo"];
+                [key: string]: components["schemas"]["app__api__v3__videos__new__ProblemStatementInfo"];
             };
             /** Objective Ids */
             objective_ids: string[];
@@ -15128,7 +15128,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_detail_default_api_v3_scenarios_detail_default_post: {
+    get_scenario_new_api_v3_scenarios_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15137,7 +15137,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ScenarioDetailDefaultRequest"];
+                "application/json": components["schemas"]["ScenarioNewRequest"];
             };
         };
         responses: {
@@ -15147,7 +15147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__scenarios__detail_default__ScenarioDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__scenarios__new__ScenarioDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -15524,7 +15524,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_detail_default_api_v3_simulations_detail_default_post: {
+    get_simulation_new_api_v3_simulations_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15533,7 +15533,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SimulationDetailDefaultRequest"];
+                "application/json": components["schemas"]["SimulationNewRequest"];
             };
         };
         responses: {
@@ -15543,7 +15543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__simulations__detail_default__SimulationDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__simulations__new__SimulationDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -15854,7 +15854,7 @@ export interface operations {
             };
         };
     };
-    get_persona_detail_default_api_v3_personas_detail_default_post: {
+    get_persona_new_api_v3_personas_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -15863,7 +15863,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PersonaDetailDefaultRequest"];
+                "application/json": components["schemas"]["PersonaNewRequest"];
             };
         };
         responses: {
@@ -15873,7 +15873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__personas__detail_default__PersonaDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__personas__new__PersonaDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -16217,7 +16217,7 @@ export interface operations {
             };
         };
     };
-    get_video_detail_default_api_v3_videos_detail_default_post: {
+    get_video_new_api_v3_videos_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -16226,7 +16226,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VideoDetailDefaultRequest"];
+                "application/json": components["schemas"]["VideoNewRequest"];
             };
         };
         responses: {
@@ -16236,7 +16236,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__videos__detail_default__VideoDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__videos__new__VideoDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -16514,7 +16514,7 @@ export interface operations {
             };
         };
     };
-    get_auth_detail_default_api_v3_auth_detail_default_post: {
+    get_auth_new_api_v3_auth_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -16523,7 +16523,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AuthDetailDefaultRequest"];
+                "application/json": components["schemas"]["AuthNewRequest"];
             };
         };
         responses: {
@@ -16765,7 +16765,7 @@ export interface operations {
             };
         };
     };
-    get_department_detail_default_api_v3_departments_detail_default_post: {
+    get_department_new_api_v3_departments_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -16774,7 +16774,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DepartmentDetailDefaultRequest"];
+                "application/json": components["schemas"]["DepartmentNewRequest"];
             };
         };
         responses: {
@@ -16784,7 +16784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__departments__detail_default__DepartmentDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__departments__new__DepartmentDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -17029,7 +17029,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_detail_default_api_v3_cohorts_detail_default_post: {
+    get_cohort_new_api_v3_cohorts_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -17038,7 +17038,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CohortDetailDefaultRequest"];
+                "application/json": components["schemas"]["CohortNewRequest"];
             };
         };
         responses: {
@@ -18112,7 +18112,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_detail_default_api_v3_rubrics_detail_default_post: {
+    get_rubric_new_api_v3_rubrics_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -18121,7 +18121,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RubricDetailDefaultRequest"];
+                "application/json": components["schemas"]["RubricNewRequest"];
             };
         };
         responses: {
@@ -18772,7 +18772,7 @@ export interface operations {
             };
         };
     };
-    get_agent_detail_default_api_v3_agents_detail_default_post: {
+    get_agent_new_api_v3_agents_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -18781,7 +18781,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AgentDetailDefaultRequest"];
+                "application/json": components["schemas"]["AgentNewRequest"];
             };
         };
         responses: {
@@ -18791,7 +18791,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__agents__detail_default__AgentDetailResponse"];
+                    "application/json": components["schemas"]["app__api__v3__agents__new__AgentDetailResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19036,7 +19036,7 @@ export interface operations {
             };
         };
     };
-    get_key_detail_default_api_v3_keys_detail_default_post: {
+    get_key_new_api_v3_keys_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19045,7 +19045,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["KeyDetailDefaultRequest"];
+                "application/json": components["schemas"]["KeyNewRequest"];
             };
         };
         responses: {
@@ -19267,7 +19267,7 @@ export interface operations {
             };
         };
     };
-    get_model_detail_default_api_v3_models_detail_default_post: {
+    get_model_new_api_v3_models_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19276,7 +19276,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ModelDetailDefaultRequest"];
+                "application/json": components["schemas"]["ModelNewRequest"];
             };
         };
         responses: {
@@ -19286,7 +19286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ModelDetailDefaultResponse"];
+                    "application/json": components["schemas"]["ModelNewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19498,7 +19498,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_detail_default_api_v3_parameters_detail_default_post: {
+    get_parameter_new_api_v3_parameters_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19507,7 +19507,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ParameterDetailDefaultRequest"];
+                "application/json": components["schemas"]["ParameterNewRequest"];
             };
         };
         responses: {
@@ -19762,7 +19762,7 @@ export interface operations {
             };
         };
     };
-    get_prompt_detail_default_api_v3_prompts_detail_default_post: {
+    get_prompt_new_api_v3_prompts_new_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19771,7 +19771,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PromptDetailDefaultRequest"];
+                "application/json": components["schemas"]["PromptNewRequest"];
             };
         };
         responses: {

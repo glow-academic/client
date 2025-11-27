@@ -18,7 +18,7 @@ import type {
   CreatePersonaOut,
   DeletePersonaPromptIn,
   DeletePersonaPromptOut,
-  PersonaDetailDefaultOut,
+  PersonaNewOut,
   PersonaDetailOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
@@ -297,7 +297,7 @@ export interface PersonaProps {
   mode?: "create" | "edit";
   // Server-provided data (for server-side rendering)
   personaDetail?: PersonaDetailOut;
-  personaDetailDefault?: PersonaDetailDefaultOut;
+  personaDetailDefault?: PersonaNewOut;
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;

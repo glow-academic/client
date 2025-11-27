@@ -48,7 +48,7 @@ import {
 import type {
   CreateParameterIn,
   CreateParameterOut,
-  ParameterDetailDefaultOut,
+  ParameterNewOut,
   ParameterDetailOut,
   UpdateParameterIn,
   UpdateParameterOut,
@@ -87,7 +87,7 @@ export interface ParameterProps {
   mode?: "create" | "edit";
   // Optional server-provided data and actions (for server-side rendering)
   parameterDetail?: ParameterDetailOut;
-  parameterDetailDefault?: ParameterDetailDefaultOut;
+  parameterDetailDefault?: ParameterNewOut;
   createParameterAction?: (
     input: CreateParameterIn
   ) => Promise<CreateParameterOut>;

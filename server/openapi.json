@@ -1164,20 +1164,20 @@
         ]
       }
     },
-    "/api/v3/scenarios/detail-default": {
+    "/api/v3/scenarios/new": {
       "post": {
         "tags": [
           "v3",
           "scenarios"
         ],
-        "summary": "Get Scenario Detail Default",
+        "summary": "Get Scenario New",
         "description": "Get default scenario structure for creation mode.",
-        "operationId": "get_scenario_detail_default_api_v3_scenarios_detail_default_post",
+        "operationId": "get_scenario_new_api_v3_scenarios_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ScenarioDetailDefaultRequest"
+                "$ref": "#/components/schemas/ScenarioNewRequest"
               }
             }
           },
@@ -1189,7 +1189,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__scenarios__detail_default__ScenarioDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__scenarios__new__ScenarioDetailResponse"
                 }
               }
             }
@@ -1732,20 +1732,20 @@
         ]
       }
     },
-    "/api/v3/simulations/detail-default": {
+    "/api/v3/simulations/new": {
       "post": {
         "tags": [
           "v3",
           "simulations"
         ],
-        "summary": "Get Simulation Detail Default",
+        "summary": "Get Simulation New",
         "description": "Get default simulation details based on profile.",
-        "operationId": "get_simulation_detail_default_api_v3_simulations_detail_default_post",
+        "operationId": "get_simulation_new_api_v3_simulations_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SimulationDetailDefaultRequest"
+                "$ref": "#/components/schemas/SimulationNewRequest"
               }
             }
           },
@@ -1757,7 +1757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__simulations__detail_default__SimulationDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__simulations__new__SimulationDetailResponse"
                 }
               }
             }
@@ -2210,20 +2210,20 @@
         ]
       }
     },
-    "/api/v3/personas/detail-default": {
+    "/api/v3/personas/new": {
       "post": {
         "tags": [
           "v3",
           "personas"
         ],
-        "summary": "Get Persona Detail Default",
+        "summary": "Get Persona New",
         "description": "Get default persona structure for creation mode.",
-        "operationId": "get_persona_detail_default_api_v3_personas_detail_default_post",
+        "operationId": "get_persona_new_api_v3_personas_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PersonaDetailDefaultRequest"
+                "$ref": "#/components/schemas/PersonaNewRequest"
               }
             }
           },
@@ -2235,7 +2235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__personas__detail_default__PersonaDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__personas__new__PersonaDetailResponse"
                 }
               }
             }
@@ -2731,20 +2731,20 @@
         ]
       }
     },
-    "/api/v3/videos/detail-default": {
+    "/api/v3/videos/new": {
       "post": {
         "tags": [
           "v3",
           "videos"
         ],
-        "summary": "Get Video Detail Default",
+        "summary": "Get Video New",
         "description": "Get default video structure for creation mode.",
-        "operationId": "get_video_detail_default_api_v3_videos_detail_default_post",
+        "operationId": "get_video_new_api_v3_videos_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VideoDetailDefaultRequest"
+                "$ref": "#/components/schemas/VideoNewRequest"
               }
             }
           },
@@ -2756,7 +2756,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__videos__detail_default__VideoDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__videos__new__VideoDetailResponse"
                 }
               }
             }
@@ -3158,20 +3158,20 @@
         ]
       }
     },
-    "/api/v3/auth/detail-default": {
+    "/api/v3/auth/new": {
       "post": {
         "tags": [
           "v3",
           "auth"
         ],
-        "summary": "Get Auth Detail Default",
+        "summary": "Get Auth New",
         "description": "Get default auth detail for creation mode.",
-        "operationId": "get_auth_detail_default_api_v3_auth_detail_default_post",
+        "operationId": "get_auth_new_api_v3_auth_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AuthDetailDefaultRequest"
+                "$ref": "#/components/schemas/AuthNewRequest"
               }
             }
           },
@@ -3514,20 +3514,20 @@
         ]
       }
     },
-    "/api/v3/departments/detail-default": {
+    "/api/v3/departments/new": {
       "post": {
         "tags": [
           "v3",
           "departments"
         ],
-        "summary": "Get Department Detail Default",
+        "summary": "Get Department New",
         "description": "Get default department detail for creation mode.",
-        "operationId": "get_department_detail_default_api_v3_departments_detail_default_post",
+        "operationId": "get_department_new_api_v3_departments_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DepartmentDetailDefaultRequest"
+                "$ref": "#/components/schemas/DepartmentNewRequest"
               }
             }
           },
@@ -3539,7 +3539,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__departments__detail_default__DepartmentDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__departments__new__DepartmentDetailResponse"
                 }
               }
             }
@@ -3890,20 +3890,20 @@
         ]
       }
     },
-    "/api/v3/cohorts/detail-default": {
+    "/api/v3/cohorts/new": {
       "post": {
         "tags": [
           "v3",
           "cohorts"
         ],
-        "summary": "Get Cohort Detail Default",
+        "summary": "Get Cohort New",
         "description": "Get default cohort detail with staff, simulations, and mappings.",
-        "operationId": "get_cohort_detail_default_api_v3_cohorts_detail_default_post",
+        "operationId": "get_cohort_new_api_v3_cohorts_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CohortDetailDefaultRequest"
+                "$ref": "#/components/schemas/CohortNewRequest"
               }
             }
           },
@@ -5440,20 +5440,20 @@
         ]
       }
     },
-    "/api/v3/rubrics/detail-default": {
+    "/api/v3/rubrics/new": {
       "post": {
         "tags": [
           "v3",
           "rubrics"
         ],
-        "summary": "Get Rubric Detail Default",
+        "summary": "Get Rubric New",
         "description": "Get default rubric detail information.",
-        "operationId": "get_rubric_detail_default_api_v3_rubrics_detail_default_post",
+        "operationId": "get_rubric_new_api_v3_rubrics_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RubricDetailDefaultRequest"
+                "$ref": "#/components/schemas/RubricNewRequest"
               }
             }
           },
@@ -6380,20 +6380,20 @@
         ]
       }
     },
-    "/api/v3/agents/detail-default": {
+    "/api/v3/agents/new": {
       "post": {
         "tags": [
           "v3",
           "agents"
         ],
-        "summary": "Get Agent Detail Default",
+        "summary": "Get Agent New",
         "description": "Get default agent detail metadata for creating new agents.",
-        "operationId": "get_agent_detail_default_api_v3_agents_detail_default_post",
+        "operationId": "get_agent_new_api_v3_agents_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AgentDetailDefaultRequest"
+                "$ref": "#/components/schemas/AgentNewRequest"
               }
             }
           },
@@ -6405,7 +6405,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/app__api__v3__agents__detail_default__AgentDetailResponse"
+                  "$ref": "#/components/schemas/app__api__v3__agents__new__AgentDetailResponse"
                 }
               }
             }
@@ -6756,20 +6756,20 @@
         ]
       }
     },
-    "/api/v3/keys/detail-default": {
+    "/api/v3/keys/new": {
       "post": {
         "tags": [
           "v3",
           "keys"
         ],
-        "summary": "Get Key Detail Default",
+        "summary": "Get Key New",
         "description": "Get default key detail information for new key creation.",
-        "operationId": "get_key_detail_default_api_v3_keys_detail_default_post",
+        "operationId": "get_key_new_api_v3_keys_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/KeyDetailDefaultRequest"
+                "$ref": "#/components/schemas/KeyNewRequest"
               }
             }
           },
@@ -7085,20 +7085,20 @@
         ]
       }
     },
-    "/api/v3/models/detail-default": {
+    "/api/v3/models/new": {
       "post": {
         "tags": [
           "v3",
           "models"
         ],
-        "summary": "Get Model Detail Default",
+        "summary": "Get Model New",
         "description": "Get default model detail for creation mode (provider mapping).",
-        "operationId": "get_model_detail_default_api_v3_models_detail_default_post",
+        "operationId": "get_model_new_api_v3_models_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelDetailDefaultRequest"
+                "$ref": "#/components/schemas/ModelNewRequest"
               }
             }
           },
@@ -7110,7 +7110,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ModelDetailDefaultResponse"
+                  "$ref": "#/components/schemas/ModelNewResponse"
                 }
               }
             }
@@ -7414,20 +7414,20 @@
         ]
       }
     },
-    "/api/v3/parameters/detail-default": {
+    "/api/v3/parameters/new": {
       "post": {
         "tags": [
           "v3",
           "parameters"
         ],
-        "summary": "Get Parameter Detail Default",
+        "summary": "Get Parameter New",
         "description": "Get default parameter detail for creation mode.",
-        "operationId": "get_parameter_detail_default_api_v3_parameters_detail_default_post",
+        "operationId": "get_parameter_new_api_v3_parameters_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ParameterDetailDefaultRequest"
+                "$ref": "#/components/schemas/ParameterNewRequest"
               }
             }
           },
@@ -7792,20 +7792,20 @@
         ]
       }
     },
-    "/api/v3/prompts/detail-default": {
+    "/api/v3/prompts/new": {
       "post": {
         "tags": [
           "v3",
           "prompts"
         ],
-        "summary": "Get Prompt Detail Default",
+        "summary": "Get Prompt New",
         "description": "Get default prompt detail information for new prompt creation.",
-        "operationId": "get_prompt_detail_default_api_v3_prompts_detail_default_post",
+        "operationId": "get_prompt_new_api_v3_prompts_new_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PromptDetailDefaultRequest"
+                "$ref": "#/components/schemas/PromptNewRequest"
               }
             }
           },
@@ -9202,19 +9202,6 @@
         "title": "AddProfilesToCohortResponse",
         "description": "Response for adding profiles to cohort."
       },
-      "AgentDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "AgentDetailDefaultRequest"
-      },
       "AgentDetailRequest": {
         "properties": {
           "agentId": {
@@ -9317,6 +9304,19 @@
           "can_delete"
         ],
         "title": "AgentItem"
+      },
+      "AgentNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "AgentNewRequest"
       },
       "AgentsListRequest": {
         "properties": {
@@ -9821,19 +9821,6 @@
         ],
         "title": "AttemptProfileItem"
       },
-      "AuthDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "AuthDetailDefaultRequest"
-      },
       "AuthDetailRequest": {
         "properties": {
           "authId": {
@@ -10029,6 +10016,19 @@
           "auths"
         ],
         "title": "AuthListResponse"
+      },
+      "AuthNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "AuthNewRequest"
       },
       "AuthSampleItem": {
         "properties": {
@@ -11041,20 +11041,6 @@
         "title": "CohortData",
         "description": "Cohort data."
       },
-      "CohortDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "CohortDetailDefaultRequest",
-        "description": "Request for default cohort detail."
-      },
       "CohortDetailRequest": {
         "properties": {
           "cohortId": {
@@ -11383,6 +11369,20 @@
         ],
         "title": "CohortMappingItem",
         "description": "Cohort mapping item - extends MappingItem"
+      },
+      "CohortNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "CohortNewRequest",
+        "description": "Request for default cohort detail."
       },
       "CohortOverviewRequest": {
         "properties": {
@@ -15107,20 +15107,6 @@
         "title": "DeleteVideoResponse",
         "description": "Response from delete operation."
       },
-      "DepartmentDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "DepartmentDetailDefaultRequest",
-        "description": "Request for default department detail."
-      },
       "DepartmentDetailRequest": {
         "properties": {
           "departmentId": {
@@ -15139,6 +15125,20 @@
         ],
         "title": "DepartmentDetailRequest",
         "description": "Request for department detail."
+      },
+      "DepartmentNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "DepartmentNewRequest",
+        "description": "Request for default department detail."
       },
       "DepartmentsListRequest": {
         "properties": {
@@ -17668,20 +17668,6 @@
         "title": "HomeSimulationItem",
         "description": "Home simulation item."
       },
-      "KeyDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "KeyDetailDefaultRequest",
-        "description": "Request for default key detail."
-      },
       "KeyDetailRequest": {
         "properties": {
           "keyId": {
@@ -17872,6 +17858,20 @@
         ],
         "title": "KeyItem",
         "description": "Key item for list view."
+      },
+      "KeyNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "KeyNewRequest",
+        "description": "Request for default key detail."
       },
       "KeysListRequest": {
         "properties": {
@@ -18815,108 +18815,6 @@
         "title": "MetricsDataPoint",
         "description": "App metrics data point."
       },
-      "ModelDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "ModelDetailDefaultRequest"
-      },
-      "ModelDetailDefaultResponse": {
-        "properties": {
-          "valid_provider_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Provider Ids"
-          },
-          "provider_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ProviderMappingItem"
-            },
-            "type": "object",
-            "title": "Provider Mapping"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__detail_default__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "valid_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Model Ids"
-          },
-          "model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__detail_default__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Model Mapping"
-          },
-          "valid_key_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Key Ids"
-          },
-          "key_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__models__detail_default__KeyMappingItem"
-            },
-            "type": "object",
-            "title": "Key Mapping"
-          },
-          "user_role": {
-            "type": "string",
-            "title": "User Role"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "valid_provider_ids",
-          "provider_mapping",
-          "valid_department_ids",
-          "department_mapping",
-          "valid_model_ids",
-          "model_mapping",
-          "valid_key_ids",
-          "key_mapping",
-          "user_role",
-          "primary_department_id"
-        ],
-        "title": "ModelDetailDefaultResponse"
-      },
       "ModelDetailRequest": {
         "properties": {
           "modelId": {
@@ -19130,6 +19028,108 @@
         "title": "ModelMappingWithPricing",
         "description": "Model mapping with pricing information."
       },
+      "ModelNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ModelNewRequest"
+      },
+      "ModelNewResponse": {
+        "properties": {
+          "valid_provider_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Provider Ids"
+          },
+          "provider_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProviderMappingItem"
+            },
+            "type": "object",
+            "title": "Provider Mapping"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__new__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "valid_model_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Model Ids"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__new__ModelMappingItem"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
+          "valid_key_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Key Ids"
+          },
+          "key_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__models__new__KeyMappingItem"
+            },
+            "type": "object",
+            "title": "Key Mapping"
+          },
+          "user_role": {
+            "type": "string",
+            "title": "User Role"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid_provider_ids",
+          "provider_mapping",
+          "valid_department_ids",
+          "department_mapping",
+          "valid_model_ids",
+          "model_mapping",
+          "valid_key_ids",
+          "key_mapping",
+          "user_role",
+          "primary_department_id"
+        ],
+        "title": "ModelNewResponse"
+      },
       "ModelsFilters": {
         "properties": {
           "profileId": {
@@ -19287,19 +19287,6 @@
         ],
         "title": "ParameterDetail",
         "description": "Parameter detail structure."
-      },
-      "ParameterDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "ParameterDetailDefaultRequest"
       },
       "ParameterDetailRequest": {
         "properties": {
@@ -19508,6 +19495,19 @@
         "title": "ParameterMappingItem",
         "description": "Parameter mapping item - extends MappingItem"
       },
+      "ParameterNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ParameterNewRequest"
+      },
       "ParameterSampleItem": {
         "properties": {
           "parameter_item_id": {
@@ -19611,20 +19611,6 @@
           "document_options"
         ],
         "title": "ParametersListResponse"
-      },
-      "PersonaDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "PersonaDetailDefaultRequest",
-        "description": "Request to get default persona details."
       },
       "PersonaDetailRequest": {
         "properties": {
@@ -19817,6 +19803,20 @@
         ],
         "title": "PersonaMappingItem",
         "description": "Persona mapping item with custom color and icon fields"
+      },
+      "PersonaNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "PersonaNewRequest",
+        "description": "Request to get default persona details."
       },
       "PersonaOverviewRequest": {
         "properties": {
@@ -22163,20 +22163,6 @@
         "title": "ProfileSearchResult",
         "description": "Profile search result."
       },
-      "PromptDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "PromptDetailDefaultRequest",
-        "description": "Request for default prompt detail."
-      },
       "PromptDetailRequest": {
         "properties": {
           "promptId": {
@@ -22407,6 +22393,20 @@
         ],
         "title": "PromptItem",
         "description": "Prompt item for list view."
+      },
+      "PromptNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "PromptNewRequest",
+        "description": "Request for default prompt detail."
       },
       "PromptsListRequest": {
         "properties": {
@@ -23797,20 +23797,6 @@
         "title": "ReportsOverviewFilters",
         "description": "Reports overview filter request schema - requires profileId for individual reports."
       },
-      "RubricDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "RubricDetailDefaultRequest",
-        "description": "Request for default rubric detail."
-      },
       "RubricDetailRequest": {
         "properties": {
           "rubricId": {
@@ -24181,6 +24167,20 @@
         "title": "RubricMatrixPackage",
         "description": "Per-rubric matrix package."
       },
+      "RubricNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "RubricNewRequest",
+        "description": "Request for default rubric detail."
+      },
       "RubricStructure": {
         "properties": {
           "standardGroups": {
@@ -24358,20 +24358,6 @@
         ],
         "title": "ScenarioAttributeScenarioFact",
         "description": "Scenario attribute scenario fact."
-      },
-      "ScenarioDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "ScenarioDetailDefaultRequest",
-        "description": "Request to get default scenario details."
       },
       "ScenarioDetailRequest": {
         "properties": {
@@ -24610,6 +24596,20 @@
         ],
         "title": "ScenarioMappingItem",
         "description": "Scenario mapping item with extended fields for nested data"
+      },
+      "ScenarioNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ScenarioNewRequest",
+        "description": "Request to get default scenario details."
       },
       "ScenarioOverviewRequest": {
         "properties": {
@@ -25629,20 +25629,6 @@
         "title": "SimulationContextItem",
         "description": "Simplified simulation item for profile context."
       },
-      "SimulationDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "SimulationDetailDefaultRequest",
-        "description": "Request to get default simulation details."
-      },
       "SimulationDetailRequest": {
         "properties": {
           "simulationId": {
@@ -25822,6 +25808,20 @@
         ],
         "title": "SimulationMappingItem",
         "description": "Simulation mapping item - extends MappingItem with time_limit"
+      },
+      "SimulationNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "SimulationNewRequest",
+        "description": "Request to get default simulation details."
       },
       "SimulationOverviewRequest": {
         "properties": {
@@ -28727,20 +28727,6 @@
         ],
         "title": "ValidationError"
       },
-      "VideoDetailDefaultRequest": {
-        "properties": {
-          "profileId": {
-            "type": "string",
-            "title": "Profileid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "profileId"
-        ],
-        "title": "VideoDetailDefaultRequest",
-        "description": "Request to get default video details."
-      },
       "VideoDetailRequest": {
         "properties": {
           "videoId": {
@@ -28964,6 +28950,20 @@
         ],
         "title": "VideoMappingItem",
         "description": "Video mapping item for facet options."
+      },
+      "VideoNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "VideoNewRequest",
+        "description": "Request to get default video details."
       },
       "VideoSearchResult": {
         "properties": {
@@ -29318,7 +29318,7 @@
         "title": "PromptInfo",
         "description": "Prompt information for version history."
       },
-      "app__api__v3__agents__detail_default__AgentDetailResponse": {
+      "app__api__v3__agents__new__AgentDetailResponse": {
         "properties": {
           "name": {
             "type": "string",
@@ -30285,7 +30285,82 @@
         "title": "StaffItem",
         "description": "Staff item from department detail."
       },
-      "app__api__v3__departments__detail_default__DepartmentDetailResponse": {
+      "app__api__v3__departments__list__DepartmentItem": {
+        "properties": {
+          "department_id": {
+            "type": "string",
+            "title": "Department Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "total_price_spent": {
+            "type": "number",
+            "title": "Total Price Spent"
+          },
+          "staff_count": {
+            "type": "integer",
+            "title": "Staff Count"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_id",
+          "title",
+          "description",
+          "active",
+          "updated_at",
+          "total_price_spent",
+          "staff_count",
+          "cohort_ids",
+          "profile_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate"
+        ],
+        "title": "DepartmentItem",
+        "description": "Department item for list view."
+      },
+      "app__api__v3__departments__new__DepartmentDetailResponse": {
         "properties": {
           "title": {
             "type": "string",
@@ -30325,7 +30400,7 @@
           },
           "staff": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__departments__detail_default__StaffItem"
+              "$ref": "#/components/schemas/app__api__v3__departments__new__StaffItem"
             },
             "type": "array",
             "title": "Staff"
@@ -30363,7 +30438,7 @@
         "title": "DepartmentDetailResponse",
         "description": "Response for department detail."
       },
-      "app__api__v3__departments__detail_default__StaffItem": {
+      "app__api__v3__departments__new__StaffItem": {
         "properties": {
           "profile_id": {
             "type": "string",
@@ -30484,81 +30559,6 @@
         ],
         "title": "StaffItem",
         "description": "Staff item from department detail."
-      },
-      "app__api__v3__departments__list__DepartmentItem": {
-        "properties": {
-          "department_id": {
-            "type": "string",
-            "title": "Department Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "total_price_spent": {
-            "type": "number",
-            "title": "Total Price Spent"
-          },
-          "staff_count": {
-            "type": "integer",
-            "title": "Staff Count"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          },
-          "profile_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Profile Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "title",
-          "description",
-          "active",
-          "updated_at",
-          "total_price_spent",
-          "staff_count",
-          "cohort_ids",
-          "profile_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate"
-        ],
-        "title": "DepartmentItem",
-        "description": "Department item for list view."
       },
       "app__api__v3__documents__upload_finalize__UploadFinalizeRequest": {
         "properties": {
@@ -31288,7 +31288,7 @@
         ],
         "title": "KeyMappingItem"
       },
-      "app__api__v3__models__detail_default__DepartmentMappingItem": {
+      "app__api__v3__models__new__DepartmentMappingItem": {
         "properties": {
           "name": {
             "type": "string",
@@ -31306,7 +31306,7 @@
         ],
         "title": "DepartmentMappingItem"
       },
-      "app__api__v3__models__detail_default__KeyMappingItem": {
+      "app__api__v3__models__new__KeyMappingItem": {
         "properties": {
           "name": {
             "type": "string",
@@ -31349,7 +31349,7 @@
         ],
         "title": "KeyMappingItem"
       },
-      "app__api__v3__models__detail_default__ModelMappingItem": {
+      "app__api__v3__models__new__ModelMappingItem": {
         "properties": {
           "name": {
             "type": "string",
@@ -31853,7 +31853,7 @@
         "title": "PromptInfo",
         "description": "Prompt information."
       },
-      "app__api__v3__personas__detail_default__DebugInfoItem": {
+      "app__api__v3__personas__new__DebugInfoItem": {
         "properties": {
           "timestamp": {
             "type": "string",
@@ -31872,7 +31872,7 @@
         "title": "DebugInfoItem",
         "description": "Debug info item."
       },
-      "app__api__v3__personas__detail_default__PersonaDetailResponse": {
+      "app__api__v3__personas__new__PersonaDetailResponse": {
         "properties": {
           "name": {
             "type": "string",
@@ -32057,7 +32057,7 @@
           },
           "prompt_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail_default__PromptInfo"
+              "$ref": "#/components/schemas/app__api__v3__personas__new__PromptInfo"
             },
             "type": "object",
             "title": "Prompt Mapping"
@@ -32099,7 +32099,7 @@
           },
           "debug_info": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail_default__DebugInfoItem"
+              "$ref": "#/components/schemas/app__api__v3__personas__new__DebugInfoItem"
             },
             "type": "array",
             "title": "Debug Info"
@@ -32145,7 +32145,7 @@
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
       },
-      "app__api__v3__personas__detail_default__PromptInfo": {
+      "app__api__v3__personas__new__PromptInfo": {
         "properties": {
           "system_prompt": {
             "type": "string",
@@ -33398,308 +33398,6 @@
         "title": "ScenarioDetailResponse",
         "description": "Detailed scenario response with all fields and metadata."
       },
-      "app__api__v3__scenarios__detail_default__ObjectiveWithDepartments": {
-        "properties": {
-          "objective": {
-            "type": "string",
-            "title": "Objective"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "objective",
-          "department_ids"
-        ],
-        "title": "ObjectiveWithDepartments",
-        "description": "Objective with department IDs."
-      },
-      "app__api__v3__scenarios__detail_default__ProblemStatementInfo": {
-        "properties": {
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "problem_statement",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ProblemStatementInfo",
-        "description": "Problem statement version info."
-      },
-      "app__api__v3__scenarios__detail_default__ScenarioDetailResponse": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "problem_statement": {
-            "type": "string",
-            "title": "Problem Statement"
-          },
-          "problem_statement_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Problem Statement Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "generated": {
-            "type": "boolean",
-            "title": "Generated"
-          },
-          "hints_enabled": {
-            "type": "boolean",
-            "title": "Hints Enabled"
-          },
-          "objectives_enabled": {
-            "type": "boolean",
-            "title": "Objectives Enabled"
-          },
-          "image_input_enabled": {
-            "type": "boolean",
-            "title": "Image Input Enabled"
-          },
-          "input_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "type": "boolean",
-            "title": "Output Guardrail Enabled"
-          },
-          "parent_scenario_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Scenario Id"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Department Ids"
-          },
-          "persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Persona Ids"
-          },
-          "valid_persona_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Persona Ids"
-          },
-          "document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Document Ids"
-          },
-          "valid_document_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Document Ids"
-          },
-          "objective_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Objective Ids"
-          },
-          "valid_objectives": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Objectives"
-          },
-          "objectives_history": {
-            "items": {
-              "$ref": "#/components/schemas/app__api__v3__scenarios__detail_default__ObjectiveWithDepartments"
-            },
-            "type": "array",
-            "title": "Objectives History"
-          },
-          "parameters": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterDetail"
-            },
-            "type": "object",
-            "title": "Parameters"
-          },
-          "active_simulation_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Active Simulation Ids"
-          },
-          "document_details": {
-            "items": {
-              "$ref": "#/components/schemas/DocumentDetailItem"
-            },
-            "type": "array",
-            "title": "Document Details"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "parameter_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Mapping"
-          },
-          "parameter_item_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ParameterItemMappingItem"
-            },
-            "type": "object",
-            "title": "Parameter Item Mapping"
-          },
-          "simulation_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Simulation Mapping"
-          },
-          "persona_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/PersonaMappingItem"
-            },
-            "type": "object",
-            "title": "Persona Mapping"
-          },
-          "document_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/DocumentMappingItem"
-            },
-            "type": "object",
-            "title": "Document Mapping"
-          },
-          "objective_mapping": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Objective Mapping"
-          },
-          "department_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
-            },
-            "type": "object",
-            "title": "Department Mapping"
-          },
-          "problem_statement_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__scenarios__detail_default__ProblemStatementInfo"
-            },
-            "type": "object",
-            "title": "Problem Statement Mapping"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "problem_statement",
-          "problem_statement_id",
-          "active",
-          "generated",
-          "hints_enabled",
-          "objectives_enabled",
-          "image_input_enabled",
-          "input_guardrail_enabled",
-          "output_guardrail_enabled",
-          "parent_scenario_id",
-          "department_ids",
-          "valid_department_ids",
-          "persona_ids",
-          "valid_persona_ids",
-          "document_ids",
-          "valid_document_ids",
-          "objective_ids",
-          "valid_objectives",
-          "objectives_history",
-          "parameters",
-          "active_simulation_ids",
-          "document_details",
-          "can_edit",
-          "can_duplicate",
-          "can_delete",
-          "parameter_mapping",
-          "parameter_item_mapping",
-          "simulation_mapping",
-          "persona_mapping",
-          "document_mapping",
-          "objective_mapping",
-          "department_mapping",
-          "problem_statement_mapping"
-        ],
-        "title": "ScenarioDetailResponse",
-        "description": "Response for scenario detail."
-      },
       "app__api__v3__scenarios__list__ScenarioItem": {
         "properties": {
           "scenario_id": {
@@ -33828,6 +33526,308 @@
         ],
         "title": "ScenarioItem",
         "description": "Individual scenario item in the response."
+      },
+      "app__api__v3__scenarios__new__ObjectiveWithDepartments": {
+        "properties": {
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective",
+          "department_ids"
+        ],
+        "title": "ObjectiveWithDepartments",
+        "description": "Objective with department IDs."
+      },
+      "app__api__v3__scenarios__new__ProblemStatementInfo": {
+        "properties": {
+          "problem_statement": {
+            "type": "string",
+            "title": "Problem Statement"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem_statement",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProblemStatementInfo",
+        "description": "Problem statement version info."
+      },
+      "app__api__v3__scenarios__new__ScenarioDetailResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "problem_statement": {
+            "type": "string",
+            "title": "Problem Statement"
+          },
+          "problem_statement_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "hints_enabled": {
+            "type": "boolean",
+            "title": "Hints Enabled"
+          },
+          "objectives_enabled": {
+            "type": "boolean",
+            "title": "Objectives Enabled"
+          },
+          "image_input_enabled": {
+            "type": "boolean",
+            "title": "Image Input Enabled"
+          },
+          "input_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "type": "boolean",
+            "title": "Output Guardrail Enabled"
+          },
+          "parent_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Scenario Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "valid_persona_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Persona Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "valid_document_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Document Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "valid_objectives": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Objectives"
+          },
+          "objectives_history": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__ObjectiveWithDepartments"
+            },
+            "type": "array",
+            "title": "Objectives History"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterDetail"
+            },
+            "type": "object",
+            "title": "Parameters"
+          },
+          "active_simulation_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Active Simulation Ids"
+          },
+          "document_details": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentDetailItem"
+            },
+            "type": "array",
+            "title": "Document Details"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterItemMappingItem"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "simulation_mapping": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Simulation Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PersonaMappingItem"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          },
+          "document_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DocumentMappingItem"
+            },
+            "type": "object",
+            "title": "Document Mapping"
+          },
+          "objective_mapping": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Objective Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "problem_statement_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__api__v3__scenarios__new__ProblemStatementInfo"
+            },
+            "type": "object",
+            "title": "Problem Statement Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "problem_statement",
+          "problem_statement_id",
+          "active",
+          "generated",
+          "hints_enabled",
+          "objectives_enabled",
+          "image_input_enabled",
+          "input_guardrail_enabled",
+          "output_guardrail_enabled",
+          "parent_scenario_id",
+          "department_ids",
+          "valid_department_ids",
+          "persona_ids",
+          "valid_persona_ids",
+          "document_ids",
+          "valid_document_ids",
+          "objective_ids",
+          "valid_objectives",
+          "objectives_history",
+          "parameters",
+          "active_simulation_ids",
+          "document_details",
+          "can_edit",
+          "can_duplicate",
+          "can_delete",
+          "parameter_mapping",
+          "parameter_item_mapping",
+          "simulation_mapping",
+          "persona_mapping",
+          "document_mapping",
+          "objective_mapping",
+          "department_mapping",
+          "problem_statement_mapping"
+        ],
+        "title": "ScenarioDetailResponse",
+        "description": "Response for scenario detail."
       },
       "app__api__v3__simulations__detail__ParameterItem": {
         "properties": {
@@ -34254,7 +34254,109 @@
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
       },
-      "app__api__v3__simulations__detail_default__ParameterItem": {
+      "app__api__v3__simulations__list__SimulationItem": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "title": "Simulation Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "practice_simulation": {
+            "type": "boolean",
+            "title": "Practice Simulation"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "num_cohorts": {
+            "type": "integer",
+            "title": "Num Cohorts"
+          },
+          "cohort_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cohort Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "name",
+          "description",
+          "department_ids",
+          "time_limit",
+          "active",
+          "practice_simulation",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "scenario_ids",
+          "rubric_id",
+          "num_cohorts",
+          "cohort_ids"
+        ],
+        "title": "SimulationItem",
+        "description": "Simulation item in list response."
+      },
+      "app__api__v3__simulations__new__ParameterItem": {
         "properties": {
           "id": {
             "type": "string",
@@ -34290,7 +34392,7 @@
         "title": "ParameterItem",
         "description": "Parameter data for dropdown."
       },
-      "app__api__v3__simulations__detail_default__ParameterItemDetail": {
+      "app__api__v3__simulations__new__ParameterItemDetail": {
         "properties": {
           "id": {
             "type": "string",
@@ -34326,7 +34428,7 @@
         "title": "ParameterItemDetail",
         "description": "Full parameter item details."
       },
-      "app__api__v3__simulations__detail_default__ScenarioInSimulation": {
+      "app__api__v3__simulations__new__ScenarioInSimulation": {
         "properties": {
           "scenario_id": {
             "type": "string",
@@ -34444,7 +34546,7 @@
         "title": "ScenarioInSimulation",
         "description": "Scenario with position in simulation."
       },
-      "app__api__v3__simulations__detail_default__SimulationDetailResponse": {
+      "app__api__v3__simulations__new__SimulationDetailResponse": {
         "properties": {
           "name": {
             "type": "string",
@@ -34555,7 +34657,7 @@
           },
           "scenarios": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__simulations__detail_default__ScenarioInSimulation"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__ScenarioInSimulation"
             },
             "type": "array",
             "title": "Scenarios"
@@ -34570,14 +34672,14 @@
           },
           "parameters": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__simulations__detail_default__ParameterItem"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__ParameterItem"
             },
             "type": "array",
             "title": "Parameters"
           },
           "parameter_items": {
             "items": {
-              "$ref": "#/components/schemas/app__api__v3__simulations__detail_default__ParameterItemDetail"
+              "$ref": "#/components/schemas/app__api__v3__simulations__new__ParameterItemDetail"
             },
             "type": "array",
             "title": "Parameter Items"
@@ -34659,108 +34761,6 @@
         ],
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
-      },
-      "app__api__v3__simulations__list__SimulationItem": {
-        "properties": {
-          "simulation_id": {
-            "type": "string",
-            "title": "Simulation Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "type": "boolean",
-            "title": "Practice Simulation"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "rubric_id": {
-            "type": "string",
-            "title": "Rubric Id"
-          },
-          "num_cohorts": {
-            "type": "integer",
-            "title": "Num Cohorts"
-          },
-          "cohort_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id",
-          "name",
-          "description",
-          "department_ids",
-          "time_limit",
-          "active",
-          "practice_simulation",
-          "can_edit",
-          "can_delete",
-          "can_duplicate",
-          "scenario_ids",
-          "rubric_id",
-          "num_cohorts",
-          "cohort_ids"
-        ],
-        "title": "SimulationItem",
-        "description": "Simulation item in list response."
       },
       "app__api__v3__videos__create__QuestionItem": {
         "properties": {
@@ -34983,7 +34983,7 @@
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
       },
-      "app__api__v3__videos__detail_default__ProblemStatementInfo": {
+      "app__api__v3__videos__new__ProblemStatementInfo": {
         "properties": {
           "problem_statement": {
             "type": "string",
@@ -35007,7 +35007,7 @@
         "title": "ProblemStatementInfo",
         "description": "Problem statement info for mapping."
       },
-      "app__api__v3__videos__detail_default__VideoDetailResponse": {
+      "app__api__v3__videos__new__VideoDetailResponse": {
         "properties": {
           "name": {
             "type": "string",
@@ -35051,7 +35051,7 @@
           },
           "problem_statement_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__videos__detail_default__ProblemStatementInfo"
+              "$ref": "#/components/schemas/app__api__v3__videos__new__ProblemStatementInfo"
             },
             "type": "object",
             "title": "Problem Statement Mapping"

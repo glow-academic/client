@@ -29,7 +29,7 @@ import type {
 import type {
   CreateKeyIn,
   CreateKeyOut,
-  KeyDetailDefaultOut,
+  KeyNewOut,
 } from "@/app/(main)/engine/keys/new/page";
 
 interface FormErrors {
@@ -49,7 +49,7 @@ interface FormData {
 export interface KeyProps {
   keyId?: string;
   // For create mode: default key detail
-  keyDetailDefault?: KeyDetailDefaultOut;
+  keyDetailDefault?: KeyNewOut;
   // For edit mode: key detail
   keyDetail?: KeyDetailOut;
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;

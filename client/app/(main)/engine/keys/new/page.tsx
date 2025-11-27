@@ -11,8 +11,8 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type KeyDetailDefaultIn = InputOf<"/api/v3/keys/detail-default", "post">;
-type KeyDetailDefaultOut = OutputOf<"/api/v3/keys/detail-default", "post">;
+type KeyNewIn = InputOf<"/api/v3/keys/new", "post">;
+type KeyNewOut = OutputOf<"/api/v3/keys/new", "post">;
 type CreateKeyIn = InputOf<"/api/v3/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
 
@@ -21,9 +21,9 @@ type CreateKeyOut = OutputOf<"/api/v3/keys/create", "post">;
  */
 const getKeyDefault = async (
   profileId: string
-): Promise<KeyDetailDefaultOut> => {
+): Promise<KeyNewOut> => {
   return api.post(
-    "/keys/detail-default",
+    "/keys/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -94,6 +94,6 @@ export default async function NewKeyPage() {
 export type {
   CreateKeyIn,
   CreateKeyOut,
-  KeyDetailDefaultIn,
-  KeyDetailDefaultOut,
+  KeyNewIn,
+  KeyNewOut,
 };

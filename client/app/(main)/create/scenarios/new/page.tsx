@@ -13,12 +13,12 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenarioDetailDefaultIn = InputOf<
-  "/api/v3/scenarios/detail-default",
+type ScenarioNewIn = InputOf<
+  "/api/v3/scenarios/new",
   "post"
 >;
-type ScenarioDetailDefaultOut = OutputOf<
-  "/api/v3/scenarios/detail-default",
+type ScenarioNewOut = OutputOf<
+  "/api/v3/scenarios/new",
   "post"
 >;
 type CreateScenarioIn = InputOf<"/api/v3/scenarios/create", "post">;
@@ -34,10 +34,10 @@ type RandomizeScenarioOut = OutputOf<"/api/v3/scenarios/randomize", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getScenarioDefault = async (
-  input: ScenarioDetailDefaultIn
-): Promise<ScenarioDetailDefaultOut> => {
+  input: ScenarioNewIn
+): Promise<ScenarioNewOut> => {
   return api.post(
-    "/scenarios/detail-default",
+    "/scenarios/new",
     input,
     {
       cache: "no-store",
@@ -142,8 +142,8 @@ export type {
   GenerateAIScenarioOut,
   RandomizeScenarioIn,
   RandomizeScenarioOut,
-  ScenarioDetailDefaultIn,
-  ScenarioDetailDefaultOut,
+  ScenarioNewIn,
+  ScenarioNewOut,
   UpdateScenarioIn,
   UpdateScenarioOut,
 };

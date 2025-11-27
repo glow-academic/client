@@ -1,4 +1,4 @@
-"""Scenario detail-default endpoint - v3 API following DHH principles."""
+"""Scenario new endpoint - v3 API following DHH principles."""
 
 import json
 from collections.abc import Sequence
@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 
 # Inline request/response schemas
-class ScenarioDetailDefaultRequest(BaseModel):
+class ScenarioNewRequest(BaseModel):
     """Request to get default scenario details."""
 
     profileId: str
@@ -119,9 +119,9 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return data or {}
 
 
-@router.post("/detail-default", response_model=ScenarioDetailResponse)
-async def get_scenario_detail_default(
-    request_data: ScenarioDetailDefaultRequest,
+@router.post("/new", response_model=ScenarioDetailResponse)
+async def get_scenario_new(
+    request_data: ScenarioNewRequest,
     request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -146,7 +146,7 @@ async def get_scenario_detail_default(
     try:
         # Load SQL query
         sql_query = load_sql(
-            "sql/v3/scenarios/get_scenario_detail_default_complete.sql"
+            "sql/v3/scenarios/get_scenario_new_complete.sql"
         )
         sql_params = (request_data.profileId,)
 
@@ -405,8 +405,9 @@ async def get_scenario_detail_default(
         handle_route_error(
             error=e,
             route_path=request.url.path,
-            operation="get_scenario_detail_default",
+            operation="get_scenario_new",
             sql_query=sql_query,
             sql_params=sql_params,
             request=request,
         )
+

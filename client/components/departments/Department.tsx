@@ -47,7 +47,7 @@ import type {
 import type {
   CreateDepartmentIn,
   CreateDepartmentOut,
-  DepartmentDetailDefaultOut,
+  DepartmentNewOut,
 } from "@/app/(main)/departments/new/page";
 // Import types from edit page (update action)
 import type {
@@ -130,7 +130,7 @@ export interface DepartmentProps {
   departmentId?: string;
   // Optional server-provided data (for server-side rendering)
   departmentDetail?: DepartmentDetailOut;
-  departmentDetailDefault?: DepartmentDetailDefaultOut;
+  departmentDetailDefault?: DepartmentNewOut;
   // Server actions (replaces useMutation)
   createDepartmentAction?: (
     input: CreateDepartmentIn

@@ -15,12 +15,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type AgentDetailOut = OutputOf<"/api/v3/agents/detail", "post">;
-type AgentDetailDefaultIn = InputOf<
-  "/api/v3/agents/detail-default",
+type AgentNewIn = InputOf<
+  "/api/v3/agents/new",
   "post"
 >;
-type AgentDetailDefaultOut = OutputOf<
-  "/api/v3/agents/detail-default",
+type AgentNewOut = OutputOf<
+  "/api/v3/agents/new",
   "post"
 >;
 type CreateAgentIn = InputOf<"/api/v3/agents/create", "post">;
@@ -179,8 +179,8 @@ export default async function AgentEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AgentDetailDefaultIn,
-  AgentDetailDefaultOut,
+  AgentNewIn,
+  AgentNewOut,
   AgentDetailOut,
   CreateAgentIn,
   CreateAgentOut,

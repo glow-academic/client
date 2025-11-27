@@ -13,12 +13,12 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterDetailDefaultIn = InputOf<
-  "/api/v3/parameters/detail-default",
+type ParameterNewIn = InputOf<
+  "/api/v3/parameters/new",
   "post"
 >;
-type ParameterDetailDefaultOut = OutputOf<
-  "/api/v3/parameters/detail-default",
+type ParameterNewOut = OutputOf<
+  "/api/v3/parameters/new",
   "post"
 >;
 type CreateParameterIn = InputOf<"/api/v3/parameters/create", "post">;
@@ -31,9 +31,9 @@ type UpdateParameterOut = OutputOf<"/api/v3/parameters/update", "post">;
  */
 const getParameterDefault = async (
   profileId: string
-): Promise<ParameterDetailDefaultOut> => {
+): Promise<ParameterNewOut> => {
   return api.post(
-    "/parameters/detail-default",
+    "/parameters/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -120,8 +120,8 @@ export default async function NewParameterPage() {
 export type {
   CreateParameterIn,
   CreateParameterOut,
-  ParameterDetailDefaultIn,
-  ParameterDetailDefaultOut,
+  ParameterNewIn,
+  ParameterNewOut,
   UpdateParameterIn,
   UpdateParameterOut,
 };

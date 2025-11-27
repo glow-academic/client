@@ -13,7 +13,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentDetailDefaultOut = OutputOf<"/api/v3/agents/detail-default", "post">;
+type AgentNewOut = OutputOf<"/api/v3/agents/new", "post">;
 type CreateAgentIn = InputOf<"/api/v3/agents/create", "post">;
 type CreateAgentOut = OutputOf<"/api/v3/agents/create", "post">;
 type UpdateAgentIn = InputOf<"/api/v3/agents/update", "post">;
@@ -26,9 +26,9 @@ type DeleteAgentPromptOut = OutputOf<"/api/v3/agents/delete-prompt", "post">;
  */
 const getAgentDefault = async (
   profileId: string
-): Promise<AgentDetailDefaultOut> => {
+): Promise<AgentNewOut> => {
   return api.post(
-    "/agents/detail-default",
+    "/agents/new",
     { body: { profileId } },
     {
       cache: "no-store",
@@ -125,7 +125,7 @@ export default async function NewAgentPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AgentDetailDefaultOut,
+  AgentNewOut,
   CreateAgentIn,
   CreateAgentOut,
   DeleteAgentPromptIn,

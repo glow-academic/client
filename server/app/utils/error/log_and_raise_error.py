@@ -29,8 +29,8 @@ def log_and_raise_error(
 
     Args:
         error: The exception that occurred
-        route_path: API route path (e.g., "/api/v3/parameters/detail-default")
-        operation: Operation name (e.g., "get_parameter_detail_default")
+        route_path: API route path (e.g., "/api/v3/parameters/new")
+        operation: Operation name (e.g., "get_parameter_new")
         sql_query: SQL query string if this was a SQL error
         sql_params: SQL parameters tuple/list if this was a SQL error
         request: FastAPI Request object for extracting additional context

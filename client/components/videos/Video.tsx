@@ -70,7 +70,7 @@ import type {
   CreateVideoOut,
   UpdateVideoIn,
   UpdateVideoOut,
-  VideoDetailDefaultOut,
+  VideoNewOut,
 } from "@/app/(main)/create/videos/new/page";
 import type { VideoDetailOut } from "@/app/(main)/create/videos/v/[videoId]/page";
 
@@ -95,7 +95,7 @@ export interface VideoProps {
   mode?: "create" | "edit";
   videoId?: string;
   videoDetail?: VideoDetailOut;
-  videoDetailDefault?: VideoDetailDefaultOut;
+  videoDetailDefault?: VideoNewOut;
   createVideoAction?: (input: CreateVideoIn) => Promise<CreateVideoOut>;
   updateVideoAction?: (input: UpdateVideoIn) => Promise<UpdateVideoOut>;
   randomizeVideoAction?: (

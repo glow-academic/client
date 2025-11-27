@@ -52,7 +52,7 @@ import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
 import type {
-  AgentDetailDefaultOut,
+  AgentNewOut,
   AgentDetailOut,
   CreateAgentIn,
   CreateAgentOut,
@@ -79,7 +79,7 @@ export interface SystemAgentProps {
   agentId?: string;
   // Optional server-provided data and actions (for server-side rendering)
   agentDetail?: AgentDetailOut;
-  agentDetailDefault?: AgentDetailDefaultOut;
+  agentDetailDefault?: AgentNewOut;
   createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
   updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   deleteAgentPromptAction?: (

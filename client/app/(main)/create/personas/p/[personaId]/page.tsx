@@ -15,12 +15,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonaDetailOut = OutputOf<"/api/v3/personas/detail", "post">;
-type PersonaDetailDefaultIn = InputOf<
-  "/api/v3/personas/detail-default",
+type PersonaNewIn = InputOf<
+  "/api/v3/personas/new",
   "post"
 >;
-type PersonaDetailDefaultOut = OutputOf<
-  "/api/v3/personas/detail-default",
+type PersonaNewOut = OutputOf<
+  "/api/v3/personas/new",
   "post"
 >;
 type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
@@ -183,8 +183,8 @@ export type {
   CreatePersonaOut,
   DeletePersonaPromptIn,
   DeletePersonaPromptOut,
-  PersonaDetailDefaultIn,
-  PersonaDetailDefaultOut,
+  PersonaNewIn,
+  PersonaNewOut,
   PersonaDetailOut,
   UpdatePersonaIn,
   UpdatePersonaOut,

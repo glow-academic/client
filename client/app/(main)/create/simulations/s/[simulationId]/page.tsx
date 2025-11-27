@@ -17,12 +17,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 type SimulationDetailIn = InputOf<"/api/v3/simulations/detail", "post">;
 type SimulationDetailOut = OutputOf<"/api/v3/simulations/detail", "post">;
 
-type SimulationDetailDefaultIn = InputOf<
-  "/api/v3/simulations/detail-default",
+type SimulationNewIn = InputOf<
+  "/api/v3/simulations/new",
   "post"
 >;
-type SimulationDetailDefaultOut = OutputOf<
-  "/api/v3/simulations/detail-default",
+type SimulationNewOut = OutputOf<
+  "/api/v3/simulations/new",
   "post"
 >;
 
@@ -181,8 +181,8 @@ export default async function EditSimulationPage({
 export type {
   CreateSimulationIn,
   CreateSimulationOut,
-  SimulationDetailDefaultIn,
-  SimulationDetailDefaultOut,
+  SimulationNewIn,
+  SimulationNewOut,
   SimulationDetailIn,
   SimulationDetailOut,
   UpdateSimulationIn,
