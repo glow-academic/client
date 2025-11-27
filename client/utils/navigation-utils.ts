@@ -124,8 +124,8 @@ export const getSectionRoute = (
       return "/engine/models";
     case "keys":
       return "/engine/keys";
-    case "prompts":
-      return "/engine/prompts";
+    case "evals":
+      return "/engine/evals";
 
     // System routes
     case "system":

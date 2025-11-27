@@ -337,13 +337,13 @@ export function UnifiedSidebar({
       }
     }
 
-    // Engine - Available for superadmin only
+    // Engine - Available for admin and superadmin
     if (
-      effectiveProfile.role === "superadmin" &&
+      (effectiveProfile.role === "admin" || effectiveProfile.role === "superadmin") &&
       (availableSections.includes("agents") ||
         availableSections.includes("models") ||
         availableSections.includes("keys") ||
-        availableSections.includes("prompts"))
+        availableSections.includes("evals"))
     ) {
       const engineItems: MenuItem[] = [];
 
@@ -378,11 +378,11 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("prompts")) {
+      if (availableSections.includes("evals")) {
         engineItems.push({
-          title: "Prompts",
+          title: "Evals",
           url: "#",
-          section: "prompts",
+          section: "evals",
         });
       }
     }

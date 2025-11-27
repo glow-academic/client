@@ -1,13 +1,12 @@
 /**
- * app/(main)/engine/prompts/p/page.tsx
- * Prompt page for the prompts section. Redirects to prompts page.
- * @AshokSaravanan222 & @siladiea
- * 06/08/2025
+ * app/(main)/engine/evals/page.tsx
+ * Evals list page
+ * @AshokSaravanan222
+ * 01/26/2025
  */
-
 import { getSession } from "@/auth";
-import { redirect } from "next/navigation";
 
+import Evals from "@/components/evals/Evals";
 import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
 
@@ -32,12 +31,16 @@ export async function generateMetadata(): Promise<Metadata> {
     : "";
 
   return {
-    title: "Prompts",
-    description: `Prompts in GLOW${orgPart}.`,
+    title: "Evals",
+    description: `Manage evals in GLOW${orgPart}.`,
   };
 }
 
-export default function PromptPage() {
-  return redirect("/engine/prompts");
+export default async function EvalsPage() {
+  return (
+    <div className="space-y-6" data-page="evals-index">
+      <Evals />
+    </div>
+  );
 }
 
