@@ -40,6 +40,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 \i app/agents/init.sql
 
+\i app/evals/init.sql
+
 -- 4. Tables that depend on agents (scenarios/parameters - must exist before seed data)
 -- Note: Parameters table is created here and needed by department seed data
 \i app/scenarios/init.sql
