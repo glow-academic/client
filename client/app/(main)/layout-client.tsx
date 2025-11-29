@@ -310,6 +310,15 @@ function MainLayoutContent({
       );
     }
 
+    if (pathname === "/engine/evals") {
+      return (
+        <Button onClick={() => router.push("/engine/evals/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          New Eval
+        </Button>
+      );
+    }
+
     if (pathname === "/departments") {
       return (
         <Button onClick={() => router.push("/departments/new")} size="sm">

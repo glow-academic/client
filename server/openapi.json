@@ -4925,6 +4925,382 @@
         ]
       }
     },
+    "/api/v3/evals/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Get Evals List",
+        "description": "Get evals list with status derivation and permissions.",
+        "operationId": "get_evals_list_api_v3_evals_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalsFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/detail": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Get Eval Detail",
+        "description": "Get detailed eval information.",
+        "operationId": "get_eval_detail_api_v3_evals_detail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalDetailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Create Eval",
+        "description": "Create a new eval.",
+        "operationId": "create_eval_api_v3_evals_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateEvalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/update": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Update Eval",
+        "description": "Update an existing eval.",
+        "operationId": "update_eval_api_v3_evals_update_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateEvalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/delete": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Delete Eval",
+        "description": "Delete an eval.",
+        "operationId": "delete_eval_api_v3_evals_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteEvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteEvalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/model_runs": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Get Model Runs",
+        "description": "Get paginated, filtered model_runs for eval selection.",
+        "operationId": "get_model_runs_api_v3_evals_model_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelRunsFilters"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelRunsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/run": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Run Eval",
+        "description": "Run an eval on its pending model_runs.",
+        "operationId": "run_eval_api_v3_evals_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunEvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEvalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
+    "/api/v3/evals/stop": {
+      "post": {
+        "tags": [
+          "v3",
+          "evals"
+        ],
+        "summary": "Stop Eval",
+        "description": "Stop a running eval.",
+        "operationId": "stop_eval_api_v3_evals_stop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopEvalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopEvalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "evals"
+        ]
+      }
+    },
     "/api/v3/images/upload/finalize": {
       "post": {
         "tags": [
@@ -12159,6 +12535,72 @@
         "title": "CreateDepartmentResponse",
         "description": "Response for creating a department."
       },
+      "CreateEvalRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "model_run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Model Run Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "run": {
+            "type": "boolean",
+            "title": "Run",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "rubric_id",
+          "model_run_ids",
+          "profileId"
+        ],
+        "title": "CreateEvalRequest",
+        "description": "Request to create an eval."
+      },
+      "CreateEvalResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "evalId",
+          "message"
+        ],
+        "title": "CreateEvalResponse",
+        "description": "Response from create eval."
+      },
       "CreateFeedbackRequest": {
         "properties": {
           "type": {
@@ -14665,6 +15107,44 @@
         "title": "DeleteDocumentResponse",
         "description": "Response from delete operation."
       },
+      "DeleteEvalRequest": {
+        "properties": {
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evalId",
+          "profileId"
+        ],
+        "title": "DeleteEvalRequest",
+        "description": "Request to delete an eval."
+      },
+      "DeleteEvalResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "DeleteEvalResponse",
+        "description": "Response from delete eval."
+      },
       "DeleteKeyRequest": {
         "properties": {
           "keyId": {
@@ -16249,6 +16729,309 @@
           "totalPossiblePoints"
         ],
         "title": "DynamicRubric"
+      },
+      "EvalDetailRequest": {
+        "properties": {
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evalId",
+          "profileId"
+        ],
+        "title": "EvalDetailRequest",
+        "description": "Request to get eval details."
+      },
+      "EvalDetailResponse": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "type": "string",
+            "title": "Rubric Description"
+          },
+          "rubric_points": {
+            "type": "integer",
+            "title": "Rubric Points"
+          },
+          "rubric_pass_points": {
+            "type": "integer",
+            "title": "Rubric Pass Points"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "type": "integer",
+            "title": "Pending Runs"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "model_runs": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__evals__detail__ModelRunItem"
+            },
+            "type": "array",
+            "title": "Model Runs"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "rubric_name",
+          "rubric_description",
+          "rubric_points",
+          "rubric_pass_points",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "total_runs",
+          "completed_runs",
+          "pending_runs",
+          "status",
+          "model_runs",
+          "department_mapping",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "EvalDetailResponse",
+        "description": "Detailed eval response with all fields and metadata."
+      },
+      "EvalItem": {
+        "properties": {
+          "eval_id": {
+            "type": "string",
+            "title": "Eval Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "rubric_name": {
+            "type": "string",
+            "title": "Rubric Name"
+          },
+          "rubric_description": {
+            "type": "string",
+            "title": "Rubric Description"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "type": "integer",
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "type": "integer",
+            "title": "Pending Runs"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eval_id",
+          "name",
+          "description",
+          "rubric_id",
+          "rubric_name",
+          "rubric_description",
+          "total_runs",
+          "completed_runs",
+          "pending_runs",
+          "status",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "EvalItem",
+        "description": "Individual eval item in the response."
+      },
+      "EvalsFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "EvalsFilters",
+        "description": "Filters for evals list request."
+      },
+      "EvalsListResponse": {
+        "properties": {
+          "evals": {
+            "items": {
+              "$ref": "#/components/schemas/EvalItem"
+            },
+            "type": "array",
+            "title": "Evals"
+          },
+          "rubric_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Rubric Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          },
+          "rubric_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rubric Options"
+          },
+          "department_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Department Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evals",
+          "rubric_mapping",
+          "department_mapping",
+          "rubric_options",
+          "department_options"
+        ],
+        "title": "EvalsListResponse",
+        "description": "Response for evals list endpoint."
       },
       "ExportRequest": {
         "properties": {
@@ -19129,6 +19912,192 @@
           "primary_department_id"
         ],
         "title": "ModelNewResponse"
+      },
+      "ModelRunsFilters": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "modelIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelids"
+          },
+          "agentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agentids"
+          },
+          "personaIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaids"
+          },
+          "agentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agenttype"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pagesize"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ModelRunsFilters",
+        "description": "Filters for model_runs query request."
+      },
+      "ModelRunsResponse": {
+        "properties": {
+          "model_runs": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__evals__model_runs__ModelRunItem"
+            },
+            "type": "array",
+            "title": "Model Runs"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          },
+          "model_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Model Mapping"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "persona_mapping": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Persona Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_runs",
+          "total_count",
+          "page",
+          "page_size",
+          "total_pages",
+          "model_mapping",
+          "agent_mapping",
+          "persona_mapping"
+        ],
+        "title": "ModelRunsResponse",
+        "description": "Response for model_runs query endpoint."
       },
       "ModelsFilters": {
         "properties": {
@@ -24291,6 +25260,54 @@
         "title": "RubricsListResponse",
         "description": "Response for rubrics list."
       },
+      "RunEvalRequest": {
+        "properties": {
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evalId",
+          "profileId"
+        ],
+        "title": "RunEvalRequest",
+        "description": "Request to run an eval."
+      },
+      "RunEvalResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "queued_count": {
+            "type": "integer",
+            "title": "Queued Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "evalId",
+          "queued_count",
+          "message"
+        ],
+        "title": "RunEvalResponse",
+        "description": "Response from run eval."
+      },
       "ScenarioAttributeAttemptFact": {
         "properties": {
           "parameterId": {
@@ -26555,6 +27572,54 @@
         "title": "StandardMappingItem",
         "description": "Standard mapping item with points"
       },
+      "StopEvalRequest": {
+        "properties": {
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evalId",
+          "profileId"
+        ],
+        "title": "StopEvalRequest",
+        "description": "Request to stop an eval."
+      },
+      "StopEvalResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "stopped_count": {
+            "type": "integer",
+            "title": "Stopped Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "evalId",
+          "stopped_count",
+          "message"
+        ],
+        "title": "StopEvalResponse",
+        "description": "Response from stop eval."
+      },
       "StudentSimReportRequest": {
         "properties": {
           "profile_id": {
@@ -27267,6 +28332,78 @@
         ],
         "title": "UpdateDocumentResponse",
         "description": "Response for updating a document."
+      },
+      "UpdateEvalRequest": {
+        "properties": {
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rubric_id": {
+            "type": "string",
+            "title": "Rubric Id"
+          },
+          "model_run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Run Ids"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evalId",
+          "name",
+          "description",
+          "rubric_id",
+          "profileId"
+        ],
+        "title": "UpdateEvalRequest",
+        "description": "Request to update an eval."
+      },
+      "UpdateEvalResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "evalId": {
+            "type": "string",
+            "title": "Evalid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "evalId",
+          "message"
+        ],
+        "title": "UpdateEvalResponse",
+        "description": "Response from update eval."
       },
       "UpdateKeyRequest": {
         "properties": {
@@ -30753,6 +31890,304 @@
         ],
         "title": "UploadFinalizeResponse",
         "description": "Response from finalize upload."
+      },
+      "app__api__v3__evals__detail__ModelRunItem": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "title": "Model Run Id"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "assigned_at": {
+            "type": "string",
+            "title": "Assigned At"
+          },
+          "status_updated_at": {
+            "type": "string",
+            "title": "Status Updated At"
+          },
+          "model_run_created_at": {
+            "type": "string",
+            "title": "Model Run Created At"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "has_grade": {
+            "type": "boolean",
+            "title": "Has Grade"
+          },
+          "grade_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Score"
+          },
+          "grade_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Passed"
+          },
+          "grade_created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "completed",
+          "assigned_at",
+          "status_updated_at",
+          "model_run_created_at",
+          "model_id",
+          "model_name",
+          "agent_id",
+          "agent_name",
+          "persona_id",
+          "persona_name",
+          "profile_id",
+          "profile_name",
+          "has_grade",
+          "grade_score",
+          "grade_passed",
+          "grade_created_at"
+        ],
+        "title": "ModelRunItem",
+        "description": "Model run item in eval detail."
+      },
+      "app__api__v3__evals__model_runs__ModelRunItem": {
+        "properties": {
+          "model_run_id": {
+            "type": "string",
+            "title": "Model Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "persona_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Name"
+          },
+          "actor_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_run_id",
+          "created_at",
+          "model_id",
+          "model_name",
+          "profile_id",
+          "profile_name",
+          "agent_id",
+          "agent_name",
+          "persona_id",
+          "persona_name",
+          "actor_type"
+        ],
+        "title": "ModelRunItem",
+        "description": "Model run item for selection."
       },
       "app__api__v3__feedback__list__FeedbackItem": {
         "properties": {

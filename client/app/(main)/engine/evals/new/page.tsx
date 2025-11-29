@@ -1,0 +1,98 @@
+/**
+ * app/(main)/engine/evals/new/page.tsx
+ * New eval page
+ * @AshokSaravanan222
+ * 01/26/2025
+ */
+import { getSession } from "@/auth";
+
+import { EvalForm } from "@/components/evals/EvalForm";
+import { api } from "@/lib/api/client";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { Metadata } from "next";
+
+/** ---- Strong types from OpenAPI ---- */
+type CreateEvalIn = InputOf<"/api/v3/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/api/v3/evals/create", "post">;
+type RubricsListOut = OutputOf<"/api/v3/rubrics/list", "post">;
+
+/** ---- Direct fetch for rubrics list ---- */
+const getRubricsList = async (profileId: string): Promise<RubricsListOut> => {
+  return api.post(
+    "/rubrics/list",
+    { body: { profileId } },
+    {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    }
+  );
+};
+
+/** ---- Metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+
+  let organizationName = "";
+  let organizationDescription = "";
+  try {
+    const activeSettings = await api.post("/settings/active", {
+      body: { profileId },
+    });
+    organizationName = activeSettings.organization_name || "";
+    organizationDescription = activeSettings.organization_description || "";
+  } catch {
+    // If settings unavailable, organizationName and organizationDescription will be empty
+  }
+
+  const orgPart = organizationName
+    ? ` at ${organizationName}${organizationDescription ? ` - ${organizationDescription}` : ""}`
+    : "";
+
+  return {
+    title: "Create Eval",
+    description: `Create a new eval in GLOW${orgPart}.`,
+  };
+}
+
+/** ---- Strongly-typed server actions ---- */
+async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
+  "use server";
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "guest-profile-id";
+  return api.post("/evals/create", {
+    ...input,
+    body: { ...input.body, profileId },
+  });
+}
+
+/** ---- Server renders client with typed data and actions ---- */
+export default async function NewEvalPage() {
+  const session = await getSession();
+  const profileId = session?.effectiveProfileId || "";
+
+  // Fetch rubrics list
+  const rubricsList = await getRubricsList(profileId);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Create New Eval</h1>
+        <p className="text-muted-foreground">
+          Create an evaluation to assess model runs against a rubric
+        </p>
+      </div>
+      <EvalForm
+        rubricsList={rubricsList}
+        profileId={profileId}
+        createEvalAction={createEval}
+      />
+    </div>
+  );
+}
+
+/** ---- Export types for client component ---- */
+export type { CreateEvalIn, CreateEvalOut, RubricsListOut };
+

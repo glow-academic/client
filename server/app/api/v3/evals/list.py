@@ -1,0 +1,199 @@
+"""Evals list endpoint - v3 API following DHH principles."""
+
+import json
+from typing import Annotated, Any
+
+import asyncpg  # type: ignore
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
+
+from app.main import get_db
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
+from app.utils.error.handle_route_error import handle_route_error
+from app.utils.schema import (
+    DepartmentMapping,
+    DepartmentMappingItem,
+)
+from app.utils.sql_helper import load_sql
+
+
+# Inline request/response schemas
+class EvalsFilters(BaseModel):
+    """Filters for evals list request."""
+
+    profileId: str
+
+
+class EvalItem(BaseModel):
+    """Individual eval item in the response."""
+
+    eval_id: str
+    name: str
+    description: str
+    rubric_id: str
+    rubric_name: str
+    rubric_description: str
+    total_runs: int
+    completed_runs: int
+    pending_runs: int
+    status: str  # 'pending', 'running', 'completed'
+    created_at: str
+    updated_at: str
+    department_ids: list[str] | None
+    can_edit: bool
+    can_delete: bool
+
+
+class EvalsListResponse(BaseModel):
+    """Response for evals list endpoint."""
+
+    evals: list[EvalItem]
+    rubric_mapping: dict[str, dict[str, Any]]
+    department_mapping: DepartmentMapping
+    rubric_options: list[dict[str, str]]  # Array of {value, label}
+    department_options: list[dict[str, str]]  # Array of {value, label}
+
+
+router = APIRouter()
+
+
+@router.post("/list", response_model=EvalsListResponse)
+async def get_evals_list(
+    filters: EvalsFilters,
+    request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> EvalsListResponse:
+    """Get evals list with status derivation and permissions."""
+    tags = ["evals"]  # From router tags
+
+    # Check for cache bypass header (for testing)
+    bypass_cache = request.headers.get("X-Bypass-Cache") == "1"
+
+    # Generate cache key from path and parsed body
+    body_dict = filters.model_dump()
+    cache_key_val = cache_key(request.url.path, body_dict)
+
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return EvalsListResponse.model_validate(cached["data"])
+
+    sql_query: str | None = None
+    sql_params: tuple[Any, ...] | None = None
+
+    try:
+        # Load SQL string
+        sql_query = load_sql("sql/v3/evals/list_evals.sql")
+        sql_params = (filters.profileId,)
+
+        # Execute query
+        result = await conn.fetch(sql_query, filters.profileId)
+
+        # Build response - transform database rows
+        evals = []
+        rubric_mapping: dict[str, dict[str, Any]] = {}
+        department_mapping: DepartmentMapping = {}
+
+        # Parse mappings from first row (same across all rows)
+        if result:
+            first_row = result[0]
+
+            # Parse rubric mapping from JSONB
+            rubric_mapping_data = first_row.get("rubric_mapping")
+            if isinstance(rubric_mapping_data, str):
+                rubric_mapping_data = json.loads(rubric_mapping_data)
+            if rubric_mapping_data and isinstance(rubric_mapping_data, dict):
+                rubric_mapping = rubric_mapping_data
+
+            # Parse department_mapping from JSONB
+            department_mapping_data = first_row.get("department_mapping")
+            if isinstance(department_mapping_data, str):
+                department_mapping_data = json.loads(department_mapping_data)
+            if department_mapping_data and isinstance(department_mapping_data, dict):
+                for did, ddata in department_mapping_data.items():
+                    if isinstance(ddata, dict):
+                        department_mapping[did] = DepartmentMappingItem(
+                            name=ddata.get("name", ""),
+                            description=ddata.get("description", ""),
+                        )
+
+        # Build eval items
+        for row in result:
+            dept_ids = None
+            if row.get("department_ids"):
+                dept_ids = [str(d) for d in row["department_ids"]]
+
+            evals.append(
+                EvalItem(
+                    eval_id=str(row["eval_id"]),
+                    name=row["name"],
+                    description=row["description"],
+                    rubric_id=str(row["rubric_id"]),
+                    rubric_name=row["rubric_name"],
+                    rubric_description=row.get("rubric_description") or "",
+                    total_runs=int(row["total_runs"]),
+                    completed_runs=int(row["completed_runs"]),
+                    pending_runs=int(row["pending_runs"]),
+                    status=str(row["status"]),
+                    created_at=str(row["created_at"]),
+                    updated_at=str(row["updated_at"]),
+                    department_ids=dept_ids,
+                    can_edit=row["can_edit"],
+                    can_delete=row["can_delete"],
+                )
+            )
+
+        # Build facet options
+        rubric_options = [
+            {"value": rid, "label": rdata.get("name", "")}
+            for rid, rdata in rubric_mapping.items()
+        ]
+        # Collect all department IDs actually assigned to evals
+        assigned_department_ids = set()
+        for eval_item in evals:
+            if eval_item.department_ids:
+                assigned_department_ids.update(eval_item.department_ids)
+        # Filter department_options to only include departments assigned to at least one eval
+        department_options = [
+            {"value": did, "label": d.name or did}
+            for (did, d) in department_mapping.items()
+            if did in assigned_department_ids
+        ]
+
+        response_data = EvalsListResponse(
+            evals=evals,
+            rubric_mapping=rubric_mapping,
+            department_mapping=department_mapping,
+            rubric_options=rubric_options,
+            department_options=department_options,
+        )
+
+        # Cache response
+        await set_cached(
+            cache_key_val,
+            {"data": response_data.model_dump()},
+            ttl=60,
+            tags=tags,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+
+        return response_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=request.url.path,
+            operation="get_evals_list",
+            sql_query=sql_query,
+            sql_params=sql_params,
+            request=request,
+        )
+

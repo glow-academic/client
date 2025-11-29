@@ -15,6 +15,7 @@ from app.api.v3.dashboard import router as dashboard_router
 # ============================================================================
 from app.api.v3.departments import router as departments_router
 from app.api.v3.documents import router as documents_router
+from app.api.v3.evals import router as evals_router
 from app.api.v3.feedback import router as feedback_router
 # ============================================================================
 # Batch G: Utility Routes
@@ -69,6 +70,7 @@ router.include_router(auth_router)
 router.include_router(departments_router)
 router.include_router(cohorts_router)
 router.include_router(documents_router)
+router.include_router(evals_router)
 router.include_router(images_router)
 router.include_router(policies_router)
 router.include_router(rubrics_router)
