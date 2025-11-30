@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TYPE simulation_message_type AS ENUM ('query', 'response'); -- query or response
+CREATE TYPE message_role AS ENUM ('user', 'assistant', 'system', 'developer');
 
 CREATE TABLE simulations (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -110,21 +110,21 @@ CREATE UNIQUE INDEX attempt_profiles_one_active_per_attempt
 CREATE INDEX ON attempt_profiles (profile_id);
 CREATE INDEX ON attempt_profiles (attempt_id, active);
 
-CREATE TABLE simulation_chats (
+CREATE TABLE chats (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
-  -- completed_at removed (use simulation_chat_grades.time_taken as source of truth)
+  -- completed_at removed (use grades.time_taken as source of truth)
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
   trace_id   TEXT         NOT NULL -- openai trace id (NOT NULL, no default)
 );
 
--- Simulation attempts ↔ Chats junction table (BCNF normalization - replaces simulation_chats.attempt_id)
+-- Simulation attempts ↔ Chats junction table (BCNF normalization - replaces chats.attempt_id)
 CREATE TABLE attempt_chats (
   attempt_id UUID NOT NULL REFERENCES simulation_attempts(id) ON DELETE CASCADE,
-  chat_id UUID NOT NULL REFERENCES simulation_chats(id) ON DELETE CASCADE,
+  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (attempt_id, chat_id)
@@ -134,21 +134,37 @@ CREATE INDEX ON attempt_chats (attempt_id);
 CREATE INDEX ON attempt_chats (chat_id);
 CREATE INDEX ON attempt_chats (attempt_id, chat_id);
 
-CREATE TABLE simulation_messages (
+-- Run ↔ Chats junction table (BCNF normalization)
+CREATE TABLE run_chats (
+  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (run_id, chat_id)
+);
+
+CREATE INDEX ON run_chats (run_id);
+CREATE INDEX ON run_chats (chat_id);
+
+-- Unified messages table - all messages link to runs
+CREATE TABLE messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  chat_id    UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
   content    TEXT        NOT NULL,
-  type  simulation_message_type NOT NULL, -- query or response
+  role       message_role NOT NULL,
+  run_id     UUID        NOT NULL REFERENCES runs(id)  ON DELETE CASCADE,
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE,
   audio      BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
+CREATE INDEX ON messages (run_id);
+CREATE INDEX ON messages (run_id, created_at);
+
 -- Simulation hints collection table (BCNF normalization)
 -- Normalized text collection pattern: composite PK with idx, created_at only (matches scenario_objectives)
 CREATE TABLE simulation_hints (
-  simulation_message_id UUID NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE,
+  simulation_message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   idx               INT  NOT NULL,
   hint              TEXT NOT NULL,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -157,7 +173,8 @@ CREATE TABLE simulation_hints (
 
 CREATE INDEX ON simulation_hints (simulation_message_id);
 
-CREATE TABLE simulation_chat_grades (
+-- Unified grades table - all grades link to runs
+CREATE TABLE grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     description TEXT        NOT NULL DEFAULT 'No description provided',
@@ -165,23 +182,34 @@ CREATE TABLE simulation_chat_grades (
     score      INTEGER     NOT NULL,
     time_taken INTEGER     NOT NULL, -- in seconds
     rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
-    simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE
-  );
+    run_id      UUID        NOT NULL REFERENCES runs(id)  ON DELETE CASCADE,
+    eval        BOOLEAN     NOT NULL, -- true=eval grade, false=simulation grade
+    eval_id     UUID        REFERENCES evals(id)  ON DELETE CASCADE, -- nullable, only when eval=true
+    CHECK (eval = false OR eval_id IS NOT NULL)
+);
 
-  CREATE TABLE simulation_chat_feedbacks (
+CREATE INDEX ON grades (run_id);
+CREATE INDEX ON grades (eval_id);
+CREATE INDEX ON grades (run_id, eval, created_at DESC);
+
+-- Unified feedbacks table
+CREATE TABLE feedbacks (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
-    simulation_chat_grade_id   UUID        NOT NULL REFERENCES simulation_chat_grades(id)  ON DELETE CASCADE,
+    grade_id   UUID        NOT NULL REFERENCES grades(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
     feedback TEXT NOT NULL DEFAULT 'No feedback provided'  -- NOT NULL with meaningful default
-  );
+);
+
+CREATE INDEX ON feedbacks (grade_id);
+CREATE INDEX ON feedbacks (standard_id);
 
 -- Message tree for branching conversations (BCNF normalization)
--- Tracks parent-child relationships between simulation_messages for branching functionality
+-- Tracks parent-child relationships between messages for branching functionality
 CREATE TABLE message_tree (
-  parent_id UUID NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE,
-  child_id  UUID NOT NULL REFERENCES simulation_messages(id) ON DELETE CASCADE,
+  parent_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  child_id  UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   active    BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),

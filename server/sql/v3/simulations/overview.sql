@@ -7,8 +7,8 @@ WITH stats AS (
         SUM(CASE WHEN scg.passed = true THEN 1 ELSE 0 END) as total_passed
     FROM simulation_attempts sa
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
-    LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
-    LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+    LEFT JOIN chats sc ON sc.id = ac.chat_id
+    LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
     WHERE sa.simulation_id = $1
 )
 SELECT 

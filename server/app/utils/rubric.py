@@ -62,6 +62,6 @@ def get_dynamic_rubric(
     rubric_string = "\n".join(rubric_lines)
 
     return {
-        "role": "system",
+        "role": "developer",
         "content": f"You are evaluating a conversation based on the following rubric. Please provide scores (1-5) and feedback for each criterion.\n\n{rubric_string}",
     }

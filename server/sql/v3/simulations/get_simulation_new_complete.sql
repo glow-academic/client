@@ -109,7 +109,7 @@ WITH user_departments AS (
                 MAX(sc.created_at) as last_used_date
             FROM simulation_scenarios ss
             JOIN default_simulation ds ON ss.simulation_id = ds.id
-            LEFT JOIN simulation_chats sc ON (
+            LEFT JOIN chats sc ON (
                 sc.scenario_id IN (
                     SELECT st2.child_id 
                     FROM scenario_tree st2 
@@ -123,7 +123,7 @@ WITH user_departments AS (
                 )
                 OR sc.scenario_id = ss.scenario_id
             )
-            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
             GROUP BY ss.scenario_id
         ),
         scenarios_list_data AS (

@@ -52,8 +52,8 @@ recent_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as run_count
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY mrp.profile_id
 ),
@@ -61,7 +61,7 @@ profile_total_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as total_requests
-    FROM model_run_profiles mrp
+    FROM run_profiles mrp
     GROUP BY mrp.profile_id
 ),
 user_profile AS (
@@ -191,8 +191,8 @@ total_requests_by_date AS (
     SELECT 
         DATE(mr.created_at) as date,
         COUNT(*) as count
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY DATE(mr.created_at)

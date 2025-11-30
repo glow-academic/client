@@ -171,7 +171,7 @@ async def get_eval_detail(
                 if isinstance(mr_data, dict):
                     model_runs.append(
                         ModelRunItem(
-                            model_run_id=str(mr_data.get("model_run_id", "")),
+                            model_run_id=str(mr_data.get("run_id", "")),
                             completed=bool(mr_data.get("completed", False)),
                             assigned_at=str(mr_data.get("assigned_at", "")),
                             status_updated_at=str(mr_data.get("status_updated_at", "")),

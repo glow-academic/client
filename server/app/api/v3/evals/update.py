@@ -72,7 +72,7 @@ async def update_eval(
             if request.model_run_ids:
                 model_run_ids_uuid = [uuid.UUID(mrid) for mrid in request.model_run_ids]
                 existing_runs = await conn.fetch(
-                    "SELECT id FROM model_runs WHERE id = ANY($1::uuid[])",
+                    "SELECT id FROM runs WHERE id = ANY($1::uuid[])",
                     model_run_ids_uuid,
                 )
                 if len(existing_runs) != len(model_run_ids_uuid):

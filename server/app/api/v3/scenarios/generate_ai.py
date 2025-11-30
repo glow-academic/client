@@ -275,8 +275,10 @@ async def generate_scenario_ai(
             context["agent_id"],
             "agent",
             final_profile_id,
+            None,  # key_id
+            str(context["agent_id"]),  # agent_id
         )
-        model_run_id = uuid.UUID(model_run_row["model_run_id"])
+        model_run_id = uuid.UUID(model_run_row["run_id"])
 
         with trace(
             "Scenario Agent",
@@ -286,7 +288,7 @@ async def generate_scenario_ai(
             result = await Runner.run(
                 agent_instance,
                 input=clean_input_items,
-                context=DebugContext(conn=conn, model_run_id=model_run_id),
+                context=DebugContext(conn=conn, run_id=model_run_id),
             )
 
         # Extract results from the global storage

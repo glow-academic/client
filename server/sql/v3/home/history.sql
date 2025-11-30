@@ -151,7 +151,7 @@ scenario_options_cte AS (
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN attempt_chats ac ON ac.attempt_id = haf.attempt_id
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     JOIN scenarios s ON s.id = sc.scenario_id
     WHERE sc.scenario_id IS NOT NULL
     GROUP BY sc.scenario_id, s.name
@@ -175,7 +175,7 @@ attempt_scenario_ids AS (
         ac.attempt_id,
         ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
     GROUP BY ac.attempt_id
 ),
@@ -198,7 +198,7 @@ history_chat_rollup AS (
         MAX(sc.created_at) AS last_activity_at,
         array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY ac.attempt_id
 ),
@@ -208,10 +208,10 @@ history_chat_grades AS (
         scg.simulation_chat_id AS chat_id,
         scg.score,
         scg.rubric_id
-    FROM simulation_chat_grades scg
+    FROM grades scg
     WHERE scg.simulation_chat_id IN (
         SELECT sc.id FROM attempt_chats ac
-        JOIN simulation_chats sc ON sc.id = ac.chat_id
+        JOIN chats sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
     ORDER BY scg.simulation_chat_id, scg.created_at DESC
@@ -225,7 +225,7 @@ history_grade_rollup AS (
             THEN (hcg.score / r.points::numeric * 100.0)
             ELSE 0 END) AS sum_grade_percent
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     LEFT JOIN rubrics r ON r.id = hcg.rubric_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
@@ -239,12 +239,12 @@ history_elapsed_time AS (
             SUM(
                 CASE 
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
-                        (SELECT scg.time_taken FROM simulation_chat_grades scg 
+                        (SELECT scg.time_taken FROM grades scg 
                          WHERE scg.simulation_chat_id = sc.id 
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
-                            (SELECT scg.created_at FROM simulation_chat_grades scg 
+                            (SELECT scg.created_at FROM grades scg 
                              WHERE scg.simulation_chat_id = sc.id 
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
@@ -255,7 +255,7 @@ history_elapsed_time AS (
             0
         ) AS elapsed_seconds
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY ac.attempt_id
@@ -266,7 +266,7 @@ history_personas AS (
         ac.attempt_id,
         array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     JOIN scenarios scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
@@ -298,7 +298,7 @@ history_first_scenario AS (
         ac.attempt_id,
         sc.scenario_id::text AS practice_scenario_id
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     ORDER BY ac.attempt_id, sc.created_at ASC
 ),

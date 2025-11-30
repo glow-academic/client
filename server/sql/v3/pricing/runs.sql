@@ -32,21 +32,20 @@ profile_role_check AS (
             ELSE (SELECT resolved_profile_id FROM resolve_profile_id)
         END as effective_profile_id
 ),
-model_runs_base AS (
+runs_base AS (
     SELECT
-        mr.id as model_run_id,
+        mr.id as run_id,
         mr.created_at,
         mr.input_tokens,
         mr.output_tokens,
         mrm.model_id,
         mrp.profile_id,
-        mra.agent_id,
+        mr.agent_id,
         mrper.persona_id
-    FROM model_runs mr
-    LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
-    LEFT JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id AND mrp.active = true
-    LEFT JOIN model_run_agents mra ON mra.model_run_id = mr.id AND mra.active = true
-    LEFT JOIN model_run_personas mrper ON mrper.model_run_id = mr.id AND mrper.active = true
+    FROM runs mr
+    LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
+    LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
+    LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
     WHERE 
         -- Date filters (always required)
         mr.created_at >= $1
@@ -56,9 +55,9 @@ model_runs_base AS (
             $3::uuid[] IS NULL 
             OR COALESCE(array_length($3::uuid[], 1), 0) = 0
             OR EXISTS (
-                SELECT 1 FROM model_run_profiles mrp2
+                SELECT 1 FROM run_profiles mrp2
                 JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
-                WHERE mrp2.model_run_id = mr.id
+                WHERE mrp2.run_id = mr.id
                   AND mrp2.active = true
                   AND pd.department_id = ANY($3::uuid[])
             )
@@ -86,7 +85,7 @@ model_runs_base AS (
             )
         )
 ),
-model_runs_with_debug AS (
+runs_with_debug AS (
     SELECT
         mrb.*,
         COALESCE(
@@ -98,29 +97,29 @@ model_runs_with_debug AS (
                 ) ORDER BY di.created_at
             )
             FROM debug_info di
-            WHERE di.model_run_id = mrb.model_run_id),
+            WHERE di.run_id = mrb.run_id),
             '[]'::jsonb
         ) as debug_info
-    FROM model_runs_base mrb
+    FROM runs_base mrb
 ),
 -- Join with mappings for search and display
-model_runs_with_names AS (
+runs_with_names AS (
     SELECT
         mrwd.*,
         m.name as model_name,
         p.first_name || ' ' || p.last_name as profile_name,
         a.name as agent_name,
         per.name as persona_name
-    FROM model_runs_with_debug mrwd
+    FROM runs_with_debug mrwd
     LEFT JOIN models m ON m.id = mrwd.model_id
     LEFT JOIN profiles p ON p.id = mrwd.profile_id
     LEFT JOIN agents a ON a.id = mrwd.agent_id
     LEFT JOIN personas per ON per.id = mrwd.persona_id
 ),
 -- Apply search filter (across model name, agent name, persona name, profile name, debug info)
-model_runs_with_search AS (
+runs_with_search AS (
     SELECT *
-    FROM model_runs_with_names
+    FROM runs_with_names
     WHERE (
         $7::text IS NULL
         OR $7::text = ''
@@ -135,9 +134,9 @@ model_runs_with_search AS (
     )
 ),
 -- Apply modelIds, profileIds, actorIds filters
-model_runs_filtered AS (
+runs_filtered AS (
     SELECT *
-    FROM model_runs_with_search
+    FROM runs_with_search
     WHERE (
         -- Model filter
         ($8::uuid[] IS NULL OR COALESCE(array_length($8::uuid[], 1), 0) = 0 OR model_id = ANY($8::uuid[]))
@@ -157,8 +156,8 @@ model_options_cte AS (
     SELECT 
         m.id AS model_id,
         m.name AS model_name,
-        COUNT(DISTINCT mrf.model_run_id) AS count
-    FROM model_runs_filtered mrf
+        COUNT(DISTINCT mrf.run_id) AS count
+    FROM runs_filtered mrf
     JOIN models m ON m.id = mrf.model_id
     WHERE mrf.model_id IS NOT NULL
     GROUP BY m.id, m.name
@@ -169,8 +168,8 @@ profile_options_cte AS (
     SELECT 
         p.id AS profile_id,
         p.first_name || ' ' || p.last_name AS profile_name,
-        COUNT(DISTINCT mrf.model_run_id) AS count
-    FROM model_runs_filtered mrf
+        COUNT(DISTINCT mrf.run_id) AS count
+    FROM runs_filtered mrf
     JOIN profiles p ON p.id = mrf.profile_id
     WHERE mrf.profile_id IS NOT NULL
     GROUP BY p.id, p.first_name, p.last_name
@@ -181,8 +180,8 @@ actor_options_cte AS (
     SELECT 
         COALESCE(a.id, per.id) AS actor_id,
         COALESCE(a.name, per.name) AS actor_name,
-        COUNT(DISTINCT mrf.model_run_id) AS count
-    FROM model_runs_filtered mrf
+        COUNT(DISTINCT mrf.run_id) AS count
+    FROM runs_filtered mrf
     LEFT JOIN agents a ON a.id = mrf.agent_id
     LEFT JOIN personas per ON per.id = mrf.persona_id
     WHERE mrf.agent_id IS NOT NULL OR mrf.persona_id IS NOT NULL
@@ -194,7 +193,7 @@ paginated_runs AS (
     SELECT
         *,
         COUNT(*) OVER() AS total_count
-    FROM model_runs_filtered
+    FROM runs_filtered
     {ORDER_BY_CLAUSE}
     {LIMIT_OFFSET_CLAUSE}
 ),
@@ -212,7 +211,7 @@ model_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT model_id FROM model_runs_filtered WHERE model_id IS NOT NULL) mrf
+    FROM (SELECT DISTINCT model_id FROM runs_filtered WHERE model_id IS NOT NULL) mrf
     JOIN models m ON m.id = mrf.model_id
 ),
 profile_mapping AS (
@@ -223,7 +222,7 @@ profile_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT profile_id FROM model_runs_filtered WHERE profile_id IS NOT NULL) mrf
+    FROM (SELECT DISTINCT profile_id FROM runs_filtered WHERE profile_id IS NOT NULL) mrf
     JOIN profiles p ON p.id = mrf.profile_id
 ),
 agent_mapping AS (
@@ -234,7 +233,7 @@ agent_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT agent_id FROM model_runs_filtered WHERE agent_id IS NOT NULL) mrf
+    FROM (SELECT DISTINCT agent_id FROM runs_filtered WHERE agent_id IS NOT NULL) mrf
     JOIN agents a ON a.id = mrf.agent_id
 ),
 persona_mapping AS (
@@ -245,14 +244,14 @@ persona_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT persona_id FROM model_runs_filtered WHERE persona_id IS NOT NULL) mrf
+    FROM (SELECT DISTINCT persona_id FROM runs_filtered WHERE persona_id IS NOT NULL) mrf
     JOIN personas per ON per.id = mrf.persona_id
 )
 SELECT jsonb_build_object(
     'data', COALESCE(
         (SELECT jsonb_agg(
             jsonb_build_object(
-                'model_run_id', model_run_id::text,
+                'run_id', run_id::text,
                 'created_at', created_at,
                 'input_tokens', input_tokens,
                 'output_tokens', output_tokens,

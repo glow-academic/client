@@ -142,7 +142,7 @@ user_context AS (
                 -- Last used: most recent chat created_at
                 MAX(sc.created_at) as last_used_date
             FROM simulation_scenarios ss
-            LEFT JOIN simulation_chats sc ON (
+            LEFT JOIN chats sc ON (
                 -- Match chats where scenario_id is in the tree with ss.scenario_id as root
                 sc.scenario_id IN (
                     SELECT st2.child_id 
@@ -157,7 +157,7 @@ user_context AS (
                 )
                 OR sc.scenario_id = ss.scenario_id
             )
-            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
             WHERE ss.simulation_id = $1
             GROUP BY ss.scenario_id
         ),

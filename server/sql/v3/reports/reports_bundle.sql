@@ -126,7 +126,7 @@
                 FROM efficiency_metrics_per_profile
                 WHERE total_sessions > 0
             ),
-            -- Stagnation rate per profile (grade-stream approach using simulation_chat_grades)
+            -- Stagnation rate per profile (grade-stream approach using grades)
             profile_chats AS (
                 SELECT DISTINCT profile_id, chat_id 
                 FROM filt 
@@ -139,7 +139,7 @@
                     sg.simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
-                FROM simulation_chat_grades sg
+                FROM grades sg
                 JOIN profile_chats pc ON pc.chat_id = sg.simulation_chat_id
                 JOIN rubrics r ON r.id = sg.rubric_id
             ),

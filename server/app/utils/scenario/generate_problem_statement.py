@@ -229,8 +229,10 @@ async def generate_scenario_problem_statement(
         uuid.UUID(context["agent_id"]),
         "agent",
         final_profile_id,  # Already a UUID object or None
+        None,  # key_id
+        context["agent_id"],  # agent_id (as string)
     )
-    model_run_id = uuid.UUID(model_run_row["model_run_id"])
+    model_run_id = uuid.UUID(model_run_row["run_id"])
 
     with trace(
         "Scenario Agent",
@@ -240,7 +242,7 @@ async def generate_scenario_problem_statement(
         result = await Runner.run(
             agent_instance,
             input=clean_input_items,
-            context=DebugContext(conn=conn, model_run_id=model_run_id),
+            context=DebugContext(conn=conn, run_id=model_run_id),
         )
 
     # Extract results from the global storage

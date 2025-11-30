@@ -4,12 +4,12 @@
 WITH chat_exists AS (
     -- Check if chat exists
     SELECT id
-    FROM simulation_chats
+    FROM chats
     WHERE id = $2::uuid
 ),
 update_chat AS (
     -- Update the completedAt timestamp only if chat exists
-    UPDATE simulation_chats
+    UPDATE chats
     SET completed_at = $1,
         updated_at = NOW()
     WHERE id IN (SELECT id FROM chat_exists)

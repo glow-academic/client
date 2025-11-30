@@ -1,4 +1,4 @@
--- List evals with status derivation from eval_model_runs junction table
+-- List evals with status derivation from eval_runs junction table
 -- Parameters: $1 = profile_id (uuid or "guest-profile-id")
 -- Returns: evals with derived status, rubric mapping, department mapping
 
@@ -22,8 +22,8 @@ eval_status_summary AS (
         COUNT(*) as total_runs,
         COUNT(*) FILTER (WHERE emr.completed = true) as completed_runs,
         COUNT(*) FILTER (WHERE emr.completed = false) as pending_runs
-    FROM eval_model_runs emr
-    GROUP BY emr.eval_id
+    FROM eval_runs er
+    GROUP BY er.eval_id
 ),
 eval_data AS (
     SELECT 

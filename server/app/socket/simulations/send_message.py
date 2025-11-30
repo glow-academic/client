@@ -331,8 +331,10 @@ async def _generate_hints_background_inline(
                 context["agent_id"],
                 "agent",
                 context["profile_id"],
+                None,  # key_id
+                str(context["agent_id"]),  # agent_id
             )
-            model_run_id = uuid.UUID(model_run_row["model_run_id"])
+            model_run_id = uuid.UUID(model_run_row["run_id"])
 
             # Run the hint agent
             logger.info("Running hint agent with parallel tool calls...")
@@ -342,7 +344,7 @@ async def _generate_hints_background_inline(
                 result = await Runner.run(
                     hint_agent.agent(),
                     input=input_items,
-                    context=DebugContext(conn=conn, model_run_id=model_run_id),
+                    context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
             # Update token usage using SQL file
@@ -509,19 +511,45 @@ async def _send_simulation_message_impl(
 
         async with pool.acquire() as conn:
             try:
+                # 1. Get or create a run for this chat (needed for message creation)
+                # We'll get the run details from context later, but for now we need a run_id
+                # For user messages, we'll use the latest run or create one
+                sql_get_run = load_sql("sql/v3/simulations/get_or_create_run_for_chat.sql")
+                # We need context to create a run, so we'll get it first
+                # For now, get the latest run for the chat
+                latest_run_row = await conn.fetchrow(
+                    """
+                    SELECT rc.run_id::text as run_id
+                    FROM run_chats rc
+                    JOIN runs r ON r.id = rc.run_id
+                    WHERE rc.chat_id = $1::uuid
+                    ORDER BY r.created_at DESC
+                    LIMIT 1
+                    """,
+                    str(chat_id_uuid)
+                )
+                
                 # 1. Add the user message to the chat (skip if this is a retry)
                 user_message = None
                 if message_str and message_str.strip() != "" and not is_retry:
-                    sql = load_sql("sql/v3/simulations/create_message.sql")
-                    user_message_row = await conn.fetchrow(
-                        sql, str(chat_id_uuid), "query", message_str, True
-                    )
-                    user_message = {
-                        "id": user_message_row["id"],
-                        "created_at": user_message_row["created_at"],
-                    }
+                    # If no run exists yet, we'll create one later when we have context
+                    # For now, we need to get or create a run
+                    if not latest_run_row:
+                        # We'll create the run later when we have full context
+                        # For now, skip message creation and create it after run creation
+                        pass
+                    else:
+                        run_id_for_message = latest_run_row["run_id"]
+                        sql = load_sql("sql/v3/simulations/create_message.sql")
+                        user_message_row = await conn.fetchrow(
+                            sql, run_id_for_message, "user", message_str, True
+                        )
+                        user_message = {
+                            "id": user_message_row["id"],
+                            "created_at": user_message_row["created_at"],
+                        }
 
-                    # Create branch from latest message to new user message (if latest exists)
+                        # Create branch from latest message to new user message (if latest exists)
                     sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
                     latest_message_row = await conn.fetchrow(
                         sql_latest, str(chat_id_uuid)
@@ -533,46 +561,56 @@ async def _send_simulation_message_impl(
                             str(latest_message_row["id"]),
                             str(user_message["id"]),
                         )
-                        logger.info(
-                            f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
-                        )
+                            logger.info(
+                                f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
+                            )
 
-                    # 2. Emit user message to connected clients
-                    logger.info(
-                        f"Emitting user message to room simulation_{chat_id_uuid}"
-                    )
-                    await simulation_new_message(
-                        SimulationNewMessagePayload(
-                            message_id=str(user_message["id"]),
-                            chat_id=str(chat_id_uuid),
-                            role="user",
-                            content=message_str,
-                            completed=True,
-                            created_at=user_message["created_at"].isoformat(),
-                        ),
-                        room=f"simulation_{chat_id_uuid}",
-                    )
-                    # Emit message_sent event for tour progression and cross-component communication
-                    await message_sent(
-                        MessageSentPayload(
-                            message_id=str(user_message["id"]),
-                            chat_id=str(chat_id_uuid),
-                            message=message_str,
-                            created_at=user_message["created_at"].isoformat(),
-                        ),
-                        room=f"simulation_{chat_id_uuid}",
-                    )
+                        # 2. Emit user message to connected clients
+                        logger.info(
+                            f"Emitting user message to room simulation_{chat_id_uuid}"
+                        )
+                        await simulation_new_message(
+                            SimulationNewMessagePayload(
+                                message_id=str(user_message["id"]),
+                                chat_id=str(chat_id_uuid),
+                                role="user",
+                                content=message_str,
+                                completed=True,
+                                created_at=user_message["created_at"].isoformat(),
+                            ),
+                            room=f"simulation_{chat_id_uuid}",
+                        )
+                        # Emit message_sent event for tour progression and cross-component communication
+                        await message_sent(
+                            MessageSentPayload(
+                                message_id=str(user_message["id"]),
+                                chat_id=str(chat_id_uuid),
+                                message=message_str,
+                                created_at=user_message["created_at"].isoformat(),
+                            ),
+                            room=f"simulation_{chat_id_uuid}",
+                        )
                 else:
                     if is_retry:
                         logger.info(
                             f"Skipping user message creation for retry in chat {chat_id_uuid}"
                         )
 
-                # 3. Create placeholder assistant message
-                sql = load_sql("sql/v3/simulations/create_message.sql")
-                assistant_message_row = await conn.fetchrow(
-                    sql, str(chat_id_uuid), "response", "", False
-                )
+                # 3. Create placeholder assistant message (will use run_id created later)
+                # For now, use latest run or create a placeholder
+                run_id_for_assistant = latest_run_row["run_id"] if latest_run_row else None
+                if not run_id_for_assistant:
+                    # We'll create the message after creating the run
+                    assistant_message = None
+                else:
+                    sql = load_sql("sql/v3/simulations/create_message.sql")
+                    assistant_message_row = await conn.fetchrow(
+                        sql, run_id_for_assistant, "assistant", "", False
+                    )
+                    assistant_message = {
+                        "id": assistant_message_row["id"],
+                        "created_at": assistant_message_row["created_at"],
+                    }
                 assistant_message = {
                     "id": assistant_message_row["id"],
                     "created_at": assistant_message_row["created_at"],
@@ -654,10 +692,8 @@ async def _send_simulation_message_impl(
                     from app.utils.websocket.store_active_run import \
                         store_active_run
 
-                    # Get all context data in a single optimized query using SQL file
-                    sql = load_sql("sql/v3/agents/get_simulation_run_context.sql")
-                    context_row = await conn.fetchrow(sql, str(chat_id_uuid))
-
+                    # Context already fetched earlier, reuse it
+                    # context_row is already available from earlier fetch (line 522)
                     if not context_row:
                         raise ValueError(
                             f"Chat {chat_id_uuid} not found or no persona configured"
@@ -813,6 +849,14 @@ async def _send_simulation_message_impl(
                             error_message = f"Daily request limit of {req_per_day} reached. Please try again tomorrow."
                         raise ValueError(error_message)
 
+                    # Get Simulation Agent ID for persona-based runs
+                    simulation_agent_row = await conn.fetchrow(
+                        "SELECT id FROM agents WHERE role = 'simulation' AND active = true LIMIT 1"
+                    )
+                    if not simulation_agent_row:
+                        raise ValueError("Simulation Agent not found")
+                    simulation_agent_id = simulation_agent_row["id"]
+
                     # Create model run with all junction records using SQL file (using persona, not agent)
                     sql_create_run = load_sql(
                         "sql/v3/model_runs/create_model_run_complete.sql"
@@ -824,8 +868,43 @@ async def _send_simulation_message_impl(
                         context["persona_id"],
                         "persona",
                         context["profile_id"],
+                        None,  # key_id
+                        str(simulation_agent_id),  # agent_id
                     )
-                    model_run_id = uuid.UUID(model_run_row["model_run_id"])
+                    model_run_id = uuid.UUID(model_run_row["run_id"])
+                    
+                    # Link run to chat if not already linked
+                    await conn.execute(
+                        """
+                        INSERT INTO run_chats (run_id, chat_id, created_at, updated_at)
+                        VALUES ($1::uuid, $2::uuid, NOW(), NOW())
+                        ON CONFLICT (run_id, chat_id) DO NOTHING
+                        """,
+                        str(model_run_id),
+                        str(chat_id_uuid)
+                    )
+                    
+                    # Create user message if it wasn't created earlier (no run existed)
+                    if not user_message and message_str and message_str.strip() != "" and not is_retry:
+                        sql = load_sql("sql/v3/simulations/create_message.sql")
+                        user_message_row = await conn.fetchrow(
+                            sql, str(model_run_id), "user", message_str, True
+                        )
+                        user_message = {
+                            "id": user_message_row["id"],
+                            "created_at": user_message_row["created_at"],
+                        }
+                    
+                    # Create assistant message if it wasn't created earlier
+                    if not assistant_message:
+                        sql = load_sql("sql/v3/simulations/create_message.sql")
+                        assistant_message_row = await conn.fetchrow(
+                            sql, str(model_run_id), "assistant", "", False
+                        )
+                        assistant_message = {
+                            "id": assistant_message_row["id"],
+                            "created_at": assistant_message_row["created_at"],
+                        }
 
                     with trace(
                         context["chat_title"],
@@ -835,7 +914,7 @@ async def _send_simulation_message_impl(
                         result = Runner.run_streamed(
                             agent_instance.agent(),
                             input=input_items,
-                            context=DebugContext(conn=conn, model_run_id=model_run_id),
+                            context=DebugContext(conn=conn, run_id=model_run_id),
                         )
 
                     # Store the result in active runs for potential cancellation using unified tracking

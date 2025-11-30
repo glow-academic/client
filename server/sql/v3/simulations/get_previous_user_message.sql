@@ -11,7 +11,7 @@ SELECT
     created_at,
     completed,
     updated_at
-FROM simulation_messages
+FROM messages
 WHERE chat_id = $1::uuid
   AND type = 'query'
 ORDER BY created_at DESC

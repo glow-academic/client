@@ -80,8 +80,10 @@ async def run_guardrail_evaluation(
         context["agent_id"],
         "agent",
         context["profile_id"],
+        None,  # key_id
+        str(context["agent_id"]),  # agent_id
     )
-    model_run_id = uuid.UUID(model_run_row["model_run_id"])
+    model_run_id = uuid.UUID(model_run_row["run_id"])
 
     # Run guardrail evaluation with tracing
     with trace(
@@ -92,7 +94,7 @@ async def run_guardrail_evaluation(
         result = await Runner.run(
             guardrail_agent.agent(),
             evaluation_input,
-            context=DebugContext(conn=conn, model_run_id=model_run_id),
+            context=DebugContext(conn=conn, run_id=model_run_id),
         )
 
     # Update token counts using SQL file

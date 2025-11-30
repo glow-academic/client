@@ -39,8 +39,8 @@ recent_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as run_count
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY mrp.profile_id
 ),
@@ -48,7 +48,7 @@ profile_total_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as total_requests
-    FROM model_run_profiles mrp
+    FROM run_profiles mrp
     GROUP BY mrp.profile_id
 ),
 all_cohort_ids AS (

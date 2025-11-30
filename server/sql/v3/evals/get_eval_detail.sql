@@ -1,6 +1,6 @@
--- Get eval detail with status breakdown and model_runs list
+-- Get eval detail with status breakdown and runs list
 -- Parameters: $1 = eval_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
--- Returns: eval details with status breakdown and model_runs
+-- Returns: eval details with status breakdown and runs
 
 WITH resolve_profile_id AS (
     SELECT 
@@ -46,52 +46,51 @@ eval_status_summary AS (
         COUNT(*) as total_runs,
         COUNT(*) FILTER (WHERE emr.completed = true) as completed_runs,
         COUNT(*) FILTER (WHERE emr.completed = false) as pending_runs
-    FROM eval_model_runs emr
-    WHERE emr.eval_id = $1
-    GROUP BY emr.eval_id
+    FROM eval_runs er
+    WHERE er.eval_id = $1
+    GROUP BY er.eval_id
 ),
-model_runs_list AS (
+runs_list AS (
     SELECT 
-        emr.model_run_id::text,
-        emr.completed,
-        emr.created_at as assigned_at,
-        emr.updated_at as status_updated_at,
-        mr.created_at as model_run_created_at,
+        er.run_id::text,
+        er.completed,
+        er.created_at as assigned_at,
+        er.updated_at as status_updated_at,
+        r.created_at as run_created_at,
         -- Get model info
-        mrm.model_id::text as model_id,
+        rm.model_id::text as model_id,
         m.name as model_name,
         -- Get agent/persona info
-        mra.agent_id::text as agent_id,
+        r.agent_id::text as agent_id,
         a.name as agent_name,
-        mrper.persona_id::text as persona_id,
+        rper.persona_id::text as persona_id,
         per.name as persona_name,
         -- Get profile info
-        mrp.profile_id::text as profile_id,
+        rp.profile_id::text as profile_id,
         p.first_name || ' ' || p.last_name as profile_name,
         -- Check if grade exists
-        CASE WHEN eg.id IS NOT NULL THEN true ELSE false END as has_grade,
-        eg.score as grade_score,
-        eg.passed as grade_passed,
-        eg.created_at as grade_created_at
-    FROM eval_model_runs emr
-    JOIN model_runs mr ON mr.id = emr.model_run_id
-    LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
-    LEFT JOIN models m ON m.id = mrm.model_id
-    LEFT JOIN model_run_agents mra ON mra.model_run_id = mr.id AND mra.active = true
-    LEFT JOIN agents a ON a.id = mra.agent_id
-    LEFT JOIN model_run_personas mrper ON mrper.model_run_id = mr.id AND mrper.active = true
-    LEFT JOIN personas per ON per.id = mrper.persona_id
-    LEFT JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id AND mrp.active = true
-    LEFT JOIN profiles p ON p.id = mrp.profile_id
-    LEFT JOIN eval_grades eg ON eg.model_run_id = emr.model_run_id AND eg.eval_id = emr.eval_id
-    WHERE emr.eval_id = $1
-    ORDER BY emr.created_at DESC
+        CASE WHEN g.id IS NOT NULL THEN true ELSE false END as has_grade,
+        g.score as grade_score,
+        g.passed as grade_passed,
+        g.created_at as grade_created_at
+    FROM eval_runs er
+    JOIN runs r ON r.id = er.run_id
+    LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
+    LEFT JOIN models m ON m.id = rm.model_id
+    LEFT JOIN agents a ON a.id = r.agent_id
+    LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
+    LEFT JOIN personas per ON per.id = rper.persona_id
+    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
+    LEFT JOIN profiles p ON p.id = rp.profile_id
+    LEFT JOIN grades g ON g.run_id = er.run_id AND g.eval_id = er.eval_id AND g.eval = true
+    WHERE er.eval_id = $1
+    ORDER BY er.created_at DESC
 ),
-model_runs_json AS (
+runs_json AS (
     SELECT COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'model_run_id', model_run_id,
+                'run_id', run_id,
                 'completed', completed,
                 'assigned_at', assigned_at,
                 'status_updated_at', status_updated_at,
@@ -111,8 +110,8 @@ model_runs_json AS (
             ) ORDER BY assigned_at DESC
         ),
         '[]'::jsonb
-    ) as model_runs
-    FROM model_runs_list
+    ) as runs
+    FROM runs_list
 ),
 user_profile AS (
     SELECT role FROM profiles WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)
@@ -153,7 +152,7 @@ SELECT
         WHEN ess.completed_runs = ess.total_runs THEN 'completed'
         ELSE 'pending'
     END as status,
-    mrl.model_runs,
+    rj.runs,
     dm.mapping as department_mapping,
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
@@ -166,7 +165,7 @@ SELECT
 FROM eval_data ed
 LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = ed.rubric_id
 LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id
-CROSS JOIN model_runs_json mrl
+CROSS JOIN runs_json rj
 CROSS JOIN user_profile up
 CROSS JOIN department_mapping_data dm
 WHERE 

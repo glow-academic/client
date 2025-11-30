@@ -36,11 +36,11 @@ attempt_chats AS (
     JOIN attempt_profiles ap ON sa.id = ap.attempt_id
     JOIN simulations s ON s.id = sa.simulation_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
-    LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
+    LEFT JOIN chats sc ON sc.id = ac.chat_id
     LEFT JOIN scenarios scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = scn.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+    LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
     WHERE ap.profile_id = $1 AND ap.active = true
     ORDER BY sa.created_at, sc.created_at
 ),
@@ -58,7 +58,7 @@ chat_messages AS (
             ) 
             FROM (
                 SELECT created_at, type, content, completed
-                FROM simulation_messages
+                FROM messages
                 WHERE chat_id = ac.chat_id
                 ORDER BY created_at DESC
                 LIMIT $2
@@ -83,7 +83,7 @@ grade_feedbacks AS (
             '[]'::jsonb
         ) as feedback
     FROM attempt_chats ac
-    LEFT JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = ac.grade_id
+    LEFT JOIN feedbacks scf ON scf.grade_id = ac.grade_id
     LEFT JOIN standards st ON st.id = scf.standard_id
     WHERE ac.grade_id IS NOT NULL
     GROUP BY ac.grade_id

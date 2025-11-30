@@ -33,8 +33,8 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
                             JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
                             WHERE ac.chat_id = $1::uuid AND ap.active = true LIMIT 1)
@@ -73,7 +73,7 @@ SELECT
     COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
     rt.earliest_run_created_at
 
-FROM simulation_chats sc
+FROM chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 CROSS JOIN best_agent ba

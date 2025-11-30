@@ -151,7 +151,7 @@ async def get_model_runs(
                 if isinstance(mr_data, dict):
                     model_runs.append(
                         ModelRunItem(
-                            model_run_id=str(mr_data.get("model_run_id", "")),
+                            model_run_id=str(mr_data.get("run_id", "")),
                             created_at=str(mr_data.get("created_at", "")),
                             model_id=str(mr_data.get("model_id", ""))
                             if mr_data.get("model_id")

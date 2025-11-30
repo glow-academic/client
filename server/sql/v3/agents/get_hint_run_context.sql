@@ -3,12 +3,12 @@
 -- Returns: message, chat, attempt, scenario, agent (hint role), model, provider, documents, and profile data
 WITH target_message AS (
     SELECT id, chat_id, type, content, created_at
-    FROM simulation_messages
+    FROM messages
     WHERE id = $1::uuid AND chat_id = $2::uuid
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, sc.trace_id, sc.title
-    FROM simulation_chats sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     JOIN target_message tm ON tm.chat_id = sc.id
 ),
@@ -61,8 +61,8 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM profile_info)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'

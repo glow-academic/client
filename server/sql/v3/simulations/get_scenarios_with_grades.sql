@@ -11,8 +11,8 @@ WITH RECURSIVE scenario_ancestors AS (
         sc.scenario_id as ancestor_id,
         0 as depth
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
-    JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN grades scg ON scg.simulation_chat_id = sc.id
     WHERE ac.attempt_id = $1::uuid
     
     UNION ALL
@@ -53,8 +53,8 @@ SELECT DISTINCT ss.scenario_id as parent_scenario_id
 FROM simulation_scenarios ss
 JOIN simulation_attempts sa ON sa.simulation_id = ss.simulation_id
 JOIN attempt_chats ac ON ac.attempt_id = sa.id
-JOIN simulation_chats sc ON sc.id = ac.chat_id
-JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+JOIN chats sc ON sc.id = ac.chat_id
+JOIN grades scg ON scg.simulation_chat_id = sc.id
 LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
 WHERE sa.id = $1::uuid
   AND (

@@ -212,7 +212,7 @@ grade_stream AS (
         sg.simulation_chat_id,
         sg.created_at,
         (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
-    FROM simulation_chat_grades sg
+    FROM grades sg
     JOIN filtered_chats_for_stagnation fc ON fc.chat_id = sg.simulation_chat_id
     JOIN rubrics r ON r.id = sg.rubric_id
 ),
@@ -710,7 +710,7 @@ latest_grade_per_chat AS (
         scg.id,
         scg.simulation_chat_id AS chat_id,
         scg.rubric_id
-    FROM simulation_chat_grades scg
+    FROM grades scg
     JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
     ORDER BY scg.simulation_chat_id, scg.created_at DESC
 ),
@@ -722,7 +722,7 @@ per_grade_group AS (
         sg.name AS group_name,
         (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
     FROM latest_grade_per_chat lg
-    JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.id
+    JOIN feedbacks scf ON scf.grade_id = lg.id
     JOIN standards s ON s.id = scf.standard_id
     JOIN standard_groups sg ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
     GROUP BY lg.chat_id, sg.rubric_id, sg.id, sg.name, sg.points
@@ -1055,7 +1055,7 @@ latest_grade_for_skills AS (
            scg.simulation_chat_id AS chat_id,
            scg.rubric_id,
            scg.created_at
-    FROM simulation_chat_grades scg
+    FROM grades scg
     ORDER BY scg.simulation_chat_id, scg.rubric_id, scg.created_at DESC
 ),
 per_grade_group_skills AS (
@@ -1073,7 +1073,7 @@ per_grade_group_skills AS (
         END AS pct
     FROM latest_grade_for_skills lg
     JOIN filt_for_skills f ON f.chat_id = lg.chat_id
-    JOIN simulation_chat_feedbacks scf ON scf.simulation_chat_grade_id = lg.grade_id
+    JOIN feedbacks scf ON scf.grade_id = lg.grade_id
     JOIN standards s ON s.id = scf.standard_id
     JOIN standard_groups sg ON sg.id = s.standard_group_id AND sg.rubric_id = lg.rubric_id
     GROUP BY lg.rubric_id, sg.id, sg.name, f.simulation_id, lg.grade_id, sg.points

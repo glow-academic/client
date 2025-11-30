@@ -42,7 +42,7 @@ async def _emit_eval_progress(event_data: dict[str, Any]) -> None:
     await eval_progress(
         {
             "eval_id": event_data.get("eval_id"),
-            "model_run_id": event_data.get("model_run_id"),
+            "run_id": event_data.get("run_id"),
             "status": event_data.get("status"),
             "message": event_data.get("message"),
             "grade_id": event_data.get("grade_id"),
@@ -75,7 +75,7 @@ async def run_eval(
 
         eval_id = result["eval_id"]
         rubric_id = result["rubric_id"]
-        pending_model_run_ids = result.get("pending_model_run_ids") or []
+        pending_model_run_ids = result.get("pending_run_ids") or []
 
         if not pending_model_run_ids:
             return RunEvalResponse(

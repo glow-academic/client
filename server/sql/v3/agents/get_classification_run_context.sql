@@ -31,8 +31,8 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT id FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'

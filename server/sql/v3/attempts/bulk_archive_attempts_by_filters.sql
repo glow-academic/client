@@ -151,7 +151,7 @@ attempt_scenario_ids AS (
         ac.attempt_id,
         ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
     GROUP BY ac.attempt_id
 ),
@@ -169,7 +169,7 @@ history_personas AS (
         ac.attempt_id,
         array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
     FROM attempt_chats ac
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
+    JOIN chats sc ON sc.id = ac.chat_id
     JOIN scenarios scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)

@@ -25,10 +25,10 @@ message_pairs AS (
             PARTITION BY sc.id 
             ORDER BY sm1.created_at
         ) as pair_num
-    FROM simulation_chats sc
+    FROM chats sc
     JOIN scenarios s ON s.id = sc.scenario_id
-    JOIN simulation_messages sm1 ON sm1.chat_id = sc.id
-    JOIN simulation_messages sm2 ON sm2.chat_id = sc.id
+    JOIN messages sm1 ON sm1.chat_id = sc.id
+    JOIN messages sm2 ON sm2.chat_id = sc.id
     CROSS JOIN scenario_ids_array sia
     WHERE sc.scenario_id = ANY(sia.ids)
       AND sia.ids != ARRAY[]::uuid[]
@@ -37,7 +37,7 @@ message_pairs AS (
       AND sm2.type = 'response'
       AND sm2.created_at > sm1.created_at
       AND NOT EXISTS (
-          SELECT 1 FROM simulation_messages sm_between
+          SELECT 1 FROM messages sm_between
           WHERE sm_between.chat_id = sc.id
             AND sm_between.created_at > sm1.created_at
             AND sm_between.created_at < sm2.created_at

@@ -130,12 +130,10 @@ debug_data AS (
         di.created_at,
         mrm.model_id::text,
         di.content
-    FROM model_run_agents mra
-    JOIN model_runs mr ON mr.id = mra.model_run_id
-    JOIN debug_info di ON di.model_run_id = mr.id
-    JOIN model_run_models mrm ON mrm.model_run_id = mr.id
-    WHERE mra.agent_id = $1::uuid
-    AND mra.active = true
+    FROM runs mr
+    JOIN debug_info di ON di.run_id = mr.id
+    JOIN run_models mrm ON mrm.run_id = mr.id
+    WHERE mr.agent_id = $1::uuid
     AND mrm.active = true
     ORDER BY di.created_at DESC
     LIMIT 100

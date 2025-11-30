@@ -415,12 +415,12 @@ async def _run_grade_agent_inline(
         time_message: TResponseInputItem
         if adjusted_time_limit > 0:
             time_message = {
-                "role": "user",
+                "role": "developer",
                 "content": f"The adjusted time limit for this chat is {format_minutes(adjusted_time_limit)}. The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
             }
         else:
             time_message = {
-                "role": "user",
+                "role": "developer",
                 "content": f"The TA has taken {format_minutes(actual_time_taken)} during this chat. You can take this into account when grading the TA, based on the rubric.",
             }
 
@@ -525,8 +525,10 @@ async def _run_grade_agent_inline(
             agent["id"],
             "agent",
             context["profile_id"],
+            None,  # key_id
+            str(agent["id"]),  # agent_id
         )
-        model_run_id = uuid.UUID(model_run_row["model_run_id"])
+        model_run_id = uuid.UUID(model_run_row["run_id"])
 
         # Run the grading
         logger.info("Running grading agent...")
@@ -536,7 +538,7 @@ async def _run_grade_agent_inline(
             result = await Runner.run(
                 agent_instance,
                 input=input_items,
-                context=DebugContext(conn=conn, model_run_id=model_run_id),
+                context=DebugContext(conn=conn, run_id=model_run_id),
             )
 
         usage = result.context_wrapper.usage

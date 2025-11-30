@@ -132,7 +132,7 @@ scenario_full_data AS (
 ),
 -- Create simulation chat (without attempt_id - uses junction table)
 new_chat AS (
-    INSERT INTO simulation_chats (
+    INSERT INTO chats (
         created_at, title, scenario_id, completed, trace_id, updated_at
     )
     SELECT 

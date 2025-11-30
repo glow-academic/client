@@ -6,7 +6,7 @@
 --   $4 = profile_id (uuid | NULL) - raw profile ID (role check happens in SQL)
 --   $5 = roles (text[] | NULL) - only used if profile_id is NULL or role is admin/superadmin/instructional
 --   $6 = cohort_ids (uuid[] | NULL)
--- Returns: JSONB object with model_runs, model_mapping, profile_mapping, agent_mapping, persona_mapping
+-- Returns: JSONB object with runs, model_mapping, profile_mapping, agent_mapping, persona_mapping
 
 WITH profile_role_check AS (
     -- Resolve profile_id and check role to determine effective filtering
@@ -18,21 +18,20 @@ WITH profile_role_check AS (
             ELSE $4::uuid
         END as effective_profile_id
 ),
-model_runs_base AS (
+runs_base AS (
     SELECT
-        mr.id as model_run_id,
+        mr.id as run_id,
         mr.created_at,
         mr.input_tokens,
         mr.output_tokens,
         mrm.model_id,
         mrp.profile_id,
-        mra.agent_id,
+        mr.agent_id,
         mrper.persona_id
-    FROM model_runs mr
-    LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
-    LEFT JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id AND mrp.active = true
-    LEFT JOIN model_run_agents mra ON mra.model_run_id = mr.id AND mra.active = true
-    LEFT JOIN model_run_personas mrper ON mrper.model_run_id = mr.id AND mrper.active = true
+    FROM runs mr
+    LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
+    LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
+    LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
     WHERE 
         -- Date filters (always required)
         mr.created_at >= $1
@@ -42,9 +41,9 @@ model_runs_base AS (
             $3::uuid[] IS NULL 
             OR COALESCE(array_length($3::uuid[], 1), 0) = 0
             OR EXISTS (
-                SELECT 1 FROM model_run_profiles mrp2
+                SELECT 1 FROM run_profiles mrp2
                 JOIN profile_departments pd ON pd.profile_id = mrp2.profile_id
-                WHERE mrp2.model_run_id = mr.id
+                WHERE mrp2.run_id = mr.id
                   AND mrp2.active = true
                   AND pd.department_id = ANY($3::uuid[])
             )
@@ -72,7 +71,7 @@ model_runs_base AS (
             )
         )
 ),
-model_runs_with_debug AS (
+runs_with_debug AS (
     SELECT
         mrb.*,
         COALESCE(
@@ -84,10 +83,10 @@ model_runs_with_debug AS (
                 ) ORDER BY di.created_at
             )
             FROM debug_info di
-            WHERE di.model_run_id = mrb.model_run_id),
+            WHERE di.run_id = mrb.run_id),
             '[]'::jsonb
         ) as debug_info
-    FROM model_runs_base mrb
+    FROM runs_base mrb
 ),
 model_mapping AS (
     SELECT COALESCE(
@@ -102,7 +101,7 @@ model_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT model_id FROM model_runs_base WHERE model_id IS NOT NULL) mrb
+    FROM (SELECT DISTINCT model_id FROM runs_base WHERE model_id IS NOT NULL) mrb
     JOIN models m ON m.id = mrb.model_id
 ),
 profile_mapping AS (
@@ -113,7 +112,7 @@ profile_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT profile_id FROM model_runs_base WHERE profile_id IS NOT NULL) mrb
+    FROM (SELECT DISTINCT profile_id FROM runs_base WHERE profile_id IS NOT NULL) mrb
     JOIN profiles p ON p.id = mrb.profile_id
 ),
 agent_mapping AS (
@@ -124,7 +123,7 @@ agent_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT agent_id FROM model_runs_base WHERE agent_id IS NOT NULL) mrb
+    FROM (SELECT DISTINCT agent_id FROM runs_base WHERE agent_id IS NOT NULL) mrb
     JOIN agents a ON a.id = mrb.agent_id
 ),
 persona_mapping AS (
@@ -135,14 +134,14 @@ persona_mapping AS (
         ),
         '{}'::jsonb
     ) as mapping
-    FROM (SELECT DISTINCT persona_id FROM model_runs_base WHERE persona_id IS NOT NULL) mrb
+    FROM (SELECT DISTINCT persona_id FROM runs_base WHERE persona_id IS NOT NULL) mrb
     JOIN personas per ON per.id = mrb.persona_id
 )
 SELECT jsonb_build_object(
-    'model_runs', COALESCE(
+    'runs', COALESCE(
         (SELECT jsonb_agg(
             jsonb_build_object(
-                'model_run_id', model_run_id::text,
+                'run_id', run_id::text,
                 'created_at', created_at,
                 'input_tokens', input_tokens,
                 'output_tokens', output_tokens,
@@ -152,7 +151,7 @@ SELECT jsonb_build_object(
                 'persona_id', CASE WHEN persona_id IS NOT NULL THEN persona_id::text ELSE NULL END,
                 'debug_info', debug_info
             ) ORDER BY created_at DESC
-        ) FROM model_runs_with_debug),
+        ) FROM runs_with_debug),
         '[]'::jsonb
     ),
     'model_mapping', COALESCE((SELECT mapping FROM model_mapping LIMIT 1), '{}'::jsonb),

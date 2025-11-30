@@ -1,4 +1,4 @@
--- Query model_runs for eval selection with filters
+-- Query runs for eval selection with filters
 -- Parameters: 
 --   $1 = profile_id (uuid or "guest-profile-id")
 --   $2 = start_date (timestamp | NULL)
@@ -10,7 +10,7 @@
 --   $8 = search (text | NULL)
 --   $9 = page (int, default 1)
 --   $10 = page_size (int, default 50)
--- Returns: JSONB object with paginated model_runs and mappings
+-- Returns: JSONB object with paginated runs and mappings
 
 WITH resolve_profile_id AS (
     SELECT 
@@ -30,51 +30,50 @@ profile_role_check AS (
             ELSE (SELECT resolved_profile_id FROM resolve_profile_id)
         END as effective_profile_id
 ),
-model_runs_base AS (
+runs_base AS (
     SELECT
-        mr.id as model_run_id,
-        mr.created_at,
-        mrm.model_id,
-        mrp.profile_id,
-        mra.agent_id,
-        mrper.persona_id
-    FROM model_runs mr
-    LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
-    LEFT JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id AND mrp.active = true
-    LEFT JOIN model_run_agents mra ON mra.model_run_id = mr.id AND mra.active = true
-    LEFT JOIN model_run_personas mrper ON mrper.model_run_id = mr.id AND mrper.active = true
+        r.id as run_id,
+        r.created_at,
+        rm.model_id,
+        rp.profile_id,
+        r.agent_id,
+        rper.persona_id
+    FROM runs r
+    LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
+    LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
+    LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
     WHERE 
         -- Date filters (optional)
-        ($2::timestamp IS NULL OR mr.created_at >= $2::timestamp)
-        AND ($3::timestamp IS NULL OR mr.created_at <= $3::timestamp)
+        ($2::timestamp IS NULL OR r.created_at >= $2::timestamp)
+        AND ($3::timestamp IS NULL OR r.created_at <= $3::timestamp)
         -- Profile filter (specific user) - only if role is not admin/superadmin/instructional
         AND (
             (SELECT effective_profile_id FROM profile_role_check) IS NULL
-            OR mrp.profile_id = (SELECT effective_profile_id FROM profile_role_check)
+            OR rp.profile_id = (SELECT effective_profile_id FROM profile_role_check)
         )
 ),
-model_runs_with_names AS (
+runs_with_names AS (
     SELECT
-        mrb.*,
+        rb.*,
         m.name as model_name,
         p.first_name || ' ' || p.last_name as profile_name,
         a.name as agent_name,
         per.name as persona_name,
         CASE 
-            WHEN mrb.agent_id IS NOT NULL THEN 'agent'
-            WHEN mrb.persona_id IS NOT NULL THEN 'persona'
+            WHEN rb.agent_id IS NOT NULL THEN 'agent'
+            WHEN rb.persona_id IS NOT NULL THEN 'persona'
             ELSE NULL
         END as actor_type
-    FROM model_runs_base mrb
-    LEFT JOIN models m ON m.id = mrb.model_id
-    LEFT JOIN profiles p ON p.id = mrb.profile_id
-    LEFT JOIN agents a ON a.id = mrb.agent_id
-    LEFT JOIN personas per ON per.id = mrb.persona_id
+    FROM runs_base rb
+    LEFT JOIN models m ON m.id = rb.model_id
+    LEFT JOIN profiles p ON p.id = rb.profile_id
+    LEFT JOIN agents a ON a.id = rb.agent_id
+    LEFT JOIN personas per ON per.id = rb.persona_id
 ),
 -- Apply filters
-model_runs_filtered AS (
+runs_filtered AS (
     SELECT *
-    FROM model_runs_with_names
+    FROM runs_with_names
     WHERE (
         -- Model filter
         ($4::uuid[] IS NULL OR COALESCE(array_length($4::uuid[], 1), 0) = 0 OR model_id = ANY($4::uuid[]))
@@ -114,7 +113,7 @@ paginated_runs AS (
     SELECT
         *,
         COUNT(*) OVER() AS total_count
-    FROM model_runs_filtered
+    FROM runs_filtered
     ORDER BY created_at DESC
     LIMIT (SELECT page_size FROM page_size_val)
     OFFSET (SELECT offset_val FROM offset_val)
@@ -132,9 +131,9 @@ model_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM (
-        SELECT DISTINCT model_id FROM model_runs_filtered WHERE model_id IS NOT NULL
-    ) mrf
-    JOIN models m ON m.id = mrf.model_id
+        SELECT DISTINCT model_id FROM runs_filtered WHERE model_id IS NOT NULL
+    ) rf
+    JOIN models m ON m.id = rf.model_id
 ),
 agent_mapping_data AS (
     SELECT COALESCE(
@@ -145,9 +144,9 @@ agent_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM (
-        SELECT DISTINCT agent_id FROM model_runs_filtered WHERE agent_id IS NOT NULL
-    ) mrf
-    JOIN agents a ON a.id = mrf.agent_id
+        SELECT DISTINCT agent_id FROM runs_filtered WHERE agent_id IS NOT NULL
+    ) rf
+    JOIN agents a ON a.id = rf.agent_id
 ),
 persona_mapping_data AS (
     SELECT COALESCE(
@@ -158,15 +157,15 @@ persona_mapping_data AS (
         '{}'::jsonb
     ) as mapping
     FROM (
-        SELECT DISTINCT persona_id FROM model_runs_filtered WHERE persona_id IS NOT NULL
-    ) mrf
-    JOIN personas per ON per.id = mrf.persona_id
+        SELECT DISTINCT persona_id FROM runs_filtered WHERE persona_id IS NOT NULL
+    ) rf
+    JOIN personas per ON per.id = rf.persona_id
 )
 SELECT 
     COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'model_run_id', model_run_id::text,
+                'run_id', run_id::text,
                 'created_at', created_at,
                 'model_id', model_id::text,
                 'model_name', model_name,
@@ -180,7 +179,7 @@ SELECT
             ) ORDER BY created_at DESC
         ),
         '[]'::jsonb
-    ) as model_runs,
+    ) as runs,
     COALESCE((SELECT total_count FROM paginated_runs LIMIT 1), 0) as total_count,
     (SELECT page FROM page_num) as page,
     (SELECT page_size FROM page_size_val) as page_size,

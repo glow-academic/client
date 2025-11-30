@@ -5,56 +5,57 @@ WITH user_departments AS (
 ),
 model_run_costs AS (
     SELECT 
-        mr.id as model_run_id,
+        mr.id as run_id,
         COALESCE(SUM(
             (mr.input_tokens / 1000000.0) * COALESCE(m.input_ppm, 0) +
             (mr.output_tokens / 1000000.0) * COALESCE(m.output_ppm, 0)
         ), 0) as cost
-    FROM model_runs mr
-    LEFT JOIN model_run_models mrm ON mrm.model_run_id = mr.id AND mrm.active = true
+    FROM runs mr
+    LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN models m ON m.id = mrm.model_id
     GROUP BY mr.id
 ),
 model_run_departments_via_agents AS (
     SELECT DISTINCT
-        mrc.model_run_id,
+        mrc.run_id,
         ad.department_id
     FROM model_run_costs mrc
-    JOIN model_run_agents mra ON mra.model_run_id = mrc.model_run_id AND mra.active = true
-    JOIN agent_departments ad ON ad.agent_id = mra.agent_id AND ad.active = true
+    JOIN runs mr ON mr.id = mrc.run_id
+    JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
+    WHERE mr.agent_id IS NOT NULL
     WHERE ad.department_id IN (SELECT department_id FROM user_departments)
 ),
 model_run_departments_via_personas AS (
     SELECT DISTINCT
-        mrc.model_run_id,
+        mrc.run_id,
         pd.department_id
     FROM model_run_costs mrc
-    JOIN model_run_personas mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
+    JOIN run_personas mrp ON mrp.run_id = mrc.run_id AND mrp.active = true
     JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ),
 model_run_departments_via_profiles AS (
     SELECT DISTINCT
-        mrc.model_run_id,
+        mrc.run_id,
         pd.department_id
     FROM model_run_costs mrc
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mrc.model_run_id AND mrp.active = true
+    JOIN run_profiles mrp ON mrp.run_id = mrc.run_id AND mrp.active = true
     JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ),
 model_run_departments AS (
-    SELECT model_run_id, department_id FROM model_run_departments_via_agents
+    SELECT run_id, department_id FROM model_run_departments_via_agents
     UNION
-    SELECT model_run_id, department_id FROM model_run_departments_via_personas
+    SELECT run_id, department_id FROM model_run_departments_via_personas
     UNION
-    SELECT model_run_id, department_id FROM model_run_departments_via_profiles
+    SELECT run_id, department_id FROM model_run_departments_via_profiles
 ),
 department_price_spent AS (
     SELECT 
         mrd.department_id,
         SUM(mrc.cost) as total_price_spent
     FROM model_run_costs mrc
-    JOIN model_run_departments mrd ON mrd.model_run_id = mrc.model_run_id
+    JOIN model_run_departments mrd ON mrd.run_id = mrc.run_id
     GROUP BY mrd.department_id
 ),
 department_staff_count AS (

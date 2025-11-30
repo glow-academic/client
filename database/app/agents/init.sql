@@ -14,7 +14,8 @@ CREATE TYPE agent_role AS ENUM (
   'scenario',
   'title',
   'image',
-  'video'
+  'video',
+  'simulation'
 );
 
 -- ============================================================================
@@ -35,71 +36,63 @@ CREATE TABLE agents (
   active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE model_runs (
+CREATE TABLE runs (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   input_tokens INTEGER     NOT NULL DEFAULT 0,
   output_tokens INTEGER     NOT NULL DEFAULT 0,
   cached_input_tokens INTEGER     NOT NULL DEFAULT 0,
-  key_id     UUID        REFERENCES keys(id) ON DELETE SET NULL
+  key_id     UUID        REFERENCES keys(id) ON DELETE SET NULL,
+  agent_id   UUID        REFERENCES agents(id) ON DELETE SET NULL
 );
 
-CREATE INDEX ON model_runs (key_id);
+CREATE INDEX ON runs (key_id);
+CREATE INDEX ON runs (agent_id);
 
--- Model run junction tables (BCNF normalization - replaces nullable FKs)
-CREATE TABLE model_run_models (
-  model_run_id UUID NOT NULL REFERENCES model_runs(id) ON DELETE CASCADE,
+-- Run junction tables (BCNF normalization - replaces nullable FKs)
+CREATE TABLE run_models (
+  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   model_id     UUID NOT NULL REFERENCES models(id)     ON DELETE RESTRICT,
   active       BOOLEAN NOT NULL DEFAULT TRUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_run_id, model_id)
+  PRIMARY KEY (run_id, model_id)
 );
 
-CREATE UNIQUE INDEX one_model_per_run ON model_run_models(model_run_id);
-CREATE INDEX ON model_run_models (model_id);
+CREATE UNIQUE INDEX one_model_per_run ON run_models(run_id);
+CREATE INDEX ON run_models (model_id);
 
-CREATE TABLE model_run_personas (
-  model_run_id UUID NOT NULL REFERENCES model_runs(id) ON DELETE CASCADE,
+CREATE TABLE run_personas (
+  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   persona_id   UUID NOT NULL REFERENCES personas(id)   ON DELETE RESTRICT,
   active       BOOLEAN NOT NULL DEFAULT TRUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_run_id, persona_id)
+  PRIMARY KEY (run_id, persona_id)
 );
 
-CREATE UNIQUE INDEX one_persona_per_run ON model_run_personas(model_run_id);
-CREATE INDEX ON model_run_personas (persona_id);
+CREATE UNIQUE INDEX one_persona_per_run ON run_personas(run_id);
+CREATE INDEX ON run_personas (persona_id);
 
-CREATE TABLE model_run_agents (
-  model_run_id UUID NOT NULL REFERENCES model_runs(id) ON DELETE CASCADE,
-  agent_id     UUID NOT NULL REFERENCES agents(id)     ON DELETE RESTRICT,
-  active       BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_run_id, agent_id)
-);
+-- Note: run_agents junction table removed - agent_id now denormalized in runs table
 
-CREATE UNIQUE INDEX one_agent_per_run ON model_run_agents(model_run_id);
-CREATE INDEX ON model_run_agents (agent_id);
-
-CREATE TABLE model_run_profiles (
-  model_run_id UUID NOT NULL REFERENCES model_runs(id) ON DELETE CASCADE,
+CREATE TABLE run_profiles (
+  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   profile_id   UUID NOT NULL REFERENCES profiles(id)   ON DELETE RESTRICT,
   active       BOOLEAN NOT NULL DEFAULT TRUE,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_run_id, profile_id)
+  PRIMARY KEY (run_id, profile_id)
 );
 
-CREATE UNIQUE INDEX one_profile_per_run ON model_run_profiles(model_run_id);
-CREATE INDEX ON model_run_profiles (profile_id);
+CREATE UNIQUE INDEX one_profile_per_run ON run_profiles(run_id);
+CREATE INDEX ON run_profiles (profile_id);
 
 CREATE TABLE debug_info (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  model_run_id   UUID        NOT NULL REFERENCES model_runs(id),
+  run_id   UUID        NOT NULL REFERENCES runs(id),
   content TEXT        NOT NULL
 );
 

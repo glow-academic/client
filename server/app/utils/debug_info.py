@@ -11,7 +11,7 @@ from app.utils.sql_helper import load_sql
 @dataclass
 class DebugContext:
     conn: asyncpg.Connection
-    model_run_id: uuid.UUID
+    run_id: uuid.UUID
 
 
 @function_tool
@@ -33,13 +33,13 @@ def debug_info(ctx: RunContextWrapper[DebugContext], content: str) -> str:
     This tool does not reply to the user; it only logs context and returns a
     confirmation string.
     """
-    model_run_id = ctx.context.model_run_id
+    run_id = ctx.context.run_id
     conn = ctx.context.conn
 
     try:
         # Insert debug info asynchronously (fire-and-forget)
         sql = load_sql("sql/v3/model_runs/insert_debug_info.sql")
-        asyncio.create_task(conn.execute(sql, model_run_id, content))
+        asyncio.create_task(conn.execute(sql, run_id, content))
     except Exception as e:
         print(f"Error saving debug info: {e}")
         return f"Error saving debug info: {e}"

@@ -128,7 +128,7 @@ grade_stream_per_profile AS (
         sg.simulation_chat_id,
         sg.created_at,
         (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
-    FROM simulation_chat_grades sg
+    FROM grades sg
     JOIN profile_chats pc ON pc.chat_id = sg.simulation_chat_id
     JOIN rubrics r ON r.id = sg.rubric_id
 ),

@@ -4,14 +4,14 @@
 WITH get_incomplete_message AS (
     -- Get first incomplete response message for the chat
     SELECT id, content
-    FROM simulation_messages
+    FROM messages
     WHERE chat_id = $1::uuid AND type = 'response' AND completed = false
     ORDER BY created_at DESC
     LIMIT 1
 ),
 update_message AS (
     -- Mark message as completed
-    UPDATE simulation_messages 
+    UPDATE messages 
     SET completed = true 
     WHERE id IN (SELECT id FROM get_incomplete_message)
     RETURNING id as cancelled_message_id, content as final_content

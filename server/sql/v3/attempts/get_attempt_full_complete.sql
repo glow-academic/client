@@ -58,7 +58,7 @@
                 ARRAY[]::text[]
             ) as document_ids
         FROM attempt_chats ac
-        JOIN simulation_chats sc ON sc.id = ac.chat_id
+        JOIN chats sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id = $1
         ORDER BY sc.created_at
         ),
@@ -97,7 +97,7 @@
                     sc.scenario_id as child_scenario_id,
                     sc.scenario_id as ancestor_id,
                     0 as depth
-                FROM simulation_chats sc
+                FROM chats sc
                 JOIN attempt_chats ac ON ac.chat_id = sc.id
                 WHERE ac.attempt_id = $1
                 
@@ -141,14 +141,14 @@
                     sc.scenario_id as child_scenario_id,
                     sc.scenario_id as ancestor_id,
                     0 as depth
-                FROM simulation_chats sc
+                FROM chats sc
                 JOIN attempt_chats ac2 ON ac2.chat_id = sc.id
                 JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
                 JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
                 CROSS JOIN current_attempt_profile cap
                 WHERE ap2.profile_id = cap.profile_id
                   AND sc.completed = true
-                  AND EXISTS (SELECT 1 FROM simulation_chat_grades scg WHERE scg.simulation_chat_id = sc.id)
+                  AND EXISTS (SELECT 1 FROM grades scg WHERE scg.simulation_chat_id = sc.id)
                   AND ac2.attempt_id != $1
                 
                 UNION ALL
@@ -206,14 +206,14 @@
                 scg.score,
                 scg.passed,
                 scg.time_taken
-            FROM simulation_chats sc
+            FROM chats sc
             JOIN attempt_chats ac2 ON ac2.chat_id = sc.id
             JOIN simulation_attempts sa2 ON sa2.id = ac2.attempt_id
             JOIN attempt_profiles ap2 ON ap2.attempt_id = sa2.id AND ap2.active = true
             CROSS JOIN current_attempt_profile cap
             CROSS JOIN simulation_scenarios_list ssl
             CROSS JOIN attempt_base ab
-            LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
               AND scg.id IS NOT NULL
@@ -236,8 +236,8 @@
                 ac.attempt_id,
                 COALESCE(SUM(scg.time_taken), 0)::integer as total_time_taken
             FROM attempt_chats ac
-            JOIN simulation_chats sc ON sc.id = ac.chat_id
-            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            JOIN chats sc ON sc.id = ac.chat_id
+            JOIN grades scg ON scg.simulation_chat_id = sc.id
             WHERE ac.attempt_id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
               AND sc.completed = true
               AND scg.id IS NOT NULL
@@ -395,12 +395,12 @@
                     updated_at,
                     0 as depth,
                     id as path_root_id
-                FROM simulation_messages
+                FROM messages
                 CROSS JOIN chat_ids_list cil
                 WHERE chat_id = ANY(cil.chat_ids)
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 
-                      WHERE mt.parent_id = simulation_messages.id AND mt.active = true
+                      WHERE mt.parent_id = messages.id AND mt.active = true
                   )
                 
                 UNION ALL
@@ -416,7 +416,7 @@
                     sm.updated_at,
                     mp.depth + 1 as depth,
                     mp.path_root_id
-                FROM simulation_messages sm
+                FROM messages sm
                 JOIN message_tree mt ON mt.child_id = sm.id AND mt.active = true
                 JOIN message_path mp ON mp.id = mt.parent_id
                 CROSS JOIN chat_ids_list cil
@@ -436,16 +436,16 @@
                     updated_at,
                     -1 as depth,
                     id as path_root_id
-                FROM simulation_messages
+                FROM messages
                 CROSS JOIN chat_ids_list cil
                 WHERE chat_id = ANY(cil.chat_ids)
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 
-                      WHERE mt.child_id = simulation_messages.id AND mt.active = true
+                      WHERE mt.child_id = messages.id AND mt.active = true
                   )
                   AND NOT EXISTS (
                       SELECT 1 FROM message_path mp 
-                      WHERE mp.id = simulation_messages.id
+                      WHERE mp.id = messages.id
                   )
             ),
             -- Combine tree-traversed messages and messages without parents
@@ -510,7 +510,7 @@
                     ) FILTER (WHERE sm.type = 'response'),
                     '[]'::jsonb
                 ) as hints
-            FROM simulation_messages sm
+            FROM messages sm
             CROSS JOIN chat_ids_list cil
             CROSS JOIN attempt_base ab
             WHERE sm.chat_id = ANY(cil.chat_ids)
@@ -531,33 +531,33 @@
                     'score', scg.score,
                     'timeTaken', scg.time_taken
                 ) as grade
-            FROM simulation_chat_grades scg
+            FROM grades scg
             CROSS JOIN chat_ids_list cil
             WHERE scg.simulation_chat_id = ANY(cil.chat_ids)
             ORDER BY scg.simulation_chat_id, scg.created_at DESC
         ),
         feedbacks_grouped AS (
             SELECT 
-                scf.simulation_chat_grade_id as grade_id,
+                scf.grade_id as grade_id,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
                             'id', scf.id::text,
                             'createdAt', scf.created_at,
                             'standardId', scf.standard_id::text,
-                            'simulationChatGradeId', scf.simulation_chat_grade_id::text,
+                            'simulationChatGradeId', scf.grade_id::text,
                             'total', scf.total,
                             'feedback', scf.feedback
                         )
                     ),
                     '[]'::jsonb
                 ) as feedbacks
-            FROM simulation_chat_feedbacks scf
-            WHERE scf.simulation_chat_grade_id IN (
+            FROM feedbacks scf
+            WHERE scf.grade_id IN (
                 SELECT (grade->>'id')::uuid
                 FROM grades_data
             )
-            GROUP BY scf.simulation_chat_grade_id
+            GROUP BY scf.grade_id
         ),
         rubric_standard_groups AS (
             SELECT 
@@ -958,8 +958,8 @@
             FROM simulation_scenarios ss
             CROSS JOIN attempt_base ab
             JOIN attempt_chats ac ON ac.attempt_id = ab.id
-            JOIN simulation_chats sc ON sc.id = ac.chat_id
-            JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+            JOIN chats sc ON sc.id = ac.chat_id
+            JOIN grades scg ON scg.simulation_chat_id = sc.id
             WHERE ss.simulation_id = ab.simulation_id
               AND ss.active = true
               -- Recursively map child scenario to root parent scenario via scenario_tree

@@ -160,7 +160,7 @@ async def get_pricing(
 
             model_runs.append(
                 ModelRunItem(
-                    model_run_id=run_data["model_run_id"],
+                    model_run_id=run_data.get("run_id") or run_data.get("model_run_id"),
                     created_at=run_data["created_at"],
                     input_tokens=run_data["input_tokens"],
                     output_tokens=run_data["output_tokens"],

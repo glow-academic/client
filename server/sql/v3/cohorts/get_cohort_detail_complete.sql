@@ -92,8 +92,8 @@ recent_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as run_count
-    FROM model_runs mr
-    JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
+    FROM runs mr
+    JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY mrp.profile_id
 ),
@@ -101,7 +101,7 @@ profile_total_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as total_requests
-    FROM model_run_profiles mrp
+    FROM run_profiles mrp
     GROUP BY mrp.profile_id
 ),
 all_cohort_ids_for_staff AS (
@@ -255,8 +255,8 @@ cohort_simulation_stats AS (
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
-    LEFT JOIN simulation_chats sc ON sc.id = ac.chat_id
-    LEFT JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+    LEFT JOIN chats sc ON sc.id = ac.chat_id
+    LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
     GROUP BY cs.simulation_id, cs.active, s.title, s.description
 ),
 valid_departments AS (

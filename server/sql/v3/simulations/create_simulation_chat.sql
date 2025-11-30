@@ -2,7 +2,7 @@
 -- Parameters: $1=created_at (timestamp with time zone), $2=title (text), $3=scenario_id (uuid), $4=attempt_id (uuid), $5=completed (boolean), $6=trace_id (text)
 -- Returns: id, created_at, updated_at, title, scenario_id, attempt_id, completed, trace_id
 WITH inserted_chat AS (
-    INSERT INTO simulation_chats (created_at, title, scenario_id, completed, trace_id, updated_at)
+    INSERT INTO chats (created_at, title, scenario_id, completed, trace_id, updated_at)
     VALUES ($1::timestamp with time zone, $2::text, $3::uuid, $5::bool, $6::text, NOW())
     RETURNING id, created_at, updated_at, title, scenario_id, completed, trace_id
 ),

@@ -5,7 +5,7 @@ SELECT
     sa.simulation_id::text,
     sa.id::text as attempt_id,
     s.practice_simulation
-FROM simulation_chats sc
+FROM chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN simulations s ON s.id = sa.simulation_id

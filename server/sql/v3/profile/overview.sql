@@ -30,8 +30,8 @@ attempt_grades AS (
     FROM latest_attempts la
     JOIN simulations s ON s.id = la.simulation_id
     JOIN attempt_chats ac ON ac.attempt_id = la.attempt_id
-    JOIN simulation_chats sc ON sc.id = ac.chat_id
-    JOIN simulation_chat_grades scg ON scg.simulation_chat_id = sc.id
+    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN grades scg ON scg.simulation_chat_id = sc.id
 )
 SELECT 
     p.id, p.first_name, p.last_name, 
