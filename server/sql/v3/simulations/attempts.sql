@@ -26,7 +26,9 @@ latest_grades AS (
         scg.time_taken
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
-    JOIN grades scg ON scg.simulation_chat_id = sc.id
+    JOIN grades scg ON scg.eval = false
+    JOIN runs r_attempts ON r_attempts.id = scg.run_id
+    JOIN chat_runs rc_attempts ON rc_attempts.run_id = r_attempts.id AND rc_attempts.chat_id = sc.id
     WHERE ac.attempt_id IN (SELECT id FROM attempt_data)
     ORDER BY ac.attempt_id, sc.created_at DESC
 )

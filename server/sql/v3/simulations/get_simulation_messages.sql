@@ -16,7 +16,7 @@ WITH RECURSIVE message_path AS (
         0 as depth,
         m.id as path_root_id
     FROM messages m
-    JOIN run_chats rc ON rc.run_id = m.run_id
+    JOIN chat_runs rc ON rc.run_id = m.run_id
     WHERE rc.chat_id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
@@ -39,7 +39,7 @@ WITH RECURSIVE message_path AS (
     FROM messages m
     JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
     JOIN message_path mp ON mp.id = mt.parent_id
-    JOIN run_chats rc ON rc.run_id = m.run_id
+    JOIN chat_runs rc ON rc.run_id = m.run_id
     
     -- Prevent infinite loops (safety limit)
     WHERE mp.depth < 1000
@@ -57,7 +57,7 @@ messages_without_parents AS (
         -1 as depth,  -- Negative depth to sort before tree messages
         m.id as path_root_id
     FROM messages m
-    JOIN run_chats rc ON rc.run_id = m.run_id
+    JOIN chat_runs rc ON rc.run_id = m.run_id
     WHERE rc.chat_id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 

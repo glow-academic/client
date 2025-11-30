@@ -136,12 +136,15 @@
                 SELECT
                     pc.profile_id,
                     sg.id,
-                    sg.simulation_chat_id,
+                    rc_bundle.chat_id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
                 FROM grades sg
-                JOIN profile_chats pc ON pc.chat_id = sg.simulation_chat_id
+                JOIN runs r_bundle ON r_bundle.id = sg.run_id
+                JOIN chat_runs rc_bundle ON rc_bundle.run_id = r_bundle.id
+                JOIN profile_chats pc ON pc.chat_id = rc_bundle.chat_id
                 JOIN rubrics r ON r.id = sg.rubric_id
+                WHERE sg.eval = false
             ),
             ordered_grades_per_profile AS (
                 SELECT *,

@@ -26,7 +26,7 @@ latest_grade AS (
          g.created_at
   FROM grades g
   JOIN runs r ON r.id = g.run_id
-  JOIN run_chats rc ON rc.run_id = r.id
+  JOIN chat_runs rc ON rc.run_id = r.id
   WHERE g.eval = false
   ORDER BY rc.chat_id, g.created_at DESC
 ),
@@ -85,7 +85,7 @@ message_counts AS (
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
   FROM messages m
   JOIN runs r ON r.id = m.run_id
-  JOIN run_chats rc ON rc.run_id = r.id
+  JOIN chat_runs rc ON rc.run_id = r.id
   GROUP BY rc.chat_id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
@@ -105,7 +105,7 @@ message_deltas AS (
     m.created_at
   FROM messages m
   JOIN runs r ON r.id = m.run_id
-  JOIN run_chats rc ON rc.run_id = r.id
+  JOIN chat_runs rc ON rc.run_id = r.id
   JOIN chats c ON c.id = rc.chat_id
 ),
 message_deltas_agg AS (
@@ -305,7 +305,7 @@ CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
   ON analytics (attempt_created_at);
 
 -- Performance indexes for analytics functions
--- Latest grade per chat fast path (via run_chats join)
+-- Latest grade per chat fast path (via chat_runs join)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
   ON grades (run_id, eval, created_at DESC);
 
@@ -376,11 +376,11 @@ CREATE INDEX IF NOT EXISTS messages_run_created_role_idx
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
   ON chats (id, created_at);
 
-CREATE INDEX IF NOT EXISTS run_chats_chat_id_idx
-  ON run_chats (chat_id);
+CREATE INDEX IF NOT EXISTS chat_runs_chat_id_idx
+  ON chat_runs (chat_id);
 
-CREATE INDEX IF NOT EXISTS run_chats_run_id_idx
-  ON run_chats (run_id);
+CREATE INDEX IF NOT EXISTS chat_runs_run_id_idx
+  ON chat_runs (run_id);
 
 CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
   ON simulation_attempts (archived);

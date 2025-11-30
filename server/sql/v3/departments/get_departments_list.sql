@@ -23,7 +23,7 @@ model_run_departments_via_agents AS (
     JOIN runs mr ON mr.id = mrc.run_id
     JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
     WHERE mr.agent_id IS NOT NULL
-    WHERE ad.department_id IN (SELECT department_id FROM user_departments)
+    AND ad.department_id IN (SELECT department_id FROM user_departments)
 ),
 model_run_departments_via_personas AS (
     SELECT DISTINCT

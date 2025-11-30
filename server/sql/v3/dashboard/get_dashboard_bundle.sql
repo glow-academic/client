@@ -199,12 +199,15 @@
             grade_stream AS (
                 SELECT
                     sg.id,
-                    sg.simulation_chat_id,
+                    rc_stag.chat_id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF(r.points, 0)) * 100.0 AS norm
                 FROM grades sg
-                JOIN filtered_chats_for_stagnation fc ON fc.chat_id = sg.simulation_chat_id
+                JOIN runs r_stag ON r_stag.id = sg.run_id
+                JOIN chat_runs rc_stag ON rc_stag.run_id = r_stag.id
+                JOIN filtered_chats_for_stagnation fc ON fc.chat_id = rc_stag.chat_id
                 JOIN rubrics r ON r.id = sg.rubric_id
+                WHERE sg.eval = false
             ),
             ordered_grades AS (
                 SELECT *,
@@ -692,13 +695,16 @@
                 WHERE chat_id IS NOT NULL
             ),
             latest_grade_per_chat AS (
-                SELECT DISTINCT ON (scg.simulation_chat_id)
+                SELECT DISTINCT ON (rc.chat_id)
                     scg.id,
-                    scg.simulation_chat_id AS chat_id,
+                    rc.chat_id,
                     scg.rubric_id
                 FROM grades scg
-                JOIN filtered_chats fc ON fc.chat_id = scg.simulation_chat_id
-                ORDER BY scg.simulation_chat_id, scg.created_at DESC
+                JOIN runs r ON r.id = scg.run_id
+                JOIN chat_runs rc ON rc.run_id = r.id
+                JOIN filtered_chats fc ON fc.chat_id = rc.chat_id
+                WHERE scg.eval = false
+                ORDER BY rc.chat_id, scg.created_at DESC
             ),
             per_grade_group AS (
                 SELECT
@@ -1052,13 +1058,16 @@
                     )
             ),
             latest_grade_for_skills AS (
-                SELECT DISTINCT ON (scg.simulation_chat_id, scg.rubric_id)
+                SELECT DISTINCT ON (rc.chat_id, scg.rubric_id)
                        scg.id AS grade_id,
-                       scg.simulation_chat_id AS chat_id,
+                       rc.chat_id,
                        scg.rubric_id,
                        scg.created_at
                 FROM grades scg
-                ORDER BY scg.simulation_chat_id, scg.rubric_id, scg.created_at DESC
+                JOIN runs r ON r.id = scg.run_id
+                JOIN chat_runs rc ON rc.run_id = r.id
+                WHERE scg.eval = false
+                ORDER BY rc.chat_id, scg.rubric_id, scg.created_at DESC
             ),
             per_grade_group_skills AS (
                 SELECT

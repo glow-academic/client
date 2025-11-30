@@ -135,7 +135,7 @@ CREATE INDEX ON attempt_chats (chat_id);
 CREATE INDEX ON attempt_chats (attempt_id, chat_id);
 
 -- Run ↔ Chats junction table (BCNF normalization)
-CREATE TABLE run_chats (
+CREATE TABLE chat_runs (
   run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -143,8 +143,8 @@ CREATE TABLE run_chats (
   PRIMARY KEY (run_id, chat_id)
 );
 
-CREATE INDEX ON run_chats (run_id);
-CREATE INDEX ON run_chats (chat_id);
+CREATE INDEX ON chat_runs (run_id);
+CREATE INDEX ON chat_runs (chat_id);
 
 -- Unified messages table - all messages link to runs
 CREATE TABLE messages (

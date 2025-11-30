@@ -520,7 +520,7 @@ async def _send_simulation_message_impl(
                 latest_run_row = await conn.fetchrow(
                     """
                     SELECT rc.run_id::text as run_id
-                    FROM run_chats rc
+                    FROM chat_runs rc
                     JOIN runs r ON r.id = rc.run_id
                     WHERE rc.chat_id = $1::uuid
                     ORDER BY r.created_at DESC
@@ -876,7 +876,7 @@ async def _send_simulation_message_impl(
                     # Link run to chat if not already linked
                     await conn.execute(
                         """
-                        INSERT INTO run_chats (run_id, chat_id, created_at, updated_at)
+                        INSERT INTO chat_runs (run_id, chat_id, created_at, updated_at)
                         VALUES ($1::uuid, $2::uuid, NOW(), NOW())
                         ON CONFLICT (run_id, chat_id) DO NOTHING
                         """,

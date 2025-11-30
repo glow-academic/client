@@ -40,7 +40,9 @@ attempt_chats AS (
     LEFT JOIN scenarios scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = scn.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-    LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
+    LEFT JOIN grades scg ON scg.eval = false
+    LEFT JOIN runs r_report ON r_report.id = scg.run_id
+    LEFT JOIN chat_runs rc_report ON rc_report.run_id = r_report.id AND rc_report.chat_id = sc.id
     WHERE ap.profile_id = $1 AND ap.active = true
     ORDER BY sa.created_at, sc.created_at
 ),

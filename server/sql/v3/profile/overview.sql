@@ -31,7 +31,9 @@ attempt_grades AS (
     JOIN simulations s ON s.id = la.simulation_id
     JOIN attempt_chats ac ON ac.attempt_id = la.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
-    JOIN grades scg ON scg.simulation_chat_id = sc.id
+    JOIN grades scg ON scg.eval = false
+    JOIN runs r_profile ON r_profile.id = scg.run_id
+    JOIN chat_runs rc_profile ON rc_profile.run_id = r_profile.id AND rc_profile.chat_id = sc.id
 )
 SELECT 
     p.id, p.first_name, p.last_name, 

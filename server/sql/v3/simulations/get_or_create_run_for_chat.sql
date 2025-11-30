@@ -6,7 +6,7 @@
 WITH latest_run AS (
     -- Get the latest run for this chat
     SELECT rc.run_id
-    FROM run_chats rc
+    FROM chat_runs rc
     JOIN runs r ON r.id = rc.run_id
     WHERE rc.chat_id = $1::uuid
     ORDER BY r.created_at DESC
@@ -57,11 +57,11 @@ link_profile AS (
 ),
 link_chat AS (
     -- Link run to chat if it's a new run
-    INSERT INTO run_chats (run_id, chat_id, created_at, updated_at)
+    INSERT INTO chat_runs (run_id, chat_id, created_at, updated_at)
     SELECT sr.id, $1::uuid, NOW(), NOW()
     FROM selected_run sr
     WHERE NOT EXISTS (SELECT 1 FROM latest_run)
-    AND NOT EXISTS (SELECT 1 FROM run_chats rc WHERE rc.run_id = sr.id AND rc.chat_id = $1::uuid)
+    AND NOT EXISTS (SELECT 1 FROM chat_runs rc WHERE rc.run_id = sr.id AND rc.chat_id = $1::uuid)
     RETURNING run_id
 )
 SELECT sr.id::text as run_id

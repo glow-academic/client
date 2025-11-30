@@ -12,7 +12,9 @@ WITH RECURSIVE scenario_ancestors AS (
         0 as depth
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
-    JOIN grades scg ON scg.simulation_chat_id = sc.id
+    JOIN grades scg ON scg.eval = false
+    JOIN runs r_scen1 ON r_scen1.id = scg.run_id
+    JOIN chat_runs rc_scen1 ON rc_scen1.run_id = r_scen1.id AND rc_scen1.chat_id = sc.id
     WHERE ac.attempt_id = $1::uuid
     
     UNION ALL
@@ -54,7 +56,9 @@ FROM simulation_scenarios ss
 JOIN simulation_attempts sa ON sa.simulation_id = ss.simulation_id
 JOIN attempt_chats ac ON ac.attempt_id = sa.id
 JOIN chats sc ON sc.id = ac.chat_id
-JOIN grades scg ON scg.simulation_chat_id = sc.id
+JOIN grades scg ON scg.eval = false
+JOIN runs r_scen2 ON r_scen2.id = scg.run_id
+JOIN chat_runs rc_scen2 ON rc_scen2.run_id = r_scen2.id AND rc_scen2.chat_id = sc.id
 LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
 WHERE sa.id = $1::uuid
   AND (

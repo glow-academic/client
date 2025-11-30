@@ -123,7 +123,9 @@ WITH user_departments AS (
                 )
                 OR sc.scenario_id = ss.scenario_id
             )
-            LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
+            LEFT JOIN grades scg ON scg.eval = false
+            LEFT JOIN runs r_new ON r_new.id = scg.run_id
+            LEFT JOIN chat_runs rc_new ON rc_new.run_id = r_new.id AND rc_new.chat_id = sc.id
             GROUP BY ss.scenario_id
         ),
         scenarios_list_data AS (

@@ -8,7 +8,9 @@ WITH stats AS (
     FROM simulation_attempts sa
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
     LEFT JOIN chats sc ON sc.id = ac.chat_id
-    LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
+    LEFT JOIN grades scg ON scg.eval = false
+    LEFT JOIN runs r_overview ON r_overview.id = scg.run_id
+    LEFT JOIN chat_runs rc_overview ON rc_overview.run_id = r_overview.id AND rc_overview.chat_id = sc.id
     WHERE sa.simulation_id = $1
 )
 SELECT 

@@ -148,7 +148,12 @@
                 CROSS JOIN current_attempt_profile cap
                 WHERE ap2.profile_id = cap.profile_id
                   AND sc.completed = true
-                  AND EXISTS (SELECT 1 FROM grades scg WHERE scg.simulation_chat_id = sc.id)
+                  AND EXISTS (
+                      SELECT 1 FROM grades scg 
+                      JOIN runs r ON r.id = scg.run_id
+                      JOIN chat_runs rc ON rc.run_id = r.id
+                      WHERE rc.chat_id = sc.id AND scg.eval = false
+                  )
                   AND ac2.attempt_id != $1
                 
                 UNION ALL
@@ -213,10 +218,12 @@
             CROSS JOIN current_attempt_profile cap
             CROSS JOIN simulation_scenarios_list ssl
             CROSS JOIN attempt_base ab
-            LEFT JOIN grades scg ON scg.simulation_chat_id = sc.id
+            LEFT JOIN grades scg ON scg.eval = false
+            LEFT JOIN runs r_prev ON r_prev.id = scg.run_id
+            LEFT JOIN chat_runs rc_prev ON rc_prev.run_id = r_prev.id AND rc_prev.chat_id = sc.id
             WHERE ap2.profile_id = cap.profile_id
               AND sc.completed = true
-              AND scg.id IS NOT NULL
+              AND rc_prev.chat_id IS NOT NULL
               -- Match root parent scenario IDs (child scenarios are recursively mapped to their root parents)
               AND COALESCE(
                     (SELECT pcsrm.root_scenario_id 
@@ -237,10 +244,12 @@
                 COALESCE(SUM(scg.time_taken), 0)::integer as total_time_taken
             FROM attempt_chats ac
             JOIN chats sc ON sc.id = ac.chat_id
-            JOIN grades scg ON scg.simulation_chat_id = sc.id
+            JOIN grades scg ON scg.eval = false
+            JOIN runs r_agg ON r_agg.id = scg.run_id
+            JOIN chat_runs rc_agg ON rc_agg.run_id = r_agg.id AND rc_agg.chat_id = sc.id
             WHERE ac.attempt_id IN (SELECT DISTINCT attempt_id FROM previous_chats_with_grades)
               AND sc.completed = true
-              AND scg.id IS NOT NULL
+              AND rc_agg.chat_id IS NOT NULL
             GROUP BY ac.attempt_id
         ),
         -- Get rubric total points per simulation for previous attempts
@@ -519,12 +528,12 @@
         ),
         grades_data AS (
             -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
-            SELECT DISTINCT ON (scg.simulation_chat_id)
-                scg.simulation_chat_id as chat_id,
+            SELECT DISTINCT ON (rc.chat_id)
+                rc.chat_id as chat_id,
                 jsonb_build_object(
                     'id', scg.id::text,
                     'createdAt', scg.created_at,
-                    'simulationChatId', scg.simulation_chat_id::text,
+                    'simulationChatId', rc.chat_id::text,
                     'rubricId', scg.rubric_id::text,
                     'description', scg.description,
                     'passed', scg.passed,
@@ -532,9 +541,12 @@
                     'timeTaken', scg.time_taken
                 ) as grade
             FROM grades scg
+            JOIN runs r ON r.id = scg.run_id
+            JOIN chat_runs rc ON rc.run_id = r.id
             CROSS JOIN chat_ids_list cil
-            WHERE scg.simulation_chat_id = ANY(cil.chat_ids)
-            ORDER BY scg.simulation_chat_id, scg.created_at DESC
+            WHERE scg.eval = false
+              AND rc.chat_id = ANY(cil.chat_ids)
+            ORDER BY rc.chat_id, scg.created_at DESC
         ),
         feedbacks_grouped AS (
             SELECT 
@@ -959,7 +971,9 @@
             CROSS JOIN attempt_base ab
             JOIN attempt_chats ac ON ac.attempt_id = ab.id
             JOIN chats sc ON sc.id = ac.chat_id
-            JOIN grades scg ON scg.simulation_chat_id = sc.id
+            JOIN grades scg ON scg.eval = false
+            JOIN runs r_scen ON r_scen.id = scg.run_id
+            JOIN chat_runs rc_scen ON rc_scen.run_id = r_scen.id AND rc_scen.chat_id = sc.id
             WHERE ss.simulation_id = ab.simulation_id
               AND ss.active = true
               -- Recursively map child scenario to root parent scenario via scenario_tree

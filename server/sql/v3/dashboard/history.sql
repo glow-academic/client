@@ -182,17 +182,20 @@ history_chat_rollup AS (
 ),
 -- Get latest grade per chat
 history_chat_grades AS (
-    SELECT DISTINCT ON (scg.simulation_chat_id)
-        scg.simulation_chat_id AS chat_id,
+    SELECT DISTINCT ON (rc.chat_id)
+        rc.chat_id,
         scg.score,
         scg.rubric_id
     FROM grades scg
-    WHERE scg.simulation_chat_id IN (
+    JOIN runs r ON r.id = scg.run_id
+    JOIN chat_runs rc ON rc.run_id = r.id
+    WHERE scg.eval = false
+      AND rc.chat_id IN (
         SELECT sc.id FROM attempt_chats ac
         JOIN chats sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
-    ORDER BY scg.simulation_chat_id, scg.created_at DESC
+    ORDER BY rc.chat_id, scg.created_at DESC
 ),
 -- Aggregate grades per attempt
 history_grade_rollup AS (
@@ -218,12 +221,18 @@ history_elapsed_time AS (
                 CASE 
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
                         (SELECT scg.time_taken FROM grades scg 
-                         WHERE scg.simulation_chat_id = sc.id 
+                         JOIN runs r ON r.id = scg.run_id
+                         JOIN chat_runs rc ON rc.run_id = r.id
+                         WHERE rc.chat_id = sc.id 
+                           AND scg.eval = false
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
                             (SELECT scg.created_at FROM grades scg 
-                             WHERE scg.simulation_chat_id = sc.id 
+                             JOIN runs r ON r.id = scg.run_id
+                             JOIN chat_runs rc ON rc.run_id = r.id
+                             WHERE rc.chat_id = sc.id 
+                               AND scg.eval = false
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
                         ))::integer
                     ELSE

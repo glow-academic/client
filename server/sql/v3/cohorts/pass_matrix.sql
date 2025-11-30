@@ -63,7 +63,9 @@ student_simulation_results AS (
             FROM student_attempts sa
             JOIN attempt_chats ac ON ac.attempt_id = sa.attempt_id
             JOIN chats sc ON sc.id = ac.chat_id
-            JOIN grades scg ON scg.simulation_chat_id = sc.id
+            JOIN grades scg ON scg.eval = false
+            JOIN runs r_matrix ON r_matrix.id = scg.run_id
+            JOIN chat_runs rc_matrix ON rc_matrix.run_id = r_matrix.id AND rc_matrix.chat_id = sc.id
         )
         SELECT 
             MAX(score) as best_score,
