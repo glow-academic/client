@@ -63,7 +63,8 @@
                     AND a.profile_role = ANY($4::profile_role[])
                     -- Filter by simulation_ids from cohorts (new filtering order)
                     AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
-                    -- Department filtering removed - now handled via profile_departments join at profile level
+                    -- Filter by department_ids (empty array = all departments)
+                    AND (cardinality($6::uuid[]) = 0 OR a.department_id = ANY($6::uuid[]))
             ),
             
             -- =====================================================
@@ -136,6 +137,8 @@
                 AND a.profile_role = ANY($4::profile_role[])
                 -- Filter by simulation_ids from cohorts (new filtering order)
                 AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
+                -- Filter by department_ids (empty array = all departments)
+                AND (cardinality($6::uuid[]) = 0 OR a.department_id = ANY($6::uuid[]))
                 ORDER BY a.profile_id, a.simulation_id, a.attempt_created_at
             ),
             first_attempts AS (
@@ -1039,11 +1042,12 @@
                 FROM analytics a
                 WHERE a.chat_created_at >= $1
                     AND a.chat_created_at < $2
-                    -- Department filtering removed - now handled via profile_departments join at profile level
                     -- Filter by simulation_ids from cohorts (new filtering order)
                     AND (cardinality($3::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                     -- Dashboard never filters by profile - always filter by roles
                     AND a.profile_role = ANY($4::profile_role[])
+                    -- Filter by department_ids (empty array = all departments)
+                    AND (cardinality($6::uuid[]) = 0 OR a.department_id = ANY($6::uuid[]))
                     AND ($5::text[] IS NULL OR cardinality($5::text[]) > 0)
                     AND (
                         $5::text[] IS NULL OR (
