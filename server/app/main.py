@@ -47,7 +47,7 @@ load_dotenv()
 # Detect container vs. host **without** relying on a .env entry
 IN_DOCKER = os.getenv("DOCKER_ENV") == "1"
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASE_FOLDER = Path("/app") if IN_DOCKER else PROJECT_ROOT
 UPLOAD_FOLDER = BASE_FOLDER / "uploads"
 UPLOAD_FOLDER.mkdir(

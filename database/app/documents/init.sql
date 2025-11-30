@@ -16,7 +16,9 @@ CREATE TABLE documents (
     mime_type  TEXT        NOT NULL,
     type       document_type   NOT NULL           DEFAULT 'homework',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
-    active BOOLEAN     NOT NULL DEFAULT TRUE
+    active BOOLEAN     NOT NULL DEFAULT TRUE,
+    template BOOLEAN NOT NULL DEFAULT FALSE,
+    template_args JSONB NOT NULL DEFAULT '{}'
 );
 
 -- Document → Departments junction table (BCNF normalization)
