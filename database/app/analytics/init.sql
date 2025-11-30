@@ -18,14 +18,17 @@ root_map AS (
   LEFT JOIN scenario_roots sr ON s.id = sr.id
 ),
 latest_grade AS (
-  SELECT DISTINCT ON (simulation_chat_id)
-         simulation_chat_id,
-         score::numeric AS score,
-         time_taken::numeric AS time_taken_seconds,
-         rubric_id,
-         created_at
-  FROM simulation_chat_grades
-  ORDER BY simulation_chat_id, created_at DESC
+  SELECT DISTINCT ON (rc.chat_id)
+         rc.chat_id AS simulation_chat_id,
+         g.score::numeric AS score,
+         g.time_taken::numeric AS time_taken_seconds,
+         g.rubric_id,
+         g.created_at
+  FROM grades g
+  JOIN runs r ON r.id = g.run_id
+  JOIN run_chats rc ON rc.run_id = r.id
+  WHERE g.eval = false
+  ORDER BY rc.chat_id, g.created_at DESC
 ),
 -- only ACTIVE simulations
 active_sims AS (
@@ -76,30 +79,34 @@ chat_first_attempt AS (
 -- Message counts per chat (total + by type)
 message_counts AS (
   SELECT
-    sm.chat_id,
+    rc.chat_id,
     COUNT(*)::int                                AS num_messages_total,
-    COUNT(*) FILTER (WHERE sm.type = 'query')::int    AS num_query_messages,
-    COUNT(*) FILTER (WHERE sm.type = 'response')::int AS num_response_messages
-  FROM simulation_messages sm
-  GROUP BY sm.chat_id
+    COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
+    COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
+  FROM messages m
+  JOIN runs r ON r.id = m.run_id
+  JOIN run_chats rc ON rc.run_id = r.id
+  GROUP BY rc.chat_id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
 -- Only measure persona "response → user query" gaps
 message_deltas AS (
   SELECT
-    m.chat_id,
+    rc.chat_id,
     -- only response -> query gaps
     CASE
-      WHEN lag(m.type) OVER (PARTITION BY m.chat_id ORDER BY m.created_at) = 'response'
-       AND m.type = 'query'
+      WHEN lag(m.role) OVER (PARTITION BY rc.chat_id ORDER BY m.created_at) = 'assistant'
+       AND m.role = 'user'
       THEN GREATEST(
              EXTRACT(epoch FROM m.created_at - COALESCE(lag(COALESCE(m.updated_at, m.created_at))
-               OVER (PARTITION BY m.chat_id ORDER BY m.created_at), sc_1.created_at))::int, 0)
+               OVER (PARTITION BY rc.chat_id ORDER BY m.created_at), c.created_at))::int, 0)
       ELSE NULL
     END AS delta_seconds,
     m.created_at
-  FROM simulation_messages m
-  JOIN simulation_chats sc_1 ON sc_1.id = m.chat_id
+  FROM messages m
+  JOIN runs r ON r.id = m.run_id
+  JOIN run_chats rc ON rc.run_id = r.id
+  JOIN chats c ON c.id = rc.chat_id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -225,7 +232,7 @@ SELECT
     scfd.department_id,
     pfd.department_id
   ) AS department_id
-FROM simulation_chats sc
+FROM chats sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -298,13 +305,13 @@ CREATE INDEX IF NOT EXISTS analytics_attempt_created_at_idx
   ON analytics (attempt_created_at);
 
 -- Performance indexes for analytics functions
--- Latest grade per chat fast path
-CREATE INDEX IF NOT EXISTS scg_chat_created_idx
-  ON simulation_chat_grades (simulation_chat_id, created_at DESC);
+-- Latest grade per chat fast path (via run_chats join)
+CREATE INDEX IF NOT EXISTS grades_run_created_idx
+  ON grades (run_id, eval, created_at DESC);
 
 -- Feedback lookup by grade
-CREATE INDEX IF NOT EXISTS scf_grade_idx
-  ON simulation_chat_feedbacks (simulation_chat_grade_id);
+CREATE INDEX IF NOT EXISTS feedbacks_grade_idx
+  ON feedbacks (grade_id);
 
 -- Standards mapping
 CREATE INDEX IF NOT EXISTS standards_group_idx
@@ -333,9 +340,9 @@ CREATE INDEX IF NOT EXISTS analytics_profile_cohorts_gin
   ON analytics USING GIN (profile_cohort_ids);
 
 -- Additional indexes for skill performance optimization
--- Latest grade per (chat, rubric) fast path
-CREATE INDEX IF NOT EXISTS scg_chat_rubric_created_idx
-  ON simulation_chat_grades (simulation_chat_id, rubric_id, created_at DESC);
+-- Latest grade per (run, rubric) fast path
+CREATE INDEX IF NOT EXISTS grades_run_rubric_created_idx
+  ON grades (run_id, rubric_id, eval, created_at DESC);
 
 -- Group id + rubric (we filter sg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS standard_groups_id_rubric_idx
@@ -360,14 +367,20 @@ CREATE INDEX IF NOT EXISTS analytics_is_archived_true_idx
   ON analytics (attempt_created_at) WHERE is_archived = true;
 
 -- Supporting table indexes for analytics functions
-CREATE INDEX IF NOT EXISTS simulation_chat_grades_latest_idx
-  ON simulation_chat_grades (simulation_chat_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS grades_run_created_idx
+  ON grades (run_id, eval, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS simulation_messages_chat_created_type_idx
-  ON simulation_messages (chat_id, created_at, type);
+CREATE INDEX IF NOT EXISTS messages_run_created_role_idx
+  ON messages (run_id, created_at, role);
 
-CREATE INDEX IF NOT EXISTS simulation_chats_id_created_idx
-  ON simulation_chats (id, created_at);
+CREATE INDEX IF NOT EXISTS chats_id_created_idx
+  ON chats (id, created_at);
+
+CREATE INDEX IF NOT EXISTS run_chats_chat_id_idx
+  ON run_chats (chat_id);
+
+CREATE INDEX IF NOT EXISTS run_chats_run_id_idx
+  ON run_chats (run_id);
 
 CREATE INDEX IF NOT EXISTS simulation_attempts_archived_idx
   ON simulation_attempts (archived);
@@ -426,13 +439,11 @@ CREATE INDEX IF NOT EXISTS analytics_practice_unarch_idx
   WHERE is_practice = TRUE AND is_archived = FALSE;
 
 -- Rubric heatmap optimization indexes
--- Chat grades with creation time ordering
-CREATE INDEX IF NOT EXISTS scg_chat_created_idx
-  ON simulation_chat_grades (simulation_chat_id, created_at DESC);
+-- (grades_run_created_idx already created above)
 
 -- Feedback lookup by grade
-CREATE INDEX IF NOT EXISTS scf_grade_idx
-  ON simulation_chat_feedbacks (simulation_chat_grade_id);
+CREATE INDEX IF NOT EXISTS feedbacks_grade_idx
+  ON feedbacks (grade_id);
 
 -- Standards mapping
 CREATE INDEX IF NOT EXISTS standards_group_idx

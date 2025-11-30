@@ -550,17 +550,17 @@ async def _send_simulation_message_impl(
                         }
 
                         # Create branch from latest message to new user message (if latest exists)
-                    sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
-                    latest_message_row = await conn.fetchrow(
-                        sql_latest, str(chat_id_uuid)
-                    )
-                    if latest_message_row:
-                        sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
-                        await conn.execute(
-                            sql_branch,
-                            str(latest_message_row["id"]),
-                            str(user_message["id"]),
+                        sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
+                        latest_message_row = await conn.fetchrow(
+                            sql_latest, str(chat_id_uuid)
                         )
+                        if latest_message_row:
+                            sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                            await conn.execute(
+                                sql_branch,
+                                str(latest_message_row["id"]),
+                                str(user_message["id"]),
+                            )
                             logger.info(
                                 f"Created branch from message {latest_message_row['id']} to user message {user_message['id']}"
                             )

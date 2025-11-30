@@ -2348,6 +2348,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/documents/generate-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Template
+         * @description Generate document template HTML and schema JSON.
+         */
+        post: operations["generate_template_api_v3_documents_generate_template_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/evals/list": {
         parameters: {
             query?: never;
@@ -7555,6 +7575,32 @@ export interface components {
             description: string;
             /** Objectives */
             objectives: string[];
+        };
+        /**
+         * GenerateTemplateRequest
+         * @description Request to generate document template.
+         */
+        GenerateTemplateRequest: {
+            /** Departmentid */
+            departmentId: string;
+            /** Profileid */
+            profileId?: string | null;
+        };
+        /**
+         * GenerateTemplateResponse
+         * @description Response from document template generation.
+         */
+        GenerateTemplateResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Template Html */
+            template_html: string;
+            /** Template Schema */
+            template_schema: {
+                [key: string]: unknown;
+            };
         };
         /** GradeItem */
         GradeItem: {
@@ -18281,6 +18327,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_template_api_v3_documents_generate_template_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateTemplateResponse"];
                 };
             };
             /** @description Validation Error */

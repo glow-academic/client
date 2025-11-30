@@ -4925,6 +4925,53 @@
         ]
       }
     },
+    "/api/v3/documents/generate-template": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Generate Template",
+        "description": "Generate document template HTML and schema JSON.",
+        "operationId": "generate_template_api_v3_documents_generate_template_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
     "/api/v3/evals/list": {
       "post": {
         "tags": [
@@ -17421,6 +17468,61 @@
         ],
         "title": "GenerateScenarioAIResponse",
         "description": "Response from AI scenario generation."
+      },
+      "GenerateTemplateRequest": {
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "departmentId"
+        ],
+        "title": "GenerateTemplateRequest",
+        "description": "Request to generate document template."
+      },
+      "GenerateTemplateResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "template_html": {
+            "type": "string",
+            "title": "Template Html"
+          },
+          "template_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Template Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "template_html",
+          "template_schema"
+        ],
+        "title": "GenerateTemplateResponse",
+        "description": "Response from document template generation."
       },
       "GradeItem": {
         "properties": {
