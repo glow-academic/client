@@ -93,7 +93,7 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
 CROSS JOIN default_guest dg
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt

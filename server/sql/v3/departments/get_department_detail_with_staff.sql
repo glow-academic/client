@@ -177,13 +177,13 @@ department_keys AS (
     -- Get all API keys available to this department (default + department-specific)
     SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
     FROM keys k
-    WHERE k.type = 'api' AND k.active = true
+    WHERE k.active = true
     UNION
     -- Also include department-specific keys for this department
     SELECT DISTINCT k.id::text as key_id, k.name, k.key, k.active
     FROM keys k
     JOIN model_department_keys mdk ON mdk.key_id = k.id AND mdk.active = true
-    WHERE k.type = 'api' AND k.active = true
+    WHERE k.active = true
     AND mdk.department_id = $1::uuid
 ),
 model_mapping_data AS (

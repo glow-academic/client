@@ -82,12 +82,11 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
 LEFT JOIN documents d ON d.id = ANY($1::uuid[])
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 GROUP BY a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
-         m.id, m.name, m.custom_model,
-         pr.id, pr.name, k.key, pe.base_url,
+         m.id, m.name, m.provider, me.base_url, k.key,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 

@@ -198,7 +198,7 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = ai.id AND ap.active = true
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
@@ -208,8 +208,7 @@ GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created
          si.id, si.rubric_id, si.department_id, si.time_limit,
          r.id, r.name, r.description, r.points, r.pass_points,
          a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
-         m.id, m.name, m.custom_model,
-         pr.id, pr.name, k.key, pe.base_url,
+         m.id, m.name, m.provider, me.base_url, k.key,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 

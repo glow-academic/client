@@ -131,6 +131,7 @@ async def generate_questions(
             "model_id": context_row["model_id"],
             "model_name": context_row["model_name"],
             "custom_model": context_row["custom_model"],
+            "provider": context_row["provider"],
             "provider_id": context_row["provider_id"],
             "provider_name": context_row["provider_name"],
             "base_url": context_row["base_url"],

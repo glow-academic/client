@@ -118,7 +118,7 @@ scenario_full_data AS (
     LEFT JOIN models m ON m.id = ptm.model_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-    LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
+    LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
     LEFT JOIN documents d ON d.id = sd.document_id
     LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id

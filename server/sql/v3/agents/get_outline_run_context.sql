@@ -69,20 +69,23 @@ SELECT
     COALESCE(me.base_url, '') as base_url,
     k.key as api_key,
     
-    -- Custom model (if any)
-    CASE WHEN m.custom_model = true THEN m.name ELSE NULL END as custom_model,
+    -- Custom model (if any) - indicated by presence of base_url in model_endpoints
+    CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.name ELSE NULL END as custom_model,
     
-    -- Provider data
-    prov.id::text as provider_id,
-    prov.name as provider_name,
+    -- Provider data (provider enum is now on models table, no separate providers table)
+    NULL::text as provider_id,
+    m.provider::text as provider_name,
     
     -- Policies data (aggregated as JSON array)
+    -- Include file_path and mime_type so format_policy_info can read actual PDF content
     COALESCE(
         (SELECT json_agg(
             json_build_object(
                 'id', pol.id::text,
                 'name', pol.name,
-                'content', pol.content
+                'content', pol.description,
+                'file_path', pol.file_path,
+                'mime_type', pol.mime_type
             )
             ORDER BY array_position(p.policy_ids, pol.id)
         )
@@ -136,8 +139,7 @@ LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_pro
 INNER JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
-LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true AND k.type = 'api'
-LEFT JOIN providers prov ON prov.id = m.provider_id
+LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
 CROSS JOIN default_guest dg
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
