@@ -401,10 +401,8 @@ export default function GradedAttemptView({
                                         ? "Passed"
                                         : "Failed"}{" "}
                                       (
-                                      {Math.round(aggregatedResults.percentage)}
-                                      /
-                                      {allDynamicRubrics?.[0]
-                                        ?.totalPossiblePoints || 100}{" "}
+                                      {aggregatedResults.totalScore}/
+                                      {aggregatedResults.totalPossiblePoints}{" "}
                                       points)
                                     </p>
                                   </TooltipContent>
@@ -670,12 +668,8 @@ export default function GradedAttemptView({
                                           ? "Passed"
                                           : "Failed"}{" "}
                                         (
-                                        {Math.round(
-                                          aggregatedResults.percentage
-                                        )}
-                                        /
-                                        {allDynamicRubrics?.[0]
-                                          ?.totalPossiblePoints || 100}{" "}
+                                        {aggregatedResults.totalScore}/
+                                        {aggregatedResults.totalPossiblePoints}{" "}
                                         points)
                                       </p>
                                     </TooltipContent>

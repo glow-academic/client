@@ -420,6 +420,7 @@
                 UNION ALL
                 
                 -- Recursive case: Traverse up the tree following parent links
+                -- Find parents (m) of children (mp) already in the path
                 SELECT 
                     m.id, 
                     rc.chat_id, 
@@ -431,8 +432,8 @@
                     mp.depth + 1 as depth,
                     mp.path_root_id
                 FROM messages m
-                JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
-                JOIN message_path mp ON mp.id = mt.parent_id
+                JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
+                JOIN message_path mp ON mp.id = mt.child_id
                 JOIN message_runs mr ON mr.message_id = m.id
                 JOIN chat_runs rc ON rc.run_id = mr.run_id
                 CROSS JOIN chat_ids_list cil
@@ -887,18 +888,19 @@
                             'totalPossiblePoints', COALESCE(
                                 (SELECT r.points FROM rubrics r 
                                  CROSS JOIN attempt_base ab 
-                                 WHERE r.id = ab.sim_rubric_id),
+                                 WHERE r.id = ab.sim_rubric_id) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL),
                                 0
                             )::float,
                             'percentage', CASE 
                                 WHEN (SELECT r.points FROM rubrics r 
                                       CROSS JOIN attempt_base ab 
-                                      WHERE r.id = ab.sim_rubric_id) > 0 THEN
+                                      WHERE r.id = ab.sim_rubric_id) > 0 
+                                     AND COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL) > 0 THEN
                                     ROUND(
                                         (SUM((grade->>'score')::numeric) FILTER (WHERE completed = true AND grade IS NOT NULL)::numeric / 
-                                         (SELECT r.points FROM rubrics r 
+                                         ((SELECT r.points FROM rubrics r 
                                           CROSS JOIN attempt_base ab 
-                                          WHERE r.id = ab.sim_rubric_id)::numeric) * 100.0,
+                                          WHERE r.id = ab.sim_rubric_id) * COUNT(*) FILTER (WHERE completed = true AND grade IS NOT NULL))::numeric) * 100.0,
                                         1
                                     )::float
                                 ELSE 0.0

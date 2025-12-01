@@ -260,16 +260,20 @@ async def get_attempt_full(
     """Get complete attempt data with all related entities and computed values."""
     tags = ["attempts"]  # From router tags
 
+    # Check for cache bypass header (for hard refresh)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
     # Generate cache key from path and parsed body
     body_dict = request.model_dump()
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return AttemptFullResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return AttemptFullResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
@@ -298,7 +302,7 @@ async def get_attempt_full(
         # Role-based restriction: check if viewing profile's role is "higher" than current user's role
         if current_profile_id:
             # Resolve "guest-profile-id" to actual guest profile UUID
-            resolved_current_profile_id = current_profile_id
+            resolved_current_profile_id: str | None = current_profile_id
             if current_profile_id == "guest-profile-id":
                 guest_profile_sql = load_sql("sql/v3/profile/get_default_guest_profile.sql")
                 guest_row = await conn.fetchrow(guest_profile_sql)
