@@ -9047,6 +9047,55 @@
         ]
       }
     },
+    "/api/v3/full": {
+      "post": {
+        "tags": [
+          "v3",
+          "runs",
+          "v3"
+        ],
+        "summary": "Get Run Full",
+        "description": "Get complete run data with all related entities and computed values.",
+        "operationId": "get_run_full_api_v3_full_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunFullRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunFullResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "runs",
+          "v3"
+        ]
+      }
+    },
     "/api/v3/home/overview": {
       "post": {
         "tags": [
@@ -25429,6 +25478,214 @@
         ],
         "title": "RunEvalResponse",
         "description": "Response from run eval."
+      },
+      "RunFullRequest": {
+        "properties": {
+          "runId": {
+            "type": "string",
+            "title": "Runid"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "runId"
+        ],
+        "title": "RunFullRequest"
+      },
+      "RunFullResponse": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/RunItem"
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__api__v3__attempts__full__SimulationItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attemptProfiles": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptProfileItem"
+            },
+            "type": "array",
+            "title": "Attemptprofiles",
+            "default": []
+          },
+          "chats": {
+            "items": {
+              "$ref": "#/components/schemas/ChatData"
+            },
+            "type": "array",
+            "title": "Chats"
+          },
+          "scenarioDocuments": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioDocumentItem"
+            },
+            "type": "array",
+            "title": "Scenariodocuments"
+          },
+          "aggregatedResults": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AggregatedResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timer": {
+            "$ref": "#/components/schemas/TimerItem"
+          },
+          "currentChatIndex": {
+            "type": "integer",
+            "title": "Currentchatindex"
+          },
+          "expectedChatCount": {
+            "type": "integer",
+            "title": "Expectedchatcount"
+          },
+          "isSingleChatAttempt": {
+            "type": "boolean",
+            "title": "Issinglechatattempt"
+          },
+          "isLastAttempt": {
+            "type": "boolean",
+            "title": "Islastattempt"
+          },
+          "showResults": {
+            "type": "boolean",
+            "title": "Showresults"
+          },
+          "shouldShowControls": {
+            "type": "boolean",
+            "title": "Shouldshowcontrols"
+          },
+          "remainingScenariosCount": {
+            "type": "integer",
+            "title": "Remainingscenarioscount"
+          },
+          "isLastRemainingScenario": {
+            "type": "boolean",
+            "title": "Islastremainingscenario"
+          },
+          "canPickMultipleAlternatives": {
+            "type": "boolean",
+            "title": "Canpickmultiplealternatives"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive"
+          },
+          "rubricStructure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RubricStructure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allSimulationScenarios": {
+            "items": {
+              "$ref": "#/components/schemas/AllSimulationScenarioItem"
+            },
+            "type": "array",
+            "title": "Allsimulationscenarios",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "chats",
+          "scenarioDocuments",
+          "timer",
+          "currentChatIndex",
+          "expectedChatCount",
+          "isSingleChatAttempt",
+          "isLastAttempt",
+          "showResults",
+          "shouldShowControls",
+          "remainingScenariosCount",
+          "isLastRemainingScenario",
+          "canPickMultipleAlternatives",
+          "isActive"
+        ],
+        "title": "RunFullResponse",
+        "description": "Response containing complete run data with all nested structures."
+      },
+      "RunItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "inputTokens": {
+            "type": "integer",
+            "title": "Inputtokens"
+          },
+          "outputTokens": {
+            "type": "integer",
+            "title": "Outputtokens"
+          },
+          "cachedInputTokens": {
+            "type": "integer",
+            "title": "Cachedinputtokens"
+          },
+          "keyId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyid"
+          },
+          "agentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agentid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "inputTokens",
+          "outputTokens",
+          "cachedInputTokens"
+        ],
+        "title": "RunItem"
       },
       "ScenarioAttributeAttemptFact": {
         "properties": {

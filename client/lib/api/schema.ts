@@ -4123,6 +4123,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/full": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Run Full
+         * @description Get complete run data with all related entities and computed values.
+         */
+        post: operations["get_run_full_api_v3_full_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/home/overview": {
         parameters: {
             query?: never;
@@ -10551,6 +10571,75 @@ export interface components {
             queued_count: number;
             /** Message */
             message: string;
+        };
+        /** RunFullRequest */
+        RunFullRequest: {
+            /** Runid */
+            runId: string;
+            /** Profileid */
+            profileId?: string | null;
+        };
+        /**
+         * RunFullResponse
+         * @description Response containing complete run data with all nested structures.
+         */
+        RunFullResponse: {
+            run: components["schemas"]["RunItem"];
+            simulation?: components["schemas"]["app__api__v3__attempts__full__SimulationItem"] | null;
+            /**
+             * Attemptprofiles
+             * @default []
+             */
+            attemptProfiles: components["schemas"]["AttemptProfileItem"][];
+            /** Chats */
+            chats: components["schemas"]["ChatData"][];
+            /** Scenariodocuments */
+            scenarioDocuments: components["schemas"]["ScenarioDocumentItem"][];
+            aggregatedResults?: components["schemas"]["AggregatedResults"] | null;
+            timer: components["schemas"]["TimerItem"];
+            /** Currentchatindex */
+            currentChatIndex: number;
+            /** Expectedchatcount */
+            expectedChatCount: number;
+            /** Issinglechatattempt */
+            isSingleChatAttempt: boolean;
+            /** Islastattempt */
+            isLastAttempt: boolean;
+            /** Showresults */
+            showResults: boolean;
+            /** Shouldshowcontrols */
+            shouldShowControls: boolean;
+            /** Remainingscenarioscount */
+            remainingScenariosCount: number;
+            /** Islastremainingscenario */
+            isLastRemainingScenario: boolean;
+            /** Canpickmultiplealternatives */
+            canPickMultipleAlternatives: boolean;
+            /** Isactive */
+            isActive: boolean;
+            rubricStructure?: components["schemas"]["RubricStructure"] | null;
+            /**
+             * Allsimulationscenarios
+             * @default []
+             */
+            allSimulationScenarios: components["schemas"]["AllSimulationScenarioItem"][];
+        };
+        /** RunItem */
+        RunItem: {
+            /** Id */
+            id: string;
+            /** Createdat */
+            createdAt: string;
+            /** Inputtokens */
+            inputTokens: number;
+            /** Outputtokens */
+            outputTokens: number;
+            /** Cachedinputtokens */
+            cachedInputTokens: number;
+            /** Keyid */
+            keyId?: string | null;
+            /** Agentid */
+            agentId?: string | null;
         };
         /**
          * ScenarioAttributeAttemptFact
@@ -21240,6 +21329,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttemptFullResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_full_api_v3_full_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunFullRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunFullResponse"];
                 };
             };
             /** @description Validation Error */

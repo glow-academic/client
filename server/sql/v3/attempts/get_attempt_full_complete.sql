@@ -315,8 +315,9 @@
                     'defaultScenario', false,
                     'copyPasteAllowed', COALESCE(ss.copy_paste_allowed, false),
                     'objectives', COALESCE(
-                        (SELECT jsonb_agg(so.objective ORDER BY so.idx)
+                        (SELECT jsonb_agg(o.objective ORDER BY so.idx)
                          FROM scenario_objectives so
+                         JOIN objectives o ON o.id = so.objective_id
                          WHERE so.scenario_id = s.id),
                         '[]'::jsonb
                     )
@@ -359,15 +360,16 @@
                     'defaultScenario', false,
                     'copyPasteAllowed', COALESCE(ss.copy_paste_allowed, false),
                     'objectives', COALESCE(
-                        (SELECT jsonb_agg(so.objective ORDER BY so.idx)
+                        (SELECT jsonb_agg(o.objective ORDER BY so.idx)
                          FROM scenario_objectives so
+                         JOIN objectives o ON o.id = so.objective_id
                          WHERE so.scenario_id = s.id),
                         '[]'::jsonb
                     )
                 ) as scenario_data,
                 COALESCE(ss.hints_enabled, false) as hints_enabled,
-                COALESCE(ss.objectives_enabled, true) as objectives_enabled,
-                COALESCE(ss.image_input_enabled, false) as image_input_enabled,
+                COALESCE(s.objectives_enabled, true) as objectives_enabled,
+                COALESCE(s.image_enabled, false) as image_input_enabled,
                 COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
                 COALESCE(ss.input_guardrail_enabled, false) as input_guardrail_enabled,
                 COALESCE(ss.output_guardrail_enabled, false) as output_guardrail_enabled
@@ -384,8 +386,8 @@
         simulation_flags AS (
             SELECT 
                 COALESCE((SELECT ss.hints_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
-                COALESCE((SELECT ss.objectives_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
-                COALESCE((SELECT ss.image_input_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
+                COALESCE((SELECT s.objectives_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id JOIN scenarios s ON s.id = ss.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
+                COALESCE((SELECT s.image_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id JOIN scenarios s ON s.id = ss.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
                 COALESCE((SELECT ss.copy_paste_allowed FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed,
                 COALESCE((SELECT ss.input_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as input_guardrail_enabled,
                 COALESCE((SELECT ss.output_guardrail_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as output_guardrail_enabled
@@ -395,66 +397,72 @@
             WITH RECURSIVE message_path AS (
                 -- Base case: Start from latest messages (no active children in message_tree)
                 SELECT 
-                    id, 
-                    chat_id, 
-                    type, 
-                    content, 
-                    created_at, 
-                    completed, 
-                    updated_at,
+                    m.id, 
+                    rc.chat_id, 
+                    CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
+                    m.content, 
+                    m.created_at, 
+                    m.completed, 
+                    m.updated_at,
                     0 as depth,
-                    id as path_root_id
-                FROM messages
+                    m.id as path_root_id
+                FROM messages m
+                JOIN chat_runs rc ON rc.run_id = m.run_id
                 CROSS JOIN chat_ids_list cil
-                WHERE chat_id = ANY(cil.chat_ids)
+                WHERE rc.chat_id = ANY(cil.chat_ids)
+                  AND m.role IN ('user', 'assistant')
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 
-                      WHERE mt.parent_id = messages.id AND mt.active = true
+                      WHERE mt.parent_id = m.id AND mt.active = true
                   )
                 
                 UNION ALL
                 
                 -- Recursive case: Traverse up the tree following parent links
                 SELECT 
-                    sm.id, 
-                    sm.chat_id, 
-                    sm.type, 
-                    sm.content, 
-                    sm.created_at, 
-                    sm.completed, 
-                    sm.updated_at,
+                    m.id, 
+                    rc.chat_id, 
+                    CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
+                    m.content, 
+                    m.created_at, 
+                    m.completed, 
+                    m.updated_at,
                     mp.depth + 1 as depth,
                     mp.path_root_id
-                FROM messages sm
-                JOIN message_tree mt ON mt.child_id = sm.id AND mt.active = true
+                FROM messages m
+                JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
                 JOIN message_path mp ON mp.id = mt.parent_id
+                JOIN chat_runs rc ON rc.run_id = m.run_id
                 CROSS JOIN chat_ids_list cil
                 WHERE mp.depth < 1000  -- Safety limit
-                  AND sm.chat_id = mp.chat_id  -- Ensure parent and child are in same chat
-                  AND sm.chat_id = ANY(cil.chat_ids)  -- Ensure we stay within the target chats
+                  AND m.role IN ('user', 'assistant')
+                  AND rc.chat_id = mp.chat_id  -- Ensure parent and child are in same chat
+                  AND rc.chat_id = ANY(cil.chat_ids)  -- Ensure we stay within the target chats
             ),
             -- Include messages without parents (backward compatibility for existing messages)
             messages_without_parents AS (
                 SELECT 
-                    id, 
-                    chat_id, 
-                    type, 
-                    content, 
-                    created_at, 
-                    completed, 
-                    updated_at,
+                    m.id, 
+                    rc.chat_id, 
+                    CASE WHEN m.role = 'user' THEN 'query' ELSE 'response' END as type, 
+                    m.content, 
+                    m.created_at, 
+                    m.completed, 
+                    m.updated_at,
                     -1 as depth,
-                    id as path_root_id
-                FROM messages
+                    m.id as path_root_id
+                FROM messages m
+                JOIN chat_runs rc ON rc.run_id = m.run_id
                 CROSS JOIN chat_ids_list cil
-                WHERE chat_id = ANY(cil.chat_ids)
+                WHERE rc.chat_id = ANY(cil.chat_ids)
+                  AND m.role IN ('user', 'assistant')
                   AND NOT EXISTS (
                       SELECT 1 FROM message_tree mt 
-                      WHERE mt.child_id = messages.id AND mt.active = true
+                      WHERE mt.child_id = m.id AND mt.active = true
                   )
                   AND NOT EXISTS (
                       SELECT 1 FROM message_path mp 
-                      WHERE mp.id = messages.id
+                      WHERE mp.id = m.id
                   )
             ),
             -- Combine tree-traversed messages and messages without parents
@@ -497,11 +505,11 @@
         ),
         hints_data AS (
             SELECT 
-                sm.chat_id,
+                rc.chat_id,
                 COALESCE(
                     jsonb_agg(
                         jsonb_build_object(
-                            'messageId', sm.id::text,
+                            'messageId', m.id::text,
                             'hints', COALESCE(
                                 (SELECT jsonb_agg(
                                     jsonb_build_object(
@@ -512,19 +520,21 @@
                                     ) ORDER BY sh.idx
                                 )
                                 FROM simulation_hints sh
-                                WHERE sh.simulation_message_id = sm.id),
+                                WHERE sh.simulation_message_id = m.id),
                                 '[]'::jsonb
                             )
                         )
-                    ) FILTER (WHERE sm.type = 'response'),
+                    ) FILTER (WHERE m.role = 'assistant'),
                     '[]'::jsonb
                 ) as hints
-            FROM messages sm
+            FROM messages m
+            JOIN chat_runs rc ON rc.run_id = m.run_id
             CROSS JOIN chat_ids_list cil
             CROSS JOIN attempt_base ab
-            WHERE sm.chat_id = ANY(cil.chat_ids)
+            WHERE rc.chat_id = ANY(cil.chat_ids)
+              AND m.role IN ('user', 'assistant')
               AND ab.sim_practice_simulation = true
-            GROUP BY sm.chat_id
+            GROUP BY rc.chat_id
         ),
         grades_data AS (
             -- Get latest grade per chat (DISTINCT ON to handle multiple grades)
