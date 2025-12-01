@@ -1,9 +1,6 @@
 __pycache__/
 **/__pycache__/
 
-uploads/tus_uploads/
-runs/
-!app/utils/runs/
 audio/
 sketches/
 htmlcov/

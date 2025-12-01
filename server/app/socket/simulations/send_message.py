@@ -335,6 +335,24 @@ async def _generate_hints_background_inline(
                 str(context["agent_id"]),  # agent_id
             )
             model_run_id = uuid.UUID(model_run_row["run_id"])
+            
+            # Link system message to run
+            sql_link_sys = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
+            await conn.fetchrow(
+                sql_link_sys,
+                str(model_run_id),
+                str(department_id),
+                None,  # chat_id not needed for hint agent
+            )
+            
+            # Link hint developer message to run (shared message)
+            hint_dev_content = "Now please generate the hints based on the previous conversation. You must call all three hint tools (provide_hint_1, provide_hint_2, and provide_hint_3) to provide short, concise guidance for the GTA."
+            sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+            await conn.fetchrow(
+                sql_link_dev,
+                hint_dev_content,
+                str(model_run_id),
+            )
 
             # Run the hint agent
             logger.info("Running hint agent with parallel tool calls...")
@@ -540,14 +558,22 @@ async def _send_simulation_message_impl(
                         pass
                     else:
                         run_id_for_message = latest_run_row["run_id"]
+                        # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
-                            sql, run_id_for_message, "user", message_str, True
+                            sql, "user", message_str, True
                         )
                         user_message = {
                             "id": user_message_row["id"],
                             "created_at": user_message_row["created_at"],
                         }
+                        # Link message to run via message_runs
+                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        await conn.execute(
+                            sql_link,
+                            str(user_message["id"]),
+                            run_id_for_message,
+                        )
 
                         # Create branch from latest message to new user message (if latest exists)
                         sql_latest = load_sql("sql/v3/simulations/get_latest_message.sql")
@@ -603,18 +629,22 @@ async def _send_simulation_message_impl(
                     # We'll create the message after creating the run
                     assistant_message = None
                 else:
+                    # Create message without run_id
                     sql = load_sql("sql/v3/simulations/create_message.sql")
                     assistant_message_row = await conn.fetchrow(
-                        sql, run_id_for_assistant, "assistant", "", False
+                        sql, "assistant", "", False
                     )
                     assistant_message = {
                         "id": assistant_message_row["id"],
                         "created_at": assistant_message_row["created_at"],
                     }
-                assistant_message = {
-                    "id": assistant_message_row["id"],
-                    "created_at": assistant_message_row["created_at"],
-                }
+                    # Link message to run via message_runs
+                    sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                    await conn.execute(
+                        sql_link,
+                        str(assistant_message["id"]),
+                        run_id_for_assistant,
+                    )
 
                 # Create branch for assistant message
                 parent_message_id = None
@@ -884,27 +914,79 @@ async def _send_simulation_message_impl(
                         str(chat_id_uuid)
                     )
                     
+                    # Link system/developer messages to run
+                    sql_link_sys_dev = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
+                    await conn.fetchrow(
+                        sql_link_sys_dev,
+                        str(model_run_id),
+                        context.get("department_id"),
+                        str(chat_id_uuid),
+                    )
+                    
                     # Create user message if it wasn't created earlier (no run existed)
                     if not user_message and message_str and message_str.strip() != "" and not is_retry:
+                        # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         user_message_row = await conn.fetchrow(
-                            sql, str(model_run_id), "user", message_str, True
+                            sql, "user", message_str, True
                         )
                         user_message = {
                             "id": user_message_row["id"],
                             "created_at": user_message_row["created_at"],
                         }
+                        # Link message to run via message_runs
+                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        await conn.execute(
+                            sql_link,
+                            str(user_message["id"]),
+                            str(model_run_id),
+                        )
+                        # Link to message_tree: developer → user (or system → user if no developer)
+                        # Get system/developer messages for this run
+                        sys_dev_result = await conn.fetchrow(
+                            sql_link_sys_dev,
+                            str(model_run_id),
+                            context.get("department_id"),
+                            str(chat_id_uuid),
+                        )
+                        if sys_dev_result and user_message:
+                            dev_msg_id = sys_dev_result.get("developer_message_id")
+                            sys_msg_id = sys_dev_result.get("system_message_id")
+                            # Link developer → user (if developer exists)
+                            if dev_msg_id:
+                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                await conn.execute(
+                                    sql_branch,
+                                    str(dev_msg_id),
+                                    str(user_message["id"]),
+                                )
+                            # Link system → user (if system exists and no developer)
+                            elif sys_msg_id:
+                                sql_branch = load_sql("sql/v3/simulations/create_message_branch.sql")
+                                await conn.execute(
+                                    sql_branch,
+                                    str(sys_msg_id),
+                                    str(user_message["id"]),
+                                )
                     
                     # Create assistant message if it wasn't created earlier
                     if not assistant_message:
+                        # Create message without run_id
                         sql = load_sql("sql/v3/simulations/create_message.sql")
                         assistant_message_row = await conn.fetchrow(
-                            sql, str(model_run_id), "assistant", "", False
+                            sql, "assistant", "", False
                         )
                         assistant_message = {
                             "id": assistant_message_row["id"],
                             "created_at": assistant_message_row["created_at"],
                         }
+                        # Link message to run via message_runs
+                        sql_link = load_sql("sql/v3/simulations/link_message_to_run.sql")
+                        await conn.execute(
+                            sql_link,
+                            str(assistant_message["id"]),
+                            str(model_run_id),
+                        )
 
                     with trace(
                         context["chat_title"],
@@ -1207,15 +1289,22 @@ async def _send_simulation_message_impl(
                 pool = get_pool()
                 if pool:
                     async with pool.acquire() as conn:
-                        # Create an error message in the database
-                        sql = load_sql("sql/v3/simulations/insert_error_message.sql")
-                        error_message = await conn.fetchrow(
-                            sql,
+                        # Get run_id from chat_id
+                        sql_get_run = load_sql("sql/v3/simulations/get_latest_run_for_chat.sql")
+                        run_row = await conn.fetchrow(
+                            sql_get_run,
                             uuid.UUID(chat_id),
-                            "response",
-                            f"Error: {str(e)}",
-                            True,
                         )
+                        if run_row:
+                            # Create an error message in the database
+                            sql = load_sql("sql/v3/simulations/insert_error_message.sql")
+                            error_message = await conn.fetchrow(
+                                sql,
+                                run_row["run_id"],
+                                f"Error: {str(e)}",
+                            )
+                        else:
+                            error_message = None
 
                         # Emit the error message to clients
                         if error_message:

@@ -529,6 +529,35 @@ async def _run_grade_agent_inline(
             str(agent["id"]),  # agent_id
         )
         model_run_id = uuid.UUID(model_run_row["run_id"])
+        
+        # Link system message to run
+        sql_link_sys = load_sql("sql/v3/model_runs/link_system_developer_messages_to_run.sql")
+        await conn.fetchrow(
+            sql_link_sys,
+            str(model_run_id),
+            str(department_id),
+            None,  # chat_id not needed for grade agent
+        )
+        
+        # Link developer messages to run (rubric and time_message)
+        # These are dynamic messages that get deduplicated by MD5 hash
+        sql_link_dev = load_sql("sql/v3/simulations/link_developer_message_to_run.sql")
+        
+        # Link rubric developer message
+        rubric_dev_content = rubric_input["content"]
+        await conn.fetchrow(
+            sql_link_dev,
+            rubric_dev_content,
+            str(model_run_id),
+        )
+        
+        # Link time limit developer message
+        time_dev_content = time_message["content"]
+        await conn.fetchrow(
+            sql_link_dev,
+            time_dev_content,
+            str(model_run_id),
+        )
 
         # Run the grading
         logger.info("Running grading agent...")
