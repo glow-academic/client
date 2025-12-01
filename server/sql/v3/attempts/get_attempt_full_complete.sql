@@ -407,7 +407,8 @@
                     0 as depth,
                     m.id as path_root_id
                 FROM messages m
-                JOIN chat_runs rc ON rc.run_id = m.run_id
+                JOIN message_runs mr ON mr.message_id = m.id
+                JOIN chat_runs rc ON rc.run_id = mr.run_id
                 CROSS JOIN chat_ids_list cil
                 WHERE rc.chat_id = ANY(cil.chat_ids)
                   AND m.role IN ('user', 'assistant')
@@ -432,7 +433,8 @@
                 FROM messages m
                 JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
                 JOIN message_path mp ON mp.id = mt.parent_id
-                JOIN chat_runs rc ON rc.run_id = m.run_id
+                JOIN message_runs mr ON mr.message_id = m.id
+                JOIN chat_runs rc ON rc.run_id = mr.run_id
                 CROSS JOIN chat_ids_list cil
                 WHERE mp.depth < 1000  -- Safety limit
                   AND m.role IN ('user', 'assistant')
@@ -452,7 +454,8 @@
                     -1 as depth,
                     m.id as path_root_id
                 FROM messages m
-                JOIN chat_runs rc ON rc.run_id = m.run_id
+                JOIN message_runs mr ON mr.message_id = m.id
+                JOIN chat_runs rc ON rc.run_id = mr.run_id
                 CROSS JOIN chat_ids_list cil
                 WHERE rc.chat_id = ANY(cil.chat_ids)
                   AND m.role IN ('user', 'assistant')
@@ -528,7 +531,8 @@
                     '[]'::jsonb
                 ) as hints
             FROM messages m
-            JOIN chat_runs rc ON rc.run_id = m.run_id
+            JOIN message_runs mr ON mr.message_id = m.id
+            JOIN chat_runs rc ON rc.run_id = mr.run_id
             CROSS JOIN chat_ids_list cil
             CROSS JOIN attempt_base ab
             WHERE rc.chat_id = ANY(cil.chat_ids)
