@@ -57,8 +57,13 @@ class VideoDetailResponse(BaseModel):
     name: str
     length_seconds: int
     active: bool
+    file_path: str
+    mime_type: str
+    video_url: str | None
     department_ids: list[str] | None
     valid_department_ids: list[str]
+    outline_ids: list[str]
+    outline_mapping: dict[str, dict[str, str]]
     problem_statement_ids: list[str]
     problem_statement_mapping: dict[str, ProblemStatementInfo]
     objective_ids: list[str]
@@ -219,6 +224,20 @@ async def get_video_detail(
                 for k, v in objective_mapping_data.items()
             }
 
+        # Parse outline_mapping from JSONB
+        outline_mapping_data = parse_jsonb(video.get("outline_mapping"))
+        outline_mapping: dict[str, dict[str, str]] = {}
+        if isinstance(outline_mapping_data, dict):
+            outline_mapping = {
+                k: {
+                    "name": v.get("name", ""),
+                    "outline": v.get("outline", ""),
+                    "created_at": v.get("created_at", ""),
+                    "updated_at": v.get("updated_at", ""),
+                }
+                for k, v in outline_mapping_data.items()
+            }
+
         # Parse policy_mapping from JSONB
         policy_mapping_data = parse_jsonb(video.get("policy_mapping"))
         policy_mapping: dict[str, dict[str, str]] = {}
@@ -250,6 +269,10 @@ async def get_video_detail(
                 if isinstance(img, dict)
             ]
 
+        outline_ids = video.get("outline_ids") or []
+        if not isinstance(outline_ids, list):
+            outline_ids = []
+
         problem_statement_ids = video.get("problem_statement_ids") or []
         if not isinstance(problem_statement_ids, list):
             problem_statement_ids = []
@@ -271,12 +294,26 @@ async def get_video_detail(
         if not isinstance(objectives_history, list):
             objectives_history = []
 
+        # Extract file_path and mime_type
+        file_path = video.get("file_path") or ""
+        mime_type = video.get("mime_type") or ""
+        
+        # Construct video_url if file_path exists and is not empty
+        video_url = None
+        if file_path and file_path.strip():
+            video_url = f"/api/videos/download/{request_data.videoId}"
+
         response_data = VideoDetailResponse(
             name=video["name"],
             length_seconds=video["length_seconds"],
             active=video["active"],
+            file_path=file_path,
+            mime_type=mime_type,
+            video_url=video_url,
             department_ids=dept_ids,
             valid_department_ids=[str(did) for did in valid_dept_ids],
+            outline_ids=[str(oid) for oid in outline_ids],
+            outline_mapping=outline_mapping,
             problem_statement_ids=[str(psid) for psid in problem_statement_ids],
             problem_statement_mapping=problem_statement_mapping,
             objective_ids=[str(oid) for oid in objective_ids],

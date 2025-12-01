@@ -57,6 +57,8 @@ video_core AS (
         v.name,
         v.length_seconds,
         v.active,
+        v.file_path,
+        v.mime_type,
         COALESCE(vdd.department_ids, NULL) as department_ids
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
@@ -121,8 +123,8 @@ policy_mapping_data AS (
     WHERE vp.video_id = $1 AND vp.active = true AND p.active = true
 ),
 valid_policies AS (
-    SELECT ARRAY_AGG(DISTINCT p.id::text ORDER BY p.id) as policy_ids
-    FROM policies p
+    SELECT ARRAY_AGG(p.id::text ORDER BY p.id) as policy_ids
+    FROM (SELECT DISTINCT p.id FROM policies p
     CROSS JOIN user_profile up
     LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
     WHERE p.active = true
@@ -131,6 +133,7 @@ valid_policies AS (
             OR pd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd2 ON pd2.profile_id = rpi.resolved_profile_id WHERE pd2.active = true)
             OR NOT EXISTS (SELECT 1 FROM policy_departments pd3 WHERE pd3.policy_id = p.id AND pd3.active = true)
         )
+    ) p
 ),
 video_images_data AS (
     SELECT COALESCE(
@@ -223,24 +226,28 @@ video_questions_data AS (
         q.question_text,
         q.type as question_type,
         q.allow_multiple,
-        (SELECT ARRAY_AGG(time ORDER BY time) FROM (SELECT DISTINCT qt.time FROM question_times qt WHERE qt.video_id = vq.video_id AND qt.question_id = q.id AND qt.active = true) distinct_times) as times,
+        (SELECT ARRAY_AGG(distinct_times.time ORDER BY distinct_times.time) FROM (SELECT DISTINCT qt.time FROM question_times qt WHERE qt.video_id = vq.video_id AND qt.question_id = q.id AND qt.active = true) distinct_times) as times,
         -- All options for this question
         COALESCE(
-            jsonb_agg(
-                DISTINCT jsonb_build_object(
-                    'option_id', o.id::text,
-                    'option_text', o.option_text,
-                    'type', o.type::text,
-                    'is_correct', CASE WHEN qa.option_id IS NOT NULL THEN true ELSE false END
-                )
-            ) FILTER (WHERE o.id IS NOT NULL),
+            (SELECT jsonb_agg(option_obj ORDER BY (option_obj->>'option_id'))
+             FROM (
+                 SELECT DISTINCT ON (o2.id) jsonb_build_object(
+                     'option_id', o2.id::text,
+                     'option_text', o2.option_text,
+                     'type', o2.type::text,
+                     'is_correct', CASE WHEN qa2.option_id IS NOT NULL THEN true ELSE false END
+                 ) as option_obj
+                 FROM question_options qo2
+                 LEFT JOIN options o2 ON o2.id = qo2.option_id AND o2.active = true
+                 LEFT JOIN question_answers qa2 ON qa2.question_id = q.id AND qa2.option_id = o2.id AND qa2.active = true
+                 WHERE qo2.question_id = q.id AND qo2.active = true AND o2.id IS NOT NULL
+                 ORDER BY o2.id
+             ) distinct_options
+            ),
             '[]'::jsonb
         ) as options
     FROM video_questions vq
     JOIN questions q ON q.id = vq.question_id
-    LEFT JOIN question_options qo ON qo.question_id = q.id AND qo.active = true
-    LEFT JOIN options o ON o.id = qo.option_id AND o.active = true
-    LEFT JOIN question_answers qa ON qa.question_id = q.id AND qa.option_id = o.id AND qa.active = true
     WHERE vq.video_id = $1 AND vq.active = true AND q.active = true
     GROUP BY q.id, q.question_text, q.type, q.allow_multiple, vq.video_id
 ),
@@ -264,6 +271,8 @@ SELECT
     vc.name,
     vc.length_seconds,
     vc.active,
+    vc.file_path,
+    vc.mime_type,
     vc.department_ids,
     COALESCE((SELECT department_ids FROM valid_departments), ARRAY[]::text[]) as valid_department_ids,
     COALESCE((SELECT outline_ids FROM video_outlines_agg), ARRAY[]::text[]) as outline_ids,

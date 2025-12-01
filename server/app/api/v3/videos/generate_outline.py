@@ -51,6 +51,7 @@ class GenerateOutlineResponse(BaseModel):
     message: str
     name: str
     outline: str
+    outline_id: str | None = None
 
 
 router = APIRouter()
@@ -290,6 +291,31 @@ async def generate_outline(
         if not outline:
             raise ValueError("Outline generation failed - no outline content returned")
 
+        outline_id: str | None = None
+        
+        # Save outline to database if videoId is provided
+        if request.videoId:
+            try:
+                video_id = uuid.UUID(request.videoId)
+                
+                # Create outline and link it to video
+                sql_create_outline = load_sql("sql/v3/videos/create_outline_for_video.sql")
+                outline_row = await conn.fetchrow(
+                    sql_create_outline,
+                    str(video_id),
+                    name,
+                    outline,
+                )
+                
+                if outline_row:
+                    outline_id = str(outline_row["outline_id"])
+                    logger.info(f"Created outline {outline_id} and linked to video {request.videoId}")
+                else:
+                    logger.warning(f"Failed to create outline for video {request.videoId}")
+            except Exception as e:
+                logger.warning(f"Failed to save outline: {e}")
+                # Don't fail the request if outline saving fails, but log the error
+
         # Save question timestamps if videoId is provided and timestamps exist
         if request.videoId and question_timestamps:
             try:
@@ -313,6 +339,7 @@ async def generate_outline(
             message="Outline generated successfully",
             name=name,
             outline=outline,
+            outline_id=outline_id,
         )
     except HTTPException:
         raise

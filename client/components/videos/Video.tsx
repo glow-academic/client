@@ -437,7 +437,10 @@ export default function Video({
 
       if (result.success) {
         setOutlineText(result.outline);
-        // Note: outline ID will be set when saving to DB
+        // Set outline ID if provided (when videoId exists, outline is saved to DB)
+        if (result.outline_id) {
+          setSelectedOutlineId(result.outline_id);
+        }
         toast.success("Outline generated successfully!");
       }
     } catch (error) {
@@ -512,6 +515,12 @@ export default function Video({
         setUploadedVideoFile(null);
         setVideoObjectUrl(null);
         toast.success("Video generated successfully!");
+        
+        // Refresh server data to get updated video_url from database
+        // This ensures the video persists after page refresh
+        if (isEditMode && currentVideoId) {
+          router.refresh();
+        }
       } else {
         toast.info(result.message || "Video generation completed");
       }
@@ -754,6 +763,14 @@ export default function Video({
         if (outlineMapping[outlineId]) {
           setOutlineText(outlineMapping[outlineId].outline || "");
         }
+      } else if (videoData.outline_mapping && Object.keys(videoData.outline_mapping).length > 0) {
+        // If no outline_ids but outline_mapping exists, load the first outline
+        const firstOutlineId = Object.keys(videoData.outline_mapping)[0]!;
+        const outlineData = videoData.outline_mapping[firstOutlineId];
+        if (outlineData?.outline) {
+          setOutlineText(outlineData.outline);
+          setSelectedOutlineId(firstOutlineId);
+        }
       }
 
       // Load policies
@@ -786,6 +803,11 @@ export default function Video({
       } else {
         setImage(null);
         setUseImage(false);
+      }
+
+      // Load video URL if video file exists
+      if (videoData.video_url) {
+        setGeneratedVideoUrl(videoData.video_url);
       }
 
       // Load questions from server data (already strongly typed from API)
@@ -831,9 +853,7 @@ export default function Video({
     if (!formData["name"].trim()) {
       newErrors["name"] = "Name is required";
     }
-    if (formData["length_seconds"] <= 0) {
-      newErrors["length_seconds"] = "Length must be greater than 0";
-    }
+    // length_seconds is optional - defaults to 4 seconds if not provided
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -976,8 +996,8 @@ export default function Video({
         ) {
           return "pending";
         }
-        // Completed if video uploaded OR generated
-        return uploadedVideoFile || generatedVideoUrl ? "completed" : "active";
+        // Completed if video uploaded OR generated OR exists on server
+        return uploadedVideoFile || generatedVideoUrl || videoData?.video_url ? "completed" : "active";
       default:
         return "pending";
     }
@@ -1865,13 +1885,13 @@ export default function Video({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Video Display - Shows either generated or uploaded video */}
-          {generatedVideoUrl ? (
+          {/* Video Display - Shows either generated, uploaded, or server video */}
+          {generatedVideoUrl || (videoData?.video_url && !uploadedVideoFile) ? (
             <div className="space-y-2">
               <Label>Video</Label>
               <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
                 <video
-                  src={generatedVideoUrl}
+                  src={generatedVideoUrl || videoData?.video_url || ""}
                   controls
                   className="w-full h-full rounded-lg"
                 />
@@ -1883,7 +1903,7 @@ export default function Video({
                     // If there's an uploaded video, it will show after clearing generated
                   }}
                   className="absolute top-2 right-2"
-                  disabled={isReadonly}
+                  disabled={isReadonly || !!videoData?.video_url}
                 >
                   <X className="h-4 w-4" />
                 </Button>

@@ -1547,9 +1547,10 @@ export interface paths {
         put?: never;
         /**
          * Generate Video
-         * @description Generate video using Sora2 API (hardcoded 4 seconds).
+         * @description Generate video using Sora2 API (4 seconds).
          *
-         *     For now, returns a hardcoded video path. Full Sora2 implementation is commented out.
+         *     Creates a video generation job, polls for completion, downloads the video,
+         *     saves it to the uploads folder, and updates the database with file_path and mime_type.
          */
         post: operations["generate_video_api_v3_videos_generate_video_post"];
         delete?: never;
@@ -1572,6 +1573,26 @@ export interface paths {
         get: operations["download_video_api_v3_videos_download__video_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Video
+         * @description Upload a video file and update the video record.
+         */
+        post: operations["upload_video_api_v3_videos_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4876,6 +4897,16 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** Body_upload_video_api_v3_videos_upload_post */
+        Body_upload_video_api_v3_videos_upload_post: {
+            /** Videoid */
+            videoId: string;
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
         /** BulkArchiveAttemptsRequest */
         BulkArchiveAttemptsRequest: {
             /** Archived */
@@ -7666,6 +7697,8 @@ export interface components {
             name: string;
             /** Outline */
             outline: string;
+            /** Outline Id */
+            outline_id?: string | null;
         };
         /**
          * GenerateQuestionsRequest
@@ -12667,6 +12700,18 @@ export interface components {
             /** Message */
             message: string;
         };
+        /**
+         * UploadVideoResponse
+         * @description Response from video upload.
+         */
+        UploadVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Videourl */
+            videoUrl?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -14959,10 +15004,24 @@ export interface components {
             length_seconds: number;
             /** Active */
             active: boolean;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Video Url */
+            video_url: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Outline Ids */
+            outline_ids: string[];
+            /** Outline Mapping */
+            outline_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
             /** Problem Statement Ids */
             problem_statement_ids: string[];
             /** Problem Statement Mapping */
@@ -17453,6 +17512,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_video_api_v3_videos_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_video_api_v3_videos_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadVideoResponse"];
                 };
             };
             /** @description Validation Error */
