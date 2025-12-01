@@ -19,7 +19,6 @@ import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { CreateStaffButton } from "@/components/common/staff/CreateStaffButton";
-import { DocumentUploadButton } from "@/components/documents/DocumentUploadButton";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
@@ -221,7 +220,12 @@ function MainLayoutContent({
     }
 
     if (pathname === "/management/documents") {
-      return <DocumentUploadButton />;
+      return (
+        <Button onClick={() => router.push("/management/documents/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Document
+        </Button>
+      );
     }
 
     if (pathname === "/management/rubrics") {

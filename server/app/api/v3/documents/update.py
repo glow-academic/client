@@ -17,7 +17,9 @@ class UpdateDocumentRequest(BaseModel):
     """Request for updating a document."""
 
     documentId: str
+    name: str | None = None
     type: str
+    active: bool | None = None
     department_id: str | None = None
     parameter_item_ids: list[str] = []
 
@@ -53,14 +55,18 @@ async def update_document(
             param_item_ids = request.parameter_item_ids or []
             sql_params = (
                 uuid.UUID(request.documentId),
+                request.name,
                 request.type,
+                request.active,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
             )
             await conn.execute(
                 sql_query,
                 uuid.UUID(request.documentId),
+                request.name,
                 request.type,
+                request.active,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
             )

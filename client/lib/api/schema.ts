@@ -11817,8 +11817,12 @@ export interface components {
         UpdateDocumentRequest: {
             /** Documentid */
             documentId: string;
+            /** Name */
+            name?: string | null;
             /** Type */
             type: string;
+            /** Active */
+            active?: boolean | null;
             /** Department Id */
             department_id?: string | null;
             /**

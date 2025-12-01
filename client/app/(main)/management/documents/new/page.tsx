@@ -1,53 +1,52 @@
 /**
- * app/(main)/management/documents/page.tsx
- * Documents list page - redirects to home with documents section
+ * app/(main)/management/documents/new/page.tsx
+ * New document page for document upload
  * @AshokSaravanan222 & @siladiea
- * 06/09/2025
+ * 01/21/2025
  */
 
 import { getSession } from "@/auth";
 
-import Documents from "@/components/documents/Documents";
+import DocumentNew from "@/components/documents/DocumentNew";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
 type DocumentsListOut = OutputOf<"/api/v3/documents/list", "post">;
-type DeleteDocumentIn = InputOf<"/api/v3/documents/delete", "post">;
-type DeleteDocumentOut = OutputOf<"/api/v3/documents/delete", "post">;
+type FinalizeDocumentUploadIn = InputOf<
+  "/api/v3/documents/upload/finalize",
+  "post"
+>;
+type FinalizeDocumentUploadOut = OutputOf<
+  "/api/v3/documents/upload/finalize",
+  "post"
+>;
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch (no Next.js cache) ---- */
 const getDocumentsList = async (
   profileId: string
 ): Promise<DocumentsListOut> => {
-  const bypassCache = await isHardRefresh();
   return api.post(
     "/documents/list",
     { body: { profileId } },
     {
       cache: "no-store",
-      ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
-      }),
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
     }
   );
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function deleteDocument(
-  input: DeleteDocumentIn,
-): Promise<DeleteDocumentOut> {
+async function finalizeDocumentUpload(
+  input: FinalizeDocumentUploadIn,
+): Promise<FinalizeDocumentUploadOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/documents/delete", input);
+  return api.post("/documents/upload/finalize", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -71,23 +70,27 @@ export async function generateMetadata(): Promise<Metadata> {
     : "";
 
   return {
-    title: "Documents",
-    description: `Documents in GLOW${orgPart}.`,
+    title: "New Document",
+    description: `Upload new documents in GLOW${orgPart}.`,
   };
 }
 
-export default async function DocumentsPage() {
+export default async function NewDocumentPage() {
   const session = await getSession();
   const profileId = session?.effectiveProfileId || "";
 
-  // Fetch list data server-side
+  // Fetch list data server-side for mappings
   const listData = await getDocumentsList(profileId);
 
   return (
-    <div className="space-y-6" data-page="documents-index">
-      <Documents
+    <div
+      className="space-y-6"
+      data-page="document-new"
+      aria-label="Create new document page"
+    >
+      <DocumentNew
         listData={listData}
-        deleteDocumentAction={deleteDocument}
+        finalizeDocumentUploadAction={finalizeDocumentUpload}
       />
     </div>
   );
@@ -95,8 +98,9 @@ export default async function DocumentsPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  DeleteDocumentIn,
-  DeleteDocumentOut,
   DocumentsListIn,
   DocumentsListOut,
+  FinalizeDocumentUploadIn,
+  FinalizeDocumentUploadOut,
 };
+

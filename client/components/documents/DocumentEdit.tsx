@@ -1,0 +1,251 @@
+/**
+ * DocumentEdit.tsx
+ * Document edit form component - full page version of edit dialog
+ * @AshokSaravanan222 & @siladiea
+ * 01/21/2025
+ */
+"use client";
+
+import type {
+  DocumentDetailOut,
+  UpdateDocumentIn,
+  UpdateDocumentOut,
+} from "@/app/(main)/management/documents/d/[documentId]/page";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useProfile } from "@/contexts/profile-context";
+import { Power } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+type DocumentType =
+  | "homework"
+  | "project"
+  | "quiz"
+  | "midterm"
+  | "lab"
+  | "lecture"
+  | "syllabus";
+
+interface DocumentEditProps {
+  documentId: string;
+  documentDetail: DocumentDetailOut;
+  updateDocumentAction: (input: UpdateDocumentIn) => Promise<UpdateDocumentOut>;
+}
+
+export default function DocumentEdit({
+  documentId,
+  documentDetail,
+  updateDocumentAction,
+}: DocumentEditProps) {
+  const router = useRouter();
+  const { effectiveDepartmentIds } = useProfile();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [formData, setFormData] = useState<{
+    name: string;
+    active: boolean;
+    type: DocumentType;
+    departmentIds: string[];
+    parameterItemIds: string[];
+  }>({
+    name: "",
+    active: true,
+    type: "homework",
+    departmentIds: [],
+    parameterItemIds: [],
+  });
+
+  // Extract mappings from detail response
+  const departmentMapping = useMemo(
+    () => documentDetail?.department_mapping || {},
+    [documentDetail]
+  );
+  const parameterItemMapping = useMemo(
+    () => documentDetail?.parameter_item_mapping || {},
+    [documentDetail]
+  );
+
+  // Compute valid parameter item IDs based on selected departments
+  const validParameterItemIds = useMemo(() => {
+    const baseIds = documentDetail?.valid_parameter_item_ids || [];
+    const selectedDeptIds = formData.departmentIds;
+
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+
+    // Get union of parameter_ids from selected departments
+    const deptParameterIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+      }
+    });
+
+    // Filter parameter items: include if their parameter_id is in department parameter IDs
+    return baseIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      return item && deptParameterIds.has(item.parameter_id);
+    });
+  }, [formData.departmentIds, departmentMapping, parameterItemMapping, documentDetail]);
+
+  // Initialize form data from document detail
+  useEffect(() => {
+    if (documentDetail) {
+      setFormData({
+        name: documentDetail.name || "",
+        active: documentDetail.active ?? true,
+        type: (documentDetail.type as DocumentType) || "homework",
+        departmentIds: documentDetail.department_ids || [],
+        parameterItemIds: documentDetail.parameter_item_ids || [],
+      });
+    }
+  }, [documentDetail]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setIsUpdating(true);
+    try {
+      await updateDocumentAction({
+        body: {
+          documentId,
+          name: formData.name,
+          type: formData.type,
+          active: formData.active,
+          department_id: formData.departmentIds.length > 0 ? formData.departmentIds[0] : null,
+          parameter_item_ids: formData.parameterItemIds,
+        },
+      });
+
+      toast.success("Document updated successfully");
+      router.push("/management/documents");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update document"
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const validDepartmentIds = useMemo(() => {
+    return documentDetail?.valid_department_ids || effectiveDepartmentIds;
+  }, [documentDetail, effectiveDepartmentIds]);
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          {/* Document name */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="Document name"
+              required
+            />
+          </div>
+
+          {/* Active status */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="active"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  Active
+                </Label>
+                <Switch
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, active: checked }))
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <DocumentTypePicker
+              selectedType={formData.type}
+              onSelect={(value) => {
+                setFormData((prev) => ({ ...prev, type: value }));
+              }}
+              label="Type"
+              description="Choose the type of document"
+            />
+          </div>
+
+          {/* Department Selection */}
+          {validDepartmentIds && validDepartmentIds.length > 1 && (
+            <div className="flex flex-col gap-2">
+              <Label>Department</Label>
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={validDepartmentIds}
+                selectedIds={formData.departmentIds}
+                onSelect={(ids) =>
+                  setFormData((prev) => ({ ...prev, departmentIds: ids }))
+                }
+                multiSelect={true}
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <Label>Parameter Items</Label>
+            <ParameterItemPicker
+              mapping={parameterItemMapping}
+              selectedIds={formData.parameterItemIds}
+              onSelect={(ids) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  parameterItemIds: ids as string[],
+                }))
+              }
+              validIds={validParameterItemIds}
+              parameterId=""
+              parameterName="Parameter Items"
+              allowCreate={false}
+              multiSelect={true}
+              badgesPosition="below"
+              showClearAll={true}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/management/documents")}
+            disabled={isUpdating}
+          >
+            Back
+          </Button>
+          <Button type="submit" disabled={isUpdating}>
+            {isUpdating ? "Updating..." : "Update"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+

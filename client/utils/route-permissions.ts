@@ -272,9 +272,15 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         redirectTo: "/management/documents",
       },
       {
+        path: "/management/documents/new",
+        roles: ["admin", "superadmin"],
+        title: "Create Document",
+        redirectTo: "/management/documents",
+      },
+      {
         path: "/management/documents/d/[documentId]",
         roles: ["admin", "superadmin"],
-        title: "View Document",
+        title: "Edit Document",
         redirectTo: "/management/documents",
       },
       {

@@ -28404,9 +28404,31 @@
             "type": "string",
             "title": "Documentid"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "type": {
             "type": "string",
             "title": "Type"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
           },
           "department_id": {
             "anyOf": [
