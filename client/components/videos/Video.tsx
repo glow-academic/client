@@ -1421,9 +1421,6 @@ export default function Video({
                             {question.allow_multiple && (
                               <Badge variant="secondary">Multiple</Badge>
                             )}
-                            <span className="text-sm text-muted-foreground">
-                              Times: {question.times.map(formatTime).join(", ")}
-                            </span>
                           </div>
                           <p className="font-medium">
                             {question.question_text}
@@ -1608,6 +1605,83 @@ export default function Video({
               className="min-h-[120px]"
               disabled={isReadonly}
             />
+          </div>
+
+          {/* Timeline */}
+          <div className="space-y-2">
+            <Label>Timeline (4 seconds) - Select questions for each time slot</Label>
+            <div className="grid grid-cols-5 gap-2">
+              {[0, 1, 2, 3, 4].map((time) => {
+                const questionsAtTime = questions.filter((q) =>
+                  q.times.includes(time)
+                );
+                // Use question_id if available, otherwise use index as fallback
+                const selectedQuestionKey =
+                  questionsAtTime.length > 0
+                    ? questionsAtTime[0]?.question_id ||
+                      `temp-${questions.findIndex(
+                        (q) => q === questionsAtTime[0]
+                      )}`
+                    : "none";
+
+                return (
+                  <div key={time} className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                      {formatTime(time)}
+                    </Label>
+                    <Select
+                      value={selectedQuestionKey || "none"}
+                      onValueChange={(questionKey) => {
+                        if (isReadonly) return;
+                        // Remove this time from all questions
+                        setQuestions((prev) =>
+                          prev.map((q) => ({
+                            ...q,
+                            times: q.times.filter((t) => t !== time),
+                          }))
+                        );
+
+                        // Add this time to the selected question (if not "none")
+                        if (questionKey && questionKey !== "none") {
+                          setQuestions((prev) =>
+                            prev.map((q, idx) => {
+                              const qKey = q.question_id || `temp-${idx}`;
+                              if (qKey === questionKey) {
+                                return {
+                                  ...q,
+                                  times: [...q.times, time].sort(
+                                    (a, b) => a - b
+                                  ),
+                                };
+                              }
+                              return q;
+                            })
+                          );
+                        }
+                      }}
+                      disabled={isReadonly || questions.length === 0}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {questions.map((q, idx) => {
+                          const qKey = q.question_id || `temp-${idx}`;
+                          return (
+                            <SelectItem key={qKey} value={qKey}>
+                              {q.question_text.length > 30
+                                ? `${q.question_text.substring(0, 30)}...`
+                                : q.question_text}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Use Image Switch */}
@@ -1805,62 +1879,6 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Timeline */}
-      {questions.length > 0 && formData.length_seconds > 0 && (
-        <div className="space-y-2">
-          <Label>Timeline ({formData.length_seconds} seconds)</Label>
-          <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
-            {/* Timeline markers */}
-            {allQuestionTimes.map((time) => (
-              <Tooltip key={time}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const question = questions.find((q) =>
-                        q.times.includes(time)
-                      );
-                      if (question) {
-                        openQuestionModal(time, question);
-                      } else {
-                        openQuestionModal(time);
-                      }
-                    }}
-                    className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
-                    style={{
-                      left: `${(time / formData.length_seconds) * 100}%`,
-                    }}
-                    disabled={isReadonly}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{formatTime(time)}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-
-            {/* Clickable timeline */}
-            <div
-              className="absolute inset-0 cursor-pointer"
-              onClick={(e) => {
-                if (isReadonly) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const percentage = x / rect.width;
-                const time = Math.floor(percentage * formData.length_seconds);
-                openQuestionModal(time);
-              }}
-            />
-
-            {/* Time labels */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
-              <span>0:00</span>
-              <span>{formatTime(formData.length_seconds)}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Action Buttons */}
       <div className="flex gap-2 justify-end">
         <Button
@@ -1950,60 +1968,6 @@ export default function Video({
                 </div>
               )}
 
-              {/* Times */}
-              <div className="space-y-2">
-                <Label>Times (seconds) *</Label>
-                <div className="flex flex-wrap gap-2">
-                  {editingQuestion.times.map((time) => (
-                    <Badge
-                      key={time}
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      {formatTime(time)}
-                      <button
-                        type="button"
-                        onClick={() => removeTime(time)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                  {selectedTime !== null &&
-                    !editingQuestion.times.includes(selectedTime) && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addTime(selectedTime)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add {formatTime(selectedTime)}
-                      </Button>
-                    )}
-                </div>
-                <Input
-                  type="number"
-                  min="0"
-                  max={formData.length_seconds}
-                  placeholder="Add time in seconds"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      const value = parseInt(e.currentTarget.value);
-                      if (
-                        !isNaN(value) &&
-                        value >= 0 &&
-                        value <= formData.length_seconds
-                      ) {
-                        addTime(value);
-                        e.currentTarget.value = "";
-                      }
-                    }
-                  }}
-                />
-              </div>
 
               {/* Options (for choice questions) */}
               {editingQuestion.type === "choice" && (

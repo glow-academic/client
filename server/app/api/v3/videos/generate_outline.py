@@ -91,6 +91,7 @@ async def generate_outline(
         # Get all context data in a single optimized query using SQL file
         policy_ids_str = [str(p) for p in policy_ids] if policy_ids else []
         question_ids_str = [str(q) for q in question_ids] if question_ids else []
+        video_id = uuid.UUID(request.videoId) if request.videoId else None
 
         sql = load_sql("sql/v3/agents/get_outline_run_context.sql")
         context_row = await conn.fetchrow(
@@ -99,6 +100,7 @@ async def generate_outline(
             policy_ids_str if policy_ids_str else None,
             question_ids_str if question_ids_str else None,
             str(profile_id) if profile_id else None,
+            str(video_id) if video_id else None,
         )
 
         if not context_row:
@@ -118,6 +120,8 @@ async def generate_outline(
             else context_row["questions"]
         )
 
+        video_length_seconds = context_row.get("video_length_seconds")
+        
         context = {
             "agent_id": context_row["agent_id"],
             "agent_name": context_row["agent_name"],
@@ -129,12 +133,14 @@ async def generate_outline(
             "model_id": context_row["model_id"],
             "model_name": context_row["model_name"],
             "custom_model": context_row["custom_model"],
+            "provider": context_row["provider"],
             "provider_id": context_row["provider_id"],
             "provider_name": context_row["provider_name"],
             "base_url": context_row["base_url"],
             "api_key": context_row["api_key"],
             "policies": policies,
             "questions": questions,
+            "video_length_seconds": video_length_seconds,
             "default_guest_profile_id": context_row["default_guest_profile_id"],
             "req_per_day": context_row["req_per_day"],
             "runs_today_count": context_row["runs_today_count"],
@@ -148,10 +154,13 @@ async def generate_outline(
             policy_info = format_policy_info(context["policies"])
 
         # Format question info if questions were provided
-        if not question_ids or len(question_ids) == 0:
+        if not questions or len(questions) == 0:
             question_info = None
         else:
-            question_info = format_question_info(context["questions"])
+            question_info = format_question_info(
+                context["questions"], 
+                context.get("video_length_seconds")
+            )
 
         # Create outline generation tools
         group_id = None
@@ -276,9 +285,28 @@ async def generate_outline(
         # Get result values
         name = outline_result.get("name", "Video Outline")
         outline = outline_result.get("outline", "")
+        question_timestamps = outline_result.get("question_timestamps")
 
         if not outline:
             raise ValueError("Outline generation failed - no outline content returned")
+
+        # Save question timestamps if videoId is provided and timestamps exist
+        if request.videoId and question_timestamps:
+            try:
+                video_id = uuid.UUID(request.videoId)
+                # Convert question_timestamps dict to JSONB format
+                timestamps_json = json.dumps(question_timestamps)
+                
+                sql_save_timestamps = load_sql("sql/v3/videos/save_question_timestamps.sql")
+                await conn.execute(
+                    sql_save_timestamps,
+                    str(video_id),
+                    timestamps_json,
+                )
+                logger.info(f"Saved question timestamps for video {request.videoId}")
+            except Exception as e:
+                logger.warning(f"Failed to save question timestamps: {e}")
+                # Don't fail the request if timestamp saving fails
 
         return GenerateOutlineResponse(
             success=True,

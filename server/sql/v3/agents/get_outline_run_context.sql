@@ -1,9 +1,24 @@
 -- Get all data needed to run outline agent with optimized JOIN
--- Parameters: $1=department_id (uuid), $2=policy_ids[] (uuid array), $3=question_ids[] (uuid array), $4=profile_id (uuid, nullable)
--- Returns: agent, model, provider, policies, questions, and profile data
+-- Parameters: $1=department_id (uuid), $2=policy_ids[] (uuid array), $3=question_ids[] (uuid array), $4=profile_id (uuid, nullable), $5=video_id (uuid, nullable)
+-- Returns: agent, model, provider, policies, questions, video_length, and profile data
 WITH params AS (
     -- Explicitly cast parameters for asyncpg type inference
-    SELECT $1::uuid as department_id, $2::uuid[] as policy_ids, $3::uuid[] as question_ids, $4::uuid as profile_id
+    SELECT $1::uuid as department_id, $2::uuid[] as policy_ids, $3::uuid[] as question_ids, $4::uuid as profile_id, $5::uuid as video_id
+),
+video_info AS (
+    -- Get video length if video_id is provided
+    SELECT 
+        v.length_seconds,
+        -- If video_id provided and no question_ids, get questions from video
+        CASE 
+            WHEN p.video_id IS NOT NULL AND (p.question_ids IS NULL OR array_length(p.question_ids, 1) IS NULL) THEN
+                (SELECT ARRAY_AGG(vq.question_id)
+                 FROM video_questions vq
+                 WHERE vq.video_id = p.video_id AND vq.active = true)
+            ELSE p.question_ids
+        END as effective_question_ids
+    FROM params p
+    LEFT JOIN videos v ON v.id = p.video_id
 ),
 default_guest AS (
     SELECT id::text as guest_profile_id
@@ -96,6 +111,7 @@ SELECT
     ) as policies,
     
     -- Questions data (aggregated as JSON array)
+    -- Use effective_question_ids from video_info if video_id provided
     COALESCE(
         (SELECT json_agg(
             json_build_object(
@@ -104,13 +120,18 @@ SELECT
                 'type', q.type::text,
                 'allow_multiple', q.allow_multiple
             )
-            ORDER BY array_position(p.question_ids, q.id)
+            ORDER BY array_position(vi.effective_question_ids, q.id)
         )
-        FROM questions q
-        WHERE q.id = ANY(p.question_ids)
+        FROM video_info vi
+        CROSS JOIN params p
+        LEFT JOIN questions q ON q.id = ANY(vi.effective_question_ids)
+        WHERE vi.effective_question_ids IS NOT NULL AND q.id IS NOT NULL
         ),
         '[]'::json
     ) as questions,
+    
+    -- Video length (if video_id provided)
+    vi.length_seconds as video_length_seconds,
     
     -- Profile data (use provided profile_id or default guest)
     COALESCE(
@@ -129,6 +150,7 @@ SELECT
 FROM best_agent ba
 INNER JOIN agents a ON a.id = ba.agent_id
 CROSS JOIN params p
+CROSS JOIN video_info vi
 -- Try department-specific prompt first, fall back to default prompt
 LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
 LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
