@@ -21,6 +21,12 @@ type UpdateVideoIn = InputOf<"/api/v3/videos/update", "post">;
 type UpdateVideoOut = OutputOf<"/api/v3/videos/update", "post">;
 type RandomizeVideoIn = InputOf<"/api/v3/videos/randomize", "post">;
 type RandomizeVideoOut = OutputOf<"/api/v3/videos/randomize", "post">;
+type GenerateQuestionsIn = InputOf<"/api/v3/videos/generate-questions", "post">;
+type GenerateQuestionsOut = OutputOf<"/api/v3/videos/generate-questions", "post">;
+type GenerateOutlineIn = InputOf<"/api/v3/videos/generate-outline", "post">;
+type GenerateOutlineOut = OutputOf<"/api/v3/videos/generate-outline", "post">;
+type GenerateVideoIn = InputOf<"/api/v3/videos/generate-video", "post">;
+type GenerateVideoOut = OutputOf<"/api/v3/videos/generate-video", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -55,6 +61,30 @@ async function randomizeVideo(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/videos/randomize", input);
+}
+
+async function generateQuestions(
+  input: GenerateQuestionsIn
+): Promise<GenerateQuestionsOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/videos/generate-questions", input);
+}
+
+async function generateOutline(
+  input: GenerateOutlineIn
+): Promise<GenerateOutlineOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/videos/generate-outline", input);
+}
+
+async function generateVideo(
+  input: GenerateVideoIn
+): Promise<GenerateVideoOut> {
+  "use server";
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/videos/generate-video", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -104,6 +134,9 @@ export default async function NewVideoPage() {
         createVideoAction={createVideo}
         updateVideoAction={updateVideo}
         randomizeVideoAction={randomizeVideo}
+        generateQuestionsAction={generateQuestions}
+        generateOutlineAction={generateOutline}
+        generateVideoAction={generateVideo}
       />
     </div>
   );
@@ -113,6 +146,12 @@ export default async function NewVideoPage() {
 export type {
   CreateVideoIn,
   CreateVideoOut,
+  GenerateQuestionsIn,
+  GenerateQuestionsOut,
+  GenerateOutlineIn,
+  GenerateOutlineOut,
+  GenerateVideoIn,
+  GenerateVideoOut,
   RandomizeVideoIn,
   RandomizeVideoOut,
   UpdateVideoIn,

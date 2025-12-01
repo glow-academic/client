@@ -1496,6 +1496,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/videos/generate-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Questions
+         * @description Generate AI questions (multiple choice, free response, multi-select).
+         */
+        post: operations["generate_questions_api_v3_videos_generate_questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/generate-outline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Outline
+         * @description Generate AI outline from policies and questions.
+         */
+        post: operations["generate_outline_api_v3_videos_generate_outline_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/videos/generate-video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Video
+         * @description Generate video using Sora2 API (hardcoded 4 seconds).
+         *
+         *     For now, returns a hardcoded video path. Full Sora2 implementation is commented out.
+         */
+        post: operations["generate_video_api_v3_videos_generate_video_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -7558,6 +7620,62 @@ export interface components {
             profileId: string;
         };
         /**
+         * GenerateOutlineRequest
+         * @description Request to generate AI outline.
+         */
+        GenerateOutlineRequest: {
+            /** Departmentid */
+            departmentId: string;
+            /** Policyids */
+            policyIds?: string[] | null;
+            /** Questionids */
+            questionIds?: string[] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Videoid */
+            videoId?: string | null;
+        };
+        /**
+         * GenerateOutlineResponse
+         * @description Response from AI outline generation.
+         */
+        GenerateOutlineResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Name */
+            name: string;
+            /** Outline */
+            outline: string;
+        };
+        /**
+         * GenerateQuestionsRequest
+         * @description Request to generate AI questions.
+         */
+        GenerateQuestionsRequest: {
+            /** Departmentid */
+            departmentId: string;
+            /** Policyids */
+            policyIds?: string[] | null;
+            /** Profileid */
+            profileId?: string | null;
+            /** Videoid */
+            videoId?: string | null;
+        };
+        /**
+         * GenerateQuestionsResponse
+         * @description Response from AI question generation.
+         */
+        GenerateQuestionsResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Questions */
+            questions: components["schemas"]["GeneratedQuestion"][];
+        };
+        /**
          * GenerateScenarioAIRequest
          * @description Request to generate AI scenario content.
          */
@@ -7621,6 +7739,46 @@ export interface components {
             template_schema: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * GenerateVideoRequest
+         * @description Request to generate video.
+         */
+        GenerateVideoRequest: {
+            /** Videoid */
+            videoId: string;
+            /** Prompt */
+            prompt: string;
+            /** Imagereferenceid */
+            imageReferenceId?: string | null;
+        };
+        /**
+         * GenerateVideoResponse
+         * @description Response from video generation.
+         */
+        GenerateVideoResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Videourl */
+            videoUrl?: string | null;
+            /** Videoid */
+            videoId?: string | null;
+        };
+        /**
+         * GeneratedQuestion
+         * @description Generated question in response.
+         */
+        GeneratedQuestion: {
+            /** Question Text */
+            question_text: string;
+            /** Type */
+            type: string;
+            /** Allow Multiple */
+            allow_multiple: boolean;
+            /** Options */
+            options: components["schemas"]["QuestionOption-Output"][];
         };
         /** GradeItem */
         GradeItem: {
@@ -9934,7 +10092,19 @@ export interface components {
          * QuestionOption
          * @description Option for a question.
          */
-        QuestionOption: {
+        "QuestionOption-Input": {
+            /** Option Text */
+            option_text: string;
+            /** Type */
+            type: string;
+            /** Is Correct */
+            is_correct: boolean;
+        };
+        /**
+         * QuestionOption
+         * @description Question option in response.
+         */
+        "QuestionOption-Output": {
             /** Option Text */
             option_text: string;
             /** Type */
@@ -14746,7 +14916,7 @@ export interface components {
             /** Times */
             times: number[];
             /** Options */
-            options: components["schemas"]["QuestionOption"][];
+            options: components["schemas"]["QuestionOption-Input"][];
         };
         /**
          * ProblemStatementInfo
@@ -14905,7 +15075,7 @@ export interface components {
             /** Times */
             times: number[];
             /** Options */
-            options: components["schemas"]["QuestionOption"][];
+            options: components["schemas"]["QuestionOption-Input"][];
         };
         /**
          * AttemptHistoryRow
@@ -17135,6 +17305,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RandomizeVideoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_questions_api_v3_videos_generate_questions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateQuestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateQuestionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_outline_api_v3_videos_generate_outline_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateOutlineRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateOutlineResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_video_api_v3_videos_generate_video_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateVideoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateVideoResponse"];
                 };
             };
             /** @description Validation Error */

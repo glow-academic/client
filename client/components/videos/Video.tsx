@@ -5,10 +5,22 @@
  * 01/21/2025
  */
 "use client";
-import { Check, Plus, Power, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import {
+  Check,
+  Image,
+  Loader2,
+  Plus,
+  Power,
+  RotateCcw,
+  Shuffle,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import * as tus from "tus-js-client";
 
 // UI Components
 import {
@@ -50,24 +62,28 @@ import { cn } from "@/lib/utils";
 
 // Custom Components
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { ImagePicker } from "@/components/common/forms/ImagePicker";
+import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import {
   PolicyMappingItem,
   PolicyPicker,
 } from "@/components/common/forms/PolicyPicker";
-import { ProblemStatementAndObjectivesPicker } from "@/components/common/forms/ProblemStatementAndObjectivesPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { getObjectivesFromMapping } from "@/utils/scenario-helpers";
 
 // Types and API functions
 import type {
   CreateVideoIn,
   CreateVideoOut,
+  GenerateOutlineIn,
+  GenerateOutlineOut,
+  GenerateQuestionsIn,
+  GenerateQuestionsOut,
+  GenerateVideoIn,
+  GenerateVideoOut,
   UpdateVideoIn,
   UpdateVideoOut,
   VideoNewOut,
@@ -101,6 +117,13 @@ export interface VideoProps {
   randomizeVideoAction?: (
     input: RandomizeVideoIn
   ) => Promise<RandomizeVideoOut>;
+  generateQuestionsAction?: (
+    input: GenerateQuestionsIn
+  ) => Promise<GenerateQuestionsOut>;
+  generateOutlineAction?: (
+    input: GenerateOutlineIn
+  ) => Promise<GenerateOutlineOut>;
+  generateVideoAction?: (input: GenerateVideoIn) => Promise<GenerateVideoOut>;
 }
 
 type RandomizeVideoIn = {
@@ -141,6 +164,9 @@ export default function Video({
   createVideoAction,
   updateVideoAction,
   randomizeVideoAction,
+  generateQuestionsAction,
+  generateOutlineAction,
+  generateVideoAction,
 }: VideoProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -213,14 +239,6 @@ export default function Video({
         body.departmentIds = formData.departmentIds;
       }
 
-      if (section === "problem_statement" && selectedProblemStatementId) {
-        body.problemStatementIds = [selectedProblemStatementId];
-      }
-
-      if (section === "objectives" && currentObjectives.length > 0) {
-        body.objectiveIds = currentObjectives;
-      }
-
       if (section === "policies" && selectedPolicyIds.length > 0) {
         body.policyIds = selectedPolicyIds;
       }
@@ -228,31 +246,6 @@ export default function Video({
       const result = await randomizeVideoAction({ body });
 
       if (result.success) {
-        if (
-          targets.includes("problem_statement") &&
-          result.problemStatementIds.length > 0
-        ) {
-          const newProblemStatementId = result.problemStatementIds[0]!;
-          setSelectedProblemStatementId(newProblemStatementId);
-          if (problemStatementMapping[newProblemStatementId]) {
-            handleInputChange(
-              "problemStatement",
-              problemStatementMapping[newProblemStatementId].problem_statement
-            );
-          }
-        }
-
-        if (targets.includes("objectives") && result.objectiveIds.length > 0) {
-          // Map objective IDs to text using mapping
-          const objectiveTexts = result.objectiveIds
-            .map((id) => {
-              const mapping = videoData?.objective_mapping || {};
-              return mapping[id]?.["name"] || "";
-            })
-            .filter((text) => text.trim());
-          setCurrentObjectives(objectiveTexts);
-        }
-
         if (targets.includes("policies") && result.policyIds.length > 0) {
           setSelectedPolicyIds(result.policyIds);
         }
@@ -268,17 +261,300 @@ export default function Video({
     }
   };
 
-  const handleResetSection = (section: string) => {
-    if (section === "problem_statement") {
-      setSelectedProblemStatementId(null);
-      handleInputChange("problemStatement", "");
-    } else if (section === "objectives") {
-      setCurrentObjectives([]);
-    } else if (section === "policies") {
-      setSelectedPolicyIds([]);
-    } else if (section === "images") {
-      setImages([]);
+  const handleGenerateQuestions = async () => {
+    if (!generateQuestionsAction || !effectiveProfile?.id) {
+      toast.error("Question generation not available");
+      return;
     }
+
+    if (selectedPolicyIds.length === 0) {
+      toast.error("Please select at least one policy");
+      return;
+    }
+
+    // Use primary department ID if no departments selected (all departments)
+    // Otherwise use first selected department
+    const departmentId = 
+      formData.departmentIds && formData.departmentIds.length > 0
+        ? formData.departmentIds[0]!
+        : effectiveProfile?.primaryDepartmentId || "";
+
+    if (!departmentId) {
+      toast.error("Please select at least one department");
+      return;
+    }
+
+    setIsGeneratingQuestions(true);
+    try {
+      const body: GenerateQuestionsIn["body"] = {
+        departmentId,
+        policyIds: selectedPolicyIds,
+        profileId: effectiveProfile.id,
+      };
+
+      if (isEditMode && videoId) {
+        body.videoId = videoId;
+      }
+
+      const result = await generateQuestionsAction({ body });
+
+      if (result.success && result.questions) {
+        // Convert generated questions to Question format
+        const convertedQuestions: Question[] = result.questions.map((q) => ({
+          question_text: q.question_text,
+          type: q.type as "choice" | "frq",
+          allow_multiple: q.allow_multiple,
+          times: [], // No times set initially
+          options: q.options.map((opt) => ({
+            option_text: opt.option_text,
+            type: opt.type as "discrete" | "freeform",
+            is_correct: opt.is_correct,
+          })),
+        }));
+
+        setQuestions(convertedQuestions);
+        toast.success("Questions generated successfully!");
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to generate questions: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  };
+
+  const handleGenerateOutline = async () => {
+    if (!generateOutlineAction || !effectiveProfile?.id) {
+      toast.error("Outline generation not available");
+      return;
+    }
+
+    if (selectedPolicyIds.length === 0) {
+      toast.error("Please select at least one policy");
+      return;
+    }
+
+    if (questions.length === 0) {
+      toast.error("Please generate or add at least one question");
+      return;
+    }
+
+    // Use primary department ID if no departments selected (all departments)
+    // Otherwise use first selected department
+    const departmentId = 
+      formData.departmentIds && formData.departmentIds.length > 0
+        ? formData.departmentIds[0]!
+        : effectiveProfile?.primaryDepartmentId || "";
+
+    if (!departmentId) {
+      toast.error("Please select at least one department");
+      return;
+    }
+
+    setIsGeneratingOutline(true);
+    try {
+      const questionIds = questions
+        .map((q) => q.question_id)
+        .filter((id): id is string => !!id);
+
+      const body: GenerateOutlineIn["body"] = {
+        departmentId,
+        policyIds: selectedPolicyIds,
+        questionIds: questionIds.length > 0 ? questionIds : undefined,
+        profileId: effectiveProfile.id,
+      };
+
+      if (isEditMode && videoId) {
+        body.videoId = videoId;
+      }
+
+      const result = await generateOutlineAction({ body });
+
+      if (result.success) {
+        setOutlineText(result.outline);
+        // Note: outline ID will be set when saving to DB
+        toast.success("Outline generated successfully!");
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to generate outline: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsGeneratingOutline(false);
+    }
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!generateVideoAction) {
+      toast.error("Video generation not available");
+      return;
+    }
+
+    if (!outlineText.trim()) {
+      toast.error("Please generate or enter an outline first");
+      return;
+    }
+
+    // For create mode, we need to create the video first
+    if (!videoId) {
+      toast.error("Please save the video first before generating");
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    try {
+      const imageId = image?.id;
+
+      const body: GenerateVideoIn["body"] = {
+        videoId,
+        prompt: outlineText,
+        imageReferenceId: imageId,
+      };
+
+      const result = await generateVideoAction({ body });
+
+      if (result.success && result.videoUrl) {
+        setGeneratedVideoUrl(result.videoUrl);
+        // Clear uploaded video when generated video replaces it
+        setUploadedVideoFile(null);
+        setVideoObjectUrl(null);
+        toast.success("Video generated successfully!");
+      } else {
+        toast.info(result.message || "Video generation completed");
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to generate video: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsGeneratingVideo(false);
+    }
+  };
+
+  const handleResetSection = (section: string) => {
+    if (section === "policies") {
+      setSelectedPolicyIds([]);
+    } else if (section === "questions") {
+      setQuestions([]);
+    } else if (section === "outline") {
+      setSelectedOutlineId(null);
+      setOutlineText("");
+    } else if (section === "images") {
+      setImage(null);
+      setUseImage(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const toastId = toast.loading(`Uploading image: ${file.name}`, {
+      description: "0% complete",
+      dismissible: true,
+    });
+
+    try {
+      // Generate a unique fileId for tracking
+      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // Create TUS upload
+      const upload = new tus.Upload(file, {
+        endpoint: `/api/images/upload`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+          fileId: fileId,
+        },
+        onError: (error) => {
+          toast.error(`Upload failed: ${file.name}`, {
+            description: error.message || "An error occurred during upload",
+            id: toastId,
+          });
+          setIsUploadingImage(false);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+          toast.loading(`Uploading image: ${file.name}`, {
+            description: `${percentage}% complete`,
+            id: toastId,
+          });
+        },
+        onSuccess: async () => {
+          // Get upload ID from location header
+          const location = upload.url;
+          if (!location) {
+            throw new Error("Failed to get upload location");
+          }
+          const uploadId = location.split("/").pop();
+
+          if (!uploadId) {
+            throw new Error("Failed to get upload ID");
+          }
+
+          // Finalize upload
+          try {
+            const response = await fetch("/api/images/upload/finalize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uploadId,
+                fileId,
+                name: file.name,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.imageId) {
+              // Update image state with the returned imageId
+              setImage({
+                id: result.imageId,
+                name: file.name,
+                mime_type: file.type,
+              });
+              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
+            } else {
+              throw new Error(result.message || "Failed to finalize upload");
+            }
+          } catch (finalizeError) {
+            toast.error(
+              `Failed to finalize upload: ${
+                finalizeError instanceof Error
+                  ? finalizeError.message
+                  : "Unknown error"
+              }`,
+              { id: toastId }
+            );
+          } finally {
+            setIsUploadingImage(false);
+          }
+        },
+      });
+
+      upload.start();
+    } catch (error) {
+      toast.error(
+        `Failed to upload image: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        {
+          id: toastId,
+        }
+      );
+      setIsUploadingImage(false);
+    }
+
+    // Reset input
+    e.target.value = "";
   };
 
   // Form data state
@@ -299,30 +575,37 @@ export default function Video({
     active: boolean;
   };
 
-  // Problem statement and objectives state
-  const [selectedProblemStatementId, setSelectedProblemStatementId] = useState<
-    string | null
-  >(null);
-  const [currentObjectives, setCurrentObjectives] = useState<string[]>([]);
-  const [images, setImages] = useState<
-    Array<{
-      id: string;
-      name: string;
-      file_path: string;
-      mime_type: string;
-      active: boolean;
-    }>
-  >([]);
+  // Outline state
+  const [selectedOutlineId, setSelectedOutlineId] = useState<string | null>(
+    null
+  );
+  const [outlineText, setOutlineText] = useState<string>("");
+  const [useImage, setUseImage] = useState(false);
+  const [image, setImage] = useState<{
+    id: string;
+    name: string;
+    mime_type: string;
+  } | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Policies state
   const [selectedPolicyIds, setSelectedPolicyIds] = useState<string[]>([]);
+
+  // Video generation state
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
+    null
+  );
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
   // Randomization state
   const [isRandomizing, setIsRandomizing] = useState(false);
 
   const initialFormData: FormData = useMemo(
     () => ({
-      name: "",
+      name: "New Video",
       length_seconds: 0,
       departmentIds: defaultDepartmentIds,
       problemStatement: "",
@@ -343,11 +626,6 @@ export default function Video({
     [videoData?.department_mapping]
   );
 
-  // Problem statement mapping
-  const problemStatementMapping = useMemo(() => {
-    return videoData?.problem_statement_mapping || {};
-  }, [videoData?.problem_statement_mapping]);
-
   // Policy mapping
   const policyMapping = useMemo(() => {
     // Server returns dict[str, dict[str, str]] which matches PolicyMappingItem structure
@@ -358,11 +636,10 @@ export default function Video({
     >;
   }, [videoData?.policy_mapping]);
 
-  // Objectives history
-  const objectivesHistory = useMemo(() => {
-    const rawHistory = videoData?.objectives_history || [];
-    return Array.isArray(rawHistory) ? rawHistory : [];
-  }, [videoData?.objectives_history]);
+  // Outline mapping (for version history)
+  const outlineMapping = useMemo(() => {
+    return videoData?.outline_mapping || {};
+  }, [videoData?.outline_mapping]);
 
   // Load video data from server response
   useEffect(() => {
@@ -370,44 +647,21 @@ export default function Video({
       // Edit mode: load existing video data (only once)
       const deptIds = videoData.department_ids || [];
 
-      // Get problem statement text from mapping or empty string
-      const problemStatementText =
-        videoData.problem_statement_ids &&
-        videoData.problem_statement_ids.length > 0 &&
-        videoData.problem_statement_ids[0] &&
-        problemStatementMapping[videoData.problem_statement_ids[0]]
-          ? problemStatementMapping[videoData.problem_statement_ids[0]]!
-              .problem_statement
-          : "";
-
       setFormData({
         name: videoData.name,
         length_seconds: videoData.length_seconds,
         departmentIds: deptIds,
-        problemStatement: problemStatementText,
+        problemStatement: "", // Not used anymore, kept for form compatibility
         active: videoData.active ?? true,
       });
 
-      // Load problem statement ID
-      if (
-        videoData.problem_statement_ids &&
-        videoData.problem_statement_ids.length > 0
-      ) {
-        setSelectedProblemStatementId(videoData.problem_statement_ids[0]!);
-      }
-
-      // Load objectives
-      if (videoData.objective_ids && videoData.objective_mapping) {
-        // Type assert objective_mapping to match getObjectivesFromMapping expected type
-        const objectiveMapping = videoData.objective_mapping as Record<
-          string,
-          { name: string }
-        >;
-        const objectives = getObjectivesFromMapping(
-          videoData.objective_ids,
-          objectiveMapping
-        );
-        setCurrentObjectives(objectives);
+      // Load outline
+      if (videoData.outline_ids && videoData.outline_ids.length > 0) {
+        const outlineId = videoData.outline_ids[0]!;
+        setSelectedOutlineId(outlineId);
+        if (outlineMapping[outlineId]) {
+          setOutlineText(outlineMapping[outlineId].outline || "");
+        }
       }
 
       // Load policies
@@ -415,25 +669,31 @@ export default function Video({
         setSelectedPolicyIds(videoData.policy_ids);
       }
 
-      // Load video images
-      if (videoData.video_images && Array.isArray(videoData.video_images)) {
-        setImages(
-          videoData.video_images.map(
-            (img: {
-              id?: string;
-              name?: string;
-              file_path?: string;
-              mime_type?: string;
-              active?: boolean;
-            }) => ({
-              id: img.id || "",
-              name: img.name || "",
-              file_path: img.file_path || "",
-              mime_type: img.mime_type || "",
-              active: img.active !== false,
-            })
-          )
-        );
+      // Load video image (single image - take first if exists)
+      if (
+        videoData.video_images &&
+        Array.isArray(videoData.video_images) &&
+        videoData.video_images.length > 0
+      ) {
+        const firstImage = videoData.video_images[0] as {
+          id?: string;
+          name?: string;
+          mime_type?: string;
+        };
+        if (firstImage.id) {
+          setImage({
+            id: firstImage.id,
+            name: firstImage.name || "",
+            mime_type: firstImage.mime_type || "image/png",
+          });
+          setUseImage(true);
+        } else {
+          setImage(null);
+          setUseImage(false);
+        }
+      } else {
+        setImage(null);
+        setUseImage(false);
       }
 
       // Load questions from server data (already strongly typed from API)
@@ -456,7 +716,7 @@ export default function Video({
 
       formDataInitializedRef.current = true;
     }
-  }, [videoData, isEditMode, problemStatementMapping]);
+  }, [videoData, isEditMode, outlineMapping]);
 
   const handleInputChange = <K extends keyof FormData>(
     field: K,
@@ -514,40 +774,29 @@ export default function Video({
         })),
       }));
 
-      // Get problem statement IDs (create new if needed)
-      let problemStatementIds: string[] = [];
-      if (selectedProblemStatementId) {
-        problemStatementIds = [selectedProblemStatementId];
-      } else if (formData.problemStatement.trim()) {
-        // TODO: Create new problem statement and get ID
-        // For now, we'll need to create it via API or handle it differently
-        // This is a placeholder - the actual implementation would create a new problem statement
-        toast.warning("Problem statement creation not yet implemented");
+      // Prepare outline IDs (will be created/saved when outline text exists)
+      // For now, outline is saved as text - outline ID management will be handled server-side
+      const outlineIds: string[] = [];
+      if (selectedOutlineId) {
+        outlineIds.push(selectedOutlineId);
       }
 
-      // Get objective IDs (create new if needed)
-      // TODO: Create objectives and get IDs - for now using empty array
-      const objectiveIds: string[] = [];
-
-      // Get video image IDs
-      const imageIds = images.map((img) => img.id).filter(Boolean);
+      // Get video image ID (single image)
+      const imageIds = image?.id ? [image.id] : [];
 
       if (isEditMode && videoId) {
         // UPDATE mode
         const updatePayload: UpdateVideoBody = {
           videoId,
           name: formData.name,
-          length_seconds: formData.length_seconds,
+          length_seconds: formData.length_seconds || 4, // Default to 4 seconds
           department_ids: finalDepartmentIds,
           active: formData.active,
           questions: questionsForApi,
         };
 
-        if (problemStatementIds.length > 0) {
-          updatePayload.problem_statement_ids = problemStatementIds;
-        }
-        if (objectiveIds.length > 0) {
-          updatePayload.objective_ids = objectiveIds;
+        if (outlineIds.length > 0) {
+          updatePayload.outline_ids = outlineIds;
         }
         if (selectedPolicyIds.length > 0) {
           updatePayload.policy_ids = selectedPolicyIds;
@@ -562,17 +811,14 @@ export default function Video({
         // CREATE mode
         const createPayload: CreateVideoBody = {
           name: formData.name,
-          length_seconds: formData.length_seconds,
+          length_seconds: formData.length_seconds || 4, // Default to 4 seconds
           department_ids: finalDepartmentIds,
           active: formData.active,
           questions: questionsForApi,
         };
 
-        if (problemStatementIds.length > 0) {
-          createPayload.problem_statement_ids = problemStatementIds;
-        }
-        if (objectiveIds.length > 0) {
-          createPayload.objective_ids = objectiveIds;
+        if (outlineIds.length > 0) {
+          createPayload.outline_ids = outlineIds;
         }
         if (selectedPolicyIds.length > 0) {
           createPayload.policy_ids = selectedPolicyIds;
@@ -581,8 +827,16 @@ export default function Video({
           createPayload.image_ids = imageIds;
         }
 
-        await handleCreateVideo(createPayload);
+        const result = await handleCreateVideo(createPayload);
         toast.success("Video created successfully!");
+
+        // Redirect to edit page so user can generate video
+        if (result.videoId) {
+          router.push(`/create/videos/v/${result.videoId}`);
+        } else {
+          router.push(`/create/videos`);
+        }
+        return;
       }
 
       router.push(`/create/videos`);
@@ -605,47 +859,49 @@ export default function Video({
       case "name":
         // Always completed - name is required
         return "completed";
-      case "problem_statement_objectives":
-        // Completed if problem statement exists and at least one objective
-        if (formData.problemStatement.trim() && currentObjectives.length > 0) {
-          return "completed";
-        }
-        // Active if name is filled (previous step completed)
-        return formData.name.trim() ? "active" : "pending";
       case "policies":
-        // Pending if previous step not completed
-        const prevStepCompleted =
-          formData.problemStatement.trim() && currentObjectives.length > 0;
-        if (!prevStepCompleted) {
+        // Active if name is filled (previous step completed)
+        if (!formData.name.trim() || formData.name === "New Video") {
           return "pending";
         }
         // Completed if at least one policy selected
         return selectedPolicyIds.length > 0 ? "completed" : "active";
       case "questions":
         // Pending if previous step not completed
-        const policiesStepCompleted =
-          formData.problemStatement.trim() &&
-          currentObjectives.length > 0 &&
-          selectedPolicyIds.length > 0;
-        if (!policiesStepCompleted) {
+        if (
+          !formData.name.trim() ||
+          formData.name === "New Video" ||
+          selectedPolicyIds.length === 0
+        ) {
           return "pending";
         }
         // Completed if at least one question added
         return questions.length > 0 ? "completed" : "active";
-      case "video_generation":
+      case "outline":
         // Pending if previous step not completed
-        const questionsStepCompleted =
-          formData.problemStatement.trim() &&
-          currentObjectives.length > 0 &&
-          selectedPolicyIds.length > 0 &&
-          questions.length > 0;
-        if (!questionsStepCompleted) {
+        if (
+          !formData.name.trim() ||
+          formData.name === "New Video" ||
+          selectedPolicyIds.length === 0 ||
+          questions.length === 0
+        ) {
           return "pending";
         }
-        // Completed if video uploaded OR length set
-        return uploadedVideoFile || formData.length_seconds > 0
-          ? "completed"
-          : "active";
+        // Completed if outline exists
+        return selectedOutlineId ? "completed" : "active";
+      case "video_generation":
+        // Pending if previous step not completed
+        if (
+          !formData.name.trim() ||
+          formData.name === "New Video" ||
+          selectedPolicyIds.length === 0 ||
+          questions.length === 0 ||
+          !selectedOutlineId
+        ) {
+          return "pending";
+        }
+        // Completed if video uploaded OR generated
+        return uploadedVideoFile || generatedVideoUrl ? "completed" : "active";
       default:
         return "pending";
     }
@@ -659,12 +915,6 @@ export default function Video({
       status: getStepStatus("name"),
     },
     {
-      id: "problem_statement_objectives",
-      title: "Problem Statement & Objectives",
-      description: "Define the problem statement and learning objectives",
-      status: getStepStatus("problem_statement_objectives"),
-    },
-    {
       id: "policies",
       title: "Policies",
       description: "Select policies that will be available for this video",
@@ -673,13 +923,19 @@ export default function Video({
     {
       id: "questions",
       title: "Questions",
-      description: "Add interactive questions at specific timestamps",
+      description: "Generate or add interactive questions",
       status: getStepStatus("questions"),
     },
     {
+      id: "outline",
+      title: "Outline",
+      description: "Generate video outline from policies and questions",
+      status: getStepStatus("outline"),
+    },
+    {
       id: "video_generation",
-      title: "Video Generation/Upload",
-      description: "Upload a video file or set video length",
+      title: "Video Generation",
+      description: "Generate video using AI or upload a video file",
       status: getStepStatus("video_generation"),
     },
   ];
@@ -727,9 +983,10 @@ export default function Video({
       return;
     }
 
+    // Allow questions without times when adding manually (not from timeline)
+    // Set default time to 0 if no time specified
     if (editingQuestion.times.length === 0) {
-      toast.error("Question must have at least one time");
-      return;
+      editingQuestion.times = [0];
     }
 
     if (editingQuestion.type === "choice") {
@@ -896,7 +1153,7 @@ export default function Video({
 
   return (
     <div className="space-y-6 py-4 px-4">
-      {/* Step 1: Name */}
+      {/* Step 1: Basic Information - Subtle inline name editor */}
       <Card className="transition-all">
         <CardContent className="pt-3">
           <div className="flex items-center gap-3">
@@ -904,15 +1161,31 @@ export default function Video({
               <Check className="w-4 h-4" />
             </div>
             <div className="flex-1">
-              <Input
-                id="name"
-                value={formData["name"]}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                placeholder="Enter video name"
-                disabled={isReadonly}
+              <input
+                type="text"
                 data-testid="input-video-name"
-                className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                value={formData.name || ""}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                onFocus={(e) => {
+                  if (e.target.value === "New Video") {
+                    e.target.select();
+                  }
+                }}
+                onBlur={(e) => {
+                  // If empty on blur, revert to "New Video"
+                  if (!e.target.value || e.target.value.trim() === "") {
+                    handleInputChange("name", "New Video");
+                  }
+                }}
+                className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+                placeholder="New Video"
+                disabled={isReadonly}
               />
+              <p className="text-xs text-muted-foreground mt-1 px-2">
+                {formData.name === "New Video" || !formData.name
+                  ? "Click to edit • Name will be auto-generated if unchanged"
+                  : "Click to edit"}
+              </p>
               {errors["name"] && (
                 <p className="text-sm text-destructive px-2 mt-1">
                   {errors["name"]}
@@ -974,123 +1247,7 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Step 2: Problem Statement & Objectives */}
-      <Card
-        className={`transition-all ${!isEditMode && getStepStatus("problem_statement_objectives") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode &&
-          getStepStatus("problem_statement_objectives") === "pending"
-            ? "opacity-50"
-            : ""
-        }`}
-      >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                getStepStatus("problem_statement_objectives") === "completed"
-                  ? "bg-green-500 text-white"
-                  : getStepStatus("problem_statement_objectives") === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-              }`}
-            >
-              {getStepStatus("problem_statement_objectives") === "completed" ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                "2"
-              )}
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-lg">{steps[1]?.title || ""}</CardTitle>
-              <CardDescription>{steps[1]?.description || ""}</CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                handleRandomizeVideo(
-                  ["problem_statement", "objectives"],
-                  "problem_statement"
-                )
-              }
-              disabled={isRandomizing || isReadonly}
-            >
-              {isRandomizing ? "Randomizing..." : "Randomize"}
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleResetSection("problem_statement")}
-                  disabled={isReadonly}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset</TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ProblemStatementAndObjectivesPicker
-            problemStatementMapping={problemStatementMapping}
-            selectedProblemStatementId={selectedProblemStatementId}
-            onProblemStatementSelect={setSelectedProblemStatementId}
-            onProblemStatementCreateNew={() => {
-              setSelectedProblemStatementId(null);
-              handleInputChange("problemStatement", "");
-            }}
-            problemStatement={formData.problemStatement}
-            onProblemStatementChange={(value) =>
-              handleInputChange("problemStatement", value)
-            }
-            objectives={currentObjectives}
-            onObjectivesChange={setCurrentObjectives}
-            objectivesHistory={objectivesHistory}
-            disabled={isSubmitting}
-            readonly={isReadonly}
-            entityType="video"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Step 2.5: Images */}
-      <Card
-        className={`transition-all ${!isEditMode && getStepStatus("images") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode && getStepStatus("images") === "pending"
-            ? "opacity-50"
-            : ""
-        }`}
-      >
-        <CardHeader>
-          <CardTitle>Reference Images</CardTitle>
-          <CardDescription>
-            Upload reference images that can be shared between scenarios and
-            videos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ImagePicker
-            images={images}
-            onImagesChange={setImages}
-            disabled={isSubmitting}
-            readonly={isReadonly}
-            finalizeUploadAction={async (input) => {
-              const response = await fetch("/api/images/upload/finalize", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(input),
-              });
-              return response.json();
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Step 3: Policies */}
+      {/* Step 2: Policies */}
       <Card
         className={`transition-all ${!isEditMode && getStepStatus("policies") === "active" ? "ring-2 ring-primary" : ""} ${
           !isEditMode && getStepStatus("policies") === "pending"
@@ -1112,23 +1269,32 @@ export default function Video({
               {getStepStatus("policies") === "completed" ? (
                 <Check className="w-4 h-4" />
               ) : (
-                "3"
+                "2"
               )}
             </div>
             <div className="flex-1">
-              <CardTitle className="text-lg">{steps[2]?.title || ""}</CardTitle>
-              <CardDescription>{steps[2]?.description || ""}</CardDescription>
+              <CardTitle className="text-lg">{steps[1]?.title || ""}</CardTitle>
+              <CardDescription>{steps[1]?.description || ""}</CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRandomizeVideo(["policies"], "policies")}
-              disabled={isRandomizing || isReadonly}
-            >
-              {isRandomizing ? "Randomizing..." : "Randomize"}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRandomizeVideo(["policies"], "policies")}
+                  disabled={isRandomizing || isReadonly}
+                >
+                  {isRandomizing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Shuffle className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Randomize</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -1160,7 +1326,7 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Step 4: Questions */}
+      {/* Step 3: Questions */}
       <Card
         className={`transition-all ${!isEditMode && getStepStatus("questions") === "active" ? "ring-2 ring-primary" : ""} ${
           !isEditMode && getStepStatus("questions") === "pending"
@@ -1168,7 +1334,7 @@ export default function Video({
             : ""
         }`}
       >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
           <div className="flex items-center space-x-3">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -1182,22 +1348,66 @@ export default function Video({
               {getStepStatus("questions") === "completed" ? (
                 <Check className="w-4 h-4" />
               ) : (
-                "4"
+                "3"
               )}
             </div>
             <div className="flex-1">
-              <CardTitle className="text-lg">{steps[3]?.title || ""}</CardTitle>
+              <CardTitle className="text-lg">{steps[2]?.title || ""}</CardTitle>
+              <CardDescription>{steps[2]?.description || ""}</CardDescription>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleGenerateQuestions}
+              disabled={isSubmitting || isGeneratingQuestions || isReadonly}
+            >
+              {isGeneratingQuestions ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate"
+              )}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setQuestions([]);
+                  }}
+                  disabled={isReadonly}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset</TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
               {questions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No questions added yet. Click on the timeline to add
-                  questions.
-                </p>
+                <div className="flex flex-col items-center gap-4 py-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    No questions added yet. Generate questions or add them
+                    manually.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openQuestionModal()}
+                    disabled={isReadonly}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Question
+                  </Button>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {questions.map((question, index) => (
@@ -1208,9 +1418,6 @@ export default function Video({
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">
-                              {question.type.toUpperCase()}
-                            </Badge>
                             {question.allow_multiple && (
                               <Badge variant="secondary">Multiple</Badge>
                             )}
@@ -1239,12 +1446,6 @@ export default function Video({
                                     >
                                       {opt.option_text}
                                     </span>
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs"
-                                    >
-                                      {opt.type}
-                                    </Badge>
                                   </div>
                                 ))}
                               </div>
@@ -1273,6 +1474,18 @@ export default function Video({
                       </div>
                     </div>
                   ))}
+                  {questions.length < 3 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openQuestionModal()}
+                      disabled={isReadonly}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Question
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -1280,7 +1493,156 @@ export default function Video({
         </CardContent>
       </Card>
 
-      {/* Step 5: Video Generation/Upload */}
+      {/* Step 4: Outline */}
+      <Card
+        className={`transition-all ${!isEditMode && getStepStatus("outline") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode && getStepStatus("outline") === "pending"
+            ? "opacity-50"
+            : ""
+        }`}
+      >
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
+          <div className="flex items-center space-x-3">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                getStepStatus("outline") === "completed"
+                  ? "bg-green-500 text-white"
+                  : getStepStatus("outline") === "active"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+              }`}
+            >
+              {getStepStatus("outline") === "completed" ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                "4"
+              )}
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg">{steps[3]?.title || ""}</CardTitle>
+              <CardDescription>{steps[3]?.description || ""}</CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleGenerateOutline}
+              disabled={isSubmitting || isGeneratingOutline || isReadonly}
+            >
+              {isGeneratingOutline ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate"
+              )}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSelectedOutlineId(null);
+                    setOutlineText("");
+                    setImage(null);
+                    setUseImage(false);
+                  }}
+                  disabled={isReadonly}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset</TooltipContent>
+            </Tooltip>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Image Preview or Upload Card */}
+          {useImage && (
+            <div className="mb-4 w-1/4">
+              {image ? (
+                <ImagePreviewCard
+                  image={image}
+                  onRemove={() => setImage(null)}
+                  showActions={!isReadonly}
+                />
+              ) : (
+                <div
+                  onClick={() => {
+                    if (!isReadonly && !isUploadingImage) {
+                      imageInputRef.current?.click();
+                    }
+                  }}
+                  className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
+                >
+                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground text-center px-4">
+                    Click to upload image
+                  </p>
+                </div>
+              )}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isReadonly || isUploadingImage}
+                className="hidden"
+              />
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label>Outline</Label>
+            <Textarea
+              value={outlineText || ""}
+              onChange={(e) => {
+                setOutlineText(e.target.value);
+                if (selectedOutlineId) {
+                  setSelectedOutlineId(null);
+                }
+              }}
+              placeholder="Enter video outline or generate one from policies and questions..."
+              className="min-h-[120px]"
+              disabled={isReadonly}
+            />
+          </div>
+
+          {/* Use Image Switch */}
+          <div className="space-y-1 pt-2">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-image"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Image
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-label="Image icon"
+                />
+                Use Image
+              </Label>
+              <Switch
+                id="use-image"
+                checked={useImage}
+                onCheckedChange={(checked) => {
+                  setUseImage(checked);
+                  if (!checked) {
+                    setImage(null);
+                  }
+                }}
+                disabled={isReadonly}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Use video reference image
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Step 5: Video Generation */}
       <Card
         className={`transition-all ${!isEditMode && getStepStatus("video_generation") === "active" ? "ring-2 ring-primary" : ""} ${
           !isEditMode && getStepStatus("video_generation") === "pending"
@@ -1288,7 +1650,7 @@ export default function Video({
             : ""
         }`}
       >
-        <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+        <CardHeader className="flex flex-row items-center space-y-0 pb-4 justify-between">
           <div className="flex items-center space-x-3">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -1306,15 +1668,80 @@ export default function Video({
               )}
             </div>
             <div className="flex-1">
-              <CardTitle className="text-lg">{steps[4]?.title || ""}</CardTitle>
+              <CardTitle className="text-lg">Video</CardTitle>
+              <CardDescription>{steps[4]?.description || ""}</CardDescription>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleGenerateVideo}
+              disabled={
+                isSubmitting ||
+                isGeneratingVideo ||
+                isReadonly ||
+                !outlineText.trim()
+              }
+            >
+              {isGeneratingVideo ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate"
+              )}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setGeneratedVideoUrl(null);
+                    setUploadedVideoFile(null);
+                    setVideoObjectUrl(null);
+                  }}
+                  disabled={
+                    isReadonly || (!generatedVideoUrl && !uploadedVideoFile)
+                  }
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset</TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Video Upload */}
-          <div className="space-y-2">
-            <Label>Video Upload</Label>
-            {uploadedVideoFile && videoObjectUrl ? (
+          {/* Video Display - Shows either generated or uploaded video */}
+          {generatedVideoUrl ? (
+            <div className="space-y-2">
+              <Label>Video</Label>
+              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
+                <video
+                  src={generatedVideoUrl}
+                  controls
+                  className="w-full h-full rounded-lg"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setGeneratedVideoUrl(null);
+                    // If there's an uploaded video, it will show after clearing generated
+                  }}
+                  className="absolute top-2 right-2"
+                  disabled={isReadonly}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : uploadedVideoFile && videoObjectUrl ? (
+            <div className="space-y-2">
+              <Label>Video</Label>
               <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
                 <video
                   ref={videoRef}
@@ -1333,7 +1760,10 @@ export default function Video({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-            ) : (
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Video</Label>
               <div
                 className={cn(
                   "border-2 border-dashed rounded-lg p-16 text-center transition-colors cursor-pointer relative aspect-video flex items-center justify-center",
@@ -1370,64 +1800,15 @@ export default function Video({
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Length Field - Only show if no video is uploaded */}
-          {!uploadedVideoFile && (
-            <div className="space-y-2">
-              <Label htmlFor="length_seconds">Length (seconds) *</Label>
-              <Input
-                id="length_seconds"
-                type="number"
-                min="1"
-                value={formData["length_seconds"]}
-                onChange={(e) =>
-                  handleInputChange(
-                    "length_seconds",
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                placeholder="Enter video length in seconds"
-                disabled={isReadonly}
-                data-testid="input-video-length"
-              />
-              {errors["length_seconds"] && (
-                <p className="text-sm text-destructive">
-                  {errors["length_seconds"]}
-                </p>
-              )}
             </div>
           )}
-
-          {/* Video Generation (TODO placeholder) */}
-          <div className="space-y-2">
-            <Label>Video Generation</Label>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                // TODO: Implement video generation
-                toast.info(
-                  "Video generation coming soon! For now, please upload a video."
-                );
-              }}
-              disabled={isReadonly}
-            >
-              Generate Video (TODO)
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              AI-powered video generation will be available soon. For now,
-              please upload a video file.
-            </p>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Timeline (only show if length > 0) */}
-      {formData.length_seconds > 0 && (
+      {/* Timeline */}
+      {questions.length > 0 && formData.length_seconds > 0 && (
         <div className="space-y-2">
-          <Label>Timeline</Label>
+          <Label>Timeline ({formData.length_seconds} seconds)</Label>
           <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
             {/* Timeline markers */}
             {allQuestionTimes.map((time) => (

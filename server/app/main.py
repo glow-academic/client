@@ -115,6 +115,14 @@ DEFAULT_CATEGORIES = [
 scenario_results: dict[str, Any] = {}
 scenario_progress: dict[str, bool] = {}
 
+# Global storage for question generation results
+question_results: dict[str, Any] = {}
+question_progress: dict[str, bool] = {}
+
+# Global storage for outline generation results
+outline_results: dict[str, Any] = {}
+outline_progress: dict[str, bool] = {}
+
 # Global storage for grading results
 grading_results: dict[str, Any] = {}
 grading_progress: dict[str, bool] = {}

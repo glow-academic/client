@@ -3064,6 +3064,147 @@
         ]
       }
     },
+    "/api/v3/videos/generate-questions": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Generate Questions",
+        "description": "Generate AI questions (multiple choice, free response, multi-select).",
+        "operationId": "generate_questions_api_v3_videos_generate_questions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateQuestionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateQuestionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/generate-outline": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Generate Outline",
+        "description": "Generate AI outline from policies and questions.",
+        "operationId": "generate_outline_api_v3_videos_generate_outline_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateOutlineRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateOutlineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
+    "/api/v3/videos/generate-video": {
+      "post": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Generate Video",
+        "description": "Generate video using Sora2 API (hardcoded 4 seconds).\n\nFor now, returns a hardcoded video path. Full Sora2 implementation is commented out.",
+        "operationId": "generate_video_api_v3_videos_generate_video_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateVideoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
     "/api/v3/auth/list": {
       "post": {
         "tags": [
@@ -17398,6 +17539,176 @@
         "title": "GenerateCertificateRequest",
         "description": "Request to generate certificate."
       },
+      "GenerateOutlineRequest": {
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "policyIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policyids"
+          },
+          "questionIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionids"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "videoId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videoid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "departmentId"
+        ],
+        "title": "GenerateOutlineRequest",
+        "description": "Request to generate AI outline."
+      },
+      "GenerateOutlineResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "outline": {
+            "type": "string",
+            "title": "Outline"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "name",
+          "outline"
+        ],
+        "title": "GenerateOutlineResponse",
+        "description": "Response from AI outline generation."
+      },
+      "GenerateQuestionsRequest": {
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "title": "Departmentid"
+          },
+          "policyIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policyids"
+          },
+          "profileId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profileid"
+          },
+          "videoId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videoid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "departmentId"
+        ],
+        "title": "GenerateQuestionsRequest",
+        "description": "Request to generate AI questions."
+      },
+      "GenerateQuestionsResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/GeneratedQuestion"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "questions"
+        ],
+        "title": "GenerateQuestionsResponse",
+        "description": "Response from AI question generation."
+      },
       "GenerateScenarioAIRequest": {
         "properties": {
           "departmentId": {
@@ -17572,6 +17883,109 @@
         ],
         "title": "GenerateTemplateResponse",
         "description": "Response from document template generation."
+      },
+      "GenerateVideoRequest": {
+        "properties": {
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "imageReferenceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagereferenceid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "videoId",
+          "prompt"
+        ],
+        "title": "GenerateVideoRequest",
+        "description": "Request to generate video."
+      },
+      "GenerateVideoResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "videoUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videourl"
+          },
+          "videoId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videoid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "GenerateVideoResponse",
+        "description": "Response from video generation."
+      },
+      "GeneratedQuestion": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOption-Output"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "type",
+          "allow_multiple",
+          "options"
+        ],
+        "title": "GeneratedQuestion",
+        "description": "Generated question in response."
       },
       "GradeItem": {
         "properties": {
@@ -23705,7 +24119,7 @@
         "title": "QueryDataRequest",
         "description": "Request to execute a SQL query."
       },
-      "QuestionOption": {
+      "QuestionOption-Input": {
         "properties": {
           "option_text": {
             "type": "string",
@@ -23728,6 +24142,30 @@
         ],
         "title": "QuestionOption",
         "description": "Option for a question."
+      },
+      "QuestionOption-Output": {
+        "properties": {
+          "option_text": {
+            "type": "string",
+            "title": "Option Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_text",
+          "type",
+          "is_correct"
+        ],
+        "title": "QuestionOption",
+        "description": "Question option in response."
       },
       "QuestionOptionResponse": {
         "properties": {
@@ -36622,7 +37060,7 @@
           },
           "options": {
             "items": {
-              "$ref": "#/components/schemas/QuestionOption"
+              "$ref": "#/components/schemas/QuestionOption-Input"
             },
             "type": "array",
             "title": "Options"
@@ -37024,7 +37462,7 @@
           },
           "options": {
             "items": {
-              "$ref": "#/components/schemas/QuestionOption"
+              "$ref": "#/components/schemas/QuestionOption-Input"
             },
             "type": "array",
             "title": "Options"

@@ -27,7 +27,7 @@ department_ids_array AS (
     SELECT ARRAY_AGG(department_id::text ORDER BY department_id) as department_ids
     FROM user_departments
 ),
--- Problem statements (shared between scenarios and videos)
+-- Problem statements (shared between scenarios only - videos now use outlines)
 problem_statement_data AS (
     SELECT DISTINCT
         ps.id,
@@ -37,15 +37,11 @@ problem_statement_data AS (
     FROM problem_statements ps
     LEFT JOIN scenario_problem_statements sps ON sps.problem_statement_id = ps.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = sps.scenario_id AND sd.active = true
-    LEFT JOIN video_problem_statements vps ON vps.problem_statement_id = ps.id
-    LEFT JOIN video_departments vd ON vd.video_id = vps.video_id AND vd.active = true
     CROSS JOIN user_profile up
     WHERE (
         up.role = 'superadmin'
         OR sd.department_id IN (SELECT department_id FROM user_departments)
-        OR vd.department_id IN (SELECT department_id FROM user_departments)
-        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = sps.scenario_id AND sd2.active = true)
-            AND NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vps.video_id AND vd2.active = true))
+        OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = sps.scenario_id AND sd2.active = true)
     )
 ),
 problem_statement_mapping_data AS (
@@ -100,7 +96,7 @@ valid_policy_ids_data AS (
     SELECT ARRAY_AGG(id::text ORDER BY id) as policy_ids
     FROM policy_data
 ),
--- Objectives (shared between scenarios and videos)
+-- Objectives (shared between scenarios only - videos now use outlines)
 objectives_data AS (
     SELECT DISTINCT
         o.id,
@@ -108,15 +104,11 @@ objectives_data AS (
     FROM objectives o
     LEFT JOIN scenario_objectives so ON so.objective_id = o.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = so.scenario_id AND sd.active = true
-    LEFT JOIN video_objectives vo ON vo.objective_id = o.id
-    LEFT JOIN video_departments vd ON vd.video_id = vo.video_id AND vd.active = true
     CROSS JOIN user_profile up
     WHERE (
         up.role = 'superadmin'
         OR sd.department_id IN (SELECT department_id FROM user_departments)
-        OR vd.department_id IN (SELECT department_id FROM user_departments)
-        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = so.scenario_id AND sd2.active = true)
-            AND NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vo.video_id AND vd2.active = true))
+        OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = so.scenario_id AND sd2.active = true)
     )
 ),
 objectives_history_data AS (
