@@ -24,6 +24,8 @@ export interface AccoladeCardProps {
   layoutId?: string;
   disabled?: boolean;
   "data-testid"?: string;
+  gradientStartColor?: string;
+  gradientEndColor?: string;
 }
 
 const getInitials = (name: string) =>
@@ -42,6 +44,8 @@ export default function AccoladeCard({
   layoutId,
   disabled,
   "data-testid": dataTestId,
+  gradientStartColor = "rgba(59, 130, 246, 0.8)",
+  gradientEndColor = "rgba(59, 130, 246, 0.8)",
 }: AccoladeCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [hovering, setHovering] = useState(false);
@@ -60,7 +64,18 @@ export default function AccoladeCard({
   const asButton = !!onClick && !disabled;
 
   return (
-    <div className="animated-gradient-border rounded-2xl p-[1px] h-full" data-testid={dataTestId}>
+    <div
+      className="rounded-2xl p-[1px] h-full relative"
+      data-testid={dataTestId}
+      style={{
+        background: `linear-gradient(90deg, ${gradientStartColor}, ${gradientEndColor}, ${gradientStartColor})`,
+        backgroundSize: "300% 100%",
+        animation: "gradient-move 4s linear infinite",
+        WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+        WebkitMaskComposite: "xor",
+        maskComposite: "exclude",
+      } as React.CSSProperties}
+    >
       <motion.div
         ref={ref}
         {...(layoutId && { layoutId })}

@@ -1,4 +1,14 @@
             WITH
+            -- Get thresholds from active settings (defaults if no settings found)
+            settings_thresholds AS (
+                SELECT 
+                    COALESCE(success_threshold, 85) AS success_threshold,
+                    COALESCE(warning_threshold, 80) AS warning_threshold,
+                    COALESCE(danger_threshold, 70) AS danger_threshold
+                FROM settings
+                WHERE active = true
+                LIMIT 1
+            ),
             -- Start from profiles to include all matching profiles, even without attempts
             filtered_profiles AS (
                 SELECT 
@@ -474,7 +484,13 @@
                                 'mean', ROUND(COALESCE(avg_score, 0))::int,
                                 'median', ROUND(COALESCE(avg_score, 0))::int,
                                 'mode', ROUND(COALESCE(avg_score, 0))::int
-                            )
+                            ),
+                            'status', CASE
+                                WHEN avg_score IS NULL OR avg_score = 0 THEN 'neutral'
+                                WHEN ROUND(avg_score) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(avg_score) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ),
                         'completionPercentage', json_build_object(
                             'hasData', completion_pct IS NOT NULL AND completion_pct > 0,
@@ -486,7 +502,13 @@
                                 'completed', 0,
                                 'total', 0,
                                 'percent', ROUND(COALESCE(completion_pct, 0))::int
-                            ), json_build_object('completed', 0, 'total', 0, 'percent', 0))
+                            ), json_build_object('completed', 0, 'total', 0, 'percent', 0)),
+                            'status', CASE
+                                WHEN completion_pct IS NULL OR completion_pct = 0 THEN 'neutral'
+                                WHEN ROUND(completion_pct) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(completion_pct) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ),
                         'firstAttemptPassRate', json_build_object(
                             'hasData', first_attempt_pass_rate IS NOT NULL AND first_attempt_pass_rate > 0,
@@ -498,7 +520,13 @@
                                 'passed', 0,
                                 'total', 0,
                                 'percent', ROUND(COALESCE(first_attempt_pass_rate, 0))::int
-                            ), json_build_object('passed', 0, 'total', 0, 'percent', 0))
+                            ), json_build_object('passed', 0, 'total', 0, 'percent', 0)),
+                            'status', CASE
+                                WHEN first_attempt_pass_rate IS NULL OR first_attempt_pass_rate = 0 THEN 'neutral'
+                                WHEN ROUND(first_attempt_pass_rate) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(first_attempt_pass_rate) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ),
                         'highestScore', json_build_object(
                             'hasData', highest_score IS NOT NULL AND highest_score > 0,
@@ -508,7 +536,13 @@
                             'dataPoints', highest_score_points,
                             'hover', COALESCE(json_build_object(
                                 'top', ARRAY[ROUND(COALESCE(highest_score, 0))::int]
-                            ), json_build_object('top', ARRAY[0]))
+                            ), json_build_object('top', ARRAY[0])),
+                            'status', CASE
+                                WHEN highest_score IS NULL OR highest_score = 0 THEN 'neutral'
+                                WHEN ROUND(highest_score) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(highest_score) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ),
                         'messagesPerSession', json_build_object(
                             'hasData', avg_messages IS NOT NULL AND avg_messages > 0,
@@ -527,6 +561,12 @@
                                     'median', 0,
                                     'count', 0
                                 )
+                            END,
+                            'status', CASE
+                                WHEN avg_messages IS NULL OR avg_messages = 0 THEN 'neutral'
+                                WHEN ROUND(avg_messages) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(avg_messages) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
                             END
                         ),
                         'personaResponseTimes', json_build_object(
@@ -546,6 +586,12 @@
                                     'medianSeconds', 0,
                                     'samples', 0
                                 )
+                            END,
+                            'status', CASE
+                                WHEN persona_response_time IS NULL OR persona_response_time = 0 THEN 'neutral'
+                                WHEN ROUND(persona_response_time) > (SELECT danger_threshold FROM settings_thresholds LIMIT 1) THEN 'danger'
+                                WHEN ROUND(persona_response_time) > (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'success'
                             END
                         ),
                         'sessionEfficiency', json_build_object(
@@ -558,7 +604,13 @@
                                 'avgScorePercent', 0,
                                 'avgMinutes', 0,
                                 'efficiency', ROUND(COALESCE(session_efficiency, 0))::int
-                            )
+                            ),
+                            'status', CASE
+                                WHEN session_efficiency IS NULL OR session_efficiency = 0 THEN 'neutral'
+                                WHEN ROUND(session_efficiency) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(session_efficiency) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ),
                         'stagnationRate', json_build_object(
                             'hasData', stagnation_rate > 0,
@@ -570,7 +622,13 @@
                                 'tracked', 0,
                                 'stagnant', 0,
                                 'ratePercent', ROUND(COALESCE(stagnation_rate, 0))::int
-                            )
+                            ),
+                            'status', CASE
+                                WHEN stagnation_rate IS NULL OR stagnation_rate = 0 THEN 'neutral'
+                                WHEN ROUND(stagnation_rate) > (SELECT danger_threshold FROM settings_thresholds LIMIT 1) THEN 'danger'
+                                WHEN ROUND(stagnation_rate) > (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'success'
+                            END
                         ),
                         'timeSpent', json_build_object(
                             'hasData', total_time_minutes IS NOT NULL AND total_time_minutes > 0,
@@ -581,7 +639,13 @@
                             'hover', json_build_object(
                                 'totalMinutes', ROUND(COALESCE(total_time_minutes, 0))::int,
                                 'totalHours', ROUND(COALESCE(total_time_minutes, 0)::numeric / 60.0, 1)
-                            )
+                            ),
+                            'status', CASE
+                                WHEN total_time_minutes IS NULL OR total_time_minutes = 0 THEN 'neutral'
+                                WHEN ROUND(total_time_minutes) >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN ROUND(total_time_minutes) >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         ),
                         'totalAttempts', json_build_object(
                             'hasData', true,
@@ -593,7 +657,13 @@
                                 'attempts', COALESCE(total_attempts, 0),
                                 'uniqueSimulations', 0,
                                 'perSimulationMean', 0
-                            )
+                            ),
+                            'status', CASE
+                                WHEN total_attempts IS NULL OR total_attempts = 0 THEN 'neutral'
+                                WHEN total_attempts >= (SELECT success_threshold FROM settings_thresholds LIMIT 1) THEN 'success'
+                                WHEN total_attempts >= (SELECT warning_threshold FROM settings_thresholds LIMIT 1) THEN 'warning'
+                                ELSE 'danger'
+                            END
                         )
                     )
                 ) {JSON_AGG_ORDER_BY}) FROM paginated_metrics_with_emails), '[]'::json),

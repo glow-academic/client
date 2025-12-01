@@ -13,8 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { Shield } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -36,19 +37,32 @@ export interface InstructionalUsersKPIProps {
   trendData: TrendData[];
 }
 
-const COLOR_CONFIG = {
-  gradient: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900",
-  border: "border-blue-200",
-  text: "text-blue-500",
-  icon: "text-blue-500",
-  primary: "#3b82f6",
-};
-
 export default function InstructionalUsersKPI({
   currentValue,
   trendData,
 }: InstructionalUsersKPIProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const chartColors = useChartColors();
+  const chartColor = chartColors[2]; // chart-3
+
+  // Convert hex/rgb to rgba for gradient
+  const colorToRgba = (color: string, alpha: number) => {
+    if (color.startsWith("rgb")) {
+      return color.replace("rgb", "rgba").replace(")", `, ${alpha})`);
+    }
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  // Generate gradient style from color
+  const gradientStyle = useMemo(() => {
+    return {
+      background: `linear-gradient(to bottom right, ${colorToRgba(chartColor, 0.1)}, ${colorToRgba(chartColor, 0.2)})`,
+      borderColor: colorToRgba(chartColor, 0.3),
+    };
+  }, [chartColor]);
 
   // Format date for display
   const formatDate = (dateStr: string) => {
@@ -64,15 +78,16 @@ export default function InstructionalUsersKPI({
   return (
     <>
       <Card
-        className={`bg-gradient-to-br ${COLOR_CONFIG.gradient} ${COLOR_CONFIG.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
+        className="cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col dark:bg-opacity-10"
+        style={gradientStyle}
         onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Instructional</CardTitle>
-          <Shield className={`h-4 w-4 ${COLOR_CONFIG.icon}`} />
+          <Shield className="h-4 w-4" style={{ color: chartColor }} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
-          <div className={`text-2xl font-bold ${COLOR_CONFIG.text}`}>
+          <div className="text-2xl font-bold" style={{ color: chartColor }}>
             {currentValue}
           </div>
         </CardContent>
@@ -110,7 +125,7 @@ export default function InstructionalUsersKPI({
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke={COLOR_CONFIG.primary}
+                  stroke={chartColor}
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   name="value"

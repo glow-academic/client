@@ -13,6 +13,7 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (ScenarioMapping, ScenarioMappingItem,
                               SimulationFilter, SimulationMapping)
 from app.utils.sql_helper import load_sql
+from app.utils.theme.oklch_to_hex import oklch_to_hex
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
@@ -74,6 +75,10 @@ class LeaderboardBundleResponse(BaseModel):
     data: list[LeaderboardRow]
     simulation_mapping: SimulationMapping = {}
     scenario_mapping: ScenarioMapping = {}
+    primary_color: str = "#171717"
+    accent_color: str = "#f5f5f5"
+    gradient_start_color: str = "rgba(59, 130, 246, 0.8)"
+    gradient_end_color: str = "rgba(59, 130, 246, 0.8)"
 
 
 @router.post("/bundle", response_model=LeaderboardBundleResponse)
@@ -196,6 +201,45 @@ async def get_leaderboard(
         parsed_result["scenario_mapping"] = {
             k: v.model_dump() for k, v in scenario_mapping.items()
         }
+
+        # Extract colors from parsed result
+        primary_color = parsed_result.get("primary_color", "#171717")
+        accent_color = parsed_result.get("accent_color", "#f5f5f5")
+
+        # Generate gradient colors from primary_color
+        def generate_gradient_colors(color: str) -> tuple[str, str]:
+            """Generate gradient start and end colors from a color string."""
+            # Convert oklch to hex if needed
+            if color.startswith("oklch("):
+                hex_color = oklch_to_hex(color)
+            elif color.startswith("#"):
+                hex_color = color
+            else:
+                # Assume hex without #
+                hex_color = f"#{color}"
+
+            # Parse hex to RGB
+            hex_clean = hex_color.lstrip("#")
+            r = int(hex_clean[0:2], 16)
+            g = int(hex_clean[2:4], 16)
+            b = int(hex_clean[4:6], 16)
+
+            # Create lighter variant (add 60 to each RGB component, cap at 255)
+            lighter_r = min(255, r + 60)
+            lighter_g = min(255, g + 60)
+            lighter_b = min(255, b + 60)
+
+            # Return rgba strings for CSS (with 0.8 opacity for gradient border)
+            start_color = f"rgba({lighter_r}, {lighter_g}, {lighter_b}, 0.8)"
+            end_color = f"rgba({r}, {g}, {b}, 0.8)"
+
+            return start_color, end_color
+
+        gradient_start, gradient_end = generate_gradient_colors(primary_color)
+
+        # Add gradient colors to parsed result
+        parsed_result["gradient_start_color"] = gradient_start
+        parsed_result["gradient_end_color"] = gradient_end
 
         # Validate and return response
         response_data = LeaderboardBundleResponse.model_validate(parsed_result)

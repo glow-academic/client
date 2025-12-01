@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { useMemo } from "react";
 import type { TooltipProps } from "recharts";
 
+import { useChartColors, getStatusColor } from "@/lib/utils/chartColors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -43,19 +44,6 @@ const currency = (value: number) =>
     currency: "USD",
     maximumFractionDigits: 2,
   }).format(value);
-
-const COLOR_PALETTE = [
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
-  "#84cc16",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-];
 
 // Custom tooltip content that sorts items by value descending
 function SortedChartTooltipContent({
@@ -184,6 +172,12 @@ export default function Pricing({
     [pricingData]
   );
 
+  // Get chart colors from CSS variables
+  const chartColors = useChartColors();
+
+  // Get muted color for "total" line (using neutral status color)
+  const mutedColor = useMemo(() => getStatusColor("neutral"), []);
+
   // Compute spend per run and aggregate by day (chart shows all data, no filtering)
   const { chartData, totals, chartConfig } = useMemo(() => {
     if (!modelRuns?.length || Object.keys(modelMapping).length === 0) {
@@ -256,7 +250,7 @@ export default function Pricing({
     let colorIdx = 0;
     for (const id of includeModels) {
       modelIdToColor[id] =
-        COLOR_PALETTE[colorIdx % COLOR_PALETTE.length] ?? "#999999";
+        chartColors[colorIdx % chartColors.length] ?? "#999999";
       colorIdx += 1;
     }
 
@@ -268,7 +262,7 @@ export default function Pricing({
         color: modelIdToColor[id] ?? "#999999",
       };
     }
-    config["total"] = { label: "Total", color: "#334155" };
+    config["total"] = { label: "Total", color: mutedColor };
 
     return {
       chartData: data,
@@ -279,7 +273,7 @@ export default function Pricing({
       },
       chartConfig: config,
     };
-  }, [modelRuns, modelMapping]);
+  }, [modelRuns, modelMapping, chartColors, mutedColor]);
 
   // Build rows for runs table from runsData (server-driven, paginated)
   const runRows = useMemo(() => {

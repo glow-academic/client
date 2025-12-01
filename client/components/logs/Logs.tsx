@@ -16,6 +16,7 @@ import WebSocketKPI from "./kpis/WebSocketKPI";
 import type { LogsBundleOut } from "@/app/(main)/system/logs/page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { formatTimestamp } from "@/utils/logs";
 import {
   CartesianGrid,
@@ -46,6 +47,9 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
     () => serverBundleData?.feedback || [],
     [serverBundleData]
   );
+
+  // Get chart colors from design system
+  const chartColors = useChartColors();
 
   // Prepare metrics chart data
   const metricsChartData = useMemo(() => {
@@ -152,7 +156,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                       yAxisId="left"
                       type="monotone"
                       dataKey="cpu"
-                      stroke="#3b82f6"
+                      stroke={chartColors[0]}
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       name="cpu"
@@ -161,7 +165,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                       yAxisId="left"
                       type="monotone"
                       dataKey="latency"
-                      stroke="#ef4444"
+                      stroke={chartColors[1]}
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       name="latency"
@@ -170,7 +174,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                       yAxisId="left"
                       type="monotone"
                       dataKey="memory"
-                      stroke="#22c55e"
+                      stroke={chartColors[2]}
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       name="memory"
@@ -179,7 +183,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                       yAxisId="right"
                       type="monotone"
                       dataKey="requests"
-                      stroke="#f59e0b"
+                      stroke={chartColors[3]}
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       name="requests"
@@ -188,7 +192,7 @@ export default function Logs({ bundleData: serverBundleData }: LogsProps) {
                       yAxisId="right"
                       type="monotone"
                       dataKey="errors"
-                      stroke="#ef4444"
+                      stroke={chartColors[4]}
                       strokeWidth={2}
                       dot={{ r: 3 }}
                       name="errors"

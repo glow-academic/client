@@ -13,8 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { useChartColors } from "@/lib/utils/chartColors";
 import { FileText } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -39,15 +40,6 @@ export interface DocumentKPIProps {
   trend: TrendData[];
 }
 
-const COLOR_CONFIG = {
-  gradient:
-    "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900",
-  border: "border-purple-200",
-  text: "text-purple-700",
-  icon: "text-purple-600",
-  primary: "#a855f7",
-};
-
 export default function DocumentKPI({
   ok,
   latency_ms,
@@ -55,6 +47,27 @@ export default function DocumentKPI({
   trend,
 }: DocumentKPIProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const chartColors = useChartColors();
+  const chartColor = chartColors[2]; // chart-3
+
+  // Convert hex/rgb to rgba for gradient
+  const colorToRgba = (color: string, alpha: number) => {
+    if (color.startsWith("rgb")) {
+      return color.replace("rgb", "rgba").replace(")", `, ${alpha})`);
+    }
+    const r = parseInt(color.slice(1, 3), 16);
+    const g = parseInt(color.slice(3, 5), 16);
+    const b = parseInt(color.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  // Generate gradient style from color
+  const gradientStyle = useMemo(() => {
+    return {
+      background: `linear-gradient(to bottom right, ${colorToRgba(chartColor, 0.1)}, ${colorToRgba(chartColor, 0.2)})`,
+      borderColor: colorToRgba(chartColor, 0.3),
+    };
+  }, [chartColor]);
 
   // Format date for display
   const formatDate = (dateStr: string) => {
@@ -84,12 +97,13 @@ export default function DocumentKPI({
   return (
     <>
       <Card
-        className={`bg-gradient-to-br ${COLOR_CONFIG.gradient} ${COLOR_CONFIG.border} cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col`}
+        className="cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col dark:bg-opacity-10"
+        style={gradientStyle}
         onClick={() => setIsDialogOpen(true)}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Document</CardTitle>
-          <FileText className={`h-4 w-4 ${COLOR_CONFIG.icon}`} />
+          <FileText className="h-4 w-4" style={{ color: chartColor }} />
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           <div className="flex items-center gap-2 mb-1">
@@ -97,7 +111,7 @@ export default function DocumentKPI({
               {ok ? "Healthy" : "Unhealthy"}
             </Badge>
           </div>
-          <div className={`text-sm ${COLOR_CONFIG.text}`}>
+          <div className="text-sm" style={{ color: chartColor }}>
             {formatLatency(latency_ms)}
           </div>
         </CardContent>
@@ -155,7 +169,7 @@ export default function DocumentKPI({
                     yAxisId="left"
                     type="monotone"
                     dataKey="uptime"
-                    stroke={COLOR_CONFIG.primary}
+                    stroke={chartColor}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     name="uptime"

@@ -8097,6 +8097,26 @@ export interface components {
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
             };
+            /**
+             * Primary Color
+             * @default #171717
+             */
+            primary_color: string;
+            /**
+             * Accent Color
+             * @default #f5f5f5
+             */
+            accent_color: string;
+            /**
+             * Gradient Start Color
+             * @default rgba(59, 130, 246, 0.8)
+             */
+            gradient_start_color: string;
+            /**
+             * Gradient End Color
+             * @default rgba(59, 130, 246, 0.8)
+             */
+            gradient_end_color: string;
         };
         /**
          * LeaderboardCohortDetailFilters

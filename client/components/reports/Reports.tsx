@@ -280,15 +280,22 @@ export default function Reports({
       return `${metric.currentValue}${metric.valueField === "percent" ? "%" : metric.valueField === "seconds" ? "s" : metric.valueField === "minutes" ? "m" : ""}`;
     };
 
-    const getBgColor = (
-      metric: (typeof profiles)[number]["metrics"][keyof (typeof profiles)[number]["metrics"]]
+    const getGradientClasses = (
+      status: string | undefined
     ): string => {
-      if (!metric.hasData || metric.currentValue == null) return "bg-muted";
-      const status = metric.status;
-      if (status === "success") return "bg-success/10 dark:bg-success/20";
-      if (status === "warning") return "bg-warning/10 dark:bg-warning/20";
-      if (status === "danger") return "bg-destructive/10 dark:bg-destructive/20";
-      return "bg-muted";
+      if (status === "success") return "bg-gradient-to-br from-success/10 to-success/5 dark:from-success/20 dark:to-success/10 border-success/30";
+      if (status === "warning") return "bg-gradient-to-br from-warning/10 to-warning/5 dark:from-warning/20 dark:to-warning/10 border-warning/30";
+      if (status === "danger") return "bg-gradient-to-br from-destructive/10 to-destructive/5 dark:from-destructive/20 dark:to-destructive/10 border-destructive/30";
+      return "bg-gradient-to-br from-muted to-muted/50 dark:from-muted dark:to-muted/50 border-border";
+    };
+
+    const getTextClasses = (
+      status: string | undefined
+    ): string => {
+      if (status === "success") return "text-success";
+      if (status === "warning") return "text-warning";
+      if (status === "danger") return "text-destructive";
+      return "text-muted-foreground";
     };
 
     const getHoverBullets = (
@@ -515,11 +522,12 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.averageScore;
-          const bgColor = getBgColor(metric);
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("averageScore", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
               {formatValue(metric)}
             </div>
@@ -557,16 +565,12 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.highestScore;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 70,
-            yellow: 80,
-            green: 90,
-          });
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("highestScore", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
               {formatValue(metric)}
             </div>
@@ -604,11 +608,12 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.completionPercentage;
-          const bgColor = getBgColor(metric);
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("completionPercentage", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
               {formatValue(metric)}
             </div>
@@ -646,11 +651,12 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.firstAttemptPassRate;
-          const bgColor = getBgColor(metric);
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("firstAttemptPassRate", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
               {formatValue(metric)}
             </div>
@@ -688,18 +694,14 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.messagesPerSession;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 5,
-            yellow: 8,
-            green: 12,
-          });
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("messagesPerSession", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
-              <MessageCircle className="h-2.5 w-2.5" />
+              <MessageCircle className={`h-2.5 w-2.5 ${textClasses}`} />
               {formatValue(metric)}
             </div>
           );
@@ -736,21 +738,14 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.personaResponseTimes;
-          // Inverted thresholds for response time (lower is better)
-          const bgColor =
-            !metric.hasData || metric.currentValue == null
-              ? "bg-gray-50"
-              : metric.currentValue <= 180
-                ? "bg-green-50"
-                : metric.currentValue <= 300
-                  ? "bg-yellow-50"
-                  : "bg-red-50";
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("personaResponseTimes", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
-              <Clock className="h-2.5 w-2.5" />
+              <Clock className={`h-2.5 w-2.5 ${textClasses}`} />
               {formatValue(metric)}
             </div>
           );
@@ -787,11 +782,12 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.sessionEfficiency;
-          const bgColor = getBgColor(metric);
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("sessionEfficiency", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
               {formatValue(metric)}
             </div>
@@ -829,19 +825,12 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.stagnationRate;
-          // Inverted thresholds for stagnation (lower is better)
-          const bgColor =
-            !metric.hasData || metric.currentValue == null
-              ? "bg-gray-50"
-              : metric.currentValue <= 15
-                ? "bg-green-50"
-                : metric.currentValue <= 25
-                  ? "bg-yellow-50"
-                  : "bg-red-50";
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("stagnationRate", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium ${gradientClasses} ${textClasses}`}
             >
               {formatValue(metric)}
             </div>
@@ -879,21 +868,14 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.timeSpent;
-          // Inverted thresholds for time spent (lower is better)
-          const bgColor =
-            !metric.hasData || metric.currentValue == null
-              ? "bg-gray-50"
-              : metric.currentValue <= 60
-                ? "bg-green-50"
-                : metric.currentValue <= 90
-                  ? "bg-yellow-50"
-                  : "bg-red-50";
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("timeSpent", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
-              <Timer className="h-2.5 w-2.5" />
+              <Timer className={`h-2.5 w-2.5 ${textClasses}`} />
               {formatValue(metric)}
             </div>
           );
@@ -930,18 +912,14 @@ export default function Reports({
         cell: ({ row }) => {
           const profile = row.original;
           const metric = profile.metrics.totalAttempts;
-          const bgColor = getBgColor(metric, {
-            gray: 0,
-            red: 3,
-            yellow: 5,
-            green: 8,
-          });
+          const gradientClasses = getGradientClasses(metric.status);
+          const textClasses = getTextClasses(metric.status);
           const bullets = getHoverBullets("totalAttempts", profile);
           const content = (
             <div
-              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${bgColor}`}
+              className={`text-center px-1 py-0.5 rounded text-xs font-medium flex items-center justify-center gap-0.5 ${gradientClasses} ${textClasses}`}
             >
-              <Target className="h-2.5 w-2.5" />
+              <Target className={`h-2.5 w-2.5 ${textClasses}`} />
               {formatValue(metric)}
             </div>
           );

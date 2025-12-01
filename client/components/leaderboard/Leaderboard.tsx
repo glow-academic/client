@@ -76,6 +76,10 @@ export default function Leaderboard({
     return leaderboardData?.data || [];
   }, [leaderboardData?.data]);
 
+  // Extract gradient colors from leaderboardData
+  const gradientStartColor = leaderboardData?.gradient_start_color || "rgba(59, 130, 246, 0.8)";
+  const gradientEndColor = leaderboardData?.gradient_end_color || "rgba(59, 130, 246, 0.8)";
+
   // Data is always available from server-side fetch
   const isError = false;
 
@@ -551,6 +555,8 @@ export default function Leaderboard({
                         : undefined
                     }
                     disabled={false}
+                    gradientStartColor={gradientStartColor}
+                    gradientEndColor={gradientEndColor}
                   />
                 ))}
             </div>

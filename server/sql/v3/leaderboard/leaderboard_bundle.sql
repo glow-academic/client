@@ -3,7 +3,17 @@
 -- Parameters are passed from the WHERE clause builder
 -- Simulation filtering by cohorts is handled inline in the WHERE clause
 
-WITH filt AS (
+WITH
+-- Get colors from active settings (defaults if no settings found)
+settings_colors AS (
+    SELECT 
+        COALESCE(primary_color, '#171717') AS primary_color,
+        COALESCE(accent, '#f5f5f5') AS accent
+    FROM settings
+    WHERE active = true
+    LIMIT 1
+),
+filt AS (
     SELECT * FROM analytics a WHERE {WHERE_CLAUSE}
 ),
 profile_stats AS (
@@ -250,5 +260,7 @@ SELECT json_build_object(
         )
     ) ORDER BY highest_score DESC) FROM top_25_percent), '[]'::json),
     'simulation_mapping', COALESCE((SELECT mapping FROM simulation_mapping_data LIMIT 1), '{}'::jsonb),
-    'scenario_mapping', COALESCE((SELECT mapping FROM scenario_mapping_data LIMIT 1), '{}'::jsonb)
+    'scenario_mapping', COALESCE((SELECT mapping FROM scenario_mapping_data LIMIT 1), '{}'::jsonb),
+    'primary_color', (SELECT primary_color FROM settings_colors LIMIT 1),
+    'accent_color', (SELECT accent FROM settings_colors LIMIT 1)
 ) AS result
