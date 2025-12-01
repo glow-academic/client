@@ -63,48 +63,39 @@ video_core AS (
     CROSS JOIN video_department_access_check vdac
     WHERE v.id = $1 AND vdac.has_access = true
 ),
-video_all_problem_statements AS (
+video_all_outlines AS (
     SELECT 
-        vps.video_id,
-        ps.id::text as problem_statement_id,
-        ps.problem_statement,
-        ps.created_at as problem_statement_created_at,
-        ps.updated_at as problem_statement_updated_at
-    FROM video_problem_statements vps
-    JOIN problem_statements ps ON ps.id = vps.problem_statement_id
-    WHERE vps.video_id = $1
+        vo.video_id,
+        o.id::text as outline_id,
+        o.name as outline_name,
+        o.outline,
+        o.created_at as outline_created_at,
+        o.updated_at as outline_updated_at
+    FROM video_outlines vo
+    JOIN outlines o ON o.id = vo.outline_id
+    WHERE vo.video_id = $1
 ),
-video_problem_statements_agg AS (
-    SELECT ARRAY_AGG(ps.id::text ORDER BY vps.created_at) as problem_statement_ids
-    FROM video_problem_statements vps
-    JOIN problem_statements ps ON ps.id = vps.problem_statement_id
-    WHERE vps.video_id = $1 AND vps.active = true
+video_outlines_agg AS (
+    SELECT ARRAY_AGG(o.id::text ORDER BY vo.created_at) as outline_ids
+    FROM video_outlines vo
+    JOIN outlines o ON o.id = vo.outline_id
+    WHERE vo.video_id = $1 AND vo.active = true
 ),
-problem_statement_mapping_data AS (
+outline_mapping_data AS (
     SELECT 
         COALESCE(
             jsonb_object_agg(
-                vaps.problem_statement_id,
+                vao.outline_id,
                 jsonb_build_object(
-                    'problem_statement', vaps.problem_statement,
-                    'created_at', vaps.problem_statement_created_at::text,
-                    'updated_at', vaps.problem_statement_updated_at::text
+                    'name', vao.outline_name,
+                    'outline', vao.outline,
+                    'created_at', vao.outline_created_at::text,
+                    'updated_at', vao.outline_updated_at::text
                 )
             ),
             '{}'::jsonb
-        ) as problem_statement_mapping
-    FROM video_all_problem_statements vaps
-),
-video_objectives_agg AS (
-    SELECT 
-        ARRAY_AGG(o.id::text ORDER BY vo.idx) as objective_ids,
-        COALESCE(jsonb_object_agg(
-            o.id::text,
-            jsonb_build_object('name', o.objective, 'description', o.objective)
-        ) FILTER (WHERE o.objective IS NOT NULL), '{}'::jsonb) as objective_mapping
-    FROM video_objectives vo
-    JOIN objectives o ON o.id = vo.objective_id
-    WHERE vo.video_id = $1
+        ) as outline_mapping
+    FROM video_all_outlines vao
 ),
 video_policies_agg AS (
     SELECT ARRAY_AGG(policy_id::text ORDER BY vp.created_at) as policy_ids
@@ -206,7 +197,7 @@ department_mapping_data AS (
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id WHERE pd.active = true)
 ),
--- Objectives (shared between scenarios and videos) for history
+-- Objectives (shared between scenarios) for history
 objectives_data AS (
     SELECT DISTINCT
         o.id,
@@ -214,15 +205,11 @@ objectives_data AS (
     FROM objectives o
     LEFT JOIN scenario_objectives so ON so.objective_id = o.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = so.scenario_id AND sd.active = true
-    LEFT JOIN video_objectives vo ON vo.objective_id = o.id
-    LEFT JOIN video_departments vd ON vd.video_id = vo.video_id AND vd.active = true
     CROSS JOIN user_profile up
     WHERE (
         up.role = 'superadmin'
         OR sd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id WHERE pd.active = true)
-        OR vd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id WHERE pd.active = true)
-        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = so.scenario_id AND sd2.active = true)
-            AND NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vo.video_id AND vd2.active = true))
+        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = so.scenario_id AND sd2.active = true))
     )
 ),
 objectives_history_data AS (
@@ -279,10 +266,8 @@ SELECT
     vc.active,
     vc.department_ids,
     COALESCE((SELECT department_ids FROM valid_departments), ARRAY[]::text[]) as valid_department_ids,
-    COALESCE((SELECT problem_statement_ids FROM video_problem_statements_agg), ARRAY[]::text[]) as problem_statement_ids,
-    COALESCE((SELECT problem_statement_mapping FROM problem_statement_mapping_data), '{}'::jsonb) as problem_statement_mapping,
-    COALESCE((SELECT objective_ids FROM video_objectives_agg), ARRAY[]::text[]) as objective_ids,
-    COALESCE((SELECT objective_mapping FROM video_objectives_agg), '{}'::jsonb) as objective_mapping,
+    COALESCE((SELECT outline_ids FROM video_outlines_agg), ARRAY[]::text[]) as outline_ids,
+    COALESCE((SELECT outline_mapping FROM outline_mapping_data), '{}'::jsonb) as outline_mapping,
     COALESCE((SELECT policy_ids FROM video_policies_agg), ARRAY[]::text[]) as policy_ids,
     COALESCE((SELECT mapping FROM policy_mapping_data), '{}'::jsonb) as policy_mapping,
     COALESCE((SELECT policy_ids FROM valid_policies), ARRAY[]::text[]) as valid_policy_ids,

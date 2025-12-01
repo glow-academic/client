@@ -2,21 +2,17 @@
 -- Parameters: 
 --   $1=department_ids (uuid array, nullable)
 --   $2=video_id (uuid, nullable) - if provided, also returns existing video links
--- Returns: problem_statements, objectives, policies, problem_statement_ids, objective_ids, policy_ids as JSON
+-- Returns: problem_statements, objectives, policies, outline_ids, policy_ids as JSON
 WITH filtered_problem_statements AS (
     SELECT DISTINCT ps.id, ps.problem_statement, ps.created_at, ps.updated_at
     FROM problem_statements ps
     LEFT JOIN scenario_problem_statements sps ON sps.problem_statement_id = ps.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = sps.scenario_id AND sd.active = true
-    LEFT JOIN video_problem_statements vps ON vps.problem_statement_id = ps.id
-    LEFT JOIN video_departments vd ON vd.video_id = vps.video_id AND vd.active = true
     WHERE (
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
         sd.department_id = ANY($1::uuid[])
-        OR vd.department_id = ANY($1::uuid[])
-        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = sps.scenario_id AND sd2.active = true)
-            AND NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vps.video_id AND vd2.active = true))
+        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = sps.scenario_id AND sd2.active = true))
     )
     GROUP BY ps.id, ps.problem_statement, ps.created_at, ps.updated_at
 ),
@@ -25,15 +21,11 @@ filtered_objectives AS (
     FROM objectives o
     LEFT JOIN scenario_objectives so ON so.objective_id = o.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = so.scenario_id AND sd.active = true
-    LEFT JOIN video_objectives vo ON vo.objective_id = o.id
-    LEFT JOIN video_departments vd ON vd.video_id = vo.video_id AND vd.active = true
     WHERE (
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
         sd.department_id = ANY($1::uuid[])
-        OR vd.department_id = ANY($1::uuid[])
-        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = so.scenario_id AND sd2.active = true)
-            AND NOT EXISTS (SELECT 1 FROM video_departments vd2 WHERE vd2.video_id = vo.video_id AND vd2.active = true))
+        OR (NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = so.scenario_id AND sd2.active = true))
     )
     GROUP BY o.id, o.objective
 ),
@@ -49,15 +41,10 @@ filtered_policies AS (
          COUNT(pd.policy_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
          OR NOT EXISTS (SELECT 1 FROM policy_departments pd2 WHERE pd2.policy_id = p.id AND pd2.active = true))
 ),
-video_problem_statement_links AS (
-    SELECT ARRAY_AGG(problem_statement_id::text ORDER BY created_at) as problem_statement_ids
-    FROM video_problem_statements
+video_outline_links AS (
+    SELECT ARRAY_AGG(outline_id::text ORDER BY created_at) as outline_ids
+    FROM video_outlines
     WHERE video_id = $2::uuid AND active = true
-),
-video_objective_links AS (
-    SELECT ARRAY_AGG(objective_id::text ORDER BY idx) as objective_ids
-    FROM video_objectives
-    WHERE video_id = $2::uuid
 ),
 video_policy_links AS (
     SELECT ARRAY_AGG(policy_id::text ORDER BY created_at) as policy_ids
@@ -91,7 +78,6 @@ SELECT
         )),
         '[]'::json
     ) FROM filtered_policies fp) as policies,
-    COALESCE((SELECT problem_statement_ids FROM video_problem_statement_links), ARRAY[]::text[]) as problem_statement_ids,
-    COALESCE((SELECT objective_ids FROM video_objective_links), ARRAY[]::text[]) as objective_ids,
+    COALESCE((SELECT outline_ids FROM video_outline_links), ARRAY[]::text[]) as outline_ids,
     COALESCE((SELECT policy_ids FROM video_policy_links), ARRAY[]::text[]) as policy_ids
 

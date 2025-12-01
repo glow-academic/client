@@ -29,7 +29,7 @@ def create_outline_tools(group_id: uuid.UUID | None) -> list[Tool]:
         ),
         question_timestamps: Any | None = Field(
             default=None,
-            description="Optional dictionary mapping question IDs to lists of timestamps (in seconds) where each question should appear in the video. Format as JSON object. Example: {'question-id-1': [10, 30], 'question-id-2': [45]}"
+            description="REQUIRED if questions were provided - Dictionary mapping question IDs (use exact IDs from the questions section) to lists of timestamps (in seconds) where each question should appear. Timestamps must be integers between 0 and video_length_seconds (inclusive). Format as JSON object. Example for 4-second video: {'abc-123-def': [0, 2], 'xyz-456-ghi': [3]}. Example for 60-second video: {'abc-123-def': [10, 30], 'xyz-456-ghi': [45]}. You MUST assign timestamps to ALL questions that were provided."
         ),
     ) -> str:
         """Set the outline for the video.

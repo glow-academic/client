@@ -38,8 +38,7 @@ class CreateVideoRequest(BaseModel):
     name: str
     length_seconds: int
     department_ids: list[str] | None
-    problem_statement_ids: list[str] | None = None
-    objective_ids: list[str] | None = None
+    outline_ids: list[str] | None = None
     policy_ids: list[str] | None = None
     image_ids: list[str] | None = None
     active: bool = True
@@ -77,8 +76,7 @@ async def create_video(
 
         # Ensure arrays are not None (use empty arrays)
         department_ids = request.department_ids or []
-        problem_statement_ids = request.problem_statement_ids or []
-        objective_ids = request.objective_ids or []
+        outline_ids = request.outline_ids or []
         policy_ids = request.policy_ids or []
         image_ids = request.image_ids or []
         questions = request.questions or []
@@ -93,8 +91,7 @@ async def create_video(
             request.length_seconds,
             request.active,
             department_ids if department_ids else None,
-            problem_statement_ids if problem_statement_ids else None,
-            objective_ids if objective_ids else None,
+            outline_ids if outline_ids else None,
             policy_ids if policy_ids else None,
             image_ids if image_ids else None,
             questions_json,

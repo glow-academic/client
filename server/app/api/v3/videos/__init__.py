@@ -3,6 +3,7 @@
 from app.api.v3.videos.create import router as create_router
 from app.api.v3.videos.delete import router as delete_router
 from app.api.v3.videos.detail import router as detail_router
+from app.api.v3.videos.download import router as download_router
 from app.api.v3.videos.duplicate import router as duplicate_router
 from app.api.v3.videos.generate_outline import \
     router as generate_outline_router
@@ -31,4 +32,5 @@ router.include_router(randomize_router)
 router.include_router(generate_questions_router)
 router.include_router(generate_outline_router)
 router.include_router(generate_video_router)
+router.include_router(download_router)
 

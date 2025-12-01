@@ -3205,6 +3205,52 @@
         ]
       }
     },
+    "/api/v3/videos/download/{video_id}": {
+      "get": {
+        "tags": [
+          "v3",
+          "videos"
+        ],
+        "summary": "Download Video",
+        "description": "Download a video by ID.",
+        "operationId": "download_video_api_v3_videos_download__video_id__get",
+        "parameters": [
+          {
+            "name": "video_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Video Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "videos"
+        ]
+      }
+    },
     "/api/v3/auth/list": {
       "post": {
         "tags": [
@@ -14232,7 +14278,7 @@
             ],
             "title": "Department Ids"
           },
-          "problem_statement_ids": {
+          "outline_ids": {
             "anyOf": [
               {
                 "items": {
@@ -14244,21 +14290,7 @@
                 "type": "null"
               }
             ],
-            "title": "Problem Statement Ids"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
+            "title": "Outline Ids"
           },
           "policy_ids": {
             "anyOf": [
@@ -17957,6 +17989,10 @@
       },
       "GeneratedQuestion": {
         "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
           "question_text": {
             "type": "string",
             "title": "Question Text"
@@ -17979,6 +18015,7 @@
         },
         "type": "object",
         "required": [
+          "question_id",
           "question_text",
           "type",
           "allow_multiple",
@@ -30571,7 +30608,7 @@
             ],
             "title": "Department Ids"
           },
-          "problem_statement_ids": {
+          "outline_ids": {
             "anyOf": [
               {
                 "items": {
@@ -30583,21 +30620,7 @@
                 "type": "null"
               }
             ],
-            "title": "Problem Statement Ids"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
+            "title": "Outline Ids"
           },
           "policy_ids": {
             "anyOf": [

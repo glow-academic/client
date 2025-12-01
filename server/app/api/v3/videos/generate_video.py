@@ -146,10 +146,22 @@ async def generate_video(
             video_filename = video_file.name
             logger.info(f"Using hardcoded video: {video_filename}")
             
+            # Save file_path and mime_type to database
+            # Store just the filename (relative to UPLOAD_FOLDER), consistent with images
+            video_path_relative = video_filename
+            mime_type = "video/mp4"
+            
+            sql_query = load_sql("sql/v3/videos/update_video_file_path.sql")
+            sql_params = (str(video_id), video_path_relative, mime_type)
+            await conn.execute(sql_query, *sql_params)
+            
+            logger.info(f"Saved video file_path: {video_path_relative}, mime_type: {mime_type}")
+            
+            # Return URL using download endpoint instead of direct /uploads/ path
             return GenerateVideoResponse(
                 success=True,
                 message="Video generation completed (using hardcoded video)",
-                videoUrl=f"/uploads/{video_filename}",
+                videoUrl=f"/api/videos/download/{video_id}",
                 videoId=str(video_id),
             )
         else:

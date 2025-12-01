@@ -7,6 +7,9 @@
 "use client";
 import {
   Check,
+  CheckSquare,
+  Circle,
+  FileText,
   Image,
   Loader2,
   Plus,
@@ -51,6 +54,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -218,6 +225,61 @@ export default function Video({
     return await updateVideoAction({ body });
   };
 
+  // Helper function to prepare video creation payload
+  const prepareCreatePayload = (): CreateVideoBody => {
+    const finalDepartmentIds = transformDepartmentIdsForSubmit(
+      formData.departmentIds || [],
+      isSuperadmin,
+      videoData?.valid_department_ids || []
+    );
+
+    // Transform questions for API
+    const questionsForApi = questions.map((q) => ({
+      question_text: q.question_text,
+      type: q.type,
+      allow_multiple: q.allow_multiple,
+      times: q.times,
+      options: q.options.map((opt) => ({
+        option_text: opt.option_text,
+        type: opt.type,
+        is_correct: opt.is_correct,
+      })),
+    }));
+
+    // Prepare outline IDs
+    const outlineIds: string[] = [];
+    if (selectedOutlineId) {
+      outlineIds.push(selectedOutlineId);
+    }
+
+    // Get video image ID (single image)
+    const imageIds = image?.id ? [image.id] : [];
+
+    // Provide defaults for required fields
+    const videoName = formData.name?.trim() || "New Video";
+    const videoLength = formData.length_seconds > 0 ? formData.length_seconds : 4;
+
+    const createPayload: CreateVideoBody = {
+      name: videoName,
+      length_seconds: videoLength,
+      department_ids: finalDepartmentIds,
+      active: formData.active ?? true,
+      questions: questionsForApi,
+    };
+
+    if (outlineIds.length > 0) {
+      createPayload.outline_ids = outlineIds;
+    }
+    if (selectedPolicyIds.length > 0) {
+      createPayload.policy_ids = selectedPolicyIds;
+    }
+    if (imageIds.length > 0) {
+      createPayload.image_ids = imageIds;
+    }
+
+    return createPayload;
+  };
+
   const handleRandomizeVideo = async (targets: string[], section: string) => {
     if (!randomizeVideoAction || !effectiveProfile?.id) {
       toast.error("Randomization not available");
@@ -300,7 +362,9 @@ export default function Video({
 
       if (result.success && result.questions) {
         // Convert generated questions to Question format
+        // Include question_id from the API response
         const convertedQuestions: Question[] = result.questions.map((q) => ({
+          question_id: q.question_id, // Include the ID from the database
           question_text: q.question_text,
           type: q.type as "choice" | "frq",
           allow_multiple: q.allow_multiple,
@@ -396,18 +460,46 @@ export default function Video({
       return;
     }
 
-    // For create mode, we need to create the video first
-    if (!videoId) {
-      toast.error("Please save the video first before generating");
-      return;
-    }
-
     setIsGeneratingVideo(true);
+    let currentVideoId = videoId;
+
     try {
+      // If no videoId exists, auto-save the video first
+      if (!currentVideoId) {
+        try {
+          // Prepare and create the video (with defaults for required fields)
+          const createPayload = prepareCreatePayload();
+          const createResult = await handleCreateVideo(createPayload);
+
+          if (!createResult.videoId) {
+            throw new Error("Video creation succeeded but no videoId returned");
+          }
+
+          currentVideoId = createResult.videoId;
+
+          // Update URL to edit page without causing navigation
+          // This allows generation to proceed without component remount
+          window.history.replaceState(
+            { ...window.history.state },
+            "",
+            `/create/videos/v/${currentVideoId}`
+          );
+        } catch (error) {
+          toast.error(
+            `Failed to save video: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+          setIsGeneratingVideo(false);
+          return;
+        }
+      }
+
+      // Now proceed with video generation using the videoId
       const imageId = image?.id;
 
       const body: GenerateVideoIn["body"] = {
-        videoId,
+        videoId: currentVideoId,
         prompt: outlineText,
         imageReferenceId: imageId,
       };
@@ -808,24 +900,8 @@ export default function Video({
         await handleUpdateVideo(updatePayload);
         toast.success("Video updated successfully!");
       } else {
-        // CREATE mode
-        const createPayload: CreateVideoBody = {
-          name: formData.name,
-          length_seconds: formData.length_seconds || 4, // Default to 4 seconds
-          department_ids: finalDepartmentIds,
-          active: formData.active,
-          questions: questionsForApi,
-        };
-
-        if (outlineIds.length > 0) {
-          createPayload.outline_ids = outlineIds;
-        }
-        if (selectedPolicyIds.length > 0) {
-          createPayload.policy_ids = selectedPolicyIds;
-        }
-        if (imageIds.length > 0) {
-          createPayload.image_ids = imageIds;
-        }
+        // CREATE mode - use helper function
+        const createPayload = prepareCreatePayload();
 
         const result = await handleCreateVideo(createPayload);
         toast.success("Video created successfully!");
@@ -944,6 +1020,11 @@ export default function Video({
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  
+  // Timeline segment modal state
+  const [showTimelineModal, setShowTimelineModal] = useState(false);
+  const [selectedTimelineSegment, setSelectedTimelineSegment] = useState<number | null>(null);
+  const [selectedQuestionsForSegment, setSelectedQuestionsForSegment] = useState<string[]>([]);
 
   const openQuestionModal = (time?: number, question?: Question) => {
     setSelectedTime(time ?? null);
@@ -1609,78 +1690,73 @@ export default function Video({
 
           {/* Timeline */}
           <div className="space-y-2">
-            <Label>Timeline (4 seconds) - Select questions for each time slot</Label>
-            <div className="grid grid-cols-5 gap-2">
-              {[0, 1, 2, 3, 4].map((time) => {
+            <Label>Timeline (4 seconds) - Click to assign questions</Label>
+            <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
+              {/* Timeline markers for questions */}
+              {allQuestionTimes.map((time) => {
                 const questionsAtTime = questions.filter((q) =>
                   q.times.includes(time)
                 );
-                // Use question_id if available, otherwise use index as fallback
-                const selectedQuestionKey =
-                  questionsAtTime.length > 0
-                    ? questionsAtTime[0]?.question_id ||
-                      `temp-${questions.findIndex(
-                        (q) => q === questionsAtTime[0]
-                      )}`
-                    : "none";
-
                 return (
-                  <div key={time} className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">
-                      {formatTime(time)}
-                    </Label>
-                    <Select
-                      value={selectedQuestionKey || "none"}
-                      onValueChange={(questionKey) => {
-                        if (isReadonly) return;
-                        // Remove this time from all questions
-                        setQuestions((prev) =>
-                          prev.map((q) => ({
-                            ...q,
-                            times: q.times.filter((t) => t !== time),
-                          }))
-                        );
-
-                        // Add this time to the selected question (if not "none")
-                        if (questionKey && questionKey !== "none") {
-                          setQuestions((prev) =>
-                            prev.map((q, idx) => {
-                              const qKey = q.question_id || `temp-${idx}`;
-                              if (qKey === questionKey) {
-                                return {
-                                  ...q,
-                                  times: [...q.times, time].sort(
-                                    (a, b) => a - b
-                                  ),
-                                };
-                              }
-                              return q;
-                            })
-                          );
-                        }
-                      }}
-                      disabled={isReadonly || questions.length === 0}
-                    >
-                      <SelectTrigger className="h-9 text-xs">
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {questions.map((q, idx) => {
-                          const qKey = q.question_id || `temp-${idx}`;
-                          return (
-                            <SelectItem key={qKey} value={qKey}>
-                              {q.question_text.length > 30
-                                ? `${q.question_text.substring(0, 30)}...`
-                                : q.question_text}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Tooltip key={time}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isReadonly) return;
+                          setSelectedTimelineSegment(time);
+                          // Get currently selected questions for this timestamp
+                          const currentQuestions = questions
+                            .filter((q) => q.times.includes(time))
+                            .map((q, idx) => q.question_id || `temp-${idx}`);
+                          setSelectedQuestionsForSegment(currentQuestions);
+                          setShowTimelineModal(true);
+                        }}
+                        className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
+                        style={{
+                          left: `${(time / 4) * 100}%`,
+                        }}
+                        disabled={isReadonly}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{formatTime(time)} - {questionsAtTime.length} question{questionsAtTime.length !== 1 ? 's' : ''}</p>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
+
+              {/* Clickable timeline */}
+              <div
+                className="absolute inset-0 cursor-pointer"
+                onClick={(e) => {
+                  if (isReadonly) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const percentage = x / rect.width;
+                  const clickedTime = percentage * 4;
+                  
+                  // Find the closest timestamp (0, 1, 2, 3, or 4)
+                  const possibleTimestamps = [0, 1, 2, 3, 4];
+                  const closestTimestamp = possibleTimestamps.reduce((prev, curr) => 
+                    Math.abs(curr - clickedTime) < Math.abs(prev - clickedTime) ? curr : prev
+                  );
+                  
+                  setSelectedTimelineSegment(closestTimestamp);
+                  // Get currently selected questions for this timestamp
+                  const currentQuestions = questions
+                    .filter((q) => q.times.includes(closestTimestamp))
+                    .map((q, idx) => q.question_id || `temp-${idx}`);
+                  setSelectedQuestionsForSegment(currentQuestions);
+                  setShowTimelineModal(true);
+                }}
+              />
+
+              {/* Time labels */}
+              <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
+                <span>0:00</span>
+                <span>0:04</span>
+              </div>
             </div>
           </div>
 
@@ -1900,6 +1976,123 @@ export default function Video({
         </Button>
       </div>
 
+      {/* Timeline Segment Modal */}
+      {showTimelineModal && selectedTimelineSegment !== null && (
+        <AlertDialog open={showTimelineModal} onOpenChange={setShowTimelineModal}>
+          <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Select Questions for {formatTime(selectedTimelineSegment)}
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="space-y-4 py-4">
+              {questions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No questions available. Please add questions first.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {questions
+                    .map((q, idx) => {
+                      const qKey = q.question_id || `temp-${idx}`;
+                      // Check if question is already assigned to OTHER timestamps (not this one)
+                      const isAssignedElsewhere = q.times.some(
+                        (t) => t !== selectedTimelineSegment!
+                      );
+                      const isSelected = selectedQuestionsForSegment.includes(qKey);
+                      
+                      return { q, qKey, isAssignedElsewhere, isSelected, idx };
+                    })
+                    .filter(({ isAssignedElsewhere }) => !isAssignedElsewhere) // Hide questions assigned to other timestamps
+                    .map(({ q, qKey, isSelected }) => (
+                      <div
+                        key={qKey}
+                        className="flex items-start space-x-3 p-3 border rounded-lg"
+                      >
+                        <Checkbox
+                          id={`timeline-${qKey}`}
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (isReadonly) return;
+                            if (checked) {
+                              setSelectedQuestionsForSegment([...selectedQuestionsForSegment, qKey]);
+                            } else {
+                              setSelectedQuestionsForSegment(
+                                selectedQuestionsForSegment.filter((k) => k !== qKey)
+                              );
+                            }
+                          }}
+                          disabled={isReadonly}
+                        />
+                        <Label
+                          htmlFor={`timeline-${qKey}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="font-medium">{q.question_text}</div>
+                        </Label>
+                      </div>
+                    ))}
+                  {questions.filter((q) => {
+                    return q.times.some((t) => t !== selectedTimelineSegment!);
+                  }).length === questions.length && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      All questions are already assigned to other timestamps.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setShowTimelineModal(false);
+                  setSelectedTimelineSegment(null);
+                  setSelectedQuestionsForSegment([]);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (isReadonly) return;
+                  const timestamp = selectedTimelineSegment!;
+                  
+                  // Remove this timestamp from all questions
+                  setQuestions((prev) =>
+                    prev.map((q) => ({
+                      ...q,
+                      times: q.times.filter((t) => t !== timestamp),
+                    }))
+                  );
+                  
+                  // Add this timestamp to selected questions
+                  setQuestions((prev) =>
+                    prev.map((q, idx) => {
+                      const qKey = q.question_id || `temp-${idx}`;
+                      if (selectedQuestionsForSegment.includes(qKey)) {
+                        // Add the timestamp if not already present
+                        const newTimes = [...q.times, timestamp].filter(
+                          (t, i, arr) => arr.indexOf(t) === i
+                        ).sort((a, b) => a - b);
+                        return { ...q, times: newTimes };
+                      }
+                      return q;
+                    })
+                  );
+                  
+                  setShowTimelineModal(false);
+                  setSelectedTimelineSegment(null);
+                  setSelectedQuestionsForSegment([]);
+                }}
+                disabled={isReadonly}
+              >
+                Save
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
       {/* Question Modal */}
       {showQuestionModal && editingQuestion && (
         <AlertDialog open={showQuestionModal} onOpenChange={closeQuestionModal}>
@@ -1929,44 +2122,101 @@ export default function Video({
               {/* Question Type */}
               <div className="space-y-2">
                 <Label>Question Type *</Label>
-                <Select
-                  value={editingQuestion.type}
-                  onValueChange={(value: "choice" | "frq") =>
-                    setEditingQuestion({
-                      ...editingQuestion,
-                      type: value,
-                      options: value === "frq" ? [] : editingQuestion.options,
-                    })
+                <RadioGroup
+                  value={
+                    editingQuestion.type === "frq"
+                      ? "frq"
+                      : editingQuestion.allow_multiple
+                        ? "choice-multiple"
+                        : "choice-single"
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="choice">Choice</SelectItem>
-                    <SelectItem value="frq">Free Response (FRQ)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Allow Multiple (for choice) */}
-              {editingQuestion.type === "choice" && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="allow_multiple"
-                    checked={editingQuestion.allow_multiple}
-                    onCheckedChange={(checked) =>
+                  onValueChange={(value) => {
+                    if (value === "frq") {
                       setEditingQuestion({
                         ...editingQuestion,
-                        allow_multiple: checked === true,
-                      })
+                        type: "frq",
+                        allow_multiple: false,
+                        options: [],
+                      });
+                    } else if (value === "choice-single") {
+                      setEditingQuestion({
+                        ...editingQuestion,
+                        type: "choice",
+                        allow_multiple: false,
+                      });
+                    } else if (value === "choice-multiple") {
+                      setEditingQuestion({
+                        ...editingQuestion,
+                        type: "choice",
+                        allow_multiple: true,
+                      });
                     }
-                  />
-                  <Label htmlFor="allow_multiple">
-                    Allow multiple selections
+                  }}
+                  className="grid grid-cols-3 gap-3"
+                >
+                  {/* MCQ - Single Selection */}
+                  <Label
+                    className={cn(
+                      "cursor-pointer block",
+                      "rounded-lg border-2 transition-colors",
+                      editingQuestion.type === "choice" &&
+                        !editingQuestion.allow_multiple
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <RadioGroupItem
+                      value="choice-single"
+                      className="sr-only"
+                    />
+                    <div className="flex flex-col items-center justify-center p-4 gap-2">
+                      <Circle className="h-6 w-6" />
+                      <span className="text-sm font-medium">MCQ</span>
+                    </div>
                   </Label>
-                </div>
-              )}
+
+                  {/* FRQ */}
+                  <Label
+                    className={cn(
+                      "cursor-pointer block",
+                      "rounded-lg border-2 transition-colors",
+                      editingQuestion.type === "frq"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <RadioGroupItem
+                      value="frq"
+                      className="sr-only"
+                    />
+                    <div className="flex flex-col items-center justify-center p-4 gap-2">
+                      <FileText className="h-6 w-6" />
+                      <span className="text-sm font-medium">FRQ</span>
+                    </div>
+                  </Label>
+
+                  {/* MCQ Multiple */}
+                  <Label
+                    className={cn(
+                      "cursor-pointer block",
+                      "rounded-lg border-2 transition-colors",
+                      editingQuestion.type === "choice" &&
+                        editingQuestion.allow_multiple
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    <RadioGroupItem
+                      value="choice-multiple"
+                      className="sr-only"
+                    />
+                    <div className="flex flex-col items-center justify-center p-4 gap-2">
+                      <CheckSquare className="h-6 w-6" />
+                      <span className="text-sm font-medium">MCQ Multiple</span>
+                    </div>
+                  </Label>
+                </RadioGroup>
+              </div>
 
 
               {/* Options (for choice questions) */}

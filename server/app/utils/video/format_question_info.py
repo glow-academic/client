@@ -43,7 +43,20 @@ def format_question_info(questions: list[dict[str, Any]], video_length_seconds: 
     )
     
     if video_length_seconds:
-        content += f"\n\nVideo Length: {video_length_seconds} seconds. Use this to determine appropriate timestamps for when each question should appear in the video."
+        content += (
+            f"\n\n**IMPORTANT - Video Length and Timestamps:**\n"
+            f"The video is {video_length_seconds} seconds long. "
+            f"You MUST assign timestamps to ALL questions above. "
+            f"Valid timestamps are integers from 0 to {video_length_seconds} (inclusive). "
+            f"Use the EXACT Question ID shown for each question when creating the question_timestamps dictionary. "
+            f"For example, if the video is {video_length_seconds} seconds: "
+            f"valid timestamps are {', '.join(map(str, range(video_length_seconds + 1)))}."
+        )
+    else:
+        content += (
+            "\n\n**IMPORTANT:** You MUST assign timestamps to ALL questions above. "
+            "Use the EXACT Question ID shown for each question when creating the question_timestamps dictionary."
+        )
 
     return {
         "role": "user",

@@ -261,8 +261,6 @@ user_context AS (
                 v.length_seconds
             FROM videos v
             JOIN simulation_videos sv ON sv.video_id = v.id
-            LEFT JOIN video_problem_statements vps ON vps.video_id = v.id AND vps.active = true
-            LEFT JOIN problem_statements ps ON ps.id = vps.problem_statement_id
             WHERE sv.simulation_id = $1
             ORDER BY sv.position
         ),
@@ -328,10 +326,8 @@ user_context AS (
             SELECT DISTINCT
                 v.id,
                 v.name,
-                COALESCE(ps.problem_statement, '') as description
+                '' as description
             FROM videos v
-            LEFT JOIN video_problem_statements vps ON vps.video_id = v.id AND vps.active = true
-            LEFT JOIN problem_statements ps ON ps.id = vps.problem_statement_id
             CROSS JOIN user_department_ids udi
             JOIN video_tree vt ON vt.parent_id = v.id AND vt.child_id = v.id
             LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true

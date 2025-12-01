@@ -44,6 +44,7 @@ class QuestionOption(BaseModel):
 class GeneratedQuestion(BaseModel):
     """Generated question in response."""
 
+    question_id: str  # Database ID of the question
     question_text: str
     type: str  # 'choice' or 'frq'
     allow_multiple: bool
@@ -273,59 +274,90 @@ async def generate_questions(
         free_response = question_result.get("free_response")
         multi_select = question_result.get("multi_select")
 
-        questions_list = []
+        # Build question data structures (as dicts) before saving to DB
+        questions_data = []
         if multiple_choice:
-            questions_list.append(
-                GeneratedQuestion(
-                    question_text=multiple_choice["question_text"],
-                    type=multiple_choice["type"],
-                    allow_multiple=multiple_choice["allow_multiple"],
-                    options=[
-                        QuestionOption(
-                            option_text=opt["option_text"],
-                            type=opt["type"],
-                            is_correct=opt["is_correct"],
-                        )
-                        for opt in multiple_choice["options"]
-                    ],
-                )
-            )
+            questions_data.append({
+                "question_text": multiple_choice["question_text"],
+                "type": multiple_choice["type"],
+                "allow_multiple": multiple_choice["allow_multiple"],
+                "options": [
+                    {
+                        "option_text": opt["option_text"],
+                        "type": opt["type"],
+                        "is_correct": opt["is_correct"],
+                    }
+                    for opt in multiple_choice["options"]
+                ],
+            })
         if free_response:
-            questions_list.append(
-                GeneratedQuestion(
-                    question_text=free_response["question_text"],
-                    type=free_response["type"],
-                    allow_multiple=free_response["allow_multiple"],
-                    options=[],
-                )
-            )
+            questions_data.append({
+                "question_text": free_response["question_text"],
+                "type": free_response["type"],
+                "allow_multiple": free_response["allow_multiple"],
+                "options": [],
+            })
         if multi_select:
-            questions_list.append(
-                GeneratedQuestion(
-                    question_text=multi_select["question_text"],
-                    type=multi_select["type"],
-                    allow_multiple=multi_select["allow_multiple"],
-                    options=[
-                        QuestionOption(
-                            option_text=opt["option_text"],
-                            type=opt["type"],
-                            is_correct=opt["is_correct"],
-                        )
-                        for opt in multi_select["options"]
-                    ],
-                )
+            questions_data.append({
+                "question_text": multi_select["question_text"],
+                "type": multi_select["type"],
+                "allow_multiple": multi_select["allow_multiple"],
+                "options": [
+                    {
+                        "option_text": opt["option_text"],
+                        "type": opt["type"],
+                        "is_correct": opt["is_correct"],
+                    }
+                    for opt in multi_select["options"]
+                ],
+            })
+
+        if len(questions_data) != 3:
+            raise ValueError(
+                f"Expected 3 questions but got {len(questions_data)}. "
+                "Please ensure all three question types are generated."
             )
 
-        if len(questions_list) != 3:
-            raise ValueError(
-                f"Expected 3 questions but got {len(questions_list)}. "
-                "Please ensure all three question types are generated."
+        # Save questions to database and get their IDs
+        questions_json = json.dumps(questions_data)
+        sql_create_questions = load_sql("sql/v3/questions/create_questions_with_options.sql")
+        question_rows = await conn.fetch(sql_create_questions, questions_json)
+
+        # Map question IDs by question_text (since questions are unique by text+type+allow_multiple)
+        question_id_map: dict[str, str] = {}
+        for row in question_rows:
+            question_text = row["question_text"]
+            question_id = str(row["question_id"])
+            if question_text not in question_id_map:
+                question_id_map[question_text] = question_id
+
+        # Create GeneratedQuestion objects with IDs
+        questions_with_ids = []
+        for q_data in questions_data:
+            question_id = question_id_map.get(q_data["question_text"], "")
+            if not question_id:
+                raise ValueError(f"Failed to save question: {q_data['question_text']}")
+            questions_with_ids.append(
+                GeneratedQuestion(
+                    question_id=question_id,
+                    question_text=q_data["question_text"],
+                    type=q_data["type"],
+                    allow_multiple=q_data["allow_multiple"],
+                    options=[
+                        QuestionOption(
+                            option_text=opt["option_text"],
+                            type=opt["type"],
+                            is_correct=opt["is_correct"],
+                        )
+                        for opt in q_data["options"]
+                    ],
+                )
             )
 
         return GenerateQuestionsResponse(
             success=True,
             message="Questions generated successfully",
-            questions=questions_list,
+            questions=questions_with_ids,
         )
     except HTTPException:
         raise

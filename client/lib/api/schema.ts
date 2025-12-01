@@ -1558,6 +1558,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/videos/download/{video_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Video
+         * @description Download a video by ID.
+         */
+        get: operations["download_video_api_v3_videos_download__video_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -6231,10 +6251,8 @@ export interface components {
             length_seconds: number;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Problem Statement Ids */
-            problem_statement_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
+            /** Outline Ids */
+            outline_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
             /** Image Ids */
@@ -7771,6 +7789,8 @@ export interface components {
          * @description Generated question in response.
          */
         GeneratedQuestion: {
+            /** Question Id */
+            question_id: string;
             /** Question Text */
             question_text: string;
             /** Type */
@@ -12623,10 +12643,8 @@ export interface components {
             length_seconds: number;
             /** Department Ids */
             department_ids: string[] | null;
-            /** Problem Statement Ids */
-            problem_statement_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
+            /** Outline Ids */
+            outline_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
             /** Image Ids */
@@ -17404,6 +17422,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GenerateVideoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_video_api_v3_videos_download__video_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
