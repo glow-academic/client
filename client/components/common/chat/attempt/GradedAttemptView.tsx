@@ -9,6 +9,7 @@
 import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
 
 // UI Components
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -41,6 +42,10 @@ import {
 // Icons
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Clock,
   FileText,
   Infinity as InfinityIcon,
@@ -135,8 +140,8 @@ export default function GradedAttemptView({
   scenario,
   currentChat,
   displayChat,
-  chats: _chats,
-  currentChatIndex: _currentChatIndex,
+  chats,
+  currentChatIndex,
   isSingleChatAttempt,
   expectedChatCount: _expectedChatCount,
   scenarioDocuments,
@@ -160,7 +165,7 @@ export default function GradedAttemptView({
   calculateChatTimeTaken,
   calculateAdjustedTimeLimit,
   calculateTimeExceeded,
-  setCurrentChatIndex: _setCurrentChatIndex,
+  setCurrentChatIndex,
   setShowGrades,
   setUserHasManuallyToggledGrades,
   setShowDocuments,
@@ -175,11 +180,11 @@ export default function GradedAttemptView({
 
   return (
     <div
-      className="h-[calc(100vh-4rem)]"
+      className="h-[calc(100vh-4rem)] flex flex-col"
       data-testid="attempt-chat-container"
       data-attempt-id={attemptId || ""}
     >
-      <ResizablePanelGroup direction="horizontal" className="h-full">
+      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* Main Results Area */}
         <ResizablePanel
           defaultSize={
@@ -412,12 +417,7 @@ export default function GradedAttemptView({
                       </div>
                     </div>
 
-                    {/* Row 2: Scenario picker */}
-                    {!isSingleChatAttempt && chatPicker && (
-                      <div className="w-full">{chatPicker}</div>
-                    )}
-
-                    {/* Row 3: Scenario description */}
+                    {/* Row 2: Scenario description */}
                     <div className="text-left text-sm md:text-base">
                       <span className="font-medium">
                         {selectedScenario?.problemStatement ||
@@ -725,11 +725,6 @@ export default function GradedAttemptView({
                       </CollapsibleContent>
                     )}
                 </Collapsible>
-
-                {/* Chat picker row - show when multi-chat attempt, right below the sections */}
-                {!isSingleChatAttempt && chatPicker && (
-                  <div className="flex justify-end">{chatPicker}</div>
-                )}
               </div>
 
               <CardContent className="flex-1 flex flex-col p-0 min-h-0">
@@ -854,6 +849,108 @@ export default function GradedAttemptView({
             );
           })()}
       </ResizablePanelGroup>
+
+      {/* Pagination Footer - Chat Navigation */}
+      {!isSingleChatAttempt && chats && chats.length > 0 && (
+        <div className="border-t px-4 py-3 flex items-center bg-background relative">
+          {/* Left Side - First and Previous Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(0)}
+              disabled={currentChatIndex === 0}
+            >
+              <span className="sr-only">Go to first chat</span>
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(currentChatIndex - 1)}
+              disabled={currentChatIndex === 0}
+            >
+              <span className="sr-only">Go to previous chat</span>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Spacer - flex grow to push content apart */}
+          <div className="flex-1" />
+
+          {/* Center - Current Chat Info - Badge + Name + Count */}
+          <div className="flex items-center gap-2 px-4 absolute left-1/2 -translate-x-1/2">
+            {(() => {
+              const currentChat = chats[currentChatIndex];
+              if (!currentChat) return null;
+
+              const rubricResult = allDynamicRubrics.find(
+                (rubric) => rubric.chatId === currentChat.id
+              );
+
+              return (
+                <>
+                  {currentChat.completed && !rubricResult ? (
+                    <Badge variant="secondary" className="text-xs">
+                      Incomplete
+                    </Badge>
+                  ) : rubricResult ? (
+                    <Badge
+                      variant={
+                        rubricResult.passed ? "default" : "destructive"
+                      }
+                      className={`text-xs ${
+                        rubricResult.passed
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                      }`}
+                    >
+                      {rubricResult.passed ? "Pass" : "Fail"}
+                    </Badge>
+                  ) : null}
+                  <span className="text-sm font-medium">
+                    {currentChat.title || `Chat ${currentChatIndex + 1}`}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    ({currentChatIndex + 1} of {chats.length})
+                  </span>
+                </>
+              );
+            })()}
+          </div>
+
+          {/* Spacer - flex grow to push content apart */}
+          <div className="flex-1" />
+
+          {/* Right Side - Next and Last Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(currentChatIndex + 1)}
+              disabled={currentChatIndex >= chats.length - 1}
+            >
+              <span className="sr-only">Go to next chat</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-8 p-0"
+              onClick={() => setCurrentChatIndex(chats.length - 1)}
+              disabled={currentChatIndex >= chats.length - 1}
+            >
+              <span className="sr-only">Go to last chat</span>
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Document Modal - Mobile Only - hide if hideDocuments is true */}
       {!hideDocuments && (
