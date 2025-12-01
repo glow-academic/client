@@ -84,7 +84,8 @@ message_counts AS (
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
   FROM messages m
-  JOIN runs r ON r.id = m.run_id
+  JOIN message_runs mr ON mr.message_id = m.id
+  JOIN runs r ON r.id = mr.run_id
   JOIN chat_runs rc ON rc.run_id = r.id
   GROUP BY rc.chat_id
 ),
@@ -104,7 +105,8 @@ message_deltas AS (
     END AS delta_seconds,
     m.created_at
   FROM messages m
-  JOIN runs r ON r.id = m.run_id
+  JOIN message_runs mr ON mr.message_id = m.id
+  JOIN runs r ON r.id = mr.run_id
   JOIN chat_runs rc ON rc.run_id = r.id
   JOIN chats c ON c.id = rc.chat_id
 ),
@@ -370,8 +372,9 @@ CREATE INDEX IF NOT EXISTS analytics_is_archived_true_idx
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
   ON grades (run_id, eval, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS messages_run_created_role_idx
-  ON messages (run_id, created_at, role);
+-- Index for message_runs (replaces old messages.run_id index)
+CREATE INDEX IF NOT EXISTS message_runs_run_created_idx
+  ON message_runs (run_id, created_at);
 
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
   ON chats (id, created_at);

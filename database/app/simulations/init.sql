@@ -146,20 +146,30 @@ CREATE TABLE chat_runs (
 CREATE INDEX ON chat_runs (run_id);
 CREATE INDEX ON chat_runs (chat_id);
 
--- Unified messages table - all messages link to runs
+-- Unified messages table - messages linked to runs via message_runs junction table (BCNF normalization)
 CREATE TABLE messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   content    TEXT        NOT NULL,
   role       message_role NOT NULL,
-  run_id     UUID        NOT NULL REFERENCES runs(id)  ON DELETE CASCADE,
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE,
   audio      BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
-CREATE INDEX ON messages (run_id);
-CREATE INDEX ON messages (run_id, created_at);
+-- Message-runs junction table (allows messages to belong to multiple runs)
+-- This enables sharing of system/developer messages across runs
+CREATE TABLE message_runs (
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  run_id UUID NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, run_id)
+);
+
+CREATE INDEX ON message_runs (message_id);
+CREATE INDEX ON message_runs (run_id);
+CREATE INDEX ON message_runs (run_id, created_at);
 
 -- Simulation hints collection table (BCNF normalization)
 -- Normalized text collection pattern: composite PK with idx, created_at only (matches scenario_objectives)
