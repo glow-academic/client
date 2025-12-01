@@ -9,10 +9,11 @@ WITH user_profile AS (
 -- Pre-aggregate persona usage counts for all models
 persona_usage AS (
     SELECT 
-        model_id,
+        ptm.model_id,
         COUNT(*) as usage_count
-    FROM personas
-    GROUP BY model_id
+    FROM personas p
+    JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
+    GROUP BY ptm.model_id
 ),
 -- Pre-aggregate agent usage counts for all models
 agent_usage AS (

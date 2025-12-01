@@ -67,11 +67,12 @@ scenario_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
         ss.scenario_id,
         ss.hints_enabled,
-        ss.objectives_enabled,
-        ss.image_input_enabled,
+        s.objectives_enabled,
+        s.image_enabled as image_input_enabled,
         ss.input_guardrail_enabled,
         ss.output_guardrail_enabled
     FROM simulation_scenarios ss
+    JOIN scenarios s ON s.id = ss.scenario_id
     WHERE ss.active = true
     ORDER BY ss.scenario_id, ss.position
 ),

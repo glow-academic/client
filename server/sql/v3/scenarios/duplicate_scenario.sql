@@ -2,11 +2,10 @@ WITH source_scenario AS (
     SELECT 
         s.id as source_id,
         s.name,
-        s.hints_enabled,
         s.objectives_enabled,
-        s.image_input_enabled,
-        s.input_guardrail_enabled,
-        s.output_guardrail_enabled,
+        s.image_enabled,
+        s.documents_enabled,
+        s.document_vision_enabled,
         ps.problem_statement,
         ps.id as problem_statement_id,
         ps.name as problem_statement_name
@@ -19,22 +18,20 @@ new_scenario AS (
     INSERT INTO scenarios (
         name,
         active,
-        hints_enabled,
         objectives_enabled,
-        image_input_enabled,
-        input_guardrail_enabled,
-        output_guardrail_enabled,
+        image_enabled,
+        documents_enabled,
+        document_vision_enabled,
         created_at,
         updated_at
     )
     SELECT 
         ss.name || ' Copy',
         false,
-        ss.hints_enabled,
         ss.objectives_enabled,
-        ss.image_input_enabled,
-        ss.input_guardrail_enabled,
-        ss.output_guardrail_enabled,
+        ss.image_enabled,
+        ss.documents_enabled,
+        ss.document_vision_enabled,
         NOW(),
         NOW()
     FROM source_scenario ss

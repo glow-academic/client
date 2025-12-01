@@ -73,6 +73,7 @@ export interface ContentItem {
   length_seconds?: number; // Video-specific
   // Switch fields (scenarios only, except show fields which apply to both)
   hints_enabled?: boolean;
+  objectives_enabled?: boolean;
   input_guardrail_enabled?: boolean;
   output_guardrail_enabled?: boolean;
   copy_paste_allowed?: boolean;
@@ -94,6 +95,7 @@ export interface SimulationContentTableProps {
   onEditScenario?: (scenarioId: string) => void;
   // Switch toggle handlers
   onHintsToggle?: (contentId: string, enabled: boolean) => void;
+  onObjectivesToggle?: (contentId: string, enabled: boolean) => void;
   onInputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
   onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
@@ -121,6 +123,7 @@ export function SimulationContentTable({
   onRemove,
   onEditScenario,
   onHintsToggle,
+  onObjectivesToggle,
   onInputGuardrailToggle,
   onOutputGuardrailToggle,
   onCopyPasteToggle,
@@ -768,11 +771,12 @@ export function SimulationContentTable({
       onObjectivesToggle,
       onInputGuardrailToggle,
       onOutputGuardrailToggle,
-      onImageInputToggle,
       onCopyPasteToggle,
       onAudioToggle,
       onTextToggle,
-      onShowScenarioToggle,
+      onShowProblemStatementToggle,
+      onShowObjectivesToggle,
+      onShowImageToggle,
       onRubricChange,
       onTimeLimitChange,
       rubricMapping,

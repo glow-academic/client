@@ -66,10 +66,10 @@ WITH user_departments AS (
                 (ss.position = 1) as default_scenario,
                 ss.position,
                 ss.hints_enabled,
-                ss.objectives_enabled,
+                s.objectives_enabled,
                 ss.input_guardrail_enabled,
                 ss.output_guardrail_enabled,
-                ss.image_input_enabled,
+                s.image_enabled as image_input_enabled,
                 ss.rubric_id,
                 stl.time_limit_seconds, -- Added per-scenario time limit
                 COALESCE(
@@ -185,8 +185,7 @@ WITH user_departments AS (
         valid_videos_list AS (
             SELECT DISTINCT
                 v.id,
-                v.name,
-                v.description
+                v.name
             FROM videos v
             LEFT JOIN video_departments vd ON vd.video_id = v.id AND vd.active = true
             CROSS JOIN user_department_ids udi
@@ -207,7 +206,7 @@ WITH user_departments AS (
                     vvl.id::text,
                     jsonb_build_object(
                         'name', vvl.name,
-                        'description', COALESCE(vvl.description, ''),
+                        'description', '',
                         'length_seconds', v.length_seconds
                     )
                 ),
