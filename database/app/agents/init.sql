@@ -15,7 +15,9 @@ CREATE TYPE agent_role AS ENUM (
   'title',
   'image',
   'video',
-  'simulation'
+  'simulation',
+  'outline',
+  'question'
 );
 
 -- ============================================================================

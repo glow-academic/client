@@ -69,31 +69,19 @@ CREATE INDEX ON simulation_videos (video_id);
 CREATE UNIQUE INDEX simulation_videos_position_uniq
   ON simulation_videos(simulation_id, position);
 
--- Video → Problem Statements junction table (BCNF normalization)
-CREATE TABLE video_problem_statements (
+-- Video → Outlines junction table (BCNF normalization)
+CREATE TABLE video_outlines (
   video_id            UUID NOT NULL REFERENCES videos(id)            ON DELETE CASCADE,
-  problem_statement_id UUID NOT NULL REFERENCES problem_statements(id) ON DELETE CASCADE,
+  outline_id         UUID NOT NULL REFERENCES outlines(id)           ON DELETE CASCADE,
   active              BOOLEAN NOT NULL DEFAULT TRUE,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (video_id, problem_statement_id)
+  PRIMARY KEY (video_id, outline_id)
 );
 
-CREATE INDEX ON video_problem_statements (video_id);
-CREATE INDEX ON video_problem_statements (problem_statement_id);
-CREATE INDEX ON video_problem_statements (video_id, active);
-
--- Video → Objectives junction table (BCNF normalization)
-CREATE TABLE video_objectives (
-  video_id    UUID NOT NULL REFERENCES videos(id)     ON DELETE CASCADE,
-  objective_id UUID NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
-  idx         INT  NOT NULL,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (video_id, objective_id)
-);
-
-CREATE INDEX ON video_objectives (video_id);
-CREATE INDEX ON video_objectives (objective_id);
+CREATE INDEX ON video_outlines (video_id);
+CREATE INDEX ON video_outlines (outline_id);
+CREATE INDEX ON video_outlines (video_id, active);
 
 -- Video → Policies junction table (BCNF normalization)
 CREATE TABLE video_policies (

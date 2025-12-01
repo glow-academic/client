@@ -31,6 +31,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i app/attributes/problem_statements/init.sql
 \i app/attributes/objectives/init.sql
 \i app/attributes/images/init.sql
+\i app/attributes/video_outlines/init.sql
 
 -- 2. Assistant tables
 \i app/assistants/init.sql
