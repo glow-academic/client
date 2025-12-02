@@ -17710,6 +17710,17 @@
               }
             ],
             "title": "Outline Id"
+          },
+          "video_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Name"
           }
         },
         "type": "object",

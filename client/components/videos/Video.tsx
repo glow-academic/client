@@ -441,6 +441,10 @@ export default function Video({
         if (result.outline_id) {
           setSelectedOutlineId(result.outline_id);
         }
+        // Update video name if provided by the agent
+        if (result.video_name) {
+          handleInputChange("name", result.video_name);
+        }
         toast.success("Outline generated successfully!");
       }
     } catch (error) {

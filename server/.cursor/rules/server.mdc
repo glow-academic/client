@@ -15,17 +15,37 @@ alwaysApply: false
 
 ## Architecture Pattern
 - **Routes** (`app/api/v3/[resource]/`): One Python file per route (e.g., `detail_default.py`, `create.py`)
-- **SQL files** (`sql/v3/[resource]/`): One SQL file per route (e.g., `get_persona_detail_default_complete.sql`)
+- **SQL files** (`sql/v3/[resource]/`): One SQL file per route
+- **SQL naming convention**: `[operation]_[resource]_complete.sql` (e.g., `get_persona_detail_complete.sql`, `create_persona_complete.sql`, `update_persona_complete.sql`)
 - **Routes load SQL**: Use `load_sql()` helper to load SQL files
 - **Routes own execution**: Routes control transactions and execution directly
 
 ## Database Access
 - **Use asyncpg** - no ORM
-- **SQL files per route**: Each route has a corresponding SQL file in `server/sql/v3/[resource]/[operation].sql`
-- **Load SQL**: Routes use `load_sql("sql/v3/[resource]/[file].sql")` to load queries
-- **Direct execution**: Routes execute SQL directly with `conn.fetchrow()`, `conn.fetch()`, etc.
-- Keep SQL readable, well-commented, and parameterized
-- Routes own transaction control - use `transaction()` decorator when needed
+- **SQL files per route**: Each route has a corresponding SQL file in `server/sql/v3/[resource]/[operation]_complete.sql`
+- **Load SQL**: Routes use `load_sql("sql/v3/[resource]/[operation]_complete.sql")` to load queries
+- **Direct execution**: Routes execute SQL directly with `conn.fetchrow()`, `conn.fetch()`, `conn.execute()`, etc.
+- Keep SQL readable, well-commented, and parameterized (use `$1`, `$2`, etc. for parameters)
+
+## Transactions
+- **Use `transaction()` context manager** for mutations (create, update, delete operations)
+- **Read operations** typically don't need transactions (single query)
+- **Multi-step operations** require transactions (e.g., create persona + link departments + link models)
+- **Pattern**: `async with transaction(conn):` wraps all database operations that must succeed or fail together
+- Example: `create.py` routes use transactions; `detail_default.py` routes typically don't
+
+## Error Handling
+- **Consistent error handling pattern** in all routes:
+  ```python
+  except HTTPException:
+      raise  # Re-raise HTTP exceptions as-is
+  except ValueError as e:
+      raise HTTPException(status_code=400, detail=str(e)) from e  # Validation errors
+  except Exception as e:
+      handle_route_error(...)  # Unexpected errors with logging
+  ```
+- **Always track SQL query and params** for error reporting: `sql_query: str | None = None`, `sql_params: tuple[Any, ...] | None = None`
+- **Use `handle_route_error()`** for unexpected exceptions - it logs errors with context
 
 ## Testing
 - **Unit tests**: For utils and small utilities (`server/tests/unit/`)
@@ -35,6 +55,21 @@ alwaysApply: false
 - Test commands: `make test-unit`, `make test-integration`, `make test-e2e`
 - Coverage: `make test-cov`
 - Use fixtures for common test data and database setup
+
+## Caching
+- **Read operations**: Use Redis caching with `get_cached()` and `set_cached()`
+- **Cache keys**: Generate with `cache_key(http_request.url.path, body_dict)` from path and request body
+- **Cache tags**: Use resource tags (e.g., `["personas"]`) for invalidation
+- **Cache headers**: Set `X-Cache-Hit` (0 or 1) and `X-Cache-Tags` headers on responses
+- **Mutations**: Invalidate cache with `invalidate_tags(tags)` after successful mutations
+- **Invalidation headers**: Set `X-Invalidate-Tags` header on mutation responses
+- **Pattern**: Check cache first, return cached if found, otherwise execute SQL and cache result
+
+## Request/Response Schemas
+- **Inline schemas**: Define Pydantic models at the top of each route file
+- **Request schemas**: Inherit from `BaseModel`, include all required fields
+- **Response schemas**: Use `response_model` parameter in route decorator
+- **Type safety**: All routes use type hints and Pydantic validation
 
 ## Code Quality
 - Run **`make typecheck`** (MyPy) before committing

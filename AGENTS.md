@@ -190,3 +190,30 @@ docker compose up --build -d
 ```bash
 tree -I node_modules -I uploads -I history -I screenshots -I queries -I mutations
 ```
+
+## Quick Reference - Common Patterns
+
+### File Locations
+- **Routes**: `server/app/api/v3/[resource]/[operation].py`
+- **SQL**: `server/sql/v3/[resource]/[operation]_complete.sql`
+- **Tests**: `server/tests/integration/v3/[resource]/test_[operation].py`
+- **Server actions**: `client/app/(main)/[resource]/page.tsx`
+- **Components**: `client/components/[resource]/[Component].tsx`
+
+### SQL Naming Convention
+- Pattern: `[operation]_[resource]_complete.sql`
+- Examples: `get_persona_detail_complete.sql`, `create_persona_complete.sql`
+
+### Common Gotchas
+- **JSON aggregation**: Use `COALESCE(json_agg(...), '[]'::json)` to avoid NULL
+- **Cache invalidation**: Always call `invalidate_tags()` after mutations
+- **Transactions**: Use `async with transaction(conn):` for mutations, not reads
+- **Profile ID**: Always include in request body for mutations
+- **Error tracking**: Initialize `sql_query` and `sql_params` at route start
+
+### Testing Profile ID
+- Use `965bd24f-dfae-4063-b370-e1373df46322` for testing (see `.cursor/commands/profile.md`)
+
+### Type Safety
+- **Server**: Pydantic models for request/response
+- **Client**: `InputOf<"/api/v3/[resource]/[operation]", "post">` and `OutputOf<...>`

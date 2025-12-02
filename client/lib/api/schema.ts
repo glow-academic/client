@@ -7689,6 +7689,8 @@ export interface components {
             outline: string;
             /** Outline Id */
             outline_id?: string | null;
+            /** Video Name */
+            video_name?: string | null;
         };
         /**
          * GenerateQuestionsRequest

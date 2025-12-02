@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from agents import Tool, function_tool
 from pydantic import Field
@@ -63,9 +63,28 @@ def create_outline_tools(group_id: uuid.UUID | None) -> list[Tool]:
                 logger.info(f"✓ Set question timestamps for {len(timestamps_dict)} question(s)")
         return "Set outline successfully"
 
-    tool = function_tool(set_outline)
-    tools.append(cast(Tool, tool))
+    async def set_video_name(
+        video_name: str = Field(
+            description="A descriptive name for the video based on its content, policies, and purpose. This should be a clear, concise title that reflects what the video is about (e.g., 'Customer Service Best Practices', 'Safety Protocol Overview')."
+        ),
+    ) -> str:
+        """Set the video name.
+        
+        Args:
+            video_name: Descriptive name for the video
+            
+        Returns:
+            Confirmation message
+        """
+        outline_results["video_name"] = video_name
+        outline_progress["video_name"] = True
+        
+        logger.info(f"✓ Set video name: {video_name}")
+        return "Set video name successfully"
+
+    tools.append(function_tool(set_outline))
+    tools.append(function_tool(set_video_name))
     
     logger.info(f"Created {len(tools)} outline tool(s)")
-    return cast(list[Tool], tools)
+    return tools
 

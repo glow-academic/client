@@ -52,6 +52,7 @@ class GenerateOutlineResponse(BaseModel):
     name: str
     outline: str
     outline_id: str | None = None
+    video_name: str | None = None
 
 
 router = APIRouter()
@@ -287,11 +288,30 @@ async def generate_outline(
         name = outline_result.get("name", "Video Outline")
         outline = outline_result.get("outline", "")
         question_timestamps = outline_result.get("question_timestamps")
+        video_name = outline_result.get("video_name")
 
         if not outline:
             raise ValueError("Outline generation failed - no outline content returned")
 
         outline_id: str | None = None
+        
+        # Update video name if video_name was set and videoId is provided
+        if request.videoId and video_name:
+            try:
+                video_id = uuid.UUID(request.videoId)
+                sql_update_name = load_sql("sql/v3/videos/update_video_name.sql")
+                name_row = await conn.fetchrow(
+                    sql_update_name,
+                    str(video_id),
+                    video_name,
+                )
+                if name_row:
+                    logger.info(f"Updated video name to '{video_name}' for video {request.videoId}")
+                else:
+                    logger.warning(f"Failed to update video name for video {request.videoId}")
+            except Exception as e:
+                logger.warning(f"Failed to update video name: {e}")
+                # Don't fail the request if video name update fails, but log the error
         
         # Save outline to database if videoId is provided
         if request.videoId:
@@ -340,6 +360,7 @@ async def generate_outline(
             name=name,
             outline=outline,
             outline_id=outline_id,
+            video_name=video_name,
         )
     except HTTPException:
         raise
