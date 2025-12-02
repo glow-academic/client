@@ -120,7 +120,7 @@ export default function Info() {
           onClick={() => {
             // Stay on same page, no navigation
           }}
-          size="md"
+          size="lg"
           invertColors={isOverBlueSection}
         />
       </motion.div>
@@ -133,10 +133,42 @@ export default function Info() {
         className="fixed top-6 right-6 z-50"
       >
         <div className="flex items-center gap-3">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-transparent"
+          >
             <Link
               href="/login"
-              className="px-6 py-2 rounded-lg font-semibold transition-all shadow-lg bg-blue-500 text-white"
+              className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 border-2 ${
+                isOverBlueSection
+                  ? "bg-white/10 backdrop-blur-sm border-white text-white hover:bg-white/20 shadow-lg"
+                  : "border-transparent text-white"
+              }`}
+              style={
+                !isOverBlueSection
+                  ? {
+                      background:
+                        "linear-gradient(to bottom right, rgb(147, 197, 253), rgb(96, 165, 250))",
+                      boxShadow: "none",
+                      textDecoration: "none",
+                    }
+                  : {
+                      textDecoration: "none",
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (!isOverBlueSection) {
+                  e.currentTarget.style.background =
+                    "linear-gradient(to bottom right, rgb(96, 165, 250), rgb(59, 130, 246))";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isOverBlueSection) {
+                  e.currentTarget.style.background =
+                    "linear-gradient(to bottom right, rgb(147, 197, 253), rgb(96, 165, 250))";
+                }
+              }}
             >
               Login
             </Link>

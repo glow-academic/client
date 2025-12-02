@@ -1,12 +1,10 @@
 /**
  * GlowIconComponent.tsx
  * Centralized Glow icon component - single entrypoint for all icon usage
- * Can be extended to dynamically generate SVGs in the future
+ * Dynamically generates SVG - no static files needed
  * @AshokSaravanan222 & @siladiea
  * 12/2025
  */
-
-import Image from "next/image";
 
 /**
  * Configuration for the Glow icon
@@ -156,69 +154,37 @@ export interface GlowIconComponentProps {
    */
   size?: number;
   /**
-   * Whether to use the simple version (smaller, optimized for favicons)
-   * Currently uses static file, but can be extended to use generateGlowIconSVG
-   */
-  simple?: boolean;
-  /**
    * Additional className for styling
    */
   className?: string;
   /**
-   * Whether to render as inline SVG instead of using Image component
-   * Use this when you need the SVG directly in the DOM
-   */
-  inline?: boolean;
-  /**
-   * Custom configuration for dynamic generation (only used when inline=true)
+   * Custom configuration for dynamic generation
    */
   config?: GlowIconConfig;
   /**
-   * Custom gradient ID (only used when inline=true)
+   * Custom gradient ID (for avoiding conflicts when multiple instances)
    */
   gradientId?: string;
 }
 
 /**
  * GlowIconComponent - Centralized icon component
- * Single entrypoint for all Glow icon usage
+ * Single entrypoint for all Glow icon usage - dynamically generates SVG
  *
  * Usage:
- * - As Image component (default): <GlowIconComponent size={32} />
- * - As inline SVG: <GlowIconComponent size={32} inline />
- *
- * Future: Can be extended to use generateGlowIconSVG() for dynamic generation
+ * <GlowIconComponent size={32} />
  */
 export function GlowIconComponent({
   size = 32,
-  simple = false,
   className = "",
-  inline = false,
   config,
   gradientId,
 }: GlowIconComponentProps) {
-  // If inline, render SVG directly as React component
-  if (inline) {
-    return (
-      <GlowIconSVGElement
-        config={{ size, ...config }}
-        {...(gradientId ? { gradientId } : {})}
-        className={className}
-      />
-    );
-  }
-
-  // Otherwise, use static file (can be replaced with dynamic generation in the future)
-  const iconPath = simple ? "/glow-icon-simple.svg" : "/glow-icon.svg";
-
   return (
-    <Image
-      src={iconPath}
-      alt="GLOW Icon"
-      width={size}
-      height={size}
+    <GlowIconSVGElement
+      config={{ size, ...config }}
+      {...(gradientId ? { gradientId } : {})}
       className={className}
-      priority
     />
   );
 }

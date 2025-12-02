@@ -365,28 +365,7 @@ export default function Login({ providers = [], guest_login_enabled = true }: Lo
               className="cursor-pointer hover:opacity-90 transition-opacity flex flex-col items-center space-y-3"
             >
               {/* Logo Icon - uses centralized GlowIconComponent */}
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                <GlowIconComponent
-                  size={64}
-                  inline={true}
-                  className="w-full h-full"
-                />
-                {/* Decorative sparkles */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div
-                    className="absolute top-2 right-2 animate-ping"
-                    style={{ animationDelay: "0.5s" }}
-                  >
-                    <SparkleIcon className="w-3 h-3 text-white/70" />
-                  </div>
-                  <div
-                    className="absolute bottom-2 left-2 animate-pulse"
-                    style={{ animationDelay: "1s" }}
-                  >
-                    <SparkleIcon className="w-2 h-2 text-white/50" />
-                  </div>
-                </div>
-              </div>
+              <GlowIconComponent size={64} className="shadow-lg" />
               {/* GLOW Text */}
               <h1 className="text-3xl font-bold bg-gradient-to-br from-blue-300 to-blue-400 bg-clip-text text-transparent">
                 GLOW
