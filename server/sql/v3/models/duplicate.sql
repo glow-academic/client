@@ -14,9 +14,6 @@ source_model AS (
         name,
         description,
         active,
-        image_model,
-        input_ppm,
-        output_ppm,
         provider
     FROM models
     WHERE id = $1
@@ -25,19 +22,13 @@ INSERT INTO models (
     provider,
     name,
     description,
-    active,
-    image_model,
-    input_ppm,
-    output_ppm
+    active
 )
 SELECT 
     sm.provider,
     sm.name,
     sm.description || ' Copy',
-    sm.active,
-    sm.image_model,
-    sm.input_ppm,
-    sm.output_ppm
+    sm.active
 FROM source_model sm
 RETURNING id
 

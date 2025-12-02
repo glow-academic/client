@@ -5779,20 +5779,12 @@ export interface components {
         CreateModelRequest: {
             /** Provider */
             provider: string;
-            /** Model Type */
-            model_type: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Key Id */
@@ -8648,10 +8640,6 @@ export interface components {
             active: boolean;
             /** Image Model */
             image_model: boolean;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
             /** Provider */
             provider: string;
             /** Base Url */
@@ -12306,20 +12294,12 @@ export interface components {
             modelId: string;
             /** Provider */
             provider: string;
-            /** Model Type */
-            model_type: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
             /** Active */
             active: boolean;
-            /** Image Model */
-            image_model: boolean;
-            /** Input Ppm */
-            input_ppm: number;
-            /** Output Ppm */
-            output_ppm: number;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Key Id */

@@ -27,16 +27,6 @@ image_model_check AS (
     FROM model_modalities
     WHERE model_id = $1::uuid AND modality = 'image' AND is_input = false AND active = true
 ),
--- Compute input_ppm and output_ppm from pricing data (using million_text unit)
--- Note: Prices are stored as REAL, but we return as numeric for compatibility
-model_ppm_data AS (
-    SELECT 
-        COALESCE(MAX(price) FILTER (WHERE mp.pricing_type = 'input' AND u.name = 'million_text' AND u.unit_category = 'tokens'), 0.0)::numeric as input_ppm,
-        COALESCE(MAX(price) FILTER (WHERE mp.pricing_type = 'output' AND u.name = 'million_text' AND u.unit_category = 'tokens'), 0.0)::numeric as output_ppm
-    FROM model_pricing mp
-    JOIN units u ON u.id = mp.unit_id
-    WHERE mp.model_id = $1::uuid AND mp.active = true AND u.active = true
-),
 model_endpoint_data AS (
     SELECT 
         me.base_url
@@ -230,8 +220,6 @@ all_units_data AS (
 SELECT 
     m.*,
     COALESCE(imc.image_model, false) as image_model,
-    COALESCE(mppm.input_ppm, 0) as input_ppm,
-    COALESCE(mppm.output_ppm, 0) as output_ppm,
     ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
     COALESCE(med.base_url, '') as base_url,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
@@ -270,5 +258,4 @@ LEFT JOIN model_reasoning_levels_data mrl ON true
 LEFT JOIN model_voices_data mv ON true
 LEFT JOIN model_qualities_data mq ON true
 LEFT JOIN image_model_check imc ON true
-LEFT JOIN model_ppm_data mppm ON true
 

@@ -22,17 +22,13 @@ class CreateModelRequest(BaseModel):
     """Request to create model."""
 
     provider: str  # enum: 'openai', 'gemini', 'custom'
-    model_type: str  # enum: 'text', 'audio', 'video' (immutable after creation) - deprecated, use modalities instead
     name: str
     description: str
     active: bool
-    image_model: bool
-    input_ppm: float
-    output_ppm: float
     department_ids: list[str] | None = None
     key_id: str | None = None
     base_url: str | None = None  # Required if provider is 'custom'
-    # New configuration fields
+    # Configuration fields
     temperature_bounds: dict[str, Any] | None = None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
     pricing: list[PricingEntry] | None = None
     modalities: dict[str, list[str]] | None = None  # { input: list[str], output: list[str] }
@@ -68,22 +64,14 @@ async def create_model(
 
     try:
         async with transaction(conn):
-            # Validate model_type
-            if request.model_type not in ["text", "audio", "video"]:
-                raise ValueError(f"Invalid model_type: {request.model_type}. Must be 'text', 'audio', or 'video'")
-            
             sql_query = load_sql("sql/v3/models/create_model_complete.sql")
             # Ensure department_ids is always an array (empty if None)
             department_ids = request.department_ids if request.department_ids else []
             sql_params = (
                 request.provider,
-                request.model_type,
                 request.name,
                 request.description,
                 request.active,
-                request.image_model,
-                request.input_ppm,
-                request.output_ppm,
                 department_ids,
                 request.key_id,
                 request.base_url,
@@ -92,13 +80,9 @@ async def create_model(
             result = await conn.fetchrow(
                 sql_query,
                 request.provider,
-                request.model_type,
                 request.name,
                 request.description,
                 request.active,
-                request.image_model,
-                request.input_ppm,
-                request.output_ppm,
                 department_ids,
                 request.key_id,
                 request.base_url,

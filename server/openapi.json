@@ -13020,10 +13020,6 @@
             "type": "string",
             "title": "Provider"
           },
-          "model_type": {
-            "type": "string",
-            "title": "Model Type"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -13035,18 +13031,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "image_model": {
-            "type": "boolean",
-            "title": "Image Model"
-          },
-          "input_ppm": {
-            "type": "number",
-            "title": "Input Ppm"
-          },
-          "output_ppm": {
-            "type": "number",
-            "title": "Output Ppm"
           },
           "department_ids": {
             "anyOf": [
@@ -13177,13 +13161,9 @@
         "type": "object",
         "required": [
           "provider",
-          "model_type",
           "name",
           "description",
           "active",
-          "image_model",
-          "input_ppm",
-          "output_ppm",
           "profileId"
         ],
         "title": "CreateModelRequest",
@@ -20306,14 +20286,6 @@
             "type": "boolean",
             "title": "Image Model"
           },
-          "input_ppm": {
-            "type": "integer",
-            "title": "Input Ppm"
-          },
-          "output_ppm": {
-            "type": "integer",
-            "title": "Output Ppm"
-          },
           "provider": {
             "type": "string",
             "title": "Provider"
@@ -20435,8 +20407,6 @@
           "description",
           "active",
           "image_model",
-          "input_ppm",
-          "output_ppm",
           "provider",
           "base_url",
           "valid_providers",
@@ -29724,10 +29694,6 @@
             "type": "string",
             "title": "Provider"
           },
-          "model_type": {
-            "type": "string",
-            "title": "Model Type"
-          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -29739,18 +29705,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "image_model": {
-            "type": "boolean",
-            "title": "Image Model"
-          },
-          "input_ppm": {
-            "type": "number",
-            "title": "Input Ppm"
-          },
-          "output_ppm": {
-            "type": "number",
-            "title": "Output Ppm"
           },
           "department_ids": {
             "anyOf": [
@@ -29882,13 +29836,9 @@
         "required": [
           "modelId",
           "provider",
-          "model_type",
           "name",
           "description",
           "active",
-          "image_model",
-          "input_ppm",
-          "output_ppm",
           "profileId"
         ],
         "title": "UpdateModelRequest",

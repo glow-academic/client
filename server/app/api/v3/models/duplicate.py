@@ -51,11 +51,7 @@ async def duplicate_model(
                     name,
                     description,
                     active,
-                    custom_model,
-                    image_model,
-                    input_ppm,
-                    output_ppm,
-                    provider_id
+                    provider
                 FROM models
                 WHERE id = $1
             """

@@ -17,7 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { KeyPicker } from "@/components/common/forms/KeyPicker";
-import { ModelTypePicker } from "@/components/common/forms/ModelTypePicker";
 import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
 import { TemperatureBoundsPicker, type TemperatureBounds } from "@/components/common/forms/TemperatureBoundsPicker";
 import { PricingPicker, type PricingEntry } from "@/components/common/forms/PricingPicker";
@@ -29,18 +28,14 @@ import { UnitPicker, type UnitItem } from "@/components/common/forms/UnitPicker"
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
-import { Power, Settings } from "lucide-react";
+import { Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 
 interface FormErrors {
   name?: string;
   description?: string;
   provider?: string;
-  inputPpm?: string;
-  outputPpm?: string;
   baseUrl?: string;
 }
 
@@ -48,15 +43,11 @@ interface FormData {
   name?: string;
   description?: string;
   provider?: string;
-  modelType?: string;
   active?: boolean;
-  customModel?: boolean; // Determined by provider === 'custom' or baseUrl presence
   baseUrl?: string;
-  inputPpm?: string; // USD per 1M input tokens (deprecated, use pricing)
-  outputPpm?: string; // USD per 1M output tokens (deprecated, use pricing)
   departmentIds?: string[] | null;
   keyId?: string | null;
-  // New configuration fields
+  // Configuration fields
   temperature_bounds?: TemperatureBounds;
   pricing?: PricingEntry[];
   modalities?: { input: string[]; output: string[] };
@@ -129,12 +120,8 @@ export default function Model({
       name: "",
       description: "",
       provider: "",
-      modelType: "text",
       active: true,
-      customModel: false,
       baseUrl: "",
-      inputPpm: "0",
-      outputPpm: "0",
       departmentIds: defaultDepartmentIds,
       keyId: null,
     }),
@@ -143,8 +130,6 @@ export default function Model({
 
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
-  const [units, setUnits] = useState<UnitItem[]>([]);
-  const [loadingUnits, setLoadingUnits] = useState(false);
 
   // Use server-provided data
   const modelDetail = serverModelDetail;
@@ -292,43 +277,24 @@ export default function Model({
     clearEntityMetadata,
   ]);
 
-  // Load units from API
-  useEffect(() => {
-    const loadUnits = async () => {
-      setLoadingUnits(true);
-      try {
-        const response = await api.post("/units/list", { body: {} });
-        setUnits(response.units || []);
-      } catch (error) {
-        console.error("Failed to load units:", error);
-        toast.error("Failed to load units");
-      } finally {
-        setLoadingUnits(false);
-      }
-    };
-    loadUnits();
-  }, []);
+  // Get units from model detail response (already included)
+  const units = useMemo(() => {
+    return modelDetail?.units || modelDetailDefault?.units || [];
+  }, [modelDetail, modelDetailDefault]);
 
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
     if (isEditMode && modelDetail) {
       // We are in EDIT mode and have the model's data, so populate the form
-      // Parse temperature bounds
+      // Parse temperature bounds (always range)
       let temperature_bounds: TemperatureBounds | undefined;
       if (modelDetail.temperature_bounds) {
         const tb = modelDetail.temperature_bounds;
-        if (tb.values && tb.values.length > 0) {
-          temperature_bounds = {
-            type: "values",
-            values: tb.values,
-          };
-        } else {
-          temperature_bounds = {
-            type: "range",
-            lower: tb.lower ?? 0.0,
-            upper: tb.upper ?? 1.0,
-          };
-        }
+        temperature_bounds = {
+          type: "range",
+          lower: tb.lower ?? 0.0,
+          upper: tb.upper ?? 1.0,
+        };
       }
 
       // Parse pricing
@@ -349,12 +315,9 @@ export default function Model({
         name: modelDetail.name,
         description: modelDetail.description,
         provider: modelDetail.provider,
-        modelType: modelDetail.model_type || "text",
         active:
           typeof modelDetail.active === "boolean" ? modelDetail.active : true,
         baseUrl: modelDetail.base_url || "",
-        inputPpm: modelDetail.input_ppm?.toString?.() ?? "0",
-        outputPpm: modelDetail.output_ppm?.toString?.() ?? "0",
         departmentIds: currentDepartmentIds,
         keyId: currentKeyId,
         temperature_bounds,
@@ -427,16 +390,9 @@ export default function Model({
       return;
     }
 
-    if (!formData.modelType) {
-      // Model type is always set to default "text" in initialFormData, so this shouldn't happen
-      // But adding validation for completeness
-      toast.error("Model type is required");
-      return;
-    }
-
-    // Validate base_url if custom model
+    // Validate base_url if custom provider
     if (
-      formData.customModel &&
+      formData.provider === "custom" &&
       (!formData.baseUrl || formData.baseUrl.trim() === "")
     ) {
       setErrors((prev) => ({
@@ -446,36 +402,15 @@ export default function Model({
       return;
     }
 
-    // Validate pricing fields
-    const inputPpmNum = parseFloat(formData.inputPpm ?? "0");
-    const outputPpmNum = parseFloat(formData.outputPpm ?? "0");
-    const priceErrors: FormErrors = {};
-    if (Number.isNaN(inputPpmNum) || inputPpmNum < 0) {
-      priceErrors.inputPpm = "Enter a valid non-negative number";
-    }
-    if (Number.isNaN(outputPpmNum) || outputPpmNum < 0) {
-      priceErrors.outputPpm = "Enter a valid non-negative number";
-    }
-    if (priceErrors.inputPpm || priceErrors.outputPpm) {
-      setErrors((prev) => ({ ...prev, ...priceErrors }));
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      // Transform temperature bounds for API
+      // Transform temperature bounds for API (always range)
       const temperature_bounds = formData.temperature_bounds
         ? {
-            type: formData.temperature_bounds.type,
-            ...(formData.temperature_bounds.type === "range"
-              ? {
-                  lower: formData.temperature_bounds.lower ?? 0.0,
-                  upper: formData.temperature_bounds.upper ?? 1.0,
-                }
-              : {
-                  values: formData.temperature_bounds.values || [],
-                }),
+            type: "range" as const,
+            lower: formData.temperature_bounds.lower ?? 0.0,
+            upper: formData.temperature_bounds.upper ?? 1.0,
           }
         : undefined;
 
@@ -503,16 +438,12 @@ export default function Model({
         await handleUpdateModel({
           modelId: modelId,
           provider: formData.provider!,
-          model_type: formData.modelType!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
-          image_model: imageModel,
-          input_ppm: inputPpmNum,
-          output_ppm: outputPpmNum,
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
-          base_url: formData.customModel ? formData.baseUrl || null : null,
+          base_url: formData.provider === "custom" ? formData.baseUrl || null : null,
           temperature_bounds,
           pricing,
           modalities,
@@ -527,16 +458,12 @@ export default function Model({
       } else {
         await handleCreateModel({
           provider: formData.provider!,
-          model_type: formData.modelType!,
           name: formData.name!,
           description: formData.description!,
           active: formData.active ?? true,
-          image_model: false, // Default to false for new models
-          input_ppm: inputPpmNum,
-          output_ppm: outputPpmNum,
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
-          base_url: formData.customModel ? formData.baseUrl || null : null,
+          base_url: formData.provider === "custom" ? formData.baseUrl || null : null,
           temperature_bounds,
           pricing,
           modalities,
@@ -596,55 +523,6 @@ export default function Model({
           )}
         </div>
 
-        {/* Provider and Model Type Selection */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-          {/* Provider Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="provider">Provider</Label>
-            <div data-testid="picker-provider">
-              <ProviderPicker
-                selectedProvider={formData.provider || ""}
-                onSelect={(provider) => {
-                  handleInputChange("provider", provider);
-                  // Auto-enable custom model if provider is 'custom'
-                  if (provider === "custom") {
-                    handleInputChange("customModel", true);
-                  } else if (formData.provider === "custom") {
-                    // If switching away from custom, disable custom model
-                    handleInputChange("customModel", false);
-                    handleInputChange("baseUrl", "");
-                  }
-                }}
-                placeholder="Select a provider..."
-                buttonClassName={errors.provider ? "border-destructive" : ""}
-              />
-            </div>
-            {errors.provider && (
-              <p className="text-sm text-destructive">{errors.provider}</p>
-            )}
-          </div>
-
-          {/* Model Type Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="modelType">Model Type</Label>
-            <div data-testid="picker-model-type">
-              <ModelTypePicker
-                selectedModelType={formData.modelType || "text"}
-                onSelect={(modelType) => {
-                  handleInputChange("modelType", modelType);
-                }}
-                placeholder="Select model type..."
-                disabled={isEditMode} // Model type is immutable after creation
-                buttonClassName={errors.provider ? "border-destructive" : ""}
-              />
-            </div>
-            {isEditMode && (
-              <p className="text-xs text-muted-foreground">
-                Model type cannot be changed after creation
-              </p>
-            )}
-          </div>
-        </div>
 
         {/* Department Selection */}
         {validDepartmentIds && validDepartmentIds.length > 1 ? (
@@ -693,270 +571,167 @@ export default function Model({
           </div>
         ) : null}
 
-        {/* Active and Custom Model Switches */}
-        <div className="space-y-2 pt-2">
-          {/* Active Switch */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="active"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                Active
-              </Label>
-              {formData.active !== undefined ? (
-                <Switch
-                  id="active"
-                  data-testid="switch-model-active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("active", checked)
-                  }
-                />
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Inactive models will not be available for selection
-            </p>
+        {/* Active Switch */}
+        <div className="space-y-1 pt-2">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="active"
+              className="text-sm flex items-center gap-1.5"
+            >
+              <Power className="h-3.5 w-3.5 text-muted-foreground" />
+              Active
+            </Label>
+            {formData.active !== undefined ? (
+              <Switch
+                id="active"
+                data-testid="switch-model-active"
+                checked={formData.active}
+                onCheckedChange={(checked) =>
+                  handleInputChange("active", checked)
+                }
+              />
+            ) : null}
           </div>
-
-          {/* Custom Model Switch */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="customModel"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                Custom Model
-              </Label>
-              {formData.customModel !== undefined ? (
-                <Switch
-                  id="customModel"
-                  data-testid="switch-model-custom"
-                  checked={formData.customModel}
-                  onCheckedChange={(checked) => {
-                    handleInputChange("customModel", checked);
-                    if (!checked) {
-                      handleInputChange("baseUrl", "");
-                    }
-                  }}
-                />
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Use a custom base URL for this model
-            </p>
-            {formData.customModel && (
-              <div className="space-y-2 pt-2">
-                <Input
-                  id="baseUrl"
-                  type="url"
-                  value={formData.baseUrl || ""}
-                  onChange={(e) => handleInputChange("baseUrl", e.target.value)}
-                  placeholder="e.g. https://api.example.com/v1"
-                  disabled={isSubmitting}
-                  className={errors.baseUrl ? "border-destructive" : ""}
-                  data-testid="input-model-base-url"
-                />
-                {errors.baseUrl && (
-                  <p className="text-sm text-destructive">{errors.baseUrl}</p>
-                )}
-              </div>
-            )}
-          </div>
+          <p className="text-xs text-muted-foreground pl-5">
+            Inactive models will not be available for selection
+          </p>
         </div>
 
-        {/* Legacy Pricing (deprecated, kept for backward compatibility) */}
-        <Collapsible defaultOpen={false}>
-          <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-            Legacy Pricing (Deprecated)
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="inputPpm">Input price (USD per 1M tokens)</Label>
-                {formData.inputPpm !== undefined ? (
-                  <Input
-                    id="inputPpm"
-                    data-testid="input-model-input-ppm"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={formData.inputPpm}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "inputPpm" as keyof FormData,
-                        e.target.value
-                      )
-                    }
-                    placeholder="e.g. 3.00"
-                    className={errors.inputPpm ? "border-destructive" : ""}
-                  />
-                ) : null}
-                {errors.inputPpm && (
-                  <p className="text-sm text-destructive">{errors.inputPpm}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="outputPpm">Output price (USD per 1M tokens)</Label>
-                {formData.outputPpm !== undefined ? (
-                  <Input
-                    id="outputPpm"
-                    data-testid="input-model-output-ppm"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={formData.outputPpm}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "outputPpm" as keyof FormData,
-                        e.target.value
-                      )
-                    }
-                    placeholder="e.g. 15.00"
-                    className={errors.outputPpm ? "border-destructive" : ""}
-                  />
-                ) : null}
-                {errors.outputPpm && (
-                  <p className="text-sm text-destructive">{errors.outputPpm}</p>
-                )}
-              </div>
+        {/* Provider Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="provider">Provider</Label>
+          <div data-testid="picker-provider">
+            <ProviderPicker
+              selectedProvider={formData.provider || ""}
+              onSelect={(provider) => {
+                handleInputChange("provider", provider);
+                // Clear base URL if switching away from custom
+                if (provider !== "custom") {
+                  handleInputChange("baseUrl", "");
+                }
+              }}
+              placeholder="Select a provider..."
+              buttonClassName={errors.provider ? "border-destructive" : ""}
+            />
+          </div>
+          {errors.provider && (
+            <p className="text-sm text-destructive">{errors.provider}</p>
+          )}
+          {/* Show base URL input when custom provider is selected */}
+          {formData.provider === "custom" && (
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="baseUrl">Base URL</Label>
+              <Input
+                id="baseUrl"
+                type="url"
+                value={formData.baseUrl || ""}
+                onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+                placeholder="e.g. https://api.example.com/v1"
+                disabled={isSubmitting}
+                className={errors.baseUrl ? "border-destructive" : ""}
+                data-testid="input-model-base-url"
+              />
+              {errors.baseUrl && (
+                <p className="text-sm text-destructive">{errors.baseUrl}</p>
+              )}
             </div>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Model Configuration Sections */}
-        <div className="space-y-6 border-t pt-6">
-          <h3 className="text-lg font-semibold">Model Configuration</h3>
-
-          {/* Temperature Bounds */}
-          <Collapsible defaultOpen={true}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
-              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-              Temperature Bounds
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <TemperatureBoundsPicker
-                bounds={formData.temperature_bounds || { type: "range", lower: 0.0, upper: 1.0 }}
-                onBoundsChange={(bounds) =>
-                  setFormData((prev) => ({ ...prev, temperature_bounds: bounds }))
-                }
-                disabled={isSubmitting || isReadonly}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Modalities */}
-          <Collapsible defaultOpen={true}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
-              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-              Modalities
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <ModalityPicker
-                inputModalities={formData.modalities?.input || []}
-                outputModalities={formData.modalities?.output || []}
-                onInputChange={(modalities) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    modalities: {
-                      input: modalities,
-                      output: prev.modalities?.output || [],
-                    },
-                  }))
-                }
-                onOutputChange={(modalities) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    modalities: {
-                      input: prev.modalities?.input || [],
-                      output: modalities,
-                    },
-                  }))
-                }
-                disabled={isSubmitting || isReadonly}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Pricing */}
-          <Collapsible defaultOpen={true}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
-              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-              Pricing
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <PricingPicker
-                pricing={formData.pricing || []}
-                units={units}
-                onPricingChange={(pricing) =>
-                  setFormData((prev) => ({ ...prev, pricing }))
-                }
-                disabled={isSubmitting || isReadonly || loadingUnits}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Reasoning Levels - Show if model supports text output */}
-          {formData.modalities?.output?.includes("text") && (
-            <Collapsible defaultOpen={false}>
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
-                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                Reasoning Levels
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <ReasoningLevelPicker
-                  selectedIds={formData.reasoning_levels || []}
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
-                  }
-                  disabled={isSubmitting || isReadonly}
-                />
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-
-          {/* Voices - Show if model supports audio output */}
-          {formData.modalities?.output?.includes("audio") && (
-            <Collapsible defaultOpen={false}>
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
-                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                Voices
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <VoiceMultiPicker
-                  selectedIds={formData.voices || []}
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({ ...prev, voices: ids }))
-                  }
-                  disabled={isSubmitting || isReadonly}
-                />
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-
-          {/* Qualities - Show if model supports image output */}
-          {formData.modalities?.output?.includes("image") && (
-            <Collapsible defaultOpen={false}>
-              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
-                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                Qualities
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <QualityPicker
-                  selectedIds={formData.qualities || []}
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({ ...prev, qualities: ids }))
-                  }
-                  disabled={isSubmitting || isReadonly}
-                />
-              </CollapsibleContent>
-            </Collapsible>
           )}
         </div>
+
+        {/* Temperature Bounds */}
+        <div className="space-y-2">
+          <Label>Temperature Bounds</Label>
+          <TemperatureBoundsPicker
+            bounds={formData.temperature_bounds || { type: "range", lower: 0.0, upper: 1.0 }}
+            onBoundsChange={(bounds) =>
+              setFormData((prev) => ({ ...prev, temperature_bounds: bounds }))
+            }
+            disabled={isSubmitting || isReadonly}
+          />
+        </div>
+
+        {/* Modalities */}
+        <div className="space-y-2">
+          <Label>Modalities</Label>
+          <ModalityPicker
+            inputModalities={formData.modalities?.input || []}
+            outputModalities={formData.modalities?.output || []}
+            onInputChange={(modalities) =>
+              setFormData((prev) => ({
+                ...prev,
+                modalities: {
+                  input: modalities,
+                  output: prev.modalities?.output || [],
+                },
+              }))
+            }
+            onOutputChange={(modalities) =>
+              setFormData((prev) => ({
+                ...prev,
+                modalities: {
+                  input: prev.modalities?.input || [],
+                  output: modalities,
+                },
+              }))
+            }
+            disabled={isSubmitting || isReadonly}
+          />
+        </div>
+
+        {/* Pricing */}
+        <div className="space-y-2">
+          <Label>Pricing</Label>
+          <PricingPicker
+            pricing={formData.pricing || []}
+            units={units}
+            onPricingChange={(pricing) =>
+              setFormData((prev) => ({ ...prev, pricing }))
+            }
+            disabled={isSubmitting || isReadonly}
+          />
+        </div>
+
+        {/* Reasoning Levels - Show if model supports text output */}
+        {formData.modalities?.output?.includes("text") && (
+          <div className="space-y-2">
+            <Label>Reasoning Levels</Label>
+            <ReasoningLevelPicker
+              selectedIds={formData.reasoning_levels || []}
+              onSelect={(ids) =>
+                setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
+              }
+              disabled={isSubmitting || isReadonly}
+            />
+          </div>
+        )}
+
+        {/* Voices - Show if model supports audio output */}
+        {formData.modalities?.output?.includes("audio") && (
+          <div className="space-y-2">
+            <Label>Voices</Label>
+            <VoiceMultiPicker
+              selectedIds={formData.voices || []}
+              onSelect={(ids) =>
+                setFormData((prev) => ({ ...prev, voices: ids }))
+              }
+              disabled={isSubmitting || isReadonly}
+            />
+          </div>
+        )}
+
+        {/* Qualities - Show if model supports image output */}
+        {formData.modalities?.output?.includes("image") && (
+          <div className="space-y-2">
+            <Label>Qualities</Label>
+            <QualityPicker
+              selectedIds={formData.qualities || []}
+              onSelect={(ids) =>
+                setFormData((prev) => ({ ...prev, qualities: ids }))
+              }
+              disabled={isSubmitting || isReadonly}
+            />
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">

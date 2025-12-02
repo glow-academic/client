@@ -57,9 +57,7 @@ class ModelDetailResponse(BaseModel):
     name: str
     description: str
     active: bool
-    image_model: bool
-    input_ppm: int
-    output_ppm: int
+    image_model: bool  # Computed from modalities, kept for backward compatibility
     provider: str  # enum: 'openai', 'gemini', 'custom'
     base_url: str  # empty string if not custom model
     valid_providers: list[str]  # enum values
@@ -170,12 +168,12 @@ async def get_model_detail(
             for key_id, kdata in key_mapping_data.items():
                 if isinstance(kdata, dict):
                     # Parse department_ids from array
-                    department_ids: list[str] | None = None
+                    key_dept_ids: list[str] | None = None
                     dept_ids_raw = kdata.get("department_ids")
                     if dept_ids_raw is not None:
                         if isinstance(dept_ids_raw, (list, tuple)):
                             dept_ids_list = [str(did) for did in dept_ids_raw if did]
-                            department_ids = dept_ids_list if dept_ids_list else None
+                            key_dept_ids = dept_ids_list if dept_ids_list else None
                         # If it's an empty array or None, keep as None
                     
                     key_mapping[key_id] = KeyMappingItem(
@@ -183,7 +181,7 @@ async def get_model_detail(
                         description=kdata.get("description", ""),
                         key_masked=kdata.get("key_masked", ""),
                         active=kdata.get("active", True),
-                        department_ids=department_ids,
+                        department_ids=key_dept_ids,
                     )
 
         default_key_id = str(model.get("default_key_id")) if model.get("default_key_id") else None
@@ -277,9 +275,7 @@ async def get_model_detail(
             name=model["name"],
             description=model["description"],
             active=model["active"],
-            image_model=model["image_model"],
-            input_ppm=int(model["input_ppm"]) if model["input_ppm"] else 0,
-            output_ppm=int(model["output_ppm"]) if model["output_ppm"] else 0,
+            image_model=bool(model.get("image_model", False)),
             provider=str(model["provider"]),
             base_url=str(model.get("base_url", "")),
             valid_providers=valid_providers,

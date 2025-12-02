@@ -1,14 +1,14 @@
 -- Update model with department, key, and endpoint links in a single transaction
 -- Parameters: $1=model_id, $2=provider (enum), $3=name, $4=description, $5=active, 
---            $6=image_model, $7=input_ppm, $8=output_ppm, $9=department_ids (text array, nullable), 
---            $10=key_id (text, nullable), $11=base_url (text, nullable), $12=profile_id (uuid or "guest-profile-id")
+--            $6=department_ids (text array, nullable), 
+--            $7=key_id (text, nullable), $8=base_url (text, nullable), $9=profile_id (uuid or "guest-profile-id")
 WITH resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $12::text = 'guest-profile-id' THEN
+            WHEN $9::text = 'guest-profile-id' THEN
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            WHEN $12::text IS NULL OR $12::text = '' THEN NULL::uuid
-            ELSE $12::uuid
+            WHEN $9::text IS NULL OR $9::text = '' THEN NULL::uuid
+            ELSE $9::uuid
         END as resolved_profile_id
 ),
 update_model AS (
@@ -17,9 +17,6 @@ update_model AS (
         name = $3,
         description = $4,
         active = $5,
-        image_model = $6,
-        input_ppm = $7,
-        output_ppm = $8,
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as model_id
@@ -39,8 +36,8 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($9::text[]) as dept_id
-    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
+    FROM UNNEST($6::text[]) as dept_id
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
     ON CONFLICT (model_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -56,11 +53,11 @@ link_key AS (
     INSERT INTO model_keys (model_id, key_id, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        $10::uuid,
+        $7::uuid,
         true,
         NOW(),
         NOW()
-    WHERE $10::text IS NOT NULL AND $10::text != ''
+    WHERE $7::text IS NOT NULL AND $7::text != ''
     ON CONFLICT (model_id, key_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -71,11 +68,11 @@ upsert_endpoint AS (
     INSERT INTO model_endpoints (model_id, base_url, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        $11::text,
+        $8::text,
         true,
         NOW(),
         NOW()
-    WHERE $11::text IS NOT NULL AND TRIM($11::text) != ''
+    WHERE $8::text IS NOT NULL AND TRIM($8::text) != ''
     ON CONFLICT (model_id) DO UPDATE SET
         base_url = EXCLUDED.base_url,
         active = true,
@@ -87,7 +84,7 @@ deactivate_endpoint AS (
     SET active = false, updated_at = NOW()
     WHERE model_id = $1::uuid 
     AND active = true
-    AND ($11::text IS NULL OR TRIM($11::text) = '')
+    AND ($8::text IS NULL OR TRIM($8::text) = '')
 )
 SELECT model_id FROM update_model
 

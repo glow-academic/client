@@ -24,17 +24,13 @@ class UpdateModelRequest(BaseModel):
 
     modelId: str
     provider: str  # enum: 'openai', 'gemini', 'custom'
-    model_type: str  # enum: 'text', 'audio', 'video' (immutable after creation) - deprecated, use modalities instead
     name: str
     description: str
     active: bool
-    image_model: bool
-    input_ppm: float
-    output_ppm: float
     department_ids: list[str] | None = None
     key_id: str | None = None
     base_url: str | None = None  # Required if provider is 'custom'
-    # New configuration fields
+    # Configuration fields
     temperature_bounds: dict[str, Any] | None = None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
     pricing: list[PricingEntry] | None = None
     modalities: dict[str, list[str]] | None = None  # { input: list[str], output: list[str] }
@@ -86,9 +82,6 @@ async def update_model(
                 request.name,
                 request.description,
                 request.active,
-                request.image_model,
-                request.input_ppm,
-                request.output_ppm,
                 department_ids,
                 request.key_id,
                 request.base_url,
@@ -101,9 +94,6 @@ async def update_model(
                 request.name,
                 request.description,
                 request.active,
-                request.image_model,
-                request.input_ppm,
-                request.output_ppm,
                 department_ids,
                 request.key_id,
                 request.base_url,
