@@ -1579,7 +1579,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/videos/upload": {
+    "/api/v3/videos/upload/finalize": {
         parameters: {
             query?: never;
             header?: never;
@@ -1589,10 +1589,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload Video
-         * @description Upload a video file and update the video record.
+         * Upload Finalize
+         * @description Finalize a video upload and update the video record with file_path and mime_type.
          */
-        post: operations["upload_video_api_v3_videos_upload_post"];
+        post: operations["upload_finalize_api_v3_videos_upload_finalize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4896,16 +4896,6 @@ export interface components {
             allowed: boolean;
             /** Reason */
             reason?: string | null;
-        };
-        /** Body_upload_video_api_v3_videos_upload_post */
-        Body_upload_video_api_v3_videos_upload_post: {
-            /** Videoid */
-            videoId: string;
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
         };
         /** BulkArchiveAttemptsRequest */
         BulkArchiveAttemptsRequest: {
@@ -12700,18 +12690,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * UploadVideoResponse
-         * @description Response from video upload.
-         */
-        UploadVideoResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Videourl */
-            videoUrl?: string | null;
-        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -15155,6 +15133,34 @@ export interface components {
             options: components["schemas"]["QuestionOption-Input"][];
         };
         /**
+         * UploadFinalizeRequest
+         * @description Request to finalize video upload.
+         */
+        app__api__v3__videos__upload_finalize__UploadFinalizeRequest: {
+            /** Uploadid */
+            uploadId: string;
+            /** Fileid */
+            fileId: string;
+            /** Videoid */
+            videoId: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * UploadFinalizeResponse
+         * @description Response from finalize upload.
+         */
+        app__api__v3__videos__upload_finalize__UploadFinalizeResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Videoid */
+            videoId?: string | null;
+        };
+        /**
          * AttemptHistoryRow
          * @description Attempt history row - shared across dashboard, home, reports, and practice history endpoints.
          */
@@ -17525,7 +17531,7 @@ export interface operations {
             };
         };
     };
-    upload_video_api_v3_videos_upload_post: {
+    upload_finalize_api_v3_videos_upload_finalize_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -17534,7 +17540,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_video_api_v3_videos_upload_post"];
+                "application/json": components["schemas"]["app__api__v3__videos__upload_finalize__UploadFinalizeRequest"];
             };
         };
         responses: {
@@ -17544,7 +17550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadVideoResponse"];
+                    "application/json": components["schemas"]["app__api__v3__videos__upload_finalize__UploadFinalizeResponse"];
                 };
             };
             /** @description Validation Error */

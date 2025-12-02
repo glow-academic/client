@@ -7,7 +7,7 @@
 --            $9=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
--- Note: file_path and mime_type are NOT updated here - they're preserved and set separately when video file is generated/uploaded
+-- Note: file_path and mime_type are NOT updated here - they're managed via video_generations table when video file is generated/uploaded
 
 WITH updated_video AS (
     -- Update video core fields

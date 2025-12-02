@@ -658,6 +658,151 @@ export default function Video({
     e.target.value = "";
   };
 
+  const handleVideoUpload = async (file: File) => {
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please select a video file");
+      return;
+    }
+
+    setIsUploadingVideo(true);
+    let currentVideoId = videoId;
+
+    const toastId = toast.loading(`Uploading video: ${file.name}`, {
+      description: "0% complete",
+      dismissible: true,
+    });
+
+    try {
+      // If no videoId exists, auto-save the video first (similar to generate flow)
+      if (!currentVideoId) {
+        try {
+          // Prepare and create the video (with defaults for required fields)
+          const createPayload = prepareCreatePayload();
+          const createResult = await handleCreateVideo(createPayload);
+
+          if (!createResult.videoId) {
+            throw new Error("Video creation succeeded but no videoId returned");
+          }
+
+          currentVideoId = createResult.videoId;
+
+          // Update URL to edit page without causing navigation
+          // This allows upload to proceed without component remount
+          window.history.replaceState(
+            { ...window.history.state },
+            "",
+            `/create/videos/v/${currentVideoId}`
+          );
+        } catch (error) {
+          toast.error(
+            `Failed to save video: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+            { id: toastId }
+          );
+          setIsUploadingVideo(false);
+          return;
+        }
+      }
+
+      // Generate a unique fileId for tracking
+      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // Create TUS upload
+      const upload = new tus.Upload(file, {
+        endpoint: `/api/videos/upload`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+          fileId: fileId,
+        },
+        onError: (error) => {
+          toast.error(`Upload failed: ${file.name}`, {
+            description: error.message || "An error occurred during upload",
+            id: toastId,
+          });
+          setIsUploadingVideo(false);
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+          toast.loading(`Uploading video: ${file.name}`, {
+            description: `${percentage}% complete`,
+            id: toastId,
+          });
+        },
+        onSuccess: async () => {
+          // Get upload ID from location header
+          const location = upload.url;
+          if (!location) {
+            throw new Error("Failed to get upload location");
+          }
+          const uploadId = location.split("/").pop();
+
+          if (!uploadId) {
+            throw new Error("Failed to get upload ID");
+          }
+
+          // Finalize upload
+          try {
+            const response = await fetch("/api/videos/upload/finalize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                uploadId,
+                fileId,
+                videoId: currentVideoId,
+                name: file.name,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.videoId) {
+              // Clear generated video URL if it exists (uploaded video replaces it)
+              setGeneratedVideoUrl(null);
+              // Clear uploaded video file state (will be loaded from server)
+              setUploadedVideoFile(null);
+              setVideoObjectUrl(null);
+              
+              toast.success(`Video uploaded: ${file.name}`, { id: toastId });
+              
+              // Refresh server data to get updated video_url from database
+              // This ensures the video persists after page refresh
+              // Navigate to edit page (will refresh data automatically)
+              router.push(`/create/videos/v/${currentVideoId}`);
+            } else {
+              throw new Error(result.message || "Failed to finalize upload");
+            }
+          } catch (finalizeError) {
+            toast.error(
+              `Failed to finalize upload: ${
+                finalizeError instanceof Error
+                  ? finalizeError.message
+                  : "Unknown error"
+              }`,
+              { id: toastId }
+            );
+          } finally {
+            setIsUploadingVideo(false);
+          }
+        },
+      });
+
+      upload.start();
+    } catch (error) {
+      toast.error(
+        `Failed to upload video: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        {
+          id: toastId,
+        }
+      );
+      setIsUploadingVideo(false);
+    }
+  };
+
   // Form data state
   const defaultDepartmentIds = useMemo(
     () =>
@@ -700,6 +845,7 @@ export default function Video({
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   // Randomization state
   const [isRandomizing, setIsRandomizing] = useState(false);
@@ -1225,7 +1371,7 @@ export default function Video({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("video/")) {
-      setUploadedVideoFile(file);
+      handleVideoUpload(file);
     }
   };
 
@@ -1243,7 +1389,7 @@ export default function Video({
     setIsDragActive(false);
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("video/")) {
-      setUploadedVideoFile(file);
+      handleVideoUpload(file);
     }
   };
 
@@ -1850,6 +1996,7 @@ export default function Video({
               disabled={
                 isSubmitting ||
                 isGeneratingVideo ||
+                isUploadingVideo ||
                 isReadonly ||
                 !outlineText.trim()
               }
@@ -1886,7 +2033,17 @@ export default function Video({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Video Display - Shows either generated, uploaded, or server video */}
-          {generatedVideoUrl || (videoData?.video_url && !uploadedVideoFile) ? (
+          {isUploadingVideo ? (
+            <div className="space-y-2">
+              <Label>Video</Label>
+              <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
+                <div className="flex flex-col items-center gap-2 text-white">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <p className="text-sm">Uploading video...</p>
+                </div>
+              </div>
+            </div>
+          ) : generatedVideoUrl || (videoData?.video_url && !uploadedVideoFile) ? (
             <div className="space-y-2">
               <Label>Video</Label>
               <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
@@ -1945,7 +2102,7 @@ export default function Video({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => {
-                  if (!isReadonly) {
+                  if (!isReadonly && !isUploadingVideo) {
                     document.getElementById("video-upload-input")?.click();
                   }
                 }}
@@ -1955,7 +2112,7 @@ export default function Video({
                   type="file"
                   accept="video/*"
                   onChange={handleFileSelect}
-                  disabled={isReadonly}
+                  disabled={isReadonly || isUploadingVideo}
                   className="hidden"
                 />
                 <div className="space-y-3">

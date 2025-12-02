@@ -57,11 +57,12 @@ video_core AS (
         v.name,
         v.length_seconds,
         v.active,
-        v.file_path,
-        v.mime_type,
+        COALESCE(vg.file_path, '') as file_path,
+        COALESCE(vg.mime_type, '') as mime_type,
         COALESCE(vdd.department_ids, NULL) as department_ids
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
+    LEFT JOIN video_generations vg ON vg.video_id = v.id AND vg.active = TRUE
     CROSS JOIN video_department_access_check vdac
     WHERE v.id = $1 AND vdac.has_access = true
 ),

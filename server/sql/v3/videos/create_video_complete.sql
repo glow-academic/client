@@ -6,17 +6,15 @@
 --            $7=image_ids (text array, nullable),
 --            $8=questions_json (JSONB string with questions array)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
--- Note: file_path and mime_type are set to empty strings as placeholders until video file is generated/uploaded
+-- Note: Video file is created separately via video_generations table when file is generated/uploaded
 
 WITH new_video AS (
     INSERT INTO videos (
         name,
         length_seconds,
-        active,
-        file_path,
-        mime_type
+        active
     )
-    VALUES ($1, $2, $3, '', '')
+    VALUES ($1, $2, $3)
     RETURNING id::uuid as video_id
 ),
 link_departments AS (

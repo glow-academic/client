@@ -15,6 +15,7 @@ from app.api.v3.videos.new import router as new_router
 from app.api.v3.videos.randomize import router as randomize_router
 from app.api.v3.videos.search import router as search_router
 from app.api.v3.videos.update import router as update_router
+from app.api.v3.videos.upload_finalize import router as upload_finalize_router
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/videos", tags=["videos"])
@@ -33,4 +34,5 @@ router.include_router(generate_questions_router)
 router.include_router(generate_outline_router)
 router.include_router(generate_video_router)
 router.include_router(download_router)
+router.include_router(upload_finalize_router)
 

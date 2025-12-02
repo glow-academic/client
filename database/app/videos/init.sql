@@ -11,12 +11,28 @@ CREATE TABLE videos (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
-  file_path  TEXT        NOT NULL,
-  mime_type  TEXT        NOT NULL,
   active     BOOLEAN     NOT NULL DEFAULT TRUE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE
 );
+
+-- Video generations table (stores all video file generations)
+-- Each video can have multiple generations, but only one active at a time
+CREATE TABLE video_generations (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  video_id   UUID        NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  file_path  TEXT        NOT NULL,
+  mime_type  TEXT        NOT NULL,
+  active     BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX ON video_generations (video_id);
+CREATE INDEX ON video_generations (video_id, active);
+CREATE UNIQUE INDEX video_generations_one_active_per_video 
+  ON video_generations(video_id) 
+  WHERE active = TRUE;
 
 -- Video → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)
