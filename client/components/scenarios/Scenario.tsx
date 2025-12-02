@@ -76,6 +76,7 @@ import type {
   UpdateScenarioIn,
   UpdateScenarioOut,
 } from "@/app/(main)/create/scenarios/s/[scenarioId]/page";
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -362,6 +363,7 @@ export default function Scenario({
       problemStatement: "",
       departmentIds: defaultDepartmentIds,
       active: true,
+      scenarioAgentId: null as string | null,
     }),
     [defaultDepartmentIds]
   );
@@ -1231,6 +1233,7 @@ export default function Scenario({
         problemStatement: scenarioData.problem_statement,
         departmentIds: deptIds,
         active: scenarioData.active ?? true,
+        scenarioAgentId: scenarioData.scenario_agent_id || null,
       });
       // Initialize previousDepartmentIds when loading scenario data
       if (previousDepartmentIds.length === 0 && deptIds.length > 0) {
@@ -2016,6 +2019,7 @@ export default function Scenario({
               document_vision_enabled: documentVisionEnabled,
               objectives_enabled: useObjectives,
               image_enabled: useImage,
+              scenario_agent_id: formData.scenarioAgentId || null,
             });
             // Query will refetch automatically via mutation's onSuccess invalidation
             // The useEffect watching problem_statement_id will update selectedProblemStatementId
@@ -2073,6 +2077,7 @@ export default function Scenario({
         objective_ids: string[];
         image_ids: string[] | null;
         parameters: Record<string, string[]>;
+        scenario_agent_id?: string | null;
       } = {
         name: formData.name?.trim() || "",
         problem_statement: formData.problemStatement?.trim() || "",
@@ -2086,6 +2091,7 @@ export default function Scenario({
           currentParameterItemIds,
           parameterItemMapping
         ),
+        scenario_agent_id: formData.scenarioAgentId || null,
       };
 
       // Include problem_statement_versions if in create mode and we have local versions
@@ -2284,6 +2290,34 @@ export default function Scenario({
                 ) : null}
               </div>
             ) : null}
+
+            {/* Scenario Agent Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
+              {formData?.scenarioAgentId !== undefined ? (
+                <AgentPicker
+                  mapping={agentMapping}
+                  validIds={
+                    scenarioData?.valid_agent_ids?.filter((id) => {
+                      const agent = agentMapping[id];
+                      return agent?.roles?.includes("scenario");
+                    }) || []
+                  }
+                  selectedIds={
+                    formData?.scenarioAgentId ? [formData.scenarioAgentId] : []
+                  }
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      scenarioAgentId: ids[0] || null,
+                    }))
+                  }
+                  placeholder="Select scenario agent"
+                  disabled={isReadonly}
+                  multiSelect={false}
+                />
+              ) : null}
+            </div>
 
             {/* Active Switch */}
             <div className="space-y-2 pt-2">

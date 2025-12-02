@@ -56,6 +56,7 @@ class EvalDetailResponse(BaseModel):
     name: str
     description: str
     rubric_id: str
+    eval_agent_id: str
     rubric_name: str
     rubric_description: str
     rubric_points: int
@@ -75,6 +76,8 @@ class EvalDetailResponse(BaseModel):
 
     # Mappings
     department_mapping: DepartmentMapping
+    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    valid_agent_ids: list[str]
 
     # Permissions
     can_edit: bool
@@ -163,12 +166,50 @@ async def get_eval_detail(
                         description=ddata.get("description", ""),
                     )
 
+        # Parse agent_mapping
+        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = {
+                        "name": adata.get("name", ""),
+                        "description": adata.get("description", ""),
+                        "roles": [str(r) for r in roles],
+                    }
+
+        valid_agent_ids = [
+            str(aid) for aid in (result.get("valid_agent_ids") or [])
+        ]
+
         # Parse model_runs list
         model_runs: list[ModelRunItem] = []
         model_runs_data = parse_jsonb(result.get("model_runs"))
         if isinstance(model_runs_data, list):
             for mr_data in model_runs_data:
                 if isinstance(mr_data, dict):
+                    grade_score_val = mr_data.get("grade_score")
+                    grade_score: int | None = None
+                    if grade_score_val is not None and grade_score_val != "":
+                        try:
+                            if isinstance(grade_score_val, (int, float, str)):
+                                grade_score = int(grade_score_val)
+                        except (ValueError, TypeError):
+                            grade_score = None
+                    
+                    grade_passed_val = mr_data.get("grade_passed")
+                    grade_passed: bool | None = None
+                    if grade_passed_val is not None:
+                        grade_passed = bool(grade_passed_val)
+                    
                     model_runs.append(
                         ModelRunItem(
                             model_run_id=str(mr_data.get("run_id", "")),
@@ -195,12 +236,8 @@ async def get_eval_detail(
                             else None,
                             profile_name=mr_data.get("profile_name"),
                             has_grade=bool(mr_data.get("has_grade", False)),
-                            grade_score=int(mr_data.get("grade_score"))
-                            if mr_data.get("grade_score") is not None
-                            else None,
-                            grade_passed=bool(mr_data.get("grade_passed"))
-                            if mr_data.get("grade_passed") is not None
-                            else None,
+                            grade_score=grade_score,
+                            grade_passed=grade_passed,
                             grade_created_at=str(mr_data.get("grade_created_at"))
                             if mr_data.get("grade_created_at")
                             else None,
@@ -212,6 +249,7 @@ async def get_eval_detail(
             name=result.get("name", ""),
             description=result.get("description", ""),
             rubric_id=str(result.get("rubric_id", "")),
+            eval_agent_id=str(result.get("eval_agent_id", "")),
             rubric_name=result.get("rubric_name", ""),
             rubric_description=result.get("rubric_description", ""),
             rubric_points=int(result.get("rubric_points", 0)),
@@ -225,6 +263,8 @@ async def get_eval_detail(
             status=str(result.get("status", "pending")),
             model_runs=model_runs,
             department_mapping=department_mapping,
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
             can_edit=result.get("can_edit", False),
             can_delete=result.get("can_delete", False),
         )

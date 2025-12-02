@@ -1,5 +1,5 @@
 -- Update eval with optional runs changes
--- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=run_ids (uuid[] | NULL - if provided, replaces all)
+-- Parameters: $1=eval_id, $2=name, $3=description, $4=rubric_id, $5=run_ids (uuid[] | NULL - if provided, replaces all), $6=eval_agent_id (nullable uuid)
 -- Returns: eval_id
 
 WITH update_eval AS (
@@ -7,6 +7,7 @@ WITH update_eval AS (
         name = $2,
         description = $3,
         rubric_id = $4::uuid,
+        eval_agent_id = COALESCE($6::uuid, eval_agent_id),
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as eval_id

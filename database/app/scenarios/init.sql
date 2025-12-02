@@ -57,9 +57,14 @@ CREATE TABLE scenarios (
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   generated BOOLEAN     NOT NULL DEFAULT FALSE,
-  active BOOLEAN     NOT NULL DEFAULT TRUE
+  active BOOLEAN     NOT NULL DEFAULT TRUE,
+  scenario_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
+  image_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
   -- Flags moved to simulation_scenarios junction table: hints_enabled, input_guardrail_enabled, output_guardrail_enabled, copy_paste_allowed
 );
+
+CREATE INDEX ON scenarios (scenario_agent_id);
+CREATE INDEX ON scenarios (image_agent_id);
 
 -- Scenario → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)

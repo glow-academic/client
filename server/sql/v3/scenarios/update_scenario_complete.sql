@@ -5,7 +5,7 @@
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
 --            $12=document_ids (text array), $13=objective_ids (text array),
 --            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=image_ids (text array, nullable)
+--            $15=image_ids (text array, nullable), $16=scenario_agent_id (nullable uuid), $17=image_agent_id (nullable uuid)
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
 WITH scenario_exists AS (
@@ -24,6 +24,8 @@ update_scenario AS (
         document_vision_enabled = $5,
         objectives_enabled = $6,
         image_enabled = $7,
+        scenario_agent_id = COALESCE($16::uuid, scenario_agent_id),
+        image_agent_id = COALESCE($17::uuid, image_agent_id),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)
     RETURNING id::text as scenario_id, name

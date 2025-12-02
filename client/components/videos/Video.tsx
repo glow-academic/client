@@ -65,6 +65,7 @@ import {
 import { cn } from "@/lib/utils";
 
 // Custom Components
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ImagePreviewCard } from "@/components/common/forms/ImagePreviewCard";
 import {
@@ -273,6 +274,12 @@ export default function Video({
     }
     if (imageIds.length > 0) {
       createPayload.image_ids = imageIds;
+    }
+    if (formData.outlineAgentId) {
+      createPayload.outline_agent_id = formData.outlineAgentId;
+    }
+    if (formData.questionAgentId) {
+      createPayload.question_agent_id = formData.questionAgentId;
     }
 
     return createPayload;
@@ -837,6 +844,8 @@ export default function Video({
     departmentIds: string[];
     problemStatement: string;
     active: boolean;
+    outlineAgentId: string | null;
+    questionAgentId: string | null;
   };
 
   // Outline state
@@ -877,6 +886,8 @@ export default function Video({
       departmentIds: defaultDepartmentIds,
       problemStatement: "",
       active: true,
+      outlineAgentId: null,
+      questionAgentId: null,
     }),
     [defaultDepartmentIds]
   );
@@ -891,6 +902,11 @@ export default function Video({
   const departmentMapping = useMemo(
     () => videoData?.department_mapping || {},
     [videoData?.department_mapping]
+  );
+  // Agent mapping for agent picker
+  const agentMapping = useMemo(
+    () => videoData?.agent_mapping || {},
+    [videoData?.agent_mapping]
   );
 
   // Policy mapping
@@ -923,6 +939,8 @@ export default function Video({
         departmentIds: deptIds,
         problemStatement: "", // Not used anymore, kept for form compatibility
         active: videoData.active ?? true,
+        outlineAgentId: videoData.outline_agent_id || null,
+        questionAgentId: videoData.question_agent_id || null,
       });
 
       // Initialize outline video length from video data
@@ -1092,6 +1110,12 @@ export default function Video({
         }
         if (imageIds.length > 0) {
           updatePayload.image_ids = imageIds;
+        }
+        if (formData.outlineAgentId) {
+          updatePayload.outline_agent_id = formData.outlineAgentId;
+        }
+        if (formData.questionAgentId) {
+          updatePayload.question_agent_id = formData.questionAgentId;
         }
 
         await handleUpdateVideo(updatePayload);
@@ -1481,6 +1505,65 @@ export default function Video({
                 ) : null}
               </div>
             )}
+
+          {/* Agent Selection */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            {/* Outline Agent */}
+            <div className="space-y-2">
+              <Label htmlFor="outlineAgentId">Outline Agent</Label>
+              {formData?.outlineAgentId !== undefined ? (
+                <AgentPicker
+                  mapping={agentMapping}
+                  validIds={
+                    videoData?.valid_agent_ids?.filter((id) => {
+                      const agent = agentMapping[id];
+                      return agent?.roles?.includes("outline");
+                    }) || []
+                  }
+                  selectedIds={
+                    formData?.outlineAgentId ? [formData.outlineAgentId] : []
+                  }
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      outlineAgentId: ids[0] || null,
+                    }))
+                  }
+                  placeholder="Select outline agent"
+                  disabled={isReadonly}
+                  multiSelect={false}
+                />
+              ) : null}
+            </div>
+
+            {/* Question Agent */}
+            <div className="space-y-2">
+              <Label htmlFor="questionAgentId">Question Agent</Label>
+              {formData?.questionAgentId !== undefined ? (
+                <AgentPicker
+                  mapping={agentMapping}
+                  validIds={
+                    videoData?.valid_agent_ids?.filter((id) => {
+                      const agent = agentMapping[id];
+                      return agent?.roles?.includes("question");
+                    }) || []
+                  }
+                  selectedIds={
+                    formData?.questionAgentId ? [formData.questionAgentId] : []
+                  }
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      questionAgentId: ids[0] || null,
+                    }))
+                  }
+                  placeholder="Select question agent"
+                  disabled={isReadonly}
+                  multiSelect={false}
+                />
+              ) : null}
+            </div>
+          </div>
 
           {/* Active Switch */}
           <div className="space-y-2 pt-2">

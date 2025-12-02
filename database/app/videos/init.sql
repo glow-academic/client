@@ -13,8 +13,15 @@ CREATE TABLE videos (
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
   active     BOOLEAN     NOT NULL DEFAULT TRUE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  image_enabled BOOLEAN NOT NULL DEFAULT TRUE
+  image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  outline_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
+  question_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
+  image_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
 );
+
+CREATE INDEX ON videos (outline_agent_id);
+CREATE INDEX ON videos (question_agent_id);
+CREATE INDEX ON videos (image_agent_id);
 
 -- Video generations table (stores all video file generations)
 -- Each video can have multiple generations, but only one active at a time

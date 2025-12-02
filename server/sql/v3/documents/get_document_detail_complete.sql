@@ -3,6 +3,8 @@ WITH document_data AS (
         d.name,
         d.active,
         d.type,
+        d.classify_agent_id::text,
+        d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids
     FROM documents d
     WHERE d.id = $1
@@ -72,14 +74,47 @@ valid_param_items AS (
           AND array_length(dd.department_ids, 1) > 0
           AND pid.department_id = ANY(SELECT unnest(dd.department_ids)::uuid)
       )
+),
+user_departments_for_agents AS (
+    SELECT department_id
+    FROM profile_departments
+    WHERE profile_id = $2 AND active = true
+),
+valid_agents AS (
+    -- Get agents with roles 'classify' or 'document'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role IN ('classify', 'document')
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 )
 SELECT 
     doc.*,
     vd.dept_mapping as department_mapping,
     vd.dept_ids as valid_department_ids,
     vpi.param_item_mapping as parameter_item_mapping,
-    vpi.param_item_ids as valid_parameter_item_ids
+    vpi.param_item_ids as valid_parameter_item_ids,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
 FROM document_data doc
 CROSS JOIN valid_depts vd
 CROSS JOIN valid_param_items vpi
+CROSS JOIN valid_agents va
 

@@ -44,6 +44,10 @@ class ContentItemInRequest(BaseModel):
     show_image: bool | None = None  # Scenarios and videos
     rubric_id: str | None = None
     time_limit_seconds: int | None = None  # Per-scenario time limit in seconds
+    hint_agent_id: str | None = None
+    input_guardrail_agent_id: str | None = None
+    output_guardrail_agent_id: str | None = None
+    grade_agent_ids: list[str] | None = None  # Array of grade agent IDs for this scenario
 
 
 class UpdateSimulationRequest(BaseModel):
@@ -100,6 +104,10 @@ async def update_simulation(
             scenario_show_image: list[bool] = []
             scenario_rubric_ids: list[str] = []
             scenario_time_limit_seconds: list[int | None] = []
+            scenario_hint_agent_ids: list[str] = []
+            scenario_input_guardrail_agent_ids: list[str] = []
+            scenario_output_guardrail_agent_ids: list[str] = []
+            scenario_grade_agent_ids: list[list[str]] = []  # Array of arrays, one per scenario
             video_ids: list[str] = []
             video_active_flags: list[bool] = []
             video_show_problem_statement: list[bool] = []
@@ -122,6 +130,10 @@ async def update_simulation(
                         scenario_show_image.append(item.show_image if item.show_image is not None else True)
                         scenario_rubric_ids.append(item.rubric_id if item.rubric_id else "")
                         scenario_time_limit_seconds.append(item.time_limit_seconds)
+                        scenario_hint_agent_ids.append(item.hint_agent_id if item.hint_agent_id else "")
+                        scenario_input_guardrail_agent_ids.append(item.input_guardrail_agent_id if item.input_guardrail_agent_id else "")
+                        scenario_output_guardrail_agent_ids.append(item.output_guardrail_agent_id if item.output_guardrail_agent_id else "")
+                        scenario_grade_agent_ids.append(item.grade_agent_ids if item.grade_agent_ids else [])
                     elif item.type == "video":
                         video_ids.append(item.id)
                         video_active_flags.append(item.active)
@@ -164,6 +176,10 @@ async def update_simulation(
             scenario_show_image_array = scenario_show_image if scenario_show_image else []
             scenario_rubric_ids_array = scenario_rubric_ids if scenario_rubric_ids else []
             scenario_time_limit_seconds_array = scenario_time_limit_seconds if scenario_time_limit_seconds else []
+            scenario_hint_agent_ids_array = scenario_hint_agent_ids if scenario_hint_agent_ids else []
+            scenario_input_guardrail_agent_ids_array = scenario_input_guardrail_agent_ids if scenario_input_guardrail_agent_ids else []
+            scenario_output_guardrail_agent_ids_array = scenario_output_guardrail_agent_ids if scenario_output_guardrail_agent_ids else []
+            scenario_grade_agent_ids_array = scenario_grade_agent_ids if scenario_grade_agent_ids else []
             video_ids_array = video_ids if video_ids else []
             video_flags_array = video_active_flags if video_active_flags else []
             video_show_problem_statement_array = video_show_problem_statement if video_show_problem_statement else []
@@ -197,6 +213,10 @@ async def update_simulation(
                 video_show_problem_statement_array,
                 video_show_objectives_array,
                 video_show_image_array,
+                scenario_hint_agent_ids_array,
+                scenario_input_guardrail_agent_ids_array,
+                scenario_output_guardrail_agent_ids_array,
+                scenario_grade_agent_ids_array,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

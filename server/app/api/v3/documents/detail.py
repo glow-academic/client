@@ -13,8 +13,27 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import DepartmentMappingItem, ParameterItemMappingItem
+from app.utils.schema import AgentMapping, AgentMappingItem, DepartmentMappingItem, ParameterItemMappingItem
 from app.utils.sql_helper import load_sql
+
+
+def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
+    """Parse JSONB data with type safety."""
+    if isinstance(data, str):
+        try:
+            parsed: Any = json.loads(data)
+            if isinstance(parsed, dict):
+                return parsed
+            if isinstance(parsed, list):
+                return parsed
+            return {}
+        except json.JSONDecodeError:
+            return {}
+    if isinstance(data, dict):
+        return data
+    if isinstance(data, list):
+        return data
+    return None
 
 
 class DocumentDetailRequest(BaseModel):
@@ -37,6 +56,10 @@ class DocumentDetailResponse(BaseModel):
     parameter_item_ids: list[str]
     valid_parameter_item_ids: list[str]
     parameter_item_mapping: dict[str, ParameterItemMappingItem]
+    classify_agent_id: str
+    document_agent_id: str
+    agent_mapping: AgentMapping
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -142,6 +165,8 @@ async def get_document_detail(
             parameter_item_ids=[],  # Not included in detail query
             valid_parameter_item_ids=valid_parameter_item_ids,
             parameter_item_mapping=parameter_item_mapping,
+            classify_agent_id=row.get("classify_agent_id", ""),
+            document_agent_id=row.get("document_agent_id", ""),
         )
 
         # Cache response

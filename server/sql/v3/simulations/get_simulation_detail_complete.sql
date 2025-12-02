@@ -101,6 +101,9 @@ user_context AS (
                 ss.show_objectives,
                 ss.show_image,
                 ss.rubric_id,
+                ss.hint_agent_id::text,
+                ss.input_guardrail_agent_id::text,
+                ss.output_guardrail_agent_id::text,
                 stl.time_limit_seconds,
                 COALESCE(
                     (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
@@ -115,6 +118,15 @@ user_context AS (
             LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
             WHERE ss.simulation_id = $1
             ORDER BY ss.position
+        ),
+        simulation_scenarios_grade_agents_data AS (
+            SELECT 
+                ssga.simulation_id,
+                ssga.scenario_id,
+                ARRAY_AGG(ssga.agent_id::text ORDER BY ssga.agent_id) as grade_agent_ids
+            FROM simulation_scenarios_grade_agents ssga
+            WHERE ssga.simulation_id = $1
+            GROUP BY ssga.simulation_id, ssga.scenario_id
         ),
         scenario_statistics AS (
             SELECT 
@@ -183,6 +195,10 @@ user_context AS (
                         'show_objectives', sb.show_objectives,
                         'show_image', sb.show_image,
                         'rubric_id', sb.rubric_id::text,
+                        'hint_agent_id', sb.hint_agent_id,
+                        'input_guardrail_agent_id', sb.input_guardrail_agent_id,
+                        'output_guardrail_agent_id', sb.output_guardrail_agent_id,
+                        'grade_agent_ids', COALESCE(ssgad.grade_agent_ids, ARRAY[]::text[]),
                         'time_limit_seconds', sb.time_limit_seconds,
                         'parameter_item_ids', (
                             SELECT COALESCE(jsonb_agg(pid::text), '[]'::jsonb)
@@ -199,6 +215,7 @@ user_context AS (
             COALESCE(ARRAY_AGG(sb.scenario_id::text), ARRAY[]::text[]) as scenario_ids
             FROM simulation_scenarios_base sb
             LEFT JOIN scenario_statistics stats ON stats.scenario_id = sb.scenario_id
+            LEFT JOIN simulation_scenarios_grade_agents_data ssgad ON ssgad.simulation_id = $1 AND ssgad.scenario_id = sb.scenario_id
         ),
         valid_scenarios_list AS (
             -- Get scenarios that are marked as roots in scenario_tree (parent_id = child_id)
@@ -656,6 +673,37 @@ user_context AS (
             LEFT JOIN department_scenario_ids dsci ON dsci.department_id = ud.id
             LEFT JOIN department_rubric_ids dri ON dri.department_id = ud.id
             LEFT JOIN department_cohort_ids dci ON dci.department_id = ud.id
+        ),
+        user_departments_for_agents AS (
+            SELECT department_id
+            FROM resolve_profile_id rpi
+            JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+            WHERE pd.active = true
+        ),
+        valid_agents AS (
+            -- Get agents with roles 'hint', 'input_guardrail', 'output_guardrail', or 'grade'
+            -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+            SELECT 
+                COALESCE(
+                    jsonb_object_agg(
+                        a.id::text,
+                        jsonb_build_object(
+                            'name', a.name,
+                            'description', COALESCE(a.description, ''),
+                            'roles', ARRAY[a.role::text]
+                        )
+                    ),
+                    '{}'::jsonb
+                ) as agent_mapping,
+                array_agg(a.id::text ORDER BY a.name) as agent_ids
+            FROM agents a
+            LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+            WHERE a.active = true 
+            AND a.role IN ('hint', 'input_guardrail', 'output_guardrail', 'grade')
+            GROUP BY a.id
+            HAVING 
+                COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+                OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
         )
         SELECT 
             -- Basic simulation fields
@@ -696,7 +744,10 @@ user_context AS (
             pmd.parameter_mapping,
             pimd.parameter_item_mapping,
             -- Parameter items list
-            pild.parameter_items_list
+            pild.parameter_items_list,
+            -- Agent mapping
+            COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+            COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
         FROM simulation_base sb
         CROSS JOIN user_context uc
         LEFT JOIN cohort_usage cu ON true
@@ -711,3 +762,4 @@ user_context AS (
         LEFT JOIN scenario_mapping_complete smc ON true
         LEFT JOIN video_mapping_data vmd ON true
         LEFT JOIN department_mapping_data dmd ON true
+        LEFT JOIN valid_agents va ON true

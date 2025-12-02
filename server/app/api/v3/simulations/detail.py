@@ -43,6 +43,12 @@ class ScenarioInSimulation(BaseModel):
     show_image: bool
     rubric_id: str | None
     time_limit_seconds: int | None  # Per-scenario time limit in seconds
+    
+    # Agent IDs
+    hint_agent_id: str
+    input_guardrail_agent_id: str
+    output_guardrail_agent_id: str
+    grade_agent_ids: list[str]  # Array of grade agent IDs from junction table
 
     # Statistics fields
     usage_count: int  # Number of all chats (regardless of completion)
@@ -143,6 +149,8 @@ class SimulationDetailResponse(BaseModel):
     rubric_mapping: RubricMapping
     department_mapping: DepartmentMapping
     parameter_item_mapping: ParameterItemMapping
+    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -257,6 +265,10 @@ async def get_simulation_detail(
                             show_objectives=s_data.get("show_objectives", True),
                             show_image=s_data.get("show_image", True),
                             rubric_id=s_data.get("rubric_id"),
+                            hint_agent_id=s_data.get("hint_agent_id", ""),
+                            input_guardrail_agent_id=s_data.get("input_guardrail_agent_id", ""),
+                            output_guardrail_agent_id=s_data.get("output_guardrail_agent_id", ""),
+                            grade_agent_ids=s_data.get("grade_agent_ids", []),
                             time_limit_seconds=s_data.get("time_limit_seconds"),
                             usage_count=s_data.get("usage_count", 0),
                             success_rate=s_data.get("success_rate", 0),
@@ -464,6 +476,30 @@ async def get_simulation_detail(
                         )
                     )
 
+        # Parse agent_mapping
+        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = {
+                        "name": adata.get("name", ""),
+                        "description": adata.get("description", ""),
+                        "roles": [str(r) for r in roles],
+                    }
+
+        valid_agent_ids = [
+            str(aid) for aid in (result.get("valid_agent_ids") or [])
+        ]
+
         # Parse department_ids
         department_ids = result.get("department_ids")
         if department_ids:
@@ -500,6 +536,8 @@ async def get_simulation_detail(
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
             parameter_item_mapping=parameter_item_mapping,
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

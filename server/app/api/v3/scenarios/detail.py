@@ -10,7 +10,7 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+from app.utils.schema import (AgentMapping, AgentMappingItem, DepartmentMapping, DepartmentMappingItem,
                               DocumentMapping, DocumentMappingItem,
                               ObjectiveMapping, ObjectiveMappingItem,
                               ParameterItemMapping, ParameterItemMappingItem,
@@ -124,6 +124,12 @@ class ScenarioDetailResponse(BaseModel):
     objective_mapping: ObjectiveMapping
     department_mapping: DepartmentMapping
     problem_statement_mapping: dict[str, ProblemStatementInfo]
+    
+    # Agent IDs
+    scenario_agent_id: str
+    image_agent_id: str
+    agent_mapping: AgentMapping
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -429,6 +435,30 @@ async def get_scenario_detail(
                 if isinstance(img, dict)
             ]
 
+        # Parse agent_mapping
+        agent_mapping: AgentMapping = {}
+        agent_mapping_data = parse_jsonb(scenario.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=[str(r) for r in roles],
+                    )
+
+        valid_agent_ids = [
+            str(aid) for aid in (scenario.get("valid_agent_ids") or [])
+        ]
+
         response_data = ScenarioDetailResponse(
             name=scenario["name"],
             problem_statement=scenario["problem_statement"],
@@ -464,6 +494,10 @@ async def get_scenario_detail(
             objective_mapping=objective_mapping,
             department_mapping=department_mapping,
             problem_statement_mapping=problem_statement_mapping,
+            scenario_agent_id=scenario.get("scenario_agent_id", ""),
+            image_agent_id=scenario.get("image_agent_id", ""),
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

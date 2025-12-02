@@ -22,6 +22,8 @@ class UpdateDocumentRequest(BaseModel):
     active: bool | None = None
     department_id: str | None = None
     parameter_item_ids: list[str] = []
+    classify_agent_id: str | None = None
+    document_agent_id: str | None = None
 
 
 class UpdateDocumentResponse(BaseModel):
@@ -60,6 +62,8 @@ async def update_document(
                 request.active,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
+                uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
+                uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
             )
             await conn.execute(
                 sql_query,
@@ -69,6 +73,8 @@ async def update_document(
                 request.active,
                 uuid.UUID(request.department_id) if request.department_id else None,
                 param_item_ids,
+                uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
+                uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
             )
 
         result = UpdateDocumentResponse(

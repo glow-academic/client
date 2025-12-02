@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,11 @@ export interface ContentItem {
   show_image?: boolean; // Scenarios and videos
   rubric_id?: string | null;
   time_limit_seconds?: number | null; // Per-scenario time limit in seconds
+  // Agent IDs (scenarios only)
+  hint_agent_id?: string | null;
+  input_guardrail_agent_id?: string | null;
+  output_guardrail_agent_id?: string | null;
+  grade_agent_ids?: string[]; // Multi-select for grade agents
 }
 
 export interface SimulationContentTableProps {
@@ -109,9 +115,17 @@ export interface SimulationContentTableProps {
     contentId: string,
     timeLimitMinutes: number | null
   ) => void;
+  // Agent change handlers
+  onHintAgentChange?: (contentId: string, agentId: string | null) => void;
+  onInputGuardrailAgentChange?: (contentId: string, agentId: string | null) => void;
+  onOutputGuardrailAgentChange?: (contentId: string, agentId: string | null) => void;
+  onGradeAgentsChange?: (contentId: string, agentIds: string[]) => void;
   // Rubric picker props
   rubricMapping?: Record<string, { name: string; description?: string }>;
   validRubricIds?: string[];
+  // Agent picker props
+  agentMapping?: Record<string, { name: string; roles?: string[] }>;
+  validAgentIds?: string[];
   readonly?: boolean;
 }
 
@@ -134,8 +148,14 @@ export function SimulationContentTable({
   onShowImageToggle,
   onRubricChange,
   onTimeLimitChange,
+  onHintAgentChange,
+  onInputGuardrailAgentChange,
+  onOutputGuardrailAgentChange,
+  onGradeAgentsChange,
   rubricMapping = {},
   validRubricIds = [],
+  agentMapping = {},
+  validAgentIds = [],
   readonly = false,
 }: SimulationContentTableProps) {
   const [columnVisibility, setColumnVisibility] =
@@ -313,6 +333,53 @@ export function SimulationContentTable({
         },
       },
       {
+        id: "hint_agent",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Hint Agent</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Agent to use for generating hints</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center min-w-[150px]">
+              <AgentPicker
+                mapping={agentMapping}
+                validIds={
+                  validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("hint");
+                  })
+                }
+                selectedIds={item.hint_agent_id ? [item.hint_agent_id] : []}
+                onSelect={(ids) =>
+                  onHintAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
+                }
+                placeholder="Select agent"
+                disabled={readonly || !onHintAgentChange}
+                multiSelect={false}
+                buttonClassName="h-8 text-xs"
+              />
+            </div>
+          );
+        },
+      },
+      {
         id: "objectives_enabled",
         header: () => (
           <Tooltip>
@@ -388,6 +455,147 @@ export function SimulationContentTable({
                   disabled={readonly || !onOutputGuardrailToggle}
                 />
               </div>
+            </div>
+          );
+        },
+      },
+      {
+        id: "input_guardrail_agent",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Input Guardrail Agent</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Agent to use for input guardrail monitoring</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center min-w-[150px]">
+              <AgentPicker
+                mapping={agentMapping}
+                validIds={
+                  validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("input_guardrail");
+                  })
+                }
+                selectedIds={item.input_guardrail_agent_id ? [item.input_guardrail_agent_id] : []}
+                onSelect={(ids) =>
+                  onInputGuardrailAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
+                }
+                placeholder="Select agent"
+                disabled={readonly || !onInputGuardrailAgentChange}
+                multiSelect={false}
+                buttonClassName="h-8 text-xs"
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "output_guardrail_agent",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Output Guardrail Agent</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Agent to use for output guardrail monitoring</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center min-w-[150px]">
+              <AgentPicker
+                mapping={agentMapping}
+                validIds={
+                  validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("output_guardrail");
+                  })
+                }
+                selectedIds={item.output_guardrail_agent_id ? [item.output_guardrail_agent_id] : []}
+                onSelect={(ids) =>
+                  onOutputGuardrailAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
+                }
+                placeholder="Select agent"
+                disabled={readonly || !onOutputGuardrailAgentChange}
+                multiSelect={false}
+                buttonClassName="h-8 text-xs"
+              />
+            </div>
+          );
+        },
+      },
+      {
+        id: "grade_agents",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs">Grade Agents</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Agents to use for grading (multiple allowed)</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.type === "video") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                N/A
+              </Badge>
+            );
+          }
+          return (
+            <div className="flex items-center justify-center min-w-[150px]">
+              <AgentPicker
+                mapping={agentMapping}
+                validIds={
+                  validAgentIds.filter((id) => {
+                    const agent = agentMapping[id];
+                    return agent?.roles?.includes("grade");
+                  })
+                }
+                selectedIds={item.grade_agent_ids || []}
+                onSelect={(ids) =>
+                  onGradeAgentsChange?.(`${item.type}:${item.id}`, ids)
+                }
+                placeholder="Select agents"
+                disabled={readonly || !onGradeAgentsChange}
+                multiSelect={true}
+                buttonClassName="h-8 text-xs"
+              />
             </div>
           );
         },
@@ -771,6 +979,10 @@ export function SimulationContentTable({
       onObjectivesToggle,
       onInputGuardrailToggle,
       onOutputGuardrailToggle,
+      onHintAgentChange,
+      onInputGuardrailAgentChange,
+      onOutputGuardrailAgentChange,
+      onGradeAgentsChange,
       onCopyPasteToggle,
       onAudioToggle,
       onTextToggle,

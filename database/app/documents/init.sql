@@ -18,8 +18,13 @@ CREATE TABLE documents (
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
     template BOOLEAN NOT NULL DEFAULT FALSE,
-    template_args JSONB NOT NULL DEFAULT '{}'
+    template_args JSONB NOT NULL DEFAULT '{}',
+    classify_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
+    document_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
 );
+
+CREATE INDEX ON documents (classify_agent_id);
+CREATE INDEX ON documents (document_agent_id);
 
 -- Document → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)

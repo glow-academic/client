@@ -12414,140 +12414,6 @@
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
       },
-      "ContentItemInRequest": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active",
-            "default": true
-          },
-          "hints_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints Enabled"
-          },
-          "input_guardrail_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Guardrail Enabled"
-          },
-          "output_guardrail_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Guardrail Enabled"
-          },
-          "audio_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Enabled"
-          },
-          "text_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Enabled"
-          },
-          "show_problem_statement": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Problem Statement"
-          },
-          "show_objectives": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Objectives"
-          },
-          "show_image": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Show Image"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "time_limit_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit Seconds"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "id"
-        ],
-        "title": "ContentItemInRequest",
-        "description": "Unified content item (scenario or video) in request format."
-      },
       "CreateAgentRequest": {
         "properties": {
           "name": {
@@ -14046,7 +13912,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ContentItemInRequest"
+                  "$ref": "#/components/schemas/app__api__v3__simulations__create__ContentItemInRequest"
                 },
                 "type": "array"
               },
@@ -16143,6 +16009,28 @@
             },
             "type": "object",
             "title": "Parameter Item Mapping"
+          },
+          "classify_agent_id": {
+            "type": "string",
+            "title": "Classify Agent Id"
+          },
+          "document_agent_id": {
+            "type": "string",
+            "title": "Document Agent Id"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentMappingItem"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -16156,7 +16044,11 @@
           "department_mapping",
           "parameter_item_ids",
           "valid_parameter_item_ids",
-          "parameter_item_mapping"
+          "parameter_item_mapping",
+          "classify_agent_id",
+          "document_agent_id",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "DocumentDetailResponse",
         "description": "Detailed document response."
@@ -16966,6 +16858,10 @@
             "type": "string",
             "title": "Rubric Id"
           },
+          "eval_agent_id": {
+            "type": "string",
+            "title": "Eval Agent Id"
+          },
           "rubric_name": {
             "type": "string",
             "title": "Rubric Name"
@@ -17034,6 +16930,21 @@
             "type": "object",
             "title": "Department Mapping"
           },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
+          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -17049,6 +16960,7 @@
           "name",
           "description",
           "rubric_id",
+          "eval_agent_id",
           "rubric_name",
           "rubric_description",
           "rubric_points",
@@ -17062,6 +16974,8 @@
           "status",
           "model_runs",
           "department_mapping",
+          "agent_mapping",
+          "valid_agent_ids",
           "can_edit",
           "can_delete"
         ],
@@ -29245,6 +29159,28 @@
             "type": "array",
             "title": "Parameter Item Ids",
             "default": []
+          },
+          "classify_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classify Agent Id"
+          },
+          "document_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Agent Id"
           }
         },
         "type": "object",
@@ -29291,6 +29227,17 @@
           "rubric_id": {
             "type": "string",
             "title": "Rubric Id"
+          },
+          "eval_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Agent Id"
           },
           "model_run_ids": {
             "anyOf": [
@@ -30176,6 +30123,28 @@
             "type": "boolean",
             "title": "Image Enabled",
             "default": false
+          },
+          "scenario_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Agent Id"
+          },
+          "image_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Agent Id"
           }
         },
         "type": "object",
@@ -30446,7 +30415,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ContentItemInRequest"
+                  "$ref": "#/components/schemas/app__api__v3__simulations__update__ContentItemInRequest"
                 },
                 "type": "array"
               },
@@ -30663,6 +30632,39 @@
             "type": "array",
             "title": "Questions",
             "default": []
+          },
+          "outline_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outline Agent Id"
+          },
+          "question_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Agent Id"
+          },
+          "image_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Agent Id"
           }
         },
         "type": "object",
@@ -35311,6 +35313,28 @@
             },
             "type": "object",
             "title": "Problem Statement Mapping"
+          },
+          "scenario_agent_id": {
+            "type": "string",
+            "title": "Scenario Agent Id"
+          },
+          "image_agent_id": {
+            "type": "string",
+            "title": "Image Agent Id"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentMappingItem"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -35348,7 +35372,11 @@
           "document_mapping",
           "objective_mapping",
           "department_mapping",
-          "problem_statement_mapping"
+          "problem_statement_mapping",
+          "scenario_agent_id",
+          "image_agent_id",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "ScenarioDetailResponse",
         "description": "Detailed scenario response with all fields and metadata."
@@ -35784,6 +35812,140 @@
         "title": "ScenarioDetailResponse",
         "description": "Response for scenario detail."
       },
+      "app__api__v3__simulations__create__ContentItemInRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "input_guardrail_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_image": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Image"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ContentItemInRequest",
+        "description": "Unified content item (scenario or video) in request format."
+      },
       "app__api__v3__simulations__detail__ParameterItem": {
         "properties": {
           "id": {
@@ -35943,6 +36105,25 @@
             ],
             "title": "Time Limit Seconds"
           },
+          "hint_agent_id": {
+            "type": "string",
+            "title": "Hint Agent Id"
+          },
+          "input_guardrail_agent_id": {
+            "type": "string",
+            "title": "Input Guardrail Agent Id"
+          },
+          "output_guardrail_agent_id": {
+            "type": "string",
+            "title": "Output Guardrail Agent Id"
+          },
+          "grade_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Grade Agent Ids"
+          },
           "usage_count": {
             "type": "integer",
             "title": "Usage Count"
@@ -35986,6 +36167,10 @@
           "show_image",
           "rubric_id",
           "time_limit_seconds",
+          "hint_agent_id",
+          "input_guardrail_agent_id",
+          "output_guardrail_agent_id",
+          "grade_agent_ids",
           "usage_count",
           "success_rate",
           "last_used",
@@ -36173,6 +36358,21 @@
             },
             "type": "object",
             "title": "Parameter Item Mapping"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -36204,7 +36404,9 @@
           "video_mapping",
           "rubric_mapping",
           "department_mapping",
-          "parameter_item_mapping"
+          "parameter_item_mapping",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
@@ -36717,6 +36919,187 @@
         "title": "SimulationDetailResponse",
         "description": "Response for simulation detail endpoint."
       },
+      "app__api__v3__simulations__update__ContentItemInRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "default": true
+          },
+          "hints_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints Enabled"
+          },
+          "input_guardrail_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Enabled"
+          },
+          "output_guardrail_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Enabled"
+          },
+          "audio_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Enabled"
+          },
+          "text_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Enabled"
+          },
+          "show_problem_statement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Problem Statement"
+          },
+          "show_objectives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Objectives"
+          },
+          "show_image": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Image"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit Seconds"
+          },
+          "hint_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Agent Id"
+          },
+          "input_guardrail_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Guardrail Agent Id"
+          },
+          "output_guardrail_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Guardrail Agent Id"
+          },
+          "grade_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Agent Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id"
+        ],
+        "title": "ContentItemInRequest",
+        "description": "Unified content item (scenario or video) in request format."
+      },
       "app__api__v3__videos__create__QuestionItem": {
         "properties": {
           "question_text": {
@@ -36947,6 +37330,33 @@
             },
             "type": "array",
             "title": "Questions"
+          },
+          "outline_agent_id": {
+            "type": "string",
+            "title": "Outline Agent Id"
+          },
+          "question_agent_id": {
+            "type": "string",
+            "title": "Question Agent Id"
+          },
+          "image_agent_id": {
+            "type": "string",
+            "title": "Image Agent Id"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -36974,7 +37384,12 @@
           "can_duplicate",
           "can_delete",
           "department_mapping",
-          "questions"
+          "questions",
+          "outline_agent_id",
+          "question_agent_id",
+          "image_agent_id",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."

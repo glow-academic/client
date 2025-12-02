@@ -22,6 +22,7 @@ eval_data AS (
         e.name,
         e.description,
         e.rubric_id,
+        e.eval_agent_id::text,
         e.created_at,
         e.updated_at,
         r.name as rubric_name,
@@ -130,12 +131,44 @@ department_mapping_data AS (
     FROM rubric_departments_data rdd
     LEFT JOIN departments d ON d.id::text = ANY(rdd.department_ids)
     WHERE d.active = true
+),
+user_departments_for_agents AS (
+    SELECT department_id
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
+),
+valid_agents AS (
+    -- Get agents with role 'eval'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role = 'eval'
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 )
 SELECT 
     ed.eval_id::text,
     ed.name,
     ed.description,
     ed.rubric_id::text,
+    ed.eval_agent_id,
     ed.rubric_name,
     ed.rubric_description,
     ed.rubric_points,
@@ -154,6 +187,8 @@ SELECT
     END as status,
     rj.runs,
     dm.mapping as department_mapping,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
@@ -168,6 +203,7 @@ LEFT JOIN eval_status_summary ess ON ess.eval_id = ed.eval_id
 CROSS JOIN runs_json rj
 CROSS JOIN user_profile up
 CROSS JOIN department_mapping_data dm
+CROSS JOIN valid_agents va
 WHERE 
     -- Filter by department access (if rubric has departments, user must have access)
     (

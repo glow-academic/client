@@ -1,5 +1,5 @@
 -- Update simulation with departments, scenarios, and videos in a single transaction
--- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_input_guardrail_enabled (bool array), $13=scenario_output_guardrail_enabled (bool array), $14=scenario_rubric_ids (text array, nullable), $15=scenario_time_limit_seconds (int array, nullable), $16=scenario_audio_enabled (bool array), $17=scenario_text_enabled (bool array), $18=scenario_show_problem_statement (bool array), $19=scenario_show_objectives (bool array), $20=scenario_show_image (bool array), $21=video_show_problem_statement (bool array), $22=video_show_objectives (bool array), $23=video_show_image (bool array)
+-- Parameters: $1=simulationId, $2=title, $3=description, $4=active, $5=practice_simulation, $6=department_ids (nullable text array), $7=scenario_ids (text array), $8=scenario_active_flags (bool array), $9=video_ids (text array), $10=video_active_flags (bool array), $11=scenario_hints_enabled (bool array), $12=scenario_input_guardrail_enabled (bool array), $13=scenario_output_guardrail_enabled (bool array), $14=scenario_rubric_ids (text array, nullable), $15=scenario_time_limit_seconds (int array, nullable), $16=scenario_audio_enabled (bool array), $17=scenario_text_enabled (bool array), $18=scenario_show_problem_statement (bool array), $19=scenario_show_objectives (bool array), $20=scenario_show_image (bool array), $21=video_show_problem_statement (bool array), $22=video_show_objectives (bool array), $23=video_show_image (bool array), $24=scenario_hint_agent_ids (text array, nullable), $25=scenario_input_guardrail_agent_ids (text array, nullable), $26=scenario_output_guardrail_agent_ids (text array, nullable), $27=scenario_grade_agent_ids (text array array, nullable - array of arrays, one per scenario)
 -- Note: scenario_ids/scenario_active_flags and video_ids/video_active_flags must be same length and order within each type
 -- Positions are unified: scenarios get positions 1..N, videos get positions N+1..M
 -- Note: rubric_id and time_limit are now per-scenario, not simulation-level
@@ -47,7 +47,7 @@ replace_videos AS (
     DELETE FROM simulation_videos WHERE simulation_id = $1::uuid
 ),
 scenarios_data AS (
-    -- Prepare scenarios with their active flags, switch flags, rubric_id, and time_limit_seconds
+    -- Prepare scenarios with their active flags, switch flags, rubric_id, time_limit_seconds, and agent_ids
     SELECT 
         scenario_id,
         active_flag,
@@ -61,6 +61,9 @@ scenarios_data AS (
         show_image,
         rubric_id,
         time_limit_seconds,
+        hint_agent_id,
+        input_guardrail_agent_id,
+        output_guardrail_agent_id,
         row_num
     FROM (
         SELECT 
@@ -76,6 +79,9 @@ scenarios_data AS (
             COALESCE(show_image, true) as show_image,
             rubric_id,
             time_limit_seconds,
+            hint_agent_id,
+            input_guardrail_agent_id,
+            output_guardrail_agent_id,
             ROW_NUMBER() OVER () as row_num
         FROM UNNEST(
             $7::text[], 
@@ -89,8 +95,11 @@ scenarios_data AS (
             COALESCE($19::bool[], ARRAY[]::bool[]),
             COALESCE($20::bool[], ARRAY[]::bool[]),
             COALESCE($14::text[], ARRAY[]::text[]),
-            COALESCE($15::int[], ARRAY[]::int[])
-        ) AS t(scenario_id, active_flag, hints_enabled, input_guardrail_enabled, output_guardrail_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, time_limit_seconds)
+            COALESCE($15::int[], ARRAY[]::int[]),
+            COALESCE($24::text[], ARRAY[]::text[]),
+            COALESCE($25::text[], ARRAY[]::text[]),
+            COALESCE($26::text[], ARRAY[]::text[])
+        ) AS t(scenario_id, active_flag, hints_enabled, input_guardrail_enabled, output_guardrail_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, time_limit_seconds, hint_agent_id, input_guardrail_agent_id, output_guardrail_agent_id)
     ) sub
 ),
 scenarios_with_order AS (
@@ -108,6 +117,9 @@ scenarios_with_order AS (
         show_image,
         rubric_id,
         time_limit_seconds,
+        hint_agent_id,
+        input_guardrail_agent_id,
+        output_guardrail_agent_id,
         ROW_NUMBER() OVER (
             ORDER BY active_flag DESC, row_num
         ) as position
@@ -178,7 +190,7 @@ videos_with_order AS (
 ),
 link_scenarios AS (
     -- Insert new scenarios with proper ordering (active first, then inactive) and switch flags
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, input_guardrail_enabled, output_guardrail_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, input_guardrail_enabled, output_guardrail_enabled, audio_enabled, text_enabled, show_problem_statement, show_objectives, show_image, rubric_id, hint_agent_id, input_guardrail_agent_id, output_guardrail_agent_id, created_at, updated_at)
     SELECT 
         $1::uuid,
         swo.scenario_id::uuid,
@@ -193,9 +205,38 @@ link_scenarios AS (
         swo.show_objectives,
         swo.show_image,
         CASE WHEN swo.rubric_id = '' OR swo.rubric_id IS NULL THEN NULL ELSE swo.rubric_id::uuid END,
+        COALESCE(swo.hint_agent_id::uuid, (SELECT id FROM agents WHERE role = 'hint' AND active = true LIMIT 1)),
+        COALESCE(swo.input_guardrail_agent_id::uuid, (SELECT id FROM agents WHERE role = 'input_guardrail' AND active = true LIMIT 1)),
+        COALESCE(swo.output_guardrail_agent_id::uuid, (SELECT id FROM agents WHERE role = 'output_guardrail' AND active = true LIMIT 1)),
         NOW(),
         NOW()
     FROM scenarios_with_order swo
+),
+replace_grade_agents AS (
+    -- Delete all existing grade agent links for scenarios in this simulation
+    DELETE FROM simulation_scenarios_grade_agents 
+    WHERE simulation_id = $1::uuid
+    AND scenario_id = ANY($7::uuid[])
+),
+link_grade_agents AS (
+    -- Insert grade agent links if provided
+    -- $27 is array of arrays: one array per scenario, each containing grade agent IDs
+    INSERT INTO simulation_scenarios_grade_agents (simulation_id, scenario_id, agent_id, created_at, updated_at)
+    SELECT 
+        $1::uuid,
+        scenario_id::uuid,
+        agent_id::uuid,
+        NOW(),
+        NOW()
+    FROM (
+        SELECT 
+            scenario_id,
+            unnest(grade_agent_ids) as agent_id
+        FROM UNNEST($7::text[], $27::text[][]) AS t(scenario_id, grade_agent_ids)
+        WHERE grade_agent_ids IS NOT NULL AND array_length(grade_agent_ids, 1) > 0
+    ) grade_data
+    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+      AND $27::text[][] IS NOT NULL
 ),
 link_videos AS (
     -- Insert new videos with proper ordering (active first, then inactive), continuing position from scenarios

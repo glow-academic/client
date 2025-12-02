@@ -44,6 +44,9 @@ class UpdateVideoRequest(BaseModel):
     image_ids: list[str] | None = None
     active: bool
     questions: list[QuestionItem] = []  # Questions with times and options
+    outline_agent_id: str | None = None
+    question_agent_id: str | None = None
+    image_agent_id: str | None = None
 
 
 class UpdateVideoResponse(BaseModel):
@@ -96,6 +99,9 @@ async def update_video(
             policy_ids if policy_ids else None,
             image_ids if image_ids else None,
             questions_json,
+            request.outline_agent_id,
+            request.question_agent_id,
+            request.image_agent_id,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

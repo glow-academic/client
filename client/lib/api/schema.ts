@@ -5510,41 +5510,6 @@ export interface components {
                 [key: string]: string;
             }[];
         };
-        /**
-         * ContentItemInRequest
-         * @description Unified content item (scenario or video) in request format.
-         */
-        ContentItemInRequest: {
-            /** Type */
-            type: string;
-            /** Id */
-            id: string;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Hints Enabled */
-            hints_enabled?: boolean | null;
-            /** Input Guardrail Enabled */
-            input_guardrail_enabled?: boolean | null;
-            /** Output Guardrail Enabled */
-            output_guardrail_enabled?: boolean | null;
-            /** Audio Enabled */
-            audio_enabled?: boolean | null;
-            /** Text Enabled */
-            text_enabled?: boolean | null;
-            /** Show Problem Statement */
-            show_problem_statement?: boolean | null;
-            /** Show Objectives */
-            show_objectives?: boolean | null;
-            /** Show Image */
-            show_image?: boolean | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds?: number | null;
-        };
         /** CreateAgentRequest */
         CreateAgentRequest: {
             /** Name */
@@ -6173,7 +6138,7 @@ export interface components {
             /** Video Ids */
             video_ids?: string[] | components["schemas"]["VideoInRequest"][] | null;
             /** Content Items */
-            content_items?: components["schemas"]["ContentItemInRequest"][] | null;
+            content_items?: components["schemas"]["app__api__v3__simulations__create__ContentItemInRequest"][] | null;
         };
         /**
          * CreateSimulationResponse
@@ -7018,6 +6983,16 @@ export interface components {
             parameter_item_mapping: {
                 [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
+            /** Classify Agent Id */
+            classify_agent_id: string;
+            /** Document Agent Id */
+            document_agent_id: string;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["AgentMappingItem"];
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * DocumentItem
@@ -7387,6 +7362,8 @@ export interface components {
             description: string;
             /** Rubric Id */
             rubric_id: string;
+            /** Eval Agent Id */
+            eval_agent_id: string;
             /** Rubric Name */
             rubric_name: string;
             /** Rubric Description */
@@ -7415,6 +7392,14 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
             /** Can Edit */
             can_edit: boolean;
             /** Can Delete */
@@ -12126,6 +12111,10 @@ export interface components {
              * @default []
              */
             parameter_item_ids: string[];
+            /** Classify Agent Id */
+            classify_agent_id?: string | null;
+            /** Document Agent Id */
+            document_agent_id?: string | null;
         };
         /**
          * UpdateDocumentResponse
@@ -12150,6 +12139,8 @@ export interface components {
             description: string;
             /** Rubric Id */
             rubric_id: string;
+            /** Eval Agent Id */
+            eval_agent_id?: string | null;
             /** Model Run Ids */
             model_run_ids?: string[] | null;
             /** Profileid */
@@ -12489,6 +12480,10 @@ export interface components {
              * @default false
              */
             image_enabled: boolean;
+            /** Scenario Agent Id */
+            scenario_agent_id?: string | null;
+            /** Image Agent Id */
+            image_agent_id?: string | null;
         };
         /**
          * UpdateScenarioResponse
@@ -12589,7 +12584,7 @@ export interface components {
             /** Video Ids */
             video_ids?: string[] | components["schemas"]["VideoInRequest"][] | null;
             /** Content Items */
-            content_items?: components["schemas"]["ContentItemInRequest"][] | null;
+            content_items?: components["schemas"]["app__api__v3__simulations__update__ContentItemInRequest"][] | null;
         };
         /**
          * UpdateSimulationResponse
@@ -12663,6 +12658,12 @@ export interface components {
              * @default []
              */
             questions: components["schemas"]["app__api__v3__videos__update__QuestionItem"][];
+            /** Outline Agent Id */
+            outline_agent_id?: string | null;
+            /** Question Agent Id */
+            question_agent_id?: string | null;
+            /** Image Agent Id */
+            image_agent_id?: string | null;
         };
         /**
          * UpdateVideoResponse
@@ -14317,6 +14318,16 @@ export interface components {
             problem_statement_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__scenarios__detail__ProblemStatementInfo"];
             };
+            /** Scenario Agent Id */
+            scenario_agent_id: string;
+            /** Image Agent Id */
+            image_agent_id: string;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["AgentMappingItem"];
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * ScenarioItem
@@ -14473,6 +14484,41 @@ export interface components {
             };
         };
         /**
+         * ContentItemInRequest
+         * @description Unified content item (scenario or video) in request format.
+         */
+        app__api__v3__simulations__create__ContentItemInRequest: {
+            /** Type */
+            type: string;
+            /** Id */
+            id: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Input Guardrail Enabled */
+            input_guardrail_enabled?: boolean | null;
+            /** Output Guardrail Enabled */
+            output_guardrail_enabled?: boolean | null;
+            /** Audio Enabled */
+            audio_enabled?: boolean | null;
+            /** Text Enabled */
+            text_enabled?: boolean | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Show Image */
+            show_image?: boolean | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds?: number | null;
+        };
+        /**
          * ParameterItem
          * @description Parameter data for dropdown.
          */
@@ -14539,6 +14585,14 @@ export interface components {
             rubric_id: string | null;
             /** Time Limit Seconds */
             time_limit_seconds: number | null;
+            /** Hint Agent Id */
+            hint_agent_id: string;
+            /** Input Guardrail Agent Id */
+            input_guardrail_agent_id: string;
+            /** Output Guardrail Agent Id */
+            output_guardrail_agent_id: string;
+            /** Grade Agent Ids */
+            grade_agent_ids: string[];
             /** Usage Count */
             usage_count: number;
             /** Success Rate */
@@ -14623,6 +14677,14 @@ export interface components {
             parameter_item_mapping: {
                 [key: string]: components["schemas"]["ParameterItemMappingItem"];
             };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * SimulationItem
@@ -14805,6 +14867,49 @@ export interface components {
             };
         };
         /**
+         * ContentItemInRequest
+         * @description Unified content item (scenario or video) in request format.
+         */
+        app__api__v3__simulations__update__ContentItemInRequest: {
+            /** Type */
+            type: string;
+            /** Id */
+            id: string;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Input Guardrail Enabled */
+            input_guardrail_enabled?: boolean | null;
+            /** Output Guardrail Enabled */
+            output_guardrail_enabled?: boolean | null;
+            /** Audio Enabled */
+            audio_enabled?: boolean | null;
+            /** Text Enabled */
+            text_enabled?: boolean | null;
+            /** Show Problem Statement */
+            show_problem_statement?: boolean | null;
+            /** Show Objectives */
+            show_objectives?: boolean | null;
+            /** Show Image */
+            show_image?: boolean | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Time Limit Seconds */
+            time_limit_seconds?: number | null;
+            /** Hint Agent Id */
+            hint_agent_id?: string | null;
+            /** Input Guardrail Agent Id */
+            input_guardrail_agent_id?: string | null;
+            /** Output Guardrail Agent Id */
+            output_guardrail_agent_id?: string | null;
+            /** Grade Agent Ids */
+            grade_agent_ids?: string[] | null;
+        };
+        /**
          * QuestionItem
          * @description Question item in create request.
          */
@@ -14906,6 +15011,20 @@ export interface components {
             };
             /** Questions */
             questions: components["schemas"]["QuestionResponse"][];
+            /** Outline Agent Id */
+            outline_agent_id: string;
+            /** Question Agent Id */
+            question_agent_id: string;
+            /** Image Agent Id */
+            image_agent_id: string;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * ProblemStatementInfo

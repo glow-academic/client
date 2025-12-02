@@ -102,7 +102,9 @@ scenario_core AS (
         s.documents_enabled,
         s.document_vision_enabled,
         s.objectives_enabled,
-        s.image_enabled
+        s.image_enabled,
+        s.scenario_agent_id::text,
+        s.image_agent_id::text
     FROM scenarios s
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.child_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
@@ -781,7 +783,40 @@ SELECT
     ddd.document_details,
     COALESCE(psmd.problem_statement_mapping, '{}'::jsonb) as problem_statement_mapping,
     COALESCE(ohd.objectives_history, '[]'::jsonb) as objectives_history,
-    COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images
+    COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images,
+    sc.scenario_agent_id,
+    sc.image_agent_id
+user_departments_for_agents AS (
+    SELECT department_id
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
+),
+valid_agents AS (
+    -- Get agents with roles 'scenario' or 'image'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role IN ('scenario', 'image')
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+)
 FROM scenario_core sc
 CROSS JOIN user_profile up
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
@@ -807,4 +842,5 @@ CROSS JOIN scenario_departments_mapping_data sdmdept
 CROSS JOIN enhanced_department_mapping_data edmdept
 CROSS JOIN problem_statement_mapping_data psmd
 CROSS JOIN objectives_history_data ohd
+CROSS JOIN valid_agents va
 

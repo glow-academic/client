@@ -52,6 +52,8 @@ document_data AS (
         d.mime_type,
         d.active,
         d.file_path,
+        d.classify_agent_id::text,
+        d.document_agent_id::text,
         COALESCE(ddd.department_ids, NULL) as department_ids,
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(dpic.parameter_item_ids, ARRAY[]::uuid[]) as parameter_item_ids,

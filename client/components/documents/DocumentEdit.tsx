@@ -11,6 +11,7 @@ import type {
   UpdateDocumentIn,
   UpdateDocumentOut,
 } from "@/app/(main)/management/documents/d/[documentId]/page";
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
@@ -53,12 +54,16 @@ export default function DocumentEdit({
     type: DocumentType;
     departmentIds: string[];
     parameterItemIds: string[];
+    classifyAgentId: string | null;
+    documentAgentId: string | null;
   }>({
     name: "",
     active: true,
     type: "homework",
     departmentIds: [],
     parameterItemIds: [],
+    classifyAgentId: null,
+    documentAgentId: null,
   });
 
   // Extract mappings from detail response
@@ -68,6 +73,10 @@ export default function DocumentEdit({
   );
   const parameterItemMapping = useMemo(
     () => documentDetail?.parameter_item_mapping || {},
+    [documentDetail]
+  );
+  const agentMapping = useMemo(
+    () => documentDetail?.agent_mapping || {},
     [documentDetail]
   );
 
@@ -106,6 +115,8 @@ export default function DocumentEdit({
         type: (documentDetail.type as DocumentType) || "homework",
         departmentIds: documentDetail.department_ids || [],
         parameterItemIds: documentDetail.parameter_item_ids || [],
+        classifyAgentId: documentDetail.classify_agent_id || null,
+        documentAgentId: documentDetail.document_agent_id || null,
       });
     }
   }, [documentDetail]);
@@ -123,6 +134,8 @@ export default function DocumentEdit({
           active: formData.active,
           department_id: formData.departmentIds.length > 0 ? formData.departmentIds[0] : null,
           parameter_item_ids: formData.parameterItemIds,
+          classify_agent_id: formData.classifyAgentId || undefined,
+          document_agent_id: formData.documentAgentId || undefined,
         },
       });
 
@@ -228,6 +241,65 @@ export default function DocumentEdit({
               badgesPosition="below"
               showClearAll={true}
             />
+          </div>
+
+          {/* Agent Selection */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            {/* Classify Agent */}
+            <div className="space-y-2">
+              <Label htmlFor="classifyAgentId">Classify Agent</Label>
+              {formData?.classifyAgentId !== undefined ? (
+                <AgentPicker
+                  mapping={agentMapping}
+                  validIds={
+                    documentDetail?.valid_agent_ids?.filter((id) => {
+                      const agent = agentMapping[id];
+                      return agent?.roles?.includes("classify");
+                    }) || []
+                  }
+                  selectedIds={
+                    formData?.classifyAgentId ? [formData.classifyAgentId] : []
+                  }
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      classifyAgentId: ids[0] || null,
+                    }))
+                  }
+                  placeholder="Select classify agent"
+                  disabled={isUpdating}
+                  multiSelect={false}
+                />
+              ) : null}
+            </div>
+
+            {/* Document Agent */}
+            <div className="space-y-2">
+              <Label htmlFor="documentAgentId">Document Agent</Label>
+              {formData?.documentAgentId !== undefined ? (
+                <AgentPicker
+                  mapping={agentMapping}
+                  validIds={
+                    documentDetail?.valid_agent_ids?.filter((id) => {
+                      const agent = agentMapping[id];
+                      return agent?.roles?.includes("document");
+                    }) || []
+                  }
+                  selectedIds={
+                    formData?.documentAgentId ? [formData.documentAgentId] : []
+                  }
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      documentAgentId: ids[0] || null,
+                    }))
+                  }
+                  placeholder="Select document agent"
+                  disabled={isUpdating}
+                  multiSelect={false}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
 

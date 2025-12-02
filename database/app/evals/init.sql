@@ -11,12 +11,14 @@ CREATE TABLE evals (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
   agent_id   UUID        NOT NULL REFERENCES agents(id)  ON DELETE CASCADE,
+  eval_agent_id UUID     NOT NULL REFERENCES agents(id)  ON DELETE RESTRICT,
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL
 );
 
 CREATE INDEX ON evals (rubric_id);
 CREATE INDEX ON evals (agent_id);
+CREATE INDEX ON evals (eval_agent_id);
 
 -- Junction table linking evals to runs
 -- Tracks which evals are assigned to which runs

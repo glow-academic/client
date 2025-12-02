@@ -4,7 +4,8 @@
 --            $6=outline_ids (text array, nullable),
 --            $7=policy_ids (text array, nullable),
 --            $8=image_ids (text array, nullable),
---            $9=questions_json (JSONB string with questions array)
+--            $9=questions_json (JSONB string with questions array),
+--            $10=outline_agent_id (nullable uuid), $11=question_agent_id (nullable uuid), $12=image_agent_id (nullable uuid)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
 -- Note: file_path and mime_type are NOT updated here - they're managed via video_generations table when video file is generated/uploaded
@@ -16,6 +17,9 @@ WITH updated_video AS (
         name = $2,
         length_seconds = $3,
         active = $4,
+        outline_agent_id = COALESCE($10::uuid, outline_agent_id),
+        question_agent_id = COALESCE($11::uuid, question_agent_id),
+        image_agent_id = COALESCE($12::uuid, image_agent_id),
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::uuid as video_id, name

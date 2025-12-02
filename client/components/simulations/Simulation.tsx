@@ -224,6 +224,15 @@ export default function Simulation({
     () => simulationData?.department_mapping || {},
     [simulationData]
   );
+  // Extract agent mapping
+  const agentMapping = useMemo(
+    () => simulationData?.agent_mapping || {},
+    [simulationData]
+  );
+  const validAgentIds = useMemo(
+    () => simulationData?.valid_agent_ids || [],
+    [simulationData]
+  );
 
   // State for managing unified content (scenarios + videos)
   const [currentContentItems, setCurrentContentItems] = useState<ContentItem[]>(
@@ -238,7 +247,7 @@ export default function Simulation({
   const [originalContentActiveStates, setOriginalContentActiveStates] =
     useState<Record<string, boolean>>({});
 
-  // Switch field states
+  // Switch field states (includes agent IDs)
   const [contentSwitchStates, setContentSwitchStates] = useState<
     Record<
       string,
@@ -254,6 +263,10 @@ export default function Simulation({
         show_image?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
+        hint_agent_id?: string | null;
+        input_guardrail_agent_id?: string | null;
+        output_guardrail_agent_id?: string | null;
+        grade_agent_ids?: string[];
       }
     >
   >({});
@@ -273,6 +286,10 @@ export default function Simulation({
           show_image?: boolean;
           rubric_id?: string | null;
           time_limit_seconds?: number | null;
+          hint_agent_id?: string | null;
+          input_guardrail_agent_id?: string | null;
+          output_guardrail_agent_id?: string | null;
+          grade_agent_ids?: string[];
         }
       >
     >({});
@@ -516,6 +533,10 @@ export default function Simulation({
             switchState?.time_limit_seconds ??
             scenario.time_limit_seconds ??
             null,
+          hint_agent_id: switchState?.hint_agent_id ?? scenario.hint_agent_id ?? null,
+          input_guardrail_agent_id: switchState?.input_guardrail_agent_id ?? scenario.input_guardrail_agent_id ?? null,
+          output_guardrail_agent_id: switchState?.output_guardrail_agent_id ?? scenario.output_guardrail_agent_id ?? null,
+          grade_agent_ids: switchState?.grade_agent_ids ?? scenario.grade_agent_ids ?? [],
         });
       });
     }
@@ -628,6 +649,10 @@ export default function Simulation({
             show_image: scenario.show_image ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
+            hint_agent_id: scenario.hint_agent_id ?? null,
+            input_guardrail_agent_id: scenario.input_guardrail_agent_id ?? null,
+            output_guardrail_agent_id: scenario.output_guardrail_agent_id ?? null,
+            grade_agent_ids: scenario.grade_agent_ids ?? [],
           };
           newOriginalSwitchStates[key] = {
             hints_enabled: scenario.hints_enabled ?? false,
@@ -642,6 +667,10 @@ export default function Simulation({
             show_image: scenario.show_image ?? true,
             rubric_id: scenario.rubric_id ?? null,
             time_limit_seconds: scenario.time_limit_seconds ?? null,
+            hint_agent_id: scenario.hint_agent_id ?? null,
+            input_guardrail_agent_id: scenario.input_guardrail_agent_id ?? null,
+            output_guardrail_agent_id: scenario.output_guardrail_agent_id ?? null,
+            grade_agent_ids: scenario.grade_agent_ids ?? [],
           };
         });
       }
@@ -903,6 +932,10 @@ export default function Simulation({
         show_image?: boolean;
         rubric_id?: string | null;
         time_limit_seconds?: number | null;
+        hint_agent_id?: string | null;
+        input_guardrail_agent_id?: string | null;
+        output_guardrail_agent_id?: string | null;
+        grade_agent_ids?: string[];
       }
 
       const contentItems: ContentItemPayload[] = currentContentItems.map(
@@ -948,6 +981,14 @@ export default function Simulation({
               switchState?.time_limit_seconds ??
               item.time_limit_seconds ??
               null;
+            baseItem.hint_agent_id =
+              switchState?.hint_agent_id ?? item.hint_agent_id ?? null;
+            baseItem.input_guardrail_agent_id =
+              switchState?.input_guardrail_agent_id ?? item.input_guardrail_agent_id ?? null;
+            baseItem.output_guardrail_agent_id =
+              switchState?.output_guardrail_agent_id ?? item.output_guardrail_agent_id ?? null;
+            baseItem.grade_agent_ids =
+              switchState?.grade_agent_ids ?? item.grade_agent_ids ?? [];
           } else if (item.type === "video") {
             baseItem.show_problem_statement =
               switchState?.show_problem_statement ??
@@ -1140,6 +1181,58 @@ export default function Simulation({
         [contentId]: {
           ...prev[contentId],
           output_guardrail_enabled: enabled,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleHintAgentChange = useCallback(
+    (contentId: string, agentId: string | null) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          hint_agent_id: agentId,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleInputGuardrailAgentChange = useCallback(
+    (contentId: string, agentId: string | null) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          input_guardrail_agent_id: agentId,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleOutputGuardrailAgentChange = useCallback(
+    (contentId: string, agentId: string | null) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          output_guardrail_agent_id: agentId,
+        },
+      }));
+    },
+    []
+  );
+
+  const handleGradeAgentsChange = useCallback(
+    (contentId: string, agentIds: string[]) => {
+      setContentSwitchStates((prev) => ({
+        ...prev,
+        [contentId]: {
+          ...prev[contentId],
+          grade_agent_ids: agentIds,
         },
       }));
     },
@@ -1553,6 +1646,10 @@ export default function Simulation({
             onHintsToggle={handleHintsToggle}
             onInputGuardrailToggle={handleInputGuardrailToggle}
             onOutputGuardrailToggle={handleOutputGuardrailToggle}
+            onHintAgentChange={handleHintAgentChange}
+            onInputGuardrailAgentChange={handleInputGuardrailAgentChange}
+            onOutputGuardrailAgentChange={handleOutputGuardrailAgentChange}
+            onGradeAgentsChange={handleGradeAgentsChange}
             onCopyPasteToggle={handleCopyPasteToggle}
             onAudioToggle={handleAudioToggle}
             onTextToggle={handleTextToggle}
@@ -1563,6 +1660,8 @@ export default function Simulation({
             onTimeLimitChange={handleTimeLimitChange}
             rubricMapping={simulationData?.rubric_mapping || {}}
             validRubricIds={validRubricIds}
+            agentMapping={agentMapping}
+            validAgentIds={validAgentIds}
             readonly={isReadonly}
           />
         </div>

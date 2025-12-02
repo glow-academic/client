@@ -59,7 +59,10 @@ video_core AS (
         v.active,
         COALESCE(vg.file_path, '') as file_path,
         COALESCE(vg.mime_type, '') as mime_type,
-        COALESCE(vdd.department_ids, NULL) as department_ids
+        COALESCE(vdd.department_ids, NULL) as department_ids,
+        v.outline_agent_id::text,
+        v.question_agent_id::text,
+        v.image_agent_id::text
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
     LEFT JOIN video_generations vg ON vg.video_id = v.id AND vg.active = TRUE
@@ -287,8 +290,14 @@ SELECT
     vp.can_duplicate,
     vp.can_delete,
     COALESCE((SELECT mapping FROM department_mapping_data), '{}'::jsonb) as department_mapping,
-    COALESCE((SELECT questions FROM questions_json), '[]'::jsonb) as questions
+    COALESCE((SELECT questions FROM questions_json), '[]'::jsonb) as questions,
+    vc.outline_agent_id,
+    vc.question_agent_id,
+    vc.image_agent_id,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
 FROM video_core vc
 CROSS JOIN video_permissions vp
+CROSS JOIN valid_agents va
 WHERE vc.id = $1
 

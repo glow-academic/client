@@ -21,6 +21,7 @@ class UpdateEvalRequest(BaseModel):
     name: str
     description: str
     rubric_id: str
+    eval_agent_id: str | None = None
     model_run_ids: list[str] | None = None  # If provided, replaces all existing
     profileId: str
 
@@ -86,6 +87,7 @@ async def update_eval(
                 request.description,
                 request.rubric_id,
                 model_run_ids_uuid,
+                uuid.UUID(request.eval_agent_id) if request.eval_agent_id else None,
             )
             result = await conn.fetchrow(sql_query, *sql_params)
 

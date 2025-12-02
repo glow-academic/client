@@ -78,6 +78,11 @@ class VideoDetailResponse(BaseModel):
     can_delete: bool
     department_mapping: DepartmentMapping
     questions: list[QuestionResponse]
+    outline_agent_id: str
+    question_agent_id: str
+    image_agent_id: str
+    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -294,6 +299,30 @@ async def get_video_detail(
         if not isinstance(objectives_history, list):
             objectives_history = []
 
+        # Parse agent_mapping
+        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping_data = parse_jsonb(video.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = {
+                        "name": adata.get("name", ""),
+                        "description": adata.get("description", ""),
+                        "roles": [str(r) for r in roles],
+                    }
+
+        valid_agent_ids = [
+            str(aid) for aid in (video.get("valid_agent_ids") or [])
+        ]
+
         # Extract file_path and mime_type
         file_path = video.get("file_path") or ""
         mime_type = video.get("mime_type") or ""
@@ -328,6 +357,11 @@ async def get_video_detail(
             can_delete=video["can_delete"],
             department_mapping=department_mapping,
             questions=questions,
+            outline_agent_id=video.get("outline_agent_id", ""),
+            question_agent_id=video.get("question_agent_id", ""),
+            image_agent_id=video.get("image_agent_id", ""),
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

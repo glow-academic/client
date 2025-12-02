@@ -31,6 +31,8 @@ class UpdateScenarioRequest(BaseModel):
     document_vision_enabled: bool = False
     objectives_enabled: bool = True
     image_enabled: bool = False
+    scenario_agent_id: str | None = None
+    image_agent_id: str | None = None
 
 
 class UpdateScenarioResponse(BaseModel):
@@ -98,6 +100,8 @@ async def update_scenario(
             objective_ids,
             parameter_item_ids,
             image_ids if image_ids else None,
+            request.scenario_agent_id,
+            request.image_agent_id,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 
