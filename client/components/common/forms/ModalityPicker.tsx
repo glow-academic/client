@@ -29,10 +29,10 @@ import { cn } from "@/lib/utils";
 
 // Modality options
 const MODALITIES = [
-  { id: "text", name: "Text", description: "Text input/output" },
-  { id: "audio", name: "Audio", description: "Audio input/output" },
-  { id: "video", name: "Video", description: "Video input/output" },
-  { id: "image", name: "Image", description: "Image input/output" },
+  { id: "text", name: "Text" },
+  { id: "audio", name: "Audio" },
+  { id: "video", name: "Video" },
+  { id: "image", name: "Image" },
 ] as const;
 
 export interface ModalityPickerProps {
@@ -81,24 +81,24 @@ export function ModalityPicker({
 
   const getInputButtonText = () => {
     if (inputModalities.length === 0) {
-      return "Select input modalities...";
+      return "Select input...";
     }
-    if (inputModalities.length === 1) {
-      const mod = MODALITIES.find((m) => m.id === inputModalities[0]);
-      return mod?.name || "Select input modalities...";
-    }
-    return `${inputModalities.length} input modalities`;
+    const selectedNames = inputModalities
+      .map((id) => MODALITIES.find((m) => m.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+    return selectedNames || "Select input...";
   };
 
   const getOutputButtonText = () => {
     if (outputModalities.length === 0) {
-      return "Select output modalities...";
+      return "Select output...";
     }
-    if (outputModalities.length === 1) {
-      const mod = MODALITIES.find((m) => m.id === outputModalities[0]);
-      return mod?.name || "Select output modalities...";
-    }
-    return `${outputModalities.length} output modalities`;
+    const selectedNames = outputModalities
+      .map((id) => MODALITIES.find((m) => m.id === id)?.name)
+      .filter(Boolean)
+      .join(", ");
+    return selectedNames || "Select output...";
   };
 
   return (
@@ -146,11 +146,9 @@ export function ModalityPicker({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <div className="flex-1 min-w-0">
                             <div className="truncate">{modality.name}</div>
-                            {modality.description && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {modality.description}
-                              </div>
-                            )}
+                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {`${modality.name} input`}
+                            </div>
                           </div>
                         </div>
                         <Check
@@ -169,29 +167,6 @@ export function ModalityPicker({
             </Command>
           </PopoverContent>
         </Popover>
-        {inputModalities.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {inputModalities.map((id) => {
-              const mod = MODALITIES.find((m) => m.id === id);
-              if (!mod) return null;
-              return (
-                <div
-                  key={id}
-                  className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-                >
-                  <span>{mod.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleInputSelect(id)}
-                    className="text-muted-foreground hover:text-destructive flex-shrink-0"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Output Modalities */}
@@ -239,11 +214,9 @@ export function ModalityPicker({
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <div className="flex-1 min-w-0">
                             <div className="truncate">{modality.name}</div>
-                            {modality.description && (
-                              <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
-                                {modality.description}
-                              </div>
-                            )}
+                            <div className="text-xs text-muted-foreground mt-1 truncate group-data-[selected=true]:text-primary-foreground group-data-[highlighted=true]:text-primary-foreground">
+                              {`${modality.name} output`}
+                            </div>
                           </div>
                         </div>
                         <Check
@@ -262,29 +235,6 @@ export function ModalityPicker({
             </Command>
           </PopoverContent>
         </Popover>
-        {outputModalities.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {outputModalities.map((id) => {
-              const mod = MODALITIES.find((m) => m.id === id);
-              if (!mod) return null;
-              return (
-                <div
-                  key={id}
-                  className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-md text-sm"
-                >
-                  <span>{mod.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleOutputSelect(id)}
-                    className="text-muted-foreground hover:text-destructive flex-shrink-0"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

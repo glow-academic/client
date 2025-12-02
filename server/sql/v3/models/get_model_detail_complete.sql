@@ -109,6 +109,44 @@ model_all_keys AS (
     JOIN keys k ON k.id = mdk.key_id
     WHERE mdk.model_id = $1::uuid AND mdk.active = true AND k.active = true
     GROUP BY mdk.key_id, k.name, k.key, k.description, k.active
+    
+    UNION ALL
+    
+    -- General keys (keys without department links that user has access to)
+    SELECT DISTINCT
+        k.id::text as key_id,
+        k.name,
+        k.key,
+        k.description,
+        k.active,
+        NULL::text[] as department_ids
+    FROM keys k
+    CROSS JOIN resolve_profile_id rpi
+    LEFT JOIN key_departments kd ON kd.key_id = k.id AND kd.active = true
+    WHERE k.active = true
+    AND NOT EXISTS (
+        -- Exclude keys already included via model_keys or model_department_keys
+        SELECT 1 FROM model_keys mk2 
+        WHERE mk2.model_id = $1::uuid AND mk2.key_id = k.id AND mk2.active = true
+    )
+    AND NOT EXISTS (
+        SELECT 1 FROM model_department_keys mdk2 
+        WHERE mdk2.model_id = $1::uuid AND mdk2.key_id = k.id AND mdk2.active = true
+    )
+    AND (
+        -- Include keys with no department links (general keys)
+        NOT EXISTS (SELECT 1 FROM key_departments kd2 WHERE kd2.key_id = k.id AND kd2.active = true)
+        OR
+        -- Include keys with department links that match user's departments
+        EXISTS (
+            SELECT 1 FROM key_departments kd3
+            JOIN user_departments ud ON ud.department_id = kd3.department_id
+            WHERE kd3.key_id = k.id AND kd3.active = true
+        )
+        OR
+        -- Superadmin can see all keys
+        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profiles p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = 'superadmin')
+    )
 ),
 key_mapping_data AS (
     SELECT COALESCE(
