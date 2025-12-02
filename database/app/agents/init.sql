@@ -15,7 +15,9 @@ CREATE TYPE agent_role AS ENUM (
   'title',
   'image',
   'video',
-  'simulation',
+  'simulation-text',
+  'simulation-voice',
+  'eval',
   'outline',
   'question'
 );
@@ -46,7 +48,7 @@ CREATE TABLE runs (
   output_tokens INTEGER     NOT NULL DEFAULT 0,
   cached_input_tokens INTEGER     NOT NULL DEFAULT 0,
   key_id     UUID        REFERENCES keys(id) ON DELETE SET NULL,
-  agent_id   UUID        REFERENCES agents(id) ON DELETE SET NULL
+  agent_id   UUID        NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
 );
 
 CREATE INDEX ON runs (key_id);

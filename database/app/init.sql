@@ -33,10 +33,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i app/attributes/images/init.sql
 \i app/attributes/video_outlines/init.sql
 
--- 2. Assistant tables
-\i app/assistants/init.sql
-
--- 3. Personas and Agents
+-- 2. Personas and Agents
 \i app/personas/init.sql
 
 \i app/agents/init.sql

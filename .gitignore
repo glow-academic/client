@@ -4,6 +4,7 @@
 history/*.sql
 .venv/
 uploads/tus_uploads/
+keycloak/
 
 # Server cache and coverage files
 server/.mypy_cache/
