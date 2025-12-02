@@ -42,6 +42,7 @@ class GenerateOutlineRequest(BaseModel):
     questionIds: list[str] | None = None
     profileId: str | None = None
     videoId: str | None = None
+    videoLengthSeconds: int | None = None
 
 
 class GenerateOutlineResponse(BaseModel):
@@ -123,7 +124,12 @@ async def generate_outline(
             else context_row["questions"]
         )
 
-        video_length_seconds = context_row.get("video_length_seconds")
+        # Use provided videoLengthSeconds or fall back to video length from DB or default to 4
+        video_length_seconds = (
+            request.videoLengthSeconds
+            if request.videoLengthSeconds is not None
+            else context_row.get("video_length_seconds") or 4
+        )
         
         context = {
             "agent_id": context_row["agent_id"],

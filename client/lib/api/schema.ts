@@ -7673,6 +7673,8 @@ export interface components {
             profileId?: string | null;
             /** Videoid */
             videoId?: string | null;
+            /** Videolengthseconds */
+            videoLengthSeconds?: number | null;
         };
         /**
          * GenerateOutlineResponse

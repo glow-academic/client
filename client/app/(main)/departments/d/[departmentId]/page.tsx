@@ -7,14 +7,15 @@
 
 import { getSession } from "@/auth";
 
-import Department from "@/components/departments/Department";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
+import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
 // Import staff types and actions from staff page
 
+import { deleteDepartment } from "@/app/(main)/departments/page";
 import {
   bulkCreateOrUpdateStaff,
   getCreateStaffData,
@@ -22,10 +23,6 @@ import {
   searchStaff,
   updateStaff,
 } from "@/app/(main)/system/staff/page";
-import {
-  deleteDepartment,
-  duplicateDepartment,
-} from "@/app/(main)/departments/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
@@ -68,7 +65,7 @@ const getDepartment = async (
 /** ---- Metadata uses the same cached fetch ---- */
 export async function generateMetadata(
   { params }: { params: Promise<{ departmentId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { departmentId } = await params;
   const session = await getSession();
@@ -106,7 +103,7 @@ export async function generateMetadata(
 
 /** ---- Strongly-typed server actions ---- */
 async function updateDepartment(
-  input: UpdateDepartmentIn,
+  input: UpdateDepartmentIn
 ): Promise<UpdateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -114,7 +111,7 @@ async function updateDepartment(
 }
 
 async function removeProfilesFromDepartment(
-  input: RemoveProfilesFromDepartmentIn,
+  input: RemoveProfilesFromDepartmentIn
 ): Promise<RemoveProfilesFromDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
@@ -150,16 +147,16 @@ export default async function DepartmentEditPage({
   try {
     const departmentDetail = await getDepartment(departmentId, profileId);
 
-  // Fetch initial search data (empty query) for SearchExistingStaffModal
-  const initialSearchData = await searchStaff({
-    body: {
-      query: null,
-      cohortIds: null,
-      departmentIds: [departmentId],
-      limit: 200,
-      profileId,
-    },
-  });
+    // Fetch initial search data (empty query) for SearchExistingStaffModal
+    const initialSearchData = await searchStaff({
+      body: {
+        query: null,
+        cohortIds: null,
+        departmentIds: [departmentId],
+        limit: 200,
+        profileId,
+      },
+    });
 
     // Fetch initial create staff data for CreateStaffButton
     const initialCreateStaffData = await getCreateStaffData({
@@ -218,16 +215,16 @@ type DepartmentStaffItem = DepartmentDetailOut["staff"][number];
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  CreateKeyIn,
+  CreateKeyOut,
+  DecryptKeyIn,
+  DecryptKeyOut,
   DepartmentDetailOut,
   DepartmentStaffItem,
   RemoveProfilesFromDepartmentIn,
   RemoveProfilesFromDepartmentOut,
   UpdateDepartmentIn,
   UpdateDepartmentOut,
-  CreateKeyIn,
-  CreateKeyOut,
-  DecryptKeyIn,
-  DecryptKeyOut,
   UpdateKeyIn,
   UpdateKeyOut,
 };

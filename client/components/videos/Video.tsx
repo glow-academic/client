@@ -47,6 +47,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -54,10 +55,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -257,7 +254,8 @@ export default function Video({
 
     // Provide defaults for required fields
     const videoName = formData.name?.trim() || "New Video";
-    const videoLength = formData.length_seconds > 0 ? formData.length_seconds : 4;
+    const videoLength =
+      formData.length_seconds > 0 ? formData.length_seconds : 4;
 
     const createPayload: CreateVideoBody = {
       name: videoName,
@@ -336,7 +334,7 @@ export default function Video({
 
     // Use primary department ID if no departments selected (all departments)
     // Otherwise use first selected department
-    const departmentId = 
+    const departmentId =
       formData.departmentIds && formData.departmentIds.length > 0
         ? formData.departmentIds[0]!
         : effectiveProfile?.primaryDepartmentId || "";
@@ -406,7 +404,7 @@ export default function Video({
 
     // Use primary department ID if no departments selected (all departments)
     // Otherwise use first selected department
-    const departmentId = 
+    const departmentId =
       formData.departmentIds && formData.departmentIds.length > 0
         ? formData.departmentIds[0]!
         : effectiveProfile?.primaryDepartmentId || "";
@@ -425,8 +423,9 @@ export default function Video({
       const body: GenerateOutlineIn["body"] = {
         departmentId,
         policyIds: selectedPolicyIds,
-        questionIds: questionIds.length > 0 ? questionIds : undefined,
+        questionIds: questionIds.length > 0 ? questionIds : null,
         profileId: effectiveProfile.id,
+        videoLengthSeconds: outlineVideoLength,
       };
 
       if (isEditMode && videoId) {
@@ -450,7 +449,8 @@ export default function Video({
           setQuestions((prevQuestions) =>
             prevQuestions.map((q) => {
               // Find timestamps for this question ID
-              const timestamps = result.question_timestamps?.[q.question_id || ""] || [];
+              const timestamps =
+                result.question_timestamps?.[q.question_id || ""] || [];
               return {
                 ...q,
                 times: timestamps,
@@ -458,7 +458,7 @@ export default function Video({
             })
           );
         }
-        
+
         toast.success("Outline generated successfully!");
       }
     } catch (error) {
@@ -522,7 +522,7 @@ export default function Video({
       const body: GenerateVideoIn["body"] = {
         videoId: currentVideoId,
         prompt: outlineText,
-        imageReferenceId: imageId,
+        imageReferenceId: imageId ?? null,
       };
 
       const result = await generateVideoAction({ body });
@@ -533,7 +533,7 @@ export default function Video({
         setUploadedVideoFile(null);
         setVideoObjectUrl(null);
         toast.success("Video generated successfully!");
-        
+
         // Refresh server data to get updated video_url from database
         // This ensures the video persists after page refresh
         if (isEditMode && currentVideoId) {
@@ -782,9 +782,9 @@ export default function Video({
               // Clear uploaded video file state (will be loaded from server)
               setUploadedVideoFile(null);
               setVideoObjectUrl(null);
-              
+
               toast.success(`Video uploaded: ${file.name}`, { id: toastId });
-              
+
               // Refresh server data to get updated video_url from database
               // This ensures the video persists after page refresh
               // Navigate to edit page (will refresh data automatically)
@@ -844,6 +844,7 @@ export default function Video({
     null
   );
   const [outlineText, setOutlineText] = useState<string>("");
+  const [outlineVideoLength, setOutlineVideoLength] = useState<number>(4);
   const [useImage, setUseImage] = useState(false);
   const [image, setImage] = useState<{
     id: string;
@@ -860,6 +861,7 @@ export default function Video({
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
     null
   );
+  const [uploadedVideoFile, setUploadedVideoFile] = useState<File | null>(null);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
@@ -901,10 +903,13 @@ export default function Video({
     >;
   }, [videoData?.policy_mapping]);
 
-  // Outline mapping (for version history)
+  // Outline mapping (for version history) - only exists in VideoDetailOut, not VideoNewOut
   const outlineMapping = useMemo(() => {
-    return videoData?.outline_mapping || {};
-  }, [videoData?.outline_mapping]);
+    if (isEditMode && videoDetail) {
+      return videoDetail.outline_mapping || {};
+    }
+    return {};
+  }, [isEditMode, videoDetail]);
 
   // Load video data from server response
   useEffect(() => {
@@ -920,20 +925,28 @@ export default function Video({
         active: videoData.active ?? true,
       });
 
-      // Load outline
-      if (videoData.outline_ids && videoData.outline_ids.length > 0) {
-        const outlineId = videoData.outline_ids[0]!;
-        setSelectedOutlineId(outlineId);
-        if (outlineMapping[outlineId]) {
-          setOutlineText(outlineMapping[outlineId].outline || "");
-        }
-      } else if (videoData.outline_mapping && Object.keys(videoData.outline_mapping).length > 0) {
-        // If no outline_ids but outline_mapping exists, load the first outline
-        const firstOutlineId = Object.keys(videoData.outline_mapping)[0]!;
-        const outlineData = videoData.outline_mapping[firstOutlineId];
-        if (outlineData?.outline) {
-          setOutlineText(outlineData.outline);
-          setSelectedOutlineId(firstOutlineId);
+      // Initialize outline video length from video data
+      setOutlineVideoLength(videoData.length_seconds || 4);
+
+      // Load outline - only exists in VideoDetailOut
+      if (isEditMode && videoDetail) {
+        if (videoDetail.outline_ids && videoDetail.outline_ids.length > 0) {
+          const outlineId = videoDetail.outline_ids[0]!;
+          setSelectedOutlineId(outlineId);
+          if (outlineMapping[outlineId]) {
+            setOutlineText(outlineMapping[outlineId]?.["outline"] || "");
+          }
+        } else if (
+          videoDetail.outline_mapping &&
+          Object.keys(videoDetail.outline_mapping).length > 0
+        ) {
+          // If no outline_ids but outline_mapping exists, load the first outline
+          const firstOutlineId = Object.keys(videoDetail.outline_mapping)[0]!;
+          const outlineData = videoDetail.outline_mapping[firstOutlineId];
+          if (outlineData?.["outline"]) {
+            setOutlineText(outlineData["outline"]);
+            setSelectedOutlineId(firstOutlineId);
+          }
         }
       }
 
@@ -969,9 +982,9 @@ export default function Video({
         setUseImage(false);
       }
 
-      // Load video URL if video file exists
-      if (videoData.video_url) {
-        setGeneratedVideoUrl(videoData.video_url);
+      // Load video URL if video file exists - construct from videoId (like documents)
+      if (isEditMode && videoId && videoDetail?.file_path) {
+        setGeneratedVideoUrl(`/api/videos/download/${videoId}`);
       }
 
       // Load questions from server data (already strongly typed from API)
@@ -994,7 +1007,7 @@ export default function Video({
 
       formDataInitializedRef.current = true;
     }
-  }, [videoData, isEditMode, outlineMapping]);
+  }, [videoData, isEditMode, outlineMapping, videoDetail, videoId]);
 
   const handleInputChange = <K extends keyof FormData>(
     field: K,
@@ -1156,12 +1169,16 @@ export default function Video({
           formData.name === "New Video" ||
           selectedPolicyIds.length === 0 ||
           questions.length === 0 ||
-          !selectedOutlineId
+          (!selectedOutlineId && !outlineText.trim())
         ) {
           return "pending";
         }
         // Completed if video uploaded OR generated OR exists on server
-        return uploadedVideoFile || generatedVideoUrl || videoData?.video_url ? "completed" : "active";
+        // Check if video file exists by checking file_path (only in VideoDetailOut)
+        const hasServerVideo = isEditMode && videoDetail?.file_path;
+        return uploadedVideoFile || generatedVideoUrl || hasServerVideo
+          ? "completed"
+          : "active";
       default:
         return "pending";
     }
@@ -1203,15 +1220,16 @@ export default function Video({
   // Question modal state
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-  const [selectedTime, setSelectedTime] = useState<number | null>(null);
-  
+
   // Timeline segment modal state
   const [showTimelineModal, setShowTimelineModal] = useState(false);
-  const [selectedTimelineSegment, setSelectedTimelineSegment] = useState<number | null>(null);
-  const [selectedQuestionsForSegment, setSelectedQuestionsForSegment] = useState<string[]>([]);
+  const [selectedTimelineSegment, setSelectedTimelineSegment] = useState<
+    number | null
+  >(null);
+  const [selectedQuestionsForSegment, setSelectedQuestionsForSegment] =
+    useState<string[]>([]);
 
   const openQuestionModal = (time?: number, question?: Question) => {
-    setSelectedTime(time ?? null);
     if (question) {
       setEditingQuestion(question);
     } else {
@@ -1229,7 +1247,6 @@ export default function Video({
   const closeQuestionModal = () => {
     setShowQuestionModal(false);
     setEditingQuestion(null);
-    setSelectedTime(null);
   };
 
   const saveQuestion = () => {
@@ -1319,24 +1336,6 @@ export default function Video({
     });
   };
 
-  const addTime = (time: number) => {
-    if (!editingQuestion) return;
-    if (!editingQuestion.times.includes(time)) {
-      setEditingQuestion({
-        ...editingQuestion,
-        times: [...editingQuestion.times, time].sort((a, b) => a - b),
-      });
-    }
-  };
-
-  const removeTime = (time: number) => {
-    if (!editingQuestion) return;
-    setEditingQuestion({
-      ...editingQuestion,
-      times: editingQuestion.times.filter((t) => t !== time),
-    });
-  };
-
   // Format time for display
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -1354,7 +1353,6 @@ export default function Video({
   }, [questions]);
 
   // Video upload state (placeholder for now)
-  const [uploadedVideoFile, setUploadedVideoFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
@@ -1786,6 +1784,32 @@ export default function Video({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="outline-video-length"
+                className="text-sm whitespace-nowrap"
+              >
+                Length:
+              </Label>
+              <Select
+                value={outlineVideoLength.toString()}
+                onValueChange={(value) => {
+                  setOutlineVideoLength(parseInt(value, 10));
+                  // Update formData length_seconds as well
+                  handleInputChange("length_seconds", parseInt(value, 10));
+                }}
+                disabled={isReadonly}
+              >
+                <SelectTrigger id="outline-video-length" className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="4">4 seconds</SelectItem>
+                  <SelectItem value="8">8 seconds</SelectItem>
+                  <SelectItem value="12">12 seconds</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               variant="default"
               size="sm"
@@ -1874,7 +1898,10 @@ export default function Video({
 
           {/* Timeline */}
           <div className="space-y-2">
-            <Label>Timeline (4 seconds) - Click to assign questions</Label>
+            <Label>
+              Timeline ({outlineVideoLength} seconds) - Click to assign
+              questions
+            </Label>
             <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
               {/* Timeline markers for questions */}
               {allQuestionTimes.map((time) => {
@@ -1898,13 +1925,16 @@ export default function Video({
                         }}
                         className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
                         style={{
-                          left: `${(time / 4) * 100}%`,
+                          left: `${(time / outlineVideoLength) * 100}%`,
                         }}
                         disabled={isReadonly}
                       />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{formatTime(time)} - {questionsAtTime.length} question{questionsAtTime.length !== 1 ? 's' : ''}</p>
+                      <p>
+                        {formatTime(time)} - {questionsAtTime.length} question
+                        {questionsAtTime.length !== 1 ? "s" : ""}
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -1918,14 +1948,21 @@ export default function Video({
                   const rect = e.currentTarget.getBoundingClientRect();
                   const x = e.clientX - rect.left;
                   const percentage = x / rect.width;
-                  const clickedTime = percentage * 4;
-                  
-                  // Find the closest timestamp (0, 1, 2, 3, or 4)
-                  const possibleTimestamps = [0, 1, 2, 3, 4];
-                  const closestTimestamp = possibleTimestamps.reduce((prev, curr) => 
-                    Math.abs(curr - clickedTime) < Math.abs(prev - clickedTime) ? curr : prev
+                  const clickedTime = percentage * outlineVideoLength;
+
+                  // Find the closest timestamp based on video length
+                  const possibleTimestamps = Array.from(
+                    { length: outlineVideoLength + 1 },
+                    (_, i) => i
                   );
-                  
+                  const closestTimestamp = possibleTimestamps.reduce(
+                    (prev, curr) =>
+                      Math.abs(curr - clickedTime) <
+                      Math.abs(prev - clickedTime)
+                        ? curr
+                        : prev
+                  );
+
                   setSelectedTimelineSegment(closestTimestamp);
                   // Get currently selected questions for this timestamp
                   const currentQuestions = questions
@@ -1939,7 +1976,7 @@ export default function Video({
               {/* Time labels */}
               <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
                 <span>0:00</span>
-                <span>0:04</span>
+                <span>{formatTime(outlineVideoLength)}</span>
               </div>
             </div>
           </div>
@@ -2061,12 +2098,16 @@ export default function Video({
                 </div>
               </div>
             </div>
-          ) : generatedVideoUrl || (videoData?.video_url && !uploadedVideoFile) ? (
+          ) : generatedVideoUrl ||
+            (isEditMode &&
+              videoId &&
+              videoDetail?.file_path &&
+              !uploadedVideoFile) ? (
             <div className="space-y-2">
               <Label>Video</Label>
               <div className="w-full bg-black rounded-lg aspect-video flex items-center justify-center relative">
                 <video
-                  src={generatedVideoUrl || videoData?.video_url || ""}
+                  src={generatedVideoUrl || `/api/videos/download/${videoId}`}
                   controls
                   className="w-full h-full rounded-lg"
                 />
@@ -2078,7 +2119,7 @@ export default function Video({
                     // If there's an uploaded video, it will show after clearing generated
                   }}
                   className="absolute top-2 right-2"
-                  disabled={isReadonly || !!videoData?.video_url}
+                  disabled={isReadonly || !!videoDetail?.file_path}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -2173,7 +2214,10 @@ export default function Video({
 
       {/* Timeline Segment Modal */}
       {showTimelineModal && selectedTimelineSegment !== null && (
-        <AlertDialog open={showTimelineModal} onOpenChange={setShowTimelineModal}>
+        <AlertDialog
+          open={showTimelineModal}
+          onOpenChange={setShowTimelineModal}
+        >
           <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <AlertDialogHeader>
               <AlertDialogTitle>
@@ -2194,8 +2238,9 @@ export default function Video({
                       const isAssignedElsewhere = q.times.some(
                         (t) => t !== selectedTimelineSegment!
                       );
-                      const isSelected = selectedQuestionsForSegment.includes(qKey);
-                      
+                      const isSelected =
+                        selectedQuestionsForSegment.includes(qKey);
+
                       return { q, qKey, isAssignedElsewhere, isSelected, idx };
                     })
                     .filter(({ isAssignedElsewhere }) => !isAssignedElsewhere) // Hide questions assigned to other timestamps
@@ -2210,10 +2255,15 @@ export default function Video({
                           onCheckedChange={(checked) => {
                             if (isReadonly) return;
                             if (checked) {
-                              setSelectedQuestionsForSegment([...selectedQuestionsForSegment, qKey]);
+                              setSelectedQuestionsForSegment([
+                                ...selectedQuestionsForSegment,
+                                qKey,
+                              ]);
                             } else {
                               setSelectedQuestionsForSegment(
-                                selectedQuestionsForSegment.filter((k) => k !== qKey)
+                                selectedQuestionsForSegment.filter(
+                                  (k) => k !== qKey
+                                )
                               );
                             }
                           }}
@@ -2251,7 +2301,7 @@ export default function Video({
                 onClick={() => {
                   if (isReadonly) return;
                   const timestamp = selectedTimelineSegment!;
-                  
+
                   // Remove this timestamp from all questions
                   setQuestions((prev) =>
                     prev.map((q) => ({
@@ -2259,22 +2309,22 @@ export default function Video({
                       times: q.times.filter((t) => t !== timestamp),
                     }))
                   );
-                  
+
                   // Add this timestamp to selected questions
                   setQuestions((prev) =>
                     prev.map((q, idx) => {
                       const qKey = q.question_id || `temp-${idx}`;
                       if (selectedQuestionsForSegment.includes(qKey)) {
                         // Add the timestamp if not already present
-                        const newTimes = [...q.times, timestamp].filter(
-                          (t, i, arr) => arr.indexOf(t) === i
-                        ).sort((a, b) => a - b);
+                        const newTimes = [...q.times, timestamp]
+                          .filter((t, i, arr) => arr.indexOf(t) === i)
+                          .sort((a, b) => a - b);
                         return { ...q, times: newTimes };
                       }
                       return q;
                     })
                   );
-                  
+
                   setShowTimelineModal(false);
                   setSelectedTimelineSegment(null);
                   setSelectedQuestionsForSegment([]);
@@ -2360,10 +2410,7 @@ export default function Video({
                         : "border-border hover:border-primary/50"
                     )}
                   >
-                    <RadioGroupItem
-                      value="choice-single"
-                      className="sr-only"
-                    />
+                    <RadioGroupItem value="choice-single" className="sr-only" />
                     <div className="flex flex-col items-center justify-center p-4 gap-2">
                       <Circle className="h-6 w-6" />
                       <span className="text-sm font-medium">MCQ</span>
@@ -2380,10 +2427,7 @@ export default function Video({
                         : "border-border hover:border-primary/50"
                     )}
                   >
-                    <RadioGroupItem
-                      value="frq"
-                      className="sr-only"
-                    />
+                    <RadioGroupItem value="frq" className="sr-only" />
                     <div className="flex flex-col items-center justify-center p-4 gap-2">
                       <FileText className="h-6 w-6" />
                       <span className="text-sm font-medium">FRQ</span>
@@ -2412,7 +2456,6 @@ export default function Video({
                   </Label>
                 </RadioGroup>
               </div>
-
 
               {/* Options (for choice questions) */}
               {editingQuestion.type === "choice" && (
