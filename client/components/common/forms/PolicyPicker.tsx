@@ -7,9 +7,10 @@
 "use client";
 
 import { PopoverProps } from "@radix-ui/react-popover";
-import { Check, ChevronsUpDown, Download, X } from "lucide-react";
+import { Check, ChevronsUpDown, Download, Eye, X } from "lucide-react";
 import * as React from "react";
 
+import PolicyViewer from "@/components/common/chat/viewers/PolicyViewer";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -19,6 +20,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   HoverCard,
   HoverCardContent,
@@ -43,6 +52,16 @@ export interface PolicyMappingItem extends MappingItem {
   mimeType?: string;
 }
 
+type PolicyItem = {
+  policy_id: string;
+  name: string;
+  type?: string;
+  updatedAt?: string;
+  extension?: string;
+  file_path: string;
+  mime_type: string;
+};
+
 export interface PolicyPickerProps<
   T extends PolicyMappingItem = PolicyMappingItem,
 > extends PopoverProps {
@@ -50,6 +69,7 @@ export interface PolicyPickerProps<
   validIds: string[];
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
+  policyDetails?: PolicyItem[]; // Full policy objects for preview
   multiSelect?: boolean;
   label?: string;
   placeholder?: string;
@@ -66,6 +86,7 @@ export function PolicyPicker<
   validIds,
   selectedIds,
   onSelect,
+  policyDetails = [],
   multiSelect = false,
   label = "Policy",
   placeholder = "Select a policy...",
@@ -76,6 +97,10 @@ export function PolicyPicker<
   ...props
 }: PolicyPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = React.useState(false);
+  const [previewPolicyId, setPreviewPolicyId] = React.useState<
+    string | undefined
+  >(undefined);
 
   // Build policies from mapping (before filtering)
   const allPolicies = React.useMemo(() => {
@@ -118,6 +143,13 @@ export function PolicyPicker<
     window.open(`/api/policies/download/${policyId}`, "_blank");
   };
 
+  // Handle policy preview
+  const handlePreview = (policyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewPolicyId(policyId);
+    setShowPreviewDialog(true);
+  };
+
   // Remove individual item in multi-select mode
   const handleRemoveItem = (policyId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -153,6 +185,10 @@ export function PolicyPicker<
     return iconMap[ext] || iconMap.other;
   };
 
+  const previewPolicy = previewPolicyId
+    ? mapping[previewPolicyId]
+    : undefined;
+
   return (
     <div className="grid gap-2">
       <HoverCard openDelay={200}>
@@ -177,17 +213,17 @@ export function PolicyPicker<
             return (
               <div
                 key={id}
-                className="relative group border rounded-lg hover:shadow-md transition-all bg-white p-3"
+                className="relative group border rounded-lg hover:shadow-md transition-all bg-white"
               >
                 {/* Action buttons */}
                 <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"
-                    onClick={(e) => handleDownload(id, e)}
+                    onClick={(e) => handlePreview(id, e)}
                     className="h-5 w-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"
-                    title="Download policy"
+                    title="Preview policy"
                   >
-                    <Download className="h-3 w-3" />
+                    <Eye className="h-3 w-3" />
                   </button>
                   {!readonly && (
                     <button
@@ -201,19 +237,60 @@ export function PolicyPicker<
                   )}
                 </div>
 
-                {/* Policy icon and name */}
-                <div className="flex flex-col items-center justify-center min-h-[80px]">
-                  <div className="text-4xl mb-2">
-                    {getPolicyExtensionIcon(policy.extension)}
+                {/* Policy preview - show actual PolicyViewer if details available */}
+                <div className="aspect-square bg-muted rounded-lg relative overflow-hidden">
+                  {(() => {
+                    const fullPolicy = policyDetails.find(
+                      (p) => p.policy_id === id,
+                    );
+                    if (fullPolicy) {
+                      return (
+                        <div className="w-full h-full">
+                          <PolicyViewer
+                            policy={fullPolicy}
+                            bare={true}
+                            isFormPolicy={false}
+                            compact={true}
+                          />
+                        </div>
+                      );
+                    }
+                    // Fallback: create minimal PolicyItem from mapping so PolicyViewer can fetch it
+                    if (id) {
+                      const minimalPolicy: PolicyItem = {
+                        policy_id: id,
+                        name: policy.name || "Policy",
+                        type: policy.type || "policy",
+                        updatedAt: new Date().toISOString(),
+                        extension: policy.extension || "",
+                        file_path: policy.filePath || "",
+                        mime_type: policy.mimeType || "",
+                      };
+                      return (
+                        <div className="w-full h-full">
+                          <PolicyViewer
+                            policy={minimalPolicy}
+                            bare={true}
+                            isFormPolicy={false}
+                            compact={true}
+                          />
+                        </div>
+                      );
+                    }
+                    // Final fallback to icon if no ID
+                    return (
+                      <div className="flex items-center justify-center h-full">
+                        <span className="text-4xl">
+                          {getPolicyExtensionIcon(policy.extension)}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Policy name */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1">
+                    <span className="truncate block">{policy.name}</span>
                   </div>
-                  <div className="text-xs font-medium text-center truncate w-full">
-                    {policy.name}
-                  </div>
-                  {policy.extension && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {policy.extension.toUpperCase()}
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -328,6 +405,71 @@ export function PolicyPicker<
           </HoverCard>
         </PopoverContent>
       </Popover>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="sm:max-w-4xl h-full max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {previewPolicy?.name || "Policy Preview"}
+            </DialogTitle>
+            <DialogDescription>
+              {previewPolicy?.description ||
+                "Preview the policy content below."}
+            </DialogDescription>
+          </DialogHeader>
+          {previewPolicyId &&
+            (() => {
+              const fullPolicy = policyDetails.find(
+                (p) => p.policy_id === previewPolicyId,
+              );
+              if (fullPolicy) {
+                return (
+                  <div className="flex-1 min-h-0">
+                    <PolicyViewer
+                      policy={fullPolicy}
+                      bare={true}
+                      isFormPolicy={false}
+                    />
+                  </div>
+                );
+              }
+              // Fallback: try to use mapping with policy_id to fetch policy
+              const mappedPolicy = mapping[previewPolicyId];
+              if (mappedPolicy && previewPolicyId) {
+                // Create minimal PolicyItem from mapping with policy_id
+                // PolicyViewer can fetch the policy using policy_id
+                const minimalPolicy: PolicyItem = {
+                  policy_id: previewPolicyId,
+                  name: mappedPolicy.name || "Policy",
+                  type: mappedPolicy.type || "policy",
+                  updatedAt: new Date().toISOString(),
+                  extension: mappedPolicy.extension || "",
+                  file_path: mappedPolicy.filePath || "",
+                  mime_type: mappedPolicy.mimeType || "",
+                };
+                return (
+                  <div className="flex-1 min-h-0">
+                    <PolicyViewer
+                      policy={minimalPolicy}
+                      bare={true}
+                      isFormPolicy={false}
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPreviewDialog(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

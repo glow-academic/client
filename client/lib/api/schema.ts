@@ -15170,10 +15170,24 @@ export interface components {
             length_seconds: number;
             /** Active */
             active: boolean;
+            /** File Path */
+            file_path: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Video Url */
+            video_url: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Valid Department Ids */
             valid_department_ids: string[];
+            /** Outline Ids */
+            outline_ids: string[];
+            /** Outline Mapping */
+            outline_mapping: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
             /** Problem Statement Ids */
             problem_statement_ids: string[];
             /** Problem Statement Mapping */
@@ -15216,6 +15230,20 @@ export interface components {
             };
             /** Questions */
             questions: components["schemas"]["QuestionResponse"][];
+            /** Outline Agent Id */
+            outline_agent_id: string;
+            /** Question Agent Id */
+            question_agent_id: string;
+            /** Image Agent Id */
+            image_agent_id: string;
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
         };
         /**
          * QuestionItem

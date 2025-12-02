@@ -58,8 +58,13 @@ class VideoDetailResponse(BaseModel):
     name: str
     length_seconds: int
     active: bool
+    file_path: str
+    mime_type: str
+    video_url: str | None
     department_ids: list[str] | None
     valid_department_ids: list[str]
+    outline_ids: list[str]
+    outline_mapping: dict[str, dict[str, str]]
     problem_statement_ids: list[str]
     problem_statement_mapping: dict[str, ProblemStatementInfo]
     objective_ids: list[str]
@@ -74,6 +79,11 @@ class VideoDetailResponse(BaseModel):
     can_delete: bool
     department_mapping: DepartmentMapping
     questions: list[QuestionResponse]  # Empty for default
+    outline_agent_id: str
+    question_agent_id: str
+    image_agent_id: str
+    agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
+    valid_agent_ids: list[str]
 
 
 router = APIRouter()
@@ -179,6 +189,30 @@ async def get_video_new(
         if not isinstance(objectives_history, list):
             objectives_history = []
 
+        # Parse agent_mapping
+        agent_mapping: dict[str, dict[str, Any]] = {}
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, str):
+                        try:
+                            roles = json.loads(roles)
+                        except json.JSONDecodeError:
+                            roles = []
+                    if not isinstance(roles, list):
+                        roles = []
+                    agent_mapping[agent_id] = {
+                        "name": adata.get("name", ""),
+                        "description": adata.get("description", ""),
+                        "roles": [str(r) for r in roles],
+                    }
+
+        valid_agent_ids = [
+            str(aid) for aid in (result.get("valid_agent_ids") or [])
+        ]
+
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
@@ -204,10 +238,15 @@ async def get_video_new(
             name="",
             length_seconds=0,
             active=True,
+            file_path="",
+            mime_type="",
+            video_url=None,
             # Department
             department_ids=default_department_ids,
             valid_department_ids=dept_ids,
             # Problem statement and objectives (empty for default)
+            outline_ids=[],
+            outline_mapping={},
             problem_statement_ids=[],
             problem_statement_mapping=problem_statement_mapping,
             objective_ids=[],
@@ -228,6 +267,12 @@ async def get_video_new(
             department_mapping=department_mapping,
             # Questions (empty for create mode)
             questions=[],
+            # Agents (empty IDs for new video, but include mapping and valid IDs)
+            outline_agent_id="",
+            question_agent_id="",
+            image_agent_id="",
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

@@ -114,6 +114,34 @@ objectives_data AS (
 objectives_history_data AS (
     SELECT ARRAY_AGG(o.objective ORDER BY o.id) as objectives_history
     FROM objectives_data o
+),
+valid_agents AS (
+    -- Get agents with roles 'outline', 'question', or 'image'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        COALESCE(array_agg(a.id::text ORDER BY a.name), ARRAY[]::text[]) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role IN ('outline', 'question', 'image')
+    AND (
+        EXISTS (
+            SELECT 1 FROM user_departments ud
+            WHERE ud.department_id = ad.department_id
+        )
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
 )
 SELECT 
     COALESCE((SELECT department_ids FROM department_ids_array), ARRAY[]::text[]) as department_ids,
@@ -123,5 +151,7 @@ SELECT
     COALESCE((SELECT policy_ids FROM valid_policy_ids_data), ARRAY[]::text[]) as valid_policy_ids,
     COALESCE((SELECT objectives_history FROM objectives_history_data), ARRAY[]::text[]) as objectives_history,
     (SELECT role FROM user_profile) as user_role,
-    (SELECT primary_department_id::text FROM user_profile) as primary_department_id
+    (SELECT primary_department_id::text FROM user_profile) as primary_department_id,
+    COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
+    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids
 

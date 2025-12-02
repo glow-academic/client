@@ -270,6 +270,35 @@ questions_json AS (
         '[]'::jsonb
     ) as questions
     FROM video_questions_data
+),
+valid_agents AS (
+    -- Get agents with roles 'outline', 'question', or 'image'
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        COALESCE(array_agg(a.id::text ORDER BY a.name), ARRAY[]::text[]) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role IN ('outline', 'question', 'image')
+    AND (
+        EXISTS (
+            SELECT 1 FROM resolve_profile_id rpi 
+            JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id 
+            WHERE pd.active = true AND ad.department_id = pd.department_id
+        )
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+    )
 )
 SELECT 
     vc.name,

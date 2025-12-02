@@ -37901,6 +37901,25 @@
             "type": "boolean",
             "title": "Active"
           },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -37921,6 +37940,23 @@
             },
             "type": "array",
             "title": "Valid Department Ids"
+          },
+          "outline_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Outline Ids"
+          },
+          "outline_mapping": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Outline Mapping"
           },
           "problem_statement_ids": {
             "items": {
@@ -38017,6 +38053,33 @@
             },
             "type": "array",
             "title": "Questions"
+          },
+          "outline_agent_id": {
+            "type": "string",
+            "title": "Outline Agent Id"
+          },
+          "question_agent_id": {
+            "type": "string",
+            "title": "Question Agent Id"
+          },
+          "image_agent_id": {
+            "type": "string",
+            "title": "Image Agent Id"
+          },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
+          "valid_agent_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Agent Ids"
           }
         },
         "type": "object",
@@ -38024,8 +38087,13 @@
           "name",
           "length_seconds",
           "active",
+          "file_path",
+          "mime_type",
+          "video_url",
           "department_ids",
           "valid_department_ids",
+          "outline_ids",
+          "outline_mapping",
           "problem_statement_ids",
           "problem_statement_mapping",
           "objective_ids",
@@ -38039,7 +38107,12 @@
           "can_duplicate",
           "can_delete",
           "department_mapping",
-          "questions"
+          "questions",
+          "outline_agent_id",
+          "question_agent_id",
+          "image_agent_id",
+          "agent_mapping",
+          "valid_agent_ids"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."

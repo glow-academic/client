@@ -37,6 +37,7 @@ import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import {
   Brain,
   DollarSign,
+  Image,
   Layers,
   Power,
   Thermometer,
@@ -65,6 +66,7 @@ interface FormData {
   enablePricing?: boolean;
   enableVoices?: boolean;
   enableReasoningLevels?: boolean;
+  enableQualities?: boolean;
   // Configuration fields
   temperature_bounds?: TemperatureBounds;
   pricing?: PricingEntry[];
@@ -302,16 +304,27 @@ export default function Model({
     if (isEditMode && modelDetail) {
       // We are in EDIT mode and have the model's data, so populate the form
       // Parse temperature bounds (always range)
+      // API returns temperature_lower and temperature_upper, construct temperature_bounds
       let temperature_bounds: TemperatureBounds | undefined;
-      const modelDetailWithBounds = modelDetail as typeof modelDetail & {
-        temperature_bounds?: { lower?: number; upper?: number };
+      const modelDetailWithTemp = modelDetail as typeof modelDetail & {
+        temperature_lower?: number;
+        temperature_upper?: number;
+        temperature_values?: string[];
       };
-      if (modelDetailWithBounds.temperature_bounds) {
-        const tb = modelDetailWithBounds.temperature_bounds;
+
+      // Check if model has temperature constraints configured
+      // Has temperature if temperature_values exist (indicates temperature_levels table has entries)
+      const hasTempValues =
+        modelDetailWithTemp.temperature_values &&
+        modelDetailWithTemp.temperature_values.length > 0;
+      const tempLower = modelDetailWithTemp.temperature_lower ?? 0.0;
+      const tempUpper = modelDetailWithTemp.temperature_upper ?? 1.0;
+
+      if (hasTempValues) {
         temperature_bounds = {
           type: "range",
-          lower: tb.lower ?? 0.0,
-          upper: tb.upper ?? 1.0,
+          lower: tempLower,
+          upper: tempUpper,
         };
       }
 
@@ -346,6 +359,8 @@ export default function Model({
         (modelDetail.voices as Array<string | { voice: string }>).length > 0;
       const hasReasoningLevels =
         modelDetail.reasoning_levels && modelDetail.reasoning_levels.length > 0;
+      const hasQualities =
+        modelDetail.qualities && modelDetail.qualities.length > 0;
 
       setFormData({
         name: modelDetail.name,
@@ -361,6 +376,7 @@ export default function Model({
         enablePricing: hasPricing,
         enableVoices: hasVoices,
         enableReasoningLevels: hasReasoningLevels,
+        enableQualities: hasQualities,
         ...(temperature_bounds ? { temperature_bounds } : {}),
         pricing,
         modalities:
@@ -386,6 +402,7 @@ export default function Model({
         enablePricing: false,
         enableVoices: false,
         enableReasoningLevels: false,
+        enableQualities: false,
         pricing: [],
         modalities: { input: ["text"], output: ["text"] }, // Default to text/text
         reasoning_levels: [],
@@ -517,7 +534,9 @@ export default function Model({
               : null,
           voices,
           qualities:
-            formData.qualities && formData.qualities.length > 0
+            formData.enableQualities &&
+            formData.qualities &&
+            formData.qualities.length > 0
               ? formData.qualities
               : null,
           profileId: effectiveProfile?.id || "guest-profile-id",
@@ -546,7 +565,9 @@ export default function Model({
               : null,
           voices,
           qualities:
-            formData.qualities && formData.qualities.length > 0
+            formData.enableQualities &&
+            formData.qualities &&
+            formData.qualities.length > 0
               ? formData.qualities
               : null,
           profileId: effectiveProfile?.id || "guest-profile-id",
@@ -1114,18 +1135,86 @@ export default function Model({
             )}
         </div>
 
-        {/* Qualities - Show if model supports image output */}
-        {formData.modalities?.output?.includes("image") && (
-          <div className="space-y-2">
-            <Label>Qualities</Label>
-            <QualityPicker
-              selectedIds={formData.qualities || []}
-              onSelect={(ids) =>
-                setFormData((prev) => ({ ...prev, qualities: ids }))
+        {/* Qualities - Collapsible with Switch, only show if model supports image or audio output */}
+        {(formData.modalities?.output?.includes("image") ||
+          formData.modalities?.output?.includes("audio")) && (
+          <Collapsible
+            open={formData.enableQualities || false}
+            onOpenChange={(open) => {
+              if (open) {
+                setFormData((prev) => ({
+                  ...prev,
+                  enableQualities: true,
+                  qualities:
+                    prev.qualities && prev.qualities.length > 0
+                      ? prev.qualities
+                      : [],
+                }));
+              } else {
+                const { qualities: _, ...rest } = formData;
+                setFormData({
+                  ...rest,
+                  enableQualities: false,
+                });
               }
-              disabled={isSubmitting || isReadonly}
-            />
-          </div>
+            }}
+          >
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Image className="h-4 w-4 text-muted-foreground" />
+                    <Label
+                      htmlFor="enable-qualities"
+                      className="text-sm font-medium"
+                    >
+                      Qualities
+                    </Label>
+                    <Switch
+                      id="enable-qualities"
+                      checked={formData.enableQualities || false}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            enableQualities: true,
+                            qualities:
+                              prev.qualities && prev.qualities.length > 0
+                                ? prev.qualities
+                                : [],
+                          }));
+                        } else {
+                          const { qualities: _, ...rest } = formData;
+                          setFormData({
+                            ...rest,
+                            enableQualities: false,
+                          } as FormData);
+                        }
+                      }}
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-6">
+                    Select specific quality levels for this model. If disabled,
+                    all available quality levels are allowed.
+                  </p>
+                </div>
+              </div>
+              <CollapsibleContent>
+                {formData.enableQualities && (
+                  <div className="pl-6 pt-1">
+                    <QualityPicker
+                      selectedIds={formData.qualities || []}
+                      onSelect={(ids) =>
+                        setFormData((prev) => ({ ...prev, qualities: ids }))
+                      }
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  </div>
+                )}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         )}
 
         {/* Submit Button */}

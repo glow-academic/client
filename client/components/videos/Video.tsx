@@ -94,6 +94,11 @@ import type {
   VideoNewOut,
 } from "@/app/(main)/create/videos/new/page";
 import type { VideoDetailOut } from "@/app/(main)/create/videos/v/[videoId]/page";
+import type { components } from "@/lib/api/schema";
+
+// Strong types from API schema
+type AgentMappingItem = components["schemas"]["AgentMappingItem"];
+type AgentMapping = Record<string, AgentMappingItem>;
 
 // Local question type for editing (IDs optional for new questions)
 // Types match the API response structure from VideoDetailOut
@@ -204,7 +209,7 @@ export default function Video({
     clearEntityMetadata,
   ]);
 
-  // Extract body types for type safety
+  // Extract body types for type safety - using strong types from API
   type CreateVideoBody = CreateVideoIn extends { body: infer B } ? B : never;
   type UpdateVideoBody = UpdateVideoIn extends { body: infer B } ? B : never;
 
@@ -275,12 +280,8 @@ export default function Video({
     if (imageIds.length > 0) {
       createPayload.image_ids = imageIds;
     }
-    if (formData.outlineAgentId) {
-      createPayload.outline_agent_id = formData.outlineAgentId;
-    }
-    if (formData.questionAgentId) {
-      createPayload.question_agent_id = formData.questionAgentId;
-    }
+    // Note: outline_agent_id and question_agent_id are not supported in create endpoint
+    // They will be set via update after creation if needed
 
     return createPayload;
   };
@@ -903,11 +904,12 @@ export default function Video({
     () => videoData?.department_mapping || {},
     [videoData?.department_mapping]
   );
-  // Agent mapping for agent picker
-  const agentMapping = useMemo(
-    () => videoData?.agent_mapping || {},
-    [videoData?.agent_mapping]
-  );
+  // Agent mapping for agent picker - properly typed from API
+  const agentMapping = useMemo<AgentMapping>(() => {
+    const mapping = videoData?.agent_mapping || {};
+    // Ensure proper typing - API returns Record<string, AgentMappingItem>
+    return mapping as AgentMapping;
+  }, [videoData?.agent_mapping]);
 
   // Policy mapping
   const policyMapping = useMemo(() => {
@@ -1026,6 +1028,56 @@ export default function Video({
       formDataInitializedRef.current = true;
     }
   }, [videoData, isEditMode, outlineMapping, videoDetail, videoId]);
+
+  // Auto-select first available outline and question agents if not already selected
+  useEffect(() => {
+    // Wait for agent data to be available
+    if (
+      !videoData?.valid_agent_ids ||
+      !agentMapping ||
+      Object.keys(agentMapping).length === 0
+    ) {
+      return;
+    }
+
+    // In edit mode, wait for form data to be initialized from server
+    if (isEditMode && !formDataInitializedRef.current) {
+      return;
+    }
+
+    // Find first available outline agent
+    const outlineAgentIds = videoData.valid_agent_ids.filter((id) => {
+      const agent = agentMapping[id];
+      return agent?.["roles"]?.includes("outline");
+    });
+
+    // Find first available question agent
+    const questionAgentIds = videoData.valid_agent_ids.filter((id) => {
+      const agent = agentMapping[id];
+      return agent?.["roles"]?.includes("question");
+    });
+
+    // Only update if we have agents and they're not already set
+    const updates: Partial<FormData> = {};
+
+    if (outlineAgentIds.length > 0 && !formData.outlineAgentId) {
+      updates.outlineAgentId = outlineAgentIds[0]!;
+    }
+
+    if (questionAgentIds.length > 0 && !formData.questionAgentId) {
+      updates.questionAgentId = questionAgentIds[0]!;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      setFormData((prev) => ({ ...prev, ...updates }));
+    }
+  }, [
+    videoData?.valid_agent_ids,
+    agentMapping,
+    isEditMode,
+    formData.outlineAgentId,
+    formData.questionAgentId,
+  ]);
 
   const handleInputChange = <K extends keyof FormData>(
     field: K,
@@ -1157,52 +1209,31 @@ export default function Video({
         // Always completed - name is required
         return "completed";
       case "policies":
-        // Active if name is filled (previous step completed)
-        if (!formData.name.trim() || formData.name === "New Video") {
-          return "pending";
-        }
-        // Completed if at least one policy selected
+        // Can start immediately, doesn't depend on name
         return selectedPolicyIds.length > 0 ? "completed" : "active";
       case "questions":
-        // Pending if previous step not completed
-        if (
-          !formData.name.trim() ||
-          formData.name === "New Video" ||
-          selectedPolicyIds.length === 0
-        ) {
-          return "pending";
-        }
-        // Completed if at least one question added
-        return questions.length > 0 ? "completed" : "active";
+        // Active if policies are selected (doesn't depend on name)
+        return selectedPolicyIds.length === 0
+          ? "pending"
+          : questions.length > 0
+            ? "completed"
+            : "active";
       case "outline":
-        // Pending if previous step not completed
-        if (
-          !formData.name.trim() ||
-          formData.name === "New Video" ||
-          selectedPolicyIds.length === 0 ||
-          questions.length === 0
-        ) {
-          return "pending";
-        }
-        // Completed if outline exists
-        return selectedOutlineId ? "completed" : "active";
+        // Active if questions exist (doesn't depend on name/policies)
+        return questions.length === 0
+          ? "pending"
+          : selectedOutlineId || outlineText.trim()
+            ? "completed"
+            : "active";
       case "video_generation":
-        // Pending if previous step not completed
-        if (
-          !formData.name.trim() ||
-          formData.name === "New Video" ||
-          selectedPolicyIds.length === 0 ||
-          questions.length === 0 ||
-          (!selectedOutlineId && !outlineText.trim())
-        ) {
-          return "pending";
-        }
-        // Completed if video uploaded OR generated OR exists on server
-        // Check if video file exists by checking file_path (only in VideoDetailOut)
-        const hasServerVideo = isEditMode && videoDetail?.file_path;
-        return uploadedVideoFile || generatedVideoUrl || hasServerVideo
-          ? "completed"
-          : "active";
+        // Active if outline exists
+        return !selectedOutlineId && !outlineText.trim()
+          ? "pending"
+          : uploadedVideoFile ||
+              generatedVideoUrl ||
+              (isEditMode && videoDetail?.file_path)
+            ? "completed"
+            : "active";
       default:
         return "pending";
     }
@@ -1507,63 +1538,89 @@ export default function Video({
             )}
 
           {/* Agent Selection */}
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            {/* Outline Agent */}
-            <div className="space-y-2">
-              <Label htmlFor="outlineAgentId">Outline Agent</Label>
-              {formData?.outlineAgentId !== undefined ? (
-                <AgentPicker
-                  mapping={agentMapping}
-                  validIds={
-                    videoData?.valid_agent_ids?.filter((id) => {
-                      const agent = agentMapping[id];
-                      return agent?.roles?.includes("outline");
-                    }) || []
-                  }
-                  selectedIds={
-                    formData?.outlineAgentId ? [formData.outlineAgentId] : []
-                  }
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      outlineAgentId: ids[0] || null,
-                    }))
-                  }
-                  placeholder="Select outline agent"
-                  disabled={isReadonly}
-                  multiSelect={false}
-                />
-              ) : null}
-            </div>
+          {(() => {
+            const outlineAgentIds =
+              videoData?.valid_agent_ids?.filter((id) => {
+                const agent = agentMapping[id];
+                return agent?.["roles"]?.includes("outline");
+              }) || [];
+            const questionAgentIds =
+              videoData?.valid_agent_ids?.filter((id) => {
+                const agent = agentMapping[id];
+                return agent?.["roles"]?.includes("question");
+              }) || [];
 
-            {/* Question Agent */}
-            <div className="space-y-2">
-              <Label htmlFor="questionAgentId">Question Agent</Label>
-              {formData?.questionAgentId !== undefined ? (
-                <AgentPicker
-                  mapping={agentMapping}
-                  validIds={
-                    videoData?.valid_agent_ids?.filter((id) => {
-                      const agent = agentMapping[id];
-                      return agent?.roles?.includes("question");
-                    }) || []
-                  }
-                  selectedIds={
-                    formData?.questionAgentId ? [formData.questionAgentId] : []
-                  }
-                  onSelect={(ids) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      questionAgentId: ids[0] || null,
-                    }))
-                  }
-                  placeholder="Select question agent"
-                  disabled={isReadonly}
-                  multiSelect={false}
-                />
-              ) : null}
-            </div>
-          </div>
+            // Only show agent pickers if there's more than one option
+            const showOutlinePicker = outlineAgentIds.length > 1;
+            const showQuestionPicker = questionAgentIds.length > 1;
+
+            // Don't render the section at all if both pickers are hidden
+            if (!showOutlinePicker && !showQuestionPicker) {
+              return null;
+            }
+
+            return (
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                {/* Outline Agent */}
+                {showOutlinePicker && (
+                  <div className="space-y-2">
+                    <Label htmlFor="outlineAgentId">Outline Agent</Label>
+                    {formData?.outlineAgentId !== undefined ? (
+                      <AgentPicker
+                        mapping={
+                          agentMapping as Record<string, AgentMappingItem>
+                        }
+                        validIds={outlineAgentIds}
+                        selectedIds={
+                          formData?.outlineAgentId
+                            ? [formData.outlineAgentId]
+                            : []
+                        }
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            outlineAgentId: ids[0] || null,
+                          }))
+                        }
+                        placeholder="Select outline agent"
+                        disabled={isReadonly}
+                        multiSelect={false}
+                      />
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Question Agent */}
+                {showQuestionPicker && (
+                  <div className="space-y-2">
+                    <Label htmlFor="questionAgentId">Question Agent</Label>
+                    {formData?.questionAgentId !== undefined ? (
+                      <AgentPicker
+                        mapping={
+                          agentMapping as Record<string, AgentMappingItem>
+                        }
+                        validIds={questionAgentIds}
+                        selectedIds={
+                          formData?.questionAgentId
+                            ? [formData.questionAgentId]
+                            : []
+                        }
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            questionAgentId: ids[0] || null,
+                          }))
+                        }
+                        placeholder="Select question agent"
+                        disabled={isReadonly}
+                        multiSelect={false}
+                      />
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Active Switch */}
           <div className="space-y-2 pt-2">
