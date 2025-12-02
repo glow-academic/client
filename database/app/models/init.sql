@@ -22,7 +22,6 @@ CREATE TABLE models (
   name       TEXT         NOT NULL,
   description TEXT        NOT NULL,
   provider   provider     NOT NULL,
-  modality_type modality_type NOT NULL DEFAULT 'text',
   active     BOOLEAN      NOT NULL DEFAULT TRUE
 );
 
@@ -150,6 +149,24 @@ CREATE TABLE model_temperature_levels (
 CREATE INDEX ON model_temperature_levels (model_id);
 CREATE INDEX ON model_temperature_levels (temperature);
 CREATE INDEX ON model_temperature_levels (active);
+
+-- Model modalities junction table
+-- Tracks input and output modalities per model (BCNF normalization)
+-- Similar structure to model_temperature_levels with is_input boolean
+CREATE TABLE model_modalities (
+  model_id   UUID         NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  modality   modality_type NOT NULL,
+  is_input   BOOLEAN     NOT NULL,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, modality, is_input)
+);
+
+CREATE INDEX ON model_modalities (model_id);
+CREATE INDEX ON model_modalities (modality);
+CREATE INDEX ON model_modalities (is_input);
+CREATE INDEX ON model_modalities (active);
 
 -- Model voices junction table (uses voice enum from personas)
 CREATE TABLE model_voices (
