@@ -1171,26 +1171,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/personas/delete-prompt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Persona Prompt
-         * @description Delete a persona prompt.
-         */
-        post: operations["delete_persona_prompt_api_v3_personas_delete_prompt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/personas/overview": {
         parameters: {
             query?: never;
@@ -4588,6 +4568,18 @@ export interface components {
             /** Can Delete */
             can_delete: boolean;
         };
+        /**
+         * AgentMappingItem
+         * @description Agent mapping item - extends MappingItem with role information
+         */
+        AgentMappingItem: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Roles */
+            roles: string[];
+        };
         /** AgentNewRequest */
         AgentNewRequest: {
             /** Profileid */
@@ -5962,20 +5954,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Text Model Id */
-            text_model_id: string | null;
-            /** Audio Model Id */
-            audio_model_id: string | null;
-            /** Voice */
-            voice: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
+            /** Instructions */
+            instructions: string;
+            /** Text Agent Id */
+            text_agent_id: string | null;
+            /** Voice Agent Id */
+            voice_agent_id: string | null;
             /** Profileid */
             profileId: string;
         };
@@ -6730,28 +6714,6 @@ export interface components {
          * @description Response from delete parameter.
          */
         DeleteParameterResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
-        /**
-         * DeletePersonaPromptRequest
-         * @description Request to delete persona prompt.
-         */
-        DeletePersonaPromptRequest: {
-            /** Personaid */
-            personaId: string;
-            /** Promptid */
-            promptId: string;
-            /** Departmentid */
-            departmentId?: string | null;
-        };
-        /**
-         * DeletePersonaPromptResponse
-         * @description Response from delete persona prompt.
-         */
-        DeletePersonaPromptResponse: {
             /** Success */
             success: boolean;
             /** Message */
@@ -9041,8 +9003,12 @@ export interface components {
             department_ids: string[] | null;
             /** Scenario Ids */
             scenario_ids: string[];
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
             /** Model Id */
-            model_id: string;
+            model_id: string | null;
             /** Model Name */
             model_name: string | null;
             /** Reasoning */
@@ -9226,9 +9192,9 @@ export interface components {
             scenario_mapping: {
                 [key: string]: components["schemas"]["ScenarioMappingItem"];
             };
-            /** Model Mapping */
-            model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["AgentMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -9238,8 +9204,8 @@ export interface components {
             scenario_options: {
                 [key: string]: string;
             }[];
-            /** Model Options */
-            model_options: {
+            /** Agent Options */
+            agent_options: {
                 [key: string]: string;
             }[];
             /** Department Options */
@@ -10027,6 +9993,26 @@ export interface components {
                     [key: string]: string;
                 };
             };
+        };
+        /**
+         * PromptInfo
+         * @description Prompt information for version history.
+         */
+        PromptInfo: {
+            /** System Prompt */
+            system_prompt: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Delete */
+            can_delete: boolean;
         };
         /**
          * PromptItem
@@ -12312,22 +12298,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Text Model Id */
-            text_model_id: string | null;
-            /** Audio Model Id */
-            audio_model_id: string | null;
-            /** Voice */
-            voice: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** Department Ids For Prompt */
-            department_ids_for_prompt: string[] | null;
+            /** Instructions */
+            instructions: string;
+            /** Text Agent Id */
+            text_agent_id: string | null;
+            /** Voice Agent Id */
+            voice_agent_id: string | null;
             /** Profileid */
             profileId: string;
         };
@@ -12892,7 +12868,7 @@ export interface components {
             };
             /** Prompt Mapping */
             prompt_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__agents__detail__PromptInfo"];
+                [key: string]: components["schemas"]["PromptInfo"];
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__agents__detail__DebugInfoItem"][];
@@ -12918,26 +12894,6 @@ export interface components {
             model_id: string;
             /** Content */
             content: string;
-        };
-        /**
-         * PromptInfo
-         * @description Prompt information for version history.
-         */
-        app__api__v3__agents__detail__PromptInfo: {
-            /** System Prompt */
-            system_prompt: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /** AgentDetailResponse */
         app__api__v3__agents__new__AgentDetailResponse: {
@@ -13834,20 +13790,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Text Model Id */
-            text_model_id: string | null;
-            /** Audio Model Id */
-            audio_model_id: string | null;
-            /** Voice */
-            voice: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string;
-            /** Prompt Id */
-            prompt_id: string | null;
+            /** Instructions */
+            instructions: string;
+            /** Text Agent Id */
+            text_agent_id: string | null;
+            /** Voice Agent Id */
+            voice_agent_id: string | null;
             /** In Use */
             in_use: boolean;
             /** Scenario Count */
@@ -13864,37 +13812,13 @@ export interface components {
             suggested_icons: string[];
             /** Valid Icons */
             valid_icons: string[];
-            /** Valid Text Model Ids */
-            valid_text_model_ids: string[];
-            /** Valid Audio Model Ids */
-            valid_audio_model_ids: string[];
-            /** Reasoning Options */
-            reasoning_options: string[];
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
             /** Valid Department Ids */
             valid_department_ids: string[];
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Prompt Mapping */
-            prompt_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__detail__PromptInfo"];
-            };
-            /** Department Prompt Links */
-            department_prompt_links: {
-                [key: string]: string;
-            };
-            /** Text Model Mapping */
-            text_model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
-            };
-            /** Audio Model Mapping */
-            audio_model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
-            };
-            /** Reasoning Mapping */
-            reasoning_mapping: {
-                [key: string]: components["schemas"]["ReasoningMappingItem"];
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["AgentMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -13902,26 +13826,6 @@ export interface components {
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__detail__DebugInfoItem"][];
-        };
-        /**
-         * PromptInfo
-         * @description Prompt information.
-         */
-        app__api__v3__personas__detail__PromptInfo: {
-            /** System Prompt */
-            system_prompt: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /**
          * DebugInfoItem
@@ -13950,20 +13854,12 @@ export interface components {
             color: string;
             /** Icon */
             icon: string;
-            /** Text Model Id */
-            text_model_id: string | null;
-            /** Audio Model Id */
-            audio_model_id: string | null;
-            /** Voice */
-            voice: string | null;
-            /** Reasoning */
-            reasoning: string | null;
-            /** Temperature */
-            temperature: number;
-            /** System Prompt */
-            system_prompt: string;
-            /** Prompt Id */
-            prompt_id: string | null;
+            /** Instructions */
+            instructions: string;
+            /** Text Agent Id */
+            text_agent_id: string | null;
+            /** Voice Agent Id */
+            voice_agent_id: string | null;
             /** In Use */
             in_use: boolean;
             /** Scenario Count */
@@ -13980,37 +13876,13 @@ export interface components {
             suggested_icons: string[];
             /** Valid Icons */
             valid_icons: string[];
-            /** Valid Text Model Ids */
-            valid_text_model_ids: string[];
-            /** Valid Audio Model Ids */
-            valid_audio_model_ids: string[];
-            /** Reasoning Options */
-            reasoning_options: string[];
+            /** Valid Agent Ids */
+            valid_agent_ids: string[];
             /** Valid Department Ids */
             valid_department_ids: string[];
-            /** Temperature Lower */
-            temperature_lower: number;
-            /** Temperature Upper */
-            temperature_upper: number;
-            /** Prompt Mapping */
-            prompt_mapping: {
-                [key: string]: components["schemas"]["app__api__v3__personas__new__PromptInfo"];
-            };
-            /** Department Prompt Links */
-            department_prompt_links: {
-                [key: string]: string;
-            };
-            /** Text Model Mapping */
-            text_model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
-            };
-            /** Audio Model Mapping */
-            audio_model_mapping: {
-                [key: string]: components["schemas"]["app__utils__schema__ModelMappingItem"];
-            };
-            /** Reasoning Mapping */
-            reasoning_mapping: {
-                [key: string]: components["schemas"]["ReasoningMappingItem"];
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: components["schemas"]["AgentMappingItem"];
             };
             /** Department Mapping */
             department_mapping: {
@@ -14018,26 +13890,6 @@ export interface components {
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
-        };
-        /**
-         * PromptInfo
-         * @description Prompt information.
-         */
-        app__api__v3__personas__new__PromptInfo: {
-            /** System Prompt */
-            system_prompt: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /**
          * UploadFinalizeRequest
@@ -16967,39 +16819,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePersonaResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_persona_prompt_api_v3_personas_delete_prompt_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeletePersonaPromptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletePersonaPromptResponse"];
                 };
             };
             /** @description Validation Error */

@@ -9,9 +9,8 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -23,18 +22,6 @@ class PersonaDetailRequest(BaseModel):
 
     personaId: str
     profileId: str
-
-
-class PromptInfo(BaseModel):
-    """Prompt information."""
-
-    system_prompt: str
-    name: str
-    description: str
-    created_at: str
-    updated_at: str
-    department_ids: list[str] | None
-    can_delete: bool
 
 
 class DebugInfoItem(BaseModel):
@@ -54,13 +41,9 @@ class PersonaDetailResponse(BaseModel):
     active: bool
     color: str
     icon: str
-    text_model_id: str | None
-    audio_model_id: str | None
-    voice: str | None
-    reasoning: str | None
-    temperature: float
-    system_prompt: str
-    prompt_id: str | None
+    instructions: str
+    text_agent_id: str | None
+    voice_agent_id: str | None
 
     # Usage and permissions
     in_use: bool
@@ -73,21 +56,11 @@ class PersonaDetailResponse(BaseModel):
     preset_colors: list[str]
     suggested_icons: list[str]
     valid_icons: list[str]
-    valid_text_model_ids: list[str]
-    valid_audio_model_ids: list[str]
-    reasoning_options: list[str]
+    valid_agent_ids: list[str]
     valid_department_ids: list[str]
-    temperature_lower: float
-    temperature_upper: float
-
-    # Prompt version history
-    prompt_mapping: dict[str, PromptInfo]
-    department_prompt_links: dict[str, str]
 
     # Mappings
-    text_model_mapping: ModelMapping
-    audio_model_mapping: ModelMapping
-    reasoning_mapping: ReasoningMapping
+    agent_mapping: AgentMapping
     department_mapping: DepartmentMapping
 
     # Debug info
@@ -161,29 +134,23 @@ async def get_persona_detail(
 
         # Parse valid IDs
         valid_department_ids = result.get("valid_department_ids", [])
-        valid_text_model_ids = result.get("valid_text_model_ids", [])
-        valid_audio_model_ids = result.get("valid_audio_model_ids", [])
+        valid_agent_ids = result.get("valid_agent_ids", [])
 
-        # Parse text model mapping
-        text_model_mapping: ModelMapping = {}
-        text_model_mapping_data = parse_jsonb(result.get("text_model_mapping"))
-        if isinstance(text_model_mapping_data, dict):
-            for model_id, mdata in text_model_mapping_data.items():
-                if isinstance(mdata, dict):
-                    text_model_mapping[model_id] = ModelMappingItem(
-                        name=mdata.get("name", ""),
-                        description=mdata.get("description", ""),
-                    )
-
-        # Parse audio model mapping
-        audio_model_mapping: ModelMapping = {}
-        audio_model_mapping_data = parse_jsonb(result.get("audio_model_mapping"))
-        if isinstance(audio_model_mapping_data, dict):
-            for model_id, mdata in audio_model_mapping_data.items():
-                if isinstance(mdata, dict):
-                    audio_model_mapping[model_id] = ModelMappingItem(
-                        name=mdata.get("name", ""),
-                        description=mdata.get("description", ""),
+        # Parse agent mapping
+        agent_mapping: AgentMapping = {}
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, list):
+                        roles = [str(r) for r in roles]
+                    else:
+                        roles = []
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=roles,
                     )
 
         # Parse department mapping
@@ -206,7 +173,6 @@ async def get_persona_detail(
         # Get usage and permissions
         scenario_count = int(result.get("usage_count", 0))
         in_use = scenario_count > 0
-        total_scenario_links = int(result.get("total_scenario_links", scenario_count))
         user_role = str(result.get("user_role", "")).lower()
         has_department_links = bool(department_ids)
         is_default = not has_department_links
@@ -223,70 +189,10 @@ async def get_persona_detail(
 
         # Can't delete if can't edit (stricter than can_edit)
         can_delete = False
-        if can_edit and total_scenario_links == 0:
+        if can_edit and scenario_count == 0:
             if has_department_links or user_role == "superadmin":
                 if user_role in {"admin", "instructional", "superadmin"}:
                     can_delete = True
-
-        # Build reasoning_mapping
-        reasoning_mapping: ReasoningMapping = {
-            "none": ReasoningMappingItem(
-                name="None", description="No extended reasoning"
-            ),
-            "minimal": ReasoningMappingItem(
-                name="Minimal", description="Basic reasoning for straightforward tasks"
-            ),
-            "low": ReasoningMappingItem(
-                name="Low", description="Light reasoning for simple problem-solving"
-            ),
-            "medium": ReasoningMappingItem(
-                name="Medium",
-                description="Balanced reasoning for moderate complexity",
-            ),
-            "high": ReasoningMappingItem(
-                name="High",
-                description="Deep reasoning for complex, multi-step problems",
-            ),
-        }
-
-        # Parse prompt_mapping
-        prompt_mapping: dict[str, PromptInfo] = {}
-        prompt_mapping_data = parse_jsonb(result.get("prompt_mapping"))
-        if isinstance(prompt_mapping_data, dict):
-            for prompt_id, prompt_data in prompt_mapping_data.items():
-                if isinstance(prompt_data, dict):
-                    dept_ids = prompt_data.get("department_ids")
-                    if isinstance(dept_ids, list):
-                        dept_ids = [str(did) for did in dept_ids if did]
-                    elif dept_ids is None:
-                        dept_ids = None
-                    else:
-                        dept_ids = None
-                    prompt_mapping[prompt_id] = PromptInfo(
-                        system_prompt=prompt_data.get("system_prompt", ""),
-                        name=prompt_data.get("name", ""),
-                        description=prompt_data.get("description", ""),
-                        created_at=prompt_data.get("created_at", ""),
-                        updated_at=prompt_data.get("updated_at", ""),
-                        department_ids=dept_ids,
-                        can_delete=prompt_data.get("can_delete", False),
-                    )
-
-        # Parse prompt_id
-        prompt_id = result.get("prompt_id")
-        if prompt_id:
-            prompt_id = str(prompt_id)
-
-        # Parse department_prompt_links
-        department_prompt_links: dict[str, str] = {}
-        department_prompt_links_data = parse_jsonb(
-            result.get("department_prompt_links")
-        )
-        if isinstance(department_prompt_links_data, dict):
-            department_prompt_links = {
-                str(dept_id): str(prompt_id_val)
-                for dept_id, prompt_id_val in department_prompt_links_data.items()
-            }
 
         # Hardcoded metadata
         preset_colors = [
@@ -354,8 +260,6 @@ async def get_persona_detail(
             "Wifi",
         ]
 
-        reasoning_options = ["minimal", "low", "medium", "high"]
-
         # Debug info (empty for now)
         debug_info: list[DebugInfoItem] = []
 
@@ -366,13 +270,9 @@ async def get_persona_detail(
             active=result.get("active", False),
             color=result.get("color", ""),
             icon=result.get("icon", ""),
-            text_model_id=str(result.get("text_model_id", "")) if result.get("text_model_id") else None,
-            audio_model_id=str(result.get("audio_model_id", "")) if result.get("audio_model_id") else None,
-            voice=str(result.get("voice", "")) if result.get("voice") else None,
-            reasoning=result.get("reasoning"),
-            temperature=float(result.get("temperature", 0.0)),
-            system_prompt=result.get("system_prompt", ""),
-            prompt_id=prompt_id,
+            instructions=result.get("instructions", ""),
+            text_agent_id=str(result.get("text_agent_id", "")) if result.get("text_agent_id") else None,
+            voice_agent_id=str(result.get("voice_agent_id", "")) if result.get("voice_agent_id") else None,
             in_use=in_use,
             scenario_count=scenario_count,
             can_edit=can_edit,
@@ -381,17 +281,9 @@ async def get_persona_detail(
             preset_colors=preset_colors,
             suggested_icons=suggested_icons,
             valid_icons=valid_icons,
-            valid_text_model_ids=valid_text_model_ids,
-            valid_audio_model_ids=valid_audio_model_ids,
-            reasoning_options=reasoning_options,
+            valid_agent_ids=valid_agent_ids,
             valid_department_ids=valid_department_ids,
-            temperature_lower=0.0,
-            temperature_upper=2.0,
-            prompt_mapping=prompt_mapping,
-            department_prompt_links=department_prompt_links,
-            text_model_mapping=text_model_mapping,
-            audio_model_mapping=audio_model_mapping,
-            reasoning_mapping=reasoning_mapping,
+            agent_mapping=agent_mapping,
             department_mapping=department_mapping,
             debug_info=debug_info,
         )

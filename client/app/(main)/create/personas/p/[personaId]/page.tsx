@@ -27,11 +27,6 @@ type CreatePersonaIn = InputOf<"/api/v3/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v3/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/api/v3/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/api/v3/personas/update", "post">;
-type DeletePersonaPromptIn = InputOf<"/api/v3/personas/delete-prompt", "post">;
-type DeletePersonaPromptOut = OutputOf<
-  "/api/v3/personas/delete-prompt",
-  "post"
->;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -119,13 +114,6 @@ async function updatePersona(
   });
 }
 
-async function deletePersonaPrompt(
-  input: DeletePersonaPromptIn
-): Promise<DeletePersonaPromptOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/delete-prompt", input);
-}
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function PersonaEditPage({
@@ -153,7 +141,6 @@ export default async function PersonaEditPage({
           personaDetail={personaDetail}
           createPersonaAction={createPersona}
           updatePersonaAction={updatePersona}
-          deletePersonaPromptAction={deletePersonaPrompt}
         />
       </div>
     );
@@ -181,8 +168,6 @@ export default async function PersonaEditPage({
 export type {
   CreatePersonaIn,
   CreatePersonaOut,
-  DeletePersonaPromptIn,
-  DeletePersonaPromptOut,
   PersonaNewIn,
   PersonaNewOut,
   PersonaDetailOut,

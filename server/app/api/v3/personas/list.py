@@ -14,6 +14,8 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.schema import (
+    AgentMapping,
+    AgentMappingItem,
     DepartmentMapping,
     DepartmentMappingItem,
     ModelMapping,
@@ -41,8 +43,10 @@ class PersonaItem(BaseModel):
     icon: str
     department_ids: list[str] | None  # None = cross-department (all departments)
     scenario_ids: list[str]  # Array of scenario IDs
-    model_id: str
-    model_name: str | None  # Precomputed model name
+    agent_id: str | None  # Primary agent ID (prefer text, fallback to voice)
+    agent_name: str | None  # Primary agent name
+    model_id: str | None  # Model ID from primary agent (for backward compatibility)
+    model_name: str | None  # Model name from primary agent (for backward compatibility)
     reasoning: str | None
     temperature: float
     temperature_display: str  # Precomputed formatted temperature (e.g. "0.44")
@@ -59,11 +63,11 @@ class PersonasListResponse(BaseModel):
 
     personas: list[PersonaItem]
     scenario_mapping: ScenarioMapping
-    model_mapping: ModelMapping
+    agent_mapping: AgentMapping
     department_mapping: DepartmentMapping
     # UI-ready facet options (precomputed on server)
     scenario_options: list[dict[str, str]]  # Array of {value, label}
-    model_options: list[dict[str, str]]  # Array of {value, label}
+    agent_options: list[dict[str, str]]  # Array of {value, label}
     department_options: list[dict[str, str]]  # Array of {value, label}
 
 
@@ -122,7 +126,7 @@ async def get_personas_list(
         # Build response - transform database rows
         personas = []
         scenario_mapping: ScenarioMapping = {}
-        model_mapping: ModelMapping = {}
+        agent_mapping: AgentMapping = {}
         department_mapping: DepartmentMapping = {}
 
         # Parse mappings from first row (same across all rows)
@@ -149,6 +153,19 @@ async def get_personas_list(
                             document_ids=sdata.get("document_ids", []),
                         )
 
+            # Parse agent_mapping from JSONB
+            agent_mapping_data = first_row.get("agent_mapping")
+            if isinstance(agent_mapping_data, str):
+                agent_mapping_data = json.loads(agent_mapping_data)
+            if agent_mapping_data and isinstance(agent_mapping_data, dict):
+                for aid, adata in agent_mapping_data.items():
+                    if isinstance(adata, dict):
+                        agent_mapping[aid] = AgentMappingItem(
+                            name=adata.get("name", ""),
+                            description=adata.get("description", ""),
+                            roles=adata.get("roles", []),
+                        )
+
             # Parse department_mapping from JSONB
             department_mapping_data = first_row.get("department_mapping")
             if isinstance(department_mapping_data, str):
@@ -161,16 +178,6 @@ async def get_personas_list(
                             description=ddata.get("description", ""),
                         )
 
-        # Build model_mapping from SQL results (collect unique models)
-        for row in result:
-            model_id = str(row["model_id"]) if row["model_id"] else ""
-            model_name = row.get("model_name")
-            if model_id and model_id not in model_mapping and model_name:
-                model_mapping[model_id] = ModelMappingItem(
-                    name=model_name,
-                    description=row.get("model_description") or "",
-                )
-
         # Build persona items with derived fields
         for row in result:
             scenario_ids = [str(sid) for sid in (row["scenario_ids"] or [])]
@@ -178,9 +185,11 @@ async def get_personas_list(
             if row.get("department_ids"):
                 dept_ids = [str(d) for d in row["department_ids"]]
 
-            model_id = str(row["model_id"]) if row["model_id"] else ""
-            temperature = float(row["temperature"]) if row["temperature"] else 0.0
+            agent_id = str(row["agent_id"]) if row["agent_id"] else None
+            agent_name = row.get("agent_name")
+            model_id = str(row["model_id"]) if row["model_id"] else None
             model_name = row.get("model_name")
+            temperature = float(row["temperature"]) if row["temperature"] else 0.0
 
             personas.append(
                 PersonaItem(
@@ -191,6 +200,8 @@ async def get_personas_list(
                     icon=row["icon"],
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,
+                    agent_id=agent_id,
+                    agent_name=agent_name,
                     model_id=model_id,
                     model_name=model_name,
                     reasoning=row["reasoning"],
@@ -248,8 +259,16 @@ async def get_personas_list(
             for opt in disambiguate_scenarios(scenario_mapping)
             if opt["value"] in valid_scenario_ids
         ]
-        model_options = [
-            {"value": mid, "label": m.name} for (mid, m) in model_mapping.items()
+        # Collect all agent IDs actually assigned to personas
+        assigned_agent_ids = set()
+        for persona in personas:
+            if persona.agent_id:
+                assigned_agent_ids.add(persona.agent_id)
+        # Filter agent_options to only include agents assigned to at least one persona
+        agent_options = [
+            {"value": aid, "label": a.name or aid}
+            for (aid, a) in agent_mapping.items()
+            if aid in assigned_agent_ids
         ]
         # Collect all department IDs actually assigned to personas
         assigned_department_ids = set()
@@ -266,10 +285,10 @@ async def get_personas_list(
         response_data = PersonasListResponse(
             personas=personas,
             scenario_mapping=scenario_mapping,
-            model_mapping=model_mapping,
+            agent_mapping=agent_mapping,
             department_mapping=department_mapping,
             scenario_options=scenario_options,
-            model_options=model_options,
+            agent_options=agent_options,
             department_options=department_options,
         )
 

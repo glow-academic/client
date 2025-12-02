@@ -9,9 +9,8 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
-                              ModelMapping, ModelMappingItem, ReasoningMapping,
-                              ReasoningMappingItem)
+from app.utils.schema import (AgentMapping, AgentMappingItem,
+                              DepartmentMapping, DepartmentMappingItem)
 from app.utils.sql_helper import load_sql
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -22,18 +21,6 @@ class PersonaNewRequest(BaseModel):
     """Request to get default persona details."""
 
     profileId: str
-
-
-class PromptInfo(BaseModel):
-    """Prompt information."""
-
-    system_prompt: str
-    name: str
-    description: str
-    created_at: str
-    updated_at: str
-    department_ids: list[str] | None
-    can_delete: bool
 
 
 class DebugInfoItem(BaseModel):
@@ -53,13 +40,9 @@ class PersonaDetailResponse(BaseModel):
     active: bool
     color: str
     icon: str
-    text_model_id: str | None
-    audio_model_id: str | None
-    voice: str | None
-    reasoning: str | None
-    temperature: float
-    system_prompt: str
-    prompt_id: str | None
+    instructions: str
+    text_agent_id: str | None
+    voice_agent_id: str | None
 
     # Usage and permissions
     in_use: bool
@@ -72,21 +55,11 @@ class PersonaDetailResponse(BaseModel):
     preset_colors: list[str]
     suggested_icons: list[str]
     valid_icons: list[str]
-    valid_text_model_ids: list[str]
-    valid_audio_model_ids: list[str]
-    reasoning_options: list[str]
+    valid_agent_ids: list[str]
     valid_department_ids: list[str]
-    temperature_lower: float
-    temperature_upper: float
-
-    # Prompt version history
-    prompt_mapping: dict[str, PromptInfo]
-    department_prompt_links: dict[str, str]
 
     # Mappings
-    text_model_mapping: ModelMapping
-    audio_model_mapping: ModelMapping
-    reasoning_mapping: ReasoningMapping
+    agent_mapping: AgentMapping
     department_mapping: DepartmentMapping
 
     # Debug info
@@ -144,8 +117,7 @@ async def get_persona_new(
             )
 
         valid_department_ids = result.get("valid_department_ids", [])
-        valid_text_model_ids = result.get("valid_text_model_ids", [])
-        valid_audio_model_ids = result.get("valid_audio_model_ids", [])
+        valid_agent_ids = result.get("valid_agent_ids", [])
         
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
@@ -181,26 +153,21 @@ async def get_persona_new(
                         description=ddata.get("description", ""),
                     )
 
-        # Parse text model mapping
-        text_model_mapping_data = parse_jsonb(result.get("text_model_mapping"))
-        text_model_mapping: ModelMapping = {}
-        if isinstance(text_model_mapping_data, dict):
-            for model_id, mdata in text_model_mapping_data.items():
-                if isinstance(mdata, dict):
-                    text_model_mapping[model_id] = ModelMappingItem(
-                        name=mdata.get("name", ""),
-                        description=mdata.get("description", ""),
-                    )
-
-        # Parse audio model mapping
-        audio_model_mapping_data = parse_jsonb(result.get("audio_model_mapping"))
-        audio_model_mapping: ModelMapping = {}
-        if isinstance(audio_model_mapping_data, dict):
-            for model_id, mdata in audio_model_mapping_data.items():
-                if isinstance(mdata, dict):
-                    audio_model_mapping[model_id] = ModelMappingItem(
-                        name=mdata.get("name", ""),
-                        description=mdata.get("description", ""),
+        # Parse agent mapping
+        agent_mapping_data = parse_jsonb(result.get("agent_mapping"))
+        agent_mapping: AgentMapping = {}
+        if isinstance(agent_mapping_data, dict):
+            for agent_id, adata in agent_mapping_data.items():
+                if isinstance(adata, dict):
+                    roles = adata.get("roles", [])
+                    if isinstance(roles, list):
+                        roles = [str(r) for r in roles]
+                    else:
+                        roles = []
+                    agent_mapping[agent_id] = AgentMappingItem(
+                        name=adata.get("name", ""),
+                        description=adata.get("description", ""),
+                        roles=roles,
                     )
 
         # Hardcoded metadata
@@ -246,32 +213,16 @@ async def get_persona_new(
             "Wifi",
         ]
 
-        reasoning_options = ["minimal", "low", "medium", "high"]
-
-        reasoning_mapping: ReasoningMapping = {
-            "none": ReasoningMappingItem(
-                name="None", description="No extended reasoning"
-            ),
-            "minimal": ReasoningMappingItem(
-                name="Minimal", description="Basic reasoning for straightforward tasks"
-            ),
-            "low": ReasoningMappingItem(
-                name="Low", description="Light reasoning for simple problem-solving"
-            ),
-            "medium": ReasoningMappingItem(
-                name="Medium",
-                description="Balanced reasoning for moderate complexity",
-            ),
-            "high": ReasoningMappingItem(
-                name="High",
-                description="Deep reasoning for complex, multi-step problems",
-            ),
-        }
-
-        # Get default text model ID (first valid text model)
-        default_text_model_id = valid_text_model_ids[0] if valid_text_model_ids else None
-        if not default_text_model_id:
-            raise HTTPException(status_code=400, detail="No valid text models found")
+        # Get default text agent ID (first valid agent with simulation-text role)
+        default_text_agent_id = None
+        for agent_id in valid_agent_ids:
+            agent = agent_mapping.get(agent_id)
+            if agent and "simulation-text" in agent.roles:
+                default_text_agent_id = agent_id
+                break
+        
+        if not default_text_agent_id:
+            raise HTTPException(status_code=400, detail="No valid simulation-text agents found")
 
         # Debug info (empty for now)
         debug_info: list[DebugInfoItem] = []
@@ -284,13 +235,9 @@ async def get_persona_new(
             active=True,
             color=preset_colors[0] if preset_colors else "#3B82F6",
             icon=suggested_icons[0] if suggested_icons else "Sparkles",
-            text_model_id=default_text_model_id,
-            audio_model_id=None,
-            voice=None,
-            reasoning="none",
-            temperature=0.0,
-            system_prompt="",
-            prompt_id=None,
+            instructions=result.get("instructions", "") if result.get("instructions") else "",
+            text_agent_id=default_text_agent_id,
+            voice_agent_id=None,
             # Usage and permissions
             in_use=False,
             scenario_count=0,
@@ -301,19 +248,10 @@ async def get_persona_new(
             preset_colors=preset_colors,
             suggested_icons=suggested_icons,
             valid_icons=valid_icons,
-            valid_text_model_ids=valid_text_model_ids,
-            valid_audio_model_ids=valid_audio_model_ids,
-            reasoning_options=reasoning_options,
+            valid_agent_ids=valid_agent_ids,
             valid_department_ids=valid_department_ids,
-            temperature_lower=0.0,
-            temperature_upper=2.0,
-            # Prompt mappings (empty for create mode)
-            prompt_mapping={},
-            department_prompt_links={},
             # Mappings
-            text_model_mapping=text_model_mapping,
-            audio_model_mapping=audio_model_mapping,
-            reasoning_mapping=reasoning_mapping,
+            agent_mapping=agent_mapping,
             department_mapping=department_mapping,
             # Debug info
             debug_info=debug_info,

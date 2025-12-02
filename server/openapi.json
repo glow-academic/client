@@ -2445,53 +2445,6 @@
         ]
       }
     },
-    "/api/v3/personas/delete-prompt": {
-      "post": {
-        "tags": [
-          "v3",
-          "personas"
-        ],
-        "summary": "Delete Persona Prompt",
-        "description": "Delete a persona prompt.",
-        "operationId": "delete_persona_prompt_api_v3_personas_delete_prompt_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeletePersonaPromptRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeletePersonaPromptResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "personas"
-        ]
-      }
-    },
     "/api/v3/personas/overview": {
       "post": {
         "tags": [
@@ -10011,6 +9964,33 @@
         ],
         "title": "AgentItem"
       },
+      "AgentMappingItem": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "roles"
+        ],
+        "title": "AgentMappingItem",
+        "description": "Agent mapping item - extends MappingItem with role information"
+      },
       "AgentNewRequest": {
         "properties": {
           "profileId": {
@@ -13510,7 +13490,11 @@
             "type": "string",
             "title": "Icon"
           },
-          "text_model_id": {
+          "instructions": {
+            "type": "string",
+            "title": "Instructions"
+          },
+          "text_agent_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -13519,9 +13503,9 @@
                 "type": "null"
               }
             ],
-            "title": "Text Model Id"
+            "title": "Text Agent Id"
           },
-          "audio_model_id": {
+          "voice_agent_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -13530,55 +13514,7 @@
                 "type": "null"
               }
             ],
-            "title": "Audio Model Id"
-          },
-          "voice": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "system_prompt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "System Prompt"
-          },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
+            "title": "Voice Agent Id"
           },
           "profileId": {
             "type": "string",
@@ -13593,13 +13529,9 @@
           "active",
           "color",
           "icon",
-          "text_model_id",
-          "audio_model_id",
-          "voice",
-          "reasoning",
-          "temperature",
-          "system_prompt",
-          "prompt_id",
+          "instructions",
+          "text_agent_id",
+          "voice_agent_id",
           "profileId"
         ],
         "title": "CreatePersonaRequest",
@@ -15574,55 +15506,6 @@
         ],
         "title": "DeleteParameterResponse",
         "description": "Response from delete parameter."
-      },
-      "DeletePersonaPromptRequest": {
-        "properties": {
-          "personaId": {
-            "type": "string",
-            "title": "Personaid"
-          },
-          "promptId": {
-            "type": "string",
-            "title": "Promptid"
-          },
-          "departmentId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departmentid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "personaId",
-          "promptId"
-        ],
-        "title": "DeletePersonaPromptRequest",
-        "description": "Request to delete persona prompt."
-      },
-      "DeletePersonaPromptResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "DeletePersonaPromptResponse",
-        "description": "Response from delete persona prompt."
       },
       "DeletePersonaRequest": {
         "properties": {
@@ -21369,8 +21252,37 @@
             "type": "array",
             "title": "Scenario Ids"
           },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "agent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Name"
+          },
           "model_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Model Id"
           },
           "model_name": {
@@ -21437,6 +21349,8 @@
           "icon",
           "department_ids",
           "scenario_ids",
+          "agent_id",
+          "agent_name",
           "model_id",
           "model_name",
           "reasoning",
@@ -21799,12 +21713,12 @@
             "type": "object",
             "title": "Scenario Mapping"
           },
-          "model_mapping": {
+          "agent_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
+              "$ref": "#/components/schemas/AgentMappingItem"
             },
             "type": "object",
-            "title": "Model Mapping"
+            "title": "Agent Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -21823,7 +21737,7 @@
             "type": "array",
             "title": "Scenario Options"
           },
-          "model_options": {
+          "agent_options": {
             "items": {
               "additionalProperties": {
                 "type": "string"
@@ -21831,7 +21745,7 @@
               "type": "object"
             },
             "type": "array",
-            "title": "Model Options"
+            "title": "Agent Options"
           },
           "department_options": {
             "items": {
@@ -21848,10 +21762,10 @@
         "required": [
           "personas",
           "scenario_mapping",
-          "model_mapping",
+          "agent_mapping",
           "department_mapping",
           "scenario_options",
-          "model_options",
+          "agent_options",
           "department_options"
         ],
         "title": "PersonasListResponse",
@@ -23986,6 +23900,60 @@
         ],
         "title": "PromptDetailResponse",
         "description": "Response for prompt detail endpoint."
+      },
+      "PromptInfo": {
+        "properties": {
+          "system_prompt": {
+            "type": "string",
+            "title": "System Prompt"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "system_prompt",
+          "name",
+          "description",
+          "created_at",
+          "updated_at",
+          "department_ids",
+          "can_delete"
+        ],
+        "title": "PromptInfo",
+        "description": "Prompt information for version history."
       },
       "PromptItem": {
         "properties": {
@@ -29712,7 +29680,11 @@
             "type": "string",
             "title": "Icon"
           },
-          "text_model_id": {
+          "instructions": {
+            "type": "string",
+            "title": "Instructions"
+          },
+          "text_agent_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -29721,9 +29693,9 @@
                 "type": "null"
               }
             ],
-            "title": "Text Model Id"
+            "title": "Text Agent Id"
           },
-          "audio_model_id": {
+          "voice_agent_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -29732,69 +29704,7 @@
                 "type": "null"
               }
             ],
-            "title": "Audio Model Id"
-          },
-          "voice": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "system_prompt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "System Prompt"
-          },
-          "prompt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prompt Id"
-          },
-          "department_ids_for_prompt": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids For Prompt"
+            "title": "Voice Agent Id"
           },
           "profileId": {
             "type": "string",
@@ -29810,14 +29720,9 @@
           "active",
           "color",
           "icon",
-          "text_model_id",
-          "audio_model_id",
-          "voice",
-          "reasoning",
-          "temperature",
-          "system_prompt",
-          "prompt_id",
-          "department_ids_for_prompt",
+          "instructions",
+          "text_agent_id",
+          "voice_agent_id",
           "profileId"
         ],
         "title": "UpdatePersonaRequest",
@@ -31278,7 +31183,7 @@
           },
           "prompt_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__agents__detail__PromptInfo"
+              "$ref": "#/components/schemas/PromptInfo"
             },
             "type": "object",
             "title": "Prompt Mapping"
@@ -31359,60 +31264,6 @@
         ],
         "title": "DebugInfoItem",
         "description": "Debug information item."
-      },
-      "app__api__v3__agents__detail__PromptInfo": {
-        "properties": {
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "system_prompt",
-          "name",
-          "description",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "can_delete"
-        ],
-        "title": "PromptInfo",
-        "description": "Prompt information for version history."
       },
       "app__api__v3__agents__new__AgentDetailResponse": {
         "properties": {
@@ -33963,59 +33814,11 @@
             "type": "string",
             "title": "Icon"
           },
-          "text_model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Model Id"
-          },
-          "audio_model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Model Id"
-          },
-          "voice": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "system_prompt": {
+          "instructions": {
             "type": "string",
-            "title": "System Prompt"
+            "title": "Instructions"
           },
-          "prompt_id": {
+          "text_agent_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -34024,7 +33827,18 @@
                 "type": "null"
               }
             ],
-            "title": "Prompt Id"
+            "title": "Text Agent Id"
+          },
+          "voice_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Agent Id"
           },
           "in_use": {
             "type": "boolean",
@@ -34067,26 +33881,12 @@
             "type": "array",
             "title": "Valid Icons"
           },
-          "valid_text_model_ids": {
+          "valid_agent_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Text Model Ids"
-          },
-          "valid_audio_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Audio Model Ids"
-          },
-          "reasoning_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
+            "title": "Valid Agent Ids"
           },
           "valid_department_ids": {
             "items": {
@@ -34095,48 +33895,12 @@
             "type": "array",
             "title": "Valid Department Ids"
           },
-          "temperature_lower": {
-            "type": "number",
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "type": "number",
-            "title": "Temperature Upper"
-          },
-          "prompt_mapping": {
+          "agent_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__detail__PromptInfo"
+              "$ref": "#/components/schemas/AgentMappingItem"
             },
             "type": "object",
-            "title": "Prompt Mapping"
-          },
-          "department_prompt_links": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Department Prompt Links"
-          },
-          "text_model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Text Model Mapping"
-          },
-          "audio_model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Audio Model Mapping"
-          },
-          "reasoning_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ReasoningMappingItem"
-            },
-            "type": "object",
-            "title": "Reasoning Mapping"
+            "title": "Agent Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -34161,13 +33925,9 @@
           "active",
           "color",
           "icon",
-          "text_model_id",
-          "audio_model_id",
-          "voice",
-          "reasoning",
-          "temperature",
-          "system_prompt",
-          "prompt_id",
+          "instructions",
+          "text_agent_id",
+          "voice_agent_id",
           "in_use",
           "scenario_count",
           "can_edit",
@@ -34176,76 +33936,14 @@
           "preset_colors",
           "suggested_icons",
           "valid_icons",
-          "valid_text_model_ids",
-          "valid_audio_model_ids",
-          "reasoning_options",
+          "valid_agent_ids",
           "valid_department_ids",
-          "temperature_lower",
-          "temperature_upper",
-          "prompt_mapping",
-          "department_prompt_links",
-          "text_model_mapping",
-          "audio_model_mapping",
-          "reasoning_mapping",
+          "agent_mapping",
           "department_mapping",
           "debug_info"
         ],
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
-      },
-      "app__api__v3__personas__detail__PromptInfo": {
-        "properties": {
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "system_prompt",
-          "name",
-          "description",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "can_delete"
-        ],
-        "title": "PromptInfo",
-        "description": "Prompt information."
       },
       "app__api__v3__personas__new__DebugInfoItem": {
         "properties": {
@@ -34309,59 +34007,11 @@
             "type": "string",
             "title": "Icon"
           },
-          "text_model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Text Model Id"
-          },
-          "audio_model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Audio Model Id"
-          },
-          "voice": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
-          },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
-          "system_prompt": {
+          "instructions": {
             "type": "string",
-            "title": "System Prompt"
+            "title": "Instructions"
           },
-          "prompt_id": {
+          "text_agent_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -34370,7 +34020,18 @@
                 "type": "null"
               }
             ],
-            "title": "Prompt Id"
+            "title": "Text Agent Id"
+          },
+          "voice_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Agent Id"
           },
           "in_use": {
             "type": "boolean",
@@ -34413,26 +34074,12 @@
             "type": "array",
             "title": "Valid Icons"
           },
-          "valid_text_model_ids": {
+          "valid_agent_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Text Model Ids"
-          },
-          "valid_audio_model_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Valid Audio Model Ids"
-          },
-          "reasoning_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Reasoning Options"
+            "title": "Valid Agent Ids"
           },
           "valid_department_ids": {
             "items": {
@@ -34441,48 +34088,12 @@
             "type": "array",
             "title": "Valid Department Ids"
           },
-          "temperature_lower": {
-            "type": "number",
-            "title": "Temperature Lower"
-          },
-          "temperature_upper": {
-            "type": "number",
-            "title": "Temperature Upper"
-          },
-          "prompt_mapping": {
+          "agent_mapping": {
             "additionalProperties": {
-              "$ref": "#/components/schemas/app__api__v3__personas__new__PromptInfo"
+              "$ref": "#/components/schemas/AgentMappingItem"
             },
             "type": "object",
-            "title": "Prompt Mapping"
-          },
-          "department_prompt_links": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Department Prompt Links"
-          },
-          "text_model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Text Model Mapping"
-          },
-          "audio_model_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/app__utils__schema__ModelMappingItem"
-            },
-            "type": "object",
-            "title": "Audio Model Mapping"
-          },
-          "reasoning_mapping": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ReasoningMappingItem"
-            },
-            "type": "object",
-            "title": "Reasoning Mapping"
+            "title": "Agent Mapping"
           },
           "department_mapping": {
             "additionalProperties": {
@@ -34507,13 +34118,9 @@
           "active",
           "color",
           "icon",
-          "text_model_id",
-          "audio_model_id",
-          "voice",
-          "reasoning",
-          "temperature",
-          "system_prompt",
-          "prompt_id",
+          "instructions",
+          "text_agent_id",
+          "voice_agent_id",
           "in_use",
           "scenario_count",
           "can_edit",
@@ -34522,76 +34129,14 @@
           "preset_colors",
           "suggested_icons",
           "valid_icons",
-          "valid_text_model_ids",
-          "valid_audio_model_ids",
-          "reasoning_options",
+          "valid_agent_ids",
           "valid_department_ids",
-          "temperature_lower",
-          "temperature_upper",
-          "prompt_mapping",
-          "department_prompt_links",
-          "text_model_mapping",
-          "audio_model_mapping",
-          "reasoning_mapping",
+          "agent_mapping",
           "department_mapping",
           "debug_info"
         ],
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
-      },
-      "app__api__v3__personas__new__PromptInfo": {
-        "properties": {
-          "system_prompt": {
-            "type": "string",
-            "title": "System Prompt"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "system_prompt",
-          "name",
-          "description",
-          "created_at",
-          "updated_at",
-          "department_ids",
-          "can_delete"
-        ],
-        "title": "PromptInfo",
-        "description": "Prompt information."
       },
       "app__api__v3__policies__upload_finalize__UploadFinalizeRequest": {
         "properties": {

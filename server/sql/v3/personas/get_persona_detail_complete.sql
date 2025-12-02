@@ -1,4 +1,4 @@
--- Get persona detail with prompts, departments, and access control
+-- Get persona detail with agents, departments, and access control
 -- Parameters: $1 = persona_id (uuid), $2 = profile_id (uuid or "guest-profile-id")
 
 WITH resolve_profile_id AS (
@@ -14,248 +14,147 @@ user_profile AS (
     SELECT role FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
 ),
-        persona_departments_data AS (
-            SELECT 
-                pd.persona_id,
-                ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
-            FROM persona_departments pd
-            WHERE pd.persona_id = $1 AND pd.active = true
-            GROUP BY pd.persona_id
-        ),
-        persona_department_access_check AS (
-            SELECT 
-                p.id as persona_id,
-                CASE 
-                    WHEN up.role = 'superadmin' THEN true
-                    WHEN EXISTS (
-                        SELECT 1 FROM persona_departments pd 
-                        JOIN resolve_profile_id rpi ON true
-                        WHERE pd.persona_id = p.id 
-                        AND pd.active = true 
-                        AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = rpi.resolved_profile_id AND pd2.active = true)
-                    ) THEN true
-                    WHEN NOT EXISTS (
-                        SELECT 1 FROM persona_departments pd3 
-                        WHERE pd3.persona_id = p.id 
-                        AND pd3.active = true
-                    ) THEN true  -- Cross-department resource
-                    ELSE false
-                END as has_access
-            FROM personas p
-            CROSS JOIN user_profile up
-            WHERE p.id = $1
-        ),
-        persona_department_prompt_links AS (
-            SELECT 
-                COALESCE(
-                    (SELECT jsonb_object_agg(
-                        pdp.department_id::text,
-                        pdp.prompt_id::text
-                    )
-                    FROM persona_department_prompts pdp
-                    WHERE pdp.persona_id = $1 AND pdp.active = true),
-                    '{}'::jsonb
-                ) as department_prompt_links
-        ),
-        persona_active_prompt AS (
-            SELECT 
-                pp.persona_id,
-                pp.prompt_id::text as prompt_id,
-                pr.system_prompt,
-                pr.created_at as prompt_created_at,
-                pr.updated_at as prompt_updated_at
-            FROM persona_prompts pp
-            JOIN prompts pr ON pr.id = pp.prompt_id
-            WHERE pp.persona_id = $1 AND pp.active = true
-            LIMIT 1
-        ),
-        persona_all_prompts AS (
-            -- Get all prompts from persona_prompts (default prompts)
-            SELECT 
-                pp.persona_id,
-                pp.prompt_id::text as prompt_id,
-                pr.system_prompt,
-                pr.name as prompt_name,
-                pr.description as prompt_description,
-                pr.created_at as prompt_created_at,
-                pr.updated_at as prompt_updated_at
-            FROM persona_prompts pp
-            JOIN prompts pr ON pr.id = pp.prompt_id
-            WHERE pp.persona_id = $1
-            UNION
-            -- Also get all prompts from persona_department_prompts (department-specific prompts)
-            SELECT DISTINCT
-                pdp.persona_id,
-                pdp.prompt_id::text as prompt_id,
-                pr.system_prompt,
-                pr.name as prompt_name,
-                pr.description as prompt_description,
-                pr.created_at as prompt_created_at,
-                pr.updated_at as prompt_updated_at
-            FROM persona_department_prompts pdp
-            JOIN prompts pr ON pr.id = pdp.prompt_id
-            WHERE pdp.persona_id = $1 AND pdp.active = true
-        ),
-        prompt_departments_data AS (
-            SELECT 
-                pdp.prompt_id::text as prompt_id,
-                ARRAY_AGG(pdp.department_id::text ORDER BY pdp.created_at) as department_ids
-            FROM persona_department_prompts pdp
-            WHERE pdp.persona_id = $1 AND pdp.active = true
-            GROUP BY pdp.prompt_id
-        ),
-        default_prompt_count AS (
-            -- Count default prompts (from persona_prompts, not department-specific)
-            -- Always return at least one row with count (0 if no prompts)
-            SELECT COALESCE(COUNT(DISTINCT pp.prompt_id), 0)::integer as count
-            FROM persona_prompts pp
-            WHERE pp.persona_id = $1
-        ),
-        prompt_mapping_data AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        pp.prompt_id,
-                        jsonb_build_object(
-                            'system_prompt', pp.system_prompt,
-                            'name', COALESCE(pp.prompt_name, ''),
-                            'description', COALESCE(pp.prompt_description, ''),
-                            'created_at', pp.prompt_created_at::text,
-                            'updated_at', pp.prompt_updated_at::text,
-                            'department_ids', COALESCE(pdd.department_ids, NULL),
-                            'can_delete', CASE
-                                -- Department-specific prompts can always be deleted (fall back to default)
-                                WHEN pdd.department_ids IS NOT NULL THEN true::boolean
-                                -- Default prompts can be deleted if there's more than one
-                                WHEN pdd.department_ids IS NULL AND COALESCE(dpc.count, 0) > 1 THEN true::boolean
-                                -- Otherwise cannot delete (only one default prompt)
-                                ELSE false::boolean
-                            END
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as prompt_mapping
-            FROM persona_all_prompts pp
-            LEFT JOIN prompt_departments_data pdd ON pdd.prompt_id = pp.prompt_id
-            CROSS JOIN default_prompt_count dpc
-        ),
-        persona_text_model_data AS (
-            SELECT 
-                ptm.persona_id,
-                ptm.model_id::text as text_model_id
-            FROM persona_text_model ptm
-            WHERE ptm.persona_id = $1 AND ptm.active = true
-            LIMIT 1
-        ),
-        persona_audio_model_data AS (
-            SELECT 
-                pam.persona_id,
-                pam.model_id::text as audio_model_id,
-                pam.voice::text as voice
-            FROM persona_audio_model pam
-            WHERE pam.persona_id = $1 AND pam.active = true
-            LIMIT 1
-        ),
-        persona_data AS (
-            SELECT 
-                p.name,
-                p.description,
-                p.active,
-                p.color,
-                p.icon,
-                COALESCE(ptmd.text_model_id, NULL)::text as text_model_id,
-                COALESCE(pamd.audio_model_id, NULL)::text as audio_model_id,
-                COALESCE(pamd.voice, NULL)::text as voice,
-                p.reasoning,
-                p.temperature,
-                COALESCE(pap.system_prompt, '') as system_prompt,
-                COALESCE(pap.prompt_id, NULL)::text as prompt_id,
-                COALESCE(pdd.department_ids, NULL) as department_ids
-            FROM personas p
-            LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
-            LEFT JOIN persona_active_prompt pap ON pap.persona_id = p.id
-            LEFT JOIN persona_text_model_data ptmd ON ptmd.persona_id = p.id
-            LEFT JOIN persona_audio_model_data pamd ON pamd.persona_id = p.id
-            INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
-            WHERE p.id = $1
-        ),
-        valid_depts AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        d.id::text,
-                        jsonb_build_object(
-                            'name', d.title,
-                            'description', COALESCE(d.description, '')
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as dept_mapping,
-                array_agg(d.id::text ORDER BY d.title) as dept_ids
-            FROM departments d
-            JOIN resolve_profile_id rpi ON true
-            JOIN profile_departments pd ON d.id = pd.department_id
-            WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
-        ),
-        valid_text_models AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        m.id::text,
-                        jsonb_build_object(
-                            'name', m.name,
-                            'description', COALESCE(m.description, '')
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as text_model_mapping,
-                array_agg(m.id::text ORDER BY m.name) as text_model_ids
-            FROM models m 
-            WHERE m.active = true AND m.model_type = 'text'
-        ),
-        valid_audio_models AS (
-            SELECT 
-                COALESCE(
-                    jsonb_object_agg(
-                        m.id::text,
-                        jsonb_build_object(
-                            'name', m.name,
-                            'description', COALESCE(m.description, '')
-                        )
-                    ),
-                    '{}'::jsonb
-                ) as audio_model_mapping,
-                array_agg(m.id::text ORDER BY m.name) as audio_model_ids
-            FROM models m 
-            WHERE m.active = true AND m.model_type = 'audio'
-        ),
-        usage_data AS (
-            SELECT COUNT(*) as usage_count
-            FROM scenario_personas sp
-            WHERE sp.persona_id = $1 AND sp.active = true
-        ),
-        profile_data AS (
-            SELECT role as user_role 
-            FROM resolve_profile_id rpi
-            JOIN profiles p ON p.id = rpi.resolved_profile_id
-        )
-        SELECT 
-            p.*,
-            vd.dept_mapping,
-            vd.dept_ids as valid_department_ids,
-            COALESCE(vtm.text_model_mapping, '{}'::jsonb) as text_model_mapping,
-            COALESCE(vtm.text_model_ids, ARRAY[]::text[]) as valid_text_model_ids,
-            COALESCE(vam.audio_model_mapping, '{}'::jsonb) as audio_model_mapping,
-            COALESCE(vam.audio_model_ids, ARRAY[]::text[]) as valid_audio_model_ids,
-            u.usage_count,
-            pr.user_role,
-            COALESCE(pmd.prompt_mapping, '{}'::jsonb) as prompt_mapping,
-            COALESCE(pdpl.department_prompt_links, '{}'::jsonb) as department_prompt_links
-        FROM persona_data p
-        CROSS JOIN valid_depts vd
-        CROSS JOIN valid_text_models vtm
-        CROSS JOIN valid_audio_models vam
-        CROSS JOIN usage_data u
-        CROSS JOIN profile_data pr
-        CROSS JOIN prompt_mapping_data pmd
-        CROSS JOIN persona_department_prompt_links pdpl
+persona_departments_data AS (
+    SELECT 
+        pd.persona_id,
+        ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+    FROM persona_departments pd
+    WHERE pd.persona_id = $1 AND pd.active = true
+    GROUP BY pd.persona_id
+),
+persona_department_access_check AS (
+    SELECT 
+        p.id as persona_id,
+        CASE 
+            WHEN up.role = 'superadmin' THEN true
+            WHEN EXISTS (
+                SELECT 1 FROM persona_departments pd 
+                JOIN resolve_profile_id rpi ON true
+                WHERE pd.persona_id = p.id 
+                AND pd.active = true 
+                AND pd.department_id IN (SELECT department_id FROM profile_departments pd2 WHERE pd2.profile_id = rpi.resolved_profile_id AND pd2.active = true)
+            ) THEN true
+            WHEN NOT EXISTS (
+                SELECT 1 FROM persona_departments pd3 
+                WHERE pd3.persona_id = p.id 
+                AND pd3.active = true
+            ) THEN true  -- Cross-department resource
+            ELSE false
+        END as has_access
+    FROM personas p
+    CROSS JOIN user_profile up
+    WHERE p.id = $1
+),
+persona_agents_data AS (
+    SELECT 
+        pa.persona_id,
+        pa.agent_id::text as agent_id,
+        a.role
+    FROM persona_agents pa
+    JOIN agents a ON a.id = pa.agent_id
+    WHERE pa.persona_id = $1 AND pa.active = true
+),
+text_agent_data AS (
+    SELECT 
+        pad.agent_id as text_agent_id
+    FROM persona_agents_data pad
+    WHERE pad.role = 'simulation-text'
+    LIMIT 1
+),
+voice_agent_data AS (
+    SELECT 
+        pad.agent_id as voice_agent_id
+    FROM persona_agents_data pad
+    WHERE pad.role = 'simulation-voice'
+    LIMIT 1
+),
+persona_data AS (
+    SELECT 
+        p.name,
+        p.description,
+        p.active,
+        p.color,
+        p.icon,
+        p.instructions,
+        COALESCE(tad.text_agent_id, NULL)::text as text_agent_id,
+        COALESCE(vad.voice_agent_id, NULL)::text as voice_agent_id,
+        COALESCE(pdd.department_ids, NULL) as department_ids
+    FROM personas p
+    LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
+    LEFT JOIN text_agent_data tad ON true
+    LEFT JOIN voice_agent_data vad ON true
+    INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
+    WHERE p.id = $1
+),
+valid_depts AS (
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                d.id::text,
+                jsonb_build_object(
+                    'name', d.title,
+                    'description', COALESCE(d.description, '')
+                )
+            ),
+            '{}'::jsonb
+        ) as dept_mapping,
+        array_agg(d.id::text ORDER BY d.title) as dept_ids
+    FROM departments d
+    JOIN resolve_profile_id rpi ON true
+    JOIN profile_departments pd ON d.id = pd.department_id
+    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
+),
+user_departments AS (
+    SELECT department_id
+    FROM resolve_profile_id rpi
+    JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
+    WHERE pd.active = true
+),
+valid_agents AS (
+    -- Get agents with roles simulation-text or simulation-voice
+    -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
+    SELECT 
+        COALESCE(
+            jsonb_object_agg(
+                a.id::text,
+                jsonb_build_object(
+                    'name', a.name,
+                    'description', COALESCE(a.description, ''),
+                    'roles', ARRAY[a.role::text]
+                )
+            ),
+            '{}'::jsonb
+        ) as agent_mapping,
+        array_agg(a.id::text ORDER BY a.name) as agent_ids
+    FROM agents a
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    WHERE a.active = true 
+    AND a.role IN ('simulation-text', 'simulation-voice')
+    GROUP BY a.id
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
+),
+usage_data AS (
+    SELECT COUNT(*) as usage_count
+    FROM scenario_personas sp
+    WHERE sp.persona_id = $1 AND sp.active = true
+),
+profile_data AS (
+    SELECT role as user_role 
+    FROM resolve_profile_id rpi
+    JOIN profiles p ON p.id = rpi.resolved_profile_id
+)
+SELECT 
+    p.*,
+    vd.dept_mapping,
+    vd.dept_ids as valid_department_ids,
+    COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    u.usage_count,
+    pr.user_role
+FROM persona_data p
+CROSS JOIN valid_depts vd
+CROSS JOIN valid_agents va
+CROSS JOIN usage_data u
+CROSS JOIN profile_data pr

@@ -22,13 +22,9 @@ class CreatePersonaRequest(BaseModel):
     active: bool
     color: str
     icon: str
-    text_model_id: str | None
-    audio_model_id: str | None
-    voice: str | None
-    reasoning: str | None
-    temperature: float
-    system_prompt: str | None
-    prompt_id: str | None
+    instructions: str
+    text_agent_id: str | None
+    voice_agent_id: str | None
     profileId: str  # Required for auditing/access control
 
 
@@ -58,46 +54,45 @@ async def create_persona(
 
     try:
         async with transaction(conn):
-            # Validate: at least one model must be provided
-            if not request.text_model_id and not request.audio_model_id:
-                raise ValueError("At least one model (text or audio) must be provided")
+            # Validate: at least one agent must be provided
+            if not request.text_agent_id and not request.voice_agent_id:
+                raise ValueError("At least one agent (text or voice) must be provided")
             
-            # Validate: if audio_model_id is provided, voice must also be provided
-            if request.audio_model_id and not request.voice:
-                raise ValueError("Voice is required when audio_model_id is provided")
-            
-            # Validate: if voice is provided, audio_model_id must also be provided
-            if request.voice and not request.audio_model_id:
-                raise ValueError("audio_model_id is required when voice is provided")
-            
-            # Validate models exist and have correct type
-            if request.text_model_id:
-                text_model = await conn.fetchrow(
-                    "SELECT model_type FROM models WHERE id = $1 AND active = true",
-                    request.text_model_id,
+            # Validate agents exist and have correct role
+            if request.text_agent_id:
+                text_agent = await conn.fetchrow(
+                    "SELECT role FROM agents WHERE id = $1 AND active = true",
+                    request.text_agent_id,
                 )
-                if not text_model:
-                    raise ValueError(f"Text model not found: {request.text_model_id}")
-                if text_model["model_type"] != "text":
-                    raise ValueError(f"Model {request.text_model_id} is not a text model")
+                if not text_agent:
+                    raise ValueError(f"Text agent not found: {request.text_agent_id}")
+                if text_agent["role"] != "simulation-text":
+                    raise ValueError(f"Agent {request.text_agent_id} is not a simulation-text agent")
             
-            if request.audio_model_id:
-                audio_model = await conn.fetchrow(
-                    "SELECT model_type FROM models WHERE id = $1 AND active = true",
-                    request.audio_model_id,
+            if request.voice_agent_id:
+                voice_agent = await conn.fetchrow(
+                    "SELECT role FROM agents WHERE id = $1 AND active = true",
+                    request.voice_agent_id,
                 )
-                if not audio_model:
-                    raise ValueError(f"Audio model not found: {request.audio_model_id}")
-                if audio_model["model_type"] != "audio":
-                    raise ValueError(f"Model {request.audio_model_id} is not an audio model")
+                if not voice_agent:
+                    raise ValueError(f"Voice agent not found: {request.voice_agent_id}")
+                if voice_agent["role"] != "simulation-voice":
+                    raise ValueError(f"Agent {request.voice_agent_id} is not a simulation-voice agent")
             
             # Ensure department_ids is always an array (empty array if None)
             dept_ids = request.department_ids if request.department_ids else []
 
             # Convert description None to empty string
             description = request.description if request.description is not None else ""
+            
+            # Convert instructions None to empty string
+            instructions = request.instructions if request.instructions is not None else ""
+            
+            # Convert empty strings to None for agent IDs (PostgreSQL expects NULL, not empty string)
+            text_agent_id = request.text_agent_id if request.text_agent_id else None
+            voice_agent_id = request.voice_agent_id if request.voice_agent_id else None
 
-            # Create persona with prompt and departments in single SQL (DHH style)
+            # Create persona with agents and departments in single SQL (DHH style)
             sql_query = load_sql("sql/v3/personas/create_persona_complete.sql")
             sql_params = (
                 request.name,
@@ -105,13 +100,9 @@ async def create_persona(
                 request.active,
                 request.color,
                 request.icon,
-                request.text_model_id,
-                request.audio_model_id,
-                request.voice,
-                request.reasoning,
-                request.temperature,
-                request.prompt_id,
-                request.system_prompt if not request.prompt_id else None,
+                instructions,
+                text_agent_id,
+                voice_agent_id,
                 dept_ids,  # Always pass array (empty array if no departments)
                 request.profileId,
             )

@@ -37,6 +37,50 @@ persona_departments_data AS (
     WHERE pd.active = true
     GROUP BY pd.persona_id
 ),
+persona_agents_data AS (
+    SELECT 
+        pa.persona_id,
+        pa.agent_id,
+        a.role,
+        a.model_id,
+        a.reasoning,
+        a.temperature
+    FROM persona_agents pa
+    JOIN agents a ON a.id = pa.agent_id
+    WHERE pa.active = true
+),
+persona_primary_agent AS (
+    -- Get primary agent: prefer simulation-text, fallback to simulation-voice
+    SELECT DISTINCT ON (pad.persona_id)
+        pad.persona_id,
+        pad.agent_id,
+        pad.model_id,
+        pad.reasoning,
+        pad.temperature
+    FROM persona_agents_data pad
+    ORDER BY pad.persona_id, 
+             CASE WHEN pad.role = 'simulation-text' THEN 1 ELSE 2 END
+),
+all_agent_ids AS (
+    SELECT DISTINCT agent_id
+    FROM persona_agents_data
+),
+agent_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            a.id::text,
+            jsonb_build_object(
+                'name', a.name,
+                'description', COALESCE(a.description, ''),
+                'roles', ARRAY[a.role]::text[]
+            )
+        ) FILTER (WHERE a.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_agent_ids aai
+    JOIN agents a ON a.id = aai.agent_id
+    WHERE a.active = true
+),
 persona_data AS (
     SELECT 
         p.id as persona_id,
@@ -44,14 +88,17 @@ persona_data AS (
         p.description,
         p.color,
         p.icon,
-        ptm.model_id,
-        p.reasoning,
-        p.temperature,
+        ppa.agent_id,
+        ppa.model_id,
+        ppa.reasoning,
+        ppa.temperature,
         p.active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(ps.num_scenarios, 0) as num_scenarios,
+        a.name as agent_name,
+        COALESCE(a.description, '') as agent_description,
         m.name as model_name,
         COALESCE(m.description, '') as model_description,
         COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
@@ -61,12 +108,13 @@ persona_data AS (
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
     LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
-    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
-    LEFT JOIN models m ON m.id = ptm.model_id
+    LEFT JOIN persona_primary_agent ppa ON ppa.persona_id = p.id
+    LEFT JOIN agents a ON a.id = ppa.agent_id
+    LEFT JOIN models m ON m.id = ppa.model_id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, ptm.model_id, p.reasoning, p.temperature, p.active, p.updated_at, 
-             pdd.department_ids, ps.scenario_ids, ps.num_scenarios, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, ppa.agent_id, ppa.model_id, ppa.reasoning, ppa.temperature, p.active, p.updated_at, 
+             pdd.department_ids, ps.scenario_ids, ps.num_scenarios, a.name, a.description, m.name, m.description, pasl.active_scenario_count, pasl_all.total_scenario_links
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true
     )
@@ -124,12 +172,15 @@ SELECT
     pd.description,
     pd.color,
     pd.icon,
+    pd.agent_id,
     pd.model_id,
     pd.reasoning,
     pd.temperature,
     pd.active,
     pd.scenario_ids,
     pd.num_scenarios,
+    pd.agent_name,
+    pd.agent_description,
     pd.model_name,
     pd.model_description,
     CASE 
@@ -147,10 +198,11 @@ SELECT
         ELSE false
     END as can_delete,
     sm.mapping as scenario_mapping,
+    am.mapping as agent_mapping,
     dm.mapping as department_mapping
 FROM persona_data pd
 CROSS JOIN user_profile up
 CROSS JOIN scenario_mapping_data sm
+CROSS JOIN agent_mapping_data am
 CROSS JOIN department_mapping_data dm
 ORDER BY pd.updated_at DESC NULLS LAST
-

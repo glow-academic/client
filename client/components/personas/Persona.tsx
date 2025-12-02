@@ -16,34 +16,13 @@ import { useProfile } from "@/contexts/profile-context";
 import type {
   CreatePersonaIn,
   CreatePersonaOut,
-  DeletePersonaPromptIn,
-  DeletePersonaPromptOut,
-  PersonaNewOut,
   PersonaDetailOut,
+  PersonaNewOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
-import UnifiedPromptEditor from "@/components/common/editor/UnifiedPromptEditor";
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { ModelPicker } from "@/components/common/forms/ModelPicker";
-import {
-  PromptInfo,
-  PromptPicker,
-} from "@/components/common/forms/PromptPicker";
-import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
-import { VoicePicker } from "@/components/common/forms/VoicePicker";
-import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -60,16 +39,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   getDefaultDepartmentIds,
@@ -79,217 +52,19 @@ import {
   getPersonaIconComponent,
   PERSONA_ICON_MAP,
 } from "@/utils/persona-icons";
-import {
-  Bug,
-  Check,
-  ChevronsUpDown,
-  Eye,
-  Power,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
-
-import {
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { Check, ChevronsUpDown, FileText, Mic, Power } from "lucide-react";
 
 interface FormData {
   name?: string;
   description?: string;
-  systemPrompt?: string;
-  promptId?: string | null;
-  temperature?: number;
-  textModelId?: string | null;
-  audioModelId?: string | null;
-  voice?: string | null;
-  reasoning?: "none" | "minimal" | "low" | "medium" | "high";
+  instructions?: string;
+  simulationType?: "text" | "voice" | "both";
+  textAgentId?: string | null;
+  voiceAgentId?: string | null;
   color?: string;
   icon?: string;
   active?: boolean;
   departmentIds?: string[] | null;
-}
-
-type PersonaDebugInfoRow = {
-  id: string;
-  createdAt: string;
-  content: string;
-  modelId: string | null;
-  modelName: string;
-};
-
-interface PersonaDebugInfoSectionProps {
-  rows: PersonaDebugInfoRow[];
-}
-
-function PersonaDebugInfoSection({ rows }: PersonaDebugInfoSectionProps) {
-  const columns = React.useMemo<ColumnDef<PersonaDebugInfoRow>[]>(
-    () => [
-      {
-        accessorKey: "createdAt",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Created" />
-        ),
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap">
-            {new Date(row.original.createdAt).toLocaleString()}
-          </span>
-        ),
-        enableSorting: true,
-      },
-      {
-        accessorKey: "modelId",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Model" />
-        ),
-        cell: ({ row }) => (
-          <Badge variant="outline">
-            {row.original.modelName || row.original.modelId}
-          </Badge>
-        ),
-        enableColumnFilter: true,
-        enableSorting: true,
-      },
-      {
-        accessorKey: "content",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Content" />
-        ),
-        cell: ({ row }) => (
-          <div className="max-w-[800px] whitespace-pre-wrap break-words text-sm">
-            {row.original.content}
-          </div>
-        ),
-        enableSorting: true,
-        sortingFn: (rowA, rowB, columnId) => {
-          const a = ((rowA.getValue(columnId) as string) || "").length;
-          const b = ((rowB.getValue(columnId) as string) || "").length;
-          if (a === b) return 0;
-          return a > b ? 1 : -1;
-        },
-      },
-    ],
-    []
-  );
-
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "createdAt", desc: true },
-  ]);
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    initialState: {
-      pagination: { pageSize: 10 },
-    },
-  });
-
-  // Memoize table rows to avoid calling getRowModel() multiple times and prevent re-render issues
-  // Extract pagination primitives directly to avoid object reference issues
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageSize = table.getState().pagination.pageSize;
-  // Stringify arrays for stable comparison (arrays are compared by reference)
-  const sortingKey = JSON.stringify(sorting);
-  const columnFiltersKey = JSON.stringify(columnFilters);
-  const tableRows = React.useMemo(() => {
-    return table.getRowModel().rows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    // Use JSON.stringify for arrays to ensure stable comparison (arrays are compared by reference)
-    sortingKey,
-    columnFiltersKey,
-    rows.length,
-    // Use pagination primitives directly (not object references)
-    pageIndex,
-    pageSize,
-  ]);
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
-        <div className="grid grid-cols-12 gap-3 p-3 font-medium text-sm bg-muted/50">
-          <div className="col-span-3">
-            <DataTableColumnHeader
-              column={table.getColumn("createdAt")!}
-              title="Created"
-            />
-          </div>
-          <div className="col-span-3">
-            <DataTableColumnHeader
-              column={table.getColumn("modelId")!}
-              title="Model"
-            />
-          </div>
-          <div className="col-span-6">
-            <DataTableColumnHeader
-              column={table.getColumn("content")!}
-              title="Content"
-            />
-          </div>
-        </div>
-        <ScrollArea className="h-[360px]">
-          <div className="divide-y">
-            {tableRows.length ? (
-              tableRows.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid grid-cols-12 gap-3 p-3 text-sm"
-                >
-                  <div className="col-span-3 whitespace-nowrap">
-                    {new Date(row.original.createdAt).toLocaleString()}
-                  </div>
-                  <div className="col-span-3">
-                    <Badge variant="outline">
-                      {row.original.modelName || row.original.modelId}
-                    </Badge>
-                  </div>
-                  <div className="col-span-6 whitespace-pre-wrap break-words">
-                    {row.original.content}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="p-6 text-center text-muted-foreground text-sm">
-                No debug info yet for this persona.
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-    </div>
-  );
 }
 
 export interface PersonaProps {
@@ -301,9 +76,6 @@ export interface PersonaProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
-  deletePersonaPromptAction?: (
-    input: DeletePersonaPromptIn
-  ) => Promise<DeletePersonaPromptOut>;
 }
 
 export default function Persona({
@@ -313,7 +85,6 @@ export default function Persona({
   personaDetailDefault: serverPersonaDetailDefault,
   createPersonaAction,
   updatePersonaAction,
-  deletePersonaPromptAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
@@ -334,13 +105,10 @@ export default function Persona({
     () => ({
       name: "",
       description: "",
-      systemPrompt: "",
-      promptId: null,
-      temperature: 0.0,
-      textModelId: null,
-      audioModelId: null,
-      voice: null,
-      reasoning: "none",
+      instructions: "",
+      simulationType: "text",
+      textAgentId: null,
+      voiceAgentId: null,
       color: "#000000",
       icon: "Zap",
       active: true,
@@ -353,15 +121,6 @@ export default function Persona({
   const [formData, setFormData] = useState<FormData>();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
-  const [editorMode, setEditorMode] = useState<"editor" | "preview" | "debug">(
-    "editor"
-  );
-  const prevDepartmentIdsRef = React.useRef<string[]>([]);
-  const [showDeletePromptDialog, setShowDeletePromptDialog] = useState(false);
-  const [promptToDelete, setPromptToDelete] = useState<{
-    promptId: string;
-    isDepartmentSpecific: boolean;
-  } | null>(null);
 
   // Use server-provided data directly (no fallback needed - server pages always provide data)
   const personaDetail = serverPersonaDetail;
@@ -391,19 +150,6 @@ export default function Persona({
       throw new Error("updatePersonaAction is required");
     }
     await updatePersonaAction({ body });
-  };
-
-  const handleDeletePersonaPrompt = async (
-    personaId: string,
-    promptId: string,
-    departmentId: string | null
-  ) => {
-    if (!deletePersonaPromptAction) {
-      throw new Error("deletePersonaPromptAction is required");
-    }
-    await deletePersonaPromptAction({
-      body: { personaId, promptId, departmentId },
-    });
   };
 
   // Wrapper functions for compatibility (matching original mutate signature with callbacks)
@@ -447,154 +193,15 @@ export default function Persona({
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-  // Filter prompt_mapping client-side based on selected departments from form
-  // API returns all prompts user has access to, then we filter by selected departments
-  // Show: default prompt + prompts for selected departments + cross-department prompts (no department_ids)
-  const filteredPromptMapping = useMemo(() => {
-    if (!isEditMode || !personaData?.prompt_mapping) {
-      return personaData?.prompt_mapping || {};
-    }
-
-    const selectedDeptIds = formData?.departmentIds || [];
-    const filtered: Record<string, PromptInfo> = {};
-
-    for (const [promptId, promptInfoRaw] of Object.entries(
-      personaData.prompt_mapping
-    )) {
-      // Add default values for name and description if missing (for backward compatibility)
-      // Type assertion needed because API schema may not be fully updated in TypeScript types
-      const rawInfo = promptInfoRaw as PromptInfo & {
-        name?: string;
-        description?: string;
-      };
-      const promptInfo: PromptInfo = {
-        ...promptInfoRaw,
-        name: rawInfo.name || "",
-        description: rawInfo.description || "",
-      };
-
-      // Always include default prompt (no department_ids)
-      if (
-        !promptInfo.department_ids ||
-        promptInfo.department_ids.length === 0
-      ) {
-        filtered[promptId] = promptInfo;
-      } else if (selectedDeptIds.length === 0) {
-        // "All Departments" selected - show ALL prompts including department-specific ones
-        filtered[promptId] = promptInfo;
-      } else {
-        // Specific departments selected - show prompts for those departments
-        if (
-          promptInfo.department_ids.some((deptId) =>
-            selectedDeptIds.includes(deptId)
-          )
-        ) {
-          filtered[promptId] = promptInfo;
-        }
-      }
-    }
-    return filtered;
-  }, [formData?.departmentIds, personaData?.prompt_mapping, isEditMode]);
-
-  // Get default prompt content (from persona_prompts table)
-  const defaultPromptContent = useMemo(() => {
-    if (!isEditMode || !personaData?.prompt_id || !personaData?.prompt_mapping)
-      return "";
-    const defaultPrompt = personaData.prompt_mapping[personaData.prompt_id];
-    return defaultPrompt?.system_prompt || "";
-  }, [personaData, isEditMode]);
-
-  // Get resolved prompt (what's actually saved/configured for selected departments from form)
-  // This is what would be used in production for the selected department(s)
-  const resolvedPrompt = useMemo(() => {
-    if (!isEditMode || !personaData?.prompt_mapping) {
-      return { promptId: null, content: "" };
-    }
-
-    const selectedDeptIds = formData?.departmentIds || [];
-    if (selectedDeptIds.length === 0) {
-      // "All Departments" - use default prompt
-      return {
-        promptId: personaData.prompt_id || null,
-        content: defaultPromptContent,
-      };
-    }
-
-    // For multiple departments, check if all have the same prompt
-    const firstDeptId = selectedDeptIds[0]!;
-    const firstPromptId =
-      personaData.department_prompt_links?.[firstDeptId] ||
-      personaData.prompt_id ||
-      null;
-
-    // Check if all selected departments have the same prompt
-    const allSamePrompt = selectedDeptIds.every((deptId) => {
-      const promptId =
-        personaData.department_prompt_links?.[deptId] ||
-        personaData.prompt_id ||
-        null;
-      return promptId === firstPromptId;
-    });
-
-    if (allSamePrompt && firstPromptId) {
-      const promptInfo = personaData.prompt_mapping[firstPromptId];
-      return {
-        promptId: firstPromptId,
-        content: promptInfo?.system_prompt || defaultPromptContent,
-      };
-    }
-
-    // Mixed prompts - return default
-    return {
-      promptId: personaData.prompt_id || null,
-      content: defaultPromptContent,
-    };
-  }, [
-    formData?.departmentIds,
-    personaData?.prompt_mapping,
-    personaData?.department_prompt_links,
-    personaData?.prompt_id,
-    defaultPromptContent,
-    isEditMode,
-  ]);
-
-  const resolvedPromptContent = resolvedPrompt.content;
-
-  // Check if current prompt content differs from resolved prompt
-  const hasPromptChanges = useMemo(() => {
-    if (!formData?.systemPrompt) return false;
-    return formData.systemPrompt !== resolvedPromptContent;
-  }, [formData?.systemPrompt, resolvedPromptContent]);
-
-  const personaDebugInfoRows = useMemo<PersonaDebugInfoRow[]>(() => {
-    if (!personaData?.debug_info) return [];
-    return personaData.debug_info.map((item, idx) => {
-      const createdAt =
-        (item as { timestamp?: string }).timestamp ||
-        (item as { created_at?: string }).created_at ||
-        "";
-      const modelId =
-        (item as { model_id?: string }).model_id ??
-        (item as { modelId?: string }).modelId ??
-        null;
-      const content =
-        (item as { message?: string }).message ||
-        (item as { content?: string }).content ||
-        "";
-      const modelName =
-        modelId && personaData.model_mapping
-          ? personaData.model_mapping[modelId]?.name || modelId
-          : modelId || "";
-
-      return {
-        id: `${createdAt}-${idx}`,
-        createdAt,
-        content,
-        modelId,
-        modelName,
-      };
-    });
-  }, [personaData?.debug_info, personaData?.model_mapping]);
+  // Determine simulation type from agent selection
+  const simulationTypeFromAgents = useMemo(() => {
+    if (!personaData) return "text";
+    const hasText = !!personaData.text_agent_id;
+    const hasVoice = !!personaData.voice_agent_id;
+    if (hasText && hasVoice) return "both";
+    if (hasVoice) return "voice";
+    return "text";
+  }, [personaData]);
 
   useEffect(() => {
     if (personaData && isEditMode) {
@@ -602,79 +209,28 @@ export default function Persona({
       setFormData({
         name: personaData.name,
         description: personaData.description || "",
-        systemPrompt: personaData.system_prompt,
-        promptId: personaData.prompt_id || null,
-        temperature: personaData.temperature,
-        textModelId: personaData.text_model_id || null,
-        audioModelId: personaData.audio_model_id || null,
-        voice: personaData.voice || null,
-        reasoning:
-          (personaData.reasoning as
-            | "minimal"
-            | "low"
-            | "medium"
-            | "high"
-            | undefined) || "none",
+        instructions: personaData.instructions || "",
+        simulationType: simulationTypeFromAgents,
+        textAgentId: personaData.text_agent_id || null,
+        voiceAgentId: personaData.voice_agent_id || null,
         color: personaData.color || "#000000",
         icon: personaData.icon || "Zap",
         active: personaData.active ?? true,
         departmentIds: deptIds,
       });
-      // Initialize the ref for department change tracking
-      prevDepartmentIdsRef.current = [...deptIds];
     } else if (!isEditMode && personaData) {
       // For create mode, use defaults from the API response
       setFormData({
         ...initialFormData,
         color: personaData.color || initialFormData.color || "#000000",
         icon: personaData.icon || initialFormData.icon || "Zap",
-        temperature:
-          personaData.temperature ?? initialFormData.temperature ?? 0.0,
-        textModelId:
-          personaData.text_model_id || initialFormData.textModelId || null,
-        audioModelId:
-          personaData.audio_model_id || initialFormData.audioModelId || null,
-        voice: personaData.voice || initialFormData.voice || null,
-        systemPrompt:
-          personaData.system_prompt || initialFormData.systemPrompt || "",
-        promptId: null,
+        textAgentId:
+          personaData.text_agent_id || initialFormData.textAgentId || null,
+        instructions:
+          personaData.instructions || initialFormData.instructions || "",
       });
     }
-  }, [personaData, isEditMode, initialFormData]);
-
-  // Update prompt when department selection changes in form
-  useEffect(() => {
-    if (!isEditMode || !personaData || !formData?.departmentIds) return;
-
-    // Track department changes - compare arrays
-    const prevIds = prevDepartmentIdsRef.current;
-    const currentIds = formData.departmentIds || [];
-    const departmentChanged =
-      prevIds.length !== currentIds.length ||
-      !prevIds.every((id) => currentIds.includes(id));
-
-    if (departmentChanged) {
-      prevDepartmentIdsRef.current = [...currentIds];
-    }
-
-    // Only auto-set if user hasn't made changes (compare content to resolved prompt)
-    if (hasPromptChanges && !departmentChanged) return;
-
-    // Only auto-set when department changes - use resolvedPrompt which is computed for current selection
-    if (departmentChanged) {
-      setFormData((prev) => ({
-        ...prev,
-        promptId: resolvedPrompt.promptId,
-        systemPrompt: resolvedPrompt.content,
-      }));
-    }
-  }, [
-    formData?.departmentIds,
-    personaData,
-    isEditMode,
-    resolvedPrompt,
-    hasPromptChanges,
-  ]);
+  }, [personaData, isEditMode, initialFormData, simulationTypeFromAgents]);
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -707,27 +263,29 @@ export default function Persona({
       return;
     }
 
-    if (!formData.systemPrompt) {
-      toast.error("System prompt is required");
+    if (!formData.instructions) {
+      toast.error("Instructions are required");
       return;
     }
 
-    // Validate: at least one model must be selected
-    if (!formData.textModelId && !formData.audioModelId) {
-      toast.error("At least one model (text or audio) must be selected");
+    // Validate: at least one agent must be selected based on simulation type
+    if (formData.simulationType === "text" && !formData.textAgentId) {
+      toast.error("Text agent is required for text simulation");
       return;
     }
 
-    // Validate: if audio model is selected, voice must also be selected
-    if (formData.audioModelId && !formData.voice) {
-      toast.error("Voice selection is required when audio model is selected");
+    if (formData.simulationType === "voice" && !formData.voiceAgentId) {
+      toast.error("Voice agent is required for voice simulation");
       return;
     }
 
-    // Validate: if voice is selected, audio model must also be selected
-    if (formData.voice && !formData.audioModelId) {
-      toast.error("Audio model is required when voice is selected");
-      return;
+    if (formData.simulationType === "both") {
+      if (!formData.textAgentId || !formData.voiceAgentId) {
+        toast.error(
+          "Both text and voice agents are required for combined simulation"
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -741,77 +299,18 @@ export default function Persona({
       );
 
       if (isEditMode) {
-        // Safety check: Only create/update overrides for departments that:
-        // 1. Don't have an override yet (use default), OR
-        // 2. Are the only department selected, OR
-        // 3. All selected departments share the same existing override prompt
-        const selectedDeptIds = formData.departmentIds || [];
-        let departmentsForPromptOverride: string[] = [];
-
-        if (hasPromptChanges) {
-          const targetDeptIds =
-            selectedDeptIds.length === 0
-              ? personaData?.valid_department_ids || []
-              : selectedDeptIds;
-
-          if (targetDeptIds.length > 0) {
-            // If only one department selected, always allow update
-            if (targetDeptIds.length === 1) {
-              departmentsForPromptOverride = targetDeptIds;
-            } else {
-              // For multiple departments, check which ones are safe to update
-              const departmentPromptLinks =
-                personaData?.department_prompt_links || {};
-              const existingPromptIds = targetDeptIds
-                .map((deptId) => departmentPromptLinks[deptId])
-                .filter((promptId) => promptId !== undefined);
-
-              const allShareSamePrompt =
-                existingPromptIds.length > 0 &&
-                existingPromptIds.every(
-                  (promptId) => promptId === existingPromptIds[0]
-                );
-
-              if (allShareSamePrompt) {
-                // All departments share the same override - safe to update all
-                departmentsForPromptOverride = targetDeptIds;
-              } else {
-                // Not all share same prompt - only update departments without overrides
-                const safeToUpdate: string[] = [];
-                for (const deptId of targetDeptIds) {
-                  if (!departmentPromptLinks[deptId]) {
-                    // Department doesn't have an override - safe to create one
-                    safeToUpdate.push(deptId);
-                  }
-                }
-                departmentsForPromptOverride = safeToUpdate;
-              }
-            }
-          }
-        }
-
-        // Always create new prompt version if content differs from resolved prompt
-        // Never create default prompts - always create department-specific overrides
-        const shouldCreateNewPrompt = hasPromptChanges;
-
         updatePersona(
           {
             personaId: personaId!,
             name: formData.name,
             description: formData.description || null,
-            prompt_id: shouldCreateNewPrompt ? null : formData.promptId || null,
-            system_prompt: formData.systemPrompt,
-            temperature: Number(formData.temperature),
-            text_model_id: formData.textModelId || null,
-            audio_model_id: formData.audioModelId || null,
-            voice: formData.voice || null,
-            reasoning:
-              formData.reasoning === "none" ? null : formData.reasoning || null,
+            instructions: formData.instructions || "",
+            text_agent_id: formData.textAgentId || null,
+            voice_agent_id: formData.voiceAgentId || null,
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
             department_ids: finalDepartmentIds,
-            department_ids_for_prompt: departmentsForPromptOverride,
             profileId: effectiveProfile?.id || "guest-profile-id",
           },
           {
@@ -830,14 +329,9 @@ export default function Persona({
           {
             name: formData.name,
             description: formData.description || null,
-            prompt_id: formData.promptId || null,
-            system_prompt: formData.systemPrompt,
-            temperature: Number(formData.temperature),
-            text_model_id: formData.textModelId || null,
-            audio_model_id: formData.audioModelId || null,
-            voice: formData.voice || null,
-            reasoning:
-              formData.reasoning === "none" ? null : formData.reasoning || null,
+            instructions: formData.instructions || "",
+            text_agent_id: formData.textAgentId || null,
+            voice_agent_id: formData.voiceAgentId || null,
             color: formData.color || "#000000",
             icon: formData.icon || "Zap",
             active: formData.active ?? true,
@@ -1207,319 +701,173 @@ export default function Persona({
               </div>
             </div>
 
-            {/* Text Model, Audio Model, Voice, Reasoning Effort, and Temperature */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
-              {/* Text Model */}
-              <div className="space-y-2">
-                <Label htmlFor="textModelId">Text Model</Label>
-                {formData?.textModelId !== undefined ? (
-                  <ModelPicker
-                    mapping={personaData?.text_model_mapping || {}}
-                    validIds={personaData?.valid_text_model_ids || []}
-                    selectedIds={
-                      formData?.textModelId ? [formData.textModelId] : []
+            {/* Simulation Type Selection */}
+            <div className="space-y-2">
+              <Label>Simulation Type *</Label>
+              <RadioGroup
+                value={formData?.simulationType || "text"}
+                onValueChange={(value) => {
+                  const newType = value as "text" | "voice" | "both";
+                  setFormData((prev) => {
+                    const updated = {
+                      ...prev,
+                      simulationType: newType,
+                    };
+                    // Clear agents when switching types
+                    if (newType === "text") {
+                      updated.voiceAgentId = null;
+                    } else if (newType === "voice") {
+                      updated.textAgentId = null;
                     }
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        textModelId: ids[0] || null,
-                      }))
-                    }
-                    placeholder="Select text model"
-                    disabled={isReadonly}
-                    multiSelect={false}
-                    triggerProps={{ "data-testid": "picker-text-model" }}
-                  />
-                ) : null}
-              </div>
-
-              {/* Audio Model */}
-              <div className="space-y-2">
-                <Label htmlFor="audioModelId">Audio Model</Label>
-                {formData?.audioModelId !== undefined ? (
-                  <ModelPicker
-                    mapping={personaData?.audio_model_mapping || {}}
-                    validIds={personaData?.valid_audio_model_ids || []}
-                    selectedIds={
-                      formData?.audioModelId ? [formData.audioModelId] : []
-                    }
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        audioModelId: ids[0] || null,
-                        // Clear voice if audio model is cleared
-                        voice: ids[0] ? prev.voice : null,
-                      }))
-                    }
-                    placeholder="Select audio model"
-                    disabled={isReadonly}
-                    multiSelect={false}
-                    triggerProps={{ "data-testid": "picker-audio-model" }}
-                  />
-                ) : null}
-              </div>
-
-              {/* Voice */}
-              <div className="space-y-2">
-                <Label htmlFor="voice">Voice</Label>
-                {formData?.voice !== undefined ? (
-                  <VoicePicker
-                    selectedVoice={formData.voice}
-                    onSelect={(voice) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        voice,
-                      }))
-                    }
-                    placeholder="Select voice"
-                    disabled={isReadonly || !formData.audioModelId}
-                    buttonClassName="w-full"
-                  />
-                ) : null}
-              </div>
-
-              {/* Reasoning Effort */}
-              <div className="space-y-2">
-                <Label htmlFor="reasoning">Reasoning Effort</Label>
-                {formData?.reasoning !== undefined ? (
-                  <ReasoningPicker
-                    mapping={personaData?.reasoning_mapping || {}}
-                    validIds={["none", "minimal", "low", "medium", "high"]}
-                    selectedIds={
-                      formData?.reasoning ? [formData.reasoning] : ["none"]
-                    }
-                    onSelect={(ids) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        reasoning: (ids[0] || "none") as
-                          | "none"
-                          | "minimal"
-                          | "low"
-                          | "medium"
-                          | "high",
-                      }))
-                    }
-                    placeholder="Select reasoning effort"
-                    disabled={isReadonly}
-                    multiSelect={false}
-                    triggerProps={{ "data-testid": "picker-reasoning" }}
-                  />
-                ) : null}
-              </div>
-
-              {/* Temperature */}
-              <div className="space-y-2">
-                <Label htmlFor="temperature">
-                  Temperature:{" "}
-                  {formData?.temperature !== undefined
-                    ? formData.temperature.toFixed(2)
-                    : "0.00"}
+                    return updated;
+                  });
+                }}
+                className="grid grid-cols-3 gap-3"
+              >
+                {/* Text Only */}
+                <Label
+                  className={cn(
+                    "cursor-pointer block",
+                    "rounded-lg border-2 transition-colors",
+                    formData?.simulationType === "text"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <RadioGroupItem value="text" className="sr-only" />
+                  <div className="flex flex-col items-center justify-center p-4 gap-2">
+                    <FileText className="h-6 w-6" />
+                    <span className="text-sm font-medium">Text Only</span>
+                  </div>
                 </Label>
-                {formData?.temperature !== undefined ? (
-                  <>
-                    <Slider
-                      id="temperature"
-                      data-testid="temperature-slider"
-                      min={personaData?.temperature_lower ?? 0}
-                      max={personaData?.temperature_upper ?? 1}
-                      step={0.01}
-                      value={[formData?.temperature || 0]}
-                      onValueChange={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          temperature: value[0] || 0,
-                        }))
-                      }
-                      className="w-full"
-                      disabled={isReadonly}
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Deterministic</span>
-                      <span>Creative</span>
+
+                {/* Voice Only */}
+                <Label
+                  className={cn(
+                    "cursor-pointer block",
+                    "rounded-lg border-2 transition-colors",
+                    formData?.simulationType === "voice"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <RadioGroupItem value="voice" className="sr-only" />
+                  <div className="flex flex-col items-center justify-center p-4 gap-2">
+                    <Mic className="h-6 w-6" />
+                    <span className="text-sm font-medium">Voice Only</span>
+                  </div>
+                </Label>
+
+                {/* Both */}
+                <Label
+                  className={cn(
+                    "cursor-pointer block",
+                    "rounded-lg border-2 transition-colors",
+                    formData?.simulationType === "both"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  <RadioGroupItem value="both" className="sr-only" />
+                  <div className="flex flex-col items-center justify-center p-4 gap-2">
+                    <div className="flex gap-1">
+                      <FileText className="h-6 w-6" />
+                      <Mic className="h-6 w-6" />
                     </div>
-                  </>
-                ) : null}
-              </div>
+                    <span className="text-sm font-medium">Both</span>
+                  </div>
+                </Label>
+              </RadioGroup>
             </div>
 
+            {/* Agent Selection */}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {/* Text Agent */}
+              {(formData?.simulationType === "text" ||
+                formData?.simulationType === "both") && (
+                <div className="space-y-2">
+                  <Label htmlFor="textAgentId">Text Agent *</Label>
+                  {formData?.textAgentId !== undefined ? (
+                    <AgentPicker
+                      mapping={personaData?.agent_mapping || {}}
+                      validIds={
+                        personaData?.valid_agent_ids?.filter((id) => {
+                          const agent = personaData?.agent_mapping?.[id];
+                          return agent?.roles?.includes("simulation-text");
+                        }) || []
+                      }
+                      selectedIds={
+                        formData?.textAgentId ? [formData.textAgentId] : []
+                      }
+                      onSelect={(ids) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          textAgentId: ids[0] || null,
+                        }))
+                      }
+                      placeholder="Select text agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              {/* Voice Agent */}
+              {(formData?.simulationType === "voice" ||
+                formData?.simulationType === "both") && (
+                <div className="space-y-2">
+                  <Label htmlFor="voiceAgentId">Voice Agent *</Label>
+                  {formData?.voiceAgentId !== undefined ? (
+                    <AgentPicker
+                      mapping={personaData?.agent_mapping || {}}
+                      validIds={
+                        personaData?.valid_agent_ids?.filter((id) => {
+                          const agent = personaData?.agent_mapping?.[id];
+                          return agent?.roles?.includes("simulation-voice");
+                        }) || []
+                      }
+                      selectedIds={
+                        formData?.voiceAgentId ? [formData.voiceAgentId] : []
+                      }
+                      onSelect={(ids) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          voiceAgentId: ids[0] || null,
+                        }))
+                      }
+                      placeholder="Select voice agent"
+                      disabled={isReadonly}
+                      multiSelect={false}
+                    />
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            {/* Instructions */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="systemPrompt">System Prompt *</Label>
-                <div className="flex gap-2">
-                  {isEditMode &&
-                    personaData &&
-                    filteredPromptMapping &&
-                    (Object.keys(filteredPromptMapping).length > 0 ||
-                      (formData?.departmentIds &&
-                        formData.departmentIds.length > 0)) && (
-                      <PromptPicker
-                        promptMapping={filteredPromptMapping}
-                        selectedPromptId={formData?.promptId || null}
-                        defaultPromptId={personaData?.prompt_id || null}
-                        onSelect={(promptId) => {
-                          if (promptId && filteredPromptMapping[promptId]) {
-                            const prompt = filteredPromptMapping[promptId];
-                            setFormData((prev) => ({
-                              ...prev,
-                              promptId: promptId,
-                              systemPrompt: prompt.system_prompt,
-                            }));
-                          } else {
-                            setFormData((prev) => ({
-                              ...prev,
-                              promptId: null,
-                            }));
-                          }
-                        }}
-                        placeholder="Select prompt..."
-                        disabled={isReadonly}
-                        buttonClassName="h-8"
-                        triggerProps={{ "data-testid": "picker-prompt" }}
-                      />
-                    )}
-                  {formData?.systemPrompt !== undefined && (
-                    <>
-                      {hasPromptChanges && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  systemPrompt: resolvedPromptContent,
-                                  promptId: resolvedPrompt.promptId,
-                                }));
-                              }}
-                              className="h-8 w-8 p-0"
-                              data-testid="btn-reset-changes"
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Reset to saved prompt</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant={
-                              editorMode === "preview" ? "default" : "secondary"
-                            }
-                            size="sm"
-                            onClick={() =>
-                              setEditorMode(
-                                editorMode === "preview" ? "editor" : "preview"
-                              )
-                            }
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Preview</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      {isEditMode &&
-                        effectiveProfile?.role === "superadmin" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant={
-                                  editorMode === "debug"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                size="sm"
-                                onClick={() =>
-                                  setEditorMode(
-                                    editorMode === "debug" ? "editor" : "debug"
-                                  )
-                                }
-                                className="h-8 w-8 p-0"
-                              >
-                                <Bug className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Debug</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      {isEditMode &&
-                        !isReadonly &&
-                        formData?.promptId &&
-                        filteredPromptMapping[formData.promptId]
-                          ?.can_delete && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => {
-                                  const promptId = formData.promptId!;
-                                  const promptInfo =
-                                    filteredPromptMapping[promptId];
-                                  if (!promptInfo) return;
-                                  setPromptToDelete({
-                                    promptId,
-                                    isDepartmentSpecific:
-                                      !!promptInfo.department_ids &&
-                                      promptInfo.department_ids.length > 0,
-                                  });
-                                  setShowDeletePromptDialog(true);
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                    </>
-                  )}
-                </div>
-              </div>
-              {formData?.systemPrompt !== undefined ? (
-                <div className="h-[500px]" data-testid="editor-system-prompt">
-                  <UnifiedPromptEditor
-                    value={formData?.systemPrompt || ""}
-                    onChange={(value) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        systemPrompt: value,
-                        promptId: null, // Clear promptId when editing, indicating new prompt version
-                      }));
-                    }}
-                    placeholder="System prompt that defines how the persona should behave and respond. You can use markdown formatting."
-                    disabled={isReadonly}
-                    className="h-full"
-                    debugContent={
-                      isEditMode &&
-                      personaData &&
-                      effectiveProfile?.role === "superadmin" ? (
-                        <PersonaDebugInfoSection rows={personaDebugInfoRows} />
-                      ) : undefined
-                    }
-                    activeMode={editorMode}
-                  />
-                </div>
+              <Label htmlFor="instructions">Instructions *</Label>
+              {formData?.instructions !== undefined ? (
+                <Textarea
+                  id="instructions"
+                  data-testid="input-instructions"
+                  value={formData.instructions}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      instructions: e.target.value,
+                    }))
+                  }
+                  placeholder="Instructions that define how the persona should behave and respond."
+                  rows={8}
+                  required
+                  disabled={isReadonly}
+                />
               ) : null}
               <p className="text-sm text-muted-foreground">
-                This prompt defines the persona's behavior and personality in
-                conversations. You can use markdown formatting for better
-                organization.
+                Instructions define the persona's behavior and personality in
+                conversations.
               </p>
             </div>
 
@@ -1548,71 +896,6 @@ export default function Persona({
             </div>
           </form>
         </div>
-
-        {/* Delete Prompt Confirmation Dialog */}
-        <AlertDialog
-          open={showDeletePromptDialog}
-          onOpenChange={setShowDeletePromptDialog}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
-              <AlertDialogDescription>
-                {promptToDelete?.isDepartmentSpecific ? (
-                  <>
-                    Are you sure you want to delete this department-specific
-                    prompt? This will delete the prompt and fall back to the
-                    default prompt for this department.
-                  </>
-                ) : (
-                  <>
-                    Are you sure you want to delete this prompt? This will
-                    delete the prompt and set the latest prompt as active.
-                  </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setShowDeletePromptDialog(false);
-                  setPromptToDelete(null);
-                }}
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  if (!promptToDelete || !personaId) return;
-
-                  try {
-                    await handleDeletePersonaPrompt(
-                      personaId,
-                      promptToDelete.promptId,
-                      promptToDelete.isDepartmentSpecific
-                        ? formData?.departmentIds && formData.departmentIds.length > 0
-                          ? formData.departmentIds[0]!
-                          : null
-                        : null
-                    );
-                    toast.success("Prompt deleted successfully");
-                    setShowDeletePromptDialog(false);
-                    setPromptToDelete(null);
-                    // Refresh the page to get updated data
-                    router.refresh();
-                  } catch (error) {
-                    const msg =
-                      error instanceof Error ? error.message : "Unknown error";
-                    toast.error(`Failed to delete prompt: ${msg}`);
-                  }
-                }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </TooltipProvider>
   );

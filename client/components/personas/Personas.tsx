@@ -126,15 +126,15 @@ export default function Personas({
         .filter((opt) => opt.value && opt.label),
     [personasData?.scenario_options]
   );
-  const modelOptions = useMemo(
+  const agentOptions = useMemo(
     () =>
-      (personasData?.model_options || [])
+      (personasData?.agent_options || [])
         .map((opt) => ({
           value: opt["value"] as string,
           label: opt["label"] as string,
         }))
         .filter((opt) => opt.value && opt.label),
-    [personasData?.model_options]
+    [personasData?.agent_options]
   );
   const departmentOptions = useMemo(
     () =>
@@ -218,25 +218,25 @@ export default function Personas({
       },
       // Hidden faceting column for Model (single ID) with correct ID
       {
-        id: "modelId",
+        id: "agentId",
         header: () => null,
         cell: () => null,
         enableHiding: true,
         enableSorting: false,
-        accessorKey: "model_id",
+        accessorKey: "agent_id",
       },
       {
-        accessorKey: "model_id",
-        header: "Model",
+        accessorKey: "agent_id",
+        header: "Agent",
         cell: ({ row }) => {
           const persona = row.original;
-          // Use server-provided model_name
+          // Use server-provided agent_name
           return (
             <div className="text-sm">
-              {persona.model_name ? (
-                <span className="text-sm">{persona.model_name}</span>
+              {persona.agent_name ? (
+                <span className="text-sm">{persona.agent_name}</span>
               ) : (
-                <span className="text-muted-foreground">No model</span>
+                <span className="text-muted-foreground">No agent</span>
               )}
             </div>
           );
@@ -530,7 +530,7 @@ export default function Personas({
 
   // Get column references for toolbar
   const nameColumn = table.getColumn("name");
-  const modelColumn = table.getColumn("modelId");
+  const agentColumn = table.getColumn("agentId");
   const scenarioColumn = table.getColumn("scenarios");
   const departmentsColumn = table.getColumn("departments");
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -568,12 +568,12 @@ export default function Personas({
                   />
                 )}
 
-                {/* Model Filter */}
-                {modelColumn && modelOptions.length > 0 && (
+                {/* Agent Filter */}
+                {agentColumn && agentOptions.length > 0 && (
                   <DataTableFacetedFilter
-                    column={modelColumn}
-                    title="Model"
-                    options={modelOptions}
+                    column={agentColumn}
+                    title="Agent"
+                    options={agentOptions}
                   />
                 )}
 
