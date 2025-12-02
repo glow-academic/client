@@ -43,10 +43,14 @@ persona_agents_data AS (
         pa.agent_id,
         a.role,
         a.model_id,
-        a.reasoning,
-        a.temperature
+        mrl.reasoning_level as reasoning,
+        COALESCE(mtl.temperature, 0.0) as temperature
     FROM persona_agents pa
     JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+    LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
     WHERE pa.active = true
 ),
 persona_primary_agent AS (

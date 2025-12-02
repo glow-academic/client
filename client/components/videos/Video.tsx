@@ -1220,14 +1220,37 @@ export default function Video({
 
   const openMCQModal = (time?: number, question?: Question) => {
     if (question) {
-      setEditingMCQQuestion(question);
+      // Ensure minimum 2 options when editing existing question
+      const options =
+        question.options.length >= 2
+          ? question.options
+          : [
+              ...question.options,
+              ...Array.from({ length: 2 - question.options.length }, () => ({
+                option_text: "",
+                type: "discrete" as const,
+                is_correct: false,
+              })),
+            ];
+      setEditingMCQQuestion({ ...question, options });
     } else {
       setEditingMCQQuestion({
         question_text: "",
         type: "choice",
         allow_multiple: false,
         times: time !== undefined ? [time] : [],
-        options: [],
+        options: [
+          {
+            option_text: "",
+            type: "discrete" as const,
+            is_correct: false,
+          },
+          {
+            option_text: "",
+            type: "discrete" as const,
+            is_correct: false,
+          },
+        ],
       });
     }
     setShowMCQModal(true);
@@ -1266,8 +1289,8 @@ export default function Video({
       return;
     }
 
-    if (editingMCQQuestion.options.length === 0) {
-      toast.error("Choice questions must have at least one option");
+    if (editingMCQQuestion.options.length < 2) {
+      toast.error("Choice questions must have at least 2 options");
       return;
     }
 
@@ -2491,112 +2514,201 @@ export default function Video({
 
               {/* Options */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Options *</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (!editingMCQQuestion) return;
-                      setEditingMCQQuestion({
-                        ...editingMCQQuestion,
-                        options: [
-                          ...editingMCQQuestion.options,
-                          {
-                            option_text: "",
-                            type: "discrete" as const,
-                            is_correct: false,
-                          },
-                        ],
-                      });
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Option
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {editingMCQQuestion.options.map((option, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 p-2 border rounded"
+                <Label>Options *</Label>
+                {editingMCQQuestion.options.length === 0 ? (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        if (!editingMCQQuestion) return;
+                        setEditingMCQQuestion({
+                          ...editingMCQQuestion,
+                          options: [
+                            {
+                              option_text: "",
+                              type: "discrete" as const,
+                              is_correct: false,
+                            },
+                            {
+                              option_text: "",
+                              type: "discrete" as const,
+                              is_correct: false,
+                            },
+                          ],
+                        });
+                      }}
+                      disabled={isReadonly}
+                      size="sm"
                     >
-                      <Input
-                        value={option.option_text}
-                        onChange={(e) => {
-                          if (!editingMCQQuestion) return;
-                          setEditingMCQQuestion({
-                            ...editingMCQQuestion,
-                            options: editingMCQQuestion.options.map((opt, i) =>
-                              i === index
-                                ? { ...opt, option_text: e.target.value }
-                                : opt
-                            ),
-                          });
-                        }}
-                        placeholder="Option text"
-                        className="flex-1"
-                      />
-                      <Select
-                        value={option.type}
-                        onValueChange={(value: "discrete" | "freeform") => {
-                          if (!editingMCQQuestion) return;
-                          setEditingMCQQuestion({
-                            ...editingMCQQuestion,
-                            options: editingMCQQuestion.options.map((opt, i) =>
-                              i === index ? { ...opt, type: value } : opt
-                            ),
-                          });
-                        }}
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Option
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    {editingMCQQuestion.options.map((option, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-end gap-2 ${index === 0 ? "" : ""}`}
                       >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="discrete">Discrete</SelectItem>
-                          <SelectItem value="freeform">Freeform</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {option.type === "discrete" && (
-                        <>
-                          <Checkbox
-                            checked={option.is_correct}
-                            onCheckedChange={(checked) => {
+                        {/* Option Text */}
+                        <div
+                          className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}
+                        >
+                          {index === 0 && (
+                            <Label
+                              htmlFor={`option-text-${index}`}
+                              className="text-sm font-medium"
+                            >
+                              Option Text
+                            </Label>
+                          )}
+                          <Input
+                            id={`option-text-${index}`}
+                            value={option.option_text}
+                            onChange={(e) => {
                               if (!editingMCQQuestion) return;
                               setEditingMCQQuestion({
                                 ...editingMCQQuestion,
                                 options: editingMCQQuestion.options.map(
                                   (opt, i) =>
                                     i === index
-                                      ? { ...opt, is_correct: checked === true }
+                                      ? { ...opt, option_text: e.target.value }
                                       : opt
                                 ),
                               });
                             }}
+                            placeholder="Option text"
+                            disabled={isReadonly}
                           />
-                          <Label className="text-sm">Correct</Label>
-                        </>
-                      )}
+                        </div>
+
+                        {/* Type */}
+                        <div
+                          className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}
+                        >
+                          {index === 0 && (
+                            <Label
+                              htmlFor={`option-type-${index}`}
+                              className="text-sm font-medium"
+                            >
+                              Type
+                            </Label>
+                          )}
+                          <Select
+                            value={option.type}
+                            onValueChange={(value: "discrete" | "freeform") => {
+                              if (!editingMCQQuestion) return;
+                              setEditingMCQQuestion({
+                                ...editingMCQQuestion,
+                                options: editingMCQQuestion.options.map(
+                                  (opt, i) =>
+                                    i === index ? { ...opt, type: value } : opt
+                                ),
+                              });
+                            }}
+                            disabled={isReadonly}
+                          >
+                            <SelectTrigger
+                              id={`option-type-${index}`}
+                              className="w-32"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="discrete">Discrete</SelectItem>
+                              <SelectItem value="freeform">Freeform</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Correct Checkbox (only for discrete) */}
+                        <div className={`${index === 0 ? "space-y-2" : ""}`}>
+                          {index === 0 && (
+                            <Label className="text-sm font-medium block">
+                              Correct
+                            </Label>
+                          )}
+                          <div className="flex items-center gap-2 h-10">
+                            {option.type === "discrete" ? (
+                              <Checkbox
+                                checked={option.is_correct}
+                                onCheckedChange={(checked) => {
+                                  if (!editingMCQQuestion) return;
+                                  setEditingMCQQuestion({
+                                    ...editingMCQQuestion,
+                                    options: editingMCQQuestion.options.map(
+                                      (opt, i) =>
+                                        i === index
+                                          ? {
+                                              ...opt,
+                                              is_correct: checked === true,
+                                            }
+                                          : opt
+                                    ),
+                                  });
+                                }}
+                                disabled={isReadonly}
+                              />
+                            ) : (
+                              <div className="w-4 h-4" /> // Spacer for alignment
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Delete Button */}
+                        {editingMCQQuestion.options.length > 2 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              if (!editingMCQQuestion) return;
+                              setEditingMCQQuestion({
+                                ...editingMCQQuestion,
+                                options: editingMCQQuestion.options.filter(
+                                  (_, i) => i !== index
+                                ),
+                              });
+                            }}
+                            className={`h-8 w-8 shrink-0 ${index === 0 ? "mb-0.5" : ""}`}
+                            disabled={isReadonly}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <div>
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="sm"
+                        variant="secondary"
                         onClick={() => {
                           if (!editingMCQQuestion) return;
                           setEditingMCQQuestion({
                             ...editingMCQQuestion,
-                            options: editingMCQQuestion.options.filter(
-                              (_, i) => i !== index
-                            ),
+                            options: [
+                              ...editingMCQQuestion.options,
+                              {
+                                option_text: "",
+                                type: "discrete" as const,
+                                is_correct: false,
+                              },
+                            ],
                           });
                         }}
+                        disabled={
+                          isReadonly || editingMCQQuestion.options.length >= 5
+                        }
+                        size="sm"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Option
                       </Button>
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
             </div>
             <AlertDialogFooter>

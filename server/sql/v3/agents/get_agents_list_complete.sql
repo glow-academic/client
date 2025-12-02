@@ -47,8 +47,8 @@ SELECT
     a.id::text as agent_id,
     a.name,
     a.description,
-    a.reasoning,
-    a.temperature,
+    mrl.reasoning_level as reasoning,
+    COALESCE(mtl.temperature, 0.0) as temperature,
     a.model_id::text,
     a.role::text,
     a.updated_at,
@@ -68,9 +68,15 @@ CROSS JOIN user_profile up
 LEFT JOIN agent_department_links adl ON adl.agent_id = a.id
 LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
 LEFT JOIN agent_departments_data addd ON addd.agent_id = a.id
+-- Join temperature from junction table
+LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+-- Join reasoning from junction table
+LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
 LEFT JOIN models m ON m.id = a.model_id
 CROSS JOIN department_mapping_data dmd
-GROUP BY a.id, a.name, a.description, a.reasoning, a.temperature, a.model_id, a.role, a.updated_at,
+GROUP BY a.id, a.name, a.description, mrl.reasoning_level, COALESCE(mtl.temperature, 0.0), a.model_id, a.role, a.updated_at,
          addd.department_ids, adl.total_links, up.role, m.name, m.description, dmd.mapping
 HAVING 
     -- Include if has matching department link OR has no department links at all (cross-dept)

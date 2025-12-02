@@ -159,8 +159,8 @@ SELECT
     a.id::text as agent_id,
     a.name as agent_name,
     COALESCE(pr_prompt.system_prompt, '') as system_prompt,
-    a.temperature,
-    a.reasoning,
+    COALESCE(mtl.temperature, 0.0) as temperature,
+    mrl.reasoning_level as reasoning,
     
     -- Model data
     m.id::text as model_id,
@@ -195,6 +195,12 @@ LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.
 LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
 -- Use department-specific prompt if available, otherwise use default
 LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
+-- Join temperature from junction table
+LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+-- Join reasoning from junction table
+LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
+LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
 INNER JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
@@ -207,7 +213,7 @@ GROUP BY ci.id, ci.scenario_id, ci.attempt_id, ci.title, ci.trace_id, ci.created
          ai.id, ai.simulation_id, ai.total_chats,
          si.id, si.rubric_id, si.department_id, si.time_limit,
          r.id, r.name, r.description, r.points, r.pass_points,
-         a.id, a.name, pr_prompt.system_prompt, a.temperature, a.reasoning,
+         a.id, a.name, pr_prompt.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
          m.id, m.name, m.provider, me.base_url, k.key,
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
