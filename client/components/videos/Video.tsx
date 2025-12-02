@@ -7,9 +7,6 @@
 "use client";
 import {
   Check,
-  CheckSquare,
-  Circle,
-  FileText,
   Image,
   Loader2,
   Plus,
@@ -47,7 +44,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -489,46 +485,18 @@ export default function Video({
       return;
     }
 
+    if (!videoId) {
+      toast.error("Please create the video first by clicking 'Create Video'");
+      return;
+    }
+
     setIsGeneratingVideo(true);
-    let currentVideoId = videoId;
 
     try {
-      // If no videoId exists, auto-save the video first
-      if (!currentVideoId) {
-        try {
-          // Prepare and create the video (with defaults for required fields)
-          const createPayload = prepareCreatePayload();
-          const createResult = await handleCreateVideo(createPayload);
-
-          if (!createResult.videoId) {
-            throw new Error("Video creation succeeded but no videoId returned");
-          }
-
-          currentVideoId = createResult.videoId;
-
-          // Update URL to edit page without causing navigation
-          // This allows generation to proceed without component remount
-          window.history.replaceState(
-            { ...window.history.state },
-            "",
-            `/create/videos/v/${currentVideoId}`
-          );
-        } catch (error) {
-          toast.error(
-            `Failed to save video: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`
-          );
-          setIsGeneratingVideo(false);
-          return;
-        }
-      }
-
-      // Now proceed with video generation using the videoId
       const imageId = image?.id;
 
       const body: GenerateVideoIn["body"] = {
-        videoId: currentVideoId,
+        videoId: videoId,
         prompt: outlineText,
         imageReferenceId: imageId ?? null,
       };
@@ -541,12 +509,6 @@ export default function Video({
         setUploadedVideoFile(null);
         setVideoObjectUrl(null);
         toast.success("Video generated successfully!");
-
-        // Refresh server data to get updated video_url from database
-        // This ensures the video persists after page refresh
-        if (isEditMode && currentVideoId) {
-          router.refresh();
-        }
       } else {
         toast.info(result.message || "Video generation completed");
       }
@@ -690,8 +652,12 @@ export default function Video({
       return;
     }
 
+    if (!videoId) {
+      toast.error("Please create the video first by clicking 'Create Video'");
+      return;
+    }
+
     setIsUploadingVideo(true);
-    let currentVideoId = videoId;
 
     const toastId = toast.loading(`Uploading video: ${file.name}`, {
       description: "0% complete",
@@ -699,38 +665,6 @@ export default function Video({
     });
 
     try {
-      // If no videoId exists, auto-save the video first (similar to generate flow)
-      if (!currentVideoId) {
-        try {
-          // Prepare and create the video (with defaults for required fields)
-          const createPayload = prepareCreatePayload();
-          const createResult = await handleCreateVideo(createPayload);
-
-          if (!createResult.videoId) {
-            throw new Error("Video creation succeeded but no videoId returned");
-          }
-
-          currentVideoId = createResult.videoId;
-
-          // Update URL to edit page without causing navigation
-          // This allows upload to proceed without component remount
-          window.history.replaceState(
-            { ...window.history.state },
-            "",
-            `/create/videos/v/${currentVideoId}`
-          );
-        } catch (error) {
-          toast.error(
-            `Failed to save video: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`,
-            { id: toastId }
-          );
-          setIsUploadingVideo(false);
-          return;
-        }
-      }
-
       // Generate a unique fileId for tracking
       const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
@@ -777,7 +711,7 @@ export default function Video({
               body: JSON.stringify({
                 uploadId,
                 fileId,
-                videoId: currentVideoId,
+                videoId: videoId,
                 name: file.name,
               }),
             });
@@ -793,10 +727,8 @@ export default function Video({
 
               toast.success(`Video uploaded: ${file.name}`, { id: toastId });
 
-              // Refresh server data to get updated video_url from database
-              // This ensures the video persists after page refresh
               // Navigate to edit page (will refresh data automatically)
-              router.push(`/create/videos/v/${currentVideoId}`);
+              router.push(`/create/videos/v/${videoId}`);
             } else {
               throw new Error(result.message || "Failed to finalize upload");
             }
@@ -1176,15 +1108,11 @@ export default function Video({
         // CREATE mode - use helper function
         const createPayload = prepareCreatePayload();
 
-        const result = await handleCreateVideo(createPayload);
+        await handleCreateVideo(createPayload);
         toast.success("Video created successfully!");
 
-        // Redirect to edit page so user can generate video
-        if (result.videoId) {
-          router.push(`/create/videos/v/${result.videoId}`);
-        } else {
-          router.push(`/create/videos`);
-        }
+        // Redirect to list page
+        router.push(`/create/videos`);
         return;
       }
 
@@ -1273,8 +1201,14 @@ export default function Video({
   ];
 
   // Question modal state
-  const [showQuestionModal, setShowQuestionModal] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [showMCQModal, setShowMCQModal] = useState(false);
+  const [showFRQModal, setShowFRQModal] = useState(false);
+  const [editingMCQQuestion, setEditingMCQQuestion] = useState<Question | null>(
+    null
+  );
+  const [editingFRQQuestion, setEditingFRQQuestion] = useState<Question | null>(
+    null
+  );
 
   // Timeline segment modal state
   const [showTimelineModal, setShowTimelineModal] = useState(false);
@@ -1284,11 +1218,11 @@ export default function Video({
   const [selectedQuestionsForSegment, setSelectedQuestionsForSegment] =
     useState<string[]>([]);
 
-  const openQuestionModal = (time?: number, question?: Question) => {
+  const openMCQModal = (time?: number, question?: Question) => {
     if (question) {
-      setEditingQuestion(question);
+      setEditingMCQQuestion(question);
     } else {
-      setEditingQuestion({
+      setEditingMCQQuestion({
         question_text: "",
         type: "choice",
         allow_multiple: false,
@@ -1296,99 +1230,116 @@ export default function Video({
         options: [],
       });
     }
-    setShowQuestionModal(true);
+    setShowMCQModal(true);
   };
 
-  const closeQuestionModal = () => {
-    setShowQuestionModal(false);
-    setEditingQuestion(null);
+  const closeMCQModal = () => {
+    setShowMCQModal(false);
+    setEditingMCQQuestion(null);
   };
 
-  const saveQuestion = () => {
-    if (!editingQuestion) return;
+  const openFRQModal = (time?: number, question?: Question) => {
+    if (question) {
+      setEditingFRQQuestion(question);
+    } else {
+      setEditingFRQQuestion({
+        question_text: "",
+        type: "frq",
+        allow_multiple: false,
+        times: time !== undefined ? [time] : [],
+        options: [],
+      });
+    }
+    setShowFRQModal(true);
+  };
 
-    if (!editingQuestion.question_text.trim()) {
+  const closeFRQModal = () => {
+    setShowFRQModal(false);
+    setEditingFRQQuestion(null);
+  };
+
+  const saveMCQQuestion = () => {
+    if (!editingMCQQuestion) return;
+
+    if (!editingMCQQuestion.question_text.trim()) {
       toast.error("Question text is required");
       return;
     }
 
-    if (
-      editingQuestion.type === "choice" &&
-      editingQuestion.options.length === 0
-    ) {
+    if (editingMCQQuestion.options.length === 0) {
       toast.error("Choice questions must have at least one option");
       return;
     }
 
     // Allow questions without times when adding manually (not from timeline)
     // Set default time to 0 if no time specified
-    if (editingQuestion.times.length === 0) {
-      editingQuestion.times = [0];
+    if (editingMCQQuestion.times.length === 0) {
+      editingMCQQuestion.times = [0];
     }
 
-    if (editingQuestion.type === "choice") {
-      const hasCorrect = editingQuestion.options.some((opt) => opt.is_correct);
-      if (!hasCorrect) {
-        toast.error("Choice questions must have at least one correct answer");
-        return;
-      }
+    // Infer allow_multiple from number of correct answers
+    const correctCount = editingMCQQuestion.options.filter(
+      (opt) => opt.is_correct
+    ).length;
+    const updatedQuestion = {
+      ...editingMCQQuestion,
+      allow_multiple: correctCount > 1,
+    };
+
+    if (correctCount === 0) {
+      toast.error("Choice questions must have at least one correct answer");
+      return;
     }
 
-    if (editingQuestion.question_id) {
+    if (updatedQuestion.question_id) {
       // Update existing question
       setQuestions((prev) =>
         prev.map((q) =>
-          q.question_id === editingQuestion.question_id ? editingQuestion : q
+          q.question_id === updatedQuestion.question_id ? updatedQuestion : q
         )
       );
     } else {
       // Add new question
-      setQuestions((prev) => [...prev, editingQuestion]);
+      setQuestions((prev) => [...prev, updatedQuestion]);
     }
 
-    closeQuestionModal();
+    closeMCQModal();
+  };
+
+  const saveFRQQuestion = () => {
+    if (!editingFRQQuestion) return;
+
+    if (!editingFRQQuestion.question_text.trim()) {
+      toast.error("Question text is required");
+      return;
+    }
+
+    // Allow questions without times when adding manually (not from timeline)
+    // Set default time to 0 if no time specified
+    if (editingFRQQuestion.times.length === 0) {
+      editingFRQQuestion.times = [0];
+    }
+
+    if (editingFRQQuestion.question_id) {
+      // Update existing question
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === editingFRQQuestion.question_id
+            ? editingFRQQuestion
+            : q
+        )
+      );
+    } else {
+      // Add new question
+      setQuestions((prev) => [...prev, editingFRQQuestion]);
+    }
+
+    closeFRQModal();
   };
 
   const deleteQuestion = (questionId?: string) => {
     if (!questionId) return;
     setQuestions((prev) => prev.filter((q) => q.question_id !== questionId));
-  };
-
-  const addOption = () => {
-    if (!editingQuestion) return;
-    setEditingQuestion({
-      ...editingQuestion,
-      options: [
-        ...editingQuestion.options,
-        {
-          option_text: "",
-          type: "discrete" as const,
-          is_correct: false,
-        } as QuestionOption,
-      ],
-    });
-  };
-
-  const removeOption = (index: number) => {
-    if (!editingQuestion) return;
-    setEditingQuestion({
-      ...editingQuestion,
-      options: editingQuestion.options.filter((_, i) => i !== index),
-    });
-  };
-
-  const updateOption = (
-    index: number,
-    field: keyof QuestionOption,
-    value: string | boolean
-  ) => {
-    if (!editingQuestion) return;
-    setEditingQuestion({
-      ...editingQuestion,
-      options: editingQuestion.options.map((opt, i) =>
-        i === index ? { ...opt, [field]: value } : opt
-      ),
-    });
   };
 
   // Format time for display
@@ -1801,15 +1752,26 @@ export default function Video({
                     No questions added yet. Generate questions or add them
                     manually.
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openQuestionModal()}
-                    disabled={isReadonly}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Question
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openMCQModal()}
+                      disabled={isReadonly}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add MCQ Question
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openFRQModal()}
+                      disabled={isReadonly}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add FRQ Question
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1855,9 +1817,13 @@ export default function Video({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              openQuestionModal(undefined, question)
-                            }
+                            onClick={() => {
+                              if (question.type === "frq") {
+                                openFRQModal(undefined, question);
+                              } else {
+                                openMCQModal(undefined, question);
+                              }
+                            }}
                             disabled={isReadonly}
                           >
                             Edit
@@ -1875,16 +1841,28 @@ export default function Video({
                     </div>
                   ))}
                   {questions.length < 3 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openQuestionModal()}
-                      disabled={isReadonly}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Question
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openMCQModal()}
+                        disabled={isReadonly}
+                        className="flex-1"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add MCQ Question
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openFRQModal()}
+                        disabled={isReadonly}
+                        className="flex-1"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add FRQ Question
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -1947,6 +1925,11 @@ export default function Video({
                   <SelectItem value="4">4 seconds</SelectItem>
                   <SelectItem value="8">8 seconds</SelectItem>
                   <SelectItem value="12">12 seconds</SelectItem>
+                  <SelectItem value="16">16 seconds</SelectItem>
+                  <SelectItem value="20">20 seconds</SelectItem>
+                  <SelectItem value="24">24 seconds</SelectItem>
+                  <SelectItem value="28">28 seconds</SelectItem>
+                  <SelectItem value="32">32 seconds</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -2478,13 +2461,15 @@ export default function Video({
         </AlertDialog>
       )}
 
-      {/* Question Modal */}
-      {showQuestionModal && editingQuestion && (
-        <AlertDialog open={showQuestionModal} onOpenChange={closeQuestionModal}>
+      {/* MCQ Question Modal */}
+      {showMCQModal && editingMCQQuestion && (
+        <AlertDialog open={showMCQModal} onOpenChange={closeMCQModal}>
           <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {editingQuestion.question_id ? "Edit Question" : "Add Question"}
+                {editingMCQQuestion.question_id
+                  ? "Edit MCQ Question"
+                  : "Add MCQ Question"}
               </AlertDialogTitle>
             </AlertDialogHeader>
             <div className="space-y-4 py-4">
@@ -2492,10 +2477,10 @@ export default function Video({
               <div className="space-y-2">
                 <Label>Question Text *</Label>
                 <Textarea
-                  value={editingQuestion.question_text}
+                  value={editingMCQQuestion.question_text}
                   onChange={(e) =>
-                    setEditingQuestion({
-                      ...editingQuestion,
+                    setEditingMCQQuestion({
+                      ...editingMCQQuestion,
                       question_text: e.target.value,
                     })
                   }
@@ -2504,168 +2489,163 @@ export default function Video({
                 />
               </div>
 
-              {/* Question Type */}
+              {/* Options */}
               <div className="space-y-2">
-                <Label>Question Type *</Label>
-                <RadioGroup
-                  value={
-                    editingQuestion.type === "frq"
-                      ? "frq"
-                      : editingQuestion.allow_multiple
-                        ? "choice-multiple"
-                        : "choice-single"
-                  }
-                  onValueChange={(value) => {
-                    if (value === "frq") {
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        type: "frq",
-                        allow_multiple: false,
-                        options: [],
+                <div className="flex items-center justify-between">
+                  <Label>Options *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!editingMCQQuestion) return;
+                      setEditingMCQQuestion({
+                        ...editingMCQQuestion,
+                        options: [
+                          ...editingMCQQuestion.options,
+                          {
+                            option_text: "",
+                            type: "discrete" as const,
+                            is_correct: false,
+                          },
+                        ],
                       });
-                    } else if (value === "choice-single") {
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        type: "choice",
-                        allow_multiple: false,
-                      });
-                    } else if (value === "choice-multiple") {
-                      setEditingQuestion({
-                        ...editingQuestion,
-                        type: "choice",
-                        allow_multiple: true,
-                      });
-                    }
-                  }}
-                  className="grid grid-cols-3 gap-3"
-                >
-                  {/* MCQ - Single Selection */}
-                  <Label
-                    className={cn(
-                      "cursor-pointer block",
-                      "rounded-lg border-2 transition-colors",
-                      editingQuestion.type === "choice" &&
-                        !editingQuestion.allow_multiple
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    )}
+                    }}
                   >
-                    <RadioGroupItem value="choice-single" className="sr-only" />
-                    <div className="flex flex-col items-center justify-center p-4 gap-2">
-                      <Circle className="h-6 w-6" />
-                      <span className="text-sm font-medium">MCQ</span>
-                    </div>
-                  </Label>
-
-                  {/* FRQ */}
-                  <Label
-                    className={cn(
-                      "cursor-pointer block",
-                      "rounded-lg border-2 transition-colors",
-                      editingQuestion.type === "frq"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <RadioGroupItem value="frq" className="sr-only" />
-                    <div className="flex flex-col items-center justify-center p-4 gap-2">
-                      <FileText className="h-6 w-6" />
-                      <span className="text-sm font-medium">FRQ</span>
-                    </div>
-                  </Label>
-
-                  {/* MCQ Multiple */}
-                  <Label
-                    className={cn(
-                      "cursor-pointer block",
-                      "rounded-lg border-2 transition-colors",
-                      editingQuestion.type === "choice" &&
-                        editingQuestion.allow_multiple
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    <RadioGroupItem
-                      value="choice-multiple"
-                      className="sr-only"
-                    />
-                    <div className="flex flex-col items-center justify-center p-4 gap-2">
-                      <CheckSquare className="h-6 w-6" />
-                      <span className="text-sm font-medium">MCQ Multiple</span>
-                    </div>
-                  </Label>
-                </RadioGroup>
-              </div>
-
-              {/* Options (for choice questions) */}
-              {editingQuestion.type === "choice" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Options *</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addOption}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Option
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {editingQuestion.options.map((option, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 p-2 border rounded"
-                      >
-                        <Input
-                          value={option.option_text}
-                          onChange={(e) =>
-                            updateOption(index, "option_text", e.target.value)
-                          }
-                          placeholder="Option text"
-                          className="flex-1"
-                        />
-                        <Select
-                          value={option.type}
-                          onValueChange={(value: "discrete" | "freeform") =>
-                            updateOption(index, "type", value)
-                          }
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="discrete">Discrete</SelectItem>
-                            <SelectItem value="freeform">Freeform</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Checkbox
-                          checked={option.is_correct}
-                          onCheckedChange={(checked) =>
-                            updateOption(index, "is_correct", checked === true)
-                          }
-                        />
-                        <Label className="text-sm">Correct</Label>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeOption(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Option
+                  </Button>
                 </div>
-              )}
+                <div className="space-y-2">
+                  {editingMCQQuestion.options.map((option, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 p-2 border rounded"
+                    >
+                      <Input
+                        value={option.option_text}
+                        onChange={(e) => {
+                          if (!editingMCQQuestion) return;
+                          setEditingMCQQuestion({
+                            ...editingMCQQuestion,
+                            options: editingMCQQuestion.options.map((opt, i) =>
+                              i === index
+                                ? { ...opt, option_text: e.target.value }
+                                : opt
+                            ),
+                          });
+                        }}
+                        placeholder="Option text"
+                        className="flex-1"
+                      />
+                      <Select
+                        value={option.type}
+                        onValueChange={(value: "discrete" | "freeform") => {
+                          if (!editingMCQQuestion) return;
+                          setEditingMCQQuestion({
+                            ...editingMCQQuestion,
+                            options: editingMCQQuestion.options.map((opt, i) =>
+                              i === index ? { ...opt, type: value } : opt
+                            ),
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="discrete">Discrete</SelectItem>
+                          <SelectItem value="freeform">Freeform</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {option.type === "discrete" && (
+                        <>
+                          <Checkbox
+                            checked={option.is_correct}
+                            onCheckedChange={(checked) => {
+                              if (!editingMCQQuestion) return;
+                              setEditingMCQQuestion({
+                                ...editingMCQQuestion,
+                                options: editingMCQQuestion.options.map(
+                                  (opt, i) =>
+                                    i === index
+                                      ? { ...opt, is_correct: checked === true }
+                                      : opt
+                                ),
+                              });
+                            }}
+                          />
+                          <Label className="text-sm">Correct</Label>
+                        </>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (!editingMCQQuestion) return;
+                          setEditingMCQQuestion({
+                            ...editingMCQQuestion,
+                            options: editingMCQQuestion.options.filter(
+                              (_, i) => i !== index
+                            ),
+                          });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={closeQuestionModal}>
+              <AlertDialogCancel onClick={closeMCQModal}>
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction onClick={saveQuestion}>Save</AlertDialogAction>
+              <AlertDialogAction onClick={saveMCQQuestion}>
+                Save
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* FRQ Question Modal */}
+      {showFRQModal && editingFRQQuestion && (
+        <AlertDialog open={showFRQModal} onOpenChange={closeFRQModal}>
+          <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {editingFRQQuestion.question_id
+                  ? "Edit FRQ Question"
+                  : "Add FRQ Question"}
+              </AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Question Text */}
+              <div className="space-y-2">
+                <Label>Question Text *</Label>
+                <Textarea
+                  value={editingFRQQuestion.question_text}
+                  onChange={(e) =>
+                    setEditingFRQQuestion({
+                      ...editingFRQQuestion,
+                      question_text: e.target.value,
+                    })
+                  }
+                  placeholder="Enter question text"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={closeFRQModal}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={saveFRQQuestion}>
+                Save
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

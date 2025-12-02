@@ -23,19 +23,45 @@ CREATE INDEX ON videos (outline_agent_id);
 CREATE INDEX ON videos (question_agent_id);
 CREATE INDEX ON videos (image_agent_id);
 
--- Video generations table (stores all video file generations)
--- Each video can have multiple generations, but only one active at a time
-CREATE TABLE video_generations (
+-- Outlines table (standalone, can exist independently)
+CREATE TABLE outlines (
+  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at      TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name            TEXT        NOT NULL,
+  outline         TEXT        NOT NULL
+);
+
+CREATE INDEX ON outlines (name);
+CREATE INDEX ON outlines (created_at);
+
+-- Generations table (standalone, can exist independently)
+CREATE TABLE generations (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  video_id   UUID        NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   file_path  TEXT        NOT NULL,
   mime_type  TEXT        NOT NULL,
-  active     BOOLEAN     NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  active     BOOLEAN     NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX ON generations (file_path);
+CREATE INDEX ON generations (created_at);
+CREATE INDEX ON generations (active);
+
+-- Video → Generations junction table (BCNF normalization)
+-- Each video can have multiple generations, but only one active at a time
+CREATE TABLE video_generations (
+  video_id      UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  generation_id UUID NOT NULL REFERENCES generations(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, generation_id)
 );
 
 CREATE INDEX ON video_generations (video_id);
+CREATE INDEX ON video_generations (generation_id);
 CREATE INDEX ON video_generations (video_id, active);
 CREATE UNIQUE INDEX video_generations_one_active_per_video 
   ON video_generations(video_id) 
