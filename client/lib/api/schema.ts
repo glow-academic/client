@@ -3911,6 +3911,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/units/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Units List
+         * @description Get list of all active units.
+         */
+        post: operations["get_units_list_api_v3_units_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/feedback/list": {
         parameters: {
             query?: never;
@@ -5779,6 +5799,22 @@ export interface components {
             key_id?: string | null;
             /** Base Url */
             base_url?: string | null;
+            /** Temperature Bounds */
+            temperature_bounds?: {
+                [key: string]: unknown;
+            } | null;
+            /** Pricing */
+            pricing?: components["schemas"]["PricingEntry"][] | null;
+            /** Modalities */
+            modalities?: {
+                [key: string]: string[];
+            } | null;
+            /** Reasoning Levels */
+            reasoning_levels?: string[] | null;
+            /** Voices */
+            voices?: string[] | null;
+            /** Qualities */
+            qualities?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -8588,6 +8624,13 @@ export interface components {
             /** Sample Count */
             sample_count: number;
         };
+        /** ModalitiesItem */
+        ModalitiesItem: {
+            /** Input */
+            input: string[];
+            /** Output */
+            output: string[];
+        };
         /** ModelDetailRequest */
         ModelDetailRequest: {
             /** Modelid */
@@ -8631,6 +8674,23 @@ export interface components {
             };
             /** Default Key Id */
             default_key_id: string | null;
+            /** Temperature Lower */
+            temperature_lower: number;
+            /** Temperature Upper */
+            temperature_upper: number;
+            /** Temperature Values */
+            temperature_values: string[];
+            /** Pricing */
+            pricing: components["schemas"]["PricingItem"][];
+            modalities: components["schemas"]["ModalitiesItem"];
+            /** Reasoning Levels */
+            reasoning_levels: string[];
+            /** Voices */
+            voices: string[];
+            /** Qualities */
+            qualities: string[];
+            /** Units */
+            units: components["schemas"]["UnitItem"][];
         };
         /** ModelItem */
         ModelItem: {
@@ -8700,6 +8760,8 @@ export interface components {
             key_mapping: {
                 [key: string]: components["schemas"]["app__api__v3__models__new__KeyMappingItem"];
             };
+            /** Units */
+            units: components["schemas"]["UnitItem"][];
             /** User Role */
             user_role: string;
             /** Primary Department Id */
@@ -9586,6 +9648,28 @@ export interface components {
             persona_mapping: {
                 [key: string]: string;
             };
+        };
+        /** PricingEntry */
+        PricingEntry: {
+            /** Type */
+            type: string;
+            /** Unit Id */
+            unit_id: string;
+            /** Price */
+            price: number;
+        };
+        /** PricingItem */
+        PricingItem: {
+            /** Type */
+            type: string;
+            /** Unit Id */
+            unit_id: string;
+            /** Unit Name */
+            unit_name: string;
+            /** Unit Category */
+            unit_category: string;
+            /** Price */
+            price: number;
         };
         /**
          * PricingRunsFilters
@@ -11945,6 +12029,27 @@ export interface components {
             /** Formatted */
             formatted: string;
         };
+        /** UnitItem */
+        UnitItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Unit Category */
+            unit_category: string;
+            /** Value */
+            value: number;
+        };
+        /** UnitsListRequest */
+        UnitsListRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /** UnitsListResponse */
+        UnitsListResponse: {
+            /** Units */
+            units: components["schemas"]["UnitItem"][];
+        };
         /** UpdateAgentRequest */
         UpdateAgentRequest: {
             /** Agentid */
@@ -12221,6 +12326,22 @@ export interface components {
             key_id?: string | null;
             /** Base Url */
             base_url?: string | null;
+            /** Temperature Bounds */
+            temperature_bounds?: {
+                [key: string]: unknown;
+            } | null;
+            /** Pricing */
+            pricing?: components["schemas"]["PricingEntry"][] | null;
+            /** Modalities */
+            modalities?: {
+                [key: string]: string[];
+            } | null;
+            /** Reasoning Levels */
+            reasoning_levels?: string[] | null;
+            /** Voices */
+            voices?: string[] | null;
+            /** Qualities */
+            qualities?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -21244,6 +21365,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePromptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_units_list_api_v3_units_list_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitsListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitsListResponse"];
                 };
             };
             /** @description Validation Error */

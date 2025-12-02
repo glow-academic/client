@@ -52,8 +52,8 @@ import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
 import type {
-  AgentNewOut,
   AgentDetailOut,
+  AgentNewOut,
   CreateAgentIn,
   CreateAgentOut,
   DeleteAgentPromptIn,
@@ -61,6 +61,11 @@ import type {
   UpdateAgentIn,
   UpdateAgentOut,
 } from "@/app/(main)/engine/agents/a/[agentId]/page";
+
+// Extract model_mapping type from AgentDetailOut
+// The API returns modalities in model_mapping, so we extract the actual type
+type AgentModelMapping = NonNullable<AgentDetailOut["model_mapping"]>;
+type AgentModelMappingItem = AgentModelMapping[string];
 
 interface SystemAgentFormData {
   name?: string;
@@ -156,9 +161,24 @@ export default function SystemAgent({
     await deleteAgentPromptAction({ body });
   };
 
-  // Temperature bounds from v2 response
-  const temperatureLower = agentData?.temperature_lower ?? 0.0;
-  const temperatureUpper = agentData?.temperature_upper ?? 1.0;
+  // Get temperature bounds from selected model (or fallback to agent's current model)
+  const temperatureBounds = useMemo(() => {
+    // For now, use agent's temperature bounds as fallback
+    // TODO: Include temperature bounds in model_mapping from API
+    const agentDetailData = isEditMode ? agentDetail : agentDetailDefault;
+    return {
+      lower: agentDetailData?.temperature_lower ?? 0.0,
+      upper: agentDetailData?.temperature_upper ?? 1.0,
+      values:
+        (agentDetailData && "temperature_values" in agentDetailData
+          ? agentDetailData.temperature_values
+          : []) || [],
+    };
+  }, [
+    isEditMode,
+    agentDetail,
+    agentDetailDefault,
+  ]);
 
   // Filter prompt_mapping client-side based on selected departments from form
   // API returns all prompts user has access to, then we filter by selected departments
@@ -291,6 +311,147 @@ export default function SystemAgent({
       ),
     [isSuperadmin, effectiveProfile?.primaryDepartmentId]
   );
+
+  // Helper function to get required modalities based on agent_type
+  const getRequiredModalities = (
+    agentType: string
+  ): {
+    input: string[];
+    output: string[];
+  } => {
+    switch (agentType) {
+      case "simulation-text":
+      case "hint":
+      case "input_guardrail":
+      case "output_guardrail":
+      case "question":
+      case "outline":
+      case "scenario":
+      case "grade":
+      case "document":
+      case "classify":
+      case "eval":
+        return { input: ["text"], output: ["text"] };
+      case "simulation-voice":
+        return { input: ["text", "audio"], output: ["text", "audio"] };
+      case "image":
+        return { input: [], output: ["image"] };
+      case "video":
+        return { input: [], output: ["video"] };
+      default:
+        return { input: ["text"], output: ["text"] };
+    }
+  };
+
+  // Type-safe model mapping - use the actual type from AgentDetailOut
+  const modelMapping = useMemo((): AgentModelMapping => {
+    return (
+      (agentData?.model_mapping as AgentModelMapping) ||
+      ({} as AgentModelMapping)
+    );
+  }, [agentData?.model_mapping]);
+
+  // Helper to extract modalities from model info
+  // The API returns input_modalities and output_modalities as separate fields
+  const getModelModalities = (
+    modelInfo: AgentModelMappingItem | undefined
+  ): { input: string[]; output: string[] } => {
+    if (!modelInfo) return { input: [], output: [] };
+
+    // Type assertion needed because the OpenAPI schema may not be fully updated
+    // but the runtime data includes these fields
+    const modelInfoWithModalities = modelInfo as AgentModelMappingItem & {
+      input_modalities?: string[];
+      output_modalities?: string[];
+      modalities?: {
+        input: string[];
+        output: string[];
+      };
+    };
+
+    // New format: separate fields (from our API update)
+    if (
+      modelInfoWithModalities.input_modalities ||
+      modelInfoWithModalities.output_modalities
+    ) {
+      return {
+        input: modelInfoWithModalities.input_modalities || [],
+        output: modelInfoWithModalities.output_modalities || [],
+      };
+    }
+
+    // Old format: nested modalities object (backward compatibility)
+    if (modelInfoWithModalities.modalities) {
+      return {
+        input: modelInfoWithModalities.modalities.input || [],
+        output: modelInfoWithModalities.modalities.output || [],
+      };
+    }
+
+    return { input: [], output: [] };
+  };
+
+  // Filter valid_model_ids based on agent_type modality requirements
+  const filteredValidModelIds = useMemo(() => {
+    if (!formData?.role || !agentData?.valid_model_ids || !modelMapping) {
+      return agentData?.valid_model_ids || [];
+    }
+
+    const requiredModalities = getRequiredModalities(formData.role);
+    const filtered: string[] = [];
+
+    for (const modelId of agentData.valid_model_ids) {
+      const modelInfo = modelMapping[modelId];
+      if (!modelInfo) continue;
+
+      const { input: modelInputMods, output: modelOutputMods } =
+        getModelModalities(modelInfo);
+
+      // If no modalities configured, include the model (backward compatibility)
+      // Otherwise, check if it has required modalities
+      if (modelInputMods.length === 0 && modelOutputMods.length === 0) {
+        // No modalities configured - include all models for backward compatibility
+        filtered.push(modelId);
+      } else {
+        const hasRequiredInput =
+          requiredModalities.input.length === 0 ||
+          requiredModalities.input.every((mod) => modelInputMods.includes(mod));
+        const hasRequiredOutput =
+          requiredModalities.output.length === 0 ||
+          requiredModalities.output.every((mod) =>
+            modelOutputMods.includes(mod)
+          );
+
+        if (hasRequiredInput && hasRequiredOutput) {
+          filtered.push(modelId);
+        }
+      }
+    }
+
+    return filtered;
+  }, [formData?.role, agentData?.valid_model_ids, modelMapping]);
+
+  // Get selected model capabilities
+  const selectedModelCapabilities = useMemo(() => {
+    if (!formData?.modelId || !modelMapping) {
+      return null;
+    }
+
+    const modelInfo = modelMapping[formData.modelId];
+    if (!modelInfo) return null;
+
+    const { input: inputMods, output: outputMods } =
+      getModelModalities(modelInfo);
+
+    return {
+      input_modalities: inputMods,
+      output_modalities: outputMods,
+      has_text_output: outputMods.includes("text"),
+      has_audio_output: outputMods.includes("audio"),
+      has_image_output: outputMods.includes("image"),
+      has_video_output: outputMods.includes("video"),
+    };
+  }, [formData?.modelId, modelMapping]);
 
   const initialFormData: SystemAgentFormData = useMemo(
     () => ({
@@ -504,14 +665,17 @@ export default function SystemAgent({
               departmentsForPromptOverride = targetDeptIds;
             } else {
               // For multiple departments, check which ones are safe to update
-              const departmentPromptLinks = agentDetail?.department_prompt_links || {};
+              const departmentPromptLinks =
+                agentDetail?.department_prompt_links || {};
               const existingPromptIds = targetDeptIds
                 .map((deptId) => departmentPromptLinks[deptId])
                 .filter((promptId) => promptId !== undefined);
 
               const allShareSamePrompt =
                 existingPromptIds.length > 0 &&
-                existingPromptIds.every((promptId) => promptId === existingPromptIds[0]);
+                existingPromptIds.every(
+                  (promptId) => promptId === existingPromptIds[0]
+                );
 
               if (allShareSamePrompt) {
                 // All departments share the same override - safe to update all
@@ -536,6 +700,7 @@ export default function SystemAgent({
         const shouldCreateNewPrompt = hasPromptChanges;
 
         // Update existing agent using v3 API
+        // Note: profileId is added by the server action
         await handleUpdateAgent({
           agentId,
           name: formData.name!,
@@ -552,6 +717,7 @@ export default function SystemAgent({
           role: formData.role || "assistant",
           department_ids: finalDepartmentIds,
           department_ids_for_prompt: departmentsForPromptOverride,
+          profileId: effectiveProfile?.id || "guest-profile-id", // Added by server action, but types require it
         });
         toast.success("Agent updated successfully!");
         resetFormAndState();
@@ -559,6 +725,7 @@ export default function SystemAgent({
         setIsSubmitting(false);
       } else {
         // Create new agent using v3 API
+        // Note: profileId is added by the server action
         await handleCreateAgent({
           name: formData.name!,
           description: formData.description!,
@@ -573,6 +740,7 @@ export default function SystemAgent({
           active: formData.active ?? true,
           role: formData.role || "assistant",
           department_ids: finalDepartmentIds,
+          profileId: effectiveProfile?.id || "guest-profile-id", // Added by server action, but types require it
         });
         toast.success("Agent created successfully!");
         resetFormAndState();
@@ -703,7 +871,48 @@ export default function SystemAgent({
                 {formData?.role !== undefined ? (
                   <RolePicker
                     selectedRole={formData.role || "assistant"}
-                    onSelect={(role) => handleInputChange("role", role)}
+                    onSelect={(role) => {
+                      handleInputChange("role", role);
+                      // If current model doesn't match new role requirements, reset modelId
+                      const requiredModalities = getRequiredModalities(role);
+                      const currentModelId = formData?.modelId;
+                      if (currentModelId && modelMapping) {
+                        const modelInfo = modelMapping[currentModelId];
+                        if (modelInfo) {
+                          const {
+                            input: modelInputMods,
+                            output: modelOutputMods,
+                          } = getModelModalities(modelInfo);
+                          const hasRequiredInput =
+                            requiredModalities.input.every((mod) =>
+                              modelInputMods.includes(mod)
+                            );
+                          const hasRequiredOutput =
+                            requiredModalities.output.every((mod) =>
+                              modelOutputMods.includes(mod)
+                            );
+                          if (!hasRequiredInput || !hasRequiredOutput) {
+                            // Reset to first valid model or empty
+                            const filteredIds =
+                              agentData?.valid_model_ids?.filter((id) => {
+                                const info = modelMapping[id];
+                                if (!info) return false;
+                                const { input: inputMods, output: outputMods } =
+                                  getModelModalities(info);
+                                return (
+                                  requiredModalities.input.every((mod) =>
+                                    inputMods.includes(mod)
+                                  ) &&
+                                  requiredModalities.output.every((mod) =>
+                                    outputMods.includes(mod)
+                                  )
+                                );
+                              }) || [];
+                            handleInputChange("modelId", filteredIds[0] || "");
+                          }
+                        }
+                      }
+                    }}
                     placeholder="Select role"
                   />
                 ) : null}
@@ -738,20 +947,38 @@ export default function SystemAgent({
               </div>
             </div>
 
-            {/* Text Model, Reasoning Effort, and Temperature - 3 Column Grid */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-              {/* Text Model */}
+            {/* Model, Reasoning Effort, and Temperature - Dynamic Grid */}
+            <div
+              className={`grid gap-4 ${
+                selectedModelCapabilities?.has_text_output
+                  ? "grid-cols-1 md:grid-cols-3"
+                  : "grid-cols-1 md:grid-cols-2"
+              }`}
+            >
+              {/* Model Selection - filtered by agent_type */}
               <div className="space-y-2">
-                <Label htmlFor="modelId">Text Model *</Label>
+                <Label htmlFor="modelId">
+                  {formData?.role === "image"
+                    ? "Image Model"
+                    : formData?.role === "video"
+                      ? "Video Model"
+                      : formData?.role === "simulation-voice"
+                        ? "Voice Model"
+                        : "Text Model"}{" "}
+                  *
+                </Label>
                 {formData?.modelId !== undefined ? (
                   <>
                     <ModelPicker
-                      mapping={agentData?.model_mapping || {}}
-                      validIds={agentData?.valid_model_ids || []}
+                      mapping={modelMapping}
+                      validIds={filteredValidModelIds}
                       selectedIds={formData?.modelId ? [formData.modelId] : []}
-                      onSelect={(ids) =>
-                        handleInputChange("modelId", ids[0] || "")
-                      }
+                      onSelect={(ids) => {
+                        const newModelId = ids[0] || "";
+                        handleInputChange("modelId", newModelId);
+                        // If selected model doesn't support current reasoning level, reset to "none"
+                        // This will be handled by conditional rendering below
+                      }}
                       placeholder="Select a model"
                       multiSelect={false}
                       buttonClassName={
@@ -759,6 +986,13 @@ export default function SystemAgent({
                       }
                       triggerProps={{ "data-testid": "picker-model" }}
                     />
+                    {filteredValidModelIds.length === 0 && formData?.role && (
+                      <p className="text-xs text-muted-foreground">
+                        No models available for this agent type. Please select a
+                        different role or configure models with the required
+                        modalities.
+                      </p>
+                    )}
                     {errors.modelId && (
                       <p className="text-sm text-destructive">
                         {errors.modelId}
@@ -768,89 +1002,102 @@ export default function SystemAgent({
                 ) : null}
               </div>
 
-              {/* Reasoning Effort */}
-              <div className="space-y-2">
-                <Label htmlFor="reasoning">Reasoning Effort</Label>
-                {formData?.reasoning !== undefined ? (
-                  <ReasoningPicker
-                    mapping={agentDetail?.reasoning_mapping || {}}
-                    validIds={
-                      agentDetail?.reasoning_options && agentDetail.reasoning_options.length > 0
-                        ? agentDetail.reasoning_options
-                        : ["none", "minimal", "low", "medium", "high"]
-                    }
-                    selectedIds={
-                      formData?.reasoning ? [formData.reasoning] : ["none"]
-                    }
-                    onSelect={(ids) =>
-                      handleInputChange(
-                        "reasoning",
-                        (ids[0] || "none") as
-                          | "none"
-                          | "minimal"
-                          | "low"
-                          | "medium"
-                          | "high"
-                      )
-                    }
-                    placeholder="Select reasoning effort"
-                    multiSelect={false}
-                    triggerProps={{ "data-testid": "picker-reasoning" }}
-                  />
-                ) : null}
-              </div>
+              {/* Reasoning Effort - Show only if model supports text output */}
+              {selectedModelCapabilities?.has_text_output && (
+                <div className="space-y-2">
+                  <Label htmlFor="reasoning">Reasoning Effort</Label>
+                  {formData?.reasoning !== undefined ? (
+                    <ReasoningPicker
+                      mapping={agentDetail?.reasoning_mapping || {}}
+                      validIds={
+                        agentDetail?.reasoning_options &&
+                        agentDetail.reasoning_options.length > 0
+                          ? agentDetail.reasoning_options
+                          : ["none", "minimal", "low", "medium", "high"]
+                      }
+                      selectedIds={
+                        formData?.reasoning ? [formData.reasoning] : ["none"]
+                      }
+                      onSelect={(ids) =>
+                        handleInputChange(
+                          "reasoning",
+                          (ids[0] || "none") as
+                            | "none"
+                            | "minimal"
+                            | "low"
+                            | "medium"
+                            | "high"
+                        )
+                      }
+                      placeholder="Select reasoning effort"
+                      multiSelect={false}
+                      triggerProps={{ "data-testid": "picker-reasoning" }}
+                    />
+                  ) : null}
+                </div>
+              )}
 
-              {/* Temperature */}
-              <div className="space-y-2">
-                <Label htmlFor="temperature">
-                  Temperature:{" "}
-                  {formData?.temperature !== undefined
-                    ? formData.temperature.toFixed(2)
-                    : "0.00"}
-                </Label>
-                {formData?.temperature !== undefined ? (
-                  <>
-                    {agentDetail?.temperature_values && agentDetail.temperature_values.length > 0 ? (
-                      // Use dropdown picker if specific temperature values are provided
-                      <select
-                        id="temperature"
-                        data-testid="temperature-picker"
-                        value={formData.temperature.toString()}
-                        onChange={(e) =>
-                          handleInputChange("temperature", parseFloat(e.target.value))
-                        }
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {agentDetail.temperature_values.map((val) => (
-                          <option key={val} value={val}>
-                            {parseFloat(val).toFixed(2)}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      // Use slider if temperature range is provided
-                      <>
-                        <Slider
+              {/* Temperature - Show only if model supports temperature configuration */}
+              {selectedModelCapabilities && (
+                <div className="space-y-2">
+                  <Label htmlFor="temperature">
+                    Temperature:{" "}
+                    {formData?.temperature !== undefined
+                      ? formData.temperature.toFixed(2)
+                      : "0.00"}
+                  </Label>
+                  {formData?.temperature !== undefined ? (
+                    <>
+                      {temperatureBounds.values.length > 0 ? (
+                        // Use dropdown picker if specific temperature values are provided
+                        <select
                           id="temperature"
-                          data-testid="temperature-slider"
-                          min={temperatureLower}
-                          max={temperatureUpper}
-                          step={0.01}
-                          value={[formData?.temperature || 0]}
-                          onValueChange={(value) =>
-                            handleInputChange("temperature", value[0] || 0)
+                          data-testid="temperature-picker"
+                          value={formData.temperature.toString()}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "temperature",
+                              parseFloat(e.target.value)
+                            )
                           }
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Deterministic</span>
-                          <span>Creative</span>
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : null}
-              </div>
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {temperatureBounds.values.map((val) => (
+                            <option key={val} value={val}>
+                              {parseFloat(val).toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        // Use slider if temperature range is provided
+                        <>
+                          <Slider
+                            id="temperature"
+                            data-testid="temperature-slider"
+                            min={temperatureBounds.lower}
+                            max={temperatureBounds.upper}
+                            step={0.01}
+                            value={[formData?.temperature || 0]}
+                            onValueChange={(value) =>
+                              handleInputChange("temperature", value[0] || 0)
+                            }
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              {temperatureBounds.lower.toFixed(2)}{" "}
+                              (Deterministic)
+                            </span>
+                            <span>
+                              {temperatureBounds.upper.toFixed(2)} (Creative)
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -861,7 +1108,8 @@ export default function SystemAgent({
                     agentDetail &&
                     filteredPromptMapping &&
                     (Object.keys(filteredPromptMapping).length > 0 ||
-                      (formData?.departmentIds && formData.departmentIds.length > 0)) && (
+                      (formData?.departmentIds &&
+                        formData.departmentIds.length > 0)) && (
                       <PromptPicker
                         promptMapping={filteredPromptMapping}
                         selectedPromptId={formData?.promptId || null}
@@ -998,39 +1246,32 @@ export default function SystemAgent({
                 </div>
               </div>
               {formData?.systemPrompt !== undefined ? (
-                <>
-                  <div
-                    className="h-[500px]"
-                    data-testid="editor-system-prompt"
-                  >
-                      <UnifiedPromptEditor
-                        value={formData?.systemPrompt || ""}
-                        onChange={(value) => {
-                          setIsCreatingNewPrompt(true); // User is actively editing
-                          handleInputChange("systemPrompt", value);
-                          // Clear promptId when editing, indicating new prompt
-                          setFormData((prev) => ({
-                            ...prev,
-                            promptId: null,
-                          }));
-                        }}
-                        placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
-                        className="h-full"
-                        debugContent={
-                          isEditMode &&
-                          agentDetail &&
-                          effectiveProfile?.role === "superadmin" ? (
-                            <AgentDebugInfo
-                              debugInfo={agentDetail.debug_info}
-                              modelMapping={agentDetail.model_mapping}
-                            />
-                          ) : undefined
-                        }
-                        activeMode={editorMode}
-                      />
-                    </div>
-                  )}
-                </>
+                <div className="h-[500px]" data-testid="editor-system-prompt">
+                  <UnifiedPromptEditor
+                    value={formData?.systemPrompt || ""}
+                    onChange={(value) => {
+                      handleInputChange("systemPrompt", value);
+                      // Clear promptId when editing, indicating new prompt
+                      setFormData((prev) => ({
+                        ...prev,
+                        promptId: null,
+                      }));
+                    }}
+                    placeholder="System prompt that defines how the agent should behave and respond. You can use markdown formatting."
+                    className="h-full"
+                    debugContent={
+                      isEditMode &&
+                      agentDetail &&
+                      effectiveProfile?.role === "superadmin" ? (
+                        <AgentDebugInfo
+                          debugInfo={agentDetail.debug_info}
+                          modelMapping={agentDetail.model_mapping}
+                        />
+                      ) : undefined
+                    }
+                    activeMode={editorMode}
+                  />
+                </div>
               ) : null}
               <p className="text-sm text-muted-foreground">
                 This prompt defines the agent's behavior and personality in
@@ -1116,7 +1357,10 @@ export default function SystemAgent({
                       agentId,
                       promptId: promptToDelete.promptId,
                       departmentId: promptToDelete.isDepartmentSpecific
-                        ? (formData?.departmentIds && formData.departmentIds.length > 0) ? formData.departmentIds[0]! : null
+                        ? formData?.departmentIds &&
+                          formData.departmentIds.length > 0
+                          ? formData.departmentIds[0]!
+                          : null
                         : null,
                     });
                     toast.success("Prompt deleted successfully");

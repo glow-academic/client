@@ -13,12 +13,18 @@ from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
+class PricingEntry(BaseModel):
+    type: str  # 'input' | 'output' | 'cached'
+    unit_id: str
+    price: float
+
+
 class UpdateModelRequest(BaseModel):
     """Request to update model."""
 
     modelId: str
     provider: str  # enum: 'openai', 'gemini', 'custom'
-    model_type: str  # enum: 'text', 'audio', 'video' (immutable after creation)
+    model_type: str  # enum: 'text', 'audio', 'video' (immutable after creation) - deprecated, use modalities instead
     name: str
     description: str
     active: bool
@@ -28,6 +34,13 @@ class UpdateModelRequest(BaseModel):
     department_ids: list[str] | None = None
     key_id: str | None = None
     base_url: str | None = None  # Required if provider is 'custom'
+    # New configuration fields
+    temperature_bounds: dict[str, Any] | None = None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
+    pricing: list[PricingEntry] | None = None
+    modalities: dict[str, list[str]] | None = None  # { input: list[str], output: list[str] }
+    reasoning_levels: list[str] | None = None
+    voices: list[str] | None = None
+    qualities: list[str] | None = None
     profileId: str  # Required for auditing/access control
 
 
@@ -56,24 +69,14 @@ async def update_model(
 
     try:
         async with transaction(conn):
-            # Check if model exists and get current model_type
-            check_sql = "SELECT name, model_type FROM models WHERE id = $1"
+            # Check if model exists
+            check_sql = "SELECT name FROM models WHERE id = $1"
             existing = await conn.fetchrow(check_sql, request.modelId)
 
             if not existing:
                 raise ValueError(f"Model not found: {request.modelId}")
-            
-            # Validate: model_type cannot be changed after creation
-            current_model_type = existing.get("model_type")
-            if current_model_type and current_model_type != request.model_type:
-                raise ValueError(f"Model type cannot be changed after creation. Current type: {current_model_type}, requested: {request.model_type}")
-            
-            # Validate model_type
-            if request.model_type not in ["text", "audio", "video"]:
-                raise ValueError(f"Invalid model_type: {request.model_type}. Must be 'text', 'audio', or 'video'")
 
             # Update model with departments, keys, and endpoints (track primary operation)
-            # Note: model_type is not updated (immutable after creation)
             sql_query = load_sql("sql/v3/models/update_model_complete.sql")
             # Ensure department_ids is always an array (empty if None)
             department_ids = request.department_ids if request.department_ids else []
@@ -105,6 +108,118 @@ async def update_model(
                 request.key_id,
                 request.base_url,
                 request.profileId,
+            )
+
+            # Update temperature bounds if provided
+            if request.temperature_bounds:
+                # Deactivate existing temperature levels
+                await conn.execute(
+                    "UPDATE model_temperature_levels SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    request.modelId,
+                )
+                # Insert new temperature levels
+                bounds_type = request.temperature_bounds.get("type")
+                if bounds_type == "range":
+                    lower = request.temperature_bounds.get("lower", 0.0)
+                    upper = request.temperature_bounds.get("upper", 1.0)
+                    await conn.execute(
+                        "INSERT INTO model_temperature_levels (model_id, temperature, is_upper, active) VALUES ($1, $2, false, true), ($1, $3, true, true) ON CONFLICT (model_id, temperature, is_upper) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        lower,
+                        upper,
+                    )
+                elif bounds_type == "values":
+                    values = request.temperature_bounds.get("values", [])
+                    for val in values:
+                        await conn.execute(
+                            "INSERT INTO model_temperature_levels (model_id, temperature, is_upper, active) VALUES ($1, $2, false, true) ON CONFLICT (model_id, temperature, is_upper) DO UPDATE SET active = true, updated_at = NOW()",
+                            request.modelId,
+                            float(val),
+                        )
+
+            # Update pricing if provided
+            if request.pricing:
+                # Deactivate existing pricing
+                await conn.execute(
+                    "UPDATE model_pricing SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    request.modelId,
+                )
+                # Insert new pricing entries
+                for pricing_entry in request.pricing:
+                    await conn.execute(
+                        "INSERT INTO model_pricing (model_id, pricing_type, unit_id, price, active) VALUES ($1, $2::pricing_type, $3::uuid, $4, true) ON CONFLICT (model_id, pricing_type, unit_id) DO UPDATE SET price = EXCLUDED.price, active = true, updated_at = NOW()",
+                        request.modelId,
+                        pricing_entry.type,
+                        pricing_entry.unit_id,
+                        pricing_entry.price,
+                    )
+
+            # Update modalities if provided
+            if request.modalities:
+                # Deactivate existing modalities
+                await conn.execute(
+                    "UPDATE model_modalities SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    request.modelId,
+                )
+                # Insert new modalities
+                input_mods = request.modalities.get("input", [])
+                output_mods = request.modalities.get("output", [])
+                for mod in input_mods:
+                    await conn.execute(
+                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        mod,
+                    )
+                for mod in output_mods:
+                    await conn.execute(
+                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, false, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        mod,
+                    )
+
+            # Update reasoning levels if provided
+            if request.reasoning_levels:
+                # Deactivate existing reasoning levels
+                await conn.execute(
+                    "UPDATE model_reasoning_levels SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    request.modelId,
+                )
+                # Insert new reasoning levels
+                for level in request.reasoning_levels:
+                    await conn.execute(
+                        "INSERT INTO model_reasoning_levels (model_id, reasoning_level, active) VALUES ($1, $2::reasoning_effort, true) ON CONFLICT (model_id, reasoning_level) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        level,
+                    )
+
+            # Update voices if provided
+            if request.voices:
+                # Deactivate existing voices
+                await conn.execute(
+                    "UPDATE model_voices SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    request.modelId,
+                )
+                # Insert new voices
+                for voice in request.voices:
+                    await conn.execute(
+                        "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true) ON CONFLICT (model_id, voice) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        voice,
+                    )
+
+            # Update qualities if provided
+            if request.qualities:
+                # Deactivate existing qualities
+                await conn.execute(
+                    "UPDATE model_qualities SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    request.modelId,
+                )
+                # Insert new qualities
+                for quality in request.qualities:
+                    await conn.execute(
+                        "INSERT INTO model_qualities (model_id, quality, active) VALUES ($1, $2::quality, true) ON CONFLICT (model_id, quality) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        quality,
             )
 
             result_data = UpdateModelResponse(

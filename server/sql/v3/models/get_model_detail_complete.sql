@@ -16,12 +16,26 @@ model_data AS (
         name,
         description,
         active,
-        image_model,
-        input_ppm,
-        output_ppm,
         provider::text as provider
     FROM models
     WHERE id = $1::uuid
+),
+-- Determine if model is an image model (has 'image' output modality)
+image_model_check AS (
+    SELECT 
+        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
+    FROM model_modalities
+    WHERE model_id = $1::uuid AND modality = 'image' AND is_input = false AND active = true
+),
+-- Compute input_ppm and output_ppm from pricing data (using million_text unit)
+-- Note: Prices are stored as REAL, but we return as numeric for compatibility
+model_ppm_data AS (
+    SELECT 
+        COALESCE(MAX(price) FILTER (WHERE mp.pricing_type = 'input' AND u.name = 'million_text' AND u.unit_category = 'tokens'), 0.0)::numeric as input_ppm,
+        COALESCE(MAX(price) FILTER (WHERE mp.pricing_type = 'output' AND u.name = 'million_text' AND u.unit_category = 'tokens'), 0.0)::numeric as output_ppm
+    FROM model_pricing mp
+    JOIN units u ON u.id = mp.unit_id
+    WHERE mp.model_id = $1::uuid AND mp.active = true AND u.active = true
 ),
 model_endpoint_data AS (
     SELECT 
@@ -135,9 +149,89 @@ key_mapping_data AS (
         FROM model_all_keys mak
         ORDER BY mak.key_id, mak.name
     ) mak
+),
+model_temperature_data AS (
+    SELECT 
+        model_id,
+        MIN(temperature) FILTER (WHERE is_upper = false) as temperature_lower,
+        MAX(temperature) FILTER (WHERE is_upper = true) as temperature_upper,
+        jsonb_agg(DISTINCT temperature::text ORDER BY temperature::text) FILTER (WHERE is_upper = false) as temperature_values
+    FROM model_temperature_levels
+    WHERE model_id = $1::uuid AND active = true
+    GROUP BY model_id
+),
+model_pricing_data AS (
+    SELECT 
+        jsonb_agg(
+            jsonb_build_object(
+                'type', mp.pricing_type::text,
+                'unit_id', u.id::text,
+                'unit_name', u.name,
+                'unit_category', u.unit_category::text,
+                'price', mp.price
+            ) ORDER BY mp.pricing_type, u.name
+        ) as pricing
+    FROM model_pricing mp
+    JOIN units u ON u.id = mp.unit_id
+    WHERE mp.model_id = $1::uuid AND mp.active = true AND u.active = true
+),
+model_modalities_data AS (
+    SELECT 
+        jsonb_agg(modality::text ORDER BY modality::text) FILTER (WHERE is_input = true) as input_modalities,
+        jsonb_agg(modality::text ORDER BY modality::text) FILTER (WHERE is_input = false) as output_modalities
+    FROM model_modalities
+    WHERE model_id = $1::uuid AND active = true
+),
+model_reasoning_levels_data AS (
+    SELECT 
+        jsonb_agg(reasoning_level::text ORDER BY 
+            CASE reasoning_level
+                WHEN 'none' THEN 1
+                WHEN 'minimal' THEN 2
+                WHEN 'low' THEN 3
+                WHEN 'medium' THEN 4
+                WHEN 'high' THEN 5
+            END
+        ) as reasoning_levels
+    FROM model_reasoning_levels
+    WHERE model_id = $1::uuid AND active = true
+),
+model_voices_data AS (
+    SELECT 
+        jsonb_agg(voice::text ORDER BY voice::text) as voices
+    FROM model_voices
+    WHERE model_id = $1::uuid AND active = true
+),
+model_qualities_data AS (
+    SELECT 
+        jsonb_agg(quality::text ORDER BY 
+            CASE quality
+                WHEN 'low' THEN 1
+                WHEN 'medium' THEN 2
+                WHEN 'high' THEN 3
+            END
+        ) as qualities
+    FROM model_qualities
+    WHERE model_id = $1::uuid AND active = true
+),
+all_units_data AS (
+    SELECT 
+        jsonb_agg(
+            jsonb_build_object(
+                'id', id::text,
+                'name', name,
+                'unit_category', unit_category::text,
+                'value', value
+            ) ORDER BY unit_category, value, name
+        ) as units
+    FROM units
+    WHERE active = true
 )
 SELECT 
     m.*,
+    COALESCE(imc.image_model, false) as image_model,
+    COALESCE(mppm.input_ppm, 0) as input_ppm,
+    COALESCE(mppm.output_ppm, 0) as output_ppm,
     ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
     COALESCE(med.base_url, '') as base_url,
     COALESCE(vdd.dept_mapping, '{}'::jsonb) as department_mapping,
@@ -145,12 +239,36 @@ SELECT
     COALESCE(mdd.department_ids, mdf.department_ids, ARRAY[]::text[]) as department_ids,
     COALESCE(kmd.key_mapping, '{}'::jsonb) as key_mapping,
     COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
-    mdk.key_id as default_key_id
+    mdk.key_id as default_key_id,
+    COALESCE(mtd.temperature_lower, 0.0) as temperature_lower,
+    COALESCE(mtd.temperature_upper, 1.0) as temperature_upper,
+    COALESCE(mtd.temperature_values, '[]'::jsonb) as temperature_values,
+    COALESCE(mpd.pricing, '[]'::jsonb) as pricing,
+    COALESCE(
+        jsonb_build_object(
+            'input', COALESCE(mmod.input_modalities, '[]'::jsonb),
+            'output', COALESCE(mmod.output_modalities, '[]'::jsonb)
+        ),
+        jsonb_build_object('input', '[]'::jsonb, 'output', '[]'::jsonb)
+    ) as modalities,
+    COALESCE(mrl.reasoning_levels, '[]'::jsonb) as reasoning_levels,
+    COALESCE(mv.voices, '[]'::jsonb) as voices,
+    COALESCE(mq.qualities, '[]'::jsonb) as qualities,
+    COALESCE(au.units, '[]'::jsonb) as units
 FROM model_data m
 CROSS JOIN valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
+CROSS JOIN all_units_data au
 LEFT JOIN model_endpoint_data med ON true
 LEFT JOIN model_departments_data mdd ON true
 LEFT JOIN model_departments_fallback mdf ON true
 LEFT JOIN model_default_key mdk ON true
+LEFT JOIN model_temperature_data mtd ON true
+LEFT JOIN model_pricing_data mpd ON true
+LEFT JOIN model_modalities_data mmod ON true
+LEFT JOIN model_reasoning_levels_data mrl ON true
+LEFT JOIN model_voices_data mv ON true
+LEFT JOIN model_qualities_data mq ON true
+LEFT JOIN image_model_check imc ON true
+LEFT JOIN model_ppm_data mppm ON true
 

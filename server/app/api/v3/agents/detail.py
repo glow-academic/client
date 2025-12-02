@@ -145,18 +145,45 @@ async def get_agent_detail(
                         )
                     )
 
-        # Parse model_mapping from JSONB
+        # Parse model_mapping from JSONB (with modalities)
+        # Store raw model_mapping_data with modalities for response
         model_mapping: ModelMapping = {}
+        model_mapping_with_modalities: dict[str, dict[str, Any]] = {}
         model_mapping_data = result["model_mapping"]
         if isinstance(model_mapping_data, str):
             model_mapping_data = json.loads(model_mapping_data)
         if model_mapping_data and isinstance(model_mapping_data, dict):
             for model_id, model_data in model_mapping_data.items():
                 if isinstance(model_data, dict):
+                    # Parse modalities
+                    modalities_data = model_data.get("modalities")
+                    modalities_dict: dict[str, list[str]] = {"input": [], "output": []}
+                    if modalities_data:
+                        if isinstance(modalities_data, str):
+                            modalities_data = json.loads(modalities_data)
+                        if isinstance(modalities_data, dict):
+                            input_mods = modalities_data.get("input", [])
+                            output_mods = modalities_data.get("output", [])
+                            if isinstance(input_mods, str):
+                                input_mods = json.loads(input_mods)
+                            if isinstance(output_mods, str):
+                                output_mods = json.loads(output_mods)
+                            modalities_dict = {
+                                "input": [str(m) for m in input_mods] if isinstance(input_mods, list) else [],
+                                "output": [str(m) for m in output_mods] if isinstance(output_mods, list) else [],
+                            }
+                    # Create ModelMappingItem for typed response
                     model_mapping[model_id] = ModelMappingItem(
                         name=model_data.get("name", ""),
                         description=model_data.get("description", ""),
                     )
+                    # Store full data with modalities for response (as separate fields for frontend)
+                    model_mapping_with_modalities[model_id] = {
+                        "name": model_data.get("name", ""),
+                        "description": model_data.get("description", ""),
+                        "input_modalities": modalities_dict["input"],
+                        "output_modalities": modalities_dict["output"],
+                    }
 
         # Parse valid_model_ids from JSONB
         valid_model_ids: list[str] = []
@@ -310,17 +337,22 @@ async def get_agent_detail(
             can_edit=can_edit,
         )
 
+        # Override model_mapping in response dict to include modalities
+        response_dict = response_data.model_dump()
+        response_dict["model_mapping"] = model_mapping_with_modalities
+
         # Cache response
         await set_cached(
             cache_key_val,
-            {"data": response_data.model_dump()},
+            {"data": response_dict},
             ttl=60,
             tags=tags,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "0"
 
-        return response_data
+        # Return response with modalities included
+        return AgentDetailResponse.model_validate(response_dict)
     except HTTPException:
         raise
     except Exception as e:

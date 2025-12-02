@@ -7,13 +7,15 @@ WITH user_profile AS (
     SELECT role FROM profiles WHERE id = $1
 ),
 -- Pre-aggregate persona usage counts for all models
+-- Personas are linked to models via persona_agents -> agents -> model_id
 persona_usage AS (
     SELECT 
-        ptm.model_id,
+        a.model_id,
         COUNT(*) as usage_count
     FROM personas p
-    JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
-    GROUP BY ptm.model_id
+    JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
+    JOIN agents a ON a.id = pa.agent_id AND a.active = true
+    GROUP BY a.model_id
 ),
 -- Pre-aggregate agent usage counts for all models
 agent_usage AS (
@@ -23,13 +25,22 @@ agent_usage AS (
     FROM agents
     GROUP BY model_id
 ),
+-- Determine if model is an image model (has 'image' output modality)
+image_model_check AS (
+    SELECT 
+        model_id,
+        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
+    FROM model_modalities
+    WHERE modality = 'image' AND is_input = false AND active = true
+    GROUP BY model_id
+),
 models_with_usage AS (
     SELECT 
         m.id as model_id,
         m.name,
         m.description,
         m.active,
-        m.image_model,
+        COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
         m.provider::text as provider,
         COALESCE(me.base_url, '') as base_url,
@@ -39,6 +50,7 @@ models_with_usage AS (
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN persona_usage pu ON pu.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
+    LEFT JOIN image_model_check imc ON imc.model_id = m.id
 )
 SELECT 
     mwu.model_id::text,

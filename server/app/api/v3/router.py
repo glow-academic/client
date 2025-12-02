@@ -46,6 +46,7 @@ from app.api.v3.scenarios import router as scenarios_router
 from app.api.v3.schema import router as schema_router
 from app.api.v3.settings import router as settings_router
 from app.api.v3.simulations import router as simulations_router
+from app.api.v3.units import router as units_router
 from app.api.v3.videos import router as videos_router
 # ============================================================================
 # Batch F: Supporting Resources
@@ -89,6 +90,7 @@ router.include_router(keys_router)
 router.include_router(models_router)
 router.include_router(parameters_router)
 router.include_router(prompts_router)
+router.include_router(units_router)
 router.include_router(feedback_router)
 router.include_router(logs_router)
 router.include_router(attempts_router)

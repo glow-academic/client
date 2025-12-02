@@ -8590,6 +8590,53 @@
         ]
       }
     },
+    "/api/v3/units/list": {
+      "post": {
+        "tags": [
+          "v3",
+          "units"
+        ],
+        "summary": "Get Units List",
+        "description": "Get list of all active units.",
+        "operationId": "get_units_list_api_v3_units_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitsListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "units"
+        ]
+      }
+    },
     "/api/v3/feedback/list": {
       "post": {
         "tags": [
@@ -13036,6 +13083,91 @@
               }
             ],
             "title": "Base Url"
+          },
+          "temperature_bounds": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Bounds"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PricingEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing"
+          },
+          "modalities": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities"
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels"
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices"
+          },
+          "qualities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities"
           },
           "profileId": {
             "type": "string",
@@ -20114,6 +20246,30 @@
         "title": "MetricsDataPoint",
         "description": "App metrics data point."
       },
+      "ModalitiesItem": {
+        "properties": {
+          "input": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Input"
+          },
+          "output": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "output"
+        ],
+        "title": "ModalitiesItem"
+      },
       "ModelDetailRequest": {
         "properties": {
           "modelId": {
@@ -20218,6 +20374,59 @@
               }
             ],
             "title": "Default Key Id"
+          },
+          "temperature_lower": {
+            "type": "number",
+            "title": "Temperature Lower"
+          },
+          "temperature_upper": {
+            "type": "number",
+            "title": "Temperature Upper"
+          },
+          "temperature_values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Temperature Values"
+          },
+          "pricing": {
+            "items": {
+              "$ref": "#/components/schemas/PricingItem"
+            },
+            "type": "array",
+            "title": "Pricing"
+          },
+          "modalities": {
+            "$ref": "#/components/schemas/ModalitiesItem"
+          },
+          "reasoning_levels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasoning Levels"
+          },
+          "voices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Voices"
+          },
+          "qualities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Qualities"
+          },
+          "units": {
+            "items": {
+              "$ref": "#/components/schemas/UnitItem"
+            },
+            "type": "array",
+            "title": "Units"
           }
         },
         "type": "object",
@@ -20236,7 +20445,16 @@
           "department_ids",
           "valid_key_ids",
           "key_mapping",
-          "default_key_id"
+          "default_key_id",
+          "temperature_lower",
+          "temperature_upper",
+          "temperature_values",
+          "pricing",
+          "modalities",
+          "reasoning_levels",
+          "voices",
+          "qualities",
+          "units"
         ],
         "title": "ModelDetailResponse"
       },
@@ -20398,6 +20616,13 @@
             "type": "object",
             "title": "Key Mapping"
           },
+          "units": {
+            "items": {
+              "$ref": "#/components/schemas/UnitItem"
+            },
+            "type": "array",
+            "title": "Units"
+          },
           "user_role": {
             "type": "string",
             "title": "User Role"
@@ -20424,6 +20649,7 @@
           "model_mapping",
           "valid_key_ids",
           "key_mapping",
+          "units",
           "user_role",
           "primary_department_id"
         ],
@@ -22747,6 +22973,62 @@
         ],
         "title": "PricingAnalyticsResponse",
         "description": "Response for pricing analytics."
+      },
+      "PricingEntry": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "unit_id": {
+            "type": "string",
+            "title": "Unit Id"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "unit_id",
+          "price"
+        ],
+        "title": "PricingEntry"
+      },
+      "PricingItem": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "unit_id": {
+            "type": "string",
+            "title": "Unit Id"
+          },
+          "unit_name": {
+            "type": "string",
+            "title": "Unit Name"
+          },
+          "unit_category": {
+            "type": "string",
+            "title": "Unit Category"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "unit_id",
+          "unit_name",
+          "unit_category",
+          "price"
+        ],
+        "title": "PricingItem"
       },
       "PricingRunsFilters": {
         "properties": {
@@ -28749,6 +29031,63 @@
         ],
         "title": "TimerItem"
       },
+      "UnitItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "unit_category": {
+            "type": "string",
+            "title": "Unit Category"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "unit_category",
+          "value"
+        ],
+        "title": "UnitItem"
+      },
+      "UnitsListRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "UnitsListRequest"
+      },
+      "UnitsListResponse": {
+        "properties": {
+          "units": {
+            "items": {
+              "$ref": "#/components/schemas/UnitItem"
+            },
+            "type": "array",
+            "title": "Units"
+          }
+        },
+        "type": "object",
+        "required": [
+          "units"
+        ],
+        "title": "UnitsListResponse"
+      },
       "UpdateAgentRequest": {
         "properties": {
           "agentId": {
@@ -29448,6 +29787,91 @@
               }
             ],
             "title": "Base Url"
+          },
+          "temperature_bounds": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Bounds"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PricingEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing"
+          },
+          "modalities": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities"
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels"
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices"
+          },
+          "qualities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities"
           },
           "profileId": {
             "type": "string",

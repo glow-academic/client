@@ -146,6 +146,31 @@ all_models AS (
         active
     FROM models
 ),
+model_modalities_data AS (
+    SELECT 
+        mm.model_id::text as model_id,
+        jsonb_agg(mm.modality::text ORDER BY mm.modality::text) FILTER (WHERE mm.is_input = true) as input_modalities,
+        jsonb_agg(mm.modality::text ORDER BY mm.modality::text) FILTER (WHERE mm.is_input = false) as output_modalities
+    FROM model_modalities mm
+    WHERE mm.active = true
+    GROUP BY mm.model_id
+),
+all_models_with_modalities AS (
+    SELECT 
+        am.model_id,
+        am.name,
+        am.description,
+        am.active,
+        COALESCE(
+            jsonb_build_object(
+                'input', COALESCE(mmod.input_modalities, '[]'::jsonb),
+                'output', COALESCE(mmod.output_modalities, '[]'::jsonb)
+            ),
+            jsonb_build_object('input', '[]'::jsonb, 'output', '[]'::jsonb)
+        ) as modalities
+    FROM all_models am
+    LEFT JOIN model_modalities_data mmod ON mmod.model_id = am.model_id
+),
 user_profile AS (
     SELECT role FROM resolve_profile_id rpi
     JOIN profiles p ON p.id = rpi.resolved_profile_id
@@ -262,16 +287,20 @@ SELECT
     ) as debug_info,
     COALESCE(
         (SELECT jsonb_object_agg(
-            am.model_id,
-            jsonb_build_object('name', am.name, 'description', am.description)
+            amwm.model_id,
+            jsonb_build_object(
+                'name', amwm.name, 
+                'description', amwm.description,
+                'modalities', amwm.modalities
+            )
         )
-        FROM all_models am),
+        FROM all_models_with_modalities amwm),
         '{}'::jsonb
     ) as model_mapping,
     COALESCE(
-        (SELECT jsonb_agg(am.model_id ORDER BY am.name)
-        FROM all_models am
-        WHERE am.active = true),
+        (SELECT jsonb_agg(amwm.model_id ORDER BY amwm.name)
+        FROM all_models_with_modalities amwm
+        WHERE amwm.active = true),
         '[]'::jsonb
     ) as valid_model_ids,
     COALESCE(

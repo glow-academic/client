@@ -33,6 +33,26 @@ class KeyMappingItem(BaseModel):
     department_ids: list[str] | None
 
 
+class PricingItem(BaseModel):
+    type: str  # 'input' | 'output' | 'cached'
+    unit_id: str
+    unit_name: str
+    unit_category: str  # 'tokens' | 'seconds' | 'units'
+    price: float
+
+
+class UnitItem(BaseModel):
+    id: str
+    name: str
+    unit_category: str  # 'tokens' | 'seconds' | 'units'
+    value: int
+
+
+class ModalitiesItem(BaseModel):
+    input: list[str]
+    output: list[str]
+
+
 class ModelDetailResponse(BaseModel):
     name: str
     description: str
@@ -49,6 +69,15 @@ class ModelDetailResponse(BaseModel):
     valid_key_ids: list[str]
     key_mapping: dict[str, KeyMappingItem]
     default_key_id: str | None
+    temperature_lower: float
+    temperature_upper: float
+    temperature_values: list[str]
+    pricing: list[PricingItem]
+    modalities: ModalitiesItem
+    reasoning_levels: list[str]
+    voices: list[str]
+    qualities: list[str]
+    units: list[UnitItem]
 
 
 router = APIRouter()
@@ -162,6 +191,88 @@ async def get_model_detail(
         # Ensure department_ids is always a list, never None
         final_department_ids = department_ids if isinstance(department_ids, list) else []
 
+        # Parse temperature bounds
+        temperature_lower = float(model.get("temperature_lower", 0.0))
+        temperature_upper = float(model.get("temperature_upper", 1.0))
+        temperature_values: list[str] = []
+        temperature_values_raw = model.get("temperature_values")
+        if isinstance(temperature_values_raw, str):
+            temperature_values_raw = json.loads(temperature_values_raw)
+        if temperature_values_raw and isinstance(temperature_values_raw, list):
+            temperature_values = [str(v) for v in temperature_values_raw if v]
+
+        # Parse pricing
+        pricing: list[PricingItem] = []
+        pricing_raw = model.get("pricing")
+        if isinstance(pricing_raw, str):
+            pricing_raw = json.loads(pricing_raw)
+        if pricing_raw and isinstance(pricing_raw, list):
+            for p in pricing_raw:
+                if isinstance(p, dict):
+                    pricing.append(PricingItem(
+                        type=str(p.get("type", "")),
+                        unit_id=str(p.get("unit_id", "")),
+                        unit_name=str(p.get("unit_name", "")),
+                        unit_category=str(p.get("unit_category", "")),
+                        price=float(p.get("price", 0.0)),
+                    ))
+
+        # Parse modalities
+        modalities = ModalitiesItem(input=[], output=[])
+        modalities_raw = model.get("modalities")
+        if isinstance(modalities_raw, str):
+            modalities_raw = json.loads(modalities_raw)
+        if modalities_raw and isinstance(modalities_raw, dict):
+            input_mods = modalities_raw.get("input", [])
+            output_mods = modalities_raw.get("output", [])
+            if isinstance(input_mods, str):
+                input_mods = json.loads(input_mods)
+            if isinstance(output_mods, str):
+                output_mods = json.loads(output_mods)
+            modalities = ModalitiesItem(
+                input=[str(m) for m in input_mods] if isinstance(input_mods, list) else [],
+                output=[str(m) for m in output_mods] if isinstance(output_mods, list) else [],
+            )
+
+        # Parse reasoning levels
+        reasoning_levels: list[str] = []
+        reasoning_levels_raw = model.get("reasoning_levels")
+        if isinstance(reasoning_levels_raw, str):
+            reasoning_levels_raw = json.loads(reasoning_levels_raw)
+        if reasoning_levels_raw and isinstance(reasoning_levels_raw, list):
+            reasoning_levels = [str(r) for r in reasoning_levels_raw if r]
+
+        # Parse voices
+        voices: list[str] = []
+        voices_raw = model.get("voices")
+        if isinstance(voices_raw, str):
+            voices_raw = json.loads(voices_raw)
+        if voices_raw and isinstance(voices_raw, list):
+            voices = [str(v) for v in voices_raw if v]
+
+        # Parse qualities
+        qualities: list[str] = []
+        qualities_raw = model.get("qualities")
+        if isinstance(qualities_raw, str):
+            qualities_raw = json.loads(qualities_raw)
+        if qualities_raw and isinstance(qualities_raw, list):
+            qualities = [str(q) for q in qualities_raw if q]
+
+        # Parse units
+        units: list[UnitItem] = []
+        units_raw = model.get("units")
+        if isinstance(units_raw, str):
+            units_raw = json.loads(units_raw)
+        if units_raw and isinstance(units_raw, list):
+            for u in units_raw:
+                if isinstance(u, dict):
+                    units.append(UnitItem(
+                        id=str(u.get("id", "")),
+                        name=str(u.get("name", "")),
+                        unit_category=str(u.get("unit_category", "")),
+                        value=int(u.get("value", 0)),
+                    ))
+
         response_data = ModelDetailResponse(
             name=model["name"],
             description=model["description"],
@@ -178,6 +289,15 @@ async def get_model_detail(
             valid_key_ids=valid_key_ids,
             key_mapping=key_mapping,
             default_key_id=default_key_id,
+            temperature_lower=temperature_lower,
+            temperature_upper=temperature_upper,
+            temperature_values=temperature_values,
+            pricing=pricing,
+            modalities=modalities,
+            reasoning_levels=reasoning_levels,
+            voices=voices,
+            qualities=qualities,
+            units=units,
         )
 
         # Cache response

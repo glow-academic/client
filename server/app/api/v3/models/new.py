@@ -43,6 +43,13 @@ class ModelMappingItem(BaseModel):
     description: str
 
 
+class UnitItem(BaseModel):
+    id: str
+    name: str
+    unit_category: str  # 'tokens' | 'seconds' | 'units'
+    value: int
+
+
 class ModelNewResponse(BaseModel):
     valid_provider_ids: list[str]
     provider_mapping: dict[str, ProviderMappingItem]
@@ -52,6 +59,7 @@ class ModelNewResponse(BaseModel):
     model_mapping: dict[str, ModelMappingItem]
     valid_key_ids: list[str]
     key_mapping: dict[str, KeyMappingItem]
+    units: list[UnitItem]
     user_role: str
     primary_department_id: str | None
 
@@ -178,6 +186,21 @@ async def get_model_new(
                         department_ids=department_ids,
                     )
 
+        # Parse units
+        units: list[UnitItem] = []
+        units_raw = result.get("units")
+        if isinstance(units_raw, str):
+            units_raw = json.loads(units_raw)
+        if units_raw and isinstance(units_raw, list):
+            for u in units_raw:
+                if isinstance(u, dict):
+                    units.append(UnitItem(
+                        id=str(u.get("id", "")),
+                        name=str(u.get("name", "")),
+                        unit_category=str(u.get("unit_category", "")),
+                        value=int(u.get("value", 0)),
+                    ))
+
         response_data = ModelNewResponse(
             valid_provider_ids=valid_provider_ids,
             provider_mapping=provider_mapping,
@@ -187,6 +210,7 @@ async def get_model_new(
             model_mapping=model_mapping,
             valid_key_ids=valid_key_ids,
             key_mapping=key_mapping,
+            units=units,
             user_role=str(result.get("user_role", "")),
             primary_department_id=str(result.get("primary_department_id")) if result.get("primary_department_id") else None,
         )

@@ -19,11 +19,21 @@ import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { KeyPicker } from "@/components/common/forms/KeyPicker";
 import { ModelTypePicker } from "@/components/common/forms/ModelTypePicker";
 import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
+import { TemperatureBoundsPicker, type TemperatureBounds } from "@/components/common/forms/TemperatureBoundsPicker";
+import { PricingPicker, type PricingEntry } from "@/components/common/forms/PricingPicker";
+import { ModalityPicker } from "@/components/common/forms/ModalityPicker";
+import { ReasoningLevelPicker } from "@/components/common/forms/ReasoningLevelPicker";
+import { VoiceMultiPicker } from "@/components/common/forms/VoiceMultiPicker";
+import { QualityPicker } from "@/components/common/forms/QualityPicker";
+import { UnitPicker, type UnitItem } from "@/components/common/forms/UnitPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import { Power, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api/client";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 interface FormErrors {
   name?: string;
@@ -42,10 +52,17 @@ interface FormData {
   active?: boolean;
   customModel?: boolean; // Determined by provider === 'custom' or baseUrl presence
   baseUrl?: string;
-  inputPpm?: string; // USD per 1M input tokens
-  outputPpm?: string; // USD per 1M output tokens
+  inputPpm?: string; // USD per 1M input tokens (deprecated, use pricing)
+  outputPpm?: string; // USD per 1M output tokens (deprecated, use pricing)
   departmentIds?: string[] | null;
   keyId?: string | null;
+  // New configuration fields
+  temperature_bounds?: TemperatureBounds;
+  pricing?: PricingEntry[];
+  modalities?: { input: string[]; output: string[] };
+  reasoning_levels?: string[];
+  voices?: string[];
+  qualities?: string[];
 }
 
 // Type-only import from server pages
@@ -126,6 +143,8 @@ export default function Model({
 
   const [formData, setFormData] = useState<FormData>({});
   const [errors, setErrors] = useState<FormErrors>({});
+  const [units, setUnits] = useState<UnitItem[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
 
   // Use server-provided data
   const modelDetail = serverModelDetail;
@@ -273,10 +292,59 @@ export default function Model({
     clearEntityMetadata,
   ]);
 
+  // Load units from API
+  useEffect(() => {
+    const loadUnits = async () => {
+      setLoadingUnits(true);
+      try {
+        const response = await api.post("/units/list", { body: {} });
+        setUnits(response.units || []);
+      } catch (error) {
+        console.error("Failed to load units:", error);
+        toast.error("Failed to load units");
+      } finally {
+        setLoadingUnits(false);
+      }
+    };
+    loadUnits();
+  }, []);
+
   // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
     if (isEditMode && modelDetail) {
       // We are in EDIT mode and have the model's data, so populate the form
+      // Parse temperature bounds
+      let temperature_bounds: TemperatureBounds | undefined;
+      if (modelDetail.temperature_bounds) {
+        const tb = modelDetail.temperature_bounds;
+        if (tb.values && tb.values.length > 0) {
+          temperature_bounds = {
+            type: "values",
+            values: tb.values,
+          };
+        } else {
+          temperature_bounds = {
+            type: "range",
+            lower: tb.lower ?? 0.0,
+            upper: tb.upper ?? 1.0,
+          };
+        }
+      }
+
+      // Parse pricing
+      const pricing: PricingEntry[] =
+        modelDetail.pricing?.map((p) => ({
+          type: p.pricing_type as "input" | "output" | "cached",
+          unit_id: p.unit_id,
+          price: p.price,
+        })) || [];
+
+      // Parse modalities
+      const modalities = {
+        input: modelDetail.modalities?.input || [],
+        output: modelDetail.modalities?.output || [],
+      };
+
       setFormData({
         name: modelDetail.name,
         description: modelDetail.description,
@@ -289,10 +357,28 @@ export default function Model({
         outputPpm: modelDetail.output_ppm?.toString?.() ?? "0",
         departmentIds: currentDepartmentIds,
         keyId: currentKeyId,
+        temperature_bounds,
+        pricing,
+        modalities,
+        reasoning_levels: modelDetail.reasoning_levels || [],
+        voices: modelDetail.voices || [],
+        qualities: modelDetail.qualities || [],
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
-      setFormData(initialFormData);
+      setFormData({
+        ...initialFormData,
+        temperature_bounds: {
+          type: "range",
+          lower: 0.0,
+          upper: 1.0,
+        },
+        pricing: [],
+        modalities: { input: [], output: [] },
+        reasoning_levels: [],
+        voices: [],
+        qualities: [],
+      });
     }
   }, [
     isEditMode,
@@ -378,6 +464,41 @@ export default function Model({
     setIsSubmitting(true);
 
     try {
+      // Transform temperature bounds for API
+      const temperature_bounds = formData.temperature_bounds
+        ? {
+            type: formData.temperature_bounds.type,
+            ...(formData.temperature_bounds.type === "range"
+              ? {
+                  lower: formData.temperature_bounds.lower ?? 0.0,
+                  upper: formData.temperature_bounds.upper ?? 1.0,
+                }
+              : {
+                  values: formData.temperature_bounds.values || [],
+                }),
+          }
+        : undefined;
+
+      // Transform pricing for API
+      const pricing = formData.pricing && formData.pricing.length > 0
+        ? formData.pricing.map((p) => ({
+            type: p.type,
+            unit_id: p.unit_id,
+            price: p.price,
+          }))
+        : undefined;
+
+      // Transform modalities for API
+      const modalities =
+        formData.modalities &&
+        (formData.modalities.input.length > 0 ||
+          formData.modalities.output.length > 0)
+          ? {
+              input: formData.modalities.input,
+              output: formData.modalities.output,
+            }
+          : undefined;
+
       if (isEditMode && modelId) {
         await handleUpdateModel({
           modelId: modelId,
@@ -392,6 +513,12 @@ export default function Model({
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
           base_url: formData.customModel ? formData.baseUrl || null : null,
+          temperature_bounds,
+          pricing,
+          modalities,
+          reasoning_levels: formData.reasoning_levels && formData.reasoning_levels.length > 0 ? formData.reasoning_levels : null,
+          voices: formData.voices && formData.voices.length > 0 ? formData.voices : null,
+          qualities: formData.qualities && formData.qualities.length > 0 ? formData.qualities : null,
           profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
@@ -410,6 +537,12 @@ export default function Model({
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
           base_url: formData.customModel ? formData.baseUrl || null : null,
+          temperature_bounds,
+          pricing,
+          modalities,
+          reasoning_levels: formData.reasoning_levels && formData.reasoning_levels.length > 0 ? formData.reasoning_levels : null,
+          voices: formData.voices && formData.voices.length > 0 ? formData.voices : null,
+          qualities: formData.qualities && formData.qualities.length > 0 ? formData.qualities : null,
           profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
@@ -635,56 +768,194 @@ export default function Model({
           </div>
         </div>
 
-        {/* Pricing */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="inputPpm">Input price (USD per 1M tokens)</Label>
-            {formData.inputPpm !== undefined ? (
-              <Input
-                id="inputPpm"
-                data-testid="input-model-input-ppm"
-                type="number"
-                step="0.0001"
-                min="0"
-                value={formData.inputPpm}
-                onChange={(e) =>
-                  handleInputChange(
-                    "inputPpm" as keyof FormData,
-                    e.target.value
-                  )
+        {/* Legacy Pricing (deprecated, kept for backward compatibility) */}
+        <Collapsible defaultOpen={false}>
+          <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+            Legacy Pricing (Deprecated)
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="inputPpm">Input price (USD per 1M tokens)</Label>
+                {formData.inputPpm !== undefined ? (
+                  <Input
+                    id="inputPpm"
+                    data-testid="input-model-input-ppm"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={formData.inputPpm}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "inputPpm" as keyof FormData,
+                        e.target.value
+                      )
+                    }
+                    placeholder="e.g. 3.00"
+                    className={errors.inputPpm ? "border-destructive" : ""}
+                  />
+                ) : null}
+                {errors.inputPpm && (
+                  <p className="text-sm text-destructive">{errors.inputPpm}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="outputPpm">Output price (USD per 1M tokens)</Label>
+                {formData.outputPpm !== undefined ? (
+                  <Input
+                    id="outputPpm"
+                    data-testid="input-model-output-ppm"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={formData.outputPpm}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "outputPpm" as keyof FormData,
+                        e.target.value
+                      )
+                    }
+                    placeholder="e.g. 15.00"
+                    className={errors.outputPpm ? "border-destructive" : ""}
+                  />
+                ) : null}
+                {errors.outputPpm && (
+                  <p className="text-sm text-destructive">{errors.outputPpm}</p>
+                )}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Model Configuration Sections */}
+        <div className="space-y-6 border-t pt-6">
+          <h3 className="text-lg font-semibold">Model Configuration</h3>
+
+          {/* Temperature Bounds */}
+          <Collapsible defaultOpen={true}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+              Temperature Bounds
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <TemperatureBoundsPicker
+                bounds={formData.temperature_bounds || { type: "range", lower: 0.0, upper: 1.0 }}
+                onBoundsChange={(bounds) =>
+                  setFormData((prev) => ({ ...prev, temperature_bounds: bounds }))
                 }
-                placeholder="e.g. 3.00"
-                className={errors.inputPpm ? "border-destructive" : ""}
+                disabled={isSubmitting || isReadonly}
               />
-            ) : null}
-            {errors.inputPpm && (
-              <p className="text-sm text-destructive">{errors.inputPpm}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="outputPpm">Output price (USD per 1M tokens)</Label>
-            {formData.outputPpm !== undefined ? (
-              <Input
-                id="outputPpm"
-                data-testid="input-model-output-ppm"
-                type="number"
-                step="0.0001"
-                min="0"
-                value={formData.outputPpm}
-                onChange={(e) =>
-                  handleInputChange(
-                    "outputPpm" as keyof FormData,
-                    e.target.value
-                  )
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Modalities */}
+          <Collapsible defaultOpen={true}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+              Modalities
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <ModalityPicker
+                inputModalities={formData.modalities?.input || []}
+                outputModalities={formData.modalities?.output || []}
+                onInputChange={(modalities) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    modalities: {
+                      input: modalities,
+                      output: prev.modalities?.output || [],
+                    },
+                  }))
                 }
-                placeholder="e.g. 15.00"
-                className={errors.outputPpm ? "border-destructive" : ""}
+                onOutputChange={(modalities) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    modalities: {
+                      input: prev.modalities?.input || [],
+                      output: modalities,
+                    },
+                  }))
+                }
+                disabled={isSubmitting || isReadonly}
               />
-            ) : null}
-            {errors.outputPpm && (
-              <p className="text-sm text-destructive">{errors.outputPpm}</p>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Pricing */}
+          <Collapsible defaultOpen={true}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+              Pricing
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <PricingPicker
+                pricing={formData.pricing || []}
+                units={units}
+                onPricingChange={(pricing) =>
+                  setFormData((prev) => ({ ...prev, pricing }))
+                }
+                disabled={isSubmitting || isReadonly || loadingUnits}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Reasoning Levels - Show if model supports text output */}
+          {formData.modalities?.output?.includes("text") && (
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                Reasoning Levels
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <ReasoningLevelPicker
+                  selectedIds={formData.reasoning_levels || []}
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
+                  }
+                  disabled={isSubmitting || isReadonly}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Voices - Show if model supports audio output */}
+          {formData.modalities?.output?.includes("audio") && (
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                Voices
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <VoiceMultiPicker
+                  selectedIds={formData.voices || []}
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({ ...prev, voices: ids }))
+                  }
+                  disabled={isSubmitting || isReadonly}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Qualities - Show if model supports image output */}
+          {formData.modalities?.output?.includes("image") && (
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium">
+                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                Qualities
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <QualityPicker
+                  selectedIds={formData.qualities || []}
+                  onSelect={(ids) =>
+                    setFormData((prev) => ({ ...prev, qualities: ids }))
+                  }
+                  disabled={isSubmitting || isReadonly}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
 
         {/* Submit Button */}

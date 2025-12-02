@@ -12,11 +12,17 @@ from pydantic import BaseModel
 
 
 # Inline request/response schemas
+class PricingEntry(BaseModel):
+    type: str  # 'input' | 'output' | 'cached'
+    unit_id: str
+    price: float
+
+
 class CreateModelRequest(BaseModel):
     """Request to create model."""
 
     provider: str  # enum: 'openai', 'gemini', 'custom'
-    model_type: str  # enum: 'text', 'audio', 'video'
+    model_type: str  # enum: 'text', 'audio', 'video' (immutable after creation) - deprecated, use modalities instead
     name: str
     description: str
     active: bool
@@ -26,6 +32,13 @@ class CreateModelRequest(BaseModel):
     department_ids: list[str] | None = None
     key_id: str | None = None
     base_url: str | None = None  # Required if provider is 'custom'
+    # New configuration fields
+    temperature_bounds: dict[str, Any] | None = None  # { type: 'range', lower: float, upper: float } | { type: 'values', values: list[float] }
+    pricing: list[PricingEntry] | None = None
+    modalities: dict[str, list[str]] | None = None  # { input: list[str], output: list[str] }
+    reasoning_levels: list[str] | None = None
+    voices: list[str] | None = None
+    qualities: list[str] | None = None
     profileId: str  # Required for auditing/access control
 
 
@@ -96,6 +109,82 @@ async def create_model(
                 raise ValueError("Failed to create model")
 
             model_id = str(result["id"])
+
+            # Handle temperature bounds if provided
+            if request.temperature_bounds:
+                bounds_type = request.temperature_bounds.get("type")
+                if bounds_type == "range":
+                    lower = request.temperature_bounds.get("lower", 0.0)
+                    upper = request.temperature_bounds.get("upper", 1.0)
+                    await conn.execute(
+                        "INSERT INTO model_temperature_levels (model_id, temperature, is_upper, active) VALUES ($1, $2, false, true), ($1, $3, true, true)",
+                        model_id,
+                        lower,
+                        upper,
+                    )
+                elif bounds_type == "values":
+                    values = request.temperature_bounds.get("values", [])
+                    for temp_val in values:
+                        await conn.execute(
+                            "INSERT INTO model_temperature_levels (model_id, temperature, is_upper, active) VALUES ($1, $2, false, true)",
+                            model_id,
+                            temp_val,
+                        )
+
+            # Handle pricing if provided
+            if request.pricing:
+                for pricing_entry in request.pricing:
+                    await conn.execute(
+                        "INSERT INTO model_pricing (model_id, pricing_type, unit_id, price, active) VALUES ($1, $2::pricing_type, $3::uuid, $4, true)",
+                        model_id,
+                        pricing_entry.type,
+                        pricing_entry.unit_id,
+                        pricing_entry.price,
+                    )
+
+            # Handle modalities if provided
+            if request.modalities:
+                input_mods = request.modalities.get("input", [])
+                output_mods = request.modalities.get("output", [])
+                for mod in input_mods:
+                    await conn.execute(
+                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true)",
+                        model_id,
+                        mod,
+                    )
+                for mod in output_mods:
+                    await conn.execute(
+                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, false, true)",
+                        model_id,
+                        mod,
+                    )
+
+            # Handle reasoning levels if provided
+            if request.reasoning_levels:
+                for level in request.reasoning_levels:
+                    await conn.execute(
+                        "INSERT INTO model_reasoning_levels (model_id, reasoning_level, active) VALUES ($1, $2::reasoning_effort, true)",
+                        model_id,
+                        level,
+                    )
+
+            # Handle voices if provided
+            if request.voices:
+                for voice in request.voices:
+                    await conn.execute(
+                        "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true)",
+                        model_id,
+                        voice,
+                    )
+
+            # Handle qualities if provided
+            if request.qualities:
+                for quality in request.qualities:
+                    await conn.execute(
+                        "INSERT INTO model_qualities (model_id, quality, active) VALUES ($1, $2::quality, true)",
+                        model_id,
+                        quality,
+                    )
 
             result_data = CreateModelResponse(
                 success=True,

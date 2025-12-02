@@ -93,6 +93,19 @@ primary_department_id AS (
     JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id
     WHERE pd.is_primary = TRUE
     LIMIT 1
+),
+all_units_data AS (
+    SELECT 
+        jsonb_agg(
+            jsonb_build_object(
+                'id', id::text,
+                'name', name,
+                'unit_category', unit_category::text,
+                'value', value
+            ) ORDER BY unit_category, value, name
+        ) as units
+    FROM units
+    WHERE active = true
 )
 SELECT 
     ARRAY['openai', 'gemini', 'custom']::text[] as valid_providers,
@@ -113,10 +126,12 @@ SELECT
     ) as valid_model_ids,
     COALESCE(kmd.key_mapping, '{}'::jsonb) as key_mapping,
     COALESCE(kmd.key_ids, ARRAY[]::text[]) as valid_key_ids,
+    COALESCE(au.units, '[]'::jsonb) as units,
     pr.user_role,
     pdi.department_id as primary_department_id
 FROM valid_departments_data vdd
 CROSS JOIN key_mapping_data kmd
 CROSS JOIN profile_data pr
+CROSS JOIN all_units_data au
 LEFT JOIN primary_department_id pdi ON true
 
