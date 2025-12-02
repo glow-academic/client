@@ -29,18 +29,16 @@ import {
   TemperatureBoundsPicker,
   type TemperatureBounds,
 } from "@/components/common/forms/TemperatureBoundsPicker";
-import {
-  VoiceMultiPicker,
-  VOICES,
-} from "@/components/common/forms/VoiceMultiPicker";
+import { VoiceMultiPicker } from "@/components/common/forms/VoiceMultiPicker";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 import {
+  Brain,
   DollarSign,
+  Layers,
   Power,
-  Settings2,
   Thermometer,
   Volume2,
 } from "lucide-react";
@@ -62,9 +60,11 @@ interface FormData {
   departmentIds?: string[] | null;
   keyId?: string | null;
   // Feature toggles
+  enableModalities?: boolean;
   enableTemperature?: boolean;
   enablePricing?: boolean;
   enableVoices?: boolean;
+  enableReasoningLevels?: boolean;
   // Configuration fields
   temperature_bounds?: TemperatureBounds;
   pricing?: PricingEntry[];
@@ -337,11 +337,15 @@ export default function Model({
       };
 
       // Determine feature toggles based on existing data
+      const hasModalities =
+        modalities.input.length > 0 || modalities.output.length > 0;
       const hasTemperature = !!temperature_bounds;
       const hasPricing = pricing && pricing.length > 0;
       const hasVoices =
         modelDetail.voices &&
         (modelDetail.voices as Array<string | { voice: string }>).length > 0;
+      const hasReasoningLevels =
+        modelDetail.reasoning_levels && modelDetail.reasoning_levels.length > 0;
 
       setFormData({
         name: modelDetail.name,
@@ -352,9 +356,11 @@ export default function Model({
         baseUrl: modelDetail.base_url || "",
         departmentIds: currentDepartmentIds,
         keyId: currentKeyId,
+        enableModalities: hasModalities,
         enableTemperature: hasTemperature,
         enablePricing: hasPricing,
         enableVoices: hasVoices,
+        enableReasoningLevels: hasReasoningLevels,
         ...(temperature_bounds ? { temperature_bounds } : {}),
         pricing,
         modalities:
@@ -375,9 +381,11 @@ export default function Model({
       // We are in CREATE mode, so reset the form to its initial state
       setFormData({
         ...initialFormData,
+        enableModalities: true, // Default to enabled with text/text
         enableTemperature: false,
         enablePricing: false,
         enableVoices: false,
+        enableReasoningLevels: false,
         pricing: [],
         modalities: { input: ["text"], output: ["text"] }, // Default to text/text
         reasoning_levels: [],
@@ -481,15 +489,11 @@ export default function Model({
           : { input: ["text"], output: ["text"] }; // Server-side default
 
       // Transform voices for API (only if enabled, otherwise all voices)
-      // If voices switch is off, we'll handle "all voices" server-side
+      // Empty array means "all voices" (like department picker)
       const voices =
         formData.enableVoices && formData.voices && formData.voices.length > 0
           ? formData.voices
-          : formData.enableVoices === false
-            ? null // Explicitly disabled - server will handle default (all voices)
-            : formData.voices && formData.voices.length > 0
-              ? formData.voices
-              : null; // Not set - server will create all voices
+          : null; // null or empty array means "all voices" - server interprets as all
 
       if (isEditMode && modelId) {
         await handleUpdateModel({
@@ -506,7 +510,9 @@ export default function Model({
           ...(pricing ? { pricing } : {}),
           modalities,
           reasoning_levels:
-            formData.reasoning_levels && formData.reasoning_levels.length > 0
+            formData.enableReasoningLevels &&
+            formData.reasoning_levels &&
+            formData.reasoning_levels.length > 0
               ? formData.reasoning_levels
               : null,
           voices,
@@ -533,7 +539,9 @@ export default function Model({
           ...(pricing ? { pricing } : {}),
           modalities,
           reasoning_levels:
-            formData.reasoning_levels && formData.reasoning_levels.length > 0
+            formData.enableReasoningLevels &&
+            formData.reasoning_levels &&
+            formData.reasoning_levels.length > 0
               ? formData.reasoning_levels
               : null,
           voices,
@@ -617,30 +625,6 @@ export default function Model({
           </div>
         ) : null}
 
-        {/* Key Selection */}
-        {validKeyIds && validKeyIds.length > 0 ? (
-          <div className="space-y-2">
-            <Label htmlFor="keyId">API Key</Label>
-            {formData?.keyId !== undefined ? (
-              <KeyPicker
-                mapping={filteredKeyMapping}
-                validIds={validKeyIds.filter((id) => filteredKeyMapping[id])}
-                selectedIds={formData.keyId ? [formData.keyId] : []}
-                defaultKeyId={modelDetail?.default_key_id || null}
-                onSelect={(ids) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    keyId: ids[0] || null,
-                  }))
-                }
-                multiSelect={false}
-                placeholder="Select key..."
-                disabled={isReadonly || isSubmitting}
-              />
-            ) : null}
-          </div>
-        ) : null}
-
         {/* Active Switch */}
         <div className="space-y-1 pt-2">
           <div className="flex items-center gap-2">
@@ -667,82 +651,154 @@ export default function Model({
           </p>
         </div>
 
-        {/* Provider Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="provider">Provider</Label>
-          <div data-testid="picker-provider">
-            <ProviderPicker
-              selectedProvider={formData.provider || ""}
-              onSelect={(provider) => {
-                handleInputChange("provider", provider);
-                // Clear base URL if switching away from custom
-                if (provider !== "custom") {
-                  handleInputChange("baseUrl", "");
-                }
-              }}
-              placeholder="Select a provider..."
-              buttonClassName={errors.provider ? "border-destructive" : ""}
-            />
-          </div>
-          {errors.provider && (
-            <p className="text-sm text-destructive">{errors.provider}</p>
-          )}
-          {/* Show base URL input when custom provider is selected */}
-          {formData.provider === "custom" && (
-            <div className="space-y-2 pt-2">
-              <Label htmlFor="baseUrl">Base URL</Label>
-              <Input
-                id="baseUrl"
-                type="url"
-                value={formData.baseUrl || ""}
-                onChange={(e) => handleInputChange("baseUrl", e.target.value)}
-                placeholder="e.g. https://api.example.com/v1"
-                disabled={isSubmitting}
-                className={errors.baseUrl ? "border-destructive" : ""}
-                data-testid="input-model-base-url"
+        {/* Provider and API Key Selection - Side by Side */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Provider Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="provider">Provider</Label>
+            <div data-testid="picker-provider">
+              <ProviderPicker
+                selectedProvider={formData.provider || ""}
+                onSelect={(provider) => {
+                  handleInputChange("provider", provider);
+                  // Clear base URL if switching away from custom
+                  if (provider !== "custom") {
+                    handleInputChange("baseUrl", "");
+                  }
+                }}
+                placeholder="Select a provider..."
+                buttonClassName={errors.provider ? "border-destructive" : ""}
               />
-              {errors.baseUrl && (
-                <p className="text-sm text-destructive">{errors.baseUrl}</p>
-              )}
             </div>
-          )}
+            {errors.provider && (
+              <p className="text-sm text-destructive">{errors.provider}</p>
+            )}
+            {/* Show base URL input when custom provider is selected */}
+            {formData.provider === "custom" && (
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="baseUrl">Base URL</Label>
+                <Input
+                  id="baseUrl"
+                  type="url"
+                  value={formData.baseUrl || ""}
+                  onChange={(e) => handleInputChange("baseUrl", e.target.value)}
+                  placeholder="e.g. https://api.example.com/v1"
+                  disabled={isSubmitting}
+                  className={errors.baseUrl ? "border-destructive" : ""}
+                  data-testid="input-model-base-url"
+                />
+                {errors.baseUrl && (
+                  <p className="text-sm text-destructive">{errors.baseUrl}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* API Key Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="keyId">API Key</Label>
+            {formData?.keyId !== undefined ? (
+              <KeyPicker
+                mapping={filteredKeyMapping}
+                validIds={validKeyIds.filter((id) => filteredKeyMapping[id])}
+                selectedIds={formData.keyId ? [formData.keyId] : []}
+                defaultKeyId={modelDetail?.default_key_id || null}
+                onSelect={(ids) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    keyId: ids[0] || null,
+                  }))
+                }
+                multiSelect={false}
+                placeholder="Select key..."
+                disabled={isReadonly || isSubmitting}
+              />
+            ) : null}
+          </div>
         </div>
 
-        {/* Modalities - Always visible, defaults to text/text */}
-        <div className="space-y-2">
-          <Label>Modalities</Label>
-          <ModalityPicker
-            inputModalities={formData.modalities?.input || ["text"]}
-            outputModalities={formData.modalities?.output || ["text"]}
-            onInputChange={(modalities) =>
-              setFormData((prev) => ({
-                ...prev,
-                modalities: {
-                  input: modalities.length > 0 ? modalities : ["text"],
-                  output: prev.modalities?.output || ["text"],
-                },
-              }))
-            }
-            onOutputChange={(modalities) =>
-              setFormData((prev) => ({
-                ...prev,
-                modalities: {
-                  input: prev.modalities?.input || ["text"],
-                  output: modalities.length > 0 ? modalities : ["text"],
-                },
-              }))
-            }
-            disabled={isSubmitting || isReadonly}
-          />
-        </div>
+        {/* Modalities - Collapsible with Switch */}
+        <Collapsible
+          open={formData.enableModalities !== false}
+          onOpenChange={(open) => {
+            setFormData((prev) => ({
+              ...prev,
+              enableModalities: open,
+              modalities: open
+                ? prev.modalities || { input: ["text"], output: ["text"] }
+                : { input: ["text"], output: ["text"] },
+            }));
+          }}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-muted-foreground" />
+                  <Label
+                    htmlFor="enable-modalities"
+                    className="text-sm font-medium"
+                  >
+                    Modalities
+                  </Label>
+                  <Switch
+                    id="enable-modalities"
+                    checked={formData.enableModalities !== false}
+                    onCheckedChange={(checked) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        enableModalities: checked,
+                        modalities: checked
+                          ? prev.modalities || {
+                              input: ["text"],
+                              output: ["text"],
+                            }
+                          : { input: ["text"], output: ["text"] },
+                      }));
+                    }}
+                    disabled={isSubmitting || isReadonly}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground pl-6">
+                  Configure input and output modalities for this model. Defaults
+                  to text/text.
+                </p>
+              </div>
+            </div>
+            <CollapsibleContent>
+              {formData.enableModalities !== false && (
+                <div className="pl-6 pt-1">
+                  <ModalityPicker
+                    inputModalities={formData.modalities?.input || ["text"]}
+                    outputModalities={formData.modalities?.output || ["text"]}
+                    onInputChange={(modalities) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        modalities: {
+                          input: modalities.length > 0 ? modalities : ["text"],
+                          output: prev.modalities?.output || ["text"],
+                        },
+                      }))
+                    }
+                    onOutputChange={(modalities) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        modalities: {
+                          input: prev.modalities?.input || ["text"],
+                          output: modalities.length > 0 ? modalities : ["text"],
+                        },
+                      }))
+                    }
+                    disabled={isSubmitting || isReadonly}
+                  />
+                </div>
+              )}
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
 
         {/* Advanced Configuration Section */}
-        <div className="space-y-4 border-t pt-6">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Settings2 className="h-5 w-5" />
-            Advanced Configuration
-          </h3>
-
+        <div className="space-y-4">
           {/* Temperature Bounds - Collapsible with Switch */}
           <Collapsible
             open={formData.enableTemperature || false}
@@ -762,7 +818,7 @@ export default function Model({
               }));
             }}
           >
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2">
@@ -771,7 +827,7 @@ export default function Model({
                       htmlFor="enable-temperature"
                       className="text-sm font-medium"
                     >
-                      Temperature Constraints
+                      Temperature
                     </Label>
                     <Switch
                       id="enable-temperature"
@@ -806,7 +862,7 @@ export default function Model({
               </div>
               <CollapsibleContent>
                 {formData.enableTemperature && (
-                  <div className="pl-6 pt-2">
+                  <div className="pl-6 pt-1">
                     <TemperatureBoundsPicker
                       bounds={
                         formData.temperature_bounds || {
@@ -840,7 +896,7 @@ export default function Model({
               }));
             }}
           >
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2">
@@ -849,7 +905,7 @@ export default function Model({
                       htmlFor="enable-pricing"
                       className="text-sm font-medium"
                     >
-                      Pricing Configuration
+                      Pricing
                     </Label>
                     <Switch
                       id="enable-pricing"
@@ -872,7 +928,7 @@ export default function Model({
               </div>
               <CollapsibleContent>
                 {formData.enablePricing && (
-                  <div className="pl-6 pt-2">
+                  <div className="pl-6 pt-1">
                     <PricingPicker
                       pricing={formData.pricing || []}
                       units={units}
@@ -887,72 +943,59 @@ export default function Model({
             </div>
           </Collapsible>
 
-          {/* Reasoning Levels - Show if model supports text output */}
+          {/* Reasoning Levels - Collapsible with Switch, only show if model supports text output */}
           {formData.modalities?.output?.includes("text") && (
-            <div className="space-y-2">
-              <Label>Reasoning Levels</Label>
-              <ReasoningLevelPicker
-                selectedIds={formData.reasoning_levels || []}
-                onSelect={(ids) =>
-                  setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
-                }
-                disabled={isSubmitting || isReadonly}
-              />
-            </div>
-          )}
-
-          {/* Voices - Collapsible with Switch, only show if audio output */}
-          {formData.modalities?.output?.includes("audio") && (
             <Collapsible
-              open={formData.enableVoices || false}
+              open={formData.enableReasoningLevels || false}
               onOpenChange={(open) => {
                 if (open) {
                   setFormData((prev) => ({
                     ...prev,
-                    enableVoices: true,
-                    voices:
-                      prev.voices && prev.voices.length > 0
-                        ? prev.voices
-                        : VOICES.map((v) => v.id),
+                    enableReasoningLevels: true,
+                    reasoning_levels:
+                      prev.reasoning_levels && prev.reasoning_levels.length > 0
+                        ? prev.reasoning_levels
+                        : [],
                   }));
                 } else {
-                  const { voices: _, ...rest } = formData;
+                  const { reasoning_levels: _, ...rest } = formData;
                   setFormData({
                     ...rest,
-                    enableVoices: false,
+                    enableReasoningLevels: false,
                   });
                 }
               }}
             >
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
-                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Brain className="h-4 w-4 text-muted-foreground" />
                       <Label
-                        htmlFor="enable-voices"
+                        htmlFor="enable-reasoning-levels"
                         className="text-sm font-medium"
                       >
-                        Voice Selection
+                        Reasoning Levels
                       </Label>
                       <Switch
-                        id="enable-voices"
-                        checked={formData.enableVoices || false}
+                        id="enable-reasoning-levels"
+                        checked={formData.enableReasoningLevels || false}
                         onCheckedChange={(checked) => {
                           if (checked) {
                             setFormData((prev) => ({
                               ...prev,
-                              enableVoices: true,
-                              voices:
-                                prev.voices && prev.voices.length > 0
-                                  ? prev.voices
-                                  : VOICES.map((v) => v.id), // Default to all voices
+                              enableReasoningLevels: true,
+                              reasoning_levels:
+                                prev.reasoning_levels &&
+                                prev.reasoning_levels.length > 0
+                                  ? prev.reasoning_levels
+                                  : [],
                             }));
                           } else {
-                            const { voices: _, ...rest } = formData;
+                            const { reasoning_levels: _, ...rest } = formData;
                             setFormData({
                               ...rest,
-                              enableVoices: false,
+                              enableReasoningLevels: false,
                             } as FormData);
                           }
                         }}
@@ -960,21 +1003,20 @@ export default function Model({
                       />
                     </div>
                     <p className="text-xs text-muted-foreground pl-6">
-                      Select specific voices for this model. If disabled, all
-                      available voices are allowed.
+                      Select specific reasoning levels for this model. If
+                      disabled, all available reasoning levels are allowed.
                     </p>
                   </div>
                 </div>
                 <CollapsibleContent>
-                  {formData.enableVoices && (
-                    <div className="pl-6 pt-2">
-                      <VoiceMultiPicker
-                        selectedIds={formData.voices || VOICES.map((v) => v.id)}
+                  {formData.enableReasoningLevels && (
+                    <div className="pl-6 pt-1">
+                      <ReasoningLevelPicker
+                        selectedIds={formData.reasoning_levels || []}
                         onSelect={(ids) =>
                           setFormData((prev) => ({
                             ...prev,
-                            voices:
-                              ids.length > 0 ? ids : VOICES.map((v) => v.id),
+                            reasoning_levels: ids,
                           }))
                         }
                         disabled={isSubmitting || isReadonly}
@@ -985,21 +1027,92 @@ export default function Model({
               </div>
             </Collapsible>
           )}
-        </div>
 
-        {/* Reasoning Levels - Show if model supports text output */}
-        {formData.modalities?.output?.includes("text") && (
-          <div className="space-y-2">
-            <Label>Reasoning Levels</Label>
-            <ReasoningLevelPicker
-              selectedIds={formData.reasoning_levels || []}
-              onSelect={(ids) =>
-                setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
-              }
-              disabled={isSubmitting || isReadonly}
-            />
-          </div>
-        )}
+          {/* Voices - Collapsible with Switch, only show if both input and output have audio */}
+          {formData.modalities?.input?.includes("audio") &&
+            formData.modalities?.output?.includes("audio") && (
+              <Collapsible
+                open={formData.enableVoices || false}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      enableVoices: true,
+                      voices:
+                        prev.voices && prev.voices.length > 0
+                          ? prev.voices
+                          : [],
+                    }));
+                  } else {
+                    const { voices: _, ...rest } = formData;
+                    setFormData({
+                      ...rest,
+                      enableVoices: false,
+                    });
+                  }
+                }}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="h-4 w-4 text-muted-foreground" />
+                        <Label
+                          htmlFor="enable-voices"
+                          className="text-sm font-medium"
+                        >
+                          Voice Selection
+                        </Label>
+                        <Switch
+                          id="enable-voices"
+                          checked={formData.enableVoices || false}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                enableVoices: true,
+                                voices:
+                                  prev.voices && prev.voices.length > 0
+                                    ? prev.voices
+                                    : [],
+                              }));
+                            } else {
+                              const { voices: _, ...rest } = formData;
+                              setFormData({
+                                ...rest,
+                                enableVoices: false,
+                              } as FormData);
+                            }
+                          }}
+                          disabled={isSubmitting || isReadonly}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        Select specific voices for this model. If disabled or
+                        none selected, all available voices are allowed.
+                      </p>
+                    </div>
+                  </div>
+                  <CollapsibleContent>
+                    {formData.enableVoices && (
+                      <div className="pl-6 pt-1">
+                        <VoiceMultiPicker
+                          selectedIds={formData.voices || []}
+                          onSelect={(ids) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              voices: ids.length > 0 ? ids : [],
+                            }))
+                          }
+                          disabled={isSubmitting || isReadonly}
+                        />
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            )}
+        </div>
 
         {/* Qualities - Show if model supports image output */}
         {formData.modalities?.output?.includes("image") && (

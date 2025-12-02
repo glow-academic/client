@@ -13,16 +13,8 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { UnitPicker, type UnitItem } from "./UnitPicker";
-
-export type PricingType = "input" | "output" | "cached";
+import { PricingTypePicker, type PricingType } from "./PricingTypePicker";
 
 export interface PricingEntry {
   type: PricingType;
@@ -36,12 +28,6 @@ export interface PricingPickerProps {
   onPricingChange: (pricing: PricingEntry[]) => void;
   disabled?: boolean;
 }
-
-const PRICING_TYPES: { value: PricingType; label: string }[] = [
-  { value: "input", label: "Input" },
-  { value: "output", label: "Output" },
-  { value: "cached", label: "Cached" },
-];
 
 export function PricingPicker({
   pricing,
@@ -94,28 +80,22 @@ export function PricingPicker({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label>Pricing Configuration</Label>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAddEntry}
-          disabled={disabled}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Pricing Entry
-        </Button>
-      </div>
-
+    <div className="space-y-2">
       {pricing.length === 0 ? (
-        <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg">
-          No pricing entries configured. Click "Add Pricing Entry" to add pricing
-          for this model.
+        <div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleAddEntry}
+            disabled={disabled}
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add entry
+          </Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <>
           {pricing.map((entry, index) => {
             const unit = getUnitForEntry(entry.unit_id);
             const filteredUnits = getFilteredUnitsForType(entry.type);
@@ -123,97 +103,95 @@ export function PricingPicker({
             return (
               <div
                 key={index}
-                className="p-4 border rounded-lg space-y-3 bg-card"
+                className={`flex items-end gap-2 ${index === 0 ? "" : ""}`}
               >
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">
-                    Entry {index + 1}
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveEntry(index)}
-                    disabled={disabled}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-                  {/* Pricing Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor={`pricing-type-${index}`}>Type</Label>
-                    <Select
-                      value={entry.type}
-                      onValueChange={(value) =>
-                        handleEntryChange(
-                          index,
-                          "type",
-                          value as PricingType
-                        )
-                      }
-                      disabled={disabled}
-                    >
-                      <SelectTrigger id={`pricing-type-${index}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRICING_TYPES.map((pt) => (
-                          <SelectItem key={pt.value} value={pt.value}>
-                            {pt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Unit */}
-                  <div className="space-y-2">
-                    <Label htmlFor={`pricing-unit-${index}`}>Unit</Label>
-                    <UnitPicker
-                      units={filteredUnits}
-                      selectedId={entry.unit_id || null}
-                      onSelect={(unitId) =>
-                        handleEntryChange(index, "unit_id", unitId || "")
-                      }
-                      placeholder="Select unit..."
-                      disabled={disabled}
-                    />
-                  </div>
-
-                  {/* Price */}
-                  <div className="space-y-2">
-                    <Label htmlFor={`pricing-price-${index}`}>
-                      Price (USD)
-                      {unit && (
-                        <span className="text-xs text-muted-foreground ml-1">
-                          per {unit.value.toLocaleString()} {unit.name}
-                        </span>
-                      )}
+                {/* Pricing Type */}
+                <div className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}>
+                  {index === 0 && (
+                    <Label htmlFor={`pricing-type-${index}`} className="text-sm font-medium">
+                      Type
                     </Label>
-                    <Input
-                      id={`pricing-price-${index}`}
-                      type="number"
-                      step="0.0001"
-                      min="0"
-                      value={entry.price}
-                      onChange={(e) =>
-                        handleEntryChange(
-                          index,
-                          "price",
-                          parseFloat(e.target.value) || 0.0
-                        )
-                      }
-                      disabled={disabled}
-                      placeholder="0.00"
-                    />
-                  </div>
+                  )}
+                  <PricingTypePicker
+                    selectedType={entry.type}
+                    onSelect={(type) =>
+                      handleEntryChange(index, "type", type)
+                    }
+                    placeholder="Select type..."
+                    disabled={disabled}
+                  />
                 </div>
+
+                {/* Unit */}
+                <div className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}>
+                  {index === 0 && (
+                    <Label htmlFor={`pricing-unit-${index}`} className="text-sm font-medium">
+                      Unit
+                    </Label>
+                  )}
+                  <UnitPicker
+                    units={filteredUnits}
+                    selectedId={entry.unit_id || null}
+                    onSelect={(unitId) =>
+                      handleEntryChange(index, "unit_id", unitId || "")
+                    }
+                    placeholder="Select unit..."
+                    disabled={disabled}
+                  />
+                </div>
+
+                {/* Price */}
+                <div className={`flex-1 ${index === 0 ? "space-y-2" : ""}`}>
+                  {index === 0 && (
+                    <Label htmlFor={`pricing-price-${index}`} className="text-sm font-medium">
+                      Price
+                    </Label>
+                  )}
+                  <Input
+                    id={`pricing-price-${index}`}
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={entry.price}
+                    onChange={(e) =>
+                      handleEntryChange(
+                        index,
+                        "price",
+                        parseFloat(e.target.value) || 0.0
+                      )
+                    }
+                    disabled={disabled}
+                    placeholder={unit ? `Price (per ${unit.value.toLocaleString()} ${unit.name})` : "Price (USD)"}
+                  />
+                </div>
+
+                {/* Delete Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleRemoveEntry(index)}
+                  className={`h-8 w-8 shrink-0 ${index === 0 ? "mb-0.5" : ""}`}
+                  disabled={disabled}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             );
           })}
-        </div>
+          <div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleAddEntry}
+              disabled={disabled}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add pricing entry
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );

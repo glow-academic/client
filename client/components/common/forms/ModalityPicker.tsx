@@ -105,7 +105,7 @@ export function ModalityPicker({
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
       {/* Input Modalities */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Input Modalities</label>
+        <label className="text-sm font-medium">Input</label>
         <Popover open={inputOpen} onOpenChange={setInputOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -196,7 +196,7 @@ export function ModalityPicker({
 
       {/* Output Modalities */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Output Modalities</label>
+        <label className="text-sm font-medium">Output</label>
         <Popover open={outputOpen} onOpenChange={setOutputOpen}>
           <PopoverTrigger asChild>
             <Button

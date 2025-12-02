@@ -45,9 +45,6 @@ export function TemperatureBoundsPicker({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>
-          Temperature Range: {lower.toFixed(2)} - {upper.toFixed(2)}
-        </Label>
         <Slider
           value={[lower, upper]}
           min={0}
