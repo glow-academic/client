@@ -1,72 +1,40 @@
 -- Create agent with prompt and department links in a single transaction
--- Parameters: $1=name, $2=description, $3=temperature, $4=model_id, $5=reasoning, $6=active, $7=role, $8=prompt_id (nullable), $9=system_prompt (nullable), $10=department_ids (nullable text array), $11=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=name, $2=description, $3=model_id, $4=active, $5=role, $6=prompt_id (nullable), $7=system_prompt (nullable), $8=department_ids (nullable text array), $9=profile_id (uuid or "guest-profile-id")
 WITH resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $11::text = 'guest-profile-id' THEN
+            WHEN $9::text = 'guest-profile-id' THEN
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            WHEN $11::text IS NULL OR $11::text = '' THEN NULL::uuid
-            ELSE $11::uuid
+            WHEN $9::text IS NULL OR $9::text = '' THEN NULL::uuid
+            ELSE $9::uuid
         END as resolved_profile_id
 ),
-validate_reasoning AS (
-    -- Validate reasoning level is supported by model (if reasoning provided and model has constraints)
-    SELECT CASE
-        WHEN $5::text IS NULL OR $5::text = '' THEN true
-        WHEN NOT EXISTS (SELECT 1 FROM model_reasoning_levels WHERE model_id = $4::uuid AND active = true) THEN true
-        WHEN EXISTS (
-            SELECT 1 FROM model_reasoning_levels 
-            WHERE model_id = $4::uuid 
-            AND reasoning_level = $5::reasoning_effort 
-            AND active = true
-        ) THEN true
-        ELSE false
-    END as is_valid
-),
-validate_temperature AS (
-    -- Validate temperature is within allowed range for model (if model has constraints)
-    SELECT CASE
-        WHEN NOT EXISTS (SELECT 1 FROM model_temperature_levels WHERE model_id = $4::uuid AND active = true) THEN true
-        WHEN $3 >= (
-            SELECT MIN(temperature) FROM model_temperature_levels 
-            WHERE model_id = $4::uuid AND is_upper = false AND active = true
-        ) AND $3 <= (
-            SELECT MAX(temperature) FROM model_temperature_levels 
-            WHERE model_id = $4::uuid AND is_upper = true AND active = true
-        ) THEN true
-        ELSE false
-    END as is_valid
-),
 new_agent AS (
-    INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, created_at, updated_at)
+    INSERT INTO agents (name, description, model_id, active, role, created_at, updated_at)
     SELECT 
         $1, 
         $2, 
         $3, 
         $4, 
-        COALESCE($5::reasoning_effort, 'none'::reasoning_effort), 
-        $6, 
-        $7, 
+        $5, 
         NOW(), 
         NOW()
-    FROM validate_reasoning vr, validate_temperature vt
-    WHERE vr.is_valid = true AND vt.is_valid = true
     RETURNING id::text as agent_id
 ),
 new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided
     INSERT INTO prompts (system_prompt, created_at, updated_at)
-    SELECT $9::text, NOW(), NOW()
-    WHERE $8::text IS NULL AND $9::text IS NOT NULL AND $9::text != ''
+    SELECT $7::text, NOW(), NOW()
+    WHERE $6::text IS NULL AND $7::text IS NOT NULL AND $7::text != ''
     RETURNING id::text as prompt_id
 ),
 selected_prompt_id AS (
     -- Use provided prompt_id or newly created prompt_id (only return row if prompt exists)
     SELECT COALESCE(
-        $8::text,
+        $6::text,
         (SELECT prompt_id FROM new_prompt LIMIT 1)
     ) as prompt_id
-    WHERE $8::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
+    WHERE $6::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
 link_prompt AS (
     -- Link agent to prompt if prompt_id exists
@@ -93,8 +61,8 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_agent na
-    CROSS JOIN UNNEST($10::text[]) as dept_id
-    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($8::text[]) as dept_id
+    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
     ON CONFLICT (agent_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

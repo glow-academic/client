@@ -126,22 +126,27 @@ async def create_model(
                         pricing_entry.price,
                     )
 
-            # Handle modalities if provided
-            if request.modalities:
-                input_mods = request.modalities.get("input", [])
-                output_mods = request.modalities.get("output", [])
-                for mod in input_mods:
-                    await conn.execute(
-                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true)",
-                        model_id,
-                        mod,
-                    )
-                for mod in output_mods:
-                    await conn.execute(
-                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, false, true)",
-                        model_id,
-                        mod,
-                    )
+            # Handle modalities (default to text/text if not provided or empty)
+            input_mods = request.modalities.get("input", []) if request.modalities else []
+            output_mods = request.modalities.get("output", []) if request.modalities else []
+            
+            # Default to text/text if no modalities specified
+            if not input_mods and not output_mods:
+                input_mods = ["text"]
+                output_mods = ["text"]
+            
+            for mod in input_mods:
+                await conn.execute(
+                    "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true)",
+                    model_id,
+                    mod,
+                )
+            for mod in output_mods:
+                await conn.execute(
+                    "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, false, true)",
+                    model_id,
+                    mod,
+                )
 
             # Handle reasoning levels if provided
             if request.reasoning_levels:
@@ -152,8 +157,19 @@ async def create_model(
                         level,
                     )
 
-            # Handle voices if provided
-            if request.voices:
+            # Handle voices (default to all voices if not provided or empty)
+            # If voices is None or empty list, create all available voices
+            if request.voices is None or (isinstance(request.voices, list) and len(request.voices) == 0):
+                # Create all available voices
+                all_voices = ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse"]
+                for voice in all_voices:
+                    await conn.execute(
+                        "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true)",
+                        model_id,
+                        voice,
+                    )
+            elif request.voices:
+                # Use provided voices
                 for voice in request.voices:
                     await conn.execute(
                         "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true)",

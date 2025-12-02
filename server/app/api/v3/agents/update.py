@@ -20,14 +20,15 @@ class UpdateAgentRequest(BaseModel):
     description: str
     prompt_id: str | None
     system_prompt: str
-    temperature: float
     model_id: str
-    reasoning: str | None
     active: bool
     role: str
     department_ids: list[str] | None
     department_ids_for_prompt: list[str] | None = None
     # Array of department IDs for prompt overrides (never create default prompts, always department-specific overrides)
+    model_temperature_level_id: str | None = None
+    model_reasoning_level_id: str | None = None
+    model_voice_ids: list[str] | None = None
     profileId: str  # Required for auditing/access control
 
 
@@ -79,9 +80,7 @@ async def update_agent(
                 request.agentId,
                 request.name,
                 request.description,
-                request.temperature,
                 request.model_id,
-                request.reasoning,
                 request.active,
                 request.role,
                 request.prompt_id,
@@ -96,6 +95,51 @@ async def update_agent(
                 raise HTTPException(
                     status_code=404, detail=f"Agent not found: {request.agentId}"
                 )
+
+            # Update temperature level if provided
+            if request.model_temperature_level_id is not None:
+                # Deactivate existing temperature level
+                await conn.execute(
+                    "UPDATE agent_temperature_levels SET active = false, updated_at = NOW() WHERE agent_id = $1",
+                    request.agentId,
+                )
+                # Insert new temperature level
+                if request.model_temperature_level_id:
+                    await conn.execute(
+                        "INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_temperature_level_id) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.agentId,
+                        request.model_temperature_level_id,
+                    )
+
+            # Update reasoning level if provided
+            if request.model_reasoning_level_id is not None:
+                # Deactivate existing reasoning level
+                await conn.execute(
+                    "UPDATE agent_reasoning_levels SET active = false, updated_at = NOW() WHERE agent_id = $1",
+                    request.agentId,
+                )
+                # Insert new reasoning level
+                if request.model_reasoning_level_id:
+                    await conn.execute(
+                        "INSERT INTO agent_reasoning_levels (agent_id, model_reasoning_level_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_reasoning_level_id) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.agentId,
+                        request.model_reasoning_level_id,
+                    )
+
+            # Update voices if provided
+            if request.model_voice_ids is not None:
+                # Deactivate existing voices
+                await conn.execute(
+                    "UPDATE agent_voices SET active = false, updated_at = NOW() WHERE agent_id = $1",
+                    request.agentId,
+                )
+                # Insert new voices
+                for voice_id in request.model_voice_ids:
+                    await conn.execute(
+                        "INSERT INTO agent_voices (agent_id, model_voice_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_voice_id) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.agentId,
+                        voice_id,
+                    )
 
         result_data = UpdateAgentResponse(
             success=True, message="Agent updated successfully"

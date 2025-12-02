@@ -144,28 +144,33 @@ async def update_model(
                         pricing_entry.price,
                     )
 
-            # Update modalities if provided
-            if request.modalities:
-                # Deactivate existing modalities
+            # Update modalities (default to text/text if not provided or empty)
+            # Deactivate existing modalities
+            await conn.execute(
+                "UPDATE model_modalities SET active = false, updated_at = NOW() WHERE model_id = $1",
+                request.modelId,
+            )
+            # Insert new modalities (default to text/text if not provided)
+            input_mods = request.modalities.get("input", []) if request.modalities else []
+            output_mods = request.modalities.get("output", []) if request.modalities else []
+            
+            # Default to text/text if no modalities specified
+            if not input_mods and not output_mods:
+                input_mods = ["text"]
+                output_mods = ["text"]
+            
+            for mod in input_mods:
                 await conn.execute(
-                    "UPDATE model_modalities SET active = false, updated_at = NOW() WHERE model_id = $1",
+                    "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
                     request.modelId,
+                    mod,
                 )
-                # Insert new modalities
-                input_mods = request.modalities.get("input", [])
-                output_mods = request.modalities.get("output", [])
-                for mod in input_mods:
-                    await conn.execute(
-                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, true, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
-                        request.modelId,
-                        mod,
-                    )
-                for mod in output_mods:
-                    await conn.execute(
-                        "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, false, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
-                        request.modelId,
-                        mod,
-                    )
+            for mod in output_mods:
+                await conn.execute(
+                    "INSERT INTO model_modalities (model_id, modality, is_input, active) VALUES ($1, $2::modality_type, false, true) ON CONFLICT (model_id, modality, is_input) DO UPDATE SET active = true, updated_at = NOW()",
+                    request.modelId,
+                    mod,
+                )
 
             # Update reasoning levels if provided
             if request.reasoning_levels:
@@ -182,14 +187,25 @@ async def update_model(
                         level,
                     )
 
-            # Update voices if provided
-            if request.voices:
-                # Deactivate existing voices
-                await conn.execute(
-                    "UPDATE model_voices SET active = false, updated_at = NOW() WHERE model_id = $1",
-                    request.modelId,
-                )
-                # Insert new voices
+            # Update voices (default to all voices if None or empty)
+            # Always deactivate existing voices first
+            await conn.execute(
+                "UPDATE model_voices SET active = false, updated_at = NOW() WHERE model_id = $1",
+                request.modelId,
+            )
+            
+            # If voices is None or empty list, create all available voices
+            if request.voices is None or (isinstance(request.voices, list) and len(request.voices) == 0):
+                # Create all available voices
+                all_voices = ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse"]
+                for voice in all_voices:
+                    await conn.execute(
+                        "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true) ON CONFLICT (model_id, voice) DO UPDATE SET active = true, updated_at = NOW()",
+                        request.modelId,
+                        voice,
+                    )
+            elif request.voices:
+                # Use provided voices
                 for voice in request.voices:
                     await conn.execute(
                         "INSERT INTO model_voices (model_id, voice, active) VALUES ($1, $2::voice, true) ON CONFLICT (model_id, voice) DO UPDATE SET active = true, updated_at = NOW()",
@@ -198,7 +214,7 @@ async def update_model(
                     )
 
             # Update qualities if provided
-            if request.qualities:
+            if request.qualities is not None:
                 # Deactivate existing qualities
                 await conn.execute(
                     "UPDATE model_qualities SET active = false, updated_at = NOW() WHERE model_id = $1",
@@ -210,7 +226,7 @@ async def update_model(
                         "INSERT INTO model_qualities (model_id, quality, active) VALUES ($1, $2::quality, true) ON CONFLICT (model_id, quality) DO UPDATE SET active = true, updated_at = NOW()",
                         request.modelId,
                         quality,
-            )
+                    )
 
             result_data = UpdateModelResponse(
                 success=True,

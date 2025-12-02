@@ -186,12 +186,6 @@ model_reasoning_levels_data AS (
     FROM model_reasoning_levels
     WHERE model_id = $1::uuid AND active = true
 ),
-model_voices_data AS (
-    SELECT 
-        jsonb_agg(voice::text ORDER BY voice::text) as voices
-    FROM model_voices
-    WHERE model_id = $1::uuid AND active = true
-),
 model_qualities_data AS (
     SELECT 
         jsonb_agg(quality::text ORDER BY 
@@ -202,6 +196,17 @@ model_qualities_data AS (
             END
         ) as qualities
     FROM model_qualities
+    WHERE model_id = $1::uuid AND active = true
+),
+model_voices_data AS (
+    SELECT 
+        jsonb_agg(
+            jsonb_build_object(
+                'id', id::text,
+                'voice', voice::text
+            ) ORDER BY voice::text
+        ) as voices
+    FROM model_voices
     WHERE model_id = $1::uuid AND active = true
 ),
 all_units_data AS (

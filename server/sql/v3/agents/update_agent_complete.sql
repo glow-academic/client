@@ -1,79 +1,47 @@
 -- Update agent with prompt and department links in a single transaction
--- Parameters: $1=agentId, $2=name, $3=description, $4=temperature, $5=model_id, $6=reasoning, $7=active, $8=role, $9=prompt_id (nullable), $10=system_prompt (nullable), $11=department_ids (nullable text array), $12=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides), $13=profile_id (uuid or "guest-profile-id")
+-- Parameters: $1=agentId, $2=name, $3=description, $4=model_id, $5=active, $6=role, $7=prompt_id (nullable), $8=system_prompt (nullable), $9=department_ids (nullable text array), $10=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides), $11=profile_id (uuid or "guest-profile-id")
 WITH resolve_profile_id AS (
     SELECT 
         CASE 
-            WHEN $13::text = 'guest-profile-id' THEN
+            WHEN $11::text = 'guest-profile-id' THEN
                 (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
-            WHEN $13::text IS NULL OR $13::text = '' THEN NULL::uuid
-            ELSE $13::uuid
+            WHEN $11::text IS NULL OR $11::text = '' THEN NULL::uuid
+            ELSE $11::uuid
         END as resolved_profile_id
-),
-validate_reasoning AS (
-    -- Validate reasoning level is supported by model (if reasoning provided and model has constraints)
-    SELECT CASE
-        WHEN $6::text IS NULL OR $6::text = '' THEN true
-        WHEN NOT EXISTS (SELECT 1 FROM model_reasoning_levels WHERE model_id = $5::uuid AND active = true) THEN true
-        WHEN EXISTS (
-            SELECT 1 FROM model_reasoning_levels 
-            WHERE model_id = $5::uuid 
-            AND reasoning_level = $6::reasoning_effort 
-            AND active = true
-        ) THEN true
-        ELSE false
-    END as is_valid
-),
-validate_temperature AS (
-    -- Validate temperature is within allowed range for model (if model has constraints)
-    SELECT CASE
-        WHEN NOT EXISTS (SELECT 1 FROM model_temperature_levels WHERE model_id = $5::uuid AND active = true) THEN true
-        WHEN $4 >= (
-            SELECT MIN(temperature) FROM model_temperature_levels 
-            WHERE model_id = $5::uuid AND is_upper = false AND active = true
-        ) AND $4 <= (
-            SELECT MAX(temperature) FROM model_temperature_levels 
-            WHERE model_id = $5::uuid AND is_upper = true AND active = true
-        ) THEN true
-        ELSE false
-    END as is_valid
 ),
 update_agent AS (
     UPDATE agents
     SET 
         name = $2,
         description = $3,
-        temperature = $4,
-        model_id = $5,
-        reasoning = COALESCE($6::reasoning_effort, 'none'::reasoning_effort),
-        active = $7,
-        role = $8,
+        model_id = $4,
+        active = $5,
+        role = $6,
         updated_at = NOW()
     WHERE id = $1::uuid
-    AND EXISTS (SELECT 1 FROM validate_reasoning WHERE is_valid = true)
-    AND EXISTS (SELECT 1 FROM validate_temperature WHERE is_valid = true)
     RETURNING id::text as agent_id
 ),
 new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided
     INSERT INTO prompts (system_prompt, created_at, updated_at)
-    SELECT $10::text, NOW(), NOW()
-    WHERE $9::text IS NULL AND $10::text IS NOT NULL AND $10::text != ''
+    SELECT $8::text, NOW(), NOW()
+    WHERE $7::text IS NULL AND $8::text IS NOT NULL AND $8::text != ''
     RETURNING id::text as prompt_id
 ),
 selected_prompt_id AS (
     -- Use provided prompt_id or newly created prompt_id (only return row if prompt exists)
     SELECT COALESCE(
-        $9::text,
+        $7::text,
         (SELECT prompt_id FROM new_prompt LIMIT 1)
     ) as prompt_id
-    WHERE $9::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
+    WHERE $7::text IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
 deactivate_department_prompts AS (
     -- Deactivate existing department-specific prompts for departments in the array
     UPDATE agent_department_prompts
     SET active = false, updated_at = NOW()
     WHERE agent_id = $1::uuid 
-    AND department_id = ANY(SELECT dept_id::uuid FROM UNNEST($12::text[]) as dept_id)
+    AND department_id = ANY(SELECT dept_id::uuid FROM UNNEST($10::text[]) as dept_id)
     AND active = true
 ),
 handle_department_prompts AS (
@@ -81,8 +49,8 @@ handle_department_prompts AS (
     INSERT INTO agent_department_prompts (agent_id, department_id, prompt_id, active, created_at, updated_at)
     SELECT $1::uuid, dept_id::uuid, sp.prompt_id::uuid, true, NOW(), NOW()
     FROM selected_prompt_id sp
-    CROSS JOIN UNNEST($12::text[]) as dept_id
-    WHERE COALESCE(array_length($12::text[], 1), 0) > 0 AND sp.prompt_id IS NOT NULL
+    CROSS JOIN UNNEST($10::text[]) as dept_id
+    WHERE COALESCE(array_length($10::text[], 1), 0) > 0 AND sp.prompt_id IS NOT NULL
     ON CONFLICT (agent_id, department_id, prompt_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -99,7 +67,7 @@ prune_duplicate_prompts AS (
     -- Prune department-specific prompts that match the default prompt content
     DELETE FROM agent_department_prompts adp
     WHERE adp.agent_id = $1::uuid
-    AND adp.department_id = ANY(SELECT dept_id::uuid FROM UNNEST($12::text[]) as dept_id)
+    AND adp.department_id = ANY(SELECT dept_id::uuid FROM UNNEST($10::text[]) as dept_id)
     AND EXISTS (
         SELECT 1 FROM get_default_prompt_content gdc
         JOIN selected_prompt_id sp ON sp.prompt_id IS NOT NULL
@@ -120,8 +88,8 @@ link_departments AS (
         true,
         NOW(),
         NOW()
-    FROM UNNEST($11::text[]) as dept_id
-    WHERE COALESCE(array_length($11::text[], 1), 0) > 0
+    FROM UNNEST($9::text[]) as dept_id
+    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
     ON CONFLICT (agent_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

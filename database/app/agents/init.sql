@@ -33,9 +33,8 @@ CREATE TABLE agents (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   -- system_prompt moved to prompts table via agent_prompts junction (default prompt)
-  temperature  REAL     NOT NULL, -- 0.0-1.0
+  -- temperature and reasoning moved to junction tables (agent_temperature_levels, agent_reasoning_levels)
   model_id UUID NOT NULL REFERENCES models(id) ON DELETE RESTRICT,
-  reasoning reasoning_effort NOT NULL DEFAULT 'medium',  -- NOT NULL with default 'medium'
   role agent_role NOT NULL DEFAULT 'scenario',
   active BOOLEAN NOT NULL DEFAULT TRUE
 );
@@ -155,3 +154,56 @@ CREATE INDEX ON agent_prompts (agent_id, active);
 -- Only one active prompt per agent
 CREATE UNIQUE INDEX agent_prompts_one_active_per_agent
   ON agent_prompts(agent_id) WHERE active = true;
+
+-- Agent voices junction table (references model_voices)
+-- Agents can select multiple voices from their model's available voices
+CREATE TABLE agent_voices (
+  agent_id      UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  model_voice_id UUID       NOT NULL REFERENCES model_voices(id) ON DELETE RESTRICT,
+  active        BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (agent_id, model_voice_id)
+);
+
+CREATE INDEX ON agent_voices (agent_id);
+CREATE INDEX ON agent_voices (model_voice_id);
+CREATE INDEX ON agent_voices (active);
+
+-- Agent temperature levels junction table (references model_temperature_levels)
+-- Agents select a single temperature level from their model's available levels
+CREATE TABLE agent_temperature_levels (
+  agent_id                  UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  model_temperature_level_id UUID       NOT NULL REFERENCES model_temperature_levels(id) ON DELETE RESTRICT,
+  active                    BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (agent_id, model_temperature_level_id)
+);
+
+CREATE INDEX ON agent_temperature_levels (agent_id);
+CREATE INDEX ON agent_temperature_levels (model_temperature_level_id);
+CREATE INDEX ON agent_temperature_levels (active);
+
+-- Only one active temperature level per agent
+CREATE UNIQUE INDEX agent_temperature_levels_one_active_per_agent
+  ON agent_temperature_levels(agent_id) WHERE active = true;
+
+-- Agent reasoning levels junction table (references model_reasoning_levels)
+-- Agents select a single reasoning level from their model's available levels
+CREATE TABLE agent_reasoning_levels (
+  agent_id                UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  model_reasoning_level_id UUID       NOT NULL REFERENCES model_reasoning_levels(id) ON DELETE RESTRICT,
+  active                  BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (agent_id, model_reasoning_level_id)
+);
+
+CREATE INDEX ON agent_reasoning_levels (agent_id);
+CREATE INDEX ON agent_reasoning_levels (model_reasoning_level_id);
+CREATE INDEX ON agent_reasoning_levels (active);
+
+-- Only one active reasoning level per agent
+CREATE UNIQUE INDEX agent_reasoning_levels_one_active_per_agent
+  ON agent_reasoning_levels(agent_id) WHERE active = true;

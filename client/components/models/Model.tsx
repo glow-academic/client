@@ -17,20 +17,34 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { KeyPicker } from "@/components/common/forms/KeyPicker";
-import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
-import { TemperatureBoundsPicker, type TemperatureBounds } from "@/components/common/forms/TemperatureBoundsPicker";
-import { PricingPicker, type PricingEntry } from "@/components/common/forms/PricingPicker";
 import { ModalityPicker } from "@/components/common/forms/ModalityPicker";
-import { ReasoningLevelPicker } from "@/components/common/forms/ReasoningLevelPicker";
-import { VoiceMultiPicker } from "@/components/common/forms/VoiceMultiPicker";
+import {
+  PricingPicker,
+  type PricingEntry,
+} from "@/components/common/forms/PricingPicker";
+import { ProviderPicker } from "@/components/common/forms/ProviderPicker";
 import { QualityPicker } from "@/components/common/forms/QualityPicker";
-import { UnitPicker, type UnitItem } from "@/components/common/forms/UnitPicker";
+import { ReasoningLevelPicker } from "@/components/common/forms/ReasoningLevelPicker";
+import {
+  TemperatureBoundsPicker,
+  type TemperatureBounds,
+} from "@/components/common/forms/TemperatureBoundsPicker";
+import {
+  VoiceMultiPicker,
+  VOICES,
+} from "@/components/common/forms/VoiceMultiPicker";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
-import { Power } from "lucide-react";
+import {
+  DollarSign,
+  Power,
+  Settings2,
+  Thermometer,
+  Volume2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api/client";
 
 interface FormErrors {
   name?: string;
@@ -47,6 +61,10 @@ interface FormData {
   baseUrl?: string;
   departmentIds?: string[] | null;
   keyId?: string | null;
+  // Feature toggles
+  enableTemperature?: boolean;
+  enablePricing?: boolean;
+  enableVoices?: boolean;
   // Configuration fields
   temperature_bounds?: TemperatureBounds;
   pricing?: PricingEntry[];
@@ -152,9 +170,6 @@ export default function Model({
     }
     await updateModelAction({ body });
   };
-
-  // Store image_model from modelDetail for mutations
-  const imageModel = modelDetail?.image_model ?? false;
 
   // Readonly logic - models are always editable for now (no can_edit field in API)
   const isReadonly = useMemo(() => {
@@ -288,8 +303,11 @@ export default function Model({
       // We are in EDIT mode and have the model's data, so populate the form
       // Parse temperature bounds (always range)
       let temperature_bounds: TemperatureBounds | undefined;
-      if (modelDetail.temperature_bounds) {
-        const tb = modelDetail.temperature_bounds;
+      const modelDetailWithBounds = modelDetail as typeof modelDetail & {
+        temperature_bounds?: { lower?: number; upper?: number };
+      };
+      if (modelDetailWithBounds.temperature_bounds) {
+        const tb = modelDetailWithBounds.temperature_bounds;
         temperature_bounds = {
           type: "range",
           lower: tb.lower ?? 0.0,
@@ -299,17 +317,31 @@ export default function Model({
 
       // Parse pricing
       const pricing: PricingEntry[] =
-        modelDetail.pricing?.map((p) => ({
-          type: p.pricing_type as "input" | "output" | "cached",
-          unit_id: p.unit_id,
-          price: p.price,
-        })) || [];
+        modelDetail.pricing?.map(
+          (p: {
+            type?: string;
+            pricing_type?: string;
+            unit_id: string;
+            price: number;
+          }) => ({
+            type: (p.type || p.pricing_type) as "input" | "output" | "cached",
+            unit_id: p.unit_id,
+            price: p.price,
+          })
+        ) || [];
 
       // Parse modalities
       const modalities = {
         input: modelDetail.modalities?.input || [],
         output: modelDetail.modalities?.output || [],
       };
+
+      // Determine feature toggles based on existing data
+      const hasTemperature = !!temperature_bounds;
+      const hasPricing = pricing && pricing.length > 0;
+      const hasVoices =
+        modelDetail.voices &&
+        (modelDetail.voices as Array<string | { voice: string }>).length > 0;
 
       setFormData({
         name: modelDetail.name,
@@ -320,24 +352,34 @@ export default function Model({
         baseUrl: modelDetail.base_url || "",
         departmentIds: currentDepartmentIds,
         keyId: currentKeyId,
-        temperature_bounds,
+        enableTemperature: hasTemperature,
+        enablePricing: hasPricing,
+        enableVoices: hasVoices,
+        ...(temperature_bounds ? { temperature_bounds } : {}),
         pricing,
-        modalities,
+        modalities:
+          modalities.input.length > 0 || modalities.output.length > 0
+            ? modalities
+            : { input: ["text"], output: ["text"] },
         reasoning_levels: modelDetail.reasoning_levels || [],
-        voices: modelDetail.voices || [],
+        voices: modelDetail.voices
+          ? (modelDetail.voices as Array<string | { voice: string }>)
+              .map((v: string | { voice: string }) =>
+                typeof v === "string" ? v : v.voice
+              )
+              .filter(Boolean)
+          : [],
         qualities: modelDetail.qualities || [],
       });
     } else if (!isEditMode) {
       // We are in CREATE mode, so reset the form to its initial state
       setFormData({
         ...initialFormData,
-        temperature_bounds: {
-          type: "range",
-          lower: 0.0,
-          upper: 1.0,
-        },
+        enableTemperature: false,
+        enablePricing: false,
+        enableVoices: false,
         pricing: [],
-        modalities: { input: [], output: [] },
+        modalities: { input: ["text"], output: ["text"] }, // Default to text/text
         reasoning_levels: [],
         voices: [],
         qualities: [],
@@ -405,25 +447,29 @@ export default function Model({
     setIsSubmitting(true);
 
     try {
-      // Transform temperature bounds for API (always range)
-      const temperature_bounds = formData.temperature_bounds
-        ? {
-            type: "range" as const,
-            lower: formData.temperature_bounds.lower ?? 0.0,
-            upper: formData.temperature_bounds.upper ?? 1.0,
-          }
-        : undefined;
+      // Transform temperature bounds for API (only if enabled)
+      const temperature_bounds =
+        formData.enableTemperature && formData.temperature_bounds
+          ? {
+              type: "range" as const,
+              lower: formData.temperature_bounds.lower ?? 0.0,
+              upper: formData.temperature_bounds.upper ?? 1.0,
+            }
+          : undefined;
 
-      // Transform pricing for API
-      const pricing = formData.pricing && formData.pricing.length > 0
-        ? formData.pricing.map((p) => ({
-            type: p.type,
-            unit_id: p.unit_id,
-            price: p.price,
-          }))
-        : undefined;
+      // Transform pricing for API (only if enabled)
+      const pricing =
+        formData.enablePricing &&
+        formData.pricing &&
+        formData.pricing.length > 0
+          ? formData.pricing.map((p) => ({
+              type: p.type,
+              unit_id: p.unit_id,
+              price: p.price,
+            }))
+          : undefined;
 
-      // Transform modalities for API
+      // Transform modalities for API (default to text/text if not set)
       const modalities =
         formData.modalities &&
         (formData.modalities.input.length > 0 ||
@@ -432,7 +478,18 @@ export default function Model({
               input: formData.modalities.input,
               output: formData.modalities.output,
             }
-          : undefined;
+          : { input: ["text"], output: ["text"] }; // Server-side default
+
+      // Transform voices for API (only if enabled, otherwise all voices)
+      // If voices switch is off, we'll handle "all voices" server-side
+      const voices =
+        formData.enableVoices && formData.voices && formData.voices.length > 0
+          ? formData.voices
+          : formData.enableVoices === false
+            ? null // Explicitly disabled - server will handle default (all voices)
+            : formData.voices && formData.voices.length > 0
+              ? formData.voices
+              : null; // Not set - server will create all voices
 
       if (isEditMode && modelId) {
         await handleUpdateModel({
@@ -443,13 +500,20 @@ export default function Model({
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
-          base_url: formData.provider === "custom" ? formData.baseUrl || null : null,
-          temperature_bounds,
-          pricing,
+          base_url:
+            formData.provider === "custom" ? formData.baseUrl || null : null,
+          ...(temperature_bounds ? { temperature_bounds } : {}),
+          ...(pricing ? { pricing } : {}),
           modalities,
-          reasoning_levels: formData.reasoning_levels && formData.reasoning_levels.length > 0 ? formData.reasoning_levels : null,
-          voices: formData.voices && formData.voices.length > 0 ? formData.voices : null,
-          qualities: formData.qualities && formData.qualities.length > 0 ? formData.qualities : null,
+          reasoning_levels:
+            formData.reasoning_levels && formData.reasoning_levels.length > 0
+              ? formData.reasoning_levels
+              : null,
+          voices,
+          qualities:
+            formData.qualities && formData.qualities.length > 0
+              ? formData.qualities
+              : null,
           profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
@@ -463,13 +527,20 @@ export default function Model({
           active: formData.active ?? true,
           department_ids: formData.departmentIds || null,
           key_id: formData.keyId || null,
-          base_url: formData.provider === "custom" ? formData.baseUrl || null : null,
-          temperature_bounds,
-          pricing,
+          base_url:
+            formData.provider === "custom" ? formData.baseUrl || null : null,
+          ...(temperature_bounds ? { temperature_bounds } : {}),
+          ...(pricing ? { pricing } : {}),
           modalities,
-          reasoning_levels: formData.reasoning_levels && formData.reasoning_levels.length > 0 ? formData.reasoning_levels : null,
-          voices: formData.voices && formData.voices.length > 0 ? formData.voices : null,
-          qualities: formData.qualities && formData.qualities.length > 0 ? formData.qualities : null,
+          reasoning_levels:
+            formData.reasoning_levels && formData.reasoning_levels.length > 0
+              ? formData.reasoning_levels
+              : null,
+          voices,
+          qualities:
+            formData.qualities && formData.qualities.length > 0
+              ? formData.qualities
+              : null,
           profileId: effectiveProfile?.id || "guest-profile-id",
         });
         resetFormAndState();
@@ -522,7 +593,6 @@ export default function Model({
             <p className="text-sm text-destructive">{errors.description}</p>
           )}
         </div>
-
 
         {/* Department Selection */}
         {validDepartmentIds && validDepartmentIds.length > 1 ? (
@@ -638,30 +708,18 @@ export default function Model({
           )}
         </div>
 
-        {/* Temperature Bounds */}
-        <div className="space-y-2">
-          <Label>Temperature Bounds</Label>
-          <TemperatureBoundsPicker
-            bounds={formData.temperature_bounds || { type: "range", lower: 0.0, upper: 1.0 }}
-            onBoundsChange={(bounds) =>
-              setFormData((prev) => ({ ...prev, temperature_bounds: bounds }))
-            }
-            disabled={isSubmitting || isReadonly}
-          />
-        </div>
-
-        {/* Modalities */}
+        {/* Modalities - Always visible, defaults to text/text */}
         <div className="space-y-2">
           <Label>Modalities</Label>
           <ModalityPicker
-            inputModalities={formData.modalities?.input || []}
-            outputModalities={formData.modalities?.output || []}
+            inputModalities={formData.modalities?.input || ["text"]}
+            outputModalities={formData.modalities?.output || ["text"]}
             onInputChange={(modalities) =>
               setFormData((prev) => ({
                 ...prev,
                 modalities: {
-                  input: modalities,
-                  output: prev.modalities?.output || [],
+                  input: modalities.length > 0 ? modalities : ["text"],
+                  output: prev.modalities?.output || ["text"],
                 },
               }))
             }
@@ -669,8 +727,8 @@ export default function Model({
               setFormData((prev) => ({
                 ...prev,
                 modalities: {
-                  input: prev.modalities?.input || [],
-                  output: modalities,
+                  input: prev.modalities?.input || ["text"],
+                  output: modalities.length > 0 ? modalities : ["text"],
                 },
               }))
             }
@@ -678,17 +736,255 @@ export default function Model({
           />
         </div>
 
-        {/* Pricing */}
-        <div className="space-y-2">
-          <Label>Pricing</Label>
-          <PricingPicker
-            pricing={formData.pricing || []}
-            units={units}
-            onPricingChange={(pricing) =>
-              setFormData((prev) => ({ ...prev, pricing }))
-            }
-            disabled={isSubmitting || isReadonly}
-          />
+        {/* Advanced Configuration Section */}
+        <div className="space-y-4 border-t pt-6">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Settings2 className="h-5 w-5" />
+            Advanced Configuration
+          </h3>
+
+          {/* Temperature Bounds - Collapsible with Switch */}
+          <Collapsible
+            open={formData.enableTemperature || false}
+            onOpenChange={(open) => {
+              setFormData((prev) => ({
+                ...prev,
+                enableTemperature: open,
+                ...(open
+                  ? {
+                      temperature_bounds: prev.temperature_bounds || {
+                        type: "range",
+                        lower: 0.0,
+                        upper: 1.0,
+                      },
+                    }
+                  : {}),
+              }));
+            }}
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="h-4 w-4 text-muted-foreground" />
+                    <Label
+                      htmlFor="enable-temperature"
+                      className="text-sm font-medium"
+                    >
+                      Temperature Constraints
+                    </Label>
+                    <Switch
+                      id="enable-temperature"
+                      checked={formData.enableTemperature || false}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            enableTemperature: true,
+                            temperature_bounds: prev.temperature_bounds || {
+                              type: "range",
+                              lower: 0.0,
+                              upper: 1.0,
+                            },
+                          }));
+                        } else {
+                          const { temperature_bounds: _, ...rest } = formData;
+                          setFormData({
+                            ...rest,
+                            enableTemperature: false,
+                          } as FormData);
+                        }
+                      }}
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-6">
+                    Restrict temperature values for this model. If disabled, any
+                    temperature value is allowed.
+                  </p>
+                </div>
+              </div>
+              <CollapsibleContent>
+                {formData.enableTemperature && (
+                  <div className="pl-6 pt-2">
+                    <TemperatureBoundsPicker
+                      bounds={
+                        formData.temperature_bounds || {
+                          type: "range",
+                          lower: 0.0,
+                          upper: 1.0,
+                        }
+                      }
+                      onBoundsChange={(bounds) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          temperature_bounds: bounds,
+                        }))
+                      }
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  </div>
+                )}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+
+          {/* Pricing - Collapsible with Switch */}
+          <Collapsible
+            open={formData.enablePricing || false}
+            onOpenChange={(open) => {
+              setFormData((prev) => ({
+                ...prev,
+                enablePricing: open,
+                pricing: open ? prev.pricing || [] : [],
+              }));
+            }}
+          >
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <Label
+                      htmlFor="enable-pricing"
+                      className="text-sm font-medium"
+                    >
+                      Pricing Configuration
+                    </Label>
+                    <Switch
+                      id="enable-pricing"
+                      checked={formData.enablePricing || false}
+                      onCheckedChange={(checked) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          enablePricing: checked,
+                          pricing: checked ? prev.pricing || [] : [],
+                        }));
+                      }}
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-6">
+                    Configure pricing for this model. If disabled, the model is
+                    free to use.
+                  </p>
+                </div>
+              </div>
+              <CollapsibleContent>
+                {formData.enablePricing && (
+                  <div className="pl-6 pt-2">
+                    <PricingPicker
+                      pricing={formData.pricing || []}
+                      units={units}
+                      onPricingChange={(pricing) =>
+                        setFormData((prev) => ({ ...prev, pricing }))
+                      }
+                      disabled={isSubmitting || isReadonly}
+                    />
+                  </div>
+                )}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+
+          {/* Reasoning Levels - Show if model supports text output */}
+          {formData.modalities?.output?.includes("text") && (
+            <div className="space-y-2">
+              <Label>Reasoning Levels</Label>
+              <ReasoningLevelPicker
+                selectedIds={formData.reasoning_levels || []}
+                onSelect={(ids) =>
+                  setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
+                }
+                disabled={isSubmitting || isReadonly}
+              />
+            </div>
+          )}
+
+          {/* Voices - Collapsible with Switch, only show if audio output */}
+          {formData.modalities?.output?.includes("audio") && (
+            <Collapsible
+              open={formData.enableVoices || false}
+              onOpenChange={(open) => {
+                if (open) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    enableVoices: true,
+                    voices:
+                      prev.voices && prev.voices.length > 0
+                        ? prev.voices
+                        : VOICES.map((v) => v.id),
+                  }));
+                } else {
+                  const { voices: _, ...rest } = formData;
+                  setFormData({
+                    ...rest,
+                    enableVoices: false,
+                  });
+                }
+              }}
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                      <Label
+                        htmlFor="enable-voices"
+                        className="text-sm font-medium"
+                      >
+                        Voice Selection
+                      </Label>
+                      <Switch
+                        id="enable-voices"
+                        checked={formData.enableVoices || false}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              enableVoices: true,
+                              voices:
+                                prev.voices && prev.voices.length > 0
+                                  ? prev.voices
+                                  : VOICES.map((v) => v.id), // Default to all voices
+                            }));
+                          } else {
+                            const { voices: _, ...rest } = formData;
+                            setFormData({
+                              ...rest,
+                              enableVoices: false,
+                            } as FormData);
+                          }
+                        }}
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-6">
+                      Select specific voices for this model. If disabled, all
+                      available voices are allowed.
+                    </p>
+                  </div>
+                </div>
+                <CollapsibleContent>
+                  {formData.enableVoices && (
+                    <div className="pl-6 pt-2">
+                      <VoiceMultiPicker
+                        selectedIds={formData.voices || VOICES.map((v) => v.id)}
+                        onSelect={(ids) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            voices:
+                              ids.length > 0 ? ids : VOICES.map((v) => v.id),
+                          }))
+                        }
+                        disabled={isSubmitting || isReadonly}
+                      />
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          )}
         </div>
 
         {/* Reasoning Levels - Show if model supports text output */}
@@ -699,20 +995,6 @@ export default function Model({
               selectedIds={formData.reasoning_levels || []}
               onSelect={(ids) =>
                 setFormData((prev) => ({ ...prev, reasoning_levels: ids }))
-              }
-              disabled={isSubmitting || isReadonly}
-            />
-          </div>
-        )}
-
-        {/* Voices - Show if model supports audio output */}
-        {formData.modalities?.output?.includes("audio") && (
-          <div className="space-y-2">
-            <Label>Voices</Label>
-            <VoiceMultiPicker
-              selectedIds={formData.voices || []}
-              onSelect={(ids) =>
-                setFormData((prev) => ({ ...prev, voices: ids }))
               }
               disabled={isSubmitting || isReadonly}
             />

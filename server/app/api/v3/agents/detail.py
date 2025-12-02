@@ -50,17 +50,21 @@ class AgentDetailResponse(BaseModel):
     description: str
     system_prompt: str
     prompt_id: str | None
-    temperature: float
+    temperature: float  # Selected temperature value (for backward compatibility)
     model_id: str
-    reasoning: str | None
+    reasoning: str | None  # Selected reasoning value (for backward compatibility)
     active: bool
     role: str
+    selected_temperature_level_id: str | None
+    selected_reasoning_level_id: str | None
+    selected_voice_ids: list[str]
     valid_model_ids: list[str]
-    reasoning_options: list[str]
+    reasoning_options: list[dict[str, str]]  # List of {id, reasoning_level} objects
     temperature_lower: float
     temperature_upper: float
-    temperature_values: list[str]
-    valid_voices: list[str]
+    temperature_levels: list[dict[str, str | bool]]  # List of {id, temperature, is_upper} objects
+    valid_voices: list[str]  # Selected voice names (for backward compatibility)
+    available_voices: list[dict[str, str]]  # List of {id, voice} objects
     department_ids: list[str]
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
@@ -281,29 +285,54 @@ async def get_agent_detail(
             ),
         }
 
-        # Parse reasoning_options from JSONB
-        reasoning_options: list[str] = []
+        # Parse reasoning_options from JSONB (list of {id, reasoning_level} objects)
+        reasoning_options: list[dict[str, str]] = []
         reasoning_options_data = result.get("reasoning_options")
         if isinstance(reasoning_options_data, str):
             reasoning_options_data = json.loads(reasoning_options_data)
         if reasoning_options_data and isinstance(reasoning_options_data, list):
-            reasoning_options = [str(opt) for opt in reasoning_options_data if opt]
+            reasoning_options = [
+                opt if isinstance(opt, dict) else {"id": "", "reasoning_level": str(opt)}
+                for opt in reasoning_options_data if opt
+            ]
 
-        # Parse temperature_values from JSONB
-        temperature_values: list[str] = []
-        temperature_values_data = result.get("temperature_values")
-        if isinstance(temperature_values_data, str):
-            temperature_values_data = json.loads(temperature_values_data)
-        if temperature_values_data and isinstance(temperature_values_data, list):
-            temperature_values = [str(val) for val in temperature_values_data if val]
+        # Parse temperature_levels from JSONB (list of {id, temperature, is_upper} objects)
+        temperature_levels: list[dict[str, str | bool]] = []
+        temperature_levels_data = result.get("temperature_levels")
+        if isinstance(temperature_levels_data, str):
+            temperature_levels_data = json.loads(temperature_levels_data)
+        if temperature_levels_data and isinstance(temperature_levels_data, list):
+            temperature_levels = [
+                level if isinstance(level, dict) else {"id": "", "temperature": str(level), "is_upper": False}
+                for level in temperature_levels_data if level
+            ]
 
-        # Parse valid_voices from JSONB
+        # Parse selected_voice_ids from JSONB
+        selected_voice_ids: list[str] = []
+        selected_voice_ids_data = result.get("selected_voice_ids")
+        if isinstance(selected_voice_ids_data, str):
+            selected_voice_ids_data = json.loads(selected_voice_ids_data)
+        if selected_voice_ids_data and isinstance(selected_voice_ids_data, list):
+            selected_voice_ids = [str(voice_id) for voice_id in selected_voice_ids_data if voice_id]
+
+        # Parse valid_voices from JSONB (selected voice names for backward compatibility)
         valid_voices: list[str] = []
         valid_voices_data = result.get("valid_voices")
         if isinstance(valid_voices_data, str):
             valid_voices_data = json.loads(valid_voices_data)
         if valid_voices_data and isinstance(valid_voices_data, list):
             valid_voices = [str(voice) for voice in valid_voices_data if voice]
+
+        # Parse available_voices from JSONB (list of {id, voice} objects)
+        available_voices: list[dict[str, str]] = []
+        available_voices_data = result.get("available_voices")
+        if isinstance(available_voices_data, str):
+            available_voices_data = json.loads(available_voices_data)
+        if available_voices_data and isinstance(available_voices_data, list):
+            available_voices = [
+                voice if isinstance(voice, dict) else {"id": "", "voice": str(voice)}
+                for voice in available_voices_data if voice
+            ]
 
         # Get can_edit from SQL result
         can_edit = result.get("can_edit", False)
@@ -313,24 +342,26 @@ async def get_agent_detail(
             description=result["description"],
             system_prompt=result["system_prompt"],
             prompt_id=prompt_id,
-            temperature=float(result["temperature"])
-            if result["temperature"] is not None
-            else 0.0,
+            temperature=float(result.get("temperature", 0.0)),
             model_id=result["model_id"],
-            reasoning=result["reasoning"],
+            reasoning=result.get("reasoning"),
             active=result["active"],
             role=result["role"],
+            selected_temperature_level_id=result.get("selected_temperature_level_id"),
+            selected_reasoning_level_id=result.get("selected_reasoning_level_id"),
+            selected_voice_ids=selected_voice_ids,
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
             department_prompt_links=department_prompt_links,
             prompt_mapping=prompt_mapping,
             valid_model_ids=valid_model_ids,
-            reasoning_options=reasoning_options if reasoning_options else ["none", "minimal", "low", "medium", "high"],
+            reasoning_options=reasoning_options if reasoning_options else [],
             temperature_lower=float(result.get("temperature_lower", 0.0)),
             temperature_upper=float(result.get("temperature_upper", 1.0)),
-            temperature_values=temperature_values,
+            temperature_levels=temperature_levels,
             valid_voices=valid_voices,
+            available_voices=available_voices,
             debug_info=debug_info,
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,

@@ -122,12 +122,13 @@ CREATE INDEX ON units (active);
 
 -- Model reasoning levels junction table
 CREATE TABLE model_reasoning_levels (
+  id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
   model_id        UUID            NOT NULL REFERENCES models(id) ON DELETE CASCADE,
   reasoning_level reasoning_effort NOT NULL,
   active          BOOLEAN         NOT NULL DEFAULT TRUE,
   created_at      TIMESTAMPTZ     NOT NULL DEFAULT now(),
   updated_at      TIMESTAMPTZ     NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_id, reasoning_level)
+  UNIQUE (model_id, reasoning_level)
 );
 
 CREATE INDEX ON model_reasoning_levels (model_id);
@@ -136,13 +137,14 @@ CREATE INDEX ON model_reasoning_levels (active);
 
 -- Model temperature levels junction table (with range support)
 CREATE TABLE model_temperature_levels (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   model_id    UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
   temperature REAL        NOT NULL,
   is_upper    BOOLEAN     NOT NULL,
   active      BOOLEAN     NOT NULL DEFAULT TRUE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_id, temperature, is_upper),
+  UNIQUE (model_id, temperature, is_upper),
   CHECK (temperature >= 0.0 AND temperature <= 2.0)
 );
 
@@ -168,19 +170,6 @@ CREATE INDEX ON model_modalities (modality);
 CREATE INDEX ON model_modalities (is_input);
 CREATE INDEX ON model_modalities (active);
 
--- Model voices junction table (uses voice enum from personas)
-CREATE TABLE model_voices (
-  model_id   UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
-  voice      voice       NOT NULL,
-  active     BOOLEAN     NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (model_id, voice)
-);
-
-CREATE INDEX ON model_voices (model_id);
-CREATE INDEX ON model_voices (voice);
-CREATE INDEX ON model_voices (active);
 
 -- Model qualities junction table (for image models with quality levels)
 CREATE TABLE model_qualities (
@@ -195,6 +184,21 @@ CREATE TABLE model_qualities (
 CREATE INDEX ON model_qualities (model_id);
 CREATE INDEX ON model_qualities (quality);
 CREATE INDEX ON model_qualities (active);
+
+-- Model voices junction table (uses voice enum from personas)
+CREATE TABLE model_voices (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_id   UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  voice      voice       NOT NULL,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (model_id, voice)
+);
+
+CREATE INDEX ON model_voices (model_id);
+CREATE INDEX ON model_voices (voice);
+CREATE INDEX ON model_voices (active);
 
 -- Model pricing junction table
 CREATE TABLE model_pricing (

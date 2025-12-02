@@ -12486,24 +12486,9 @@
             "type": "string",
             "title": "System Prompt"
           },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
           "model_id": {
             "type": "string",
             "title": "Model Id"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
           },
           "active": {
             "type": "boolean",
@@ -12527,6 +12512,42 @@
             ],
             "title": "Department Ids"
           },
+          "model_temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Temperature Level Id"
+          },
+          "model_reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Reasoning Level Id"
+          },
+          "model_voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Voice Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -12538,9 +12559,7 @@
           "description",
           "prompt_id",
           "system_prompt",
-          "temperature",
           "model_id",
-          "reasoning",
           "active",
           "role",
           "department_ids",
@@ -20381,7 +20400,8 @@
           },
           "voices": {
             "items": {
-              "type": "string"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "array",
             "title": "Voices"
@@ -29087,24 +29107,9 @@
             "type": "string",
             "title": "System Prompt"
           },
-          "temperature": {
-            "type": "number",
-            "title": "Temperature"
-          },
           "model_id": {
             "type": "string",
             "title": "Model Id"
-          },
-          "reasoning": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning"
           },
           "active": {
             "type": "boolean",
@@ -29142,6 +29147,42 @@
             ],
             "title": "Department Ids For Prompt"
           },
+          "model_temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Temperature Level Id"
+          },
+          "model_reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Reasoning Level Id"
+          },
+          "model_voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Voice Ids"
+          },
           "profileId": {
             "type": "string",
             "title": "Profileid"
@@ -29154,9 +29195,7 @@
           "description",
           "prompt_id",
           "system_prompt",
-          "temperature",
           "model_id",
-          "reasoning",
           "active",
           "role",
           "department_ids",
@@ -31507,6 +31546,35 @@
             "type": "string",
             "title": "Role"
           },
+          "selected_temperature_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Temperature Level Id"
+          },
+          "selected_reasoning_level_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Reasoning Level Id"
+          },
+          "selected_voice_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Voice Ids"
+          },
           "valid_model_ids": {
             "items": {
               "type": "string"
@@ -31516,7 +31584,10 @@
           },
           "reasoning_options": {
             "items": {
-              "type": "string"
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
             },
             "type": "array",
             "title": "Reasoning Options"
@@ -31529,12 +31600,22 @@
             "type": "number",
             "title": "Temperature Upper"
           },
-          "temperature_values": {
+          "temperature_levels": {
             "items": {
-              "type": "string"
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "object"
             },
             "type": "array",
-            "title": "Temperature Values"
+            "title": "Temperature Levels"
           },
           "valid_voices": {
             "items": {
@@ -31542,6 +31623,16 @@
             },
             "type": "array",
             "title": "Valid Voices"
+          },
+          "available_voices": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Available Voices"
           },
           "department_ids": {
             "items": {
@@ -31615,12 +31706,16 @@
           "reasoning",
           "active",
           "role",
+          "selected_temperature_level_id",
+          "selected_reasoning_level_id",
+          "selected_voice_ids",
           "valid_model_ids",
           "reasoning_options",
           "temperature_lower",
           "temperature_upper",
-          "temperature_values",
+          "temperature_levels",
           "valid_voices",
+          "available_voices",
           "department_ids",
           "valid_department_ids",
           "department_mapping",

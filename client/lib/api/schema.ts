@@ -5540,18 +5540,20 @@ export interface components {
             prompt_id: string | null;
             /** System Prompt */
             system_prompt: string;
-            /** Temperature */
-            temperature: number;
             /** Model Id */
             model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
             /** Active */
             active: boolean;
             /** Role */
             role: string;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Model Temperature Level Id */
+            model_temperature_level_id?: string | null;
+            /** Model Reasoning Level Id */
+            model_reasoning_level_id?: string | null;
+            /** Model Voice Ids */
+            model_voice_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -8674,7 +8676,9 @@ export interface components {
             /** Reasoning Levels */
             reasoning_levels: string[];
             /** Voices */
-            voices: string[];
+            voices: {
+                [key: string]: unknown;
+            }[];
             /** Qualities */
             qualities: string[];
             /** Units */
@@ -12050,12 +12054,8 @@ export interface components {
             prompt_id: string | null;
             /** System Prompt */
             system_prompt: string;
-            /** Temperature */
-            temperature: number;
             /** Model Id */
             model_id: string;
-            /** Reasoning */
-            reasoning: string | null;
             /** Active */
             active: boolean;
             /** Role */
@@ -12064,6 +12064,12 @@ export interface components {
             department_ids: string[] | null;
             /** Department Ids For Prompt */
             department_ids_for_prompt?: string[] | null;
+            /** Model Temperature Level Id */
+            model_temperature_level_id?: string | null;
+            /** Model Reasoning Level Id */
+            model_reasoning_level_id?: string | null;
+            /** Model Voice Ids */
+            model_voice_ids?: string[] | null;
             /** Profileid */
             profileId: string;
         };
@@ -12948,18 +12954,32 @@ export interface components {
             active: boolean;
             /** Role */
             role: string;
+            /** Selected Temperature Level Id */
+            selected_temperature_level_id: string | null;
+            /** Selected Reasoning Level Id */
+            selected_reasoning_level_id: string | null;
+            /** Selected Voice Ids */
+            selected_voice_ids: string[];
             /** Valid Model Ids */
             valid_model_ids: string[];
             /** Reasoning Options */
-            reasoning_options: string[];
+            reasoning_options: {
+                [key: string]: string;
+            }[];
             /** Temperature Lower */
             temperature_lower: number;
             /** Temperature Upper */
             temperature_upper: number;
-            /** Temperature Values */
-            temperature_values: string[];
+            /** Temperature Levels */
+            temperature_levels: {
+                [key: string]: string | boolean;
+            }[];
             /** Valid Voices */
             valid_voices: string[];
+            /** Available Voices */
+            available_voices: {
+                [key: string]: string;
+            }[];
             /** Department Ids */
             department_ids: string[];
             /** Valid Department Ids */

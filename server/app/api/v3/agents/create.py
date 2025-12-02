@@ -19,12 +19,13 @@ class CreateAgentRequest(BaseModel):
     description: str
     prompt_id: str | None
     system_prompt: str
-    temperature: float
     model_id: str
-    reasoning: str | None
     active: bool
     role: str
     department_ids: list[str] | None
+    model_temperature_level_id: str | None = None
+    model_reasoning_level_id: str | None = None
+    model_voice_ids: list[str] | None = None
     profileId: str  # Required for auditing/access control
 
 
@@ -75,9 +76,7 @@ async def create_agent(
             sql_params = (
                 request.name,
                 request.description,
-                request.temperature,
                 request.model_id,
-                request.reasoning,
                 request.active,
                 request.role,
                 request.prompt_id,
@@ -91,6 +90,31 @@ async def create_agent(
                 raise HTTPException(status_code=500, detail="Failed to create agent")
 
             agent_id = agent_row["agent_id"]
+
+            # Handle temperature level if provided
+            if request.model_temperature_level_id:
+                await conn.execute(
+                    "INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_temperature_level_id) DO UPDATE SET active = true, updated_at = NOW()",
+                    agent_id,
+                    request.model_temperature_level_id,
+                )
+
+            # Handle reasoning level if provided
+            if request.model_reasoning_level_id:
+                await conn.execute(
+                    "INSERT INTO agent_reasoning_levels (agent_id, model_reasoning_level_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_reasoning_level_id) DO UPDATE SET active = true, updated_at = NOW()",
+                    agent_id,
+                    request.model_reasoning_level_id,
+                )
+
+            # Handle voices if provided
+            if request.model_voice_ids:
+                for voice_id in request.model_voice_ids:
+                    await conn.execute(
+                        "INSERT INTO agent_voices (agent_id, model_voice_id, active) VALUES ($1, $2::uuid, true) ON CONFLICT (agent_id, model_voice_id) DO UPDATE SET active = true, updated_at = NOW()",
+                        agent_id,
+                        voice_id,
+                    )
 
         result_data = CreateAgentResponse(
             success=True,

@@ -19,6 +19,7 @@ import {
   PromptPicker,
 } from "@/components/common/forms/PromptPicker";
 import { ReasoningPicker } from "@/components/common/forms/ReasoningPicker";
+import { VoiceMultiPicker } from "@/components/common/forms/VoiceMultiPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,12 +73,18 @@ interface SystemAgentFormData {
   description?: string;
   systemPrompt?: string;
   promptId?: string | null;
-  temperature?: number;
   modelId?: string;
-  reasoning?: "none" | "minimal" | "low" | "medium" | "high";
   active?: boolean;
   role?: string; // agent_role enum value
   departmentIds?: string[]; // None = cross-department (superadmin only)
+  // Option IDs from model tables
+  model_temperature_level_id?: string | null;
+  model_reasoning_level_id?: string | null;
+  model_voice_ids?: string[];
+  // Display values (for backward compatibility and UI)
+  temperature?: number;
+  reasoning?: "none" | "minimal" | "low" | "medium" | "high";
+  voices?: string[];
 }
 
 export interface SystemAgentProps {
@@ -161,24 +168,89 @@ export default function SystemAgent({
     await deleteAgentPromptAction({ body });
   };
 
-  // Get temperature bounds from selected model (or fallback to agent's current model)
+  // Get temperature bounds and levels from selected model
   const temperatureBounds = useMemo(() => {
-    // For now, use agent's temperature bounds as fallback
-    // TODO: Include temperature bounds in model_mapping from API
     const agentDetailData = isEditMode ? agentDetail : agentDetailDefault;
+    const agentDetailWithLevels = agentDetailData as typeof agentDetailData & {
+      temperature_levels?: Array<{
+        id: string;
+        temperature: string;
+        is_upper: boolean;
+      }>;
+    };
+    const levels = (agentDetailWithLevels?.temperature_levels || []) as Array<{
+      id: string;
+      temperature: string;
+      is_upper: boolean;
+    }>;
+    const values = levels
+      .filter((l) => !l.is_upper)
+      .map((l) => l.temperature?.toString() || "")
+      .filter(Boolean);
+
     return {
       lower: agentDetailData?.temperature_lower ?? 0.0,
       upper: agentDetailData?.temperature_upper ?? 1.0,
-      values:
-        (agentDetailData && "temperature_values" in agentDetailData
-          ? agentDetailData.temperature_values
-          : []) || [],
+      values: values.length > 0 ? values : [],
+      levels: levels,
     };
-  }, [
-    isEditMode,
-    agentDetail,
-    agentDetailDefault,
-  ]);
+  }, [isEditMode, agentDetail, agentDetailDefault]);
+
+  // Helper to get temperature level ID from temperature value
+  const getTemperatureLevelId = useMemo(() => {
+    const levels = temperatureBounds.levels || [];
+    return (temperature: number) => {
+      // Find the closest matching level (prefer non-upper bounds)
+      const matchingLevel = levels.find(
+        (l) =>
+          !l.is_upper &&
+          Math.abs(parseFloat(l.temperature) - temperature) < 0.001
+      );
+      return matchingLevel?.id || null;
+    };
+  }, [temperatureBounds.levels]);
+
+  // Helper to get reasoning option ID from reasoning level value
+  const getReasoningOptionId = useMemo(() => {
+    const options = (agentDetail?.reasoning_options || []) as Array<{
+      id: string;
+      reasoning_level: string;
+    }>;
+    const mapping = new Map<string, string>();
+    options.forEach((opt) => {
+      if (opt.id && opt.reasoning_level) {
+        mapping.set(opt.reasoning_level, opt.id);
+      }
+    });
+    return (reasoningLevel: string) => mapping.get(reasoningLevel) || null;
+  }, [agentDetail?.reasoning_options]);
+
+  // Helper to get reasoning level value from option ID
+  const getReasoningLevelFromId = useMemo(() => {
+    const options = (agentDetail?.reasoning_options || []) as Array<{
+      id: string;
+      reasoning_level: string;
+    }>;
+    const mapping = new Map<string, string>();
+    options.forEach((opt) => {
+      if (opt.id && opt.reasoning_level) {
+        mapping.set(opt.id, opt.reasoning_level);
+      }
+    });
+    return (optionId: string) => mapping.get(optionId) || "none";
+  }, [agentDetail?.reasoning_options]);
+
+  // Helper to get available voice IDs and names
+  const availableVoices = useMemo(() => {
+    const voices = (agentDetail?.available_voices || []) as Array<{
+      id: string;
+      voice: string;
+    }>;
+    return voices.map((v) => ({
+      id: v.id || "",
+      voice: v.voice || "",
+    }));
+  }, [agentDetail?.available_voices]);
 
   // Filter prompt_mapping client-side based on selected departments from form
   // API returns all prompts user has access to, then we filter by selected departments
@@ -459,12 +531,16 @@ export default function SystemAgent({
       description: "",
       systemPrompt: "",
       promptId: null,
-      temperature: 0.7,
       modelId: "",
-      reasoning: "none",
       active: true,
       role: "assistant", // Default role
       departmentIds: defaultDepartmentIds,
+      model_temperature_level_id: null,
+      model_reasoning_level_id: null,
+      model_voice_ids: [],
+      temperature: 0.7,
+      reasoning: "none",
+      voices: [],
     }),
     [defaultDepartmentIds]
   );
@@ -502,8 +578,18 @@ export default function SystemAgent({
         description: agentDetail.description,
         systemPrompt: agentDetail.system_prompt,
         promptId: agentDetail.prompt_id || null,
-        temperature: agentDetail.temperature,
         modelId: defaultModelId || "",
+        active: agentDetail.active ?? true,
+        role: agentDetail.role || "assistant",
+        departmentIds: deptIds,
+        // Option IDs
+        model_temperature_level_id:
+          agentDetail.selected_temperature_level_id || null,
+        model_reasoning_level_id:
+          agentDetail.selected_reasoning_level_id || null,
+        model_voice_ids: agentDetail.selected_voice_ids || [],
+        // Display values (for backward compatibility)
+        temperature: agentDetail.temperature,
         reasoning:
           (agentDetail.reasoning as
             | "minimal"
@@ -511,9 +597,7 @@ export default function SystemAgent({
             | "medium"
             | "high"
             | undefined) || "none",
-        active: agentDetail.active ?? true,
-        role: agentDetail.role || "assistant",
-        departmentIds: deptIds,
+        voices: agentDetail.valid_voices || [],
       });
       // Initialize the ref for department change tracking
       prevDepartmentIdsRef.current = [...deptIds];
@@ -529,8 +613,6 @@ export default function SystemAgent({
 
       setFormData({
         ...initialFormData,
-        temperature:
-          agentDetailDefault.temperature ?? initialFormData.temperature ?? 0.7,
         modelId: defaultModelId || "",
         systemPrompt:
           agentDetailDefault.system_prompt ||
@@ -542,6 +624,15 @@ export default function SystemAgent({
           agentDetailDefault.department_ids?.length > 0
             ? agentDetailDefault.department_ids
             : defaultDepartmentIds,
+        // Option IDs (empty for new agents)
+        model_temperature_level_id: null,
+        model_reasoning_level_id: null,
+        model_voice_ids: [],
+        // Display values
+        temperature:
+          agentDetailDefault.temperature ?? initialFormData.temperature ?? 0.7,
+        reasoning: "none",
+        voices: [],
       });
     }
   }, [
@@ -589,7 +680,7 @@ export default function SystemAgent({
 
   const handleInputChange = (
     field: keyof SystemAgentFormData,
-    value: string | number | boolean | null | undefined
+    value: string | number | boolean | string[] | null | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -707,16 +798,18 @@ export default function SystemAgent({
           description: formData.description!,
           prompt_id: shouldCreateNewPrompt ? null : formData.promptId || null,
           system_prompt: formData.systemPrompt!,
-          temperature: Number(formData.temperature),
           model_id: formData.modelId!.trim(),
-          reasoning:
-            formData.reasoning && formData.reasoning !== "none"
-              ? formData.reasoning
-              : null,
           active: formData.active ?? true,
           role: formData.role || "assistant",
           department_ids: finalDepartmentIds,
           department_ids_for_prompt: departmentsForPromptOverride,
+          model_temperature_level_id:
+            formData.model_temperature_level_id || null,
+          model_reasoning_level_id: formData.model_reasoning_level_id || null,
+          model_voice_ids:
+            formData.model_voice_ids && formData.model_voice_ids.length > 0
+              ? formData.model_voice_ids
+              : null,
           profileId: effectiveProfile?.id || "guest-profile-id", // Added by server action, but types require it
         });
         toast.success("Agent updated successfully!");
@@ -731,15 +824,17 @@ export default function SystemAgent({
           description: formData.description!,
           prompt_id: formData.promptId || null,
           system_prompt: formData.systemPrompt!,
-          temperature: Number(formData.temperature),
           model_id: formData.modelId!.trim(),
-          reasoning:
-            formData.reasoning && formData.reasoning !== "none"
-              ? formData.reasoning
-              : null,
           active: formData.active ?? true,
           role: formData.role || "assistant",
           department_ids: finalDepartmentIds,
+          model_temperature_level_id:
+            formData.model_temperature_level_id || null,
+          model_reasoning_level_id: formData.model_reasoning_level_id || null,
+          model_voice_ids:
+            formData.model_voice_ids && formData.model_voice_ids.length > 0
+              ? formData.model_voice_ids
+              : null,
           profileId: effectiveProfile?.id || "guest-profile-id", // Added by server action, but types require it
         });
         toast.success("Agent created successfully!");
@@ -1006,32 +1101,79 @@ export default function SystemAgent({
               {selectedModelCapabilities?.has_text_output && (
                 <div className="space-y-2">
                   <Label htmlFor="reasoning">Reasoning Effort</Label>
-                  {formData?.reasoning !== undefined ? (
+                  {formData?.model_reasoning_level_id !== undefined ? (
                     <ReasoningPicker
                       mapping={agentDetail?.reasoning_mapping || {}}
                       validIds={
                         agentDetail?.reasoning_options &&
+                        Array.isArray(agentDetail.reasoning_options) &&
                         agentDetail.reasoning_options.length > 0
-                          ? agentDetail.reasoning_options
+                          ? (
+                              agentDetail.reasoning_options as Array<{
+                                id: string;
+                                reasoning_level: string;
+                              }>
+                            ).map((opt) => opt.reasoning_level)
                           : ["none", "minimal", "low", "medium", "high"]
                       }
                       selectedIds={
-                        formData?.reasoning ? [formData.reasoning] : ["none"]
+                        formData.model_reasoning_level_id
+                          ? [
+                              getReasoningLevelFromId(
+                                formData.model_reasoning_level_id
+                              ),
+                            ]
+                          : formData.reasoning
+                            ? [formData.reasoning]
+                            : ["none"]
                       }
-                      onSelect={(ids) =>
+                      onSelect={(ids) => {
+                        const reasoningLevel = ids[0] || "none";
+                        const optionId = getReasoningOptionId(reasoningLevel);
+                        handleInputChange("model_reasoning_level_id", optionId);
                         handleInputChange(
                           "reasoning",
-                          (ids[0] || "none") as
+                          reasoningLevel as
                             | "none"
                             | "minimal"
                             | "low"
                             | "medium"
                             | "high"
-                        )
-                      }
+                        );
+                      }}
                       placeholder="Select reasoning effort"
                       multiSelect={false}
                       triggerProps={{ "data-testid": "picker-reasoning" }}
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              {/* Voices - Show if model supports audio output */}
+              {selectedModelCapabilities?.has_audio_output && (
+                <div className="space-y-2">
+                  <Label htmlFor="voices">Voices</Label>
+                  {formData?.model_voice_ids !== undefined ? (
+                    <VoiceMultiPicker
+                      selectedIds={
+                        formData.model_voice_ids &&
+                        formData.model_voice_ids.length > 0
+                          ? availableVoices
+                              .filter((v) =>
+                                formData.model_voice_ids?.includes(v.id)
+                              )
+                              .map((v) => v.voice)
+                          : formData.voices || []
+                      }
+                      onSelect={(voiceNames) => {
+                        // Map voice names back to option IDs
+                        const selectedIds = availableVoices
+                          .filter((v) => voiceNames.includes(v.voice))
+                          .map((v) => v.id);
+                        handleInputChange("model_voice_ids", selectedIds);
+                        handleInputChange("voices", voiceNames);
+                      }}
+                      disabled={isSubmitting || isReadonly}
                     />
                   ) : null}
                 </div>
@@ -1053,16 +1195,19 @@ export default function SystemAgent({
                         <select
                           id="temperature"
                           data-testid="temperature-picker"
-                          value={formData.temperature.toString()}
-                          onChange={(e) =>
+                          value={formData.temperature?.toString() || "0.7"}
+                          onChange={(e) => {
+                            const tempValue = parseFloat(e.target.value);
+                            const levelId = getTemperatureLevelId(tempValue);
+                            handleInputChange("temperature", tempValue);
                             handleInputChange(
-                              "temperature",
-                              parseFloat(e.target.value)
-                            )
-                          }
+                              "model_temperature_level_id",
+                              levelId
+                            );
+                          }}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {temperatureBounds.values.map((val) => (
+                          {temperatureBounds.values.map((val: string) => (
                             <option key={val} value={val}>
                               {parseFloat(val).toFixed(2)}
                             </option>
@@ -1078,9 +1223,15 @@ export default function SystemAgent({
                             max={temperatureBounds.upper}
                             step={0.01}
                             value={[formData?.temperature || 0]}
-                            onValueChange={(value) =>
-                              handleInputChange("temperature", value[0] || 0)
-                            }
+                            onValueChange={(value) => {
+                              const tempValue = value[0] || 0;
+                              const levelId = getTemperatureLevelId(tempValue);
+                              handleInputChange("temperature", tempValue);
+                              handleInputChange(
+                                "model_temperature_level_id",
+                                levelId
+                              );
+                            }}
                             className="w-full"
                           />
                           <div className="flex justify-between text-xs text-muted-foreground">
