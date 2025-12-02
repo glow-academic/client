@@ -102,6 +102,22 @@ runs_with_debug AS (
         ) as debug_info
     FROM runs_base mrb
 ),
+-- Calculate run costs using run_pricing_usage and model_pricing
+run_costs AS (
+    SELECT 
+        rpu.run_id,
+        COALESCE(SUM(
+            (rpu.count::numeric / u.value::numeric) * mp.price
+        ), 0) as run_cost
+    FROM run_pricing_usage rpu
+    JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
+    JOIN model_pricing mp ON mp.model_id = rm.model_id 
+        AND mp.pricing_type = rpu.pricing_type 
+        AND mp.unit_id = rpu.unit_id
+        AND mp.active = true
+    JOIN units u ON u.id = rpu.unit_id
+    GROUP BY rpu.run_id
+),
 -- Join with mappings for search and display
 runs_with_names AS (
     SELECT
@@ -109,12 +125,14 @@ runs_with_names AS (
         m.name as model_name,
         p.first_name || ' ' || p.last_name as profile_name,
         a.name as agent_name,
-        per.name as persona_name
+        per.name as persona_name,
+        COALESCE(rc.run_cost, 0) as run_cost
     FROM runs_with_debug mrwd
     LEFT JOIN models m ON m.id = mrwd.model_id
     LEFT JOIN profiles p ON p.id = mrwd.profile_id
     LEFT JOIN agents a ON a.id = mrwd.agent_id
     LEFT JOIN personas per ON per.id = mrwd.persona_id
+    LEFT JOIN run_costs rc ON rc.run_id = mrwd.run_id
 ),
 -- Apply search filter (across model name, agent name, persona name, profile name, debug info)
 runs_with_search AS (
@@ -204,9 +222,7 @@ model_mapping AS (
             m.id::text,
             jsonb_build_object(
                 'name', m.name,
-                'description', m.description,
-                'input_ppm', m.input_ppm,
-                'output_ppm', m.output_ppm
+                'description', m.description
             )
         ),
         '{}'::jsonb
@@ -255,6 +271,7 @@ SELECT jsonb_build_object(
                 'created_at', created_at,
                 'input_tokens', input_tokens,
                 'output_tokens', output_tokens,
+                'cost', run_cost,
                 'model_id', CASE WHEN model_id IS NOT NULL THEN model_id::text ELSE NULL END,
                 'profile_id', CASE WHEN profile_id IS NOT NULL THEN profile_id::text ELSE NULL END,
                 'agent_id', CASE WHEN agent_id IS NOT NULL THEN agent_id::text ELSE NULL END,

@@ -5,15 +5,18 @@ WITH user_departments AS (
 ),
 model_run_costs AS (
     SELECT 
-        mr.id as run_id,
+        rpu.run_id,
         COALESCE(SUM(
-            (mr.input_tokens / 1000000.0) * COALESCE(m.input_ppm, 0) +
-            (mr.output_tokens / 1000000.0) * COALESCE(m.output_ppm, 0)
+            (rpu.count::numeric / u.value::numeric) * mp.price
         ), 0) as cost
-    FROM runs mr
-    LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
-    LEFT JOIN models m ON m.id = mrm.model_id
-    GROUP BY mr.id
+    FROM run_pricing_usage rpu
+    JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
+    JOIN model_pricing mp ON mp.model_id = rm.model_id 
+        AND mp.pricing_type = rpu.pricing_type 
+        AND mp.unit_id = rpu.unit_id
+        AND mp.active = true
+    JOIN units u ON u.id = rpu.unit_id
+    GROUP BY rpu.run_id
 ),
 model_run_departments_via_agents AS (
     SELECT DISTINCT

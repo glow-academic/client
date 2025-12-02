@@ -195,3 +195,20 @@ CREATE INDEX ON model_pricing (model_id);
 CREATE INDEX ON model_pricing (pricing_type);
 CREATE INDEX ON model_pricing (unit_id);
 CREATE INDEX ON model_pricing (active);
+
+-- Run pricing usage junction table
+-- Tracks usage metrics (token counts, seconds, image counts) by pricing type and unit
+-- Enables dynamic pricing calculation by joining with model_pricing without storing actual prices (BCNF)
+CREATE TABLE run_pricing_usage (
+  run_id         UUID         NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+  pricing_type   pricing_type NOT NULL,
+  unit_id        UUID         NOT NULL REFERENCES units(id) ON DELETE RESTRICT,
+  count          INTEGER      NOT NULL DEFAULT 0,
+  created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  PRIMARY KEY (run_id, pricing_type, unit_id)
+);
+
+CREATE INDEX ON run_pricing_usage (run_id);
+CREATE INDEX ON run_pricing_usage (pricing_type);
+CREATE INDEX ON run_pricing_usage (unit_id);

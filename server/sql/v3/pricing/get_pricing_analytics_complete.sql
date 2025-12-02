@@ -94,9 +94,7 @@ model_mapping AS (
             m.id::text,
             jsonb_build_object(
                 'name', m.name,
-                'description', m.description,
-                'input_ppm', m.input_ppm,
-                'output_ppm', m.output_ppm
+                'description', m.description
             )
         ),
         '{}'::jsonb

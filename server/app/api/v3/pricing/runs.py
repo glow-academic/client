@@ -190,13 +190,14 @@ async def get_pricing_runs(
         sort_order = (filters.sortOrder or "desc").upper()
 
         # Map sortBy to actual column names
+        # Note: cost calculation now uses run_pricing_usage joined with model_pricing
         sort_column_map = {
             "createdAt": "created_at",
             "modelName": "model_name",
             "profileName": "profile_name",
             "inputTokens": "input_tokens",
             "outputTokens": "output_tokens",
-            "cost": "(input_tokens::float / 1000000.0 * COALESCE((SELECT input_ppm FROM models WHERE id = model_id), 0) + output_tokens::float / 1000000.0 * COALESCE((SELECT output_ppm FROM models WHERE id = model_id), 0))",
+            "cost": "run_cost",
         }
 
         sort_column = sort_column_map.get(sort_by, "created_at")
