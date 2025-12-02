@@ -9,6 +9,34 @@ WITH resolve_profile_id AS (
             ELSE $13::uuid
         END as resolved_profile_id
 ),
+validate_reasoning AS (
+    -- Validate reasoning level is supported by model (if reasoning provided and model has constraints)
+    SELECT CASE
+        WHEN $6::text IS NULL OR $6::text = '' THEN true
+        WHEN NOT EXISTS (SELECT 1 FROM model_reasoning_levels WHERE model_id = $5::uuid AND active = true) THEN true
+        WHEN EXISTS (
+            SELECT 1 FROM model_reasoning_levels 
+            WHERE model_id = $5::uuid 
+            AND reasoning_level = $6::reasoning_effort 
+            AND active = true
+        ) THEN true
+        ELSE false
+    END as is_valid
+),
+validate_temperature AS (
+    -- Validate temperature is within allowed range for model (if model has constraints)
+    SELECT CASE
+        WHEN NOT EXISTS (SELECT 1 FROM model_temperature_levels WHERE model_id = $5::uuid AND active = true) THEN true
+        WHEN $4 >= (
+            SELECT MIN(temperature) FROM model_temperature_levels 
+            WHERE model_id = $5::uuid AND is_upper = false AND active = true
+        ) AND $4 <= (
+            SELECT MAX(temperature) FROM model_temperature_levels 
+            WHERE model_id = $5::uuid AND is_upper = true AND active = true
+        ) THEN true
+        ELSE false
+    END as is_valid
+),
 update_agent AS (
     UPDATE agents
     SET 
@@ -21,6 +49,8 @@ update_agent AS (
         role = $8,
         updated_at = NOW()
     WHERE id = $1::uuid
+    AND EXISTS (SELECT 1 FROM validate_reasoning WHERE is_valid = true)
+    AND EXISTS (SELECT 1 FROM validate_temperature WHERE is_valid = true)
     RETURNING id::text as agent_id
 ),
 new_prompt AS (

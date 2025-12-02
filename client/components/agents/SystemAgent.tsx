@@ -774,7 +774,11 @@ export default function SystemAgent({
                 {formData?.reasoning !== undefined ? (
                   <ReasoningPicker
                     mapping={agentDetail?.reasoning_mapping || {}}
-                    validIds={["none", "minimal", "low", "medium", "high"]}
+                    validIds={
+                      agentDetail?.reasoning_options && agentDetail.reasoning_options.length > 0
+                        ? agentDetail.reasoning_options
+                        : ["none", "minimal", "low", "medium", "high"]
+                    }
                     selectedIds={
                       formData?.reasoning ? [formData.reasoning] : ["none"]
                     }
@@ -806,22 +810,44 @@ export default function SystemAgent({
                 </Label>
                 {formData?.temperature !== undefined ? (
                   <>
-                    <Slider
-                      id="temperature"
-                      data-testid="temperature-slider"
-                      min={temperatureLower}
-                      max={temperatureUpper}
-                      step={0.01}
-                      value={[formData?.temperature || 0]}
-                      onValueChange={(value) =>
-                        handleInputChange("temperature", value[0] || 0)
-                      }
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Deterministic</span>
-                      <span>Creative</span>
-                    </div>
+                    {agentDetail?.temperature_values && agentDetail.temperature_values.length > 0 ? (
+                      // Use dropdown picker if specific temperature values are provided
+                      <select
+                        id="temperature"
+                        data-testid="temperature-picker"
+                        value={formData.temperature.toString()}
+                        onChange={(e) =>
+                          handleInputChange("temperature", parseFloat(e.target.value))
+                        }
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {agentDetail.temperature_values.map((val) => (
+                          <option key={val} value={val}>
+                            {parseFloat(val).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      // Use slider if temperature range is provided
+                      <>
+                        <Slider
+                          id="temperature"
+                          data-testid="temperature-slider"
+                          min={temperatureLower}
+                          max={temperatureUpper}
+                          step={0.01}
+                          value={[formData?.temperature || 0]}
+                          onValueChange={(value) =>
+                            handleInputChange("temperature", value[0] || 0)
+                          }
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Deterministic</span>
+                          <span>Creative</span>
+                        </div>
+                      </>
+                    )}
                   </>
                 ) : null}
               </div>

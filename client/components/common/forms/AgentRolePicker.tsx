@@ -49,6 +49,30 @@ export const AGENT_ROLES = [
     description: "Scenario generation agent",
   },
   { id: "title", name: "Title", description: "Title generation agent" },
+  { id: "image", name: "Image", description: "Image generation agent" },
+  { id: "video", name: "Video", description: "Video generation agent" },
+  {
+    id: "simulation-text",
+    name: "Simulation Text",
+    description: "Text-based simulation agent",
+  },
+  {
+    id: "simulation-voice",
+    name: "Simulation Voice",
+    description: "Voice-based simulation agent",
+  },
+  { id: "eval", name: "Eval", description: "Evaluation agent" },
+  { id: "outline", name: "Outline", description: "Outline generation agent" },
+  {
+    id: "question",
+    name: "Question",
+    description: "Question generation agent",
+  },
+  {
+    id: "document",
+    name: "Document",
+    description: "Document generation agent",
+  },
 ] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number]["id"];
@@ -125,7 +149,7 @@ export function RolePicker({
                     <Check
                       className={cn(
                         "ml-auto flex-shrink-0",
-                        selectedRole === role.id ? "opacity-100" : "opacity-0",
+                        selectedRole === role.id ? "opacity-100" : "opacity-0"
                       )}
                     />
                   </div>

@@ -5,23 +5,17 @@ from datetime import datetime
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel
-
 from app.main import get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.schema import (
-    DepartmentMapping,
-    DepartmentMappingItem,
-    ModelMapping,
-    ModelMappingItem,
-    ReasoningMapping,
-    ReasoningMappingItem,
-)
+from app.utils.schema import (DepartmentMapping, DepartmentMappingItem,
+                              ModelMapping, ModelMappingItem, ReasoningMapping,
+                              ReasoningMappingItem)
 from app.utils.sql_helper import load_sql
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 
 # Inline request/response schemas
@@ -65,6 +59,8 @@ class AgentDetailResponse(BaseModel):
     reasoning_options: list[str]
     temperature_lower: float
     temperature_upper: float
+    temperature_values: list[str]
+    valid_voices: list[str]
     department_ids: list[str]
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
@@ -258,6 +254,30 @@ async def get_agent_detail(
             ),
         }
 
+        # Parse reasoning_options from JSONB
+        reasoning_options: list[str] = []
+        reasoning_options_data = result.get("reasoning_options")
+        if isinstance(reasoning_options_data, str):
+            reasoning_options_data = json.loads(reasoning_options_data)
+        if reasoning_options_data and isinstance(reasoning_options_data, list):
+            reasoning_options = [str(opt) for opt in reasoning_options_data if opt]
+
+        # Parse temperature_values from JSONB
+        temperature_values: list[str] = []
+        temperature_values_data = result.get("temperature_values")
+        if isinstance(temperature_values_data, str):
+            temperature_values_data = json.loads(temperature_values_data)
+        if temperature_values_data and isinstance(temperature_values_data, list):
+            temperature_values = [str(val) for val in temperature_values_data if val]
+
+        # Parse valid_voices from JSONB
+        valid_voices: list[str] = []
+        valid_voices_data = result.get("valid_voices")
+        if isinstance(valid_voices_data, str):
+            valid_voices_data = json.loads(valid_voices_data)
+        if valid_voices_data and isinstance(valid_voices_data, list):
+            valid_voices = [str(voice) for voice in valid_voices_data if voice]
+
         # Get can_edit from SQL result
         can_edit = result.get("can_edit", False)
 
@@ -272,16 +292,18 @@ async def get_agent_detail(
             model_id=result["model_id"],
             reasoning=result["reasoning"],
             active=result["active"],
-            role=result.get("role", "assistant"),
+            role=result["role"],
             department_ids=department_ids,
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,
             department_prompt_links=department_prompt_links,
             prompt_mapping=prompt_mapping,
             valid_model_ids=valid_model_ids,
-            reasoning_options=["none", "minimal", "low", "medium", "high"],
-            temperature_lower=0.0,
-            temperature_upper=1.0,
+            reasoning_options=reasoning_options if reasoning_options else ["none", "minimal", "low", "medium", "high"],
+            temperature_lower=float(result.get("temperature_lower", 0.0)),
+            temperature_upper=float(result.get("temperature_upper", 1.0)),
+            temperature_values=temperature_values,
+            valid_voices=valid_voices,
             debug_info=debug_info,
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,

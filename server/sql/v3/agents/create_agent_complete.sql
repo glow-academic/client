@@ -9,9 +9,48 @@ WITH resolve_profile_id AS (
             ELSE $11::uuid
         END as resolved_profile_id
 ),
+validate_reasoning AS (
+    -- Validate reasoning level is supported by model (if reasoning provided and model has constraints)
+    SELECT CASE
+        WHEN $5::text IS NULL OR $5::text = '' THEN true
+        WHEN NOT EXISTS (SELECT 1 FROM model_reasoning_levels WHERE model_id = $4::uuid AND active = true) THEN true
+        WHEN EXISTS (
+            SELECT 1 FROM model_reasoning_levels 
+            WHERE model_id = $4::uuid 
+            AND reasoning_level = $5::reasoning_effort 
+            AND active = true
+        ) THEN true
+        ELSE false
+    END as is_valid
+),
+validate_temperature AS (
+    -- Validate temperature is within allowed range for model (if model has constraints)
+    SELECT CASE
+        WHEN NOT EXISTS (SELECT 1 FROM model_temperature_levels WHERE model_id = $4::uuid AND active = true) THEN true
+        WHEN $3 >= (
+            SELECT MIN(temperature) FROM model_temperature_levels 
+            WHERE model_id = $4::uuid AND is_upper = false AND active = true
+        ) AND $3 <= (
+            SELECT MAX(temperature) FROM model_temperature_levels 
+            WHERE model_id = $4::uuid AND is_upper = true AND active = true
+        ) THEN true
+        ELSE false
+    END as is_valid
+),
 new_agent AS (
     INSERT INTO agents (name, description, temperature, model_id, reasoning, active, role, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, COALESCE($5::reasoning_effort, 'none'::reasoning_effort), $6, $7, NOW(), NOW())
+    SELECT 
+        $1, 
+        $2, 
+        $3, 
+        $4, 
+        COALESCE($5::reasoning_effort, 'none'::reasoning_effort), 
+        $6, 
+        $7, 
+        NOW(), 
+        NOW()
+    FROM validate_reasoning vr, validate_temperature vt
+    WHERE vr.is_valid = true AND vt.is_valid = true
     RETURNING id::text as agent_id
 ),
 new_prompt AS (

@@ -12854,6 +12854,10 @@ export interface components {
             temperature_lower: number;
             /** Temperature Upper */
             temperature_upper: number;
+            /** Temperature Values */
+            temperature_values: string[];
+            /** Valid Voices */
+            valid_voices: string[];
             /** Department Ids */
             department_ids: string[];
             /** Valid Department Ids */

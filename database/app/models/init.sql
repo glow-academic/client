@@ -6,25 +6,24 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 CREATE TYPE provider AS ENUM ('openai', 'gemini', 'custom');
-CREATE TYPE model_type AS ENUM ('text', 'video', 'audio', 'image');
+CREATE TYPE modality_type AS ENUM ('text', 'video', 'audio', 'image');
+CREATE TYPE pricing_type AS ENUM ('input', 'output', 'cached');
+CREATE TYPE unit_category AS ENUM ('tokens', 'seconds', 'units');
+CREATE TYPE quality AS ENUM ('low', 'medium', 'high');
 
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
 
 CREATE TABLE models (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NOT NULL,
+  id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
+  name       TEXT         NOT NULL,
   description TEXT        NOT NULL,
-  provider   provider    NOT NULL,
-  model_type model_type  NOT NULL DEFAULT 'text',
-  active      BOOLEAN     NOT NULL DEFAULT TRUE,
-  input_ppm   FLOAT       NOT NULL DEFAULT 0.0, -- price per million input tokens (dollars) (free is 0.0)
-  output_ppm  FLOAT       NOT NULL DEFAULT 0.0, -- price per million output tokens (dollars) (free is 0.0)
-  cached_ppm  FLOAT       NOT NULL DEFAULT 0.0, -- cached price per million tokens (dollars) (free is 0.0)
-  image_model BOOLEAN     NOT NULL DEFAULT FALSE
+  provider   provider     NOT NULL,
+  modality_type modality_type NOT NULL DEFAULT 'text',
+  active     BOOLEAN      NOT NULL DEFAULT TRUE
 );
 
 -- Model endpoints junction table (BCNF normalization)
@@ -97,3 +96,102 @@ CREATE INDEX ON model_department_keys (key_id);
 -- Only one active per (model_id, department_id, key_id)
 CREATE UNIQUE INDEX model_department_keys_one_active_per_model_dept_key
   ON model_department_keys(model_id, department_id, key_id) WHERE active = true;
+
+-- ============================================================================
+-- PRICING AND CONSTRAINT TABLES
+-- ============================================================================
+
+-- Units reference table
+CREATE TABLE units (
+  id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          TEXT          NOT NULL,
+  unit_category unit_category NOT NULL,
+  value         INTEGER       NOT NULL,
+  active        BOOLEAN       NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ   NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ   NOT NULL DEFAULT now()
+);
+
+-- Unique constraint on (name, value, unit_category) to allow multiple units with same value/category
+-- but different names (e.g., million_text vs million_audio vs million_image)
+CREATE UNIQUE INDEX units_unique_name_value_category_active
+  ON units(name, value, unit_category) WHERE active = true;
+
+CREATE INDEX ON units (unit_category);
+CREATE INDEX ON units (value);
+CREATE INDEX ON units (active);
+
+-- Model reasoning levels junction table
+CREATE TABLE model_reasoning_levels (
+  model_id        UUID            NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  reasoning_level reasoning_effort NOT NULL,
+  active          BOOLEAN         NOT NULL DEFAULT TRUE,
+  created_at      TIMESTAMPTZ     NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ     NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, reasoning_level)
+);
+
+CREATE INDEX ON model_reasoning_levels (model_id);
+CREATE INDEX ON model_reasoning_levels (reasoning_level);
+CREATE INDEX ON model_reasoning_levels (active);
+
+-- Model temperature levels junction table (with range support)
+CREATE TABLE model_temperature_levels (
+  model_id    UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  temperature REAL        NOT NULL,
+  is_upper    BOOLEAN     NOT NULL,
+  active      BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, temperature, is_upper),
+  CHECK (temperature >= 0.0 AND temperature <= 2.0)
+);
+
+CREATE INDEX ON model_temperature_levels (model_id);
+CREATE INDEX ON model_temperature_levels (temperature);
+CREATE INDEX ON model_temperature_levels (active);
+
+-- Model voices junction table (uses voice enum from personas)
+CREATE TABLE model_voices (
+  model_id   UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  voice      voice       NOT NULL,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, voice)
+);
+
+CREATE INDEX ON model_voices (model_id);
+CREATE INDEX ON model_voices (voice);
+CREATE INDEX ON model_voices (active);
+
+-- Model qualities junction table (for image models with quality levels)
+CREATE TABLE model_qualities (
+  model_id   UUID        NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  quality    quality     NOT NULL,
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, quality)
+);
+
+CREATE INDEX ON model_qualities (model_id);
+CREATE INDEX ON model_qualities (quality);
+CREATE INDEX ON model_qualities (active);
+
+-- Model pricing junction table
+CREATE TABLE model_pricing (
+  model_id       UUID         NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  pricing_type   pricing_type NOT NULL,
+  unit_id        UUID         NOT NULL REFERENCES units(id) ON DELETE RESTRICT,
+  price          REAL         NOT NULL,
+  active         BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  PRIMARY KEY (model_id, pricing_type, unit_id)
+);
+
+CREATE INDEX ON model_pricing (model_id);
+CREATE INDEX ON model_pricing (pricing_type);
+CREATE INDEX ON model_pricing (unit_id);
+CREATE INDEX ON model_pricing (active);

@@ -189,6 +189,42 @@ valid_departments_data AS (
         ) as dept_mapping,
         array_agg(ud.id::text ORDER BY ud.name) as dept_ids
     FROM user_departments ud
+),
+model_reasoning_levels_data AS (
+    SELECT 
+        mrl.model_id::text as model_id,
+        jsonb_agg(mrl.reasoning_level::text ORDER BY 
+            CASE mrl.reasoning_level
+                WHEN 'none' THEN 1
+                WHEN 'minimal' THEN 2
+                WHEN 'low' THEN 3
+                WHEN 'medium' THEN 4
+                WHEN 'high' THEN 5
+            END
+        ) as reasoning_levels
+    FROM model_reasoning_levels mrl
+    WHERE mrl.active = true
+    GROUP BY mrl.model_id
+),
+model_temperature_levels_data AS (
+    SELECT 
+        mtl.model_id::text as model_id,
+        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false) as temperature_lower,
+        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true) as temperature_upper,
+        jsonb_agg(
+            DISTINCT mtl.temperature::text ORDER BY mtl.temperature::text
+        ) as temperature_values
+    FROM model_temperature_levels mtl
+    WHERE mtl.active = true
+    GROUP BY mtl.model_id
+),
+model_voices_data AS (
+    SELECT 
+        mv.model_id::text as model_id,
+        jsonb_agg(mv.voice::text ORDER BY mv.voice::text) as voices
+    FROM model_voices mv
+    WHERE mv.active = true
+    GROUP BY mv.model_id
 )
 SELECT 
     ai.agent_id,
@@ -237,7 +273,37 @@ SELECT
         FROM all_models am
         WHERE am.active = true),
         '[]'::jsonb
-    ) as valid_model_ids
+    ) as valid_model_ids,
+    COALESCE(
+        (SELECT mrl.reasoning_levels
+        FROM model_reasoning_levels_data mrl
+        WHERE mrl.model_id = ai.model_id),
+        '[]'::jsonb
+    ) as reasoning_options,
+    COALESCE(
+        (SELECT mtl.temperature_lower
+        FROM model_temperature_levels_data mtl
+        WHERE mtl.model_id = ai.model_id),
+        0.0
+    ) as temperature_lower,
+    COALESCE(
+        (SELECT mtl.temperature_upper
+        FROM model_temperature_levels_data mtl
+        WHERE mtl.model_id = ai.model_id),
+        1.0
+    ) as temperature_upper,
+    COALESCE(
+        (SELECT mtl.temperature_values
+        FROM model_temperature_levels_data mtl
+        WHERE mtl.model_id = ai.model_id),
+        '[]'::jsonb
+    ) as temperature_values,
+    COALESCE(
+        (SELECT mv.voices
+        FROM model_voices_data mv
+        WHERE mv.model_id = ai.model_id),
+        '[]'::jsonb
+    ) as valid_voices
 FROM agent_info ai
 LEFT JOIN agent_active_prompt aap ON aap.agent_id = ai.agent_id
 LEFT JOIN agent_departments_data add ON add.agent_id = ai.agent_id

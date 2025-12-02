@@ -31153,6 +31153,20 @@
             "type": "number",
             "title": "Temperature Upper"
           },
+          "temperature_values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Temperature Values"
+          },
+          "valid_voices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Voices"
+          },
           "department_ids": {
             "items": {
               "type": "string"
@@ -31229,6 +31243,8 @@
           "reasoning_options",
           "temperature_lower",
           "temperature_upper",
+          "temperature_values",
+          "valid_voices",
           "department_ids",
           "valid_department_ids",
           "department_mapping",

@@ -42,6 +42,8 @@ class AgentDetailResponse(BaseModel):
     reasoning_options: list[str]
     temperature_lower: float
     temperature_upper: float
+    temperature_values: list[str]
+    valid_voices: list[str]
     department_ids: list[str]
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
@@ -187,6 +189,8 @@ async def get_agent_new(
             reasoning_options=["none", "minimal", "low", "medium", "high"],
             temperature_lower=0.0,
             temperature_upper=1.0,
+            temperature_values=[],
+            valid_voices=[],
             debug_info=[],
             model_mapping=model_mapping,
             reasoning_mapping=reasoning_mapping,

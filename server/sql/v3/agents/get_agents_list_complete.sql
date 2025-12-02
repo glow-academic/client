@@ -50,7 +50,7 @@ SELECT
     a.reasoning,
     a.temperature,
     a.model_id::text,
-    a.role,
+    a.role::text,
     a.updated_at,
     COALESCE(addd.department_ids, NULL) as department_ids,
     CASE WHEN up.role IN ('admin', 'superadmin') THEN true ELSE false END as can_edit,
