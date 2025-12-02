@@ -6,6 +6,7 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { GlowIconComponent } from "@/components/common/GlowIconComponent";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
@@ -363,11 +364,15 @@ export default function Login({ providers = [], guest_login_enabled = true }: Lo
               href="/"
               className="cursor-pointer hover:opacity-90 transition-opacity flex flex-col items-center space-y-3"
             >
-              {/* Logo Icon */}
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                {/* Logo sparkles */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
+              {/* Logo Icon - uses centralized GlowIconComponent */}
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                <GlowIconComponent
+                  size={64}
+                  inline={true}
+                  className="w-full h-full"
+                />
+                {/* Decorative sparkles */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div
                     className="absolute top-2 right-2 animate-ping"
                     style={{ animationDelay: "0.5s" }}

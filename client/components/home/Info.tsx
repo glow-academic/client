@@ -308,7 +308,11 @@ export default function Info() {
                   label: "Minutes Practiced",
                   color: "gold",
                 },
-                { number: "Purdue", label: "University", color: "sun" },
+                {
+                  number: "Pilot",
+                  label: "at Top-Tier R1 University",
+                  color: "sun",
+                },
               ].map((stat, index) => (
                 <motion.div
                   key={index}
@@ -464,7 +468,7 @@ export default function Info() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -100 }}
                     transition={{ duration: 0.5 }}
-                    className="aspect-video relative w-full"
+                    className="aspect-video relative w-full rounded-2xl overflow-hidden"
                   >
                     <Image
                       src={`/Image${carouselIndex + 1}.png`}
@@ -478,7 +482,7 @@ export default function Info() {
                               : "TA Specialized Feedback & Rubric"
                       }
                       fill
-                      className="object-cover object-[center_5%]"
+                      className="object-cover object-[center_5%] rounded-2xl"
                       priority={carouselIndex === 0}
                     />
                   </motion.div>
@@ -775,7 +779,7 @@ export default function Info() {
       {/* Licensing Section */}
       <section
         ref={licensingRef}
-        className="py-16 md:py-24 lg:py-32 xl:py-42 bg-gradient-to-r from-blue-500 to-blue-600 relative overflow-hidden"
+        className="py-32 md:py-40 lg:py-48 xl:py-56 bg-gradient-to-r from-blue-500 to-blue-600 relative overflow-hidden"
       >
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -ml-48 -mt-48"></div>
@@ -811,29 +815,37 @@ export default function Info() {
               </svg>
             </motion.div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 md:mb-6">
-              Bring GLOW to Your Institution
+              Contact
             </h2>
             <p className="text-lg md:text-xl text-white mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed px-4">
-              We&apos;re working on licensing options for colleges and
-              universities. Reach out to learn more.
-            </p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="bg-white/20 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-white/30 max-w-xl mx-auto"
-            >
-              <p className="text-base md:text-lg text-white mb-2 md:mb-3 font-semibold">
-                Get in touch:
-              </p>
+              For more information, please contact PIs{" "}
               <a
-                href="mailto:redacted@purdue.edu"
-                className="text-lg md:text-xl text-white hover:text-blue-100 underline transition-colors break-all"
+                href="mailto:redacted@purdue.edu,redacted@purdue.edu"
+                className="underline hover:text-blue-100 transition-colors"
               >
-                redacted@purdue.edu
+                Ethan Dickey and Andres Bejarano
               </a>
-            </motion.div>
+              . Tool originally created in Summer 2025 under their guidance by{" "}
+              <a
+                href="https://www.linkedin.com/in/ashok-saravanan"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-100 transition-colors"
+              >
+                Ashok Saravanan
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://www.linkedin.com/in/alexander-siladie"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-100 transition-colors"
+              >
+                Alex Siladie
+              </a>{" "}
+              and initially piloted in Purdue's GTA program in Fall 2025.
+              Results pending.
+            </p>
             <div className="mt-8 pt-8 border-t border-white/20">
               <p className="text-sm text-white/90">
                 &copy; {new Date().getFullYear()} GLOW. All rights reserved.

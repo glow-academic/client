@@ -1,12 +1,15 @@
 /**
  * GlowLogo.tsx
  * Reusable logo component with sparkle icon and glow text
+ * Uses centralized GlowIconComponent
  * @AshokSaravanan222 & @siladiea
  * 11/20/2025
  */
 "use client";
 
-// Sparkle Icon Component
+import { GlowIconComponent } from "@/components/common/GlowIconComponent";
+
+// Sparkle Icon Component (for decorative sparkles around the logo)
 const SparkleIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg
     className={className}
@@ -74,20 +77,38 @@ export function GlowLogo({
             ? "bg-white/60 backdrop-blur-sm border border-blue-300/40"
             : invertColors
               ? "bg-white/95 border border-gray-300/50"
-              : "bg-gradient-to-br from-blue-300 via-blue-400 to-blue-500"
+              : ""
         }`}
       >
-        {/* Logo sparkles */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <SparkleIcon
-            className={`${iconSize} ${
-              lightBackground
-                ? "text-black"
-                : invertColors
-                  ? "text-gray-900"
-                  : "text-white"
-            } animate-pulse`}
+        {/* Main Glow Icon - uses centralized component */}
+        {lightBackground || invertColors ? (
+          <GlowIconComponent
+            size={size === "sm" ? 20 : 24}
+            inline={true}
+            className="w-full h-full"
+            config={{
+              gradientColors: lightBackground
+                ? {
+                    start: "#3B82F6",
+                    middle: "#2563EB",
+                    end: "#1D4ED8",
+                  }
+                : {
+                    start: "#3B82F6",
+                    middle: "#2563EB",
+                    end: "#1D4ED8",
+                  },
+            }}
           />
+        ) : (
+          <GlowIconComponent
+            size={size === "sm" ? 20 : 24}
+            inline={true}
+            className="w-full h-full"
+          />
+        )}
+        {/* Decorative sparkles */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             className="absolute top-1 right-1 animate-ping"
             style={{ animationDelay: "0.5s" }}

@@ -21,6 +21,13 @@ export const metadata: Metadata = {
     default: "GLOW",
   },
   description: "Graduate Learning Orientation Workshop",
+  icons: {
+    icon: [
+      { url: "/glow-icon-simple.svg", type: "image/svg+xml" },
+      { url: "/glow-icon.svg", type: "image/svg+xml", sizes: "512x512" },
+    ],
+    apple: [{ url: "/glow-icon.svg", sizes: "512x512", type: "image/svg+xml" }],
+  },
 };
 
 export default async function RootLayout({
