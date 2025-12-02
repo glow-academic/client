@@ -180,7 +180,6 @@ export default async function DepartmentEditPage({
           departmentDetail={departmentDetail}
           updateDepartmentAction={updateDepartment}
           removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
-          duplicateDepartmentAction={duplicateDepartment}
           deleteDepartmentAction={deleteDepartment}
           processCSVAction={processCSV}
           bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}

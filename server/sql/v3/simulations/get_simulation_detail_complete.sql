@@ -252,7 +252,7 @@ user_context AS (
             SELECT 
                 v.id as video_id,
                 v.name,
-                COALESCE(ps.problem_statement, '') as description,
+                '' as description,
                 sv.active,
                 sv.position,
                 sv.show_problem_statement,

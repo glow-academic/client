@@ -17721,6 +17721,23 @@
               }
             ],
             "title": "Video Name"
+          },
+          "question_timestamps": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Timestamps"
           }
         },
         "type": "object",

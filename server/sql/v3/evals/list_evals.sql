@@ -18,10 +18,10 @@ user_departments AS (
 ),
 eval_status_summary AS (
     SELECT 
-        emr.eval_id,
+        er.eval_id,
         COUNT(*) as total_runs,
-        COUNT(*) FILTER (WHERE emr.completed = true) as completed_runs,
-        COUNT(*) FILTER (WHERE emr.completed = false) as pending_runs
+        COUNT(*) FILTER (WHERE er.completed = true) as completed_runs,
+        COUNT(*) FILTER (WHERE er.completed = false) as pending_runs
     FROM eval_runs er
     GROUP BY er.eval_id
 ),

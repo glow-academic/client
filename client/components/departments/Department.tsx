@@ -25,18 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { Copy, Power, Trash2 } from "lucide-react";
+import { Power, Trash2 } from "lucide-react";
 // Type-only import from server page
 import type {
   CreateStaffDataOut,
@@ -179,7 +171,7 @@ export default function Department({
   createDepartmentAction,
   updateDepartmentAction,
   removeProfilesFromDepartmentAction,
-  duplicateDepartmentAction,
+  duplicateDepartmentAction: _duplicateDepartmentAction,
   deleteDepartmentAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
@@ -187,9 +179,9 @@ export default function Department({
   initialSearchData,
   initialCreateStaffData,
   updateStaffAction,
-  createKeyAction,
-  decryptKeyAction,
-  updateKeyAction,
+  createKeyAction: _createKeyAction,
+  decryptKeyAction: _decryptKeyAction,
+  updateKeyAction: _updateKeyAction,
 }: DepartmentProps) {
   const router = useRouter();
   const { effectiveProfile, scopedRoles } = useProfile();
@@ -216,8 +208,6 @@ export default function Department({
   const [editProfileId, setEditProfileId] = useState<string | null>(null);
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  // Duplicate loading state
-  const [isDuplicating, setIsDuplicating] = useState(false);
 
   // Use server-provided data (no React Query needed when server data is provided)
   const departmentDetail = serverDepartmentDetail;
@@ -392,25 +382,6 @@ export default function Department({
     }
   };
 
-  const handleDuplicate = async () => {
-    if (!departmentId || !duplicateDepartmentAction) return;
-
-    setIsDuplicating(true);
-    try {
-      await duplicateDepartmentAction({
-        body: { departmentId },
-      });
-      toast.success("Department duplicated successfully");
-      router.push("/departments");
-    } catch (error) {
-      toast.error(
-        `Failed to duplicate department: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setIsDuplicating(false);
-    }
-  };
-
   const handleDelete = async () => {
     if (!departmentId || !deleteDepartmentAction) return;
 
@@ -542,8 +513,6 @@ export default function Department({
           </div>
         </div>
 
-        {/* Models Management */}
-        {departmentId && departmentData && (
         {/* Staff Management */}
         {departmentId && departmentData && (
           <div className="space-y-4">
@@ -761,33 +730,10 @@ export default function Department({
             type="button"
             variant="outline"
             onClick={() => router.back()}
-            disabled={isSubmitting || isDuplicating}
+            disabled={isSubmitting}
           >
             Back
           </Button>
-          {isEditMode &&
-            departmentData?.can_duplicate &&
-            duplicateDepartmentAction && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDuplicate}
-                disabled={isSubmitting || isDuplicating}
-                data-testid="btn-duplicate-department"
-              >
-                {isDuplicating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current border-t-transparent mr-2" />
-                    Duplicating...
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Duplicate
-                  </>
-                )}
-              </Button>
-            )}
           {isEditMode &&
             departmentData?.can_delete &&
             deleteDepartmentAction && (
@@ -795,7 +741,7 @@ export default function Department({
                 type="button"
                 variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
-                disabled={isSubmitting || isDuplicating}
+                disabled={isSubmitting}
                 data-testid="btn-delete-department"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -804,7 +750,7 @@ export default function Department({
             )}
           <Button
             type="submit"
-            disabled={isSubmitting || isReadonly || isDuplicating}
+            disabled={isSubmitting || isReadonly}
             className="min-w-[120px]"
             data-testid="btn-submit-department"
           >

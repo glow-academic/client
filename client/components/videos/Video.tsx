@@ -445,6 +445,20 @@ export default function Video({
         if (result.video_name) {
           handleInputChange("name", result.video_name);
         }
+        // Update question timestamps directly from response (like questions generation)
+        if (result.question_timestamps && questions.length > 0) {
+          setQuestions((prevQuestions) =>
+            prevQuestions.map((q) => {
+              // Find timestamps for this question ID
+              const timestamps = result.question_timestamps?.[q.question_id || ""] || [];
+              return {
+                ...q,
+                times: timestamps,
+              };
+            })
+          );
+        }
+        
         toast.success("Outline generated successfully!");
       }
     } catch (error) {

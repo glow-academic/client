@@ -136,19 +136,20 @@ async def search_staff(
         ),
         recent_runs AS (
             SELECT
-                mrp.profile_id,
+                rp.profile_id,
                 COUNT(*) as run_count
-            FROM model_runs mr
-            JOIN model_run_profiles mrp ON mrp.model_run_id = mr.id
-            WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
-            GROUP BY mrp.profile_id
+            FROM runs r
+            JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
+            WHERE r.created_at >= NOW() - INTERVAL '24 hours'
+            GROUP BY rp.profile_id
         ),
         profile_total_runs AS (
             SELECT
-                mrp.profile_id,
+                rp.profile_id,
                 COUNT(*) as total_requests
-            FROM model_run_profiles mrp
-            GROUP BY mrp.profile_id
+            FROM run_profiles rp
+            WHERE rp.active = true
+            GROUP BY rp.profile_id
         ),
         all_cohort_ids AS (
             SELECT DISTINCT c.id as cohort_id

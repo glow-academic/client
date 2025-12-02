@@ -53,6 +53,7 @@ class GenerateOutlineResponse(BaseModel):
     outline: str
     outline_id: str | None = None
     video_name: str | None = None
+    question_timestamps: dict[str, list[int]] | None = None
 
 
 router = APIRouter()
@@ -156,10 +157,11 @@ async def generate_outline(
             policy_info = format_policy_info(context["policies"])
 
         # Format question info if questions were provided
+        question_id_mapping: dict[str, str] = {}
         if not questions or len(questions) == 0:
             question_info = None
         else:
-            question_info = format_question_info(
+            question_info, question_id_mapping = format_question_info(
                 context["questions"], 
                 context.get("video_length_seconds")
             )
@@ -336,12 +338,31 @@ async def generate_outline(
                 logger.warning(f"Failed to save outline: {e}")
                 # Don't fail the request if outline saving fails, but log the error
 
+        # Convert simple number keys back to UUIDs if mapping exists (for both saving and response)
+        converted_timestamps: dict[str, list[int]] | None = None
+        if question_timestamps and isinstance(question_timestamps, dict):
+            converted_timestamps = {}
+            if question_id_mapping:
+                for key, timestamps in question_timestamps.items():
+                    # Check if key is a simple number (needs conversion) or already a UUID
+                    if key in question_id_mapping:
+                        # Convert simple number to UUID
+                        uuid_key = question_id_mapping[key]
+                        converted_timestamps[uuid_key] = timestamps
+                    else:
+                        # Already a UUID (backward compatibility), use as-is
+                        converted_timestamps[key] = timestamps
+            else:
+                # No mapping available, use as-is
+                converted_timestamps = question_timestamps
+
         # Save question timestamps if videoId is provided and timestamps exist
-        if request.videoId and question_timestamps:
+        if request.videoId and converted_timestamps:
             try:
                 video_id = uuid.UUID(request.videoId)
+                
                 # Convert question_timestamps dict to JSONB format
-                timestamps_json = json.dumps(question_timestamps)
+                timestamps_json = json.dumps(converted_timestamps)
                 
                 sql_save_timestamps = load_sql("sql/v3/videos/save_question_timestamps.sql")
                 await conn.execute(
@@ -353,7 +374,7 @@ async def generate_outline(
             except Exception as e:
                 logger.warning(f"Failed to save question timestamps: {e}")
                 # Don't fail the request if timestamp saving fails
-
+        
         return GenerateOutlineResponse(
             success=True,
             message="Outline generated successfully",
@@ -361,6 +382,7 @@ async def generate_outline(
             outline=outline,
             outline_id=outline_id,
             video_name=video_name,
+            question_timestamps=converted_timestamps,
         )
     except HTTPException:
         raise

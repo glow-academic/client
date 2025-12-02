@@ -92,10 +92,11 @@ messages_grouped AS (
             '[]'::jsonb
         ) as messages
     FROM messages m
-    JOIN chat_runs cr ON cr.run_id = m.run_id
+    JOIN message_runs mr ON mr.message_id = m.id
+    JOIN chat_runs cr ON cr.run_id = mr.run_id
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
-    WHERE m.run_id = rb.id
+    WHERE mr.run_id = rb.id
       AND cr.chat_id = ANY(cil.chat_ids)
     GROUP BY cr.chat_id
 ),
@@ -124,10 +125,11 @@ hints_data AS (
             '[]'::jsonb
         ) as hints
     FROM messages m
-    JOIN chat_runs cr ON cr.run_id = m.run_id
+    JOIN message_runs mr ON mr.message_id = m.id
+    JOIN chat_runs cr ON cr.run_id = mr.run_id
     CROSS JOIN chat_ids_list cil
     CROSS JOIN run_base rb
-    WHERE m.run_id = rb.id
+    WHERE mr.run_id = rb.id
       AND cr.chat_id = ANY(cil.chat_ids)
       AND (m.role = 'assistant' OR m.role = 'response')
     GROUP BY cr.chat_id

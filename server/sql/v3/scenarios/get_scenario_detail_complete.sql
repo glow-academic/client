@@ -99,7 +99,7 @@ scenario_core AS (
         s.generated,
         st.parent_id::text as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        COALESCE(s.documents_enabled, s.use_documents, false) as documents_enabled,  -- Backward compatibility
+        s.documents_enabled,
         s.document_vision_enabled,
         s.objectives_enabled,
         s.image_enabled
@@ -109,6 +109,17 @@ scenario_core AS (
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     INNER JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id AND sdac.has_access = true
     WHERE s.id = $1
+),
+scenario_simulation_attributes AS (
+    SELECT DISTINCT ON (ss.scenario_id)
+        ss.scenario_id,
+        ss.hints_enabled,
+        ss.input_guardrail_enabled,
+        ss.output_guardrail_enabled
+    FROM simulation_scenarios ss
+    WHERE ss.scenario_id = $1 AND ss.active = true
+    ORDER BY ss.scenario_id, ss.position
+    LIMIT 1
 ),
 scenario_personas_agg AS (
     SELECT ARRAY_AGG(persona_id::text ORDER BY persona_id) as persona_ids
@@ -239,7 +250,8 @@ persona_data AS (
     FROM scenario_personas_agg spa
     CROSS JOIN LATERAL unnest(spa.persona_ids) as persona_id
     JOIN personas p2 ON p2.id = persona_id::uuid
-    LEFT JOIN models m2 ON m2.id = p2.model_id
+    LEFT JOIN persona_text_model ptm2 ON ptm2.persona_id = p2.id AND ptm2.active = true
+    LEFT JOIN models m2 ON m2.id = ptm2.model_id
     WHERE p2.active = true
     ORDER BY name
 ),
@@ -744,11 +756,11 @@ SELECT
     sc.generated,
     sc.department_ids,
     sc.parent_scenario_id,
-    sc.hints_enabled,
+    COALESCE(ssa_attr.hints_enabled, false) as hints_enabled,
     sc.objectives_enabled,
-    sc.image_input_enabled,
-    sc.input_guardrail_enabled,
-    sc.output_guardrail_enabled,
+    sc.image_enabled as image_input_enabled,
+    COALESCE(ssa_attr.input_guardrail_enabled, false) as input_guardrail_enabled,
+    COALESCE(ssa_attr.output_guardrail_enabled, false) as output_guardrail_enabled,
     COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
     COALESCE(sd.document_ids, ARRAY[]::text[]) as document_ids,
     COALESCE(sod.objective_ids, ARRAY[]::text[]) as objective_ids,
@@ -772,6 +784,7 @@ SELECT
     COALESCE((SELECT scenario_images FROM scenario_images_data), '[]'::jsonb) as scenario_images
 FROM scenario_core sc
 CROSS JOIN user_profile up
+LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
 LEFT JOIN scenario_personas_agg spa ON true
 LEFT JOIN scenario_documents_agg sd ON true
 LEFT JOIN scenario_objectives_data sod ON true

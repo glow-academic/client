@@ -7691,6 +7691,10 @@ export interface components {
             outline_id?: string | null;
             /** Video Name */
             video_name?: string | null;
+            /** Question Timestamps */
+            question_timestamps?: {
+                [key: string]: number[];
+            } | null;
         };
         /**
          * GenerateQuestionsRequest
