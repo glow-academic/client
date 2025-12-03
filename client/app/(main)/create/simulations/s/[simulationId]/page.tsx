@@ -32,12 +32,6 @@ type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
 type UpdateSimulationIn = InputOf<"/api/v3/simulations/update", "post">;
 type UpdateSimulationOut = OutputOf<"/api/v3/simulations/update", "post">;
 
-type SearchScenarioIn = InputOf<"/api/v3/scenarios/search", "post">;
-type SearchScenarioOut = OutputOf<"/api/v3/scenarios/search", "post">;
-
-type SearchVideoIn = InputOf<"/api/v3/videos/search", "post">;
-type SearchVideoOut = OutputOf<"/api/v3/videos/search", "post">;
-
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -113,20 +107,6 @@ async function updateSimulation(
   return api.post("/simulations/update", input);
 }
 
-async function searchScenarios(
-  input: SearchScenarioIn,
-): Promise<SearchScenarioOut> {
-  "use server";
-  return api.post("/scenarios/search", input);
-}
-
-async function searchVideos(
-  input: SearchVideoIn,
-): Promise<SearchVideoOut> {
-  "use server";
-  return api.post("/videos/search", input);
-}
-
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditSimulationPage({
   params,
@@ -152,8 +132,6 @@ export default async function EditSimulationPage({
           simulationDetail={simulationDetail}
           createSimulationAction={createSimulation}
           updateSimulationAction={updateSimulation}
-          searchScenarioAction={searchScenarios}
-          searchVideoAction={searchVideos}
         />
       </div>
     );

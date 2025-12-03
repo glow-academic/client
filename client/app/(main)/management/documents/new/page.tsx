@@ -15,14 +15,16 @@ import type { Metadata } from "next";
 /** ---- Strong types from OpenAPI ---- */
 type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
 type DocumentsListOut = OutputOf<"/api/v3/documents/list", "post">;
-type FinalizeDocumentUploadIn = InputOf<
-  "/api/v3/documents/upload/finalize",
+type FinalizeUploadIn = InputOf<
+  "/api/v3/uploads/upload/{upload_id}/finalize",
   "post"
 >;
-type FinalizeDocumentUploadOut = OutputOf<
-  "/api/v3/documents/upload/finalize",
+type FinalizeUploadOut = OutputOf<
+  "/api/v3/uploads/upload/{upload_id}/finalize",
   "post"
 >;
+type CreateDocumentIn = InputOf<"/api/v3/documents/create", "post">;
+type CreateDocumentOut = OutputOf<"/api/v3/documents/create", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getDocumentsList = async (
@@ -41,12 +43,18 @@ const getDocumentsList = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function finalizeDocumentUpload(
-  input: FinalizeDocumentUploadIn,
-): Promise<FinalizeDocumentUploadOut> {
+async function finalizeUpload(
+  uploadId: string,
+): Promise<FinalizeUploadOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/documents/upload/finalize", input);
+  return api.post(`/uploads/upload/${uploadId}/finalize`, {});
+}
+
+async function createDocument(
+  input: CreateDocumentIn,
+): Promise<CreateDocumentOut> {
+  "use server";
+  return api.post("/documents/create", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -90,7 +98,8 @@ export default async function NewDocumentPage() {
     >
       <DocumentNew
         listData={listData}
-        finalizeDocumentUploadAction={finalizeDocumentUpload}
+        finalizeUploadAction={finalizeUpload}
+        createDocumentAction={createDocument}
       />
     </div>
   );
@@ -100,7 +109,9 @@ export default async function NewDocumentPage() {
 export type {
   DocumentsListIn,
   DocumentsListOut,
-  FinalizeDocumentUploadIn,
-  FinalizeDocumentUploadOut,
+  FinalizeUploadIn,
+  FinalizeUploadOut,
+  CreateDocumentIn,
+  CreateDocumentOut,
 };
 

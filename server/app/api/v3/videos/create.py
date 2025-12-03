@@ -37,6 +37,7 @@ class CreateVideoRequest(BaseModel):
 
     name: str
     length_seconds: int
+    upload_id: str | None = None
     department_ids: list[str] | None
     outline_ids: list[str] | None = None
     policy_ids: list[str] | None = None
@@ -88,10 +89,15 @@ async def create_video(
 
         # Create video with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/videos/create_video_complete.sql")
+        upload_id_uuid = None
+        if request.upload_id:
+            import uuid
+            upload_id_uuid = uuid.UUID(request.upload_id)
         sql_params = (
             request.name,
             request.length_seconds,
             request.active,
+            upload_id_uuid,
             department_ids if department_ids else None,
             outline_ids if outline_ids else None,
             policy_ids if policy_ids else None,

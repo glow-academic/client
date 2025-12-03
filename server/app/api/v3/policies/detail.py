@@ -27,8 +27,7 @@ class PolicyDetailResponse(BaseModel):
 
     name: str
     description: str
-    file_path: str
-    mime_type: str
+    upload_id: str | None = None
     active: bool
     created_at: str
     updated_at: str
@@ -101,8 +100,7 @@ async def get_policy_detail(
         response_data = PolicyDetailResponse(
             name=policy["name"],
             description=policy["description"],
-            file_path=policy["file_path"],
-            mime_type=policy["mime_type"],
+            upload_id=policy.get("upload_id"),
             active=policy["active"],
             created_at=policy["created_at"],
             updated_at=policy["updated_at"],

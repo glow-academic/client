@@ -47,6 +47,7 @@ from app.api.v3.schema import router as schema_router
 from app.api.v3.settings import router as settings_router
 from app.api.v3.simulations import router as simulations_router
 from app.api.v3.units import router as units_router
+from app.api.v3.uploads import router as uploads_router
 from app.api.v3.videos import router as videos_router
 # ============================================================================
 # Batch F: Supporting Resources
@@ -101,3 +102,4 @@ router.include_router(home_router)
 router.include_router(practice_router)
 router.include_router(pricing_router)
 router.include_router(schema_router)
+router.include_router(uploads_router)

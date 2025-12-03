@@ -54,8 +54,9 @@ policy_core AS (
         p.id,
         p.name,
         p.description,
-        p.file_path,
-        p.mime_type,
+        p.upload_id::text,
+        u.file_path,
+        u.mime_type,
         p.active,
         p.created_at,
         p.updated_at,
@@ -69,6 +70,7 @@ policy_core AS (
             ELSE false
         END as can_delete
     FROM policies p
+    LEFT JOIN uploads u ON u.id = p.upload_id
     LEFT JOIN policy_departments_data pdd ON pdd.policy_id = p.id
     CROSS JOIN user_profile up
     WHERE p.id = $1::uuid
@@ -76,6 +78,7 @@ policy_core AS (
 SELECT 
     pc.name,
     pc.description,
+    pc.upload_id,
     pc.file_path,
     pc.mime_type,
     pc.active,

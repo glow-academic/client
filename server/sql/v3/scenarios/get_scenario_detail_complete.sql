@@ -139,8 +139,7 @@ scenario_images_data AS (
             jsonb_build_object(
                 'id', i.id::text,
                 'name', i.name,
-                'file_path', i.file_path,
-                'mime_type', i.mime_type,
+                'upload_id', i.upload_id::text,
                 'active', si.active
             )
         ) FILTER (WHERE i.id IS NOT NULL),

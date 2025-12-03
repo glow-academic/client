@@ -11,14 +11,14 @@ CREATE TABLE policies (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT       NOT NULL,
-  file_path  TEXT        NOT NULL,
-  mime_type  TEXT        NOT NULL,
+  upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
   active     BOOLEAN     NOT NULL DEFAULT TRUE
 );
 
 CREATE INDEX ON policies (name);
 CREATE INDEX ON policies (active);
 CREATE INDEX ON policies (created_at);
+CREATE INDEX ON policies (upload_id);
 
 -- Policy → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)

@@ -13,8 +13,7 @@ type PolicyItem = {
   type?: string;
   updatedAt?: string;
   extension?: string;
-  file_path: string;
-  mime_type: string;
+  upload_id: string | null;
 };
 
 import { Download, FileText } from "lucide-react";
@@ -64,19 +63,18 @@ export default function PolicyViewer({
         setLoading(true);
         setError(null);
 
-        // Call the API route directly or use blob URL for form policies
+        // Call the API route using upload_id
         let response;
-        if (isFormPolicy && policy.file_path?.startsWith("blob:")) {
-          // For form policies with blob URLs, fetch the blob directly
-          response = await fetch(policy.file_path);
-        } else {
+        if (policy.upload_id) {
           response = await fetch(
-            `/api/policies/download/${policy.policy_id}`,
+            `/api/uploads/download/${policy.upload_id}`,
             {
               method: "GET",
               credentials: "include",
             }
           );
+        } else {
+          throw new Error("Policy upload_id is required");
         }
 
         if (!response.ok) {

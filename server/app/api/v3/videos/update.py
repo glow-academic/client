@@ -38,6 +38,7 @@ class UpdateVideoRequest(BaseModel):
     videoId: str
     name: str
     length_seconds: int
+    upload_id: str | None = None
     department_ids: list[str] | None
     outline_ids: list[str] | None = None
     policy_ids: list[str] | None = None
@@ -93,11 +94,16 @@ async def update_video(
         # Update video with all relationships in a single SQL file
         # Pass empty arrays instead of None to ensure proper SQL handling
         sql_query = load_sql("sql/v3/videos/update_video_complete.sql")
+        import uuid
+        upload_id_uuid = None
+        if request.upload_id:
+            upload_id_uuid = uuid.UUID(request.upload_id)
         sql_params = (
             request.videoId,
             request.name,
             request.length_seconds,
             request.active,
+            upload_id_uuid,
             department_ids,  # Always pass array, SQL handles empty arrays
             outline_ids,  # Always pass array, SQL handles empty arrays
             policy_ids,  # Always pass array, SQL handles empty arrays

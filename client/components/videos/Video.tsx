@@ -857,9 +857,10 @@ export default function Video({
       // Generate a unique fileId for tracking
       const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
+      let tusUploadInstance: tus.Upload | null = null;
       // Create TUS upload
-      const upload = new tus.Upload(file, {
-        endpoint: `/api/videos/upload`,
+      tusUploadInstance = new tus.Upload(file, {
+        endpoint: `/api/uploads/upload`,
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,
@@ -881,33 +882,65 @@ export default function Video({
           });
         },
         onSuccess: async () => {
-          // Get upload ID from location header
-          const location = upload.url;
-          if (!location) {
-            throw new Error("Failed to get upload location");
+          // Extract TUS upload_id from upload URL
+          const uploadUrl = tusUploadInstance?.url || "";
+          const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+          if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+            toast.error("Failed to extract upload ID from upload URL", {
+              id: toastId,
+            });
+            setIsUploadingVideo(false);
+            return;
           }
-          const uploadId = location.split("/").pop();
+          const tusUploadId = tusUploadIdMatch[1];
 
-          if (!uploadId) {
-            throw new Error("Failed to get upload ID");
-          }
-
-          // Finalize upload
+          // Finalize upload to get database upload_id
           try {
-            const response = await fetch("/api/videos/upload/finalize", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                uploadId,
-                fileId,
+            const finalizeResponse = await fetch(
+              `/api/uploads/upload/${tusUploadId}/finalize`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              }
+            );
+
+            const finalizeResult = await finalizeResponse.json();
+
+            if (!finalizeResult.success || !finalizeResult.uploadId) {
+              throw new Error(
+                finalizeResult.message || "Failed to finalize upload"
+              );
+            }
+
+            const databaseUploadId = finalizeResult.uploadId;
+
+            // Update video with upload_id
+            if (!updateVideoAction) {
+              throw new Error("updateVideoAction is required");
+            }
+
+            // Get current video data to preserve other fields
+            const currentVideo = serverVideoDetail || videoDetailDefault;
+            const updateResult = await updateVideoAction({
+              body: {
                 videoId: videoId,
-                name: file.name,
-              }),
+                name: currentVideo.name,
+                length_seconds: currentVideo.length_seconds,
+                upload_id: databaseUploadId,
+                department_ids: currentVideo.department_ids || [],
+                outline_ids: currentVideo.outline_ids || [],
+                policy_ids: currentVideo.policy_ids || [],
+                image_ids: currentVideo.image_ids || [],
+                active: currentVideo.active,
+                questions: currentVideo.questions || [],
+                outline_agent_id: currentVideo.outline_agent_id || null,
+                image_agent_id: currentVideo.image_agent_id || null,
+                parameter_item_ids: currentVideo.parameter_item_ids || [],
+              },
             });
 
-            const result = await response.json();
-
-            if (result.success && result.videoId) {
+            if (updateResult.success) {
               // Clear generated video URL if it exists (uploaded video replaces it)
               setGeneratedVideoUrl(null);
               // Clear uploaded video file state (will be loaded from server)
@@ -919,7 +952,7 @@ export default function Video({
               // Navigate to edit page (will refresh data automatically)
               router.push(`/create/videos/v/${videoId}`);
             } else {
-              throw new Error(result.message || "Failed to finalize upload");
+              throw new Error(updateResult.message || "Failed to update video");
             }
           } catch (finalizeError) {
             toast.error(
@@ -936,7 +969,7 @@ export default function Video({
         },
       });
 
-      upload.start();
+      tusUploadInstance.start();
     } catch (error) {
       toast.error(
         `Failed to upload video: ${

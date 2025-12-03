@@ -706,8 +706,7 @@ export default function Documents({
                     can_delete: previewDocument.can_delete,
                     active: previewDocument.active,
                     department_ids: previewDocument.department_ids || [],
-                    file_path: previewDocument.file_path || "",
-                    mime_type: previewDocument.mime_type || "",
+                    upload_id: previewDocument.upload_id || null,
                     parameter_item_ids: previewDocument.parameter_item_ids,
                   }}
                   bare={true}

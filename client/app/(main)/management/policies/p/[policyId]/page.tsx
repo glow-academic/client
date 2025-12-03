@@ -20,12 +20,12 @@ type CreatePolicyIn = InputOf<"/api/v3/policies/create", "post">;
 type CreatePolicyOut = OutputOf<"/api/v3/policies/create", "post">;
 type UpdatePolicyIn = InputOf<"/api/v3/policies/update", "post">;
 type UpdatePolicyOut = OutputOf<"/api/v3/policies/update", "post">;
-type FinalizePolicyUploadIn = InputOf<
-  "/api/v3/policies/upload/finalize",
+type FinalizeUploadIn = InputOf<
+  "/api/v3/uploads/upload/{upload_id}/finalize",
   "post"
 >;
-type FinalizePolicyUploadOut = OutputOf<
-  "/api/v3/policies/upload/finalize",
+type FinalizeUploadOut = OutputOf<
+  "/api/v3/uploads/upload/{upload_id}/finalize",
   "post"
 >;
 
@@ -54,12 +54,11 @@ async function updatePolicy(input: UpdatePolicyIn): Promise<UpdatePolicyOut> {
   return api.post("/policies/update", input);
 }
 
-async function finalizePolicyUpload(
-  input: FinalizePolicyUploadIn
-): Promise<FinalizePolicyUploadOut> {
+async function finalizeUpload(
+  uploadId: string
+): Promise<FinalizeUploadOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/policies/upload/finalize", input);
+  return api.post(`/uploads/upload/${uploadId}/finalize`, {});
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -90,8 +89,7 @@ export default async function EditPolicyPage({
     const policyDetailDefault: PolicyDetailOut = {
       name: "",
       description: "",
-      file_path: "",
-      mime_type: "",
+      upload_id: null,
       active: true,
       created_at: "",
       updated_at: "",
@@ -112,7 +110,7 @@ export default async function EditPolicyPage({
           mode="create"
           policyDetailDefault={policyDetailDefault}
           createPolicyAction={createPolicy}
-          finalizePolicyUploadAction={finalizePolicyUpload}
+          finalizeUploadAction={finalizeUpload}
         />
       </div>
     );
@@ -165,8 +163,8 @@ export type {
   CreatePolicyOut,
   UpdatePolicyIn,
   UpdatePolicyOut,
-  FinalizePolicyUploadIn,
-  FinalizePolicyUploadOut,
+  FinalizeUploadIn,
+  FinalizeUploadOut,
   PolicyDetailIn,
   PolicyDetailOut,
 };

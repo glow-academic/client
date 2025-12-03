@@ -57,8 +57,7 @@ class VideoDetailResponse(BaseModel):
     name: str
     length_seconds: int
     active: bool
-    file_path: str
-    mime_type: str
+    upload_id: str | None
     video_url: str | None
     department_ids: list[str] | None
     valid_department_ids: list[str]
@@ -363,21 +362,19 @@ async def get_video_detail(
             parameter_item_ids = []
         parameter_item_ids = [str(pid) for pid in parameter_item_ids]
 
-        # Extract file_path and mime_type
-        file_path = video.get("file_path") or ""
-        mime_type = video.get("mime_type") or ""
+        # Extract upload_id
+        upload_id = video.get("upload_id")
         
-        # Construct video_url if file_path exists and is not empty
+        # Construct video_url if upload_id exists
         video_url = None
-        if file_path and file_path.strip():
-            video_url = f"/api/videos/download/{request_data.videoId}"
+        if upload_id:
+            video_url = f"/api/v3/uploads/download/{upload_id}"
 
         response_data = VideoDetailResponse(
             name=video["name"],
             length_seconds=video["length_seconds"],
             active=video["active"],
-            file_path=file_path,
-            mime_type=mime_type,
+            upload_id=upload_id,
             video_url=video_url,
             department_ids=dept_ids,
             valid_department_ids=[str(did) for did in valid_dept_ids],

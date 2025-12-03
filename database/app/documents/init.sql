@@ -12,8 +12,7 @@ CREATE TABLE documents (
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
-    file_path  TEXT        NOT NULL,
-    mime_type  TEXT        NOT NULL,
+    upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
     type       document_type   NOT NULL           DEFAULT 'homework',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
@@ -25,6 +24,7 @@ CREATE TABLE documents (
 
 CREATE INDEX ON documents (classify_agent_id);
 CREATE INDEX ON documents (document_agent_id);
+CREATE INDEX ON documents (upload_id);
 
 -- Document → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)

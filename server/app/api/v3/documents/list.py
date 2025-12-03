@@ -35,9 +35,8 @@ class DocumentItem(BaseModel):
     name: str
     type: str
     updated_at: str
-    mime_type: str | None = None
+    upload_id: str | None = None
     active: bool
-    file_path: str | None = None
     extension: str | None = None
     department_ids: list[str] | None = None
     scenario_ids: list[str]
@@ -219,9 +218,8 @@ async def get_documents_list(
                     updated_at=row["updated_at"].isoformat()
                     if row["updated_at"]
                     else "",
-                    mime_type=row.get("mime_type"),
+                    upload_id=row.get("upload_id"),
                     active=row["active"],
-                    file_path=row.get("file_path"),
                     extension=extension,
                     department_ids=dept_ids,
                     scenario_ids=scenario_ids,

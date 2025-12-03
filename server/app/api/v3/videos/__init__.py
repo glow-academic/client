@@ -3,7 +3,6 @@
 from app.api.v3.videos.create import router as create_router
 from app.api.v3.videos.delete import router as delete_router
 from app.api.v3.videos.detail import router as detail_router
-from app.api.v3.videos.download import router as download_router
 from app.api.v3.videos.duplicate import router as duplicate_router
 from app.api.v3.videos.generate_outline import \
     router as generate_outline_router
@@ -13,7 +12,6 @@ from app.api.v3.videos.new import router as new_router
 from app.api.v3.videos.randomize import router as randomize_router
 from app.api.v3.videos.search import router as search_router
 from app.api.v3.videos.update import router as update_router
-from app.api.v3.videos.upload_finalize import router as upload_finalize_router
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/videos", tags=["videos"])
@@ -30,6 +28,4 @@ router.include_router(search_router)
 router.include_router(randomize_router)
 router.include_router(generate_outline_router)
 router.include_router(generate_video_router)
-router.include_router(download_router)
-router.include_router(upload_finalize_router)
 

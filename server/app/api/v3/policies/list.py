@@ -37,8 +37,7 @@ class PolicyItem(BaseModel):
     policy_id: str
     name: str
     description: str
-    file_path: str
-    mime_type: str
+    upload_id: str | None = None
     active: bool
     created_at: str
     updated_at: str
@@ -147,8 +146,7 @@ async def get_policies_list(
                     policy_id=str(row["policy_id"]),
                     name=row["name"],
                     description=row["description"],
-                    file_path=row["file_path"],
-                    mime_type=row["mime_type"],
+                    upload_id=row.get("upload_id"),
                     active=row["active"],
                     created_at=str(row["created_at"]),
                     updated_at=str(row["updated_at"]),

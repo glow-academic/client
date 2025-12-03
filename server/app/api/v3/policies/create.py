@@ -19,8 +19,7 @@ class CreatePolicyRequest(BaseModel):
 
     name: str
     description: str
-    file_path: str
-    mime_type: str
+    uploadId: str
     active: bool = True
     department_ids: list[str] | None = None
 
@@ -64,8 +63,7 @@ async def create_policy(
             policy_id,
             request.name,
             request.description,
-            request.file_path,
-            request.mime_type,
+            uuid.UUID(request.uploadId),
             request.active,
             dept_ids,
         )

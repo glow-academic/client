@@ -1,14 +1,12 @@
 """Images API router."""
 
-from app.api.v3.images.download import router as download_router
-from app.api.v3.images.upload_finalize import router as upload_finalize_router
 from fastapi import APIRouter
+
+from app.api.v3.images.create import router as create_router
 
 router = APIRouter(prefix="/images", tags=["images"])
 
-# Include endpoint routers
-router.include_router(upload_finalize_router)
-router.include_router(download_router)
+router.include_router(create_router)
 
 __all__ = ["router"]
 

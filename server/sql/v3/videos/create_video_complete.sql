@@ -1,21 +1,22 @@
 -- Create video with all relationships in a single transaction
 -- Parameters: $1=name, $2=length_seconds, $3=active,
---            $4=department_ids (text array, nullable),
---            $5=outline_ids (text array, nullable),
---            $6=policy_ids (text array, nullable),
---            $7=image_ids (text array, nullable),
---            $8=questions_json (JSONB string with questions array),
---            $9=parameter_item_ids (text array, nullable)
+--            $4=upload_id (uuid, nullable),
+--            $5=department_ids (text array, nullable),
+--            $6=outline_ids (text array, nullable),
+--            $7=policy_ids (text array, nullable),
+--            $8=image_ids (text array, nullable),
+--            $9=questions_json (JSONB string with questions array),
+--            $10=parameter_item_ids (text array, nullable)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
--- Note: Video file is created separately via video_generations table when file is generated/uploaded
 
 WITH new_video AS (
     INSERT INTO videos (
         name,
         length_seconds,
+        upload_id,
         active
     )
-    VALUES ($1, $2, $3)
+    VALUES ($1, $2, $4, $3)
     RETURNING id::uuid as video_id
 ),
 link_departments AS (
@@ -28,8 +29,8 @@ link_departments AS (
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($4::text[]) as dept_id
-    WHERE COALESCE(array_length($4::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($5::text[]) as dept_id
+    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
     ON CONFLICT (video_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -44,8 +45,8 @@ link_outlines AS (
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($5::text[]) as outline_id
-    WHERE COALESCE(array_length($5::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($6::text[]) as outline_id
+    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
     ON CONFLICT (video_id, outline_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -60,8 +61,8 @@ link_policies AS (
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($6::text[]) as policy_id
-    WHERE COALESCE(array_length($6::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($7::text[]) as policy_id
+    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
     ON CONFLICT (video_id, policy_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -77,8 +78,8 @@ link_video_images AS (
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($7::text[]) as image_id
-    WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($8::text[]) as image_id
+    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
     ON CONFLICT (video_id, image_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
@@ -98,7 +99,7 @@ questions_data AS (
         ARRAY(SELECT jsonb_array_elements_text(q->'times'))::integer[] as times,
         q->'options' as options_json
     FROM new_video nv
-    CROSS JOIN jsonb_array_elements($8::jsonb) as q
+    CROSS JOIN jsonb_array_elements($9::jsonb) as q
 ),
 create_questions AS (
     -- Create questions
@@ -222,8 +223,8 @@ link_video_parameter_items AS (
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($9::text[]) as param_item_id
-    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
+    CROSS JOIN UNNEST($10::text[]) as param_item_id
+    WHERE COALESCE(array_length($10::text[], 1), 0) > 0
     ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
         active = true,
         updated_at = NOW()

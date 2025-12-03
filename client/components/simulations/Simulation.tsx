@@ -32,13 +32,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
-import { AddContentButton } from "@/components/common/simulations/AddContentButton";
-import SearchExistingScenarioModal from "@/components/common/simulations/SearchExistingScenarioModal";
-import SearchExistingVideoModal from "@/components/common/simulations/SearchExistingVideoModal";
 import {
   SimulationContentTable,
   type ContentItem,
 } from "@/components/common/simulations/SimulationContentTable";
+import { SimulationScenariosTable } from "@/components/common/simulations/SimulationScenariosTable";
+import { SimulationVideosTable } from "@/components/common/simulations/SimulationVideosTable";
 import { Switch } from "@/components/ui/switch";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -70,30 +69,6 @@ export interface SimulationProps {
   updateSimulationAction?: (
     input: UpdateSimulationIn
   ) => Promise<UpdateSimulationOut>;
-  searchScenarioAction?: (input: {
-    body: { query: string; limit: number };
-  }) => Promise<
-    Array<{
-      id: string;
-      name: string | null;
-      problem_statement: string | null;
-      persona_id: string | null;
-      default_scenario: boolean;
-      score: number;
-    }>
-  >;
-  searchVideoAction?: (input: {
-    body: { query: string; limit: number; department_ids?: string[] | null };
-  }) => Promise<
-    Array<{
-      id: string;
-      name: string | null;
-      description: string | null;
-      length_seconds: number;
-      department_ids: string[] | null;
-      score: number;
-    }>
-  >;
 }
 
 interface FormData {
@@ -117,8 +92,6 @@ export default function Simulation({
   simulationDetailDefault: serverSimulationDetailDefault,
   createSimulationAction,
   updateSimulationAction,
-  searchScenarioAction,
-  searchVideoAction,
 }: SimulationProps) {
   const { effectiveProfile } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
@@ -853,9 +826,6 @@ export default function Simulation({
 
   // Note: rubric_id is now per-scenario, not simulation-level, so we don't clear it here
 
-  // Modal states
-  const [showSearchScenarioModal, setShowSearchScenarioModal] = useState(false);
-  const [showSearchVideoModal, setShowSearchVideoModal] = useState(false);
 
   // Legacy drag-and-drop handler - replaced by table's up/down buttons
   const _handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
@@ -1395,70 +1365,84 @@ export default function Simulation({
     []
   );
 
-  const handleStagedScenarios = useCallback(
-    (
-      scenarios: Array<{
-        scenarioId: string;
-        name?: string;
-        description?: string;
-      }>
-    ) => {
+  // Handler for scenario picker selection - adds scenarios directly
+  const handleScenarioSelect = useCallback(
+    (scenarioIds: string[]) => {
+      // Find newly selected scenarios (not already in currentContentItems)
+      const existingScenarioIds = new Set(
+        currentContentItems
+          .filter((item) => item.type === "scenario")
+          .map((item) => item.id)
+      );
+      const newScenarioIds = scenarioIds.filter(
+        (id) => !existingScenarioIds.has(id)
+      );
+
+      if (newScenarioIds.length === 0) return;
+
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
         0
       );
-      const newItems: ContentItem[] = scenarios.map((scenario, idx) => ({
-        type: "scenario" as const,
-        id: scenario.scenarioId,
-        title: scenario.name || "Unnamed Scenario",
-        description: scenario.description || "",
-        active: true,
-        position: maxPosition + idx + 1,
-        usage_count: 0,
-        success_rate: 0,
-        last_used: null,
-        can_remove: true,
-        isNew: true,
-      }));
+      const newItems: ContentItem[] = newScenarioIds.map((scenarioId, idx) => {
+        const scenarioData = simulationData?.scenario_mapping?.[scenarioId];
+        return {
+          type: "scenario" as const,
+          id: scenarioId,
+          title: scenarioData?.name || "Unnamed Scenario",
+          description: scenarioData?.description || "",
+          active: true,
+          position: maxPosition + idx + 1,
+          usage_count: 0,
+          success_rate: 0,
+          last_used: null,
+          can_remove: true,
+          isNew: true,
+        };
+      });
       setStagedContentItems((prev) => [...prev, ...newItems]);
-      setCurrentScenarioIds((prev) => [
-        ...prev,
-        ...scenarios.map((s) => s.scenarioId),
-      ]);
+      setCurrentScenarioIds((prev) => [...prev, ...newScenarioIds]);
     },
-    [currentContentItems]
+    [currentContentItems, simulationData?.scenario_mapping]
   );
 
-  const handleStagedVideos = useCallback(
-    (
-      videos: Array<{
-        videoId: string;
-        name?: string;
-        description?: string;
-        length_seconds?: number;
-      }>
-    ) => {
+  // Handler for video picker selection - adds videos directly
+  const handleVideoSelect = useCallback(
+    (videoIds: string[]) => {
+      // Find newly selected videos (not already in currentContentItems)
+      const existingVideoIds = new Set(
+        currentContentItems
+          .filter((item) => item.type === "video")
+          .map((item) => item.id)
+      );
+      const newVideoIds = videoIds.filter((id) => !existingVideoIds.has(id));
+
+      if (newVideoIds.length === 0) return;
+
       const maxPosition = Math.max(
         ...currentContentItems.map((item) => item.position),
         0
       );
-      const newItems: ContentItem[] = videos.map((video, idx) => ({
-        type: "video" as const,
-        id: video.videoId,
-        title: video.name || "Unnamed Video",
-        description: video.description || "",
-        active: true,
-        position: maxPosition + idx + 1,
-        usage_count: 0,
-        success_rate: 0,
-        last_used: null,
-        can_remove: true,
-        length_seconds: video.length_seconds || 0,
-        isNew: true,
-      }));
+      const newItems: ContentItem[] = newVideoIds.map((videoId, idx) => {
+        const videoData = simulationData?.video_mapping?.[videoId];
+        return {
+          type: "video" as const,
+          id: videoId,
+          title: videoData?.name || "Unnamed Video",
+          description: videoData?.description || "",
+          active: true,
+          position: maxPosition + idx + 1,
+          usage_count: 0,
+          success_rate: 0,
+          last_used: null,
+          can_remove: true,
+          length_seconds: videoData?.length_seconds || 0,
+          isNew: true,
+        };
+      });
       setStagedContentItems((prev) => [...prev, ...newItems]);
     },
-    [currentContentItems]
+    [currentContentItems, simulationData?.video_mapping]
   );
 
   // TODO: Add parameter badge display (requires loading from scenario_parameter_items junction)
@@ -1620,76 +1604,72 @@ export default function Simulation({
         </div>
 
         {/* Content (Scenarios & Videos) */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
+        <div className="space-y-6">
+          {/* Central Content Table - Shared Attributes */}
+          <div className="space-y-2">
             <div>
               <Label htmlFor="content">Content</Label>
               <p className="text-sm text-muted-foreground">
-                Manage scenarios and videos for this simulation
+                Manage position, usage, and shared settings for all content
               </p>
             </div>
-            {!isReadonly && (
-              <AddContentButton
-                onAddScenario={() => setShowSearchScenarioModal(true)}
-                onAddVideo={() => setShowSearchVideoModal(true)}
-              />
-            )}
+
+            <SimulationContentTable
+              data={currentContentItems}
+              onActiveToggle={handleContentActiveToggle}
+              onMoveUp={handleContentMoveUp}
+              onMoveDown={handleContentMoveDown}
+              onRemove={handleContentRemove}
+              onEditScenario={editScenario}
+              onShowProblemStatementToggle={handleShowProblemStatementToggle}
+              onShowObjectivesToggle={handleShowObjectivesToggle}
+              onShowImageToggle={handleShowImageToggle}
+              readonly={isReadonly}
+            />
           </div>
 
-          <SimulationContentTable
-            data={currentContentItems}
-            onActiveToggle={handleContentActiveToggle}
-            onMoveUp={handleContentMoveUp}
-            onMoveDown={handleContentMoveDown}
-            onRemove={handleContentRemove}
-            onEditScenario={editScenario}
-            onHintsToggle={handleHintsToggle}
-            onInputGuardrailToggle={handleInputGuardrailToggle}
-            onOutputGuardrailToggle={handleOutputGuardrailToggle}
-            onHintAgentChange={handleHintAgentChange}
-            onInputGuardrailAgentChange={handleInputGuardrailAgentChange}
-            onOutputGuardrailAgentChange={handleOutputGuardrailAgentChange}
-            onGradeAgentsChange={handleGradeAgentsChange}
-            onCopyPasteToggle={handleCopyPasteToggle}
-            onAudioToggle={handleAudioToggle}
-            onTextToggle={handleTextToggle}
-            onShowProblemStatementToggle={handleShowProblemStatementToggle}
-            onShowObjectivesToggle={handleShowObjectivesToggle}
-            onShowImageToggle={handleShowImageToggle}
-            onRubricChange={handleRubricChange}
-            onTimeLimitChange={handleTimeLimitChange}
-            rubricMapping={simulationData?.rubric_mapping || {}}
-            validRubricIds={validRubricIds}
-            agentMapping={agentMapping}
-            validAgentIds={validAgentIds}
-            readonly={isReadonly}
-          />
-        </div>
+          {/* Scenarios Table - Scenario-Specific Attributes */}
+          <div className="space-y-2">
+            <SimulationScenariosTable
+              data={currentContentItems}
+              onHintsToggle={handleHintsToggle}
+              onInputGuardrailToggle={handleInputGuardrailToggle}
+              onOutputGuardrailToggle={handleOutputGuardrailToggle}
+              onCopyPasteToggle={handleCopyPasteToggle}
+              onAudioToggle={handleAudioToggle}
+              onTextToggle={handleTextToggle}
+              onRubricChange={handleRubricChange}
+              onTimeLimitChange={handleTimeLimitChange}
+              onHintAgentChange={handleHintAgentChange}
+              onInputGuardrailAgentChange={handleInputGuardrailAgentChange}
+              onOutputGuardrailAgentChange={handleOutputGuardrailAgentChange}
+              onGradeAgentsChange={handleGradeAgentsChange}
+              rubricMapping={simulationData?.rubric_mapping || {}}
+              validRubricIds={validRubricIds}
+              agentMapping={agentMapping}
+              validAgentIds={validAgentIds}
+              scenarioMapping={simulationData?.scenario_mapping || {}}
+              validScenarioIds={validScenarioIds}
+              selectedScenarioIds={currentScenarioIds}
+              onScenarioSelect={handleScenarioSelect}
+              readonly={isReadonly}
+            />
+          </div>
 
-        {/* Search Modals */}
-        {searchScenarioAction && (
-          <SearchExistingScenarioModal
-            open={showSearchScenarioModal}
-            onOpenChange={setShowSearchScenarioModal}
-            onStagedScenarios={handleStagedScenarios}
-            existingScenarioIds={currentScenarioIds}
-            searchScenarioAction={searchScenarioAction}
-          />
-        )}
-        {searchVideoAction && (
-          <SearchExistingVideoModal
-            open={showSearchVideoModal}
-            onOpenChange={setShowSearchVideoModal}
-            onStagedVideos={handleStagedVideos}
-            existingVideoIds={currentContentItems
-              .filter((item) => item.type === "video")
-              .map((item) => item.id)}
-            {...(formData?.departmentIds && {
-              departmentIds: formData.departmentIds,
-            })}
-            searchVideoAction={searchVideoAction}
-          />
-        )}
+          {/* Videos Table - Video-Specific Attributes */}
+          <div className="space-y-2">
+            <SimulationVideosTable
+              data={currentContentItems}
+              videoMapping={simulationData?.video_mapping || {}}
+              validVideoIds={simulationData?.valid_video_ids || []}
+              selectedVideoIds={currentContentItems
+                .filter((item) => item.type === "video")
+                .map((item) => item.id)}
+              onVideoSelect={handleVideoSelect}
+              readonly={isReadonly}
+            />
+          </div>
+        </div>
 
         {/* Submit Button */}
         <div className="flex justify-end gap-3">

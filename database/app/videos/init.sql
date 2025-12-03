@@ -11,6 +11,7 @@ CREATE TABLE videos (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
+  upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
   active     BOOLEAN     NOT NULL DEFAULT TRUE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -20,6 +21,7 @@ CREATE TABLE videos (
 
 CREATE INDEX ON videos (outline_agent_id);
 CREATE INDEX ON videos (image_agent_id);
+CREATE INDEX ON videos (upload_id);
 
 -- Outlines table (standalone, can exist independently)
 CREATE TABLE outlines (
@@ -32,38 +34,6 @@ CREATE TABLE outlines (
 
 CREATE INDEX ON outlines (name);
 CREATE INDEX ON outlines (created_at);
-
--- Generations table (standalone, can exist independently)
-CREATE TABLE generations (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  file_path  TEXT        NOT NULL,
-  mime_type  TEXT        NOT NULL,
-  active     BOOLEAN     NOT NULL DEFAULT TRUE
-);
-
-CREATE INDEX ON generations (file_path);
-CREATE INDEX ON generations (created_at);
-CREATE INDEX ON generations (active);
-
--- Video → Generations junction table (BCNF normalization)
--- Each video can have multiple generations, but only one active at a time
-CREATE TABLE video_generations (
-  video_id      UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-  generation_id UUID NOT NULL REFERENCES generations(id) ON DELETE CASCADE,
-  active        BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (video_id, generation_id)
-);
-
-CREATE INDEX ON video_generations (video_id);
-CREATE INDEX ON video_generations (generation_id);
-CREATE INDEX ON video_generations (video_id, active);
-CREATE UNIQUE INDEX video_generations_one_active_per_video 
-  ON video_generations(video_id) 
-  WHERE active = TRUE;
 
 -- Video → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)

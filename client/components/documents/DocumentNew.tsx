@@ -7,24 +7,14 @@
 "use client";
 
 import type {
+  CreateDocumentIn,
+  CreateDocumentOut,
   DocumentsListOut,
-  FinalizeDocumentUploadIn,
-  FinalizeDocumentUploadOut,
+  FinalizeUploadOut,
 } from "@/app/(main)/management/documents/new/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
 import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
-import { useProfile } from "@/contexts/profile-context";
-import { inferMimeFromName } from "@/utils/mime-map";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
-import { useRouter } from "next/navigation";
-import React, { useMemo, useState } from "react";
-import { toast } from "sonner";
-import * as tus from "tus-js-client";
-import { v4 as uuidv4 } from "uuid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,8 +33,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { UploadCloud, Building2, FileText, Tag, X } from "lucide-react";
+import { useProfile } from "@/contexts/profile-context";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
+import { inferMimeFromName } from "@/utils/mime-map";
+import { Building2, FileText, Tag, UploadCloud, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
 
 type DocumentType =
   | "homework"
@@ -63,16 +64,16 @@ type FileClassification = {
 
 interface DocumentNewProps {
   listData: DocumentsListOut;
-  finalizeDocumentUploadAction: (
-    input: FinalizeDocumentUploadIn
-  ) => Promise<FinalizeDocumentUploadOut>;
+  finalizeUploadAction: (uploadId: string) => Promise<FinalizeUploadOut>;
+  createDocumentAction: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
 }
 
 const DEFAULT_TYPE: DocumentType = "homework";
 
 export default function DocumentNew({
   listData,
-  finalizeDocumentUploadAction,
+  finalizeUploadAction,
+  createDocumentAction,
 }: DocumentNewProps) {
   const { effectiveProfile } = useProfile();
   const router = useRouter();
@@ -111,14 +112,19 @@ export default function DocumentNew({
     useState<DocumentType>(DEFAULT_TYPE);
   const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
     useState<string[]>([]);
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    defaultDepartmentIds
-  );
+  const [selectedDepartmentIds, setSelectedDepartmentIds] =
+    useState<string[]>(defaultDepartmentIds);
   const [keepDefaultPerFile, setKeepDefaultPerFile] = useState<
     Record<string, boolean>
   >({});
   const [_stagedSelections, setStagedSelections] = useState<
-    Record<string, { apply_all_parameter_item_ids?: string[]; per_file_parameter_item_ids?: Record<string, string[]> }>
+    Record<
+      string,
+      {
+        apply_all_parameter_item_ids?: string[];
+        per_file_parameter_item_ids?: Record<string, string[]>;
+      }
+    >
   >({});
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
     []
@@ -494,10 +500,7 @@ export default function DocumentNew({
     disabled: activeUploads.size > 0,
   });
 
-  const uploadFile = async (
-    file: File,
-    classification: FileClassification
-  ) => {
+  const uploadFile = async (file: File, classification: FileClassification) => {
     const fileId = uuidv4();
     const toastId = toast.loading(`Preparing upload: ${file.name}`, {
       description: "0% complete",
@@ -513,9 +516,10 @@ export default function DocumentNew({
       })
     );
 
+    let tusUploadInstance: tus.Upload | null = null;
     try {
-      const upload = new tus.Upload(file, {
-        endpoint: `/api/documents/upload`,
+      tusUploadInstance = new tus.Upload(file, {
+        endpoint: `/api/uploads/upload`,
         retryDelays: [0, 3000, 5000, 10000, 20000],
         metadata: {
           filename: file.name,
@@ -567,40 +571,47 @@ export default function DocumentNew({
           });
 
           try {
-            const isZipFile = file.name.toLowerCase().endsWith(".zip");
-            const shouldAutoClassify = isZipFile;
+            // Extract TUS upload_id from upload URL
+            // URL format: /api/uploads/upload/{upload_id}
+            const uploadUrl = tusUploadInstance?.url || "";
+            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+              throw new Error("Failed to extract upload ID from upload URL");
+            }
+            const tusUploadId = tusUploadIdMatch[1];
 
+            // Finalize upload to get database upload_id
+            const finalizeResult = await finalizeUploadAction(tusUploadId);
+
+            if (!finalizeResult.success || !finalizeResult.uploadId) {
+              throw new Error(
+                finalizeResult.message || "Failed to finalize upload"
+              );
+            }
+
+            const databaseUploadId = finalizeResult.uploadId;
+
+            // Create document with upload_id
             const finalDepartmentIds = transformDepartmentIdsForSubmit(
               classification.departmentIds || selectedDepartmentIds,
               isSuperadmin,
               validDepartmentIds
             );
 
-            const result = await finalizeDocumentUploadAction({
+            const createResult = await createDocumentAction({
               body: {
-                uploadId: "",
-                fileId,
-                zip: isZipFile,
-                autoClassify: shouldAutoClassify,
-                csv: false,
-                test: false,
-                profileId: effectiveProfile?.id || "",
+                name: file.name,
+                type: classification.type,
+                uploadId: databaseUploadId,
                 departmentIds: finalDepartmentIds,
                 parameterItemIds: classification.parameterItemIds || [],
+                profileId: effectiveProfile?.id || "",
               },
             });
 
-            if (result.success) {
-              const isZipFile = file.name.toLowerCase().endsWith(".zip");
-              const classificationSuccess =
-                result.documents?.some((doc) => doc["classification_result"]) ??
-                false;
-              const description = isZipFile
-                ? `Extracted ${result.documents?.length || 0} documents${classificationSuccess ? " and auto-classified" : ""}`
-                : "File uploaded and processed successfully";
-
+            if (createResult.success) {
               toast.success(`Upload completed: ${file.name}!`, {
-                description,
+                description: "Document created successfully",
                 id: toastId,
               });
 
@@ -633,9 +644,9 @@ export default function DocumentNew({
                 });
               }, 2000);
             } else {
-              toast.error(`Upload processing failed: ${file.name}`, {
+              toast.error(`Document creation failed: ${file.name}`, {
                 description:
-                  result.message || "Failed to process uploaded file",
+                  createResult.message || "Failed to create document",
                 id: toastId,
               });
               setActiveUploads((prev) => {
@@ -661,7 +672,7 @@ export default function DocumentNew({
         },
       });
 
-      await upload.start();
+      await tusUploadInstance.start();
     } catch {
       toast.error(`Upload failed: ${file.name}`, {
         description: "An error occurred during upload",
@@ -717,7 +728,7 @@ export default function DocumentNew({
             : finalDepartmentIds || [],
       };
 
-        await uploadFile(file, classification);
+      await uploadFile(file, classification);
     }
   };
 
@@ -832,8 +843,7 @@ export default function DocumentNew({
                         (id) => !next.includes(id)
                       );
                       if (added.length) applyParameterItemsToAll(added);
-                      if (removed.length)
-                        removeParameterItemsFromAll(removed);
+                      if (removed.length) removeParameterItemsFromAll(removed);
                       setGlobalDefaultParameterItemIds(next);
                     }}
                     parameterId=""
@@ -917,7 +927,10 @@ export default function DocumentNew({
                             >
                               📄 {file.name}
                             </div>
-                            <Badge variant="secondary" className="text-xs w-fit">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs w-fit"
+                            >
                               {Math.round(file.size / 1024)} KB
                             </Badge>
                             {validationErrors[file.name] &&
@@ -979,14 +992,15 @@ export default function DocumentNew({
                             onSelect={(type) => {
                               if (!useDefaultType) {
                                 setPerFile((prev) => {
-                                  const prevForFile: FileClassification =
-                                    prev[file.name] ?? {
-                                      type: globalDefaultType,
-                                      parameterItemIds: [
-                                        ...globalDefaultParameterItemIds,
-                                      ],
-                                      departmentIds: selectedDepartmentIds,
-                                    };
+                                  const prevForFile: FileClassification = prev[
+                                    file.name
+                                  ] ?? {
+                                    type: globalDefaultType,
+                                    parameterItemIds: [
+                                      ...globalDefaultParameterItemIds,
+                                    ],
+                                    departmentIds: selectedDepartmentIds,
+                                  };
                                   return {
                                     ...prev,
                                     [file.name]: {
@@ -1014,14 +1028,15 @@ export default function DocumentNew({
                             onSelect={(parameterItemIds) => {
                               if (!useDefaultParameterItems) {
                                 setPerFile((prev) => {
-                                  const prevForFile: FileClassification =
-                                    prev[file.name] ?? {
-                                      type: fc.type,
-                                      parameterItemIds: [
-                                        ...globalDefaultParameterItemIds,
-                                      ],
-                                      departmentIds: selectedDepartmentIds,
-                                    };
+                                  const prevForFile: FileClassification = prev[
+                                    file.name
+                                  ] ?? {
+                                    type: fc.type,
+                                    parameterItemIds: [
+                                      ...globalDefaultParameterItemIds,
+                                    ],
+                                    departmentIds: selectedDepartmentIds,
+                                  };
                                   return {
                                     ...prev,
                                     [file.name]: {
@@ -1046,8 +1061,8 @@ export default function DocumentNew({
                               documentParameterIds.some((paramId) =>
                                 filteredValidParameterItemIds.some(
                                   (itemId) =>
-                                    parameterItemMapping[itemId]?.parameter_id ===
-                                    paramId
+                                    parameterItemMapping[itemId]
+                                      ?.parameter_id === paramId
                                 )
                               )
                             }
@@ -1156,15 +1171,13 @@ export default function DocumentNew({
         <Button
           type="submit"
           disabled={
-            activeUploads.size > 0 ||
-            pendingFiles.length === 0 ||
-            !canSubmit
+            activeUploads.size > 0 || pendingFiles.length === 0 || !canSubmit
           }
           data-testid="document-classify-submit"
         >
           Start Upload
         </Button>
-    </div>
+      </div>
     </form>
   );
 }

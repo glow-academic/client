@@ -35,8 +35,7 @@ import type {
   CreatePolicyOut,
   UpdatePolicyIn,
   UpdatePolicyOut,
-  FinalizePolicyUploadIn,
-  FinalizePolicyUploadOut,
+  FinalizeUploadOut,
 } from "@/app/(main)/management/policies/p/[policyId]/page";
 import type { PolicyDetailOut } from "@/app/(main)/management/policies/p/[policyId]/page";
 
@@ -47,9 +46,7 @@ export interface PolicyProps {
   policyDetailDefault?: PolicyDetailOut;
   createPolicyAction?: (input: CreatePolicyIn) => Promise<CreatePolicyOut>;
   updatePolicyAction?: (input: UpdatePolicyIn) => Promise<UpdatePolicyOut>;
-  finalizePolicyUploadAction?: (
-    input: FinalizePolicyUploadIn
-  ) => Promise<FinalizePolicyUploadOut>;
+  finalizeUploadAction?: (uploadId: string) => Promise<FinalizeUploadOut>;
 }
 
 export default function Policy({
@@ -59,7 +56,7 @@ export default function Policy({
   policyDetailDefault: serverPolicyDetailDefault,
   createPolicyAction,
   updatePolicyAction,
-  finalizePolicyUploadAction,
+  finalizeUploadAction,
 }: PolicyProps) {
   const router = useRouter();
   const { effectiveProfile } = useProfile();
@@ -260,17 +257,18 @@ export default function Policy({
         toast.success("Policy updated successfully");
         router.refresh();
       } else {
-        // Create new policy - upload file first, then finalize
-        if (!selectedFile || !finalizePolicyUploadAction) {
+        // Create new policy - upload file first, then finalize, then create
+        if (!selectedFile || !finalizeUploadAction || !createPolicyAction) {
           throw new Error("File upload is required for new policies");
         }
 
         const fileId = uuidv4();
         setIsUploading(true);
 
+        let tusUploadInstance: tus.Upload | null = null;
         // Create TUS upload
-        const upload = new tus.Upload(selectedFile, {
-          endpoint: `/api/policies/upload`,
+        tusUploadInstance = new tus.Upload(selectedFile, {
+          endpoint: `/api/uploads/upload`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: selectedFile.name,
@@ -290,28 +288,47 @@ export default function Policy({
           onSuccess: async () => {
             // Finalize the upload after TUS upload completes
             try {
+              // Extract TUS upload_id from upload URL
+              const uploadUrl = tusUploadInstance?.url || "";
+              const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+              if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+                throw new Error("Failed to extract upload ID from upload URL");
+              }
+              const tusUploadId = tusUploadIdMatch[1];
+
+              // Finalize upload to get database upload_id
+              const finalizeResult = await finalizeUploadAction(tusUploadId);
+
+              if (!finalizeResult.success || !finalizeResult.uploadId) {
+                throw new Error(
+                  finalizeResult.message || "Failed to finalize upload"
+                );
+              }
+
+              const databaseUploadId = finalizeResult.uploadId;
+
+              // Create policy with upload_id
               const deptIds = transformDepartmentIdsForSubmit(
                 formData.departmentIds,
                 isSuperadmin
               );
 
-              const result = await finalizePolicyUploadAction({
+              const createResult = await createPolicyAction({
                 body: {
-                  uploadId: "", // Server will find by fileId
-                  fileId,
                   name: formData.name,
                   description: formData.description,
+                  uploadId: databaseUploadId,
                   active: formData.active,
                   departmentIds: deptIds,
                 },
               });
 
-              if (result.success && result.policyId) {
+              if (createResult.success && createResult.policyId) {
                 toast.success("Policy created successfully");
-                router.push(`/management/policies/p/${result.policyId}`);
+                router.push(`/management/policies/p/${createResult.policyId}`);
               } else {
                 toast.error("Failed to create policy", {
-                  description: result.message || "Unknown error",
+                  description: createResult.message || "Unknown error",
                 });
                 setIsUploading(false);
               }
@@ -326,7 +343,7 @@ export default function Policy({
         });
 
         // Start the upload
-        await upload.start();
+        await tusUploadInstance.start();
       }
     } catch (error) {
       toast.error(

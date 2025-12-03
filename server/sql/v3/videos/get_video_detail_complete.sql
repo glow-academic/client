@@ -57,15 +57,12 @@ video_core AS (
         v.name,
         v.length_seconds,
         v.active,
-        COALESCE(g.file_path, '') as file_path,
-        COALESCE(g.mime_type, '') as mime_type,
+        v.upload_id::text,
         COALESCE(vdd.department_ids, NULL) as department_ids,
         v.outline_agent_id::text,
         v.image_agent_id::text
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
-    LEFT JOIN video_generations vg ON vg.video_id = v.id AND vg.active = TRUE
-    LEFT JOIN generations g ON g.id = vg.generation_id
     CROSS JOIN video_department_access_check vdac
     WHERE v.id = $1 AND vdac.has_access = true
 ),
@@ -378,8 +375,7 @@ SELECT
     vc.name,
     vc.length_seconds,
     vc.active,
-    vc.file_path,
-    vc.mime_type,
+    vc.upload_id,
     vc.department_ids,
     COALESCE((SELECT department_ids FROM valid_departments), ARRAY[]::text[]) as valid_department_ids,
     COALESCE((SELECT outline_ids FROM video_outlines_agg), ARRAY[]::text[]) as outline_ids,

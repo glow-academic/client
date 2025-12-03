@@ -31,8 +31,9 @@ policy_data AS (
         p.id as policy_id,
         p.name,
         p.description,
-        p.file_path,
-        p.mime_type,
+        p.upload_id::text,
+        u.file_path,
+        u.mime_type,
         p.active,
         p.created_at,
         p.updated_at,
@@ -48,11 +49,12 @@ policy_data AS (
             ELSE false
         END as can_delete
     FROM policies p
+    LEFT JOIN uploads u ON u.id = p.upload_id
     LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
     LEFT JOIN policy_departments_data pdd ON pdd.policy_id = p.id
     LEFT JOIN policy_videos_data pvd ON pvd.policy_id = p.id
     CROSS JOIN user_profile up
-    GROUP BY p.id, p.name, p.description, p.file_path, p.mime_type, p.active, p.created_at, p.updated_at, pdd.department_ids, pvd.video_ids, pvd.video_count, up.role
+    GROUP BY p.id, p.name, p.description, p.upload_id, u.file_path, u.mime_type, p.active, p.created_at, p.updated_at, pdd.department_ids, pvd.video_ids, pvd.video_count, up.role
     HAVING 
         COUNT(pd.policy_id) FILTER (WHERE pd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM policy_departments pd2 WHERE pd2.policy_id = p.id AND pd2.active = true)
@@ -94,7 +96,10 @@ department_mapping_data AS (
 )
 SELECT 
     pd.*,
-    SUBSTRING(pd.file_path FROM '\.([^\.]+)$') as extension,
+    CASE 
+        WHEN pd.file_path IS NOT NULL THEN SUBSTRING(pd.file_path FROM '\.([^\.]+)$')
+        ELSE NULL
+    END as extension,
     COALESCE(vm.mapping, '{}'::jsonb) as video_mapping,
     COALESCE(dm.mapping, '{}'::jsonb) as department_mapping
 FROM policy_data pd

@@ -1519,46 +1519,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/videos/download/{video_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Video
-         * @description Download a video by ID.
-         */
-        get: operations["download_video_api_v3_videos_download__video_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/videos/upload/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Finalize
-         * @description Finalize a video upload and update the video record with file_path and mime_type.
-         */
-        post: operations["upload_finalize_api_v3_videos_upload_finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/auth/list": {
         parameters: {
             query?: never;
@@ -2271,6 +2231,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/documents/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Document
+         * @description Create a new document.
+         */
+        post: operations["create_document_api_v3_documents_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/documents/delete": {
         parameters: {
             query?: never;
@@ -2345,46 +2325,6 @@ export interface paths {
          * @description Update a document.
          */
         post: operations["update_document_api_v3_documents_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/documents/upload/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Finalize
-         * @description Finalize a document upload and process the file.
-         */
-        post: operations["upload_finalize_api_v3_documents_upload_finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/documents/download/{document_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Document
-         * @description Download a document by ID.
-         */
-        get: operations["download_document_api_v3_documents_download__document_id__get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2591,7 +2531,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/images/upload/finalize": {
+    "/api/v3/images/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2601,30 +2541,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload Finalize
-         * @description Finalize an image upload and create the image.
+         * Create Image
+         * @description Create a new image.
          */
-        post: operations["upload_finalize_api_v3_images_upload_finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/images/download/{image_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Image
-         * @description Download an image by ID.
-         */
-        get: operations["download_image_api_v3_images_download__image_id__get"];
-        put?: never;
-        post?: never;
+        post: operations["create_image_api_v3_images_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2725,46 +2645,6 @@ export interface paths {
          * @description Delete a policy (soft delete).
          */
         post: operations["delete_policy_api_v3_policies_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/policies/upload/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Finalize
-         * @description Finalize a policy upload and create the policy.
-         */
-        post: operations["upload_finalize_api_v3_policies_upload_finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v3/policies/download/{policy_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Policy
-         * @description Download a policy by ID.
-         */
-        get: operations["download_policy_api_v3_policies_download__policy_id__get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4416,6 +4296,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/uploads/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tus Creation
+         * @description Handle POST request for tus protocol - create upload.
+         */
+        post: operations["tus_creation_api_v3_uploads_upload_post"];
+        delete?: never;
+        /**
+         * Tus Options
+         * @description Handle OPTIONS request for tus protocol discovery.
+         */
+        options: operations["tus_options_api_v3_uploads_upload_options"];
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/uploads/upload/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        /**
+         * Tus Options Upload Id
+         * @description Handle OPTIONS request for specific upload.
+         */
+        options: operations["tus_options_upload_id_api_v3_uploads_upload__upload_id__options"];
+        /**
+         * Tus Head
+         * @description Handle HEAD request for tus protocol - get upload info.
+         */
+        head: operations["tus_head_api_v3_uploads_upload__upload_id__head"];
+        /**
+         * Tus Patch
+         * @description Handle PATCH request for tus protocol - upload chunk.
+         */
+        patch: operations["tus_patch_api_v3_uploads_upload__upload_id__patch"];
+        trace?: never;
+    };
+    "/api/v3/uploads/upload/{upload_id}/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tus Finalize
+         * @description Finalize a TUS upload and create upload record.
+         */
+        post: operations["tus_finalize_api_v3_uploads_upload__upload_id__finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/uploads/download/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Upload
+         * @description Download an upload by ID.
+         */
+        get: operations["download_upload_api_v3_uploads_download__upload_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -4456,58 +4428,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tus Creation
-         * @description Handle POST request for tus protocol - create upload.
-         */
-        post: operations["tus_creation_upload_post"];
-        delete?: never;
-        /**
-         * Tus Options
-         * @description Handle OPTIONS request for tus protocol discovery.
-         */
-        options: operations["tus_options_upload_options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/upload/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Options Upload Id
-         * @description Handle OPTIONS request for specific upload.
-         */
-        options: operations["tus_options_upload_id_upload__upload_id__options"];
-        /**
-         * Tus Head
-         * @description Handle HEAD request for tus protocol - get upload info.
-         */
-        head: operations["tus_head_upload__upload_id__head"];
-        /**
-         * Tus Patch
-         * @description Handle PATCH request for tus protocol - upload chunk.
-         */
-        patch: operations["tus_patch_upload__upload_id__patch"];
         trace?: never;
     };
 }
@@ -5641,6 +5561,36 @@ export interface components {
             message: string;
         };
         /**
+         * CreateDocumentRequest
+         * @description Request to create document.
+         */
+        CreateDocumentRequest: {
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Uploadid */
+            uploadId: string;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * CreateDocumentResponse
+         * @description Response from create document.
+         */
+        CreateDocumentResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Documentid */
+            documentId?: string | null;
+        };
+        /**
          * CreateEvalRequest
          * @description Request to create an eval.
          */
@@ -5690,6 +5640,28 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /**
+         * CreateImageRequest
+         * @description Request to create image.
+         */
+        CreateImageRequest: {
+            /** Name */
+            name: string;
+            /** Uploadid */
+            uploadId: string;
+        };
+        /**
+         * CreateImageResponse
+         * @description Response from create image.
+         */
+        CreateImageResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Imageid */
+            imageId?: string | null;
         };
         /**
          * CreateKeyRequest
@@ -5959,10 +5931,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
+            /** Uploadid */
+            uploadId: string;
             /**
              * Active
              * @default true
@@ -6229,6 +6199,8 @@ export interface components {
             name: string;
             /** Length Seconds */
             length_seconds: number;
+            /** Upload Id */
+            upload_id?: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Outline Ids */
@@ -6977,6 +6949,8 @@ export interface components {
             active: boolean;
             /** Type */
             type: string;
+            /** Upload Id */
+            upload_id: string | null;
             /** Document Type Options */
             document_type_options: string[];
             /** Department Ids */
@@ -7019,12 +6993,10 @@ export interface components {
             type: string;
             /** Updated At */
             updated_at: string;
-            /** Mime Type */
-            mime_type?: string | null;
+            /** Upload Id */
+            upload_id?: string | null;
             /** Active */
             active: boolean;
-            /** File Path */
-            file_path?: string | null;
             /** Extension */
             extension?: string | null;
             /** Department Ids */
@@ -9320,10 +9292,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
+            /** Upload Id */
+            upload_id?: string | null;
             /** Active */
             active: boolean;
             /** Created At */
@@ -9357,10 +9327,8 @@ export interface components {
             name: string;
             /** Description */
             description: string;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
+            /** Upload Id */
+            upload_id?: string | null;
             /** Active */
             active: boolean;
             /** Created At */
@@ -12022,6 +11990,20 @@ export interface components {
             /** Formatted */
             formatted: string;
         };
+        /**
+         * TusFinalizeResponse
+         * @description Response from finalize upload.
+         */
+        TusFinalizeResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Status */
+            status: string;
+            /** Uploadid */
+            uploadId?: string | null;
+        };
         /** UnitItem */
         UnitItem: {
             /** Id */
@@ -12751,6 +12733,8 @@ export interface components {
             name: string;
             /** Length Seconds */
             length_seconds: number;
+            /** Upload Id */
+            upload_id?: string | null;
             /** Department Ids */
             department_ids: string[] | null;
             /** Outline Ids */
@@ -13497,66 +13481,6 @@ export interface components {
             can_remove: boolean;
         };
         /**
-         * UploadFinalizeRequest
-         * @description Request to finalize upload.
-         */
-        app__api__v3__documents__upload_finalize__UploadFinalizeRequest: {
-            /** Uploadid */
-            uploadId: string;
-            /** Fileid */
-            fileId: string;
-            /**
-             * Zip
-             * @default false
-             */
-            zip: boolean | null;
-            /**
-             * Autoclassify
-             * @default false
-             */
-            autoClassify: boolean | null;
-            /**
-             * Csv
-             * @default false
-             */
-            csv: boolean | null;
-            /**
-             * Test
-             * @default false
-             */
-            test: boolean | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /** Parameteritemids */
-            parameterItemIds?: string[] | null;
-        };
-        /**
-         * UploadFinalizeResponse
-         * @description Response from finalize upload.
-         */
-        app__api__v3__documents__upload_finalize__UploadFinalizeResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Status */
-            status: string;
-            /** Documentid */
-            documentId?: string | null;
-            /** Documents */
-            documents?: {
-                [key: string]: string;
-            }[] | null;
-            /** Userscreated */
-            usersCreated?: number | null;
-            /** Usersskipped */
-            usersSkipped?: number | null;
-            /** Errors */
-            errors?: string[] | null;
-        };
-        /**
          * ModelRunItem
          * @description Model run item in eval detail.
          */
@@ -13692,32 +13616,6 @@ export interface components {
             cohortNames: string[];
             /** Practicescenarioid */
             practiceScenarioId?: string | null;
-        };
-        /**
-         * UploadFinalizeRequest
-         * @description Request to finalize image upload.
-         */
-        app__api__v3__images__upload_finalize__UploadFinalizeRequest: {
-            /** Uploadid */
-            uploadId: string;
-            /** Fileid */
-            fileId: string;
-            /** Name */
-            name: string;
-        };
-        /**
-         * UploadFinalizeResponse
-         * @description Response from finalize upload.
-         */
-        app__api__v3__images__upload_finalize__UploadFinalizeResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Status */
-            status: string;
-            /** Imageid */
-            imageId?: string | null;
         };
         /**
          * FeedbackItem
@@ -14017,41 +13915,6 @@ export interface components {
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
-        };
-        /**
-         * UploadFinalizeRequest
-         * @description Request to finalize policy upload.
-         */
-        app__api__v3__policies__upload_finalize__UploadFinalizeRequest: {
-            /** Uploadid */
-            uploadId: string;
-            /** Fileid */
-            fileId: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Departmentids */
-            departmentIds?: string[] | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-        };
-        /**
-         * UploadFinalizeResponse
-         * @description Response from finalize upload.
-         */
-        app__api__v3__policies__upload_finalize__UploadFinalizeResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Status */
-            status: string;
-            /** Policyid */
-            policyId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -15073,10 +14936,8 @@ export interface components {
             length_seconds: number;
             /** Active */
             active: boolean;
-            /** File Path */
-            file_path: string;
-            /** Mime Type */
-            mime_type: string;
+            /** Upload Id */
+            upload_id: string | null;
             /** Video Url */
             video_url: string | null;
             /** Department Ids */
@@ -15288,34 +15149,6 @@ export interface components {
             times: number[];
             /** Options */
             options: components["schemas"]["QuestionOption-Input"][];
-        };
-        /**
-         * UploadFinalizeRequest
-         * @description Request to finalize video upload.
-         */
-        app__api__v3__videos__upload_finalize__UploadFinalizeRequest: {
-            /** Uploadid */
-            uploadId: string;
-            /** Fileid */
-            fileId: string;
-            /** Videoid */
-            videoId: string;
-            /** Name */
-            name: string;
-        };
-        /**
-         * UploadFinalizeResponse
-         * @description Response from finalize upload.
-         */
-        app__api__v3__videos__upload_finalize__UploadFinalizeResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Status */
-            status: string;
-            /** Videoid */
-            videoId?: string | null;
         };
         /**
          * AttemptHistoryRow
@@ -17591,70 +17424,6 @@ export interface operations {
             };
         };
     };
-    download_video_api_v3_videos_download__video_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                video_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_finalize_api_v3_videos_upload_finalize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v3__videos__upload_finalize__UploadFinalizeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v3__videos__upload_finalize__UploadFinalizeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_auth_list_api_v3_auth_list_post: {
         parameters: {
             query?: never;
@@ -18731,6 +18500,39 @@ export interface operations {
             };
         };
     };
+    create_document_api_v3_documents_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDocumentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_document_api_v3_documents_delete_post: {
         parameters: {
             query?: never;
@@ -18850,70 +18652,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateDocumentResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_finalize_api_v3_documents_upload_finalize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v3__documents__upload_finalize__UploadFinalizeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v3__documents__upload_finalize__UploadFinalizeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_document_api_v3_documents_download__document_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                document_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -19257,7 +18995,7 @@ export interface operations {
             };
         };
     };
-    upload_finalize_api_v3_images_upload_finalize_post: {
+    create_image_api_v3_images_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -19266,7 +19004,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__api__v3__images__upload_finalize__UploadFinalizeRequest"];
+                "application/json": components["schemas"]["CreateImageRequest"];
             };
         };
         responses: {
@@ -19276,38 +19014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__api__v3__images__upload_finalize__UploadFinalizeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_image_api_v3_images_download__image_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                image_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["CreateImageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19473,70 +19180,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePolicyResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_finalize_api_v3_policies_upload_finalize_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["app__api__v3__policies__upload_finalize__UploadFinalizeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["app__api__v3__policies__upload_finalize__UploadFinalizeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_policy_api_v3_policies_download__policy_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                policy_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -22166,6 +21809,201 @@ export interface operations {
             };
         };
     };
+    tus_creation_api_v3_uploads_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_options_api_v3_uploads_upload_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    tus_options_upload_id_api_v3_uploads_upload__upload_id__options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_head_api_v3_uploads_upload__upload_id__head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_patch_api_v3_uploads_upload__upload_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tus_finalize_api_v3_uploads_upload__upload_id__finalize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TusFinalizeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_upload_api_v3_uploads_download__upload_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     root_info__get: {
         parameters: {
             query?: never;
@@ -22202,139 +22040,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_creation_upload_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_options_upload_options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    tus_options_upload_id_upload__upload_id__options: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_head_upload__upload_id__head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_patch_upload__upload_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

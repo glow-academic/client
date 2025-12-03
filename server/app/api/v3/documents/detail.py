@@ -49,6 +49,7 @@ class DocumentDetailResponse(BaseModel):
     name: str
     active: bool
     type: str
+    upload_id: str | None
     document_type_options: list[str]
     department_ids: list[str] | None
     valid_department_ids: list[str]
@@ -151,6 +152,25 @@ async def get_document_detail(
         if row.get("department_ids"):
             dept_ids = [str(d) for d in row["department_ids"]]
 
+        # Parse agent mapping
+        agent_mapping: AgentMapping = {}
+        if row.get("agent_mapping"):
+            agent_data = row["agent_mapping"]
+            if isinstance(agent_data, str):
+                agent_data = json.loads(agent_data)
+            if isinstance(agent_data, dict):
+                for aid, adata in agent_data.items():
+                    if isinstance(adata, dict):
+                        agent_mapping[aid] = AgentMappingItem(
+                            name=adata.get("name", ""),
+                            description=adata.get("description", ""),
+                            roles=adata.get("roles", []),
+                        )
+
+        valid_agent_ids = [
+            str(aid) for aid in (row.get("valid_agent_ids") or [])
+        ]
+
         # Document type options (from v2 - typically ["homework", "exam", "lab", "project"])
         document_type_options = ["homework", "exam", "lab", "project"]
 
@@ -158,6 +178,7 @@ async def get_document_detail(
             name=row.get("name", ""),
             active=row.get("active", False),
             type=row.get("type", ""),
+            upload_id=row.get("upload_id"),
             document_type_options=document_type_options,
             department_ids=dept_ids,
             valid_department_ids=valid_department_ids,
@@ -167,6 +188,8 @@ async def get_document_detail(
             parameter_item_mapping=parameter_item_mapping,
             classify_agent_id=row.get("classify_agent_id", ""),
             document_agent_id=row.get("document_agent_id", ""),
+            agent_mapping=agent_mapping,
+            valid_agent_ids=valid_agent_ids,
         )
 
         # Cache response

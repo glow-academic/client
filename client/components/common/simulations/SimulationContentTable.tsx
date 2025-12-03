@@ -23,11 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { AgentPicker } from "@/components/common/forms/AgentPicker";
-import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -40,19 +37,9 @@ import {
   ArrowUp,
   BarChart3,
   BookOpen,
-  Clock,
-  Copy,
   FileText,
-  Image,
-  Layers,
-  Lightbulb,
-  Mic,
   Pencil,
   Power,
-  Shield,
-  ShieldCheck,
-  Target,
-  Text,
   Trash2,
   Video,
   Eye,
@@ -99,33 +86,9 @@ export interface SimulationContentTableProps {
   onMoveDown: (contentId: string) => void;
   onRemove: (contentId: string) => void;
   onEditScenario?: (scenarioId: string) => void;
-  // Switch toggle handlers
-  onHintsToggle?: (contentId: string, enabled: boolean) => void;
-  onObjectivesToggle?: (contentId: string, enabled: boolean) => void;
-  onInputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
-  onOutputGuardrailToggle?: (contentId: string, enabled: boolean) => void;
-  onCopyPasteToggle?: (contentId: string, enabled: boolean) => void;
-  onAudioToggle?: (contentId: string, enabled: boolean) => void;
-  onTextToggle?: (contentId: string, enabled: boolean) => void;
   onShowProblemStatementToggle?: (contentId: string, enabled: boolean) => void;
   onShowObjectivesToggle?: (contentId: string, enabled: boolean) => void;
   onShowImageToggle?: (contentId: string, enabled: boolean) => void;
-  onRubricChange?: (contentId: string, rubricId: string | null) => void;
-  onTimeLimitChange?: (
-    contentId: string,
-    timeLimitMinutes: number | null
-  ) => void;
-  // Agent change handlers
-  onHintAgentChange?: (contentId: string, agentId: string | null) => void;
-  onInputGuardrailAgentChange?: (contentId: string, agentId: string | null) => void;
-  onOutputGuardrailAgentChange?: (contentId: string, agentId: string | null) => void;
-  onGradeAgentsChange?: (contentId: string, agentIds: string[]) => void;
-  // Rubric picker props
-  rubricMapping?: Record<string, { name: string; description?: string }>;
-  validRubricIds?: string[];
-  // Agent picker props
-  agentMapping?: Record<string, { name: string; roles?: string[] }>;
-  validAgentIds?: string[];
   readonly?: boolean;
 }
 
@@ -136,26 +99,9 @@ export function SimulationContentTable({
   onMoveDown,
   onRemove,
   onEditScenario,
-  onHintsToggle,
-  onObjectivesToggle,
-  onInputGuardrailToggle,
-  onOutputGuardrailToggle,
-  onCopyPasteToggle,
-  onAudioToggle,
-  onTextToggle,
   onShowProblemStatementToggle,
   onShowObjectivesToggle,
   onShowImageToggle,
-  onRubricChange,
-  onTimeLimitChange,
-  onHintAgentChange,
-  onInputGuardrailAgentChange,
-  onOutputGuardrailAgentChange,
-  onGradeAgentsChange,
-  rubricMapping = {},
-  validRubricIds = [],
-  agentMapping = {},
-  validAgentIds = [],
   readonly = false,
 }: SimulationContentTableProps) {
   const [columnVisibility, setColumnVisibility] =
@@ -179,9 +125,32 @@ export function SimulationContentTable({
     return `${rate}%`;
   };
 
-  // Columns definition
+  // Columns definition - only shared attributes
   const columns: ColumnDef<ContentItem>[] = React.useMemo(
     () => [
+      {
+        accessorKey: "position",
+        header: () => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex flex-col items-center gap-1 cursor-help">
+                <span className="text-xs">#</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Position in simulation</p>
+            </TooltipContent>
+          </Tooltip>
+        ),
+        cell: ({ row }) => {
+          return (
+            <div className="flex items-center justify-center">
+              <span className="text-sm font-medium">{row.original.position}</span>
+            </div>
+          );
+        },
+        enableSorting: true,
+      },
       {
         accessorKey: "title",
         size: 150,
@@ -294,428 +263,6 @@ export function SimulationContentTable({
         },
       },
       {
-        id: "hints_enabled",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Hints</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                Provide hints to help students progress through the scenario
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.hints_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  onHintsToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onHintsToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "hint_agent",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Lightbulb className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Hint Agent</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Agent to use for generating hints</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center min-w-[150px]">
-              <AgentPicker
-                mapping={agentMapping}
-                validIds={
-                  validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("hint");
-                  })
-                }
-                selectedIds={item.hint_agent_id ? [item.hint_agent_id] : []}
-                onSelect={(ids) =>
-                  onHintAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
-                }
-                placeholder="Select agent"
-                disabled={readonly || !onHintAgentChange}
-                multiSelect={false}
-                buttonClassName="h-8 text-xs"
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "objectives_enabled",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Objectives</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Display learning objectives to students during the scenario</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.objectives_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  onObjectivesToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onObjectivesToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "guardrail",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Guardrail</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Monitor and filter inappropriate input/output</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex flex-col items-center justify-center gap-2 py-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Input</span>
-                <Switch
-                  checked={item.input_guardrail_enabled ?? false}
-                  onCheckedChange={(checked) =>
-                    onInputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
-                  }
-                  disabled={readonly || !onInputGuardrailToggle}
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Output</span>
-                <Switch
-                  checked={item.output_guardrail_enabled ?? false}
-                  onCheckedChange={(checked) =>
-                    onOutputGuardrailToggle?.(`${item.type}:${item.id}`, checked)
-                  }
-                  disabled={readonly || !onOutputGuardrailToggle}
-                />
-              </div>
-            </div>
-          );
-        },
-      },
-      {
-        id: "input_guardrail_agent",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Input Guardrail Agent</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Agent to use for input guardrail monitoring</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center min-w-[150px]">
-              <AgentPicker
-                mapping={agentMapping}
-                validIds={
-                  validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("input_guardrail");
-                  })
-                }
-                selectedIds={item.input_guardrail_agent_id ? [item.input_guardrail_agent_id] : []}
-                onSelect={(ids) =>
-                  onInputGuardrailAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
-                }
-                placeholder="Select agent"
-                disabled={readonly || !onInputGuardrailAgentChange}
-                multiSelect={false}
-                buttonClassName="h-8 text-xs"
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "output_guardrail_agent",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Output Guardrail Agent</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Agent to use for output guardrail monitoring</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center min-w-[150px]">
-              <AgentPicker
-                mapping={agentMapping}
-                validIds={
-                  validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("output_guardrail");
-                  })
-                }
-                selectedIds={item.output_guardrail_agent_id ? [item.output_guardrail_agent_id] : []}
-                onSelect={(ids) =>
-                  onOutputGuardrailAgentChange?.(`${item.type}:${item.id}`, ids[0] || null)
-                }
-                placeholder="Select agent"
-                disabled={readonly || !onOutputGuardrailAgentChange}
-                multiSelect={false}
-                buttonClassName="h-8 text-xs"
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "grade_agents",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Target className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Grade Agents</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Agents to use for grading (multiple allowed)</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center min-w-[150px]">
-              <AgentPicker
-                mapping={agentMapping}
-                validIds={
-                  validAgentIds.filter((id) => {
-                    const agent = agentMapping[id];
-                    return agent?.roles?.includes("grade");
-                  })
-                }
-                selectedIds={item.grade_agent_ids || []}
-                onSelect={(ids) =>
-                  onGradeAgentsChange?.(`${item.type}:${item.id}`, ids)
-                }
-                placeholder="Select agents"
-                disabled={readonly || !onGradeAgentsChange}
-                multiSelect={true}
-                buttonClassName="h-8 text-xs"
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "copy_paste_allowed",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Copy className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs leading-tight text-center">
-                  Copy
-                  <br />
-                  Paste
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Allow students to copy and paste text during the scenario</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.copy_paste_allowed ?? false}
-                onCheckedChange={(checked) =>
-                  onCopyPasteToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onCopyPasteToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "audio_enabled",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Mic className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Audio</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Enable audio input for the scenario</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.audio_enabled ?? false}
-                onCheckedChange={(checked) =>
-                  onAudioToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onAudioToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
-        id: "text_enabled",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Text className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Text</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Enable text input for the scenario</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          return (
-            <div className="flex items-center justify-center">
-              <Switch
-                checked={item.text_enabled ?? true}
-                onCheckedChange={(checked) =>
-                  onTextToggle?.(`${item.type}:${item.id}`, checked)
-                }
-                disabled={readonly || !onTextToggle}
-              />
-            </div>
-          );
-        },
-      },
-      {
         id: "show_fields",
         header: () => (
           <Tooltip>
@@ -764,115 +311,6 @@ export function SimulationContentTable({
                   disabled={readonly || !onShowImageToggle}
                 />
               </div>
-            </div>
-          );
-        },
-      },
-      {
-        id: "rubric_id",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs">Rubric</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Rubric for grading this scenario</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          const contentId = `${item.type}:${item.id}`;
-          return (
-            <div className="flex items-center justify-center min-w-[120px]">
-              {readonly ? (
-                <span className="text-xs text-muted-foreground">
-                  {item.rubric_id && rubricMapping[item.rubric_id]
-                    ? rubricMapping[item.rubric_id].name
-                    : "None"}
-                </span>
-              ) : (
-                <RubricPicker
-                  mapping={rubricMapping}
-                  validIds={validRubricIds}
-                  selectedIds={item.rubric_id ? [item.rubric_id] : []}
-                  onSelect={(ids) =>
-                    onRubricChange?.(contentId, ids[0] || null)
-                  }
-                  placeholder="Select rubric..."
-                  hideSelectedChips={true}
-                />
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        id: "time_limit",
-        header: () => (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-1 cursor-help">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs leading-tight text-center">
-                  Time
-                  <br />
-                  Limit
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Time limit in minutes for this scenario</p>
-            </TooltipContent>
-          </Tooltip>
-        ),
-        cell: ({ row }) => {
-          const item = row.original;
-          if (item.type === "video") {
-            return (
-              <Badge variant="outline" className="text-muted-foreground">
-                N/A
-              </Badge>
-            );
-          }
-          const contentId = `${item.type}:${item.id}`;
-          // Convert seconds to minutes for display
-          const timeLimitMinutes = item.time_limit_seconds
-            ? Math.round(item.time_limit_seconds / 60)
-            : null;
-          return (
-            <div className="flex items-center justify-center">
-              {readonly ? (
-                <span className="text-xs text-muted-foreground">
-                  {timeLimitMinutes ? `${timeLimitMinutes} min` : "No limit"}
-                </span>
-              ) : (
-                <Input
-                  type="number"
-                  min="1"
-                  max="120"
-                  value={timeLimitMinutes || ""}
-                  onChange={(e) => {
-                    const value = e.target.value
-                      ? parseInt(e.target.value)
-                      : null;
-                    onTimeLimitChange?.(contentId, value);
-                  }}
-                  placeholder="None"
-                  className="w-20 h-8 text-sm"
-                  disabled={readonly}
-                />
-              )}
             </div>
           );
         },
@@ -975,24 +413,9 @@ export function SimulationContentTable({
       onMoveDown,
       onRemove,
       onEditScenario,
-      onHintsToggle,
-      onObjectivesToggle,
-      onInputGuardrailToggle,
-      onOutputGuardrailToggle,
-      onHintAgentChange,
-      onInputGuardrailAgentChange,
-      onOutputGuardrailAgentChange,
-      onGradeAgentsChange,
-      onCopyPasteToggle,
-      onAudioToggle,
-      onTextToggle,
       onShowProblemStatementToggle,
       onShowObjectivesToggle,
       onShowImageToggle,
-      onRubricChange,
-      onTimeLimitChange,
-      rubricMapping,
-      validRubricIds,
     ]
   );
 

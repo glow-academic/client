@@ -20,12 +20,6 @@ type SimulationNewOut = OutputOf<
 type CreateSimulationIn = InputOf<"/api/v3/simulations/create", "post">;
 type CreateSimulationOut = OutputOf<"/api/v3/simulations/create", "post">;
 
-type SearchScenarioIn = InputOf<"/api/v3/scenarios/search", "post">;
-type SearchScenarioOut = OutputOf<"/api/v3/scenarios/search", "post">;
-
-type SearchVideoIn = InputOf<"/api/v3/videos/search", "post">;
-type SearchVideoOut = OutputOf<"/api/v3/videos/search", "post">;
-
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -51,20 +45,6 @@ async function createSimulation(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/simulations/create", input);
-}
-
-async function searchScenarios(
-  input: SearchScenarioIn,
-): Promise<SearchScenarioOut> {
-  "use server";
-  return api.post("/scenarios/search", input);
-}
-
-async function searchVideos(
-  input: SearchVideoIn,
-): Promise<SearchVideoOut> {
-  "use server";
-  return api.post("/videos/search", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -109,8 +89,6 @@ export default async function NewSimulationPage() {
       <Simulation
         simulationDetailDefault={simulationDetailDefault}
         createSimulationAction={createSimulation}
-        searchScenarioAction={searchScenarios}
-        searchVideoAction={searchVideos}
       />
     </div>
   );

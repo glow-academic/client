@@ -139,20 +139,33 @@ async def generate_video(
                 
                 logger.info(f"Video saved to: {video_path}")
                 
-                # Update video record with file path
-                # Store just the filename (relative to UPLOAD_FOLDER), consistent with images
+                # Create upload record
                 mime_type = "video/mp4"
-                sql_query = load_sql("sql/v3/videos/update_video_file_path.sql")
-                sql_params = (str(video_id), video_filename, mime_type)
-                await conn.execute(sql_query, *sql_params)
+                file_size = len(video_content_bytes)
+                sql_query = load_sql("sql/v3/uploads/insert_upload.sql")
+                upload_id_str = await conn.fetchval(
+                    sql_query,
+                    video_filename,  # file_path (relative to UPLOAD_FOLDER)
+                    mime_type,
+                    file_size,
+                )
                 
-                logger.info(f"Saved video file_path: {video_filename}, mime_type: {mime_type}")
+                if not upload_id_str:
+                    raise ValueError("Failed to create upload record")
                 
-                # Return URL using download endpoint instead of direct /uploads/ path
+                logger.info(f"Created upload record: {upload_id_str}, file_path: {video_filename}")
+                
+                # Update video with upload_id
+                update_sql = load_sql("sql/v3/videos/update_video_upload_id.sql")
+                await conn.execute(update_sql, str(video_id), uuid.UUID(upload_id_str))
+                
+                logger.info(f"Updated video {video_id} with upload_id: {upload_id_str}")
+                
+                # Return URL using download endpoint
                 return GenerateVideoResponse(
                     success=True,
                     message="Video generated successfully",
-                    videoUrl=f"/api/videos/download/{video_id}",
+                    videoUrl=f"/api/uploads/download/{upload_id_str}",
                     videoId=str(video_id),
                 )
             elif video_status.status == "failed":

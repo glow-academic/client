@@ -3,6 +3,7 @@ WITH document_data AS (
         d.name,
         d.active,
         d.type,
+        d.upload_id::text,
         d.classify_agent_id::text,
         d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids

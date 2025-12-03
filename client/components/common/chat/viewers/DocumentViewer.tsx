@@ -18,8 +18,7 @@ type DocumentItem = {
   can_delete: boolean;
   active: boolean;
   department_ids: string[] | null;
-  file_path: string;
-  mime_type: string;
+  upload_id: string | null;
   parameter_item_ids: string[];
 };
 
@@ -73,17 +72,26 @@ export default function DocumentViewer({
 
         // Call the API route directly or use blob URL for form documents
         let response;
-        if (isFormDocument && document.file_path?.startsWith("blob:")) {
-          // For form documents with blob URLs, fetch the blob directly
-          response = await fetch(document.file_path);
-        } else {
+        if (isFormDocument && document.upload_id) {
+          // For form documents, use upload_id
           response = await fetch(
-            `/api/documents/download/${document.document_id}`,
+            `/api/uploads/download/${document.upload_id}`,
             {
               method: "GET",
               credentials: "include",
             }
           );
+        } else if (document.upload_id) {
+          // Use upload_id for download
+          response = await fetch(
+            `/api/uploads/download/${document.upload_id}`,
+            {
+              method: "GET",
+              credentials: "include",
+            }
+          );
+        } else {
+          throw new Error("Document upload_id is required");
         }
 
         if (!response.ok) {
