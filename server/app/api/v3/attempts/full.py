@@ -151,6 +151,56 @@ class GradeItem(BaseModel):
     timeTaken: int | None
 
 
+class OptionItem(BaseModel):
+    id: str
+    optionText: str
+    type: str
+    isCorrect: bool
+
+
+class QuestionItem(BaseModel):
+    id: str
+    questionText: str
+    type: str  # "choice" | "frq"
+    allowMultiple: bool
+    times: list[int]  # Timestamps when question appears
+    options: list[OptionItem]
+
+
+class PolicyItem(BaseModel):
+    id: str
+    name: str
+    description: str
+    extension: str | None
+    filePath: str | None
+    mimeType: str | None
+
+
+class VideoItem(BaseModel):
+    id: str
+    title: str
+    lengthSeconds: int
+    uploadId: str | None
+    policies: list[PolicyItem]
+    questions: list[QuestionItem]
+    showProblemStatement: bool
+    showObjectives: bool
+    showImage: bool
+
+
+class QuizResponseItem(BaseModel):
+    questionId: str
+    optionId: str
+    completed: bool
+    createdAt: str
+
+
+class QuizItem(BaseModel):
+    id: str
+    completed: bool
+    responses: list[QuizResponseItem]
+
+
 class ChatData(BaseModel):
     chat: ChatItem
     scenario: ScenarioItem | None
@@ -160,6 +210,9 @@ class ChatData(BaseModel):
     gradingState: GradingState | None = None
     dynamicRubric: DynamicRubric | None = None
     previousChats: list[PreviousChat]
+    contentType: str | None = None  # "scenario" | "video"
+    video: VideoItem | None = None
+    quiz: QuizItem | None = None
 
 
 class ScenarioDocumentItem(BaseModel):
@@ -408,6 +461,56 @@ async def get_attempt_full(
             previous_chats = [
                 PreviousChat(**pc) for pc in chat_data.get("previousChats", [])
             ]
+            
+            # Handle contentType, video, and quiz fields
+            content_type = chat_data.get("contentType")
+            video = None
+            quiz = None
+            
+            if content_type == "video" and chat_data.get("video"):
+                video_data = chat_data["video"]
+                # Parse policies
+                policies = [
+                    PolicyItem(**p) for p in video_data.get("policies", [])
+                ]
+                # Parse questions with options
+                questions = []
+                for q_data in video_data.get("questions", []):
+                    options = [
+                        OptionItem(**opt) for opt in q_data.get("options", [])
+                    ]
+                    questions.append(
+                        QuestionItem(
+                            id=q_data["id"],
+                            questionText=q_data["questionText"],
+                            type=q_data["type"],
+                            allowMultiple=q_data.get("allowMultiple", False),
+                            times=q_data.get("times", []),
+                            options=options,
+                        )
+                    )
+                video = VideoItem(
+                    id=video_data["id"],
+                    title=video_data["title"],
+                    lengthSeconds=video_data["lengthSeconds"],
+                    uploadId=video_data.get("uploadId"),
+                    policies=policies,
+                    questions=questions,
+                    showProblemStatement=video_data.get("showProblemStatement", True),
+                    showObjectives=video_data.get("showObjectives", True),
+                    showImage=video_data.get("showImage", True),
+                )
+            
+            if chat_data.get("quiz"):
+                quiz_data = chat_data["quiz"]
+                responses = [
+                    QuizResponseItem(**r) for r in quiz_data.get("responses", [])
+                ]
+                quiz = QuizItem(
+                    id=quiz_data["id"],
+                    completed=quiz_data.get("completed", False),
+                    responses=responses,
+                )
 
             chats.append(
                 ChatData(
@@ -419,6 +522,9 @@ async def get_attempt_full(
                     gradingState=grading_state,
                     dynamicRubric=dynamic_rubric,
                     previousChats=previous_chats,
+                    contentType=content_type,
+                    video=video,
+                    quiz=quiz,
                 )
             )
 

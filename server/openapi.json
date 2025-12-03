@@ -8956,6 +8956,159 @@
         ]
       }
     },
+    "/api/v3/attempts/quizzes/create": {
+      "post": {
+        "tags": [
+          "v3",
+          "attempts",
+          "attempts",
+          "quizzes"
+        ],
+        "summary": "Create Quiz",
+        "description": "Create quiz for attempt + video if doesn't exist.",
+        "operationId": "create_quiz_api_v3_attempts_quizzes_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuizRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateQuizResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts",
+          "attempts",
+          "quizzes"
+        ]
+      }
+    },
+    "/api/v3/attempts/quizzes/submit-response": {
+      "post": {
+        "tags": [
+          "v3",
+          "attempts",
+          "attempts",
+          "quizzes"
+        ],
+        "summary": "Submit Quiz Response",
+        "description": "Submit quiz response for question + option.",
+        "operationId": "submit_quiz_response_api_v3_attempts_quizzes_submit_response_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitQuizResponseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitQuizResponseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts",
+          "attempts",
+          "quizzes"
+        ]
+      }
+    },
+    "/api/v3/attempts/quizzes/complete": {
+      "post": {
+        "tags": [
+          "v3",
+          "attempts",
+          "attempts",
+          "quizzes"
+        ],
+        "summary": "Complete Quiz",
+        "description": "Complete quiz - marks as completed and validates all answers are correct.",
+        "operationId": "complete_quiz_api_v3_attempts_quizzes_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteQuizRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteQuizResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "attempts",
+          "attempts",
+          "quizzes"
+        ]
+      }
+    },
     "/api/v3/full": {
       "post": {
         "tags": [
@@ -9572,6 +9725,64 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TusFinalizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "uploads"
+        ]
+      }
+    },
+    "/api/v3/uploads/upload/{upload_id}/classify": {
+      "post": {
+        "tags": [
+          "v3",
+          "uploads"
+        ],
+        "summary": "Classify Upload",
+        "description": "Classify an uploaded file and suggest parameter items.",
+        "operationId": "classify_upload_api_v3_uploads_upload__upload_id__classify_post",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassifyUploadResponse"
                 }
               }
             }
@@ -11391,6 +11602,37 @@
             },
             "type": "array",
             "title": "Previouschats"
+          },
+          "contentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contenttype"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__api__v3__attempts__full__VideoItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quiz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuizItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -11488,6 +11730,73 @@
           "documentIds"
         ],
         "title": "ChatItem"
+      },
+      "ClassifyUploadRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          },
+          "parameterIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "ClassifyUploadRequest",
+        "description": "Request body for upload classification."
+      },
+      "ClassifyUploadResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "suggestedParameterItemIds": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Suggestedparameteritemids"
+          },
+          "newParameterItems": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Newparameteritems",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "suggestedParameterItemIds"
+        ],
+        "title": "ClassifyUploadResponse",
+        "description": "Response from upload classification."
       },
       "CohortDailyFact": {
         "properties": {
@@ -12270,6 +12579,42 @@
         "title": "CohortsListResponse",
         "description": "Response for cohorts list."
       },
+      "CompleteQuizRequest": {
+        "properties": {
+          "quizId": {
+            "type": "string",
+            "title": "Quizid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quizId"
+        ],
+        "title": "CompleteQuizRequest"
+      },
+      "CompleteQuizResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "allCorrect": {
+            "type": "boolean",
+            "title": "Allcorrect"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "allCorrect"
+        ],
+        "title": "CompleteQuizResponse"
+      },
       "CreateAgentRequest": {
         "properties": {
           "name": {
@@ -12592,10 +12937,6 @@
             "type": "string",
             "title": "Name"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "uploadId": {
             "type": "string",
             "title": "Uploadid"
@@ -12636,7 +12977,6 @@
         "type": "object",
         "required": [
           "name",
-          "type",
           "uploadId",
           "profileId"
         ],
@@ -13535,6 +13875,31 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "classify_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classify Agent Id"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
           }
         },
         "type": "object",
@@ -13641,6 +14006,53 @@
         ],
         "title": "CreatePromptResponse",
         "description": "Response from create prompt."
+      },
+      "CreateQuizRequest": {
+        "properties": {
+          "attemptId": {
+            "type": "string",
+            "title": "Attemptid"
+          },
+          "videoId": {
+            "type": "string",
+            "title": "Videoid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attemptId",
+          "videoId"
+        ],
+        "title": "CreateQuizRequest"
+      },
+      "CreateQuizResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "quizId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quizid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "CreateQuizResponse"
       },
       "CreateRubricRequest": {
         "properties": {
@@ -20970,6 +21382,34 @@
         "title": "ObjectiveMappingItem",
         "description": "Objective mapping item - extends MappingItem"
       },
+      "OptionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "optionText": {
+            "type": "string",
+            "title": "Optiontext"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "isCorrect": {
+            "type": "boolean",
+            "title": "Iscorrect"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "optionText",
+          "type",
+          "isCorrect"
+        ],
+        "title": "OptionItem"
+      },
       "ParameterDetail": {
         "properties": {
           "parameter_item_ids": {
@@ -21925,7 +22365,7 @@
         "properties": {
           "policies": {
             "items": {
-              "$ref": "#/components/schemas/PolicyItem"
+              "$ref": "#/components/schemas/app__api__v3__policies__list__PolicyItem"
             },
             "type": "array",
             "title": "Policies"
@@ -22090,98 +22530,6 @@
         ],
         "title": "PolicyDetailResponse",
         "description": "Response for policy detail."
-      },
-      "PolicyItem": {
-        "properties": {
-          "policy_id": {
-            "type": "string",
-            "title": "Policy Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "upload_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upload Id"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "video_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Video Ids",
-            "default": []
-          },
-          "video_count": {
-            "type": "integer",
-            "title": "Video Count",
-            "default": 0
-          },
-          "extension": {
-            "type": "string",
-            "title": "Extension",
-            "default": ""
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          }
-        },
-        "type": "object",
-        "required": [
-          "policy_id",
-          "name",
-          "description",
-          "active",
-          "created_at",
-          "updated_at",
-          "can_edit",
-          "can_delete"
-        ],
-        "title": "PolicyItem",
-        "description": "Individual policy item in the response."
       },
       "PracticeFilters": {
         "properties": {
@@ -24415,6 +24763,50 @@
         "title": "QueryDataRequest",
         "description": "Request to execute a SQL query."
       },
+      "QuestionItem-Output": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "questionText": {
+            "type": "string",
+            "title": "Questiontext"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "allowMultiple": {
+            "type": "boolean",
+            "title": "Allowmultiple"
+          },
+          "times": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Times"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/OptionItem"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "questionText",
+          "type",
+          "allowMultiple",
+          "times",
+          "options"
+        ],
+        "title": "QuestionItem"
+      },
       "QuestionOption-Input": {
         "properties": {
           "option_text": {
@@ -24536,6 +24928,60 @@
         ],
         "title": "QuestionResponse",
         "description": "Question in video detail response."
+      },
+      "QuizItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "responses": {
+            "items": {
+              "$ref": "#/components/schemas/QuizResponseItem"
+            },
+            "type": "array",
+            "title": "Responses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "completed",
+          "responses"
+        ],
+        "title": "QuizItem"
+      },
+      "QuizResponseItem": {
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "title": "Questionid"
+          },
+          "optionId": {
+            "type": "string",
+            "title": "Optionid"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questionId",
+          "optionId",
+          "completed",
+          "createdAt"
+        ],
+        "title": "QuizResponseItem"
       },
       "RandomizeScenarioRequest": {
         "properties": {
@@ -28776,6 +29222,52 @@
         "title": "StudentSimReportResponse",
         "description": "Response with student simulation report."
       },
+      "SubmitQuizResponseRequest": {
+        "properties": {
+          "quizId": {
+            "type": "string",
+            "title": "Quizid"
+          },
+          "questionId": {
+            "type": "string",
+            "title": "Questionid"
+          },
+          "optionId": {
+            "type": "string",
+            "title": "Optionid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quizId",
+          "questionId",
+          "optionId"
+        ],
+        "title": "SubmitQuizResponseRequest"
+      },
+      "SubmitQuizResponseResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "isCorrect": {
+            "type": "boolean",
+            "title": "Iscorrect"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "isCorrect"
+        ],
+        "title": "SubmitQuizResponseResponse"
+      },
       "ThemeTokens": {
         "properties": {
           "background": {
@@ -29517,10 +30009,6 @@
             ],
             "title": "Name"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "active": {
             "anyOf": [
               {
@@ -29576,8 +30064,7 @@
         },
         "type": "object",
         "required": [
-          "documentId",
-          "type"
+          "documentId"
         ],
         "title": "UpdateDocumentRequest",
         "description": "Request for updating a document."
@@ -30181,6 +30668,31 @@
               }
             ],
             "title": "Departmentids"
+          },
+          "classify_agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classify Agent Id"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
           }
         },
         "type": "object",
@@ -31319,70 +31831,6 @@
         "title": "VideoInSimulation",
         "description": "Video with position in simulation."
       },
-      "VideoItem": {
-        "properties": {
-          "video_id": {
-            "type": "string",
-            "title": "Video Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "length_seconds": {
-            "type": "integer",
-            "title": "Length Seconds"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "can_edit": {
-            "type": "boolean",
-            "title": "Can Edit"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete"
-          },
-          "can_duplicate": {
-            "type": "boolean",
-            "title": "Can Duplicate"
-          },
-          "updated_at": {
-            "type": "string",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "video_id",
-          "name",
-          "length_seconds",
-          "active",
-          "department_ids",
-          "can_edit",
-          "can_delete",
-          "can_duplicate",
-          "updated_at"
-        ],
-        "title": "VideoItem",
-        "description": "Individual video item in the response."
-      },
       "VideoMappingItem": {
         "properties": {
           "name": {
@@ -31519,7 +31967,7 @@
         "properties": {
           "videos": {
             "items": {
-              "$ref": "#/components/schemas/VideoItem"
+              "$ref": "#/components/schemas/app__api__v3__videos__list__VideoItem"
             },
             "type": "array",
             "title": "Videos"
@@ -31973,6 +32421,65 @@
         ],
         "title": "AgentDetailResponse"
       },
+      "app__api__v3__attempts__full__PolicyItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "filePath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filepath"
+          },
+          "mimeType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mimetype"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "extension",
+          "filePath",
+          "mimeType"
+        ],
+        "title": "PolicyItem"
+      },
       "app__api__v3__attempts__full__ScenarioItem": {
         "properties": {
           "id": {
@@ -32238,6 +32745,72 @@
           "passPoints"
         ],
         "title": "StandardGroupMappingItem"
+      },
+      "app__api__v3__attempts__full__VideoItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "lengthSeconds": {
+            "type": "integer",
+            "title": "Lengthseconds"
+          },
+          "uploadId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploadid"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__attempts__full__PolicyItem"
+            },
+            "type": "array",
+            "title": "Policies"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionItem-Output"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "showProblemStatement": {
+            "type": "boolean",
+            "title": "Showproblemstatement"
+          },
+          "showObjectives": {
+            "type": "boolean",
+            "title": "Showobjectives"
+          },
+          "showImage": {
+            "type": "boolean",
+            "title": "Showimage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "lengthSeconds",
+          "uploadId",
+          "policies",
+          "questions",
+          "showProblemStatement",
+          "showObjectives",
+          "showImage"
+        ],
+        "title": "VideoItem"
       },
       "app__api__v3__cohorts__detail__StaffItem": {
         "properties": {
@@ -34428,6 +35001,98 @@
         ],
         "title": "PersonaDetailResponse",
         "description": "Detailed persona response with all fields and metadata."
+      },
+      "app__api__v3__policies__list__PolicyItem": {
+        "properties": {
+          "policy_id": {
+            "type": "string",
+            "title": "Policy Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "video_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Video Ids",
+            "default": []
+          },
+          "video_count": {
+            "type": "integer",
+            "title": "Video Count",
+            "default": 0
+          },
+          "extension": {
+            "type": "string",
+            "title": "Extension",
+            "default": ""
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policy_id",
+          "name",
+          "description",
+          "active",
+          "created_at",
+          "updated_at",
+          "can_edit",
+          "can_delete"
+        ],
+        "title": "PolicyItem",
+        "description": "Individual policy item in the response."
       },
       "app__api__v3__practice__overview__AttemptHistoryRow": {
         "properties": {
@@ -37606,6 +38271,70 @@
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
+      },
+      "app__api__v3__videos__list__VideoItem": {
+        "properties": {
+          "video_id": {
+            "type": "string",
+            "title": "Video Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
+          },
+          "can_duplicate": {
+            "type": "boolean",
+            "title": "Can Duplicate"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "video_id",
+          "name",
+          "length_seconds",
+          "active",
+          "department_ids",
+          "can_edit",
+          "can_delete",
+          "can_duplicate",
+          "updated_at"
+        ],
+        "title": "VideoItem",
+        "description": "Individual video item in the response."
       },
       "app__api__v3__videos__new__ProblemStatementInfo": {
         "properties": {

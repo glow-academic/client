@@ -10,6 +10,12 @@ import type {
   AttemptFullOut,
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
+  CreateQuizIn,
+  CreateQuizOut,
+  SubmitQuizResponseIn,
+  SubmitQuizResponseOut,
+  CompleteQuizIn,
+  CompleteQuizOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
@@ -88,6 +94,23 @@ async function updateChatCreatedAt(
   return api.post("/attempts/chats/update-created-at", input);
 }
 
+async function createQuiz(input: CreateQuizIn): Promise<CreateQuizOut> {
+  "use server";
+  return api.post("/attempts/quizzes/create", input);
+}
+
+async function submitQuizResponse(
+  input: SubmitQuizResponseIn
+): Promise<SubmitQuizResponseOut> {
+  "use server";
+  return api.post("/attempts/quizzes/submit-response", input);
+}
+
+async function completeQuiz(input: CompleteQuizIn): Promise<CompleteQuizOut> {
+  "use server";
+  return api.post("/attempts/quizzes/complete", input);
+}
+
 /** ---- Page component ---- */
 export default async function PracticeAttemptPage({
   params,
@@ -111,6 +134,9 @@ export default async function PracticeAttemptPage({
           attemptId={attemptId}
           attemptData={attemptData}
           updateChatCreatedAtAction={updateChatCreatedAt}
+          createQuizAction={createQuiz}
+          submitQuizResponseAction={submitQuizResponse}
+          completeQuizAction={completeQuiz}
         />
       </div>
     );
@@ -140,4 +166,10 @@ export type {
   AttemptFullOut,
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
+  CreateQuizIn,
+  CreateQuizOut,
+  SubmitQuizResponseIn,
+  SubmitQuizResponseOut,
+  CompleteQuizIn,
+  CompleteQuizOut,
 };

@@ -4086,6 +4086,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/attempts/quizzes/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Quiz
+         * @description Create quiz for attempt + video if doesn't exist.
+         */
+        post: operations["create_quiz_api_v3_attempts_quizzes_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/attempts/quizzes/submit-response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Quiz Response
+         * @description Submit quiz response for question + option.
+         */
+        post: operations["submit_quiz_response_api_v3_attempts_quizzes_submit_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/attempts/quizzes/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete Quiz
+         * @description Complete quiz - marks as completed and validates all answers are correct.
+         */
+        post: operations["complete_quiz_api_v3_attempts_quizzes_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/full": {
         parameters: {
             query?: never;
@@ -4362,6 +4422,26 @@ export interface paths {
          * @description Finalize a TUS upload and create upload record.
          */
         post: operations["tus_finalize_api_v3_uploads_upload__upload_id__finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/uploads/upload/{upload_id}/classify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Classify Upload
+         * @description Classify an uploaded file and suggest parameter items.
+         */
+        post: operations["classify_upload_api_v3_uploads_upload__upload_id__classify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5067,6 +5147,10 @@ export interface components {
             dynamicRubric?: components["schemas"]["DynamicRubric"] | null;
             /** Previouschats */
             previousChats: components["schemas"]["PreviousChat"][];
+            /** Contenttype */
+            contentType?: string | null;
+            video?: components["schemas"]["app__api__v3__attempts__full__VideoItem"] | null;
+            quiz?: components["schemas"]["QuizItem"] | null;
         };
         /** ChatItem */
         ChatItem: {
@@ -5092,6 +5176,37 @@ export interface components {
             traceId: string | null;
             /** Documentids */
             documentIds: string[];
+        };
+        /**
+         * ClassifyUploadRequest
+         * @description Request body for upload classification.
+         */
+        ClassifyUploadRequest: {
+            /** Profileid */
+            profileId: string;
+            /** Parameterids */
+            parameterIds?: string[] | null;
+        };
+        /**
+         * ClassifyUploadResponse
+         * @description Response from upload classification.
+         */
+        ClassifyUploadResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Suggestedparameteritemids */
+            suggestedParameterItemIds: {
+                [key: string]: string[];
+            };
+            /**
+             * Newparameteritems
+             * @default []
+             */
+            newParameterItems: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * CohortDailyFact
@@ -5430,6 +5545,20 @@ export interface components {
                 [key: string]: string;
             }[];
         };
+        /** CompleteQuizRequest */
+        CompleteQuizRequest: {
+            /** Quizid */
+            quizId: string;
+        };
+        /** CompleteQuizResponse */
+        CompleteQuizResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Allcorrect */
+            allCorrect: boolean;
+        };
         /** CreateAgentRequest */
         CreateAgentRequest: {
             /** Name */
@@ -5567,8 +5696,6 @@ export interface components {
         CreateDocumentRequest: {
             /** Name */
             name: string;
-            /** Type */
-            type: string;
             /** Uploadid */
             uploadId: string;
             /** Departmentids */
@@ -5940,6 +6067,10 @@ export interface components {
             active: boolean;
             /** Department Ids */
             department_ids?: string[] | null;
+            /** Classify Agent Id */
+            classify_agent_id?: string | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
         };
         /**
          * CreatePolicyResponse
@@ -5985,6 +6116,22 @@ export interface components {
             promptId: string;
             /** Message */
             message: string;
+        };
+        /** CreateQuizRequest */
+        CreateQuizRequest: {
+            /** Attemptid */
+            attemptId: string;
+            /** Videoid */
+            videoId: string;
+        };
+        /** CreateQuizResponse */
+        CreateQuizResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Quizid */
+            quizId?: string | null;
         };
         /**
          * CreateRubricRequest
@@ -8846,6 +8993,17 @@ export interface components {
             /** Description */
             description: string;
         };
+        /** OptionItem */
+        OptionItem: {
+            /** Id */
+            id: string;
+            /** Optiontext */
+            optionText: string;
+            /** Type */
+            type: string;
+            /** Iscorrect */
+            isCorrect: boolean;
+        };
         /**
          * ParameterDetail
          * @description Parameter detail structure.
@@ -9239,7 +9397,7 @@ export interface components {
          */
         PoliciesListResponse: {
             /** Policies */
-            policies: components["schemas"]["PolicyItem"][];
+            policies: components["schemas"]["app__api__v3__policies__list__PolicyItem"][];
             /** Department Mapping */
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
@@ -9315,47 +9473,6 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
-        };
-        /**
-         * PolicyItem
-         * @description Individual policy item in the response.
-         */
-        PolicyItem: {
-            /** Policy Id */
-            policy_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Active */
-            active: boolean;
-            /** Created At */
-            created_at: string;
-            /** Updated At */
-            updated_at: string;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /**
-             * Video Ids
-             * @default []
-             */
-            video_ids: string[];
-            /**
-             * Video Count
-             * @default 0
-             */
-            video_count: number;
-            /**
-             * Extension
-             * @default
-             */
-            extension: string;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
         };
         /**
          * PracticeFilters
@@ -10155,6 +10272,21 @@ export interface components {
             /** Sql */
             sql: string;
         };
+        /** QuestionItem */
+        "QuestionItem-Output": {
+            /** Id */
+            id: string;
+            /** Questiontext */
+            questionText: string;
+            /** Type */
+            type: string;
+            /** Allowmultiple */
+            allowMultiple: boolean;
+            /** Times */
+            times: number[];
+            /** Options */
+            options: components["schemas"]["OptionItem"][];
+        };
         /**
          * QuestionOption
          * @description Option for a question.
@@ -10210,6 +10342,26 @@ export interface components {
             times: number[];
             /** Options */
             options: components["schemas"]["QuestionOptionResponse"][];
+        };
+        /** QuizItem */
+        QuizItem: {
+            /** Id */
+            id: string;
+            /** Completed */
+            completed: boolean;
+            /** Responses */
+            responses: components["schemas"]["QuizResponseItem"][];
+        };
+        /** QuizResponseItem */
+        QuizResponseItem: {
+            /** Questionid */
+            questionId: string;
+            /** Optionid */
+            optionId: string;
+            /** Completed */
+            completed: boolean;
+            /** Createdat */
+            createdAt: string;
         };
         /**
          * RandomizeScenarioRequest
@@ -11885,6 +12037,24 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** SubmitQuizResponseRequest */
+        SubmitQuizResponseRequest: {
+            /** Quizid */
+            quizId: string;
+            /** Questionid */
+            questionId: string;
+            /** Optionid */
+            optionId: string;
+        };
+        /** SubmitQuizResponseResponse */
+        SubmitQuizResponseResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Iscorrect */
+            isCorrect: boolean;
+        };
         /**
          * ThemeTokens
          * @description Full internal design tokens derived from ThemePrimitives.
@@ -12182,8 +12352,6 @@ export interface components {
             documentId: string;
             /** Name */
             name?: string | null;
-            /** Type */
-            type: string;
             /** Active */
             active?: boolean | null;
             /** Department Id */
@@ -12413,6 +12581,10 @@ export interface components {
             active: boolean;
             /** Departmentids */
             departmentIds?: string[] | null;
+            /** Classify Agent Id */
+            classify_agent_id?: string | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
         };
         /**
          * UpdatePolicyResponse
@@ -12832,30 +13004,6 @@ export interface components {
             can_remove: boolean;
         };
         /**
-         * VideoItem
-         * @description Individual video item in the response.
-         */
-        VideoItem: {
-            /** Video Id */
-            video_id: string;
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean;
-            /** Can Delete */
-            can_delete: boolean;
-            /** Can Duplicate */
-            can_duplicate: boolean;
-            /** Updated At */
-            updated_at: string;
-        };
-        /**
          * VideoMappingItem
          * @description Video mapping item for facet options.
          */
@@ -12909,7 +13057,7 @@ export interface components {
          */
         VideosListResponse: {
             /** Videos */
-            videos: components["schemas"]["VideoItem"][];
+            videos: components["schemas"]["app__api__v3__videos__list__VideoItem"][];
             /** Department Mapping */
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
@@ -13067,6 +13215,21 @@ export interface components {
             /** Can Edit */
             can_edit: boolean;
         };
+        /** PolicyItem */
+        app__api__v3__attempts__full__PolicyItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Extension */
+            extension: string | null;
+            /** Filepath */
+            filePath: string | null;
+            /** Mimetype */
+            mimeType: string | null;
+        };
         /** ScenarioItem */
         app__api__v3__attempts__full__ScenarioItem: {
             /** Id */
@@ -13147,6 +13310,27 @@ export interface components {
             points: number;
             /** Passpoints */
             passPoints: number;
+        };
+        /** VideoItem */
+        app__api__v3__attempts__full__VideoItem: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Lengthseconds */
+            lengthSeconds: number;
+            /** Uploadid */
+            uploadId: string | null;
+            /** Policies */
+            policies: components["schemas"]["app__api__v3__attempts__full__PolicyItem"][];
+            /** Questions */
+            questions: components["schemas"]["QuestionItem-Output"][];
+            /** Showproblemstatement */
+            showProblemStatement: boolean;
+            /** Showobjectives */
+            showObjectives: boolean;
+            /** Showimage */
+            showImage: boolean;
         };
         /**
          * StaffItem
@@ -13915,6 +14099,47 @@ export interface components {
             };
             /** Debug Info */
             debug_info: components["schemas"]["app__api__v3__personas__new__DebugInfoItem"][];
+        };
+        /**
+         * PolicyItem
+         * @description Individual policy item in the response.
+         */
+        app__api__v3__policies__list__PolicyItem: {
+            /** Policy Id */
+            policy_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Video Ids
+             * @default []
+             */
+            video_ids: string[];
+            /**
+             * Video Count
+             * @default 0
+             */
+            video_count: number;
+            /**
+             * Extension
+             * @default
+             */
+            extension: string;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
         };
         /**
          * AttemptHistoryRow
@@ -15020,6 +15245,30 @@ export interface components {
             };
             /** Parameter Item Ids */
             parameter_item_ids: string[];
+        };
+        /**
+         * VideoItem
+         * @description Individual video item in the response.
+         */
+        app__api__v3__videos__list__VideoItem: {
+            /** Video Id */
+            video_id: string;
+            /** Name */
+            name: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Active */
+            active: boolean;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
+            /** Can Duplicate */
+            can_duplicate: boolean;
+            /** Updated At */
+            updated_at: string;
         };
         /**
          * ProblemStatementInfo
@@ -21525,6 +21774,105 @@ export interface operations {
             };
         };
     };
+    create_quiz_api_v3_attempts_quizzes_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuizRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateQuizResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_quiz_response_api_v3_attempts_quizzes_submit_response_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitQuizResponseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmitQuizResponseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_quiz_api_v3_attempts_quizzes_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteQuizRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompleteQuizResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_run_full_api_v3_full_post: {
         parameters: {
             query?: never;
@@ -21960,6 +22308,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TusFinalizeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    classify_upload_api_v3_uploads_upload__upload_id__classify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassifyUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassifyUploadResponse"];
                 };
             };
             /** @description Validation Error */

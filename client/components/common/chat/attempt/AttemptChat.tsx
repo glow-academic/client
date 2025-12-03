@@ -17,6 +17,12 @@ import type {
   AttemptFullOut,
   UpdateChatCreatedAtIn,
   UpdateChatCreatedAtOut,
+  CreateQuizIn,
+  CreateQuizOut,
+  SubmitQuizResponseIn,
+  SubmitQuizResponseOut,
+  CompleteQuizIn,
+  CompleteQuizOut,
 } from "@/app/(main)/home/a/[attemptId]/page";
 import {
   Select,
@@ -31,6 +37,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ActiveAttemptView from "./ActiveAttemptView";
 import GradedAttemptView from "./GradedAttemptView";
+import VideoAttemptView from "./VideoAttemptView";
 
 type UpdateChatCreatedAtBody = UpdateChatCreatedAtIn extends { body: infer B }
   ? B
@@ -42,12 +49,20 @@ interface AttemptChatProps {
   updateChatCreatedAtAction?: (
     input: UpdateChatCreatedAtIn
   ) => Promise<UpdateChatCreatedAtOut>;
+  createQuizAction?: (input: CreateQuizIn) => Promise<CreateQuizOut>;
+  submitQuizResponseAction?: (
+    input: SubmitQuizResponseIn
+  ) => Promise<SubmitQuizResponseOut>;
+  completeQuizAction?: (input: CompleteQuizIn) => Promise<CompleteQuizOut>;
 }
 
 export default function AttemptChat({
   attemptId,
   attemptData: initialAttemptData,
   updateChatCreatedAtAction,
+  createQuizAction,
+  submitQuizResponseAction,
+  completeQuizAction,
 }: AttemptChatProps) {
   const router = useRouter();
   const { effectiveProfile, activeProfile, socket, isConnected } = useProfile();
@@ -211,6 +226,13 @@ export default function AttemptChat({
     const chatData = attemptData.chats[currentChatIndex];
     return chatData?.chat || attemptData.chats[0]?.chat || null;
   }, [attemptData, currentChatIndex]);
+
+  // Get current content item (full ContentItem object) to access contentType, video, quiz
+  const currentContentItem = useMemo(() => {
+    if (!attemptData?.content || attemptData.content.length === 0) return null;
+    const contentItem = attemptData.content[currentContentIndex];
+    return contentItem || attemptData.content[0] || null;
+  }, [attemptData, currentContentIndex]);
 
   // Get scenario, documents from v3 data
   const scenario = useMemo(() => {
@@ -1483,6 +1505,74 @@ export default function AttemptChat({
     );
   }
 
+  // Check contentType to determine which view to render
+  const contentType = currentContentItem?.contentType || "scenario";
+
+  // Helper function to handle quiz completion
+  const handleVideoComplete = useCallback(
+    async (quizId: string) => {
+      if (!completeQuizAction) return;
+      try {
+        await completeQuizAction({ body: { quizId } });
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to complete quiz:", error);
+      }
+    },
+    [completeQuizAction, router]
+  );
+
+  // Helper function to handle quiz response submission
+  const handleSubmitQuizResponse = useCallback(
+    async (
+      quizId: string,
+      questionId: string,
+      optionId: string,
+      isCorrect: boolean
+    ) => {
+      if (!submitQuizResponseAction) return;
+      try {
+        await submitQuizResponseAction({
+          body: { quizId, questionId, optionId, isCorrect },
+        });
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to submit quiz response:", error);
+      }
+    },
+    [submitQuizResponseAction, router]
+  );
+
+  // If video content type, render VideoAttemptView
+  if (contentType === "video" && currentContentItem) {
+    // Filter policies from scenarioDocuments
+    const policies = scenarioDocuments.filter((doc) => doc.type === "policy");
+
+    return (
+      <VideoAttemptView
+        attemptId={attemptId}
+        contentItem={currentContentItem}
+        policies={policies}
+        currentContentIndex={currentContentIndex}
+        expectedContentCount={expectedContentCount}
+        isAttemptOwner={isAttemptOwner}
+        onVideoComplete={handleVideoComplete}
+        onSubmitQuizResponse={handleSubmitQuizResponse}
+        onContinue={() => {
+          if (currentContentIndex < (attemptData?.content.length ?? 0) - 1) {
+            setCurrentContentIndex(currentContentIndex + 1);
+          }
+        }}
+        onPrevious={() => {
+          if (currentContentIndex > 0) {
+            setCurrentContentIndex(currentContentIndex - 1);
+          }
+        }}
+      />
+    );
+  }
+
+  // Default to ActiveAttemptView for scenario content type
   return (
     <ActiveAttemptView
       attemptId={attemptId}
