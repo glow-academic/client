@@ -79,6 +79,14 @@ department_mapping_data AS (
     LEFT JOIN department_parameter_ids dparami ON dparami.department_id = d.id
     LEFT JOIN department_parameter_item_ids dparamitems ON dparamitems.department_id = d.id
 ),
+image_model_check AS (
+    SELECT 
+        model_id,
+        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
+    FROM model_modalities
+    WHERE modality = 'image' AND is_input = false AND active = true
+    GROUP BY model_id
+),
 persona_data AS (
     SELECT 
         p.id,
@@ -86,13 +94,15 @@ persona_data AS (
         COALESCE(p.description, '') as description,
         p.color,
         p.icon,
-        m.image_model
+        COALESCE(imc.image_model, false) as image_model
     FROM personas p
-    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
-    LEFT JOIN models m ON m.id = ptm.model_id
+    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
+    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN models m ON m.id = a.model_id
+    LEFT JOIN image_model_check imc ON imc.model_id = m.id
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, m.image_model
+    GROUP BY p.id, p.name, p.description, p.color, p.icon, imc.image_model
     HAVING 
         COUNT(pd.persona_id) FILTER (WHERE pd.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)

@@ -188,6 +188,14 @@ all_persona_ids AS (
     FROM scenario_data
     WHERE persona_ids IS NOT NULL
 ),
+image_model_check AS (
+    SELECT 
+        model_id,
+        CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
+    FROM model_modalities
+    WHERE modality = 'image' AND is_input = false AND active = true
+    GROUP BY model_id
+),
 persona_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
@@ -197,14 +205,16 @@ persona_mapping_data AS (
                 'description', COALESCE(p.description, ''),
                 'color', p.color,
                 'icon', p.icon,
-                'image_model', COALESCE(m.image_model, false)
+                'image_model', COALESCE(imc.image_model, false)
             )
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM personas p
-    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
-    LEFT JOIN models m ON m.id = ptm.model_id
+    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
+    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN models m ON m.id = a.model_id
+    LEFT JOIN image_model_check imc ON imc.model_id = m.id
     WHERE p.id IN (SELECT persona_id FROM all_persona_ids)
 ),
 all_simulation_ids AS (

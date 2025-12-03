@@ -3,37 +3,17 @@ WITH user_departments AS (
             FROM profile_departments pd
             WHERE pd.profile_id = $1
         ),
-        default_simulation AS (
-            SELECT s.id
-            FROM simulations s
-            LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
-            LEFT JOIN user_departments ud ON sd.department_id = ud.department_id
-            WHERE s.active = true
-              AND (
-                  -- Include if has matching department link OR has no department links at all (cross-dept)
-                  sd.department_id = ud.department_id
-                  OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
-              )
-            ORDER BY s.created_at DESC
-            LIMIT 1
-        ),
+        -- For "new" simulation, we don't select any default simulation
+        -- Return empty/default values instead
         simulation_base AS (
             SELECT 
-                s.id,
-                s.title,
-                s.description,
-                s.active,
-                s.practice_simulation,
-                (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.id AND ss.active = true ORDER BY ss.position LIMIT 1) as rubric_id,
-                COALESCE(
-                    (SELECT SUM(stl.time_limit_seconds)
-                     FROM scenario_time_limits stl
-                     JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                     WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
-                    0
-                ) as time_limit
-            FROM simulations s
-            JOIN default_simulation ds ON s.id = ds.id
+                NULL::uuid as id,
+                ''::text as title,
+                ''::text as description,
+                true as active,
+                false as practice_simulation,
+                NULL::uuid as rubric_id,
+                0 as time_limit
         ),
         user_context AS (
             SELECT role FROM profiles WHERE id = $1
@@ -46,10 +26,8 @@ WITH user_departments AS (
         ),
         cohort_usage AS (
             SELECT 
-                COUNT(*) FILTER (WHERE cs.active = true) as active_cohort_count,
-                COUNT(*) as total_cohort_links
-            FROM cohort_simulations cs
-            JOIN default_simulation ds ON cs.simulation_id = ds.id
+                0 as active_cohort_count,
+                0 as total_cohort_links
         ),
         user_department_ids AS (
             SELECT ARRAY_AGG(id) as ids
@@ -57,76 +35,33 @@ WITH user_departments AS (
             JOIN profile_departments pd ON d.id = pd.department_id
             WHERE pd.profile_id = $1 AND d.active = true
         ),
+        -- For "new" simulation, return empty scenarios list
         simulation_scenarios_base AS (
             SELECT 
-                s.id as scenario_id,
-                s.name,
-                ps.problem_statement,
-                ss.active,
-                (ss.position = 1) as default_scenario,
-                ss.position,
-                ss.hints_enabled,
-                s.objectives_enabled,
-                ss.input_guardrail_enabled,
-                ss.output_guardrail_enabled,
-                s.image_enabled as image_input_enabled,
-                ss.rubric_id,
-                stl.time_limit_seconds, -- Added per-scenario time limit
-                COALESCE(
-                    (SELECT ARRAY_AGG(DISTINCT spi.parameter_item_id)
-                     FROM scenario_parameter_items spi
-                     WHERE spi.scenario_id = s.id AND spi.active = true),
-                    ARRAY[]::uuid[]
-                ) as parameter_item_ids
-            FROM scenarios s
-            JOIN simulation_scenarios ss ON ss.scenario_id = s.id
-            LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-            LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-            LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
-            JOIN default_simulation ds ON ss.simulation_id = ds.id
-            ORDER BY ss.position
+                NULL::uuid as scenario_id,
+                NULL::text as name,
+                NULL::text as problem_statement,
+                NULL::boolean as active,
+                NULL::boolean as default_scenario,
+                NULL::integer as position,
+                NULL::boolean as hints_enabled,
+                NULL::boolean as objectives_enabled,
+                NULL::boolean as input_guardrail_enabled,
+                NULL::boolean as output_guardrail_enabled,
+                NULL::boolean as image_input_enabled,
+                NULL::uuid as rubric_id,
+                NULL::integer as time_limit_seconds,
+                ARRAY[]::uuid[] as parameter_item_ids
+            WHERE false  -- This ensures no rows are returned
         ),
         scenario_statistics AS (
             SELECT 
-                ss.scenario_id,
-                COALESCE(
-                    (SELECT st.parent_id 
-                     FROM scenario_tree st 
-                     WHERE st.child_id = ss.scenario_id 
-                       AND st.parent_id = st.child_id 
-                     LIMIT 1),
-                    ss.scenario_id
-                ) as root_scenario_id,
-                COUNT(DISTINCT sc.id) as usage_count,
-                CASE 
-                    WHEN COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END) > 0 
-                    THEN ROUND(
-                        (COUNT(DISTINCT CASE WHEN sc.completed = true AND scg.passed = true THEN sc.id END)::numeric / 
-                         COUNT(DISTINCT CASE WHEN sc.completed = true THEN sc.id END)::numeric) * 100
-                    )
-                    ELSE 0 
-                END as success_rate,
-                MAX(sc.created_at) as last_used_date
-            FROM simulation_scenarios ss
-            JOIN default_simulation ds ON ss.simulation_id = ds.id
-            LEFT JOIN chats sc ON (
-                sc.scenario_id IN (
-                    SELECT st2.child_id 
-                    FROM scenario_tree st2 
-                    WHERE st2.parent_id = COALESCE(
-                        (SELECT st3.parent_id 
-                         FROM scenario_tree st3 
-                         WHERE st3.child_id = ss.scenario_id 
-                           AND st3.parent_id = st3.child_id),
-                        ss.scenario_id
-                    )
-                )
-                OR sc.scenario_id = ss.scenario_id
-            )
-            LEFT JOIN grades scg ON scg.eval = false
-            LEFT JOIN runs r_new ON r_new.id = scg.run_id
-            LEFT JOIN chat_runs rc_new ON rc_new.run_id = r_new.id AND rc_new.chat_id = sc.id
-            GROUP BY ss.scenario_id
+                NULL::uuid as scenario_id,
+                NULL::uuid as root_scenario_id,
+                0 as usage_count,
+                0 as success_rate,
+                NULL::timestamptz as last_used_date
+            WHERE false  -- This ensures no rows are returned
         ),
         scenarios_list_data AS (
             SELECT COALESCE(

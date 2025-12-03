@@ -114,8 +114,9 @@ scenario_full_data AS (
     LEFT JOIN personas p ON p.id = sp.persona_id
     LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
     LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
-    LEFT JOIN persona_text_model ptm ON ptm.persona_id = p.id AND ptm.active = true
-    LEFT JOIN models m ON m.id = ptm.model_id
+    LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
+    LEFT JOIN agents a ON a.id = pa.agent_id
+    LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
     LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
