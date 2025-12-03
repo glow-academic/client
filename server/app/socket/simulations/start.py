@@ -147,7 +147,32 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
                 )
                 return
 
-            # Parse JSONB fields if they're strings
+            # Check content type (video vs scenario)
+            content_type = row.get("content_type", "scenario")
+            video_id = row.get("video_id")
+
+            # Handle video case - navigate to video page
+            if content_type == "video" and video_id:
+                logger.info(
+                    f"Simulation {simulation_id} has video content, navigating to video {video_id}"
+                )
+                # Emit video navigation event
+                await sio.emit(
+                    "simulation_video_navigation",
+                    {
+                        "success": True,
+                        "attempt_id": row["attempt_id"],
+                        "video_id": video_id,
+                        "simulation_id": simulation_id,
+                    },
+                    room=sid,
+                )
+                logger.info(
+                    f"Emitted video navigation event to {sid}: video_id={video_id}, attempt_id={row['attempt_id']}"
+                )
+                return
+
+            # Parse JSONB fields if they're strings (only for scenarios)
             simulation_data = row["simulation_data"]
             scenario_metadata = row["scenario_metadata"]
             if isinstance(simulation_data, str):
@@ -157,7 +182,16 @@ async def _start_simulation_impl(sid: str, data: StartSimulationPayload) -> None
 
             # Check if scenario needs generation
             needs_generation = row.get("needs_generation", False)
-            scenario_id_raw = row["scenario_id"]
+            scenario_id_raw = row.get("scenario_id")
+            if not scenario_id_raw:
+                await start_simulation_error(
+                    StartSimulationErrorPayload(
+                        success=False, message="No scenario found for simulation"
+                    ),
+                    room=sid,
+                )
+                logger.error(f"Emitted error to {sid}: No scenario found")
+                return
             # Convert asyncpg UUID to Python UUID
             scenario_id = uuid.UUID(str(scenario_id_raw))
 

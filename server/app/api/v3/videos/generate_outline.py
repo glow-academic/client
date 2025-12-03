@@ -220,7 +220,7 @@ async def generate_outline(
         if not policy_ids or len(policy_ids) == 0:
             policy_info = None
         else:
-            policy_info = format_policy_info(context["policies"])
+            policy_info = format_policy_info(context["policies"], video_length_seconds)
 
         # Format parameter item info if parameter items were provided
         parameter_item_info = None

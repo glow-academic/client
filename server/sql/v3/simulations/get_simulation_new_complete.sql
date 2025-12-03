@@ -296,7 +296,7 @@ WITH user_departments AS (
             SELECT 
                 d.id,
                 d.name,
-                d.type::text as description
+                ''::text as description
             FROM documents d
             WHERE d.id IN (SELECT document_id FROM all_document_ids)
         ),

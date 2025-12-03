@@ -117,7 +117,8 @@ policy_mapping_data AS (
                     ELSE NULL
                 END,
                 'filePath', u.file_path,
-                'mimeType', u.mime_type
+                'mimeType', u.mime_type,
+                'uploadId', CASE WHEN p.upload_id IS NOT NULL THEN p.upload_id::text ELSE NULL END
             )
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb
@@ -168,23 +169,16 @@ video_permissions AS (
     SELECT 
         vc.id as video_id,
         CASE 
-            WHEN COALESCE(vc.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin', 'instructional', 'superadmin') 
-                 AND COALESCE(vasl.total_links, 0) = 0 
-            THEN true
+            WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
             ELSE false
         END as can_edit,
         CASE 
-            WHEN COALESCE(vc.department_ids, NULL) IS NULL AND up.role != 'superadmin' THEN false
-            WHEN up.role IN ('admin', 'instructional', 'superadmin') 
-                 AND COALESCE(vasl.total_links, 0) = 0 
-            THEN true
+            WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
             ELSE false
         END as can_delete,
         true as can_duplicate
     FROM video_core vc
     CROSS JOIN user_profile up
-    LEFT JOIN video_all_simulation_links vasl ON vasl.video_id = vc.id
 ),
 valid_departments AS (
     SELECT ARRAY_AGG(d.id::text ORDER BY d.id) as department_ids

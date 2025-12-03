@@ -20,6 +20,7 @@ class CreateEvalRequest(BaseModel):
     name: str
     description: str
     rubric_id: str
+    agent_id: str
     model_run_ids: list[str]
     profileId: str  # Required for auditing/access control
     run: bool = False  # Whether to run the eval immediately after creation
@@ -76,12 +77,21 @@ async def create_eval(
                 else []
             )
 
+            # Validate agent exists
+            agent_check = await conn.fetchrow(
+                "SELECT id FROM agents WHERE id = $1 AND active = true",
+                request.agent_id,
+            )
+            if not agent_check:
+                raise ValueError(f"Agent not found: {request.agent_id}")
+
             # Create eval with model_runs in single SQL (DHH style)
             sql_query = load_sql("sql/v3/evals/create_eval_complete.sql")
             sql_params = (
                 request.name,
                 request.description,
                 request.rubric_id,
+                request.agent_id,
                 model_run_ids_uuid,
                 request.profileId,
             )

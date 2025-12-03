@@ -102,7 +102,7 @@ scenarios_with_order AS (
 replace_time_limits AS (
     -- Delete existing scenario time limits for this simulation (should be empty for new simulation, but included for consistency)
     DELETE FROM scenario_time_limits 
-    WHERE simulation_id IN (SELECT simulation_id FROM new_simulation)
+    WHERE simulation_id IN (SELECT simulation_id::uuid FROM new_simulation)
 ),
 link_time_limits AS (
     -- Link per-scenario time limits to scenarios if provided

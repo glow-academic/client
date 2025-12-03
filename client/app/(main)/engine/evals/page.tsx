@@ -78,11 +78,7 @@ export default async function EvalsPage() {
   // Fetch list data server-side
   const listData = await getEvalsList(profileId);
 
-  return (
-    <div className="space-y-6" data-page="evals-index">
-      <Evals listData={listData} deleteEvalAction={deleteEval} />
-    </div>
-  );
+  return <Evals listData={listData} deleteEvalAction={deleteEval} />;
 }
 
 /** ---- Export types for client component ---- */

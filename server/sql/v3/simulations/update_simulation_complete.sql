@@ -231,12 +231,20 @@ link_grade_agents AS (
     FROM (
         SELECT 
             scenario_id,
-            unnest(grade_agent_ids) as agent_id
-        FROM UNNEST($7::text[], $27::text[][]) AS t(scenario_id, grade_agent_ids)
-        WHERE grade_agent_ids IS NOT NULL AND array_length(grade_agent_ids, 1) > 0
+            unnest(grade_agent_ids::text[]) as agent_id
+        FROM (
+            SELECT 
+                ($7::text[])[scenario_idx] as scenario_id,
+                CAST(($27::text[][])[scenario_idx] AS text[]) as grade_agent_ids
+            FROM generate_subscripts($7::text[], 1) AS scenario_idx
+            WHERE ($7::text[])[scenario_idx] IS NOT NULL
+              AND ($27::text[][])[scenario_idx] IS NOT NULL
+              AND array_length(CAST(($27::text[][])[scenario_idx] AS text[]), 1) > 0
+        ) scenario_grade_pairs
     ) grade_data
     WHERE COALESCE(array_length($7::text[], 1), 0) > 0
       AND $27::text[][] IS NOT NULL
+      AND COALESCE(array_length($27::text[][], 1), 0) > 0
 ),
 link_videos AS (
     -- Insert new videos with proper ordering (active first, then inactive), continuing position from scenarios
@@ -252,6 +260,13 @@ link_videos AS (
         NOW(),
         NOW()
     FROM videos_with_order vwo
+    ON CONFLICT (simulation_id, video_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        position = EXCLUDED.position,
+        show_problem_statement = EXCLUDED.show_problem_statement,
+        show_objectives = EXCLUDED.show_objectives,
+        show_image = EXCLUDED.show_image,
+        updated_at = NOW()
 )
 SELECT simulation_id FROM update_simulation
 

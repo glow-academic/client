@@ -313,7 +313,7 @@ ta_rows AS (
                 FROM ta_primary_cohort tpc
                 WHERE tpc.simulation_id = s.simulation_id AND tpc.rn = 1
             ),
-            'standard_groups', (
+            'standard_groups', COALESCE((
                 SELECT jsonb_object_agg(
                     sg.id::text,
                     (
@@ -324,7 +324,7 @@ ta_rows AS (
                 )
                 FROM standard_groups sg
                 WHERE sg.rubric_id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.simulation_id AND ss.active = true ORDER BY ss.position LIMIT 1)
-            )
+            ), '{}'::jsonb)
         ) AS item
     FROM sim_meta s
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
@@ -395,7 +395,7 @@ inst_rows AS (
                                    || ', and ' || icn.titles[array_length(icn.titles,1)]
                             END,
             'orderIndex', ROW_NUMBER() OVER (ORDER BY s.simulation_id),
-            'standard_groups', (
+            'standard_groups', COALESCE((
                 SELECT jsonb_object_agg(
                     sg.id::text,
                     (
@@ -406,7 +406,7 @@ inst_rows AS (
                 )
                 FROM standard_groups sg
                 WHERE sg.rubric_id = (SELECT ss.rubric_id FROM simulation_scenarios ss WHERE ss.simulation_id = s.simulation_id AND ss.active = true ORDER BY ss.position LIMIT 1)
-            )
+            ), '{}'::jsonb)
         ) AS item,
         CASE
             WHEN COALESCE(ic.total_members, 0) = 0 THEN true

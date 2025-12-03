@@ -84,12 +84,13 @@ SELECT
                 'id', pol.id::text,
                 'name', pol.name,
                 'content', pol.description,
-                'file_path', pol.file_path,
-                'mime_type', pol.mime_type
+                'file_path', u.file_path,
+                'mime_type', u.mime_type
             )
             ORDER BY array_position(p.policy_ids, pol.id)
         )
         FROM policies pol
+        LEFT JOIN uploads u ON u.id = pol.upload_id
         WHERE pol.id = ANY(p.policy_ids)
         ),
         '[]'::json

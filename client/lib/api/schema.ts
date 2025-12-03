@@ -5728,6 +5728,8 @@ export interface components {
             description: string;
             /** Rubric Id */
             rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
             /** Model Run Ids */
             model_run_ids: string[];
             /** Profileid */
@@ -7549,6 +7551,8 @@ export interface components {
             description: string;
             /** Rubric Id */
             rubric_id: string;
+            /** Agent Id */
+            agent_id: string;
             /** Rubric Name */
             rubric_name: string;
             /** Rubric Description */
@@ -7597,12 +7601,22 @@ export interface components {
             department_mapping: {
                 [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
             };
+            /** Agent Mapping */
+            agent_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
             /** Rubric Options */
             rubric_options: {
                 [key: string]: string;
             }[];
             /** Department Options */
             department_options: {
+                [key: string]: string;
+            }[];
+            /** Agent Options */
+            agent_options: {
                 [key: string]: string;
             }[];
         };
@@ -8900,6 +8914,8 @@ export interface components {
             agentType?: string | null;
             /** Search */
             search?: string | null;
+            /** Eval */
+            eval?: boolean | null;
             /** Page */
             page?: number | null;
             /** Pagesize */
@@ -10831,6 +10847,8 @@ export interface components {
             passPoints: number;
             /** Passpercentage */
             passPercentage: number;
+            /** Agent Role */
+            agent_role?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Simulation Ids */

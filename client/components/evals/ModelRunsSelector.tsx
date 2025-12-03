@@ -32,6 +32,8 @@ export interface ModelRunsSelectorProps {
   modelMapping?: Record<string, { name: string; description: string }>;
   agentMapping?: Record<string, string>;
   personaMapping?: Record<string, string>;
+  agentIds?: string[];
+  eval?: boolean;
 }
 
 export function ModelRunsSelector({
@@ -41,6 +43,8 @@ export function ModelRunsSelector({
   modelMapping = {},
   agentMapping = {},
   personaMapping = {},
+  agentIds,
+  eval: evalFilter,
 }: ModelRunsSelectorProps) {
   const [modelRuns, setModelRuns] = useState<ModelRunsResponse["model_runs"]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,10 +68,11 @@ export function ModelRunsSelector({
           pageSize: filters.pageSize,
           agentType: filters.agentType === "all" ? undefined : filters.agentType,
           modelIds: filters.modelIds,
-          agentIds: filters.agentIds,
+          agentIds: agentIds || filters.agentIds,
           personaIds: filters.personaIds,
           startDate: filters.startDate,
           endDate: filters.endDate,
+          eval: evalFilter,
         };
         const response = await api.post("/evals/model_runs", {
           body: requestBody,
@@ -82,7 +87,7 @@ export function ModelRunsSelector({
     };
 
     fetchModelRuns();
-  }, [filters, profileId, searchQuery]);
+  }, [filters, profileId, searchQuery, agentIds, evalFilter]);
 
   const handleToggleModelRun = (modelRunId: string) => {
     if (selectedModelRunIds.includes(modelRunId)) {

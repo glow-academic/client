@@ -1,22 +1,25 @@
 /**
  * EvalForm.tsx
- * Form component for creating evals
+ * Form component for creating evals with inline layout
  */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RubricPicker } from "@/components/common/forms/RubricPicker";
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { ModelRunsSelector } from "./ModelRunsSelector";
 import type { RubricsListOut } from "@/app/(main)/management/rubrics/page";
 import type { CreateEvalIn, CreateEvalOut } from "@/app/(main)/engine/evals/new/page";
+import type { OutputOf } from "@/lib/api/types";
 import { toast } from "sonner";
 import { api } from "@/lib/api/client";
+
+type AgentsListOut = OutputOf<"/api/v3/agents/list", "post">;
 
 export interface EvalFormProps {
   rubricsList: RubricsListOut;
@@ -28,23 +31,108 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [selectedAgentId, setSelectedAgentId] = useState<string[]>([]);
   const [selectedRubricId, setSelectedRubricId] = useState<string[]>([]);
   const [selectedModelRunIds, setSelectedModelRunIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [agentsList, setAgentsList] = useState<AgentsListOut | null>(null);
+  const [loadingAgents, setLoadingAgents] = useState(false);
 
-  // Build rubric mapping
-  const rubricMapping = rubricsList.rubrics.reduce(
-    (acc, rubric) => {
-      acc[rubric.rubric_id] = {
-        name: rubric.name,
-        description: rubric.description,
-      };
-      return acc;
-    },
-    {} as Record<string, { name: string; description: string }>
-  );
+  // Fetch agents list
+  useEffect(() => {
+    const fetchAgents = async () => {
+      setLoadingAgents(true);
+      try {
+        const response = await api.post("/agents/list", {
+          body: { profileId },
+        });
+        setAgentsList(response);
+      } catch (error) {
+        console.error("Failed to fetch agents:", error);
+        toast.error("Failed to load agents");
+      } finally {
+        setLoadingAgents(false);
+      }
+    };
+    fetchAgents();
+  }, [profileId]);
 
-  const validRubricIds = rubricsList.rubrics.map((r) => r.rubric_id);
+  // Build agent mapping for AgentPicker
+  const agentMappingForPicker = useMemo(() => {
+    if (!agentsList) return {};
+    return agentsList.agents.reduce(
+      (acc, agent) => {
+        acc[agent.agent_id] = {
+          name: agent.name,
+          description: agent.description,
+          roles: [agent.role],
+        };
+        return acc;
+      },
+      {} as Record<string, { name: string; description: string; roles: string[] }>
+    );
+  }, [agentsList]);
+
+  // Build agent mapping for ModelRunsSelector (simple string mapping)
+  const agentMappingForRuns = useMemo(() => {
+    if (!agentsList) return {};
+    return agentsList.agents.reduce(
+      (acc, agent) => {
+        acc[agent.agent_id] = agent.name;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+  }, [agentsList]);
+
+  const validAgentIds = useMemo(() => {
+    if (!agentsList) return [];
+    return agentsList.agents.map((a) => a.agent_id);
+  }, [agentsList]);
+
+  // Get selected agent's role
+  const selectedAgentRole = useMemo(() => {
+    if (selectedAgentId.length === 0 || !agentsList) return null;
+    const agent = agentsList.agents.find((a) => a.agent_id === selectedAgentId[0]);
+    return agent?.role || null;
+  }, [selectedAgentId, agentsList]);
+
+  // Filter rubrics by agent role
+  const filteredRubrics = useMemo(() => {
+    if (!selectedAgentRole) return rubricsList.rubrics;
+    return rubricsList.rubrics.filter((rubric) => {
+      return rubric.agent_role === selectedAgentRole;
+    });
+  }, [rubricsList.rubrics, selectedAgentRole]);
+
+  // Build rubric mapping from filtered rubrics
+  const rubricMapping = useMemo(() => {
+    return filteredRubrics.reduce(
+      (acc, rubric) => {
+        acc[rubric.rubric_id] = {
+          name: rubric.name,
+          description: rubric.description,
+        };
+        return acc;
+      },
+      {} as Record<string, { name: string; description: string }>
+    );
+  }, [filteredRubrics]);
+
+  const validRubricIds = filteredRubrics.map((r) => r.rubric_id);
+
+  // Reset rubric selection when agent changes
+  useEffect(() => {
+    if (selectedAgentId.length === 0) {
+      setSelectedRubricId([]);
+    } else if (selectedRubricId.length > 0) {
+      // Check if selected rubric is still valid
+      const isValid = validRubricIds.includes(selectedRubricId[0]!);
+      if (!isValid) {
+        setSelectedRubricId([]);
+      }
+    }
+  }, [selectedAgentId, validRubricIds, selectedRubricId]);
 
   const handleSubmit = async (run: boolean) => {
     if (!name.trim()) {
@@ -53,6 +141,10 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
     }
     if (!description.trim()) {
       toast.error("Description is required");
+      return;
+    }
+    if (selectedAgentId.length === 0) {
+      toast.error("Please select an agent");
       return;
     }
     if (selectedRubricId.length === 0) {
@@ -70,6 +162,7 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
         body: {
           name: name.trim(),
           description: description.trim(),
+          agent_id: selectedAgentId[0]!,
           rubric_id: selectedRubricId[0]!,
           model_run_ids: selectedModelRunIds,
           profileId: "", // Will be filled by server action
@@ -111,68 +204,117 @@ export function EvalForm({ rubricsList, profileId, createEvalAction }: EvalFormP
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Eval Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter eval name"
-            />
-          </div>
-          <div>
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter eval description"
-              rows={4}
-            />
-          </div>
-          <div>
-            <Label>Rubric *</Label>
-            <RubricPicker
-              mapping={rubricMapping}
-              validIds={validRubricIds}
-              selectedIds={selectedRubricId}
-              onSelect={setSelectedRubricId}
+    <div className="space-y-6 py-4 px-4">
+      {/* Form Fields */}
+      <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-4">
+        {/* Name */}
+        <div className="space-y-2">
+          <Label htmlFor="name">Name *</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter eval name"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {/* Description */}
+        <div className="space-y-2">
+          <Label htmlFor="description">Description *</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter eval description"
+            rows={4}
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {/* Agent Selection */}
+        <div className="space-y-2">
+          <Label>Agent *</Label>
+          {loadingAgents ? (
+            <div className="text-sm text-muted-foreground">Loading agents...</div>
+          ) : (
+            <AgentPicker
+              mapping={agentMappingForPicker}
+              validIds={validAgentIds}
+              selectedIds={selectedAgentId}
+              onSelect={setSelectedAgentId}
               multiSelect={false}
-              placeholder="Select a rubric..."
+              placeholder="Select an agent..."
+              disabled={isSubmitting}
+            />
+          )}
+        </div>
+
+        {/* Rubric Selection - only show if agent is selected */}
+        {selectedAgentId.length > 0 && (
+          <div className="space-y-2">
+            <Label>Rubric *</Label>
+            {filteredRubrics.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                No rubrics available for the selected agent role.
+              </div>
+            ) : (
+              <RubricPicker
+                mapping={rubricMapping}
+                validIds={validRubricIds}
+                selectedIds={selectedRubricId}
+                onSelect={setSelectedRubricId}
+                multiSelect={false}
+                placeholder="Select a rubric..."
+                disabled={isSubmitting}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Model Runs Selection - only show if agent is selected */}
+        {selectedAgentId.length > 0 && (
+          <div className="space-y-2">
+            <Label>Model Runs *</Label>
+            <ModelRunsSelector
+              profileId={profileId}
+              selectedModelRunIds={selectedModelRunIds}
+              onSelect={setSelectedModelRunIds}
+              modelMapping={rubricsList.model_mapping || {}}
+              agentMapping={agentMappingForRuns}
+              agentIds={selectedAgentId}
+              eval={true}
             />
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      <ModelRunsSelector
-        profileId={profileId}
-        selectedModelRunIds={selectedModelRunIds}
-        onSelect={setSelectedModelRunIds}
-        modelMapping={rubricsList.model_mapping || {}}
-      />
-
-      <div className="flex gap-4">
-        <Button
-          onClick={() => handleSubmit(false)}
-          disabled={isSubmitting}
-          variant="outline"
-        >
-          Create
-        </Button>
-        <Button
-          onClick={() => handleSubmit(true)}
-          disabled={isSubmitting}
-        >
-          Create and Run
-        </Button>
-      </div>
+        {/* Submit Buttons */}
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={isSubmitting}
+          >
+            Back
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleSubmit(false)}
+            disabled={isSubmitting}
+          >
+            Create
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleSubmit(true)}
+            disabled={isSubmitting}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Create and Run
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
-

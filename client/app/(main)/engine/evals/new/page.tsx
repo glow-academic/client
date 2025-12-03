@@ -77,19 +77,11 @@ export default async function NewEvalPage() {
   const rubricsList = await getRubricsList(profileId);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Create New Eval</h1>
-        <p className="text-muted-foreground">
-          Create an evaluation to assess model runs against a rubric
-        </p>
-      </div>
-      <EvalForm
-        rubricsList={rubricsList}
-        profileId={profileId}
-        createEvalAction={createEval}
-      />
-    </div>
+    <EvalForm
+      rubricsList={rubricsList}
+      profileId={profileId}
+      createEvalAction={createEval}
+    />
   );
 }
 

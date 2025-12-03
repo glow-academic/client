@@ -177,6 +177,7 @@ async def get_video_new(
                     "extension": v.get("extension", ""),
                     "filePath": v.get("filePath", ""),
                     "mimeType": v.get("mimeType", ""),
+                    "uploadId": v.get("uploadId", ""),
                 }
                 for k, v in policy_mapping_data.items()
             }

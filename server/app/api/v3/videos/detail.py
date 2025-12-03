@@ -255,6 +255,7 @@ async def get_video_detail(
                     "extension": v.get("extension", ""),
                     "filePath": v.get("filePath", ""),
                     "mimeType": v.get("mimeType", ""),
+                    "uploadId": v.get("uploadId", ""),
                 }
                 for k, v in policy_mapping_data.items()
             }
@@ -362,8 +363,9 @@ async def get_video_detail(
             parameter_item_ids = []
         parameter_item_ids = [str(pid) for pid in parameter_item_ids]
 
-        # Extract upload_id
-        upload_id = video.get("upload_id")
+        # Extract upload_id and convert to string if present
+        upload_id_raw = video.get("upload_id")
+        upload_id = str(upload_id_raw) if upload_id_raw is not None else None
         
         # Construct video_url if upload_id exists
         video_url = None

@@ -265,6 +265,7 @@ export function PolicyPicker<
                         extension: policy.extension || "",
                         file_path: policy.filePath || "",
                         mime_type: policy.mimeType || "",
+                        upload_id: policy.uploadId || null,
                       };
                       return (
                         <div className="w-full h-full">

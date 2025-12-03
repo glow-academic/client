@@ -31,6 +31,7 @@ eval_data AS (
         e.name,
         e.description,
         e.rubric_id,
+        e.agent_id,
         e.created_at,
         e.updated_at,
         r.name as rubric_name,
@@ -104,12 +105,33 @@ department_mapping_data AS (
     FROM all_department_ids adi
     LEFT JOIN departments d ON d.id::text = adi.department_id
     WHERE d.active = true
+),
+all_agent_ids AS (
+    SELECT DISTINCT agent_id::uuid as agent_id
+    FROM eval_data
+    WHERE agent_id IS NOT NULL
+),
+agent_mapping_data AS (
+    SELECT COALESCE(
+        jsonb_object_agg(
+            a.id::text,
+            jsonb_build_object(
+                'name', a.name,
+                'description', COALESCE(a.description, '')
+            )
+        ) FILTER (WHERE a.id IS NOT NULL),
+        '{}'::jsonb
+    ) as mapping
+    FROM all_agent_ids aai
+    LEFT JOIN agents a ON a.id = aai.agent_id
+    WHERE a.active = true
 )
 SELECT 
     ed.eval_id,
     ed.name,
     ed.description,
     ed.rubric_id::text,
+    ed.agent_id::text,
     ed.rubric_name,
     ed.rubric_description,
     ed.total_runs,
@@ -121,6 +143,7 @@ SELECT
     edept.department_ids,
     rm.mapping as rubric_mapping,
     dm.mapping as department_mapping,
+    am.mapping as agent_mapping,
     CASE 
         WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
         ELSE false
@@ -134,6 +157,7 @@ LEFT JOIN eval_departments edept ON edept.eval_id = ed.eval_id
 CROSS JOIN user_profile up
 CROSS JOIN rubric_mapping_data rm
 CROSS JOIN department_mapping_data dm
+CROSS JOIN agent_mapping_data am
 WHERE 
     -- Filter by department access (if rubric has departments, user must have access)
     (

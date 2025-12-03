@@ -113,8 +113,8 @@ SELECT
             json_build_object(
                 'id', d.id::text,
                 'name', d.name,
-                'file_path', d.file_path,
-                'mime_type', d.mime_type
+                'file_path', u.file_path,
+                'mime_type', u.mime_type
             )
             ORDER BY d.id
         ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true),
@@ -131,15 +131,15 @@ LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
 LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
 LEFT JOIN personas p ON p.id = sp.persona_id
--- Try department-specific persona prompt first, fall back to default prompt
-LEFT JOIN persona_department_prompts pdp_prompt ON pdp_prompt.persona_id = p.id 
-    AND pdp_prompt.department_id = (SELECT department_id FROM resolved_dept)
-    AND pdp_prompt.active = true
-LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = pdp_prompt.prompt_id
-LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
-LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = pp.prompt_id
 LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
 LEFT JOIN agents a ON a.id = pa.agent_id
+-- Try department-specific agent prompt first, fall back to default prompt
+LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
+    AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
+    AND adp_prompt.active = true
+LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
 LEFT JOIN models m ON m.id = a.model_id
 LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
 LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
@@ -147,6 +147,7 @@ LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents d ON d.id = sd.document_id
+LEFT JOIN uploads u ON u.id = d.upload_id
 CROSS JOIN profile_rate_limit prl
 CROSS JOIN runs_today rt
 CROSS JOIN resolved_dept

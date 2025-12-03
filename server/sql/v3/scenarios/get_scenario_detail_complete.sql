@@ -287,14 +287,15 @@ valid_documents_filtered AS (
     SELECT DISTINCT
         d.id,
         d.name,
-        d.type::text as description,
-        d.file_path,
-        d.mime_type
+        ''::text as description,
+        u.file_path,
+        u.mime_type
     FROM documents d
+    LEFT JOIN uploads u ON u.id = d.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_departments ud
     WHERE d.active = true
-    GROUP BY d.id, d.name, d.type, d.file_path, d.mime_type
+    GROUP BY d.id, d.name, u.file_path, u.mime_type
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
@@ -305,12 +306,13 @@ document_data AS (
     SELECT DISTINCT
         d2.id,
         d2.name,
-        d2.type::text as description,
-        d2.file_path,
-        d2.mime_type
+        ''::text as description,
+        u2.file_path,
+        u2.mime_type
     FROM scenario_documents_agg sda
     CROSS JOIN LATERAL unnest(sda.document_ids) as doc_id
     JOIN documents d2 ON d2.id = doc_id::uuid
+    LEFT JOIN uploads u2 ON u2.id = d2.upload_id
     WHERE d2.active = true
     ORDER BY name
 ),
@@ -334,15 +336,16 @@ scenario_documents_mapping_data AS (
             d.id::text,
             jsonb_build_object(
                 'name', d.name,
-                'description', COALESCE(d.type::text, ''),
-                'filePath', d.file_path,
-                'mimeType', d.mime_type
+                'description', '',
+                'filePath', u.file_path,
+                'mimeType', u.mime_type
             )
         ),
         '{}'::jsonb
     ) as document_mapping
     FROM scenario_documents sd
     JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN uploads u ON u.id = d.upload_id
     WHERE sd.scenario_id = $1 AND sd.active = true AND d.active = true
 ),
 enhanced_document_mapping_data AS (
@@ -370,9 +373,9 @@ document_details_data AS (
                 jsonb_build_object(
                     'document_id', d.id::text,
                     'name', d.name,
-                    'type', d.type,
+                    'type', NULL,
                     'updatedAt', d.updated_at::text,
-                    'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                    'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE NULL END,
                     'scenario_ids', COALESCE((
                         SELECT jsonb_agg(sd2.scenario_id::text)
                         FROM scenario_documents sd2
@@ -381,8 +384,8 @@ document_details_data AS (
                     'can_edit', true,
                     'can_delete', true,
                     'active', d.active,
-                    'file_path', d.file_path,
-                    'mime_type', d.mime_type,
+                    'file_path', u.file_path,
+                    'mime_type', u.mime_type,
                     'parameter_item_ids', COALESCE((
                         SELECT jsonb_agg(dpi.parameter_item_id::text)
                         FROM document_parameter_items dpi
@@ -392,6 +395,7 @@ document_details_data AS (
             )
             FROM scenario_documents sd
             JOIN documents d ON d.id = sd.document_id
+            LEFT JOIN uploads u ON u.id = d.upload_id
             WHERE sd.scenario_id = $1 AND sd.active = true
         ),
         '[]'::jsonb

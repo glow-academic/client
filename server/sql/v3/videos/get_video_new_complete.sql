@@ -65,7 +65,8 @@ policy_data AS (
         p.name,
         COALESCE(p.description, '') as description,
         u.file_path,
-        u.mime_type
+        u.mime_type,
+        u.id as upload_id
     FROM policies p
     LEFT JOIN uploads u ON u.id = p.upload_id
     LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
@@ -89,7 +90,8 @@ policy_mapping_data AS (
                     ELSE NULL
                 END,
                 'filePath', p.file_path,
-                'mimeType', p.mime_type
+                'mimeType', p.mime_type,
+                'uploadId', p.upload_id::text
             )
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb

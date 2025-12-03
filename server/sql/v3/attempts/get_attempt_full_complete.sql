@@ -108,7 +108,8 @@
                                 ELSE NULL
                             END,
                             'filePath', u.file_path,
-                            'mimeType', u.mime_type
+                            'mimeType', u.mime_type,
+                            'uploadId', p.upload_id::text
                         )
                     )
                     FROM video_policies vp
@@ -787,9 +788,9 @@
                     jsonb_build_object(
                         'document_id', d.id::text,
                         'name', d.name,
-                        'type', d.type,
+                        'type', NULL,
                         'updatedAt', d.updated_at,
-                        'extension', COALESCE(SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'), ''),
+                        'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE '' END,
                         'scenario_ids', COALESCE(
                             (SELECT array_agg(DISTINCT st.parent_id::text)
                              FROM scenario_documents sd2
@@ -819,6 +820,7 @@
                 '[]'::jsonb
             ) as scenario_documents
             FROM documents d
+            LEFT JOIN uploads u ON u.id = d.upload_id
             JOIN scenario_documents sd ON sd.document_id = d.id
             CROSS JOIN scenario_ids_list sil
             WHERE sd.scenario_id = ANY(sil.scenario_ids) AND d.active = true

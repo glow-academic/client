@@ -73,7 +73,7 @@ async def tus_finalize(
         filename = metadata.get("filename", "unknown")
         file_size = file_path.stat().st_size
 
-        # Generate final file path
+        # Generate final file path with UUID
         upload_uuid = uuid.uuid4()
         _, ext = os.path.splitext(filename)
         if not ext:
@@ -87,15 +87,21 @@ async def tus_finalize(
 
         content_type = metadata.get("filetype") or get_content_type(filename)
 
-        # Insert upload record
+        # Insert upload record (SQL returns the generated ID)
         sql = load_sql("sql/v3/uploads/insert_upload.sql")
-        await conn.execute(
+        upload_id = await conn.fetchval(
             sql,
-            upload_uuid,
             final_file_path,
             content_type,
             file_size,
         )
+
+        if not upload_id:
+            return TusFinalizeResponse(
+                success=False,
+                message="Failed to create upload record",
+                status="error",
+            )
 
         # Clean up TUS upload directory
         try:
@@ -107,7 +113,7 @@ async def tus_finalize(
             success=True,
             message="Upload finalized successfully",
             status="success",
-            uploadId=str(upload_uuid),
+            uploadId=upload_id,
         )
 
         # Invalidate cache after mutation

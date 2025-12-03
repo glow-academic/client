@@ -9,7 +9,7 @@ from app.utils.document.read_pdf_text_pages import read_pdf_text_pages
 from app.utils.document.read_text_file import read_text_file
 
 
-def format_policy_info(policies: list[dict[str, Any]]) -> TResponseInputItem:
+def format_policy_info(policies: list[dict[str, Any]], video_length_seconds: int | None = None) -> TResponseInputItem:
     """
     Format policy information as TResponseInputItem.
     
@@ -18,6 +18,7 @@ def format_policy_info(policies: list[dict[str, Any]]) -> TResponseInputItem:
 
     Args:
         policies: List of dicts with keys: id, name, content, file_path, mime_type
+        video_length_seconds: Optional video length in seconds for context
 
     Returns:
         TResponseInputItem formatted for agent input
@@ -75,6 +76,15 @@ def format_policy_info(policies: list[dict[str, Any]]) -> TResponseInputItem:
         "The following are the policies that should inform the video content:\n\n"
         + "\n---\n\n".join(formatted_policies)
     )
+    
+    # Add video length information if provided
+    if video_length_seconds is not None:
+        content += (
+            f"\n\n**IMPORTANT - Video Length:**\n"
+            f"The video is {video_length_seconds} seconds long. "
+            f"Use this to structure the outline appropriately and ensure all content fits within this duration. "
+            f"When assigning question timestamps, use integers from 0 to {video_length_seconds} (inclusive)."
+        )
 
     return {
         "role": "user",

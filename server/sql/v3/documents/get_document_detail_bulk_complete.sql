@@ -1,14 +1,14 @@
 WITH document_data AS (
     SELECT 
         d.id,
-        d.type,
+        NULL::text as type,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids
     FROM documents d
     WHERE d.id = ANY($1)
 ),
 aggregated_data AS (
     SELECT 
-        array_agg(DISTINCT type) as types,
+        array_agg(DISTINCT type) FILTER (WHERE type IS NOT NULL) as types,
         COALESCE(array_agg(DISTINCT dept_id) FILTER (WHERE dept_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM document_data dd
     CROSS JOIN LATERAL UNNEST(COALESCE(dd.department_ids, ARRAY[]::text[])) as dept_id

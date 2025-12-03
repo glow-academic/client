@@ -74,12 +74,13 @@ SELECT
             json_build_object(
                 'id', d.id::text,
                 'name', d.name,
-                'file_path', d.file_path,
-                'mime_type', d.mime_type
+                'file_path', u.file_path,
+                'mime_type', u.mime_type
             )
             ORDER BY array_position(p.document_ids, d.id)
         )
         FROM documents d
+        LEFT JOIN uploads u ON u.id = d.upload_id
         WHERE d.id = ANY(p.document_ids)
         ),
         '[]'::json

@@ -554,7 +554,7 @@ export default function VideoAttemptView({
                               description: policy.description,
                               file_path: policy.filePath || null,
                               mime_type: policy.mimeType || null,
-                              upload_id: null, // Policies don't have upload_id in this context
+                              upload_id: policy.uploadId || null,
                             }}
                           />
                         ) : null;

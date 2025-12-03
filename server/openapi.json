@@ -13027,6 +13027,10 @@
             "type": "string",
             "title": "Rubric Id"
           },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
           "model_run_ids": {
             "items": {
               "type": "string"
@@ -13049,6 +13053,7 @@
           "name",
           "description",
           "rubric_id",
+          "agent_id",
           "model_run_ids",
           "profileId"
         ],
@@ -17509,6 +17514,10 @@
             "type": "string",
             "title": "Rubric Id"
           },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
           "rubric_name": {
             "type": "string",
             "title": "Rubric Name"
@@ -17570,6 +17579,7 @@
           "name",
           "description",
           "rubric_id",
+          "agent_id",
           "rubric_name",
           "rubric_description",
           "total_runs",
@@ -17623,6 +17633,14 @@
             "type": "object",
             "title": "Department Mapping"
           },
+          "agent_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Agent Mapping"
+          },
           "rubric_options": {
             "items": {
               "additionalProperties": {
@@ -17642,6 +17660,16 @@
             },
             "type": "array",
             "title": "Department Options"
+          },
+          "agent_options": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Agent Options"
           }
         },
         "type": "object",
@@ -17649,8 +17677,10 @@
           "evals",
           "rubric_mapping",
           "department_mapping",
+          "agent_mapping",
           "rubric_options",
-          "department_options"
+          "department_options",
+          "agent_options"
         ],
         "title": "EvalsListResponse",
         "description": "Response for evals list endpoint."
@@ -21154,6 +21184,17 @@
               }
             ],
             "title": "Search"
+          },
+          "eval": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval"
           },
           "page": {
             "anyOf": [
@@ -26347,6 +26388,17 @@
           "passPercentage": {
             "type": "integer",
             "title": "Passpercentage"
+          },
+          "agent_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Role"
           },
           "department_ids": {
             "anyOf": [

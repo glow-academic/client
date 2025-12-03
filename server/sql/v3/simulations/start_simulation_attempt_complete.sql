@@ -37,6 +37,53 @@ simulation_scenarios AS (
     WHERE ss.simulation_id = $1::uuid AND ss.active = true
     ORDER BY ss.position
 ),
+-- Get simulation videos in order
+simulation_videos AS (
+    SELECT 
+        sv.video_id,
+        sv.position
+    FROM simulation_videos sv
+    WHERE sv.simulation_id = $1::uuid AND sv.active = true
+    ORDER BY sv.position
+),
+-- Determine content type and first content item
+content_type_check AS (
+    SELECT 
+        CASE 
+            -- If scenario override provided, use scenario
+            WHEN COALESCE($4::text, '') != '' THEN 'scenario'
+            -- Compare positions: use whichever comes first (scenario or video)
+            WHEN EXISTS(SELECT 1 FROM simulation_scenarios) AND EXISTS(SELECT 1 FROM simulation_videos) THEN
+                CASE 
+                    WHEN (SELECT MIN(position) FROM simulation_scenarios) < 
+                         (SELECT MIN(position) FROM simulation_videos) THEN 'scenario'
+                    ELSE 'video'
+                END
+            -- If only scenarios exist, use scenario
+            WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 'scenario'
+            -- If only videos exist, use video
+            WHEN EXISTS(SELECT 1 FROM simulation_videos) THEN 'video'
+            -- Default to scenario
+            ELSE 'scenario'
+        END as content_type,
+        CASE 
+            -- If content type is video, get first video_id
+            WHEN (CASE 
+                    WHEN COALESCE($4::text, '') != '' THEN 'scenario'
+                    WHEN EXISTS(SELECT 1 FROM simulation_scenarios) AND EXISTS(SELECT 1 FROM simulation_videos) THEN
+                        CASE 
+                            WHEN (SELECT MIN(position) FROM simulation_scenarios) < 
+                                 (SELECT MIN(position) FROM simulation_videos) THEN 'scenario'
+                            ELSE 'video'
+                        END
+                    WHEN EXISTS(SELECT 1 FROM simulation_scenarios) THEN 'scenario'
+                    WHEN EXISTS(SELECT 1 FROM simulation_videos) THEN 'video'
+                    ELSE 'scenario'
+                  END) = 'video' THEN
+                (SELECT video_id FROM simulation_videos ORDER BY position LIMIT 1)
+            ELSE NULL::uuid
+        END as first_video_id
+),
 -- Determine chosen scenario
 chosen_scenario_id AS (
     SELECT 
@@ -53,6 +100,39 @@ chosen_scenario_id AS (
             )
         END as scenario_id
 ),
+-- Resolve department_id for agent prompt selection (scenario -> profile -> any active)
+scenario_dept AS (
+    SELECT 
+        csi.scenario_id,
+        (SELECT sd.department_id FROM scenario_departments sd 
+         WHERE sd.scenario_id = csi.scenario_id AND sd.active = true LIMIT 1) as department_id
+    FROM chosen_scenario_id csi
+),
+profile_dept AS (
+    -- Get first department from profile's accessible departments
+    SELECT d.id as department_id
+    FROM departments d
+    JOIN profile_departments pd ON pd.department_id = d.id
+    WHERE pd.profile_id = $3::uuid 
+      AND pd.active = true 
+      AND d.active = true
+    LIMIT 1
+),
+any_active_dept AS (
+    -- Get any active department as last resort
+    SELECT id as department_id
+    FROM departments
+    WHERE active = true
+    LIMIT 1
+),
+resolved_dept AS (
+    -- Resolve department_id with fallback: scenario -> profile -> any active
+    SELECT COALESCE(
+        (SELECT department_id FROM scenario_dept),
+        (SELECT department_id FROM profile_dept),
+        (SELECT department_id FROM any_active_dept)
+    ) as department_id
+),
 -- Get full scenario data with all metadata
 scenario_full_data AS (
     SELECT 
@@ -65,7 +145,10 @@ scenario_full_data AS (
         -- Persona data
         p.id as persona_id,
         p.name as persona_name,
-        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
+        COALESCE(
+            COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
+            ''
+        ) as system_prompt,
         p.temperature,
         p.reasoning,
         p.color as persona_color,
@@ -82,8 +165,8 @@ scenario_full_data AS (
                 json_build_object(
                     'id', d.id::text,
                     'name', d.name,
-                    'file_path', d.file_path,
-                    'mime_type', d.mime_type
+                    'file_path', u.file_path,
+                    'mime_type', u.mime_type
                 ) ORDER BY d.id
             ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true),
             '[]'::json
@@ -112,26 +195,33 @@ scenario_full_data AS (
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     LEFT JOIN personas p ON p.id = sp.persona_id
-    LEFT JOIN persona_prompts pp ON pp.persona_id = p.id AND pp.active = true
-    LEFT JOIN prompts pr_prompt ON pr_prompt.id = pp.prompt_id
     LEFT JOIN persona_agents pa ON pa.persona_id = p.id AND pa.active = true
     LEFT JOIN agents a ON a.id = pa.agent_id
+    -- Try department-specific agent prompt first, fall back to default prompt
+    CROSS JOIN resolved_dept rd
+    LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
+        AND adp_prompt.department_id = rd.department_id
+        AND adp_prompt.active = true
+    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+    LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
+    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN model_keys mk ON mk.model_id = m.id AND mk.active = true
     LEFT JOIN keys k ON k.id = mk.key_id AND k.active = true
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
     LEFT JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN uploads u ON u.id = d.upload_id
     LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
     LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
     LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, s.name, ps.problem_statement, s.active, 
-             s.generated, p.id, p.name, pr_prompt.system_prompt, 
+             s.generated, p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
              p.temperature, p.reasoning, p.color, p.icon, m.id, m.name, m.provider,
              k.key, me.base_url
 ),
--- Create simulation chat (without attempt_id - uses junction table)
+-- Create simulation chat (only for scenarios, not videos)
 new_chat AS (
     INSERT INTO chats (
         created_at, title, scenario_id, completed, trace_id, updated_at
@@ -145,9 +235,11 @@ new_chat AS (
         now()
     FROM new_attempt na
     CROSS JOIN scenario_full_data sfd
+    CROSS JOIN content_type_check ctc
+    WHERE ctc.content_type = 'scenario'
     RETURNING id as chat_id, title as chat_title, created_at, updated_at
 ),
--- Create attempt_chats junction table entry
+-- Create attempt_chats junction table entry (only if chat was created)
 attempt_chat_link AS (
     INSERT INTO attempt_chats (attempt_id, chat_id, created_at, updated_at)
     SELECT na.attempt_id, nc.chat_id, nc.created_at, nc.updated_at
@@ -158,12 +250,14 @@ attempt_chat_link AS (
 -- Return all data in single row
 SELECT 
     na.attempt_id::text,
-    nc.chat_id::text,
-    nc.chat_title,
-    sfd.scenario_id::text,
-    sfd.scenario_name,
-    sfd.problem_statement,
-    sfd.needs_generation,
+    CASE WHEN ctc.content_type = 'scenario' THEN nc.chat_id::text ELSE NULL::text END as chat_id,
+    CASE WHEN ctc.content_type = 'scenario' THEN nc.chat_title ELSE NULL::text END as chat_title,
+    CASE WHEN ctc.content_type = 'scenario' THEN sfd.scenario_id::text ELSE NULL::text END as scenario_id,
+    CASE WHEN ctc.content_type = 'scenario' THEN sfd.scenario_name ELSE NULL::text END as scenario_name,
+    CASE WHEN ctc.content_type = 'scenario' THEN sfd.problem_statement ELSE NULL::text END as problem_statement,
+    CASE WHEN ctc.content_type = 'scenario' THEN sfd.needs_generation ELSE false END as needs_generation,
+    ctc.content_type,
+    ctc.first_video_id::text as video_id,
     -- Simulation metadata as JSONB
     jsonb_build_object(
         'id', sd.id::text,
@@ -173,29 +267,34 @@ SELECT
         'practice_simulation', sd.practice_simulation,
         'rubric_id', sd.rubric_id::text
     ) as simulation_data,
-    -- Scenario metadata as JSONB
-    jsonb_build_object(
-        'persona_id', sfd.persona_id::text,
-        'persona_name', sfd.persona_name,
-        'persona_system_prompt', sfd.system_prompt,
-        'persona_temperature', sfd.temperature,
-        'persona_reasoning', sfd.reasoning,
-        'persona_color', sfd.persona_color,
-        'persona_icon', sfd.persona_icon,
-        'model_id', sfd.model_id::text,
-        'model_name', sfd.model_name,
-        'provider', sfd.provider,
-        'provider_base_url', sfd.base_url,
-        'provider_api_key', sfd.api_key,
-        'documents', sfd.documents,
-        'parameter_items', sfd.parameter_items,
-        'active', sfd.active,
-        'default_scenario', sfd.default_scenario,
-        'generated', sfd.generated
-    ) as scenario_metadata
+    -- Scenario metadata as JSONB (only for scenarios)
+    CASE 
+        WHEN ctc.content_type = 'scenario' THEN
+            jsonb_build_object(
+                'persona_id', sfd.persona_id::text,
+                'persona_name', sfd.persona_name,
+                'persona_system_prompt', sfd.system_prompt,
+                'persona_temperature', sfd.temperature,
+                'persona_reasoning', sfd.reasoning,
+                'persona_color', sfd.persona_color,
+                'persona_icon', sfd.persona_icon,
+                'model_id', sfd.model_id::text,
+                'model_name', sfd.model_name,
+                'provider', sfd.provider,
+                'provider_base_url', sfd.base_url,
+                'provider_api_key', sfd.api_key,
+                'documents', sfd.documents,
+                'parameter_items', sfd.parameter_items,
+                'active', sfd.active,
+                'default_scenario', sfd.default_scenario,
+                'generated', sfd.generated
+            )
+        ELSE NULL::jsonb
+    END as scenario_metadata
 FROM new_attempt na
-CROSS JOIN new_chat nc
-INNER JOIN attempt_chat_link acl ON acl.chat_id = nc.chat_id AND acl.attempt_id = na.attempt_id
-CROSS JOIN scenario_full_data sfd
+CROSS JOIN content_type_check ctc
 CROSS JOIN simulation_data sd
+LEFT JOIN new_chat nc ON ctc.content_type = 'scenario'
+LEFT JOIN attempt_chat_link acl ON acl.chat_id = nc.chat_id AND acl.attempt_id = na.attempt_id AND ctc.content_type = 'scenario'
+LEFT JOIN scenario_full_data sfd ON ctc.content_type = 'scenario' AND sfd.scenario_id = (SELECT scenario_id FROM chosen_scenario_id)
 

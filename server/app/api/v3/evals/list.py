@@ -33,6 +33,7 @@ class EvalItem(BaseModel):
     name: str
     description: str
     rubric_id: str
+    agent_id: str
     rubric_name: str
     rubric_description: str
     total_runs: int
@@ -52,8 +53,10 @@ class EvalsListResponse(BaseModel):
     evals: list[EvalItem]
     rubric_mapping: dict[str, dict[str, Any]]
     department_mapping: DepartmentMapping
+    agent_mapping: dict[str, dict[str, Any]]
     rubric_options: list[dict[str, str]]  # Array of {value, label}
     department_options: list[dict[str, str]]  # Array of {value, label}
+    agent_options: list[dict[str, str]]  # Array of {value, label}
 
 
 router = APIRouter()
@@ -99,6 +102,7 @@ async def get_evals_list(
         evals = []
         rubric_mapping: dict[str, dict[str, Any]] = {}
         department_mapping: DepartmentMapping = {}
+        agent_mapping: dict[str, dict[str, Any]] = {}
 
         # Parse mappings from first row (same across all rows)
         if result:
@@ -123,6 +127,13 @@ async def get_evals_list(
                             description=ddata.get("description", ""),
                         )
 
+            # Parse agent_mapping from JSONB
+            agent_mapping_data = first_row.get("agent_mapping")
+            if isinstance(agent_mapping_data, str):
+                agent_mapping_data = json.loads(agent_mapping_data)
+            if agent_mapping_data and isinstance(agent_mapping_data, dict):
+                agent_mapping = agent_mapping_data
+
         # Build eval items
         for row in result:
             dept_ids = None
@@ -135,6 +146,7 @@ async def get_evals_list(
                     name=row["name"],
                     description=row["description"],
                     rubric_id=str(row["rubric_id"]),
+                    agent_id=str(row.get("agent_id", "")),
                     rubric_name=row["rubric_name"],
                     rubric_description=row.get("rubric_description") or "",
                     total_runs=int(row["total_runs"]),
@@ -165,13 +177,26 @@ async def get_evals_list(
             for (did, d) in department_mapping.items()
             if did in assigned_department_ids
         ]
+        # Collect all agent IDs actually assigned to evals
+        assigned_agent_ids = set()
+        for eval_item in evals:
+            if eval_item.agent_id:
+                assigned_agent_ids.add(eval_item.agent_id)
+        # Filter agent_options to only include agents assigned to at least one eval
+        agent_options = [
+            {"value": aid, "label": adata.get("name", "")}
+            for (aid, adata) in agent_mapping.items()
+            if aid in assigned_agent_ids
+        ]
 
         response_data = EvalsListResponse(
             evals=evals,
             rubric_mapping=rubric_mapping,
             department_mapping=department_mapping,
+            agent_mapping=agent_mapping,
             rubric_options=rubric_options,
             department_options=department_options,
+            agent_options=agent_options,
         )
 
         # Cache response

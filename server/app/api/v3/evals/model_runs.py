@@ -30,6 +30,7 @@ class ModelRunsFilters(BaseModel):
     personaIds: list[str] | None = None
     agentType: str | None = None  # 'agent' or 'persona'
     search: str | None = None
+    eval: bool | None = None  # Filter runs where agent role is evaluable
     page: int | None = None
     pageSize: int | None = None
 
@@ -131,6 +132,7 @@ async def get_model_runs(
             persona_ids,
             filters.agentType,
             filters.search,
+            filters.eval,
             filters.page or 1,
             filters.pageSize or 50,
         )

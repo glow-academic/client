@@ -736,17 +736,14 @@ export default function Video({
       });
 
       try {
-        // Generate a unique fileId for tracking
-        const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
+        let tusUploadInstance: tus.Upload | null = null;
         // Create TUS upload
-        const upload = new tus.Upload(file, {
-          endpoint: `/api/images/upload`,
+        tusUploadInstance = new tus.Upload(file, {
+          endpoint: `/api/uploads/upload`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
             filetype: file.type,
-            fileId: fileId,
           },
           onError: (error) => {
             toast.error(`Upload failed: ${file.name}`, {
@@ -763,44 +760,66 @@ export default function Video({
             });
           },
           onSuccess: async () => {
-            // Get upload ID from location header
-            const location = upload.url;
-            if (!location) {
-              throw new Error("Failed to get upload location");
+            // Extract TUS upload_id from upload URL
+            const uploadUrl = tusUploadInstance?.url || "";
+            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+              toast.error("Failed to extract upload ID from upload URL", {
+                id: toastId,
+              });
+              setIsUploadingImage(false);
+              return;
             }
-            const uploadId = location.split("/").pop();
+            const tusUploadId = tusUploadIdMatch[1];
 
-            if (!uploadId) {
-              throw new Error("Failed to get upload ID");
-            }
-
-            // Finalize upload
+            // Finalize upload to get database upload_id
             try {
-              const response = await fetch("/api/images/upload/finalize", {
+              const finalizeResponse = await fetch(
+                `/api/uploads/upload/${tusUploadId}/finalize`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({}),
+                }
+              );
+
+              const finalizeResult = await finalizeResponse.json();
+
+              if (!finalizeResult.success || !finalizeResult.uploadId) {
+                throw new Error(
+                  finalizeResult.message || "Failed to finalize upload"
+                );
+              }
+
+              const databaseUploadId = finalizeResult.uploadId;
+
+              // Create image with upload_id
+              const createResponse = await fetch("/api/v3/images/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  uploadId,
-                  fileId,
                   name: file.name,
+                  uploadId: databaseUploadId,
                 }),
               });
 
-              const result = await response.json();
+              const createResult = await createResponse.json();
 
-              if (result.success && result.imageId) {
+              if (createResult.success && createResult.imageId) {
                 // Append to images array
                 setImages((prev) => [
                   ...prev,
                   {
-                    id: result.imageId,
+                    id: createResult.imageId,
                     name: file.name,
                     mime_type: file.type,
                   },
                 ]);
                 toast.success(`Image uploaded: ${file.name}`, { id: toastId });
               } else {
-                throw new Error(result.message || "Failed to finalize upload");
+                throw new Error(
+                  createResult.message || "Failed to create image"
+                );
               }
             } catch (finalizeError) {
               toast.error(
@@ -817,7 +836,7 @@ export default function Video({
           },
         });
 
-        upload.start();
+        tusUploadInstance.start();
       } catch (error) {
         toast.error(
           `Failed to upload image: ${

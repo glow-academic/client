@@ -8,8 +8,9 @@
 --   $6 = persona_ids (uuid[] | NULL)
 --   $7 = agent_type (text | NULL) - 'agent' or 'persona' to filter type
 --   $8 = search (text | NULL)
---   $9 = page (int, default 1)
---   $10 = page_size (int, default 50)
+--   $9 = eval (boolean | NULL) - filter runs where agent role is evaluable
+--   $10 = page (int, default 1)
+--   $11 = page_size (int, default 50)
 -- Returns: JSONB object with paginated runs and mappings
 
 WITH resolve_profile_id AS (
@@ -58,6 +59,7 @@ runs_with_names AS (
         m.name as model_name,
         p.first_name || ' ' || p.last_name as profile_name,
         a.name as agent_name,
+        a.role as agent_role,
         per.name as persona_name,
         CASE 
             WHEN rb.agent_id IS NOT NULL THEN 'agent'
@@ -96,14 +98,23 @@ runs_filtered AS (
             OR LOWER(persona_name) LIKE '%' || LOWER($8::text) || '%'
             OR LOWER(profile_name) LIKE '%' || LOWER($8::text) || '%'
         )
+        -- Eval filter (filter runs where agent role is evaluable)
+        AND (
+            $9::boolean IS NULL
+            OR $9::boolean = false
+            OR (
+                $9::boolean = true
+                AND agent_role IN ('grade', 'grade-text', 'grade-voice', 'simulation-text', 'simulation-voice', 'eval')
+            )
+        )
     )
 ),
 -- Pagination
 page_num AS (
-    SELECT COALESCE($9::int, 1) as page
+    SELECT COALESCE($10::int, 1) as page
 ),
 page_size_val AS (
-    SELECT COALESCE($10::int, 50) as page_size
+    SELECT COALESCE($11::int, 50) as page_size
 ),
 offset_val AS (
     SELECT (page - 1) * page_size as offset_val

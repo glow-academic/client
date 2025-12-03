@@ -16,11 +16,12 @@ WITH filtered_personas AS (
          OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
 ),
 filtered_documents AS (
-    SELECT DISTINCT d.id, d.name, d.type, d.file_path
+    SELECT DISTINCT d.id, d.name, NULL::text as type, u.file_path
     FROM documents d
+    LEFT JOIN uploads u ON u.id = d.upload_id
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE d.active = true
-    GROUP BY d.id, d.name, d.type, d.file_path
+    GROUP BY d.id, d.name, u.file_path
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR

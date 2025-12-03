@@ -128,11 +128,11 @@ document_data AS (
     SELECT 
         d.id,
         d.name,
-        d.type::text as description
+        ''::text as description
     FROM documents d
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE d.active = true
-    GROUP BY d.id, d.name, d.type
+    GROUP BY d.id, d.name
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
@@ -245,15 +245,15 @@ document_details_data AS (
                 jsonb_build_object(
                     'document_id', d.id::text,
                     'name', d.name,
-                    'type', d.type,
+                    'type', NULL,
                     'updatedAt', d.updated_at::text,
-                    'extension', SUBSTRING(d.file_path FROM '\\.([^\\.]+)$'),
+                    'extension', CASE WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$') ELSE NULL END,
                     'scenario_ids', '[]'::jsonb,
                     'can_edit', true,
                     'can_delete', true,
                     'active', d.active,
-                    'file_path', d.file_path,
-                    'mime_type', d.mime_type,
+                    'file_path', u.file_path,
+                    'mime_type', u.mime_type,
                     'parameter_item_ids', COALESCE((
                         SELECT jsonb_agg(dpi.parameter_item_id::text)
                         FROM document_parameter_items dpi
@@ -262,6 +262,7 @@ document_details_data AS (
                 ) ORDER BY d.name
             )
             FROM documents d
+            LEFT JOIN uploads u ON u.id = d.upload_id
             WHERE d.id IN (SELECT id FROM document_data)
             AND d.active = true
         ),

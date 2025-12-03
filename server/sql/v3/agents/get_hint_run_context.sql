@@ -115,13 +115,14 @@ SELECT
                 json_build_object(
                     'id', d.id::text,
                     'name', d.name,
-                    'file_path', d.file_path,
-                    'mime_type', d.mime_type
+                    'file_path', u.file_path,
+                    'mime_type', u.mime_type
                 )
                 ORDER BY d.id
             )
             FROM scenario_documents sd
             JOIN documents d ON d.id = sd.document_id
+            LEFT JOIN uploads u ON u.id = d.upload_id
             WHERE sd.scenario_id = si.id AND sd.active = true
         ),
         '[]'::json
