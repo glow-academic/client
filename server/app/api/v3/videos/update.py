@@ -45,8 +45,8 @@ class UpdateVideoRequest(BaseModel):
     active: bool
     questions: list[QuestionItem] = []  # Questions with times and options
     outline_agent_id: str | None = None
-    question_agent_id: str | None = None
     image_agent_id: str | None = None
+    parameter_item_ids: list[str] | None = None  # Parameter items for video
 
 
 class UpdateVideoResponse(BaseModel):
@@ -83,6 +83,7 @@ async def update_video(
         policy_ids = request.policy_ids or []
         image_ids = request.image_ids or []
         questions = request.questions or []
+        parameter_item_ids = request.parameter_item_ids or []
 
         # Prepare questions JSON for SQL
         questions_json = json.dumps([q.model_dump() for q in questions])
@@ -100,8 +101,8 @@ async def update_video(
             image_ids if image_ids else None,
             questions_json,
             request.outline_agent_id,
-            request.question_agent_id,
             request.image_agent_id,
+            parameter_item_ids if parameter_item_ids else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

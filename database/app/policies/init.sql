@@ -34,3 +34,16 @@ CREATE TABLE policy_departments (
 CREATE INDEX ON policy_departments (policy_id);
 CREATE INDEX ON policy_departments (department_id);
 
+-- Policy → Documents junction table (BCNF normalization)
+CREATE TABLE policy_documents (
+  policy_id   UUID NOT NULL REFERENCES policies(id)   ON DELETE CASCADE,
+  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (policy_id, document_id)
+);
+
+CREATE INDEX ON policy_documents (policy_id);
+CREATE INDEX ON policy_documents (document_id);
+

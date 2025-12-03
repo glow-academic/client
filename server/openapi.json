@@ -3017,53 +3017,6 @@
         ]
       }
     },
-    "/api/v3/videos/generate-questions": {
-      "post": {
-        "tags": [
-          "v3",
-          "videos"
-        ],
-        "summary": "Generate Questions",
-        "description": "Generate AI questions (multiple choice, free response, multi-select).",
-        "operationId": "generate_questions_api_v3_videos_generate_questions_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GenerateQuestionsRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GenerateQuestionsResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "videos"
-        ]
-      }
-    },
     "/api/v3/videos/generate-outline": {
       "post": {
         "tags": [
@@ -14308,6 +14261,20 @@
             "type": "array",
             "title": "Questions",
             "default": []
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
           }
         },
         "type": "object",
@@ -17277,6 +17244,81 @@
         "title": "EvalsListResponse",
         "description": "Response for evals list endpoint."
       },
+      "ExistingQuestion": {
+        "properties": {
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple"
+          },
+          "times": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Times",
+            "default": []
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ExistingQuestionOption"
+            },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text",
+          "type",
+          "allow_multiple"
+        ],
+        "title": "ExistingQuestion",
+        "description": "Existing question in request."
+      },
+      "ExistingQuestionOption": {
+        "properties": {
+          "option_text": {
+            "type": "string",
+            "title": "Option Text"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_text",
+          "type",
+          "is_correct"
+        ],
+        "title": "ExistingQuestionOption",
+        "description": "Question option in request for existing questions."
+      },
       "ExportRequest": {
         "properties": {
           "filters": {
@@ -17580,6 +17622,34 @@
             ],
             "title": "Questionids"
           },
+          "parameterItemIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameteritemids"
+          },
+          "existingQuestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ExistingQuestion"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existingquestions"
+          },
           "profileId": {
             "anyOf": [
               {
@@ -17612,6 +17682,11 @@
               }
             ],
             "title": "Videolengthseconds"
+          },
+          "useQuestions": {
+            "type": "boolean",
+            "title": "Usequestions",
+            "default": true
           }
         },
         "type": "object",
@@ -17661,6 +17736,20 @@
             ],
             "title": "Video Name"
           },
+          "questions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GeneratedQuestion"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          },
           "question_timestamps": {
             "anyOf": [
               {
@@ -17688,83 +17777,6 @@
         ],
         "title": "GenerateOutlineResponse",
         "description": "Response from AI outline generation."
-      },
-      "GenerateQuestionsRequest": {
-        "properties": {
-          "departmentId": {
-            "type": "string",
-            "title": "Departmentid"
-          },
-          "policyIds": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Policyids"
-          },
-          "profileId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profileid"
-          },
-          "videoId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videoid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "departmentId"
-        ],
-        "title": "GenerateQuestionsRequest",
-        "description": "Request to generate AI questions."
-      },
-      "GenerateQuestionsResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "questions": {
-            "items": {
-              "$ref": "#/components/schemas/GeneratedQuestion"
-            },
-            "type": "array",
-            "title": "Questions"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message",
-          "questions"
-        ],
-        "title": "GenerateQuestionsResponse",
-        "description": "Response from AI question generation."
       },
       "GenerateScenarioAIRequest": {
         "properties": {
@@ -18014,10 +18026,6 @@
       },
       "GeneratedQuestion": {
         "properties": {
-          "question_id": {
-            "type": "string",
-            "title": "Question Id"
-          },
           "question_text": {
             "type": "string",
             "title": "Question Text"
@@ -18040,7 +18048,6 @@
         },
         "type": "object",
         "required": [
-          "question_id",
           "question_text",
           "type",
           "allow_multiple",
@@ -31057,17 +31064,6 @@
             ],
             "title": "Outline Agent Id"
           },
-          "question_agent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Agent Id"
-          },
           "image_agent_id": {
             "anyOf": [
               {
@@ -31078,6 +31074,20 @@
               }
             ],
             "title": "Image Agent Id"
+          },
+          "parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Item Ids"
           }
         },
         "type": "object",
@@ -37804,10 +37814,6 @@
             "type": "string",
             "title": "Outline Agent Id"
           },
-          "question_agent_id": {
-            "type": "string",
-            "title": "Question Agent Id"
-          },
           "image_agent_id": {
             "type": "string",
             "title": "Image Agent Id"
@@ -37826,6 +37832,29 @@
             },
             "type": "array",
             "title": "Valid Agent Ids"
+          },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
           }
         },
         "type": "object",
@@ -37855,10 +37884,12 @@
           "department_mapping",
           "questions",
           "outline_agent_id",
-          "question_agent_id",
           "image_agent_id",
           "agent_mapping",
-          "valid_agent_ids"
+          "valid_agent_ids",
+          "parameter_mapping",
+          "parameter_item_mapping",
+          "parameter_item_ids"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."
@@ -38058,10 +38089,6 @@
             "type": "string",
             "title": "Outline Agent Id"
           },
-          "question_agent_id": {
-            "type": "string",
-            "title": "Question Agent Id"
-          },
           "image_agent_id": {
             "type": "string",
             "title": "Image Agent Id"
@@ -38080,6 +38107,29 @@
             },
             "type": "array",
             "title": "Valid Agent Ids"
+          },
+          "parameter_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Parameter Mapping"
+          },
+          "parameter_item_mapping": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Parameter Item Mapping"
+          },
+          "parameter_item_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Parameter Item Ids"
           }
         },
         "type": "object",
@@ -38109,10 +38159,12 @@
           "department_mapping",
           "questions",
           "outline_agent_id",
-          "question_agent_id",
           "image_agent_id",
           "agent_mapping",
-          "valid_agent_ids"
+          "valid_agent_ids",
+          "parameter_mapping",
+          "parameter_item_mapping",
+          "parameter_item_ids"
         ],
         "title": "VideoDetailResponse",
         "description": "Response for video detail."

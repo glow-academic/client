@@ -61,7 +61,6 @@ video_core AS (
         COALESCE(g.mime_type, '') as mime_type,
         COALESCE(vdd.department_ids, NULL) as department_ids,
         v.outline_agent_id::text,
-        v.question_agent_id::text,
         v.image_agent_id::text
     FROM videos v
     LEFT JOIN video_departments_data vdd ON vdd.video_id = v.id
@@ -273,7 +272,7 @@ questions_json AS (
     FROM video_questions_data
 ),
 valid_agents AS (
-    -- Get agents with roles 'outline', 'question', or 'image'
+    -- Get agents with roles 'outline' or 'image'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         COALESCE(
@@ -291,7 +290,7 @@ valid_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true 
-    AND a.role IN ('outline', 'question', 'image')
+    AND a.role IN ('outline', 'image')
     AND (
         EXISTS (
             SELECT 1 FROM resolve_profile_id rpi 
@@ -300,6 +299,80 @@ valid_agents AS (
         )
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
+),
+-- Video parameters (filtered by video_parameter = true OR policy_parameter = true)
+video_parameter_data AS (
+    SELECT DISTINCT 
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.numerical,
+        p.policy_parameter,
+        p.video_parameter
+    FROM parameters p
+    JOIN parameter_items pi ON pi.parameter_id = p.id
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    CROSS JOIN resolve_profile_id rpi
+    LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
+    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
+    GROUP BY p.id, p.name, p.description, p.numerical, p.policy_parameter, p.video_parameter
+    HAVING 
+        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
+        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+),
+video_parameter_mapping_data AS (
+    SELECT 
+        COALESCE(jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name, 
+                'description', p.description, 
+                'numerical', p.numerical,
+                'policy_parameter', p.policy_parameter,
+                'video_parameter', p.video_parameter
+            )
+        ), '{}'::jsonb) as parameter_mapping
+    FROM video_parameter_data p
+),
+video_parameter_items_data AS (
+    SELECT 
+        pi.id,
+        pi.name,
+        COALESCE(pi.description, '') as description,
+        pi.parameter_id,
+        p.name as parameter_name,
+        pi.value
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    CROSS JOIN resolve_profile_id rpi
+    LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
+    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
+    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+    HAVING 
+        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
+        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+),
+video_parameter_item_mapping_data AS (
+    SELECT 
+        COALESCE(jsonb_object_agg(
+            pi.id::text,
+            jsonb_build_object(
+                'name', pi.name,
+                'description', pi.description,
+                'parameter_id', pi.parameter_id::text,
+                'parameter_name', pi.parameter_name,
+                'value', pi.value
+            )
+        ), '{}'::jsonb) as parameter_item_mapping
+    FROM video_parameter_items_data pi
+),
+video_selected_parameter_items AS (
+    SELECT ARRAY_AGG(vpi.parameter_item_id::text ORDER BY vpi.parameter_item_id) as parameter_item_ids
+    FROM video_parameter_items vpi
+    WHERE vpi.video_id = $1 AND vpi.active = true
 )
 SELECT 
     vc.name,
@@ -322,10 +395,12 @@ SELECT
     COALESCE((SELECT mapping FROM department_mapping_data), '{}'::jsonb) as department_mapping,
     COALESCE((SELECT questions FROM questions_json), '[]'::jsonb) as questions,
     vc.outline_agent_id,
-    vc.question_agent_id,
     vc.image_agent_id,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
+    COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping,
+    COALESCE((SELECT parameter_item_ids FROM video_selected_parameter_items), ARRAY[]::text[]) as parameter_item_ids
 FROM video_core vc
 CROSS JOIN video_permissions vp
 CROSS JOIN valid_agents va

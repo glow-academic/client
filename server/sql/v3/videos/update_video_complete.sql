@@ -5,7 +5,8 @@
 --            $7=policy_ids (text array, nullable),
 --            $8=image_ids (text array, nullable),
 --            $9=questions_json (JSONB string with questions array),
---            $10=outline_agent_id (nullable uuid), $11=question_agent_id (nullable uuid), $12=image_agent_id (nullable uuid)
+--            $10=outline_agent_id (nullable uuid), $11=image_agent_id (nullable uuid),
+--            $12=parameter_item_ids (text array, nullable)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
 -- Note: file_path and mime_type are NOT updated here - they're managed via video_generations table when video file is generated/uploaded
@@ -18,8 +19,7 @@ WITH updated_video AS (
         length_seconds = $3,
         active = $4,
         outline_agent_id = COALESCE($10::uuid, outline_agent_id),
-        question_agent_id = COALESCE($11::uuid, question_agent_id),
-        image_agent_id = COALESCE($12::uuid, image_agent_id),
+        image_agent_id = COALESCE($11::uuid, image_agent_id),
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::uuid as video_id, name
@@ -266,6 +266,27 @@ link_question_answers AS (
     FROM options_data od
     JOIN all_options ao ON ao.option_text = od.option_text AND ao.type::text = od.option_type
     WHERE od.is_correct = true
+),
+replace_video_parameters AS (
+    -- Delete all existing parameter links
+    DELETE FROM video_parameter_items 
+    WHERE video_id = $1::uuid
+),
+insert_video_parameters AS (
+    -- Insert new parameter links
+    INSERT INTO video_parameter_items (video_id, parameter_item_id, active, created_at, updated_at)
+    SELECT 
+        uv.video_id,
+        param_item_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM updated_video uv
+    CROSS JOIN UNNEST($12::text[]) as param_item_id
+    WHERE COALESCE(array_length($12::text[], 1), 0) > 0
+    ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 )
 SELECT video_id::uuid, name FROM updated_video
 

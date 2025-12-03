@@ -15,12 +15,10 @@ CREATE TABLE videos (
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   outline_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
-  question_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT,
   image_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT
 );
 
 CREATE INDEX ON videos (outline_agent_id);
-CREATE INDEX ON videos (question_agent_id);
 CREATE INDEX ON videos (image_agent_id);
 
 -- Outlines table (standalone, can exist independently)
@@ -158,4 +156,17 @@ CREATE TABLE video_images (
 CREATE INDEX ON video_images (video_id);
 CREATE INDEX ON video_images (image_id);
 CREATE INDEX ON video_images (video_id, active);
+
+-- Video → Parameter Items junction table (BCNF normalization)
+CREATE TABLE video_parameter_items (
+  video_id         UUID NOT NULL REFERENCES videos(id)       ON DELETE CASCADE,
+  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  active           BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, parameter_item_id)
+);
+
+CREATE INDEX ON video_parameter_items (video_id);
+CREATE INDEX ON video_parameter_items (parameter_item_id);
 

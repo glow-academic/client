@@ -37,7 +37,10 @@ CREATE TABLE parameters (
   active BOOLEAN     NOT NULL DEFAULT FALSE,
   practice_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
   document_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
-  persona_parameter BOOLEAN     NOT NULL DEFAULT FALSE
+  persona_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  policy_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  scenario_parameter BOOLEAN     NOT NULL DEFAULT FALSE,
+  video_parameter BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE parameter_items (

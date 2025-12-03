@@ -17,13 +17,15 @@ import asyncpg  # type: ignore
 from agents import (FunctionToolResult, RunContextWrapper, Runner,
                     ToolsToFinalOutputResult, gen_trace_id, trace)
 from agents.items import TResponseInputItem
-from app.main import get_db, outline_progress, outline_results
+from app.main import (get_db, outline_progress, outline_results,
+                      question_progress, question_results)
 from app.utils.agents.generic_agent import GenericAgent
 from app.utils.agents.tools.create_outline_tools import create_outline_tools
 from app.utils.debug_info import DebugContext
 from app.utils.debug_info import debug_info as debug_info_tool
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
+from app.utils.scenario import format_parameter_item_info
 from app.utils.sql_helper import load_sql
 from app.utils.video.format_policy_info import format_policy_info
 from app.utils.video.format_question_info import format_question_info
@@ -34,15 +36,54 @@ logger = get_logger(__name__)
 
 
 # Inline request/response schemas
+class ExistingQuestionOption(BaseModel):
+    """Question option in request for existing questions."""
+
+    option_text: str
+    type: str  # 'discrete' or 'freeform'
+    is_correct: bool
+
+
+class ExistingQuestion(BaseModel):
+    """Existing question in request."""
+
+    question_id: str | None = None
+    question_text: str
+    type: str  # 'choice' or 'frq'
+    allow_multiple: bool
+    times: list[int] = []
+    options: list[ExistingQuestionOption] = []
+
+
 class GenerateOutlineRequest(BaseModel):
     """Request to generate AI outline."""
 
     departmentId: str
     policyIds: list[str] | None = None
     questionIds: list[str] | None = None
+    parameterItemIds: list[str] | None = None  # Parameter items to inform outline generation
+    existingQuestions: list[ExistingQuestion] | None = None  # Existing questions to inform outline generation
     profileId: str | None = None
     videoId: str | None = None
     videoLengthSeconds: int | None = None
+    useQuestions: bool = True  # Whether to generate questions (default True for backward compatibility)
+
+
+class QuestionOption(BaseModel):
+    """Question option in response."""
+
+    option_text: str
+    type: str  # 'discrete' or 'freeform'
+    is_correct: bool
+
+
+class GeneratedQuestion(BaseModel):
+    """Generated question in response."""
+
+    question_text: str
+    type: str  # 'choice' or 'frq'
+    allow_multiple: bool
+    options: list[QuestionOption]
 
 
 class GenerateOutlineResponse(BaseModel):
@@ -54,6 +95,7 @@ class GenerateOutlineResponse(BaseModel):
     outline: str
     outline_id: str | None = None
     video_name: str | None = None
+    questions: list[GeneratedQuestion] | None = None
     question_timestamps: dict[str, list[int]] | None = None
 
 
@@ -79,6 +121,11 @@ async def generate_outline(
         question_ids = (
             [uuid.UUID(q) for q in request.questionIds] if request.questionIds else None
         )
+        parameter_item_ids = (
+            [uuid.UUID(p) for p in request.parameterItemIds]
+            if request.parameterItemIds
+            else None
+        )
         profile_id = uuid.UUID(request.profileId) if request.profileId else None
 
         # Filter out empty lists
@@ -86,15 +133,22 @@ async def generate_outline(
             policy_ids = None
         if question_ids and len(question_ids) == 0:
             question_ids = None
+        if parameter_item_ids and len(parameter_item_ids) == 0:
+            parameter_item_ids = None
 
-        # Generate outline
+        # Generate outline and questions
         # Clear previous results
         outline_results.clear()
         outline_progress.clear()
+        question_results.clear()
+        question_progress.clear()
 
         # Get all context data in a single optimized query using SQL file
         policy_ids_str = [str(p) for p in policy_ids] if policy_ids else []
         question_ids_str = [str(q) for q in question_ids] if question_ids else []
+        parameter_item_ids_str = (
+            [str(p) for p in parameter_item_ids] if parameter_item_ids else []
+        )
         video_id = uuid.UUID(request.videoId) if request.videoId else None
 
         sql = load_sql("sql/v3/agents/get_outline_run_context.sql")
@@ -103,6 +157,7 @@ async def generate_outline(
             str(department_id),
             policy_ids_str if policy_ids_str else None,
             question_ids_str if question_ids_str else None,
+            parameter_item_ids_str if parameter_item_ids_str else None,
             str(profile_id) if profile_id else None,
             str(video_id) if video_id else None,
         )
@@ -122,6 +177,11 @@ async def generate_outline(
             json.loads(context_row["questions"])
             if isinstance(context_row["questions"], str)
             else context_row["questions"]
+        )
+        parameter_items = (
+            json.loads(context_row["parameter_items"])
+            if isinstance(context_row["parameter_items"], str)
+            else context_row["parameter_items"]
         )
 
         # Use provided videoLengthSeconds or fall back to video length from DB or default to 4
@@ -162,37 +222,61 @@ async def generate_outline(
         else:
             policy_info = format_policy_info(context["policies"])
 
-        # Format question info if questions were provided
-        question_id_mapping: dict[str, str] = {}
-        if not questions or len(questions) == 0:
-            question_info = None
+        # Format parameter item info if parameter items were provided
+        parameter_item_info = None
+        if not parameter_item_ids or len(parameter_item_ids) == 0:
+            parameter_item_info = None
         else:
+            parameter_item_info = format_parameter_item_info(parameter_items)
+
+        # Format existing questions if provided to inform outline generation
+        question_info = None
+        question_id_mapping: dict[str, str] = {}
+        if request.existingQuestions and len(request.existingQuestions) > 0:
+            # Convert existing questions to format expected by format_question_info
+            existing_questions_formatted = [
+                {
+                    "id": q.question_id or f"temp-{idx}",
+                    "question_text": q.question_text,
+                    "type": q.type,
+                    "allow_multiple": q.allow_multiple,
+                }
+                for idx, q in enumerate(request.existingQuestions)
+            ]
             question_info, question_id_mapping = format_question_info(
-                context["questions"], 
-                context.get("video_length_seconds")
+                existing_questions_formatted, video_length_seconds
             )
 
         # Create outline generation tools
         group_id = None
-        outline_tools = create_outline_tools(group_id)
+        use_questions = request.useQuestions if hasattr(request, 'useQuestions') else True
+        outline_tools = create_outline_tools(group_id, include_questions=use_questions)
         outline_tools.append(debug_info_tool)
         logger.info(
-            f"Created {len(outline_tools)} outline tools (including debug_info)"
+            f"Created {len(outline_tools)} outline tools (including debug_info, use_questions={use_questions})"
         )
 
         # Create tool use behavior to check when all required tools are called
+        use_questions = request.useQuestions if hasattr(request, 'useQuestions') else True
+        
         def tool_use_behavior(
             tool_context: RunContextWrapper[Any],
             tool_results: list[FunctionToolResult],
         ) -> ToolsToFinalOutputResult:
-            required_tools = ["outline"]
-
-            completed_required = all(
-                outline_progress.get(tool, False) for tool in required_tools
-            )
+            if use_questions:
+                required_tools = ["outline", "multiple_choice", "free_response", "multi_select"]
+                completed_outline = outline_progress.get("outline", False)
+                completed_questions = all(
+                    question_progress.get(tool, False) for tool in ["multiple_choice", "free_response", "multi_select"]
+                )
+                completed_required = completed_outline and completed_questions
+            else:
+                required_tools = ["outline"]
+                completed_outline = outline_progress.get("outline", False)
+                completed_required = completed_outline
 
             logger.info(
-                f"Tool use check: required={required_tools}, completed={completed_required}, progress={outline_progress}"
+                f"Tool use check: use_questions={use_questions}, required={required_tools}, completed_outline={completed_outline}, completed_questions={completed_questions if use_questions else 'N/A'}, outline_progress={outline_progress}, question_progress={question_progress}"
             )
             return ToolsToFinalOutputResult(is_final_output=completed_required)
 
@@ -214,6 +298,7 @@ async def generate_outline(
 
         input_items: list[TResponseInputItem | None] = [
             policy_info,
+            parameter_item_info,
             question_info,
         ]
 
@@ -301,6 +386,58 @@ async def generate_outline(
         if not outline:
             raise ValueError("Outline generation failed - no outline content returned")
 
+        # Extract questions from question_results (only if useQuestions was True)
+        use_questions = request.useQuestions if hasattr(request, 'useQuestions') else True
+        questions_data: list[GeneratedQuestion] = []
+        
+        if use_questions:
+            multiple_choice = question_results.get("multiple_choice")
+            free_response = question_results.get("free_response")
+            multi_select = question_results.get("multi_select")
+
+            # Build question data structures
+            if multiple_choice:
+                questions_data.append(GeneratedQuestion(
+                    question_text=multiple_choice["question_text"],
+                    type=multiple_choice["type"],
+                    allow_multiple=multiple_choice["allow_multiple"],
+                    options=[
+                        QuestionOption(
+                            option_text=opt["option_text"],
+                            type=opt["type"],
+                            is_correct=opt["is_correct"],
+                        )
+                        for opt in multiple_choice["options"]
+                    ],
+                ))
+            if free_response:
+                questions_data.append(GeneratedQuestion(
+                    question_text=free_response["question_text"],
+                    type=free_response["type"],
+                    allow_multiple=free_response["allow_multiple"],
+                    options=[],
+                ))
+            if multi_select:
+                questions_data.append(GeneratedQuestion(
+                    question_text=multi_select["question_text"],
+                    type=multi_select["type"],
+                    allow_multiple=multi_select["allow_multiple"],
+                    options=[
+                        QuestionOption(
+                            option_text=opt["option_text"],
+                            type=opt["type"],
+                            is_correct=opt["is_correct"],
+                        )
+                        for opt in multi_select["options"]
+                    ],
+                ))
+
+            if len(questions_data) != 3:
+                raise ValueError(
+                    f"Expected 3 questions but got {len(questions_data)}. "
+                    "Please ensure all three question types are generated."
+                )
+
         outline_id: str | None = None
         
         # Update video name if video_name was set and videoId is provided
@@ -344,23 +481,11 @@ async def generate_outline(
                 logger.warning(f"Failed to save outline: {e}")
                 # Don't fail the request if outline saving fails, but log the error
 
-        # Convert simple number keys back to UUIDs if mapping exists (for both saving and response)
+        # Convert question IDs to simple numbers (1, 2, 3) for timestamps mapping
+        # The agent uses "1" for multiple choice, "2" for free response, "3" for multi-select
         converted_timestamps: dict[str, list[int]] | None = None
         if question_timestamps and isinstance(question_timestamps, dict):
-            converted_timestamps = {}
-            if question_id_mapping:
-                for key, timestamps in question_timestamps.items():
-                    # Check if key is a simple number (needs conversion) or already a UUID
-                    if key in question_id_mapping:
-                        # Convert simple number to UUID
-                        uuid_key = question_id_mapping[key]
-                        converted_timestamps[uuid_key] = timestamps
-                    else:
-                        # Already a UUID (backward compatibility), use as-is
-                        converted_timestamps[key] = timestamps
-            else:
-                # No mapping available, use as-is
-                converted_timestamps = question_timestamps
+            converted_timestamps = question_timestamps
 
         # Save question timestamps if videoId is provided and timestamps exist
         if request.videoId and converted_timestamps:
@@ -383,12 +508,13 @@ async def generate_outline(
         
         return GenerateOutlineResponse(
             success=True,
-            message="Outline generated successfully",
+            message="Outline and questions generated successfully" if use_questions else "Outline generated successfully",
             name=name,
             outline=outline,
             outline_id=outline_id,
             video_name=video_name,
-            question_timestamps=converted_timestamps,
+            questions=questions_data if questions_data else None,
+            question_timestamps=converted_timestamps if use_questions else None,
         )
     except HTTPException:
         raise

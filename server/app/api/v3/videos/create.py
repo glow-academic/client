@@ -43,6 +43,7 @@ class CreateVideoRequest(BaseModel):
     image_ids: list[str] | None = None
     active: bool = True
     questions: list[QuestionItem] = []  # Questions with times and options
+    parameter_item_ids: list[str] | None = None  # Parameter items for video
 
 
 class CreateVideoResponse(BaseModel):
@@ -80,6 +81,7 @@ async def create_video(
         policy_ids = request.policy_ids or []
         image_ids = request.image_ids or []
         questions = request.questions or []
+        parameter_item_ids = request.parameter_item_ids or []
 
         # Prepare questions JSON for SQL
         questions_json = json.dumps([q.model_dump() for q in questions])
@@ -95,6 +97,7 @@ async def create_video(
             policy_ids if policy_ids else None,
             image_ids if image_ids else None,
             questions_json,
+            parameter_item_ids if parameter_item_ids else None,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

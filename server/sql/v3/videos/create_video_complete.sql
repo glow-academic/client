@@ -4,7 +4,8 @@
 --            $5=outline_ids (text array, nullable),
 --            $6=policy_ids (text array, nullable),
 --            $7=image_ids (text array, nullable),
---            $8=questions_json (JSONB string with questions array)
+--            $8=questions_json (JSONB string with questions array),
+--            $9=parameter_item_ids (text array, nullable)
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Note: Video file is created separately via video_generations table when file is generated/uploaded
 
@@ -208,6 +209,22 @@ link_question_answers AS (
     JOIN create_options co ON co.option_text = od.option_text AND co.type::text = od.option_type
     WHERE od.is_correct = true
     ON CONFLICT (question_id, option_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+link_video_parameter_items AS (
+    -- Link parameter items to video if provided
+    INSERT INTO video_parameter_items (video_id, parameter_item_id, active, created_at, updated_at)
+    SELECT 
+        nv.video_id,
+        param_item_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_video nv
+    CROSS JOIN UNNEST($9::text[]) as param_item_id
+    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
+    ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

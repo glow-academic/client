@@ -116,7 +116,7 @@ objectives_history_data AS (
     FROM objectives_data o
 ),
 valid_agents AS (
-    -- Get agents with roles 'outline', 'question', or 'image'
+    -- Get agents with roles 'outline' or 'image'
     -- Filter by department access: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         COALESCE(
@@ -134,7 +134,7 @@ valid_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true 
-    AND a.role IN ('outline', 'question', 'image')
+    AND a.role IN ('outline', 'image')
     AND (
         EXISTS (
             SELECT 1 FROM user_departments ud
@@ -142,6 +142,71 @@ valid_agents AS (
         )
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
+),
+-- Video parameters (filtered by video_parameter = true OR policy_parameter = true)
+video_parameter_data AS (
+    SELECT DISTINCT 
+        p.id,
+        p.name,
+        COALESCE(p.description, '') as description,
+        p.numerical,
+        p.policy_parameter,
+        p.video_parameter
+    FROM parameters p
+    JOIN parameter_items pi ON pi.parameter_id = p.id
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
+    GROUP BY p.id, p.name, p.description, p.numerical, p.policy_parameter, p.video_parameter
+    HAVING 
+        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
+                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+),
+video_parameter_mapping_data AS (
+    SELECT 
+        COALESCE(jsonb_object_agg(
+            p.id::text,
+            jsonb_build_object(
+                'name', p.name, 
+                'description', p.description, 
+                'numerical', p.numerical,
+                'policy_parameter', p.policy_parameter,
+                'video_parameter', p.video_parameter
+            )
+        ), '{}'::jsonb) as parameter_mapping
+    FROM video_parameter_data p
+),
+video_parameter_items_data AS (
+    SELECT 
+        pi.id,
+        pi.name,
+        COALESCE(pi.description, '') as description,
+        pi.parameter_id,
+        p.name as parameter_name,
+        pi.value
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id
+    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
+    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
+    HAVING 
+        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+),
+video_parameter_item_mapping_data AS (
+    SELECT 
+        COALESCE(jsonb_object_agg(
+            pi.id::text,
+            jsonb_build_object(
+                'name', pi.name,
+                'description', pi.description,
+                'parameter_id', pi.parameter_id::text,
+                'parameter_name', pi.parameter_name,
+                'value', pi.value
+            )
+        ), '{}'::jsonb) as parameter_item_mapping
+    FROM video_parameter_items_data pi
 )
 SELECT 
     COALESCE((SELECT department_ids FROM department_ids_array), ARRAY[]::text[]) as department_ids,
@@ -153,5 +218,7 @@ SELECT
     (SELECT role FROM user_profile) as user_role,
     (SELECT primary_department_id::text FROM user_profile) as primary_department_id,
     COALESCE((SELECT agent_mapping FROM valid_agents), '{}'::jsonb) as agent_mapping,
-    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids
+    COALESCE((SELECT agent_ids FROM valid_agents), ARRAY[]::text[]) as valid_agent_ids,
+    COALESCE((SELECT parameter_mapping FROM video_parameter_mapping_data), '{}'::jsonb) as parameter_mapping,
+    COALESCE((SELECT parameter_item_mapping FROM video_parameter_item_mapping_data), '{}'::jsonb) as parameter_item_mapping
 

@@ -1476,26 +1476,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/videos/generate-questions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate Questions
-         * @description Generate AI questions (multiple choice, free response, multi-select).
-         */
-        post: operations["generate_questions_api_v3_videos_generate_questions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/videos/generate-outline": {
         parameters: {
             query?: never;
@@ -6267,6 +6247,8 @@ export interface components {
              * @default []
              */
             questions: components["schemas"]["app__api__v3__videos__create__QuestionItem"][];
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
         };
         /**
          * CreateVideoResponse
@@ -7506,6 +7488,42 @@ export interface components {
             }[];
         };
         /**
+         * ExistingQuestion
+         * @description Existing question in request.
+         */
+        ExistingQuestion: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Question Text */
+            question_text: string;
+            /** Type */
+            type: string;
+            /** Allow Multiple */
+            allow_multiple: boolean;
+            /**
+             * Times
+             * @default []
+             */
+            times: number[];
+            /**
+             * Options
+             * @default []
+             */
+            options: components["schemas"]["ExistingQuestionOption"][];
+        };
+        /**
+         * ExistingQuestionOption
+         * @description Question option in request for existing questions.
+         */
+        ExistingQuestionOption: {
+            /** Option Text */
+            option_text: string;
+            /** Type */
+            type: string;
+            /** Is Correct */
+            is_correct: boolean;
+        };
+        /**
          * ExportRequest
          * @description Request to export reports data.
          */
@@ -7646,12 +7664,21 @@ export interface components {
             policyIds?: string[] | null;
             /** Questionids */
             questionIds?: string[] | null;
+            /** Parameteritemids */
+            parameterItemIds?: string[] | null;
+            /** Existingquestions */
+            existingQuestions?: components["schemas"]["ExistingQuestion"][] | null;
             /** Profileid */
             profileId?: string | null;
             /** Videoid */
             videoId?: string | null;
             /** Videolengthseconds */
             videoLengthSeconds?: number | null;
+            /**
+             * Usequestions
+             * @default true
+             */
+            useQuestions: boolean;
         };
         /**
          * GenerateOutlineResponse
@@ -7670,36 +7697,12 @@ export interface components {
             outline_id?: string | null;
             /** Video Name */
             video_name?: string | null;
+            /** Questions */
+            questions?: components["schemas"]["GeneratedQuestion"][] | null;
             /** Question Timestamps */
             question_timestamps?: {
                 [key: string]: number[];
             } | null;
-        };
-        /**
-         * GenerateQuestionsRequest
-         * @description Request to generate AI questions.
-         */
-        GenerateQuestionsRequest: {
-            /** Departmentid */
-            departmentId: string;
-            /** Policyids */
-            policyIds?: string[] | null;
-            /** Profileid */
-            profileId?: string | null;
-            /** Videoid */
-            videoId?: string | null;
-        };
-        /**
-         * GenerateQuestionsResponse
-         * @description Response from AI question generation.
-         */
-        GenerateQuestionsResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Questions */
-            questions: components["schemas"]["GeneratedQuestion"][];
         };
         /**
          * GenerateScenarioAIRequest
@@ -7797,8 +7800,6 @@ export interface components {
          * @description Generated question in response.
          */
         GeneratedQuestion: {
-            /** Question Id */
-            question_id: string;
             /** Question Text */
             question_text: string;
             /** Type */
@@ -12767,10 +12768,10 @@ export interface components {
             questions: components["schemas"]["app__api__v3__videos__update__QuestionItem"][];
             /** Outline Agent Id */
             outline_agent_id?: string | null;
-            /** Question Agent Id */
-            question_agent_id?: string | null;
             /** Image Agent Id */
             image_agent_id?: string | null;
+            /** Parameter Item Ids */
+            parameter_item_ids?: string[] | null;
         };
         /**
          * UpdateVideoResponse
@@ -15134,8 +15135,6 @@ export interface components {
             questions: components["schemas"]["QuestionResponse"][];
             /** Outline Agent Id */
             outline_agent_id: string;
-            /** Question Agent Id */
-            question_agent_id: string;
             /** Image Agent Id */
             image_agent_id: string;
             /** Agent Mapping */
@@ -15146,6 +15145,20 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
         };
         /**
          * ProblemStatementInfo
@@ -15232,8 +15245,6 @@ export interface components {
             questions: components["schemas"]["QuestionResponse"][];
             /** Outline Agent Id */
             outline_agent_id: string;
-            /** Question Agent Id */
-            question_agent_id: string;
             /** Image Agent Id */
             image_agent_id: string;
             /** Agent Mapping */
@@ -15244,6 +15255,20 @@ export interface components {
             };
             /** Valid Agent Ids */
             valid_agent_ids: string[];
+            /** Parameter Mapping */
+            parameter_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Parameter Item Mapping */
+            parameter_item_mapping: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Parameter Item Ids */
+            parameter_item_ids: string[];
         };
         /**
          * QuestionItem
@@ -17487,39 +17512,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RandomizeVideoResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    generate_questions_api_v3_videos_generate_questions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GenerateQuestionsRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerateQuestionsResponse"];
                 };
             };
             /** @description Validation Error */

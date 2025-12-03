@@ -7,6 +7,7 @@
 "use client";
 import {
   Check,
+  HelpCircle,
   Image,
   Loader2,
   Plus,
@@ -32,7 +33,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,6 +68,7 @@ import {
   PolicyMappingItem,
   PolicyPicker,
 } from "@/components/common/forms/PolicyPicker";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -81,8 +82,6 @@ import type {
   CreateVideoOut,
   GenerateOutlineIn,
   GenerateOutlineOut,
-  GenerateQuestionsIn,
-  GenerateQuestionsOut,
   GenerateVideoIn,
   GenerateVideoOut,
   UpdateVideoIn,
@@ -95,6 +94,29 @@ import type { components } from "@/lib/api/schema";
 // Strong types from API schema
 type AgentMappingItem = components["schemas"]["AgentMappingItem"];
 type AgentMapping = Record<string, AgentMappingItem>;
+
+// Parameter types (compatible with ParameterSelector)
+type ParameterMappingItem = {
+  name: string;
+  description: string;
+  numerical: boolean;
+  policy_parameter?: boolean;
+  video_parameter?: boolean;
+  scenario_parameter?: boolean;
+  document_parameter: boolean; // Required for ParameterSelector compatibility
+  persona_parameter: boolean; // Required for ParameterSelector compatibility
+};
+
+type ParameterItemMappingItem = {
+  name: string;
+  description: string;
+  parameter_id: string;
+  parameter_name: string;
+  value: string; // ParameterSelector expects string
+};
+
+type ParameterMapping = Record<string, ParameterMappingItem>;
+type ParameterItemMapping = Record<string, ParameterItemMappingItem>;
 
 // Local question type for editing (IDs optional for new questions)
 // Types match the API response structure from VideoDetailOut
@@ -123,9 +145,6 @@ export interface VideoProps {
   randomizeVideoAction?: (
     input: RandomizeVideoIn
   ) => Promise<RandomizeVideoOut>;
-  generateQuestionsAction?: (
-    input: GenerateQuestionsIn
-  ) => Promise<GenerateQuestionsOut>;
   generateOutlineAction?: (
     input: GenerateOutlineIn
   ) => Promise<GenerateOutlineOut>;
@@ -170,7 +189,6 @@ export default function Video({
   createVideoAction,
   updateVideoAction,
   randomizeVideoAction,
-  generateQuestionsAction,
   generateOutlineAction,
   generateVideoAction,
 }: VideoProps) {
@@ -276,10 +294,13 @@ export default function Video({
     if (imageIds.length > 0) {
       createPayload.image_ids = imageIds;
     }
-    // Note: outline_agent_id and question_agent_id are not supported in create endpoint
-    // They will be set via update after creation if needed
+    if (currentParameterItemIds.length > 0) {
+      (createPayload as any).parameter_item_ids = currentParameterItemIds;
+    }
+    // Note: outline_agent_id is not supported in create endpoint
+    // It will be set via update after creation if needed
 
-    return createPayload;
+    return createPayload as any;
   };
 
   const handleRandomizeVideo = async (targets: string[], section: string) => {
@@ -325,71 +346,6 @@ export default function Video({
     }
   };
 
-  const handleGenerateQuestions = async () => {
-    if (!generateQuestionsAction || !effectiveProfile?.id) {
-      toast.error("Question generation not available");
-      return;
-    }
-
-    if (selectedPolicyIds.length === 0) {
-      toast.error("Please select at least one policy");
-      return;
-    }
-
-    // Use primary department ID if no departments selected (all departments)
-    // Otherwise use first selected department
-    const departmentId =
-      formData.departmentIds && formData.departmentIds.length > 0
-        ? formData.departmentIds[0]!
-        : effectiveProfile?.primaryDepartmentId || "";
-
-    if (!departmentId) {
-      toast.error("Please select at least one department");
-      return;
-    }
-
-    setIsGeneratingQuestions(true);
-    try {
-      const body: GenerateQuestionsIn["body"] = {
-        departmentId,
-        policyIds: selectedPolicyIds,
-        profileId: effectiveProfile.id,
-      };
-
-      if (isEditMode && videoId) {
-        body.videoId = videoId;
-      }
-
-      const result = await generateQuestionsAction({ body });
-
-      if (result.success && result.questions) {
-        // Convert generated questions to Question format
-        // Include question_id from the API response
-        const convertedQuestions: Question[] = result.questions.map((q) => ({
-          question_id: q.question_id, // Include the ID from the database
-          question_text: q.question_text,
-          type: q.type as "choice" | "frq",
-          allow_multiple: q.allow_multiple,
-          times: [], // No times set initially
-          options: q.options.map((opt) => ({
-            option_text: opt.option_text,
-            type: opt.type as "discrete" | "freeform",
-            is_correct: opt.is_correct,
-          })),
-        }));
-
-        setQuestions(convertedQuestions);
-        toast.success("Questions generated successfully!");
-      }
-    } catch (error) {
-      toast.error(
-        `Failed to generate questions: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setIsGeneratingQuestions(false);
-    }
-  };
-
   const handleGenerateOutline = async () => {
     if (!generateOutlineAction || !effectiveProfile?.id) {
       toast.error("Outline generation not available");
@@ -397,12 +353,7 @@ export default function Video({
     }
 
     if (selectedPolicyIds.length === 0) {
-      toast.error("Please select at least one policy");
-      return;
-    }
-
-    if (questions.length === 0) {
-      toast.error("Please generate or add at least one question");
+      toast.error("Please select a policy");
       return;
     }
 
@@ -420,16 +371,34 @@ export default function Video({
 
     setIsGeneratingOutline(true);
     try {
-      const questionIds = questions
-        .map((q) => q.question_id)
-        .filter((id): id is string => !!id);
-
       const body: GenerateOutlineIn["body"] = {
         departmentId,
         policyIds: selectedPolicyIds,
-        questionIds: questionIds.length > 0 ? questionIds : null,
+        questionIds: null, // Questions are now generated by outline agent if useQuestions is true
+        // @ts-expect-error - parameterItemIds will be added to schema in next regeneration
+        parameterItemIds:
+          currentParameterItemIds.length > 0
+            ? currentParameterItemIds
+            : undefined,
         profileId: effectiveProfile.id,
         videoLengthSeconds: outlineVideoLength,
+        useQuestions: useQuestions,
+        // @ts-expect-error - existingQuestions will be added to schema in next regeneration
+        existingQuestions:
+          questions.length > 0
+            ? questions.map((q) => ({
+                question_id: q.question_id || undefined,
+                question_text: q.question_text,
+                type: q.type,
+                allow_multiple: q.allow_multiple,
+                times: q.times,
+                options: q.options.map((opt) => ({
+                  option_text: opt.option_text,
+                  type: opt.type,
+                  is_correct: opt.is_correct,
+                })),
+              }))
+            : undefined,
       };
 
       if (isEditMode && videoId) {
@@ -448,13 +417,36 @@ export default function Video({
         if (result.video_name) {
           handleInputChange("name", result.video_name);
         }
-        // Update question timestamps directly from response (like questions generation)
-        if (result.question_timestamps && questions.length > 0) {
+        // Update questions from response (only if useQuestions was true)
+        if (useQuestions && result.questions && result.questions.length > 0) {
+          const convertedQuestions: Question[] = result.questions.map(
+            (q, _index) => ({
+              question_text: q.question_text,
+              type: q.type as "choice" | "frq",
+              allow_multiple: q.allow_multiple,
+              times: [], // Will be set from question_timestamps
+              options: q.options.map((opt) => ({
+                option_text: opt.option_text,
+                type: opt.type as "discrete" | "freeform",
+                is_correct: opt.is_correct,
+              })),
+            })
+          );
+          setQuestions(convertedQuestions);
+        }
+        // Update question timestamps directly from response (only if useQuestions was true)
+        if (useQuestions && result.question_timestamps && result.questions) {
+          // Map question IDs (1, 2, 3) to questions array indices
+          const questionIdToIndex: Record<string, number> = {};
+          result.questions.forEach((_, _index) => {
+            questionIdToIndex[String(_index + 1)] = _index;
+          });
           setQuestions((prevQuestions) =>
-            prevQuestions.map((q) => {
-              // Find timestamps for this question ID
+            prevQuestions.map((q, index) => {
+              // Find timestamps for this question index (1-based in response)
+              const questionKey = String(index + 1);
               const timestamps =
-                result.question_timestamps?.[q.question_id || ""] || [];
+                result.question_timestamps?.[questionKey] || [];
               return {
                 ...q,
                 times: timestamps,
@@ -463,7 +455,11 @@ export default function Video({
           );
         }
 
-        toast.success("Outline generated successfully!");
+        toast.success(
+          useQuestions
+            ? "Outline and questions generated successfully!"
+            : "Outline generated successfully!"
+        );
       }
     } catch (error) {
       toast.error(
@@ -524,8 +520,8 @@ export default function Video({
   const handleResetSection = (section: string) => {
     if (section === "policies") {
       setSelectedPolicyIds([]);
-    } else if (section === "questions") {
-      setQuestions([]);
+    } else if (section === "parameters") {
+      setCurrentParameterItemIds([]);
     } else if (section === "outline") {
       setSelectedOutlineId(null);
       setOutlineText("");
@@ -778,7 +774,6 @@ export default function Video({
     problemStatement: string;
     active: boolean;
     outlineAgentId: string | null;
-    questionAgentId: string | null;
   };
 
   // Outline state
@@ -788,6 +783,7 @@ export default function Video({
   const [outlineText, setOutlineText] = useState<string>("");
   const [outlineVideoLength, setOutlineVideoLength] = useState<number>(4);
   const [useImage, setUseImage] = useState(false);
+  const [useQuestions, setUseQuestions] = useState(true);
   const [image, setImage] = useState<{
     id: string;
     name: string;
@@ -799,12 +795,16 @@ export default function Video({
   // Policies state
   const [selectedPolicyIds, setSelectedPolicyIds] = useState<string[]>([]);
 
+  // Parameter state
+  const [currentParameterItemIds, setCurrentParameterItemIds] = useState<
+    string[]
+  >([]);
+
   // Video generation state
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
     null
   );
   const [uploadedVideoFile, setUploadedVideoFile] = useState<File | null>(null);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -820,7 +820,6 @@ export default function Video({
       problemStatement: "",
       active: true,
       outlineAgentId: null,
-      questionAgentId: null,
     }),
     [defaultDepartmentIds]
   );
@@ -853,6 +852,138 @@ export default function Video({
     >;
   }, [videoData?.policy_mapping]);
 
+  // Parameter mapping (filtered by video_parameter = true OR policy_parameter = true)
+  const parameterMapping = useMemo((): ParameterMapping => {
+    const mapping = ((videoData as any)?.parameter_mapping || {}) as Record<
+      string,
+      any
+    >;
+    // Filter to include video_parameter = true OR policy_parameter = true and convert to ParameterMapping format
+    const filtered = Object.fromEntries(
+      Object.entries(mapping).filter(([, param]) => {
+        return (
+          param?.video_parameter === true || param?.policy_parameter === true
+        );
+      })
+    );
+    // Convert to ParameterMapping format with all required fields
+    return Object.fromEntries(
+      Object.entries(filtered).map(([key, param]: [string, any]) => [
+        key,
+        {
+          name: param?.name || "",
+          description: param?.description || "",
+          numerical: param?.numerical || false,
+          policy_parameter: param?.policy_parameter || false,
+          video_parameter: param?.video_parameter || false,
+          scenario_parameter: param?.scenario_parameter || false,
+          document_parameter: false, // Not used for videos
+          persona_parameter: false, // Not used for videos
+        },
+      ])
+    ) as ParameterMapping;
+  }, [(videoData as any)?.parameter_mapping]);
+
+  // Parameter item mapping
+  const parameterItemMapping = useMemo((): ParameterItemMapping => {
+    const mapping = ((videoData as any)?.parameter_item_mapping ||
+      {}) as Record<string, any>;
+    // Convert to ParameterItemMapping format with proper value type (must be string for ParameterSelector)
+    return Object.fromEntries(
+      Object.entries(mapping).map(([key, item]: [string, any]) => [
+        key,
+        {
+          name: item?.name || "",
+          description: item?.description || "",
+          parameter_id: item?.parameter_id || "",
+          parameter_name: item?.parameter_name || "",
+          value: item?.value !== undefined ? String(item.value) : "",
+        },
+      ])
+    ) as ParameterItemMapping;
+  }, [(videoData as any)?.parameter_item_mapping]);
+
+  // Filter parameters by policy_parameter for display next to policies
+  const policyParameterIds = useMemo(() => {
+    return Object.keys(parameterMapping).filter(
+      (paramId) => parameterMapping[paramId]?.policy_parameter === true
+    );
+  }, [parameterMapping]);
+
+  const generalVideoParameterIds = useMemo(() => {
+    return Object.keys(parameterMapping).filter(
+      (paramId) => parameterMapping[paramId]?.policy_parameter !== true
+    );
+  }, [parameterMapping]);
+
+  // Filter parameter item IDs by parameter type
+  const policyParameterItemIds = useMemo(() => {
+    return currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return policyParameterIds.includes(paramId);
+    });
+  }, [currentParameterItemIds, parameterItemMapping, policyParameterIds]);
+
+  const generalVideoParameterItemIds = useMemo(() => {
+    return currentParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return generalVideoParameterIds.includes(paramId);
+    });
+  }, [currentParameterItemIds, parameterItemMapping, generalVideoParameterIds]);
+
+  // Filter valid parameter item IDs by parameter type
+  const validParameterItemIds = useMemo(() => {
+    // Get all parameter item IDs from mapping that belong to video parameters
+    const allVideoParamItemIds = Object.keys(parameterItemMapping).filter(
+      (itemId) => {
+        const item = parameterItemMapping[itemId];
+        if (!item) return false;
+        const paramId = item.parameter_id;
+        return Object.keys(parameterMapping).includes(paramId);
+      }
+    );
+    return allVideoParamItemIds;
+  }, [parameterItemMapping, parameterMapping]);
+
+  const validPolicyParameterItemIds = useMemo(() => {
+    return validParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return policyParameterIds.includes(paramId);
+    });
+  }, [validParameterItemIds, parameterItemMapping, policyParameterIds]);
+
+  const validGeneralVideoParameterItemIds = useMemo(() => {
+    return validParameterItemIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      if (!item) return false;
+      const paramId = item.parameter_id;
+      return generalVideoParameterIds.includes(paramId);
+    });
+  }, [validParameterItemIds, parameterItemMapping, generalVideoParameterIds]);
+
+  // Build parameter mappings filtered by type
+  const policyParameterMapping = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(parameterMapping).filter(([paramId]) =>
+        policyParameterIds.includes(paramId)
+      )
+    );
+  }, [parameterMapping, policyParameterIds]);
+
+  const generalVideoParameterMapping = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(parameterMapping).filter(([paramId]) =>
+        generalVideoParameterIds.includes(paramId)
+      )
+    );
+  }, [parameterMapping, generalVideoParameterIds]);
+
   // Outline mapping (for version history) - only exists in VideoDetailOut, not VideoNewOut
   const outlineMapping = useMemo(() => {
     if (isEditMode && videoDetail) {
@@ -874,8 +1005,12 @@ export default function Video({
         problemStatement: "", // Not used anymore, kept for form compatibility
         active: videoData.active ?? true,
         outlineAgentId: videoData.outline_agent_id || null,
-        questionAgentId: videoData.question_agent_id || null,
       });
+
+      // Load parameter items
+      if ((videoData as any)?.parameter_item_ids) {
+        setCurrentParameterItemIds((videoData as any).parameter_item_ids);
+      }
 
       // Initialize outline video length from video data
       setOutlineVideoLength(videoData.length_seconds || 4);
@@ -983,21 +1118,11 @@ export default function Video({
       return agent?.["roles"]?.includes("outline");
     });
 
-    // Find first available question agent
-    const questionAgentIds = videoData.valid_agent_ids.filter((id) => {
-      const agent = agentMapping[id];
-      return agent?.["roles"]?.includes("question");
-    });
-
     // Only update if we have agents and they're not already set
     const updates: Partial<FormData> = {};
 
     if (outlineAgentIds.length > 0 && !formData.outlineAgentId) {
       updates.outlineAgentId = outlineAgentIds[0]!;
-    }
-
-    if (questionAgentIds.length > 0 && !formData.questionAgentId) {
-      updates.questionAgentId = questionAgentIds[0]!;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -1008,7 +1133,6 @@ export default function Video({
     agentMapping,
     isEditMode,
     formData.outlineAgentId,
-    formData.questionAgentId,
   ]);
 
   const handleInputChange = <K extends keyof FormData>(
@@ -1098,11 +1222,11 @@ export default function Video({
         if (formData.outlineAgentId) {
           updatePayload.outline_agent_id = formData.outlineAgentId;
         }
-        if (formData.questionAgentId) {
-          updatePayload.question_agent_id = formData.questionAgentId;
+        if (currentParameterItemIds.length > 0) {
+          (updatePayload as any).parameter_item_ids = currentParameterItemIds;
         }
 
-        await handleUpdateVideo(updatePayload);
+        await handleUpdateVideo(updatePayload as any);
         toast.success("Video updated successfully!");
       } else {
         // CREATE mode - use helper function
@@ -1139,16 +1263,16 @@ export default function Video({
       case "policies":
         // Can start immediately, doesn't depend on name
         return selectedPolicyIds.length > 0 ? "completed" : "active";
-      case "questions":
-        // Active if policies are selected (doesn't depend on name)
+      case "parameters":
+        // Active when policies are selected, completed when parameter items are selected
         return selectedPolicyIds.length === 0
           ? "pending"
-          : questions.length > 0
+          : currentParameterItemIds.length > 0
             ? "completed"
             : "active";
       case "outline":
-        // Active if questions exist (doesn't depend on name/policies)
-        return questions.length === 0
+        // Active if policies are selected (questions are generated with outline)
+        return selectedPolicyIds.length === 0
           ? "pending"
           : selectedOutlineId || outlineText.trim()
             ? "completed"
@@ -1181,15 +1305,16 @@ export default function Video({
       status: getStepStatus("policies"),
     },
     {
-      id: "questions",
-      title: "Questions",
-      description: "Generate or add interactive questions",
-      status: getStepStatus("questions"),
+      id: "parameters",
+      title: "Parameters",
+      description: "Configure video parameters",
+      status: getStepStatus("parameters"),
     },
     {
       id: "outline",
       title: "Outline",
-      description: "Generate video outline from policies and questions",
+      description:
+        "Generate video outline from policies (questions are generated automatically)",
       status: getStepStatus("outline"),
     },
     {
@@ -1518,80 +1643,35 @@ export default function Video({
                 const agent = agentMapping[id];
                 return agent?.["roles"]?.includes("outline");
               }) || [];
-            const questionAgentIds =
-              videoData?.valid_agent_ids?.filter((id) => {
-                const agent = agentMapping[id];
-                return agent?.["roles"]?.includes("question");
-              }) || [];
 
-            // Only show agent pickers if there's more than one option
+            // Only show agent picker if there's more than one option
             const showOutlinePicker = outlineAgentIds.length > 1;
-            const showQuestionPicker = questionAgentIds.length > 1;
 
-            // Don't render the section at all if both pickers are hidden
-            if (!showOutlinePicker && !showQuestionPicker) {
+            if (!showOutlinePicker) {
               return null;
             }
 
             return (
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                {/* Outline Agent */}
-                {showOutlinePicker && (
-                  <div className="space-y-2">
-                    <Label htmlFor="outlineAgentId">Outline Agent</Label>
-                    {formData?.outlineAgentId !== undefined ? (
-                      <AgentPicker
-                        mapping={
-                          agentMapping as Record<string, AgentMappingItem>
-                        }
-                        validIds={outlineAgentIds}
-                        selectedIds={
-                          formData?.outlineAgentId
-                            ? [formData.outlineAgentId]
-                            : []
-                        }
-                        onSelect={(ids) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            outlineAgentId: ids[0] || null,
-                          }))
-                        }
-                        placeholder="Select outline agent"
-                        disabled={isReadonly}
-                        multiSelect={false}
-                      />
-                    ) : null}
-                  </div>
-                )}
-
-                {/* Question Agent */}
-                {showQuestionPicker && (
-                  <div className="space-y-2">
-                    <Label htmlFor="questionAgentId">Question Agent</Label>
-                    {formData?.questionAgentId !== undefined ? (
-                      <AgentPicker
-                        mapping={
-                          agentMapping as Record<string, AgentMappingItem>
-                        }
-                        validIds={questionAgentIds}
-                        selectedIds={
-                          formData?.questionAgentId
-                            ? [formData.questionAgentId]
-                            : []
-                        }
-                        onSelect={(ids) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            questionAgentId: ids[0] || null,
-                          }))
-                        }
-                        placeholder="Select question agent"
-                        disabled={isReadonly}
-                        multiSelect={false}
-                      />
-                    ) : null}
-                  </div>
-                )}
+              <div className="space-y-2">
+                <Label htmlFor="outlineAgentId">Outline Agent</Label>
+                {formData?.outlineAgentId !== undefined ? (
+                  <AgentPicker
+                    mapping={agentMapping as Record<string, AgentMappingItem>}
+                    validIds={outlineAgentIds}
+                    selectedIds={
+                      formData?.outlineAgentId ? [formData.outlineAgentId] : []
+                    }
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        outlineAgentId: ids[0] || null,
+                      }))
+                    }
+                    placeholder="Select outline agent"
+                    disabled={isReadonly}
+                    multiSelect={false}
+                  />
+                ) : null}
               </div>
             );
           })()}
@@ -1687,26 +1767,60 @@ export default function Video({
             </Tooltip>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <PolicyPicker
             mapping={policyMapping}
             validIds={videoData?.valid_policy_ids || []}
             selectedIds={selectedPolicyIds}
-            onSelect={setSelectedPolicyIds}
+            onSelect={(ids) => {
+              // Limit to 1 policy (like Scenario.tsx limits documents)
+              const limitedIds = ids.slice(0, 1);
+              setSelectedPolicyIds(limitedIds);
+            }}
             multiSelect={true}
             label="Policies"
-            placeholder="Select policies..."
-            description="Choose policies that will be available for this video."
+            placeholder="Select a policy..."
+            description="Choose a policy that will be available for this video."
             disabled={isSubmitting}
             readonly={isReadonly}
           />
+          {/* Policy Parameters - co-located with policies section */}
+          {Object.keys(policyParameterMapping).length > 0 && (
+            <div className="pt-2">
+              <ParameterSelector
+                parameterMapping={policyParameterMapping}
+                parameterItemMapping={parameterItemMapping}
+                validParameterItemIds={validPolicyParameterItemIds}
+                selectedParameterItemIds={policyParameterItemIds}
+                onParameterItemIdsChange={(newIds) => {
+                  // Remove old policy parameter items
+                  const nonPolicyParamIds = currentParameterItemIds.filter(
+                    (itemId) => {
+                      const item = parameterItemMapping[itemId];
+                      if (!item) return true;
+                      const paramId = item.parameter_id;
+                      return !policyParameterIds.includes(paramId);
+                    }
+                  );
+                  // Combine with new policy parameter items
+                  const updatedParameterItemIds = [
+                    ...nonPolicyParamIds,
+                    ...newIds,
+                  ];
+                  setCurrentParameterItemIds(updatedParameterItemIds);
+                }}
+                disabled={isReadonly}
+                maxItemsPerParameter={1}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Step 3: Questions */}
+      {/* Step 3: Parameters */}
       <Card
-        className={`transition-all ${!isEditMode && getStepStatus("questions") === "active" ? "ring-2 ring-primary" : ""} ${
-          !isEditMode && getStepStatus("questions") === "pending"
+        className={`transition-all ${!isEditMode && getStepStatus("parameters") === "active" ? "ring-2 ring-primary" : ""} ${
+          !isEditMode && getStepStatus("parameters") === "pending"
             ? "opacity-50"
             : ""
         }`}
@@ -1715,14 +1829,14 @@ export default function Video({
           <div className="flex items-center space-x-3">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                getStepStatus("questions") === "completed"
+                getStepStatus("parameters") === "completed"
                   ? "bg-green-500 text-white"
-                  : getStepStatus("questions") === "active"
+                  : getStepStatus("parameters") === "active"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"
               }`}
             >
-              {getStepStatus("questions") === "completed" ? (
+              {getStepStatus("parameters") === "completed" ? (
                 <Check className="w-4 h-4" />
               ) : (
                 "3"
@@ -1734,28 +1848,13 @@ export default function Video({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleGenerateQuestions}
-              disabled={isSubmitting || isGeneratingQuestions || isReadonly}
-            >
-              {isGeneratingQuestions ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                "Generate"
-              )}
-            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => {
-                    setQuestions([]);
+                    setCurrentParameterItemIds([]);
                   }}
                   disabled={isReadonly}
                 >
@@ -1766,131 +1865,38 @@ export default function Video({
             </Tooltip>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              {questions.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    No questions added yet. Generate questions or add them
-                    manually.
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openMCQModal()}
-                      disabled={isReadonly}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add MCQ Question
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openFRQModal()}
-                      disabled={isReadonly}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add FRQ Question
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {questions.map((question, index) => (
-                    <div
-                      key={question.question_id || index}
-                      className="border rounded-lg p-4 space-y-2"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            {question.allow_multiple && (
-                              <Badge variant="secondary">Multiple</Badge>
-                            )}
-                          </div>
-                          <p className="font-medium">
-                            {question.question_text}
-                          </p>
-                          {question.type === "choice" &&
-                            question.options.length > 0 && (
-                              <div className="mt-2 space-y-1">
-                                {question.options.map((opt, optIdx) => (
-                                  <div
-                                    key={optIdx}
-                                    className="flex items-center gap-2 text-sm"
-                                  >
-                                    {opt.is_correct && (
-                                      <Check className="h-4 w-4 text-green-600" />
-                                    )}
-                                    <span
-                                      className={
-                                        opt.is_correct ? "font-semibold" : ""
-                                      }
-                                    >
-                                      {opt.option_text}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (question.type === "frq") {
-                                openFRQModal(undefined, question);
-                              } else {
-                                openMCQModal(undefined, question);
-                              }
-                            }}
-                            disabled={isReadonly}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteQuestion(question.question_id)}
-                            disabled={isReadonly}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {questions.length < 3 && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openMCQModal()}
-                        disabled={isReadonly}
-                        className="flex-1"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add MCQ Question
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openFRQModal()}
-                        disabled={isReadonly}
-                        className="flex-1"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add FRQ Question
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+        <CardContent className="space-y-4">
+          {Object.keys(generalVideoParameterMapping).length > 0 ? (
+            <ParameterSelector
+              parameterMapping={generalVideoParameterMapping as any}
+              parameterItemMapping={parameterItemMapping as any}
+              validParameterItemIds={validGeneralVideoParameterItemIds}
+              selectedParameterItemIds={generalVideoParameterItemIds}
+              onParameterItemIdsChange={(newIds) => {
+                // Remove old general video parameter items
+                const nonGeneralParamIds = currentParameterItemIds.filter(
+                  (itemId) => {
+                    const item = parameterItemMapping[itemId];
+                    if (!item) return true;
+                    const paramId = item.parameter_id;
+                    return !generalVideoParameterIds.includes(paramId);
+                  }
+                );
+                // Combine with new general video parameter items
+                const updatedParameterItemIds = [
+                  ...nonGeneralParamIds,
+                  ...newIds,
+                ];
+                setCurrentParameterItemIds(updatedParameterItemIds);
+              }}
+              disabled={isReadonly}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No video parameters available. Parameters will appear here once
+              they are configured.
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -2043,88 +2049,121 @@ export default function Video({
           </div>
 
           {/* Timeline */}
-          <div className="space-y-2">
-            <Label>
-              Timeline ({outlineVideoLength} seconds) - Click to assign
-              questions
-            </Label>
-            <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
-              {/* Timeline markers for questions */}
-              {allQuestionTimes.map((time) => {
-                const questionsAtTime = questions.filter((q) =>
-                  q.times.includes(time)
-                );
-                return (
-                  <Tooltip key={time}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (isReadonly) return;
-                          setSelectedTimelineSegment(time);
-                          // Get currently selected questions for this timestamp
-                          const currentQuestions = questions
-                            .filter((q) => q.times.includes(time))
-                            .map((q, idx) => q.question_id || `temp-${idx}`);
-                          setSelectedQuestionsForSegment(currentQuestions);
-                          setShowTimelineModal(true);
-                        }}
-                        className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
-                        style={{
-                          left: `${(time / outlineVideoLength) * 100}%`,
-                        }}
-                        disabled={isReadonly}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {formatTime(time)} - {questionsAtTime.length} question
-                        {questionsAtTime.length !== 1 ? "s" : ""}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-
-              {/* Clickable timeline */}
-              <div
-                className="absolute inset-0 cursor-pointer"
-                onClick={(e) => {
-                  if (isReadonly) return;
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const percentage = x / rect.width;
-                  const clickedTime = percentage * outlineVideoLength;
-
-                  // Find the closest timestamp based on video length
-                  const possibleTimestamps = Array.from(
-                    { length: outlineVideoLength + 1 },
-                    (_, i) => i
+          {questions.length > 0 && (
+            <div className="space-y-2">
+              <Label>
+                Timeline ({outlineVideoLength} seconds) - Click to assign
+                questions
+              </Label>
+              <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
+                {/* Timeline markers for questions */}
+                {allQuestionTimes.map((time) => {
+                  const questionsAtTime = questions.filter((q) =>
+                    q.times.includes(time)
                   );
-                  const closestTimestamp = possibleTimestamps.reduce(
-                    (prev, curr) =>
-                      Math.abs(curr - clickedTime) <
-                      Math.abs(prev - clickedTime)
-                        ? curr
-                        : prev
+                  return (
+                    <Tooltip key={time}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isReadonly) return;
+                            setSelectedTimelineSegment(time);
+                            // Get currently selected questions for this timestamp
+                            const currentQuestions = questions
+                              .filter((q) => q.times.includes(time))
+                              .map((q, idx) => q.question_id || `temp-${idx}`);
+                            setSelectedQuestionsForSegment(currentQuestions);
+                            setShowTimelineModal(true);
+                          }}
+                          className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
+                          style={{
+                            left: `${(time / outlineVideoLength) * 100}%`,
+                          }}
+                          disabled={isReadonly}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          {formatTime(time)} - {questionsAtTime.length} question
+                          {questionsAtTime.length !== 1 ? "s" : ""}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   );
+                })}
 
-                  setSelectedTimelineSegment(closestTimestamp);
-                  // Get currently selected questions for this timestamp
-                  const currentQuestions = questions
-                    .filter((q) => q.times.includes(closestTimestamp))
-                    .map((q, idx) => q.question_id || `temp-${idx}`);
-                  setSelectedQuestionsForSegment(currentQuestions);
-                  setShowTimelineModal(true);
-                }}
-              />
+                {/* Clickable timeline */}
+                <div
+                  className="absolute inset-0 cursor-pointer"
+                  onClick={(e) => {
+                    if (isReadonly) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const percentage = x / rect.width;
+                    const clickedTime = percentage * outlineVideoLength;
 
-              {/* Time labels */}
-              <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
-                <span>0:00</span>
-                <span>{formatTime(outlineVideoLength)}</span>
+                    // Find the closest timestamp based on video length
+                    const possibleTimestamps = Array.from(
+                      { length: outlineVideoLength + 1 },
+                      (_, i) => i
+                    );
+                    const closestTimestamp = possibleTimestamps.reduce(
+                      (prev, curr) =>
+                        Math.abs(curr - clickedTime) <
+                        Math.abs(prev - clickedTime)
+                          ? curr
+                          : prev
+                    );
+
+                    setSelectedTimelineSegment(closestTimestamp);
+                    // Get currently selected questions for this timestamp
+                    const currentQuestions = questions
+                      .filter((q) => q.times.includes(closestTimestamp))
+                      .map((q, idx) => q.question_id || `temp-${idx}`);
+                    setSelectedQuestionsForSegment(currentQuestions);
+                    setShowTimelineModal(true);
+                  }}
+                />
+
+                {/* Time labels */}
+                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
+                  <span>0:00</span>
+                  <span>{formatTime(outlineVideoLength)}</span>
+                </div>
               </div>
             </div>
+          )}
+
+          {/* Use Questions Switch */}
+          <div className="space-y-1 pt-2">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-questions"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <HelpCircle
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-label="Question icon"
+                />
+                Generate Questions
+              </Label>
+              <Switch
+                id="use-questions"
+                checked={useQuestions}
+                onCheckedChange={(checked) => {
+                  setUseQuestions(checked);
+                  if (!checked) {
+                    // Clear generated questions when disabled
+                    setQuestions([]);
+                  }
+                }}
+                disabled={isReadonly}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pl-5">
+              Automatically generate questions when generating outline
+            </p>
           </div>
 
           {/* Use Image Switch */}
@@ -2156,6 +2195,110 @@ export default function Video({
               Use video reference image
             </p>
           </div>
+
+          {/* Manual Question Addition */}
+          {useQuestions && (
+            <div className="space-y-2 pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <Label>Questions</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openMCQModal()}
+                    disabled={isReadonly}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add MCQ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openFRQModal()}
+                    disabled={isReadonly}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add FRQ
+                  </Button>
+                </div>
+              </div>
+              {questions.length > 0 ? (
+                <div className="space-y-2">
+                  {questions.map((question, index) => (
+                    <div
+                      key={question.question_id || index}
+                      className="border rounded-lg p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {question.question_text}
+                          </p>
+                          {question.type === "choice" &&
+                            question.options.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {question.options.map((opt, optIdx) => (
+                                  <div
+                                    key={optIdx}
+                                    className="flex items-center gap-2 text-xs"
+                                  >
+                                    {opt.is_correct && (
+                                      <Check className="h-3 w-3 text-green-600" />
+                                    )}
+                                    <span
+                                      className={
+                                        opt.is_correct ? "font-semibold" : ""
+                                      }
+                                    >
+                                      {opt.option_text}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          {question.times.length > 0 && (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                              Times: {question.times.join(", ")}s
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (question.type === "frq") {
+                                openFRQModal(undefined, question);
+                              } else {
+                                openMCQModal(undefined, question);
+                              }
+                            }}
+                            disabled={isReadonly}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteQuestion(question.question_id)}
+                            disabled={isReadonly}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-2">
+                  No questions added yet.{" "}
+                  {useQuestions &&
+                    "Questions will be generated automatically when you generate the outline, or you can add them manually."}
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -21,8 +21,6 @@ type UpdateVideoIn = InputOf<"/api/v3/videos/update", "post">;
 type UpdateVideoOut = OutputOf<"/api/v3/videos/update", "post">;
 type RandomizeVideoIn = InputOf<"/api/v3/videos/randomize", "post">;
 type RandomizeVideoOut = OutputOf<"/api/v3/videos/randomize", "post">;
-type GenerateQuestionsIn = InputOf<"/api/v3/videos/generate-questions", "post">;
-type GenerateQuestionsOut = OutputOf<"/api/v3/videos/generate-questions", "post">;
 type GenerateOutlineIn = InputOf<"/api/v3/videos/generate-outline", "post">;
 type GenerateOutlineOut = OutputOf<"/api/v3/videos/generate-outline", "post">;
 type GenerateVideoIn = InputOf<"/api/v3/videos/generate-video", "post">;
@@ -61,14 +59,6 @@ async function randomizeVideo(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/videos/randomize", input);
-}
-
-async function generateQuestions(
-  input: GenerateQuestionsIn
-): Promise<GenerateQuestionsOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/videos/generate-questions", input);
 }
 
 async function generateOutline(
@@ -134,7 +124,6 @@ export default async function NewVideoPage() {
         createVideoAction={createVideo}
         updateVideoAction={updateVideo}
         randomizeVideoAction={randomizeVideo}
-        generateQuestionsAction={generateQuestions}
         generateOutlineAction={generateOutline}
         generateVideoAction={generateVideo}
       />
@@ -146,8 +135,6 @@ export default async function NewVideoPage() {
 export type {
   CreateVideoIn,
   CreateVideoOut,
-  GenerateQuestionsIn,
-  GenerateQuestionsOut,
   GenerateOutlineIn,
   GenerateOutlineOut,
   GenerateVideoIn,

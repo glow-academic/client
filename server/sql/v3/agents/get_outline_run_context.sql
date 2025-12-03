@@ -1,9 +1,9 @@
 -- Get all data needed to run outline agent with optimized JOIN
--- Parameters: $1=department_id (uuid), $2=policy_ids[] (uuid array), $3=question_ids[] (uuid array), $4=profile_id (uuid, nullable), $5=video_id (uuid, nullable)
--- Returns: agent, model, provider, policies, questions, video_length, and profile data
+-- Parameters: $1=department_id (uuid), $2=policy_ids[] (uuid array), $3=question_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=profile_id (uuid, nullable), $6=video_id (uuid, nullable)
+-- Returns: agent, model, provider, policies, questions, parameter_items, video_length, and profile data
 WITH params AS (
     -- Explicitly cast parameters for asyncpg type inference
-    SELECT $1::uuid as department_id, $2::uuid[] as policy_ids, $3::uuid[] as question_ids, $4::uuid as profile_id, $5::uuid as video_id
+    SELECT $1::uuid as department_id, $2::uuid[] as policy_ids, $3::uuid[] as question_ids, $4::uuid[] as parameter_item_ids, $5::uuid as profile_id, $6::uuid as video_id
 ),
 video_info AS (
     -- Get video length if video_id is provided
@@ -129,6 +129,24 @@ SELECT
         ),
         '[]'::json
     ) as questions,
+    
+    -- Parameter items data (aggregated as JSON array with parameter info)
+    COALESCE(
+        (SELECT json_agg(
+            json_build_object(
+                'item_name', pi.name,
+                'item_description', pi.description,
+                'param_name', pa.name,
+                'param_description', pa.description
+            )
+            ORDER BY array_position(p.parameter_item_ids, pi.id)
+        )
+        FROM parameter_items pi
+        JOIN parameters pa ON pi.parameter_id = pa.id
+        WHERE pi.id = ANY(p.parameter_item_ids)
+        ),
+        '[]'::json
+    ) as parameter_items,
     
     -- Video length (if video_id provided)
     vi.length_seconds as video_length_seconds,

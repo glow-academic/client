@@ -212,6 +212,7 @@ interface ParameterSelectorProps {
   selectedParameterItemIds: string[];
   onParameterItemIdsChange: (parameterItemIds: string[]) => void;
   disabled?: boolean;
+  maxItemsPerParameter?: number; // Maximum items allowed per parameter
 }
 
 export function ParameterSelector({
@@ -221,6 +222,7 @@ export function ParameterSelector({
   selectedParameterItemIds,
   onParameterItemIdsChange,
   disabled = false,
+  maxItemsPerParameter,
 }: ParameterSelectorProps) {
   // Group valid parameter items by parameter (from mapping)
   const parameterItemsByParameter = useMemo(() => {
@@ -283,9 +285,15 @@ export function ParameterSelector({
       (id) => parameterItemMapping[id]?.parameter_id !== parameterId
     );
 
-    // Accept all selected IDs (unlimited multi-select)
-    if (newIds.length > 0) {
-      onParameterItemIdsChange([...currentItems, ...newIds]);
+    // Limit to maxItemsPerParameter if specified
+    let limitedIds = newIds;
+    if (maxItemsPerParameter !== undefined && newIds.length > maxItemsPerParameter) {
+      limitedIds = newIds.slice(0, maxItemsPerParameter);
+    }
+
+    // Accept selected IDs (with limit if specified)
+    if (limitedIds.length > 0) {
+      onParameterItemIdsChange([...currentItems, ...limitedIds]);
     } else {
       onParameterItemIdsChange(currentItems);
     }
@@ -548,16 +556,26 @@ export function ParameterSelector({
                   mapping={parameterItemMapping}
                   validIds={itemIds}
                   selectedIds={selectedItemIds}
-                  onSelect={(ids) =>
-                    handleNonNumericalParameterChange(parameterId, ids)
-                  }
+                  onSelect={(ids) => {
+                    // Enforce maxItemsPerParameter limit
+                    let limitedIds = ids;
+                    if (maxItemsPerParameter !== undefined && ids.length > maxItemsPerParameter) {
+                      limitedIds = ids.slice(0, maxItemsPerParameter);
+                    }
+                    handleNonNumericalParameterChange(parameterId, limitedIds);
+                  }}
                   parameterId={parameterId}
                   parameterName={parameter?.name || ""}
                   parameterDescription={parameter?.description || ""}
                   isDefaultParameter={false}
-                  disabled={disabled}
+                  disabled={disabled || (maxItemsPerParameter !== undefined && selectedItemIds.length >= maxItemsPerParameter)}
                   multiSelect={true}
                 />
+                {maxItemsPerParameter !== undefined && (
+                  <p className="text-xs text-muted-foreground">
+                    Select up to {maxItemsPerParameter} {parameter?.name?.toLowerCase() || "items"}
+                  </p>
+                )}
 
                 {selectedItemIds.length > 0 && (
                   <div className="space-y-1">

@@ -80,10 +80,12 @@ class VideoDetailResponse(BaseModel):
     department_mapping: DepartmentMapping
     questions: list[QuestionResponse]  # Empty for default
     outline_agent_id: str
-    question_agent_id: str
     image_agent_id: str
     agent_mapping: dict[str, dict[str, Any]]  # AgentMapping format
     valid_agent_ids: list[str]
+    parameter_mapping: dict[str, dict[str, Any]]
+    parameter_item_mapping: dict[str, dict[str, Any]]
+    parameter_item_ids: list[str]
 
 
 router = APIRouter()
@@ -213,6 +215,44 @@ async def get_video_new(
             str(aid) for aid in (result.get("valid_agent_ids") or [])
         ]
 
+        # Parse parameter_mapping from JSONB
+        parameter_mapping_data = parse_jsonb(result.get("parameter_mapping"))
+        parameter_mapping: dict[str, dict[str, Any]] = {}
+        if isinstance(parameter_mapping_data, dict):
+            parameter_mapping = {
+                k: {
+                    "name": v.get("name", ""),
+                    "description": v.get("description", ""),
+                    "numerical": bool(v.get("numerical", False)),
+                    "policy_parameter": bool(v.get("policy_parameter", False)),
+                    "video_parameter": bool(v.get("video_parameter", False)),
+                }
+                for k, v in parameter_mapping_data.items()
+                if isinstance(v, dict)
+            }
+
+        # Parse parameter_item_mapping from JSONB
+        parameter_item_mapping_data = parse_jsonb(result.get("parameter_item_mapping"))
+        parameter_item_mapping: dict[str, dict[str, Any]] = {}
+        if isinstance(parameter_item_mapping_data, dict):
+            parameter_item_mapping = {
+                k: {
+                    "name": v.get("name", ""),
+                    "description": v.get("description", ""),
+                    "parameter_id": str(v.get("parameter_id", "")),
+                    "parameter_name": v.get("parameter_name", ""),
+                    "value": v.get("value"),
+                }
+                for k, v in parameter_item_mapping_data.items()
+                if isinstance(v, dict)
+            }
+
+        # Parse parameter_item_ids
+        parameter_item_ids = result.get("parameter_item_ids") or []
+        if not isinstance(parameter_item_ids, list):
+            parameter_item_ids = []
+        parameter_item_ids = [str(pid) for pid in parameter_item_ids]
+
         # Get user role and primary department for default behavior
         user_role = str(result.get("user_role", "")).lower()
         is_superadmin = user_role == "superadmin"
@@ -269,10 +309,13 @@ async def get_video_new(
             questions=[],
             # Agents (empty IDs for new video, but include mapping and valid IDs)
             outline_agent_id="",
-            question_agent_id="",
             image_agent_id="",
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
+            # Parameters (empty for new video)
+            parameter_mapping=parameter_mapping,
+            parameter_item_mapping=parameter_item_mapping,
+            parameter_item_ids=parameter_item_ids,
         )
 
         # Cache response
