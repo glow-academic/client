@@ -7,6 +7,7 @@
 "use client";
 import {
   Check,
+  ChevronsUpDown,
   HelpCircle,
   Image,
   Loader2,
@@ -42,8 +43,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -181,6 +194,79 @@ interface Step {
   optional?: boolean;
 }
 
+const VIDEO_LENGTHS = [
+  { value: 4, label: "4 seconds" },
+  { value: 8, label: "8 seconds" },
+  { value: 12, label: "12 seconds" },
+  { value: 16, label: "16 seconds" },
+  { value: 20, label: "20 seconds" },
+  { value: 24, label: "24 seconds" },
+  { value: 28, label: "28 seconds" },
+  { value: 32, label: "32 seconds" },
+];
+
+interface VideoLengthPickerProps {
+  value: number;
+  onValueChange: (value: number) => void;
+  disabled?: boolean;
+}
+
+function VideoLengthPicker({
+  value,
+  onValueChange,
+  disabled = false,
+}: VideoLengthPickerProps) {
+  const [open, setOpen] = useState(false);
+  const selectedLabel =
+    VIDEO_LENGTHS.find((vl) => vl.value === value)?.label || "Select length";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Select video length"
+          size="sm"
+          className={cn("w-[140px] justify-between", disabled && "opacity-50")}
+          disabled={disabled}
+        >
+          <span className="truncate text-left">{selectedLabel}</span>
+          <ChevronsUpDown className="opacity-50 flex-shrink-0 ml-2 h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[200px] p-0">
+        <Command>
+          <CommandList>
+            <CommandEmpty>No length found.</CommandEmpty>
+            <CommandGroup>
+              {VIDEO_LENGTHS.map((vl) => (
+                <CommandItem
+                  key={vl.value}
+                  onSelect={() => {
+                    onValueChange(vl.value);
+                    setOpen(false);
+                  }}
+                  className="flex items-center justify-between"
+                >
+                  {vl.label}
+                  <Check
+                    className={cn(
+                      "ml-auto h-4 w-4",
+                      value === vl.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function Video({
   mode = "create",
   videoId,
@@ -269,8 +355,8 @@ export default function Video({
       outlineIds.push(selectedOutlineId);
     }
 
-    // Get video image ID (single image)
-    const imageIds = image?.id ? [image.id] : [];
+    // Get video image IDs from images array
+    const imageIds = images.map((img) => img.id);
 
     // Provide defaults for required fields
     const videoName = formData.name?.trim() || "New Video";
@@ -324,15 +410,89 @@ export default function Video({
         body.departmentIds = formData.departmentIds;
       }
 
-      if (section === "policies" && selectedPolicyIds.length > 0) {
-        body.policyIds = selectedPolicyIds;
+      // For policies randomization, don't send policyIds to force randomization (like documents in Scenario.tsx)
+      // The backend will randomize if policyIds is not provided
+      if (section === "policies") {
+        // Don't set body.policyIds - let backend randomize
+      }
+
+      // For parameters randomization, we handle it client-side
+      if (section === "parameters") {
+        // Client-side randomization for general video parameters
       }
 
       const result = await randomizeVideoAction({ body });
 
       if (result.success) {
+        // Update policies if randomized
         if (targets.includes("policies") && result.policyIds.length > 0) {
           setSelectedPolicyIds(result.policyIds);
+
+          // Randomize policy parameters for the new policies (client-side)
+          // Filter available policy parameter items for the new policies
+          const newPolicyParameterItemIds: string[] = [];
+          policyParameterIds.forEach((paramId) => {
+            const paramItems = Object.entries(parameterItemMapping)
+              .filter(([_itemId, item]) => item.parameter_id === paramId)
+              .map(([itemId]) => itemId);
+            const validItems = paramItems.filter((itemId) =>
+              validPolicyParameterItemIds.includes(itemId)
+            );
+            if (validItems.length > 0) {
+              // Randomly select one item per parameter
+              const randomIndex = Math.floor(Math.random() * validItems.length);
+              const randomItemId = validItems[randomIndex];
+              if (randomItemId) {
+                newPolicyParameterItemIds.push(randomItemId);
+              }
+            }
+          });
+
+          // Update parameters: remove old policy parameters, add new ones, keep general video parameters
+          const nonPolicyParamIds = currentParameterItemIds.filter((itemId) => {
+            const item = parameterItemMapping[itemId];
+            if (!item) return true;
+            const paramId = item.parameter_id;
+            return !policyParameterIds.includes(paramId);
+          });
+          setCurrentParameterItemIds([
+            ...nonPolicyParamIds,
+            ...newPolicyParameterItemIds,
+          ]);
+        }
+
+        // Note: Parameters randomization would need backend support to fully work
+        // For now, we can randomize client-side for general video parameters
+        if (targets.includes("parameters")) {
+          const newGeneralParamItemIds: string[] = [];
+          generalVideoParameterIds.forEach((paramId) => {
+            const paramItems = Object.entries(parameterItemMapping)
+              .filter(([_itemId, item]) => item.parameter_id === paramId)
+              .map(([itemId]) => itemId);
+            const validItems = paramItems.filter((itemId) =>
+              validGeneralVideoParameterItemIds.includes(itemId)
+            );
+            if (validItems.length > 0) {
+              // Randomly select one item per parameter
+              const randomIndex = Math.floor(Math.random() * validItems.length);
+              const randomItemId = validItems[randomIndex];
+              if (randomItemId) {
+                newGeneralParamItemIds.push(randomItemId);
+              }
+            }
+          });
+
+          // Update parameters: keep policy parameters, replace general video parameters
+          const policyParamIds = currentParameterItemIds.filter((itemId) => {
+            const item = parameterItemMapping[itemId];
+            if (!item) return false;
+            const paramId = item.parameter_id;
+            return policyParameterIds.includes(paramId);
+          });
+          setCurrentParameterItemIds([
+            ...policyParamIds,
+            ...newGeneralParamItemIds,
+          ]);
         }
 
         toast.success("Randomization completed successfully!");
@@ -489,7 +649,8 @@ export default function Video({
     setIsGeneratingVideo(true);
 
     try {
-      const imageId = image?.id;
+      // Use first image if available (backend expects single image reference)
+      const imageId = images.length > 0 && images[0] ? images[0].id : null;
 
       const body: GenerateVideoIn["body"] = {
         videoId: videoId,
@@ -526,119 +687,151 @@ export default function Video({
       setSelectedOutlineId(null);
       setOutlineText("");
     } else if (section === "images") {
-      setImage(null);
+      setImages([]);
       setUseImage(false);
     }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+    // Calculate max images allowed: video length / 4 + 1
+    const maxImages = Math.floor(outlineVideoLength / 4) + 1;
+    const currentImageCount = images.length;
+    const remainingSlots = maxImages - currentImageCount;
+
+    if (remainingSlots <= 0) {
+      toast.error(
+        `Maximum ${maxImages} image${maxImages !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
+      );
+      e.target.value = "";
       return;
     }
 
-    setIsUploadingImage(true);
-    const toastId = toast.loading(`Uploading image: ${file.name}`, {
-      description: "0% complete",
-      dismissible: true,
-    });
-
-    try {
-      // Generate a unique fileId for tracking
-      const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
-      // Create TUS upload
-      const upload = new tus.Upload(file, {
-        endpoint: `/api/images/upload`,
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        metadata: {
-          filename: file.name,
-          filetype: file.type,
-          fileId: fileId,
-        },
-        onError: (error) => {
-          toast.error(`Upload failed: ${file.name}`, {
-            description: error.message || "An error occurred during upload",
-            id: toastId,
-          });
-          setIsUploadingImage(false);
-        },
-        onProgress: (bytesUploaded, bytesTotal) => {
-          const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
-          toast.loading(`Uploading image: ${file.name}`, {
-            description: `${percentage}% complete`,
-            id: toastId,
-          });
-        },
-        onSuccess: async () => {
-          // Get upload ID from location header
-          const location = upload.url;
-          if (!location) {
-            throw new Error("Failed to get upload location");
-          }
-          const uploadId = location.split("/").pop();
-
-          if (!uploadId) {
-            throw new Error("Failed to get upload ID");
-          }
-
-          // Finalize upload
-          try {
-            const response = await fetch("/api/images/upload/finalize", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                uploadId,
-                fileId,
-                name: file.name,
-              }),
-            });
-
-            const result = await response.json();
-
-            if (result.success && result.imageId) {
-              // Update image state with the returned imageId
-              setImage({
-                id: result.imageId,
-                name: file.name,
-                mime_type: file.type,
-              });
-              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-            } else {
-              throw new Error(result.message || "Failed to finalize upload");
-            }
-          } catch (finalizeError) {
-            toast.error(
-              `Failed to finalize upload: ${
-                finalizeError instanceof Error
-                  ? finalizeError.message
-                  : "Unknown error"
-              }`,
-              { id: toastId }
-            );
-          } finally {
-            setIsUploadingImage(false);
-          }
-        },
-      });
-
-      upload.start();
-    } catch (error) {
-      toast.error(
-        `Failed to upload image: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-        {
-          id: toastId,
-        }
+    // Process files up to the remaining slots
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      toast.warning(
+        `Only ${remainingSlots} image${remainingSlots !== 1 ? "s" : ""} can be uploaded. ${files.length - remainingSlots} file${files.length - remainingSlots !== 1 ? "s" : ""} ignored.`
       );
-      setIsUploadingImage(false);
     }
 
-    // Reset input
+    // Filter valid image files
+    const validFiles = filesToUpload.filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (validFiles.length === 0) {
+      toast.error("Please select valid image files");
+      e.target.value = "";
+      return;
+    }
+
+    // Upload each file
+    for (const file of validFiles) {
+      setIsUploadingImage(true);
+      const toastId = toast.loading(`Uploading image: ${file.name}`, {
+        description: "0% complete",
+        dismissible: true,
+      });
+
+      try {
+        // Generate a unique fileId for tracking
+        const fileId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+        // Create TUS upload
+        const upload = new tus.Upload(file, {
+          endpoint: `/api/images/upload`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: {
+            filename: file.name,
+            filetype: file.type,
+            fileId: fileId,
+          },
+          onError: (error) => {
+            toast.error(`Upload failed: ${file.name}`, {
+              description: error.message || "An error occurred during upload",
+              id: toastId,
+            });
+            setIsUploadingImage(false);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            toast.loading(`Uploading image: ${file.name}`, {
+              description: `${percentage}% complete`,
+              id: toastId,
+            });
+          },
+          onSuccess: async () => {
+            // Get upload ID from location header
+            const location = upload.url;
+            if (!location) {
+              throw new Error("Failed to get upload location");
+            }
+            const uploadId = location.split("/").pop();
+
+            if (!uploadId) {
+              throw new Error("Failed to get upload ID");
+            }
+
+            // Finalize upload
+            try {
+              const response = await fetch("/api/images/upload/finalize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  uploadId,
+                  fileId,
+                  name: file.name,
+                }),
+              });
+
+              const result = await response.json();
+
+              if (result.success && result.imageId) {
+                // Append to images array
+                setImages((prev) => [
+                  ...prev,
+                  {
+                    id: result.imageId,
+                    name: file.name,
+                    mime_type: file.type,
+                  },
+                ]);
+                toast.success(`Image uploaded: ${file.name}`, { id: toastId });
+              } else {
+                throw new Error(result.message || "Failed to finalize upload");
+              }
+            } catch (finalizeError) {
+              toast.error(
+                `Failed to finalize upload: ${
+                  finalizeError instanceof Error
+                    ? finalizeError.message
+                    : "Unknown error"
+                }`,
+                { id: toastId }
+              );
+            } finally {
+              setIsUploadingImage(false);
+            }
+          },
+        });
+
+        upload.start();
+      } catch (error) {
+        toast.error(
+          `Failed to upload image: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+          {
+            id: toastId,
+          }
+        );
+        setIsUploadingImage(false);
+      }
+    }
+
+    // Reset input to allow selecting the same file again
     e.target.value = "";
   };
 
@@ -784,11 +977,13 @@ export default function Video({
   const [outlineVideoLength, setOutlineVideoLength] = useState<number>(4);
   const [useImage, setUseImage] = useState(false);
   const [useQuestions, setUseQuestions] = useState(true);
-  const [image, setImage] = useState<{
-    id: string;
-    name: string;
-    mime_type: string;
-  } | null>(null);
+  const [images, setImages] = useState<
+    Array<{
+      id: string;
+      name: string;
+      mime_type: string;
+    }>
+  >([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -1042,30 +1237,28 @@ export default function Video({
         setSelectedPolicyIds(videoData.policy_ids);
       }
 
-      // Load video image (single image - take first if exists)
+      // Load video images (all images from array)
       if (
         videoData.video_images &&
         Array.isArray(videoData.video_images) &&
         videoData.video_images.length > 0
       ) {
-        const firstImage = videoData.video_images[0] as {
-          id?: string;
-          name?: string;
-          mime_type?: string;
-        };
-        if (firstImage.id) {
-          setImage({
-            id: firstImage.id,
-            name: firstImage.name || "",
-            mime_type: firstImage.mime_type || "image/png",
-          });
+        const loadedImages = videoData.video_images
+          .map((img: any) => ({
+            id: img.id,
+            name: img.name || "",
+            mime_type: img.mime_type || "image/png",
+          }))
+          .filter((img: { id?: string }) => img.id);
+        if (loadedImages.length > 0) {
+          setImages(loadedImages);
           setUseImage(true);
         } else {
-          setImage(null);
+          setImages([]);
           setUseImage(false);
         }
       } else {
-        setImage(null);
+        setImages([]);
         setUseImage(false);
       }
 
@@ -1196,8 +1389,8 @@ export default function Video({
         outlineIds.push(selectedOutlineId);
       }
 
-      // Get video image ID (single image)
-      const imageIds = image?.id ? [image.id] : [];
+      // Get video image IDs from images array
+      const imageIds = images.map((img) => img.id);
 
       if (isEditMode && videoId) {
         // UPDATE mode
@@ -1447,7 +1640,14 @@ export default function Video({
         )
       );
     } else {
-      // Add new question
+      // Add new question - check max limit
+      const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
+      if (questions.length >= maxQuestions) {
+        toast.error(
+          `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
+        );
+        return;
+      }
       setQuestions((prev) => [...prev, updatedQuestion]);
     }
 
@@ -1478,7 +1678,14 @@ export default function Video({
         )
       );
     } else {
-      // Add new question
+      // Add new question - check max limit
+      const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
+      if (questions.length >= maxQuestions) {
+        toast.error(
+          `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
+        );
+        return;
+      }
       setQuestions((prev) => [...prev, editingFRQQuestion]);
     }
 
@@ -1773,14 +1980,12 @@ export default function Video({
             validIds={videoData?.valid_policy_ids || []}
             selectedIds={selectedPolicyIds}
             onSelect={(ids) => {
-              // Limit to 1 policy (like Scenario.tsx limits documents)
-              const limitedIds = ids.slice(0, 1);
-              setSelectedPolicyIds(limitedIds);
+              setSelectedPolicyIds(ids);
             }}
             multiSelect={true}
             label="Policies"
-            placeholder="Select a policy..."
-            description="Choose a policy that will be available for this video."
+            placeholder="Select policies..."
+            description="Choose policies that will be available for this video."
             disabled={isSubmitting}
             readonly={isReadonly}
           />
@@ -1810,7 +2015,6 @@ export default function Video({
                   setCurrentParameterItemIds(updatedParameterItemIds);
                 }}
                 disabled={isReadonly}
-                maxItemsPerParameter={1}
               />
             </div>
           )}
@@ -1848,6 +2052,25 @@ export default function Video({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() =>
+                    handleRandomizeVideo(["parameters"], "parameters")
+                  }
+                  disabled={isRandomizing || isReadonly}
+                >
+                  {isRandomizing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Shuffle className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Randomize</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -1931,37 +2154,15 @@ export default function Video({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="outline-video-length"
-                className="text-sm whitespace-nowrap"
-              >
-                Length:
-              </Label>
-              <Select
-                value={outlineVideoLength.toString()}
-                onValueChange={(value) => {
-                  setOutlineVideoLength(parseInt(value, 10));
-                  // Update formData length_seconds as well
-                  handleInputChange("length_seconds", parseInt(value, 10));
-                }}
-                disabled={isReadonly}
-              >
-                <SelectTrigger id="outline-video-length" className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="4">4 seconds</SelectItem>
-                  <SelectItem value="8">8 seconds</SelectItem>
-                  <SelectItem value="12">12 seconds</SelectItem>
-                  <SelectItem value="16">16 seconds</SelectItem>
-                  <SelectItem value="20">20 seconds</SelectItem>
-                  <SelectItem value="24">24 seconds</SelectItem>
-                  <SelectItem value="28">28 seconds</SelectItem>
-                  <SelectItem value="32">32 seconds</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <VideoLengthPicker
+              value={outlineVideoLength}
+              onValueChange={(value) => {
+                setOutlineVideoLength(value);
+                // Update formData length_seconds as well
+                handleInputChange("length_seconds", value);
+              }}
+              disabled={isReadonly}
+            />
             <Button
               variant="default"
               size="sm"
@@ -1985,7 +2186,7 @@ export default function Video({
                   onClick={() => {
                     setSelectedOutlineId(null);
                     setOutlineText("");
-                    setImage(null);
+                    setImages([]);
                     setUseImage(false);
                   }}
                   disabled={isReadonly}
@@ -2000,32 +2201,47 @@ export default function Video({
         <CardContent className="space-y-4">
           {/* Image Preview or Upload Card */}
           {useImage && (
-            <div className="mb-4 w-1/4">
-              {image ? (
-                <ImagePreviewCard
-                  image={image}
-                  onRemove={() => setImage(null)}
-                  showActions={!isReadonly}
-                />
-              ) : (
-                <div
-                  onClick={() => {
-                    if (!isReadonly && !isUploadingImage) {
-                      imageInputRef.current?.click();
-                    }
-                  }}
-                  className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
-                >
-                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground text-center px-4">
-                    Click to upload image
-                  </p>
-                </div>
-              )}
+            <div className="mb-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Images</Label>
+                <p className="text-xs text-muted-foreground">
+                  Max {Math.floor(outlineVideoLength / 4) + 1} image
+                  {Math.floor(outlineVideoLength / 4) + 1 !== 1 ? "s" : ""} (
+                  {images.length}/{Math.floor(outlineVideoLength / 4) + 1})
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {images.map((img, index) => (
+                  <ImagePreviewCard
+                    key={img.id}
+                    image={img}
+                    onRemove={() => {
+                      setImages((prev) => prev.filter((_, i) => i !== index));
+                    }}
+                    showActions={!isReadonly}
+                  />
+                ))}
+                {images.length < Math.floor(outlineVideoLength / 4) + 1 && (
+                  <div
+                    onClick={() => {
+                      if (!isReadonly && !isUploadingImage) {
+                        imageInputRef.current?.click();
+                      }
+                    }}
+                    className="aspect-square border-2 border-dashed border-muted-foreground/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground hover:bg-muted/50 transition-colors bg-muted/20"
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      Click to upload image
+                    </p>
+                  </div>
+                )}
+              </div>
               <input
                 ref={imageInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageUpload}
                 disabled={isReadonly || isUploadingImage}
                 className="hidden"
@@ -2048,92 +2264,35 @@ export default function Video({
             />
           </div>
 
-          {/* Timeline */}
-          {questions.length > 0 && (
-            <div className="space-y-2">
-              <Label>
-                Timeline ({outlineVideoLength} seconds) - Click to assign
-                questions
-              </Label>
-              <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
-                {/* Timeline markers for questions */}
-                {allQuestionTimes.map((time) => {
-                  const questionsAtTime = questions.filter((q) =>
-                    q.times.includes(time)
-                  );
-                  return (
-                    <Tooltip key={time}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isReadonly) return;
-                            setSelectedTimelineSegment(time);
-                            // Get currently selected questions for this timestamp
-                            const currentQuestions = questions
-                              .filter((q) => q.times.includes(time))
-                              .map((q, idx) => q.question_id || `temp-${idx}`);
-                            setSelectedQuestionsForSegment(currentQuestions);
-                            setShowTimelineModal(true);
-                          }}
-                          className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
-                          style={{
-                            left: `${(time / outlineVideoLength) * 100}%`,
-                          }}
-                          disabled={isReadonly}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {formatTime(time)} - {questionsAtTime.length} question
-                          {questionsAtTime.length !== 1 ? "s" : ""}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-
-                {/* Clickable timeline */}
-                <div
-                  className="absolute inset-0 cursor-pointer"
-                  onClick={(e) => {
-                    if (isReadonly) return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percentage = x / rect.width;
-                    const clickedTime = percentage * outlineVideoLength;
-
-                    // Find the closest timestamp based on video length
-                    const possibleTimestamps = Array.from(
-                      { length: outlineVideoLength + 1 },
-                      (_, i) => i
-                    );
-                    const closestTimestamp = possibleTimestamps.reduce(
-                      (prev, curr) =>
-                        Math.abs(curr - clickedTime) <
-                        Math.abs(prev - clickedTime)
-                          ? curr
-                          : prev
-                    );
-
-                    setSelectedTimelineSegment(closestTimestamp);
-                    // Get currently selected questions for this timestamp
-                    const currentQuestions = questions
-                      .filter((q) => q.times.includes(closestTimestamp))
-                      .map((q, idx) => q.question_id || `temp-${idx}`);
-                    setSelectedQuestionsForSegment(currentQuestions);
-                    setShowTimelineModal(true);
-                  }}
+          {/* Use Image Switch */}
+          <div className="space-y-1 pt-2">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="use-image"
+                className="text-sm flex items-center gap-1.5"
+              >
+                <Image
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-label="Image icon"
                 />
-
-                {/* Time labels */}
-                <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
-                  <span>0:00</span>
-                  <span>{formatTime(outlineVideoLength)}</span>
-                </div>
-              </div>
+                Use Images
+              </Label>
+              <Switch
+                id="use-image"
+                checked={useImage}
+                onCheckedChange={(checked) => {
+                  setUseImage(checked);
+                  if (!checked) {
+                    setImages([]);
+                  }
+                }}
+                disabled={isReadonly}
+              />
             </div>
-          )}
+            <p className="text-xs text-muted-foreground pl-5">
+              Use video reference images
+            </p>
+          </div>
 
           {/* Use Questions Switch */}
           <div className="space-y-1 pt-2">
@@ -2166,63 +2325,16 @@ export default function Video({
             </p>
           </div>
 
-          {/* Use Image Switch */}
-          <div className="space-y-1 pt-2">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="use-image"
-                className="text-sm flex items-center gap-1.5"
-              >
-                <Image
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-label="Image icon"
-                />
-                Use Image
-              </Label>
-              <Switch
-                id="use-image"
-                checked={useImage}
-                onCheckedChange={(checked) => {
-                  setUseImage(checked);
-                  if (!checked) {
-                    setImage(null);
-                  }
-                }}
-                disabled={isReadonly}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pl-5">
-              Use video reference image
-            </p>
-          </div>
-
           {/* Manual Question Addition */}
           {useQuestions && (
             <div className="space-y-2 pt-4 border-t">
               <div className="flex items-center justify-between">
-                <Label>Questions</Label>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openMCQModal()}
-                    disabled={isReadonly}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add MCQ
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openFRQModal()}
-                    disabled={isReadonly}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add FRQ
-                  </Button>
-                </div>
+                <Label>
+                  Questions ({questions.length}/
+                  {Math.floor(outlineVideoLength / 4) + 1})
+                </Label>
               </div>
-              {questions.length > 0 ? (
+              {questions.length > 0 && (
                 <div className="space-y-2">
                   {questions.map((question, index) => (
                     <div
@@ -2290,12 +2402,142 @@ export default function Video({
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground py-2">
-                  No questions added yet.{" "}
-                  {useQuestions &&
-                    "Questions will be generated automatically when you generate the outline, or you can add them manually."}
-                </p>
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
+                    if (questions.length >= maxQuestions) {
+                      toast.error(
+                        `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
+                      );
+                      return;
+                    }
+                    openMCQModal();
+                  }}
+                  disabled={
+                    isReadonly ||
+                    questions.length >= Math.floor(outlineVideoLength / 4) + 1
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add MCQ
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const maxQuestions = Math.floor(outlineVideoLength / 4) + 1;
+                    if (questions.length >= maxQuestions) {
+                      toast.error(
+                        `Maximum ${maxQuestions} question${maxQuestions !== 1 ? "s" : ""} allowed for a ${outlineVideoLength}-second video`
+                      );
+                      return;
+                    }
+                    openFRQModal();
+                  }}
+                  disabled={
+                    isReadonly ||
+                    questions.length >= Math.floor(outlineVideoLength / 4) + 1
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add FRQ
+                </Button>
+              </div>
+
+              {/* Timeline */}
+              {questions.length > 0 && (
+                <div className="space-y-2 pt-4 border-t">
+                  <Label>
+                    Timeline ({outlineVideoLength} seconds) - Click to assign
+                    questions
+                  </Label>
+                  <div className="relative w-full h-12 bg-gray-200 rounded-lg overflow-hidden">
+                    {/* Timeline markers for questions */}
+                    {allQuestionTimes.map((time) => {
+                      const questionsAtTime = questions.filter((q) =>
+                        q.times.includes(time)
+                      );
+                      return (
+                        <Tooltip key={time}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isReadonly) return;
+                                setSelectedTimelineSegment(time);
+                                // Get currently selected questions for this timestamp
+                                const currentQuestions = questions
+                                  .filter((q) => q.times.includes(time))
+                                  .map(
+                                    (q, idx) => q.question_id || `temp-${idx}`
+                                  );
+                                setSelectedQuestionsForSegment(
+                                  currentQuestions
+                                );
+                                setShowTimelineModal(true);
+                              }}
+                              className="absolute top-0 w-3 h-full bg-blue-600 hover:bg-blue-700 cursor-pointer z-10"
+                              style={{
+                                left: `${(time / outlineVideoLength) * 100}%`,
+                              }}
+                              disabled={isReadonly}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {formatTime(time)} - {questionsAtTime.length}{" "}
+                              question
+                              {questionsAtTime.length !== 1 ? "s" : ""}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+
+                    {/* Clickable timeline */}
+                    <div
+                      className="absolute inset-0 cursor-pointer"
+                      onClick={(e) => {
+                        if (isReadonly) return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const percentage = x / rect.width;
+                        const clickedTime = percentage * outlineVideoLength;
+
+                        // Find the closest timestamp based on video length
+                        const possibleTimestamps = Array.from(
+                          { length: outlineVideoLength + 1 },
+                          (_, i) => i
+                        );
+                        const closestTimestamp = possibleTimestamps.reduce(
+                          (prev, curr) =>
+                            Math.abs(curr - clickedTime) <
+                            Math.abs(prev - clickedTime)
+                              ? curr
+                              : prev
+                        );
+
+                        setSelectedTimelineSegment(closestTimestamp);
+                        // Get currently selected questions for this timestamp
+                        const currentQuestions = questions
+                          .filter((q) => q.times.includes(closestTimestamp))
+                          .map((q, idx) => q.question_id || `temp-${idx}`);
+                        setSelectedQuestionsForSegment(currentQuestions);
+                        setShowTimelineModal(true);
+                      }}
+                    />
+
+                    {/* Time labels */}
+                    <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-gray-600">
+                      <span>0:00</span>
+                      <span>{formatTime(outlineVideoLength)}</span>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}

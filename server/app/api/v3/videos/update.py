@@ -78,8 +78,10 @@ async def update_video(
             raise ValueError("length_seconds must be greater than 0")
 
         # Ensure arrays are not None (use empty arrays)
+        # IMPORTANT: Always pass arrays (even if empty) to SQL, never None
+        # This ensures proper handling of empty arrays vs missing data
         department_ids = request.department_ids or []
-        outline_ids = request.outline_ids or []
+        outline_ids = request.outline_ids or []  # Always pass array, even if empty
         policy_ids = request.policy_ids or []
         image_ids = request.image_ids or []
         questions = request.questions or []
@@ -89,20 +91,21 @@ async def update_video(
         questions_json = json.dumps([q.model_dump() for q in questions])
 
         # Update video with all relationships in a single SQL file
+        # Pass empty arrays instead of None to ensure proper SQL handling
         sql_query = load_sql("sql/v3/videos/update_video_complete.sql")
         sql_params = (
             request.videoId,
             request.name,
             request.length_seconds,
             request.active,
-            department_ids if department_ids else None,
-            outline_ids if outline_ids else None,
-            policy_ids if policy_ids else None,
-            image_ids if image_ids else None,
+            department_ids,  # Always pass array, SQL handles empty arrays
+            outline_ids,  # Always pass array, SQL handles empty arrays
+            policy_ids,  # Always pass array, SQL handles empty arrays
+            image_ids,  # Always pass array, SQL handles empty arrays
             questions_json,
             request.outline_agent_id,
             request.image_agent_id,
-            parameter_item_ids if parameter_item_ids else None,
+            parameter_item_ids,  # Always pass array, SQL handles empty arrays
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

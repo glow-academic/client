@@ -49,16 +49,14 @@ link_departments AS (
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST($5::text[]) as dept_id
+    CROSS JOIN UNNEST(COALESCE($5::text[], ARRAY[]::text[])) as dept_id
     WHERE COALESCE(array_length($5::text[], 1), 0) > 0
-),
-delete_old_outlines AS (
-    -- Delete old outline links
-    DELETE FROM video_outlines
-    WHERE video_id = $1::uuid
+    ON CONFLICT (video_id, department_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 link_outlines AS (
-    -- Link outlines if provided
+    -- Link outlines if provided (insert or update existing)
     INSERT INTO video_outlines (video_id, outline_id, active, created_at, updated_at)
     SELECT 
         uv.video_id,
@@ -67,11 +65,20 @@ link_outlines AS (
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST($6::text[]) as outline_id
+    CROSS JOIN UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as outline_id
     WHERE COALESCE(array_length($6::text[], 1), 0) > 0
     ON CONFLICT (video_id, outline_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+delete_old_outlines AS (
+    -- Delete outline links that are NOT in the new list
+    DELETE FROM video_outlines
+    WHERE video_id = $1::uuid
+      AND outline_id NOT IN (
+          SELECT outline_id::uuid
+          FROM UNNEST(COALESCE($6::text[], ARRAY[]::text[])) as outline_id
+      )
 ),
 delete_old_policies AS (
     -- Delete old policy links
@@ -88,8 +95,11 @@ link_policies AS (
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST($7::text[]) as policy_id
+    CROSS JOIN UNNEST(COALESCE($7::text[], ARRAY[]::text[])) as policy_id
     WHERE COALESCE(array_length($7::text[], 1), 0) > 0
+    ON CONFLICT (video_id, policy_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 delete_old_video_images AS (
     -- Delete old video image links (junction table entries)
@@ -106,7 +116,7 @@ link_video_images AS (
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST($8::text[]) as image_id
+    CROSS JOIN UNNEST(COALESCE($8::text[], ARRAY[]::text[])) as image_id
     WHERE COALESCE(array_length($8::text[], 1), 0) > 0
     ON CONFLICT (video_id, image_id) DO UPDATE SET
         active = true,
@@ -124,7 +134,8 @@ questions_data AS (
     CROSS JOIN jsonb_array_elements($9::jsonb) as q
 ),
 create_questions AS (
-    -- Create questions (or get existing if they match)
+    -- Create questions (only if they don't already exist)
+    -- Check for existing questions first to avoid duplicates
     INSERT INTO questions (question_text, type, allow_multiple, active, created_at, updated_at)
     SELECT DISTINCT
         qd.question_text,
@@ -134,8 +145,15 @@ create_questions AS (
         NOW(),
         NOW()
     FROM questions_data qd
-    WHERE qd.question_text IS NOT NULL AND qd.question_text != ''
-    ON CONFLICT DO NOTHING
+    WHERE qd.question_text IS NOT NULL 
+      AND qd.question_text != ''
+      AND NOT EXISTS (
+          SELECT 1 FROM questions q 
+          WHERE q.question_text = qd.question_text
+            AND q.type::text = qd.question_type
+            AND q.allow_multiple = qd.allow_multiple
+            AND q.active = true
+      )
     RETURNING id::uuid as question_id, question_text, type, allow_multiple
 ),
 get_existing_questions AS (
@@ -170,6 +188,9 @@ link_video_questions AS (
     JOIN all_questions aq ON aq.question_text = qd.question_text 
         AND aq.type::text = qd.question_type 
         AND aq.allow_multiple = qd.allow_multiple
+    ON CONFLICT (video_id, question_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 create_question_times AS (
     -- Create question times
@@ -188,6 +209,9 @@ create_question_times AS (
         AND aq.allow_multiple = qd.allow_multiple
     CROSS JOIN UNNEST(qd.times) as time_seconds
     WHERE time_seconds IS NOT NULL AND time_seconds >= 0
+    ON CONFLICT (video_id, question_id, time) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 options_data AS (
     -- Extract options from questions (only for choice questions)
@@ -203,18 +227,15 @@ options_data AS (
     CROSS JOIN jsonb_array_elements(qd.options_json) as opt
     WHERE qd.question_type = 'choice' AND qd.options_json IS NOT NULL
 ),
-delete_old_question_options AS (
-    -- Delete old question-option links for questions in this video
-    DELETE FROM question_options
-    WHERE question_id IN (SELECT question_id FROM all_questions)
-),
-delete_old_question_answers AS (
-    -- Delete old question-answer links for questions in this video
-    DELETE FROM question_answers
-    WHERE question_id IN (SELECT question_id FROM all_questions)
-),
+-- Note: We do NOT delete question_options or question_answers here because:
+-- 1. These are global tables shared across all videos
+-- 2. If a question is used in multiple videos, deleting its options/answers would affect other videos
+-- 3. We use INSERT ... ON CONFLICT DO UPDATE to ensure correct state without deleting
+-- 4. If an option is no longer correct, we'll handle it by only inserting the new correct answers
+--    (old incorrect answers remain but won't be marked as correct)
 create_options AS (
-    -- Create options
+    -- Create options (only if they don't already exist)
+    -- Check for existing options first to avoid duplicates
     INSERT INTO options (option_text, type, active, created_at, updated_at)
     SELECT DISTINCT
         od.option_text,
@@ -223,8 +244,14 @@ create_options AS (
         NOW(),
         NOW()
     FROM options_data od
-    WHERE od.option_text IS NOT NULL AND od.option_text != ''
-    ON CONFLICT DO NOTHING
+    WHERE od.option_text IS NOT NULL 
+      AND od.option_text != ''
+      AND NOT EXISTS (
+          SELECT 1 FROM options o 
+          WHERE o.option_text = od.option_text
+            AND o.type::text = od.option_type
+            AND o.active = true
+      )
     RETURNING id::uuid as option_id, option_text, type
 ),
 get_existing_options AS (
@@ -253,6 +280,9 @@ link_question_options AS (
         NOW()
     FROM options_data od
     JOIN all_options ao ON ao.option_text = od.option_text AND ao.type::text = od.option_type
+    ON CONFLICT (question_id, option_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 link_question_answers AS (
     -- Link correct answers (only for options marked as correct)
@@ -266,6 +296,9 @@ link_question_answers AS (
     FROM options_data od
     JOIN all_options ao ON ao.option_text = od.option_text AND ao.type::text = od.option_type
     WHERE od.is_correct = true
+    ON CONFLICT (question_id, option_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
 ),
 replace_video_parameters AS (
     -- Delete all existing parameter links
@@ -282,7 +315,7 @@ insert_video_parameters AS (
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST($12::text[]) as param_item_id
+    CROSS JOIN UNNEST(COALESCE($12::text[], ARRAY[]::text[])) as param_item_id
     WHERE COALESCE(array_length($12::text[], 1), 0) > 0
     ON CONFLICT (video_id, parameter_item_id) DO UPDATE SET
         active = true,
