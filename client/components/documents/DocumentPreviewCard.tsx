@@ -24,7 +24,6 @@ import * as React from "react";
 type DocumentItem = {
   document_id: string;
   name: string;
-  type: string;
   updatedAt: string;
   extension: string;
   scenario_ids: string[];
@@ -53,16 +52,9 @@ const truncateText = (text: string, maxLength: number = 30): string => {
   return text.substring(0, maxLength) + "...";
 };
 
-// Get document type icon
-const getDocumentTypeIcon = (type: string) => {
-  const typeMap: Record<string, string> = {
-    homework: "📚",
-    exam: "📝",
-    syllabus: "📋",
-    rubric: "📊",
-    other: "📄",
-  };
-  return typeMap[type] || "📄";
+// Get document icon (generic, since we no longer have document types)
+const getDocumentIcon = () => {
+  return "📄";
 };
 
 export function DocumentPreviewCard({
@@ -80,14 +72,6 @@ export function DocumentPreviewCard({
   const documentForViewer: DocumentItem = {
     document_id: documentItem.document_id,
     name: documentItem.name,
-    type: documentItem.type as
-      | "homework"
-      | "project"
-      | "quiz"
-      | "midterm"
-      | "lab"
-      | "lecture"
-      | "syllabus",
     active: documentItem.active,
     file_path: documentItem.file_path,
     mime_type: documentItem.mime_type,
@@ -191,10 +175,10 @@ export function DocumentPreviewCard({
             </span>
           </div>
 
-          {/* Type badge - moved to bottom right */}
+          {/* Document icon badge - moved to bottom right */}
           <div className="absolute bottom-2 right-2 z-10">
             <Badge variant="outline" className="text-xs">
-              {getDocumentTypeIcon(documentItem.type)}
+              {getDocumentIcon()}
             </Badge>
           </div>
         </div>
@@ -206,9 +190,8 @@ export function DocumentPreviewCard({
           <DialogHeader>
             <DialogTitle>{documentItem.name}</DialogTitle>
             <DialogDescription>
-              Type: {documentItem.type}
               {!documentItem.active && (
-                <span className="text-red-500 ml-2">(Inactive)</span>
+                <span className="text-red-500">(Inactive)</span>
               )}
             </DialogDescription>
           </DialogHeader>

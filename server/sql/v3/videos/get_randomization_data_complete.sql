@@ -30,11 +30,12 @@ filtered_objectives AS (
     GROUP BY o.id, o.objective
 ),
 filtered_policies AS (
-    SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description, p.file_path, p.mime_type
+    SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description, u.file_path, u.mime_type
     FROM policies p
+    LEFT JOIN uploads u ON u.id = p.upload_id
     LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
     WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.file_path, p.mime_type
+    GROUP BY p.id, p.name, p.description, u.file_path, u.mime_type
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR

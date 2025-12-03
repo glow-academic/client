@@ -112,15 +112,19 @@ policy_mapping_data AS (
             jsonb_build_object(
                 'name', p.name,
                 'description', COALESCE(p.description, ''),
-                'extension', SUBSTRING(p.file_path FROM '\.([^\.]+)$'),
-                'filePath', p.file_path,
-                'mimeType', p.mime_type
+                'extension', CASE 
+                    WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$')
+                    ELSE NULL
+                END,
+                'filePath', u.file_path,
+                'mimeType', u.mime_type
             )
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
     FROM video_policies vp
     JOIN policies p ON p.id = vp.policy_id
+    LEFT JOIN uploads u ON u.id = p.upload_id
     WHERE vp.video_id = $1 AND vp.active = true AND p.active = true
 ),
 valid_policies AS (
@@ -142,8 +146,7 @@ video_images_data AS (
             jsonb_build_object(
                 'id', i.id::text,
                 'name', i.name,
-                'file_path', i.file_path,
-                'mime_type', i.mime_type,
+                'upload_id', i.upload_id::text,
                 'active', vi.active
             )
         ) FILTER (WHERE i.id IS NOT NULL),

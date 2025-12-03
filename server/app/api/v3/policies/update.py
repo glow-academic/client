@@ -22,6 +22,8 @@ class UpdatePolicyRequest(BaseModel):
     description: str
     active: bool
     departmentIds: list[str] | None = None
+    classify_agent_id: str | None = None
+    parameter_item_ids: list[str] | None = None
 
 
 class UpdatePolicyResponse(BaseModel):
@@ -56,12 +58,20 @@ async def update_policy(
             if request.departmentIds
             else []
         )
+        # Convert parameter_item_ids to uuid array, empty array if None
+        param_item_ids = (
+            [uuid.UUID(pid) for pid in request.parameter_item_ids]
+            if request.parameter_item_ids
+            else []
+        )
         sql_params = (
             uuid.UUID(request.policyId),
             request.name,
             request.description,
             request.active,
+            uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
             dept_ids,
+            param_item_ids,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

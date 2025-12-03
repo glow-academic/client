@@ -13,6 +13,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
+    agent_role agent_role,
     active BOOLEAN     NOT NULL DEFAULT TRUE
   );
 

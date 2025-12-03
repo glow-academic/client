@@ -52,7 +52,6 @@ type MappingItem = {
 type DocumentItem = {
   document_id: string;
   name: string;
-  type: string;
   updatedAt: string;
   extension: string;
   scenario_ids: string[];
@@ -68,7 +67,6 @@ type DocumentItem = {
 // Extended mapping item for documents with tags
 export interface DocumentMappingItem extends MappingItem {
   tags?: string[];
-  type?: string;
   filePath?: string;
   mimeType?: string;
 }
@@ -177,16 +175,9 @@ export function DocumentPicker<
     return `No ${label} found.`;
   };
 
-  // Get document type icon
-  const getDocumentTypeIcon = (type?: string) => {
-    const typeMap: Record<string, string> = {
-      homework: "📚",
-      exam: "📝",
-      syllabus: "📋",
-      rubric: "📊",
-      other: "📄",
-    };
-    return typeMap[type || "other"] || "📄";
+  // Get document icon (generic, since we no longer have document types)
+  const getDocumentIcon = () => {
+    return "📄";
   };
 
   const previewDocument = previewDocumentId
@@ -262,7 +253,6 @@ export function DocumentPicker<
                       const minimalDoc: DocumentItem = {
                         document_id: id,
                         name: document.name || "Document",
-                        type: document.type || "document",
                         updatedAt: new Date().toISOString(),
                         extension: "",
                         scenario_ids: [],
@@ -289,7 +279,7 @@ export function DocumentPicker<
                     return (
                       <div className="flex items-center justify-center h-full">
                         <span className="text-4xl">
-                          {getDocumentTypeIcon(document.type)}
+                          {getDocumentIcon()}
                         </span>
                       </div>
                     );
@@ -336,13 +326,10 @@ export function DocumentPicker<
                 <h4 className="font-medium leading-none">
                   {peekedDocument?.name || "No document selected"}
                 </h4>
-                <div className="text-sm text-muted-foreground">
-                  {peekedDocument?.type || "No type available"}
-                </div>
                 {peekedDocument && (
                   <div className="mt-4 text-center">
                     <div className="text-6xl mb-2">
-                      {getDocumentTypeIcon(peekedDocument.type)}
+                      {getDocumentIcon()}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {peekedDocument.filePath || "No file path"}
@@ -374,7 +361,7 @@ export function DocumentPicker<
                       isSelected={selectedIds.includes(document.id)}
                       onPeek={(doc) => setPeekedDocument(doc)}
                       onSelect={() => handleSelect(document.id)}
-                      getDocumentTypeIcon={getDocumentTypeIcon}
+                      getDocumentIcon={getDocumentIcon}
                     />
                   ))}
                 </CommandGroup>
@@ -420,7 +407,6 @@ export function DocumentPicker<
                 const minimalDoc: DocumentItem = {
                   document_id: previewDocumentId,
                   name: mappedDoc.name || "Document",
-                  type: mappedDoc.type || "document",
                   updatedAt: new Date().toISOString(),
                   extension: "",
                   scenario_ids: [],
@@ -463,7 +449,7 @@ interface DocumentItemProps<T extends DocumentMappingItem> {
   isSelected: boolean;
   onSelect: () => void;
   onPeek: (document: { id: string } & T) => void;
-  getDocumentTypeIcon: (type?: string) => string;
+  getDocumentIcon: () => string;
 }
 
 function DocumentItem<T extends DocumentMappingItem>({
@@ -471,7 +457,7 @@ function DocumentItem<T extends DocumentMappingItem>({
   isSelected,
   onSelect,
   onPeek,
-  getDocumentTypeIcon,
+  getDocumentIcon,
 }: DocumentItemProps<T>) {
   const ref = React.useRef<HTMLDivElement>(null);
 
@@ -495,7 +481,7 @@ function DocumentItem<T extends DocumentMappingItem>({
       className="data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
     >
       <div className="flex items-center gap-2 w-full">
-        <span className="text-lg">{getDocumentTypeIcon(document.type)}</span>
+        <span className="text-lg">{getDocumentIcon()}</span>
         <span className="flex-1 truncate">{document.name}</span>
         <Check
           className={cn("ml-auto", isSelected ? "opacity-100" : "opacity-0")}

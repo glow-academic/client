@@ -22,6 +22,8 @@ class CreatePolicyRequest(BaseModel):
     uploadId: str
     active: bool = True
     department_ids: list[str] | None = None
+    classify_agent_id: str | None = None
+    parameter_item_ids: list[str] | None = None
 
 
 class CreatePolicyResponse(BaseModel):
@@ -59,13 +61,21 @@ async def create_policy(
             if request.department_ids
             else []
         )
+        # Convert parameter_item_ids to uuid array, empty array if None
+        param_item_ids = (
+            [uuid.UUID(pid) for pid in request.parameter_item_ids]
+            if request.parameter_item_ids
+            else []
+        )
         sql_params = (
             policy_id,
             request.name,
             request.description,
             uuid.UUID(request.uploadId),
             request.active,
+            uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
             dept_ids,
+            param_item_ids,
         )
         result = await conn.fetchrow(sql_query, *sql_params)
 

@@ -14,7 +14,6 @@ import type {
 } from "@/app/(main)/management/documents/new/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
-import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +38,7 @@ import {
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { Building2, FileText, Tag, UploadCloud, X } from "lucide-react";
+import { Building2, Tag, UploadCloud, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -47,17 +46,7 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
-type DocumentType =
-  | "homework"
-  | "project"
-  | "quiz"
-  | "midterm"
-  | "lab"
-  | "lecture"
-  | "syllabus";
-
 type FileClassification = {
-  type: DocumentType;
   parameterItemIds: string[];
   departmentIds?: string[];
 };
@@ -67,8 +56,6 @@ interface DocumentNewProps {
   finalizeUploadAction: (uploadId: string) => Promise<FinalizeUploadOut>;
   createDocumentAction: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
 }
-
-const DEFAULT_TYPE: DocumentType = "homework";
 
 export default function DocumentNew({
   listData,
@@ -104,12 +91,9 @@ export default function DocumentNew({
   const [perFile, setPerFile] = useState<Record<string, FileClassification>>(
     {}
   );
-  const [zipDefaults, setZipDefaults] = useState<FileClassification>({
-    type: DEFAULT_TYPE,
+  const [_zipDefaults, _setZipDefaults] = useState<FileClassification>({
     parameterItemIds: [],
   });
-  const [globalDefaultType, setGlobalDefaultType] =
-    useState<DocumentType>(DEFAULT_TYPE);
   const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
     useState<string[]>([]);
   const [selectedDepartmentIds, setSelectedDepartmentIds] =
@@ -343,7 +327,6 @@ export default function DocumentNew({
     const next: Record<string, FileClassification> = {};
     pendingFiles.forEach((f) => {
       const current: FileClassification = perFile[f.name] ?? {
-        type: globalDefaultType,
         parameterItemIds: [...globalDefaultParameterItemIds],
       };
       next[f.name] = current;
@@ -368,16 +351,6 @@ export default function DocumentNew({
     setGlobalDefaultParameterItemIds(intersection);
   }, [perFile]);
 
-  const applyTypeToAll = (type: DocumentType) => {
-    setGlobalDefaultType(type);
-    setPerFile((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
-      )
-    );
-    setZipDefaults((p) => ({ ...p, type }));
-  };
-
   const applyParameterItemsToAll = (incomingIds: string[]) => {
     if (incomingIds.length === 0) return;
     setGlobalDefaultParameterItemIds((prev) => {
@@ -394,7 +367,7 @@ export default function DocumentNew({
         })
       )
     );
-    setZipDefaults((p) => ({
+    _setZipDefaults((p) => ({
       ...p,
       parameterItemIds: Array.from(
         new Set([...(p.parameterItemIds ?? []), ...incomingIds])
@@ -417,10 +390,10 @@ export default function DocumentNew({
         })
       )
     );
-    setZipDefaults((p) => ({
+    _setZipDefaults((p) => ({
       ...p,
       parameterItemIds: (p.parameterItemIds ?? []).filter(
-        (id) => !idsToRemove.includes(id)
+        (id: string) => !idsToRemove.includes(id)
       ),
     }));
   };
@@ -435,7 +408,6 @@ export default function DocumentNew({
 
     pendingFiles.forEach((file) => {
       const fc = perFile[file.name] ?? {
-        type: globalDefaultType,
         parameterItemIds: [...globalDefaultParameterItemIds],
       };
 
@@ -467,7 +439,6 @@ export default function DocumentNew({
   }, [
     pendingFiles,
     perFile,
-    globalDefaultType,
     globalDefaultParameterItemIds,
     documentParameterIds,
     filteredValidParameterItemIds,
@@ -591,6 +562,48 @@ export default function DocumentNew({
 
             const databaseUploadId = finalizeResult.uploadId;
 
+            // Call classification endpoint to get suggested parameter items
+            let suggestedParameterItemIds: string[] = [];
+            try {
+              // Use fetch directly since the endpoint may not be in OpenAPI types yet
+              const classifyResponse = await fetch(
+                `/api/v3/uploads/upload/${tusUploadId}/classify`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    profileId: effectiveProfile?.id || "",
+                    parameterIds: null, // Use all document/policy parameters
+                  }),
+                }
+              );
+
+              if (classifyResponse.ok) {
+                const classifyResult = await classifyResponse.json();
+                if (
+                  classifyResult.success &&
+                  classifyResult.suggestedParameterItemIds
+                ) {
+                  // Get suggested items for this file (use filename as key)
+                  suggestedParameterItemIds =
+                    classifyResult.suggestedParameterItemIds[file.name] || [];
+                }
+              }
+            } catch {
+              // Classification failed, but continue with user's selections
+              // Silently fail - user can still proceed with manual selections
+            }
+
+            // Merge user's selections with suggested items (user selections take priority)
+            const finalParameterItemIds = Array.from(
+              new Set([
+                ...(classification.parameterItemIds || []),
+                ...suggestedParameterItemIds,
+              ])
+            );
+
             // Create document with upload_id
             const finalDepartmentIds = transformDepartmentIdsForSubmit(
               classification.departmentIds || selectedDepartmentIds,
@@ -601,12 +614,11 @@ export default function DocumentNew({
             const createResult = await createDocumentAction({
               body: {
                 name: file.name,
-                type: classification.type,
                 uploadId: databaseUploadId,
                 departmentIds: finalDepartmentIds,
-                parameterItemIds: classification.parameterItemIds || [],
+                parameterItemIds: finalParameterItemIds,
                 profileId: effectiveProfile?.id || "",
-              },
+              } as CreateDocumentIn["body"],
             });
 
             if (createResult.success) {
@@ -711,7 +723,6 @@ export default function DocumentNew({
     // Upload all files with their classifications
     for (const file of pendingFiles) {
       const fc = perFile[file.name] ?? {
-        type: globalDefaultType,
         parameterItemIds: [...globalDefaultParameterItemIds],
         departmentIds: selectedDepartmentIds,
       };
@@ -819,14 +830,6 @@ export default function DocumentNew({
                     />
                   </div>
                 )}
-                <div data-testid="document-type-selector">
-                  <DocumentTypePicker
-                    selectedType={globalDefaultType}
-                    onSelect={applyTypeToAll}
-                    placeholder="Type"
-                    compact={true}
-                  />
-                </div>
                 <div
                   className="flex-1 min-w-[120px]"
                   data-testid="document-parameter-selector"
@@ -883,12 +886,6 @@ export default function DocumentNew({
                         </div>
                       </TableHead>
                     )}
-                    <TableHead className="w-[150px]">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>Type</span>
-                      </div>
-                    </TableHead>
                     <TableHead className="min-w-[200px]">
                       <div className="flex items-center gap-2">
                         <Tag className="h-3.5 w-3.5 text-muted-foreground" />
@@ -906,7 +903,6 @@ export default function DocumentNew({
                 <TableBody>
                   {pendingFiles.map((file) => {
                     const fc = perFile[file.name] ?? {
-                      type: globalDefaultType,
                       parameterItemIds: [...globalDefaultParameterItemIds],
                       departmentIds: selectedDepartmentIds,
                     };
@@ -914,7 +910,6 @@ export default function DocumentNew({
                     const keepDefault = keepDefaultPerFile[file.name] ?? true;
 
                     const useDefaultDepartment = keepDefault;
-                    const useDefaultType = keepDefault;
                     const useDefaultParameterItems = keepDefault;
 
                     return (
@@ -960,7 +955,6 @@ export default function DocumentNew({
                                   setPerFile((prev) => {
                                     const prevForFile: FileClassification =
                                       prev[file.name] ?? {
-                                        type: globalDefaultType,
                                         parameterItemIds: [
                                           ...globalDefaultParameterItemIds,
                                         ],
@@ -984,38 +978,6 @@ export default function DocumentNew({
                             />
                           </TableCell>
                         )}
-                        <TableCell>
-                          <DocumentTypePicker
-                            selectedType={
-                              useDefaultType ? globalDefaultType : fc.type
-                            }
-                            onSelect={(type) => {
-                              if (!useDefaultType) {
-                                setPerFile((prev) => {
-                                  const prevForFile: FileClassification = prev[
-                                    file.name
-                                  ] ?? {
-                                    type: globalDefaultType,
-                                    parameterItemIds: [
-                                      ...globalDefaultParameterItemIds,
-                                    ],
-                                    departmentIds: selectedDepartmentIds,
-                                  };
-                                  return {
-                                    ...prev,
-                                    [file.name]: {
-                                      ...prevForFile,
-                                      type,
-                                    },
-                                  } as Record<string, FileClassification>;
-                                });
-                              }
-                            }}
-                            placeholder="Type"
-                            compact={true}
-                            disabled={useDefaultType}
-                          />
-                        </TableCell>
                         <TableCell className="max-w-[300px]">
                           <ParameterItemPicker
                             mapping={parameterItemMapping}
@@ -1031,7 +993,6 @@ export default function DocumentNew({
                                   const prevForFile: FileClassification = prev[
                                     file.name
                                   ] ?? {
-                                    type: fc.type,
                                     parameterItemIds: [
                                       ...globalDefaultParameterItemIds,
                                     ],

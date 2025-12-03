@@ -8,6 +8,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TYPE agent_role AS ENUM (
   'classify', 
   'grade',
+  'grade-text',
+  'grade-voice',
   'hint',
   'input_guardrail',
   'output_guardrail',

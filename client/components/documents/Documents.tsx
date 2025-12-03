@@ -117,16 +117,6 @@ export default function Documents({
   );
 
   // Use server-provided filter options directly (no client-side computation)
-  const typeOptions = useMemo(
-    () =>
-      (documentsData?.type_options || [])
-        .map((opt) => ({
-          value: opt["value"] as string,
-          label: opt["label"] as string,
-        }))
-        .filter((opt) => opt.value && opt.label),
-    [documentsData?.type_options]
-  );
   const scenarioOptions = useMemo(
     () =>
       (documentsData?.scenario_options || [])
@@ -171,24 +161,6 @@ export default function Documents({
               </span>
             </div>
           );
-        },
-      },
-      {
-        accessorKey: "type",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Type" />
-        ),
-        cell: ({ row }) => {
-          const type = row.getValue("type") as string;
-          const typeInfo = typeOptions.find((option) => option.value === type);
-          return (
-            <Badge variant="outline" className="text-xs">
-              {typeInfo?.label || type}
-            </Badge>
-          );
-        },
-        filterFn: (row, _id, value) => {
-          return value.length === 0 || value.includes(row.getValue("type"));
         },
       },
       {
@@ -300,7 +272,7 @@ export default function Documents({
         sortingFn: "datetime",
       },
     ],
-    [scenarioMapping, parameterItemMapping, typeOptions]
+    [scenarioMapping, parameterItemMapping]
   );
 
   // Permission checking using server-provided flags
@@ -445,13 +417,6 @@ export default function Documents({
                     aria-controls="documents-list"
                   />
                 </div>
-                {table.getColumn("type") && (
-                  <DataTableFacetedFilter
-                    column={table.getColumn("type")!}
-                    title="Type"
-                    options={typeOptions}
-                  />
-                )}
                 {table.getColumn("scenario_ids") && (
                   <DataTableFacetedFilter
                     column={table.getColumn("scenario_ids")!}
@@ -491,9 +456,6 @@ export default function Documents({
               {tableRows.length ? (
                 tableRows.map((row) => {
                   const document = row.original;
-                  const typeInfo = typeOptions.find(
-                    (opt) => opt.value === document.type
-                  );
                   return (
                     <Card
                       key={document.document_id}
@@ -510,9 +472,6 @@ export default function Documents({
                             </CardTitle>
                             <div className="mt-1 space-y-2">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <Badge variant="outline">
-                                  {typeInfo?.label || document.type}
-                                </Badge>
                                 {!document.active && (
                                   <Badge variant="secondary">Inactive</Badge>
                                 )}
@@ -698,7 +657,6 @@ export default function Documents({
                   document={{
                     document_id: previewDocument.document_id,
                     name: previewDocument.name,
-                    type: previewDocument.type,
                     updatedAt: previewDocument.updated_at,
                     extension: previewDocument.extension || "",
                     scenario_ids: previewDocument.scenario_ids,

@@ -10,7 +10,6 @@ import { isCodeByName } from "@/utils/mime-map";
 type DocumentItem = {
   document_id: string;
   name: string;
-  type: string;
   updatedAt: string;
   extension: string;
   scenario_ids: string[];
@@ -40,16 +39,9 @@ const isMobileSafari =
   /Safari/.test(navigator.userAgent) &&
   !/CriOS|FxiOS/.test(navigator.userAgent);
 
-// Simplified document type info
-const getDocumentTypeInfo = (type: string) => {
-  const typeMap: Record<string, { icon: string; color: string }> = {
-    homework: { icon: "📝", color: "bg-blue-500" },
-    project: { icon: "🚀", color: "bg-purple-500" },
-    quiz: { icon: "❓", color: "bg-yellow-500" },
-    midterm: { icon: "📊", color: "bg-red-500" },
-    lab: { icon: "🧪", color: "bg-green-500" },
-  };
-  return typeMap[type] || { icon: "📄", color: "bg-gray-500" };
+// Simplified document icon info (generic since we no longer have document types)
+const getDocumentIconInfo = () => {
+  return { icon: "📄", color: "bg-gray-500" };
 };
 
 export default function DocumentViewer({
@@ -131,7 +123,7 @@ export default function DocumentViewer({
     loadDocument();
   }, [document.document_id, document.file_path, document.name, isFormDocument]);
 
-  const typeInfo = getDocumentTypeInfo(document.type || "homework");
+  const typeInfo = getDocumentIconInfo();
 
   // Simplified content rendering
   const renderContent = () => {

@@ -12,13 +12,15 @@ CREATE TABLE policies (
   name       TEXT        NOT NULL,
   description TEXT       NOT NULL,
   upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
-  active     BOOLEAN     NOT NULL DEFAULT TRUE
+  active     BOOLEAN     NOT NULL DEFAULT TRUE,
+  classify_agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE RESTRICT DEFAULT '434b105b-a302-5638-93c6-e4bbac94b4f0'::uuid
 );
 
 CREATE INDEX ON policies (name);
 CREATE INDEX ON policies (active);
 CREATE INDEX ON policies (created_at);
 CREATE INDEX ON policies (upload_id);
+CREATE INDEX ON policies (classify_agent_id);
 
 -- Policy → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)
@@ -46,4 +48,18 @@ CREATE TABLE policy_documents (
 
 CREATE INDEX ON policy_documents (policy_id);
 CREATE INDEX ON policy_documents (document_id);
+
+-- Policy → Parameter Items junction table (BCNF normalization)
+-- Allows policies to be filtered by parameter values
+CREATE TABLE policy_parameter_items (
+  policy_id         UUID NOT NULL REFERENCES policies(id)       ON DELETE CASCADE,
+  parameter_item_id UUID NOT NULL REFERENCES parameter_items(id) ON DELETE CASCADE,
+  active            BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (policy_id, parameter_item_id)
+);
+
+CREATE INDEX ON policy_parameter_items (policy_id);
+CREATE INDEX ON policy_parameter_items (parameter_item_id);
 

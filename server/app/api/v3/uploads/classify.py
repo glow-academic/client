@@ -1,0 +1,322 @@
+"""Upload classification endpoint - v3 API following DHH principles."""
+
+import json
+import uuid
+import zipfile
+from pathlib import Path
+from typing import Annotated, Any
+
+import asyncpg  # type: ignore
+from agents import FunctionToolResult, Runner, RunContextWrapper, ToolsToFinalOutputResult, trace
+from fastapi import APIRouter, Depends, Request, Response
+from pydantic import BaseModel
+
+from app.main import TUS_UPLOADS_DIR, UPLOAD_FOLDER, classification_results, get_db
+from app.utils.agents.generic_agent import GenericAgent
+from app.utils.agents.tools.create_classification_tools import (
+    create_classification_tools,
+)
+from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.debug_info import DebugContext
+from app.utils.logging.db_logger import get_logger
+from app.utils.sql_helper import load_sql
+
+logger = get_logger(__name__)
+
+router = APIRouter()
+
+
+class ClassifyUploadRequest(BaseModel):
+    """Request body for upload classification."""
+
+    profileId: str
+    parameterIds: list[str] | None = None  # Optional filter for specific parameters
+
+
+class ClassifyUploadResponse(BaseModel):
+    """Response from upload classification."""
+
+    success: bool
+    message: str
+    suggestedParameterItemIds: dict[str, list[str]]  # file_name -> [parameter_item_ids]
+    newParameterItems: list[dict[str, Any]] = []  # For future use - new items to create
+
+
+@router.post("/upload/{upload_id}/classify", response_model=ClassifyUploadResponse)
+async def classify_upload(
+    upload_id: str,
+    request_body: ClassifyUploadRequest,
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+) -> ClassifyUploadResponse:
+    """Classify an uploaded file and suggest parameter items."""
+    tags = ["uploads"]
+
+    try:
+        # Find the upload directory
+        upload_dir = TUS_UPLOADS_DIR / upload_id
+
+        if not upload_dir.exists():
+            return ClassifyUploadResponse(
+                success=False,
+                message=f"Upload with uploadId {upload_id} not found",
+                suggestedParameterItemIds={},
+            )
+
+        # Read metadata
+        metadata_path = upload_dir / "metadata.json"
+        metadata = {}
+        if metadata_path.exists():
+            with open(metadata_path) as f:
+                metadata = json.load(f)
+
+        # Get the uploaded file path
+        file_path = upload_dir / "file"
+
+        if not file_path.exists() or file_path.stat().st_size == 0:
+            return ClassifyUploadResponse(
+                success=False,
+                message="Upload file is missing or empty",
+                suggestedParameterItemIds={},
+            )
+
+        filename = metadata.get("filename", "unknown")
+        is_zip = filename.lower().endswith(".zip")
+
+        # Get parameter items for classification
+        parameter_ids_filter: list[uuid.UUID] | None = None
+        if request_body.parameterIds:
+            parameter_ids_filter = [uuid.UUID(pid) for pid in request_body.parameterIds]
+
+        sql_param_items = load_sql("sql/v3/uploads/get_classification_context.sql")
+        rows = await conn.fetch(
+            sql_param_items,
+            parameter_ids_filter if parameter_ids_filter else [],
+            uuid.UUID(request_body.profileId),
+        )
+
+        parameter_items = [
+            {
+                "id": row["id"],
+                "name": row["name"],
+                "description": row["description"],
+                "value": row["value"],
+                "parameter_id": row["parameter_id"],
+                "parameter_name": row["parameter_name"],
+            }
+            for row in rows
+        ]
+
+        if not parameter_items:
+            return ClassifyUploadResponse(
+                success=False,
+                message="No parameter items available for classification",
+                suggestedParameterItemIds={},
+            )
+
+        # Extract file names from upload
+        file_names: list[str] = []
+        if is_zip:
+            try:
+                with zipfile.ZipFile(file_path, "r") as zip_ref:
+                    file_names = sorted(zip_ref.namelist())
+            except Exception as e:
+                logger.error(f"Error reading ZIP file: {str(e)}")
+                return ClassifyUploadResponse(
+                    success=False,
+                    message=f"Error reading ZIP file: {str(e)}",
+                    suggestedParameterItemIds={},
+                )
+        else:
+            file_names = [filename]
+
+        # Clear previous classification results
+        classification_results.clear()
+
+        # Get user's department for agent selection (use first department or None)
+        profile_id_uuid = uuid.UUID(request_body.profileId)
+        user_dept_rows = await conn.fetch(
+            "SELECT department_id FROM profile_departments WHERE profile_id = $1 AND active = true LIMIT 1",
+            profile_id_uuid
+        )
+        department_id = user_dept_rows[0]["department_id"] if user_dept_rows else None
+
+        # Get classification agent context
+        sql_context = load_sql("sql/v3/agents/get_upload_classification_run_context.sql")
+        context_row = await conn.fetchrow(
+            sql_context,
+            department_id,
+            profile_id_uuid,
+        )
+
+        if not context_row:
+            return ClassifyUploadResponse(
+                success=False,
+                message="Classification agent not found",
+                suggestedParameterItemIds={},
+            )
+
+        context = {
+            "agent_id": context_row["agent_id"],
+            "agent_name": context_row["agent_name"],
+            "system_prompt": context_row["system_prompt"],
+            "temperature": float(context_row["temperature"]),
+            "reasoning": context_row["reasoning"],
+            "model_id": context_row["model_id"],
+            "model_name": context_row["model_name"],
+            "provider": context_row["provider"],
+            "base_url": context_row["base_url"] or None,
+            "api_key": context_row["api_key"],
+            "profile_id": context_row["profile_id"],
+            "req_per_day": context_row["req_per_day"],
+            "runs_today_count": int(context_row["runs_today_count"]),
+        }
+
+        # Check rate limit
+        if context["req_per_day"] is not None and context["runs_today_count"] >= context["req_per_day"]:
+            return ClassifyUploadResponse(
+                success=False,
+                message=f"Daily request limit of {context['req_per_day']} reached. Please try again tomorrow.",
+                suggestedParameterItemIds={},
+            )
+
+        # Create classification tools from parameter items
+        classification_tools = create_classification_tools(parameter_items)
+
+        # Create tool use behavior - allow agent to finish after tool calls
+        classification_progress_tracker: dict[str, bool] = {}
+        
+        def tool_use_behavior(
+            tool_context: RunContextWrapper[Any],
+            tool_results: list[FunctionToolResult],
+        ) -> ToolsToFinalOutputResult:
+            # Track that tools have been called
+            for result in tool_results:
+                if hasattr(result, "name"):
+                    classification_progress_tracker[result.name] = True
+            
+            # Allow agent to finish after making tool calls
+            # The agent will naturally finish when it's done classifying
+            return ToolsToFinalOutputResult(is_final_output=False)
+
+        # Build classification agent
+        classification_agent = GenericAgent(
+            agent_name=context["agent_name"],
+            system_prompt=context["system_prompt"],
+            temperature=context["temperature"],
+            model_name=context["model_name"],
+            provider=context["provider"],
+            base_url=context["base_url"],
+            api_key=context["api_key"],
+            reasoning=context["reasoning"],
+            tools=classification_tools,
+            parallel_tool_calls=True,
+            tool_use_behavior=tool_use_behavior,
+        )
+
+        # Format file list for agent input
+        file_list_text = "\n".join(
+            [f"{i+1}. {name}" for i, name in enumerate(file_names)]
+        )
+
+        # Format parameter items for agent input
+        parameter_items_text = "\n".join(
+            [
+                f"- {item['name']} (ID: {item['id']}): {item['description']} [Parameter: {item['parameter_name']}]"
+                for item in parameter_items
+            ]
+        )
+
+        # Create input for agent
+        agent_input = f"""You need to classify the following files by matching them to appropriate parameter items.
+
+Files:
+{file_list_text}
+
+Available Parameter Items:
+{parameter_items_text}
+
+Analyze each file name and classify it by selecting the most appropriate parameter item IDs. A file can be linked to multiple parameter items if relevant.
+
+Use the provided classification tools to indicate which files match each parameter item. Call the tool for each parameter item that has matching files."""
+
+        # Create model run
+        sql_create_run = load_sql("sql/v3/model_runs/create_model_run_complete.sql")
+        model_run_row = await conn.fetchrow(
+            sql_create_run,
+            str(department_id) if department_id else None,
+            context["model_id"],
+            context["agent_id"],
+            "agent",
+            context["profile_id"],
+            None,  # key_id
+            context["agent_id"],  # agent_id
+        )
+        model_run_id = uuid.UUID(model_run_row["run_id"])
+
+        # Run classification agent
+        input_items = [{"role": "user", "content": agent_input}]
+        
+        with trace(
+            "Classification Agent",
+            trace_id=None,
+            group_id=None,
+        ):
+            result = await Runner.run(
+                classification_agent.agent(),
+                input_items,
+                context=DebugContext(conn=conn, run_id=model_run_id),
+            )
+
+        # Update token counts
+        usage = result.context_wrapper.usage
+        sql_update_tokens = load_sql("sql/v3/model_runs/update_model_run_tokens.sql")
+        await conn.execute(
+            sql_update_tokens,
+            str(model_run_id),
+            usage.input_tokens,
+            usage.output_tokens,
+        )
+
+        # Map results: file_name -> [parameter_item_ids]
+        suggested_items: dict[str, list[str]] = {}
+        for file_name in file_names:
+            suggested_items[file_name] = []
+
+        # Process classification_results to map to file names
+        for param_item_id, file_numbers in classification_results.items():
+            for file_num_str in file_numbers:
+                try:
+                    file_index = int(file_num_str) - 1
+                    if 0 <= file_index < len(file_names):
+                        file_name = file_names[file_index]
+                        if file_name not in suggested_items:
+                            suggested_items[file_name] = []
+                        if param_item_id not in suggested_items[file_name]:
+                            suggested_items[file_name].append(param_item_id)
+                except (ValueError, IndexError):
+                    logger.warning(
+                        f"Invalid file number in classification results: {file_num_str}"
+                    )
+
+        result_data = ClassifyUploadResponse(
+            success=True,
+            message="Classification completed successfully",
+            suggestedParameterItemIds=suggested_items,
+        )
+
+        # Invalidate cache after classification
+        await invalidate_tags(tags)
+        response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+        return result_data
+
+    except Exception as e:
+        logger.error(f"Error classifying upload: {str(e)}")
+        return ClassifyUploadResponse(
+            success=False,
+            message=f"Failed to classify upload: {str(e)}",
+            suggestedParameterItemIds={},
+        )
+

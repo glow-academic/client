@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 
 // Custom Components
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import {
@@ -122,6 +123,7 @@ export default function Policy({
     name: string;
     description: string;
     departmentIds: string[];
+    parameterItemIds: string[];
     active: boolean;
   };
 
@@ -130,6 +132,7 @@ export default function Policy({
       name: "",
       description: "",
       departmentIds: defaultDepartmentIds,
+      parameterItemIds: [],
       active: true,
     }),
     [defaultDepartmentIds]
@@ -155,6 +158,43 @@ export default function Policy({
     [policyData?.valid_department_ids]
   );
 
+  // Parameter item mappings
+  const parameterItemMapping = useMemo(
+    () => policyData?.parameter_item_mapping || {},
+    [policyData?.parameter_item_mapping]
+  );
+
+  const validParameterItemIds = useMemo(
+    () => policyData?.valid_parameter_item_ids || [],
+    [policyData?.valid_parameter_item_ids]
+  );
+
+  // Compute valid parameter item IDs based on selected departments
+  const filteredValidParameterItemIds = useMemo(() => {
+    const baseIds = validParameterItemIds;
+    const selectedDeptIds = formData.departmentIds;
+
+    // If no departments selected, return all valid IDs
+    if (selectedDeptIds.length === 0) {
+      return baseIds;
+    }
+
+    // Get union of parameter_ids from selected departments
+    const deptParameterIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+        deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+      }
+    });
+
+    // Filter parameter items: include if their parameter_id is in department parameter IDs
+    return baseIds.filter((itemId) => {
+      const item = parameterItemMapping[itemId];
+      return item && deptParameterIds.has(item.parameter_id);
+    });
+  }, [formData.departmentIds, departmentMapping, parameterItemMapping, validParameterItemIds]);
+
   // Load policy data from server response
   useEffect(() => {
     if (policyData && isEditMode && !formDataInitializedRef.current) {
@@ -164,6 +204,7 @@ export default function Policy({
         name: policyData.name,
         description: policyData.description,
         departmentIds: deptIds,
+        parameterItemIds: policyData.parameter_item_ids || [],
         active: policyData.active ?? true,
       });
       formDataInitializedRef.current = true;
@@ -252,6 +293,7 @@ export default function Policy({
           description: formData.description,
           active: formData.active,
           departmentIds: deptIds,
+          parameter_item_ids: formData.parameterItemIds,
         });
 
         toast.success("Policy updated successfully");
@@ -307,6 +349,47 @@ export default function Policy({
 
               const databaseUploadId = finalizeResult.uploadId;
 
+              // Call classification endpoint to get suggested parameter items
+              let suggestedParameterItemIds: string[] = [];
+              try {
+                const classifyResponse = await fetch(
+                  `/api/v3/uploads/upload/${tusUploadId}/classify`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      profileId: effectiveProfile?.id || "",
+                      parameterIds: null, // Use all policy parameters
+                    }),
+                  }
+                );
+
+                if (classifyResponse.ok) {
+                  const classifyResult = await classifyResponse.json();
+                  if (
+                    classifyResult.success &&
+                    classifyResult.suggestedParameterItemIds
+                  ) {
+                    // Get suggested items for this file (use filename as key)
+                    suggestedParameterItemIds =
+                      classifyResult.suggestedParameterItemIds[selectedFile.name] || [];
+                  }
+                }
+              } catch {
+                // Classification failed, but continue with user's selections
+                // Silently fail - user can still proceed with manual selections
+              }
+
+              // Merge user's selections with suggested items (user selections take priority)
+              const finalParameterItemIds = Array.from(
+                new Set([
+                  ...formData.parameterItemIds,
+                  ...suggestedParameterItemIds,
+                ])
+              );
+
               // Create policy with upload_id
               const deptIds = transformDepartmentIdsForSubmit(
                 formData.departmentIds,
@@ -320,6 +403,7 @@ export default function Policy({
                   uploadId: databaseUploadId,
                   active: formData.active,
                   departmentIds: deptIds,
+                  parameter_item_ids: finalParameterItemIds,
                 },
               });
 
@@ -413,6 +497,26 @@ export default function Policy({
             />
           </div>
         )}
+
+        {/* Parameter Items */}
+        <div className="space-y-2">
+          <Label>Parameter Items</Label>
+          <ParameterItemPicker
+            mapping={parameterItemMapping}
+            selectedIds={formData.parameterItemIds}
+            onSelect={(ids) =>
+              handleInputChange("parameterItemIds", ids as string[])
+            }
+            validIds={filteredValidParameterItemIds}
+            parameterId=""
+            parameterName="Parameter Items"
+            allowCreate={false}
+            multiSelect={true}
+            badgesPosition="below"
+            showClearAll={true}
+            disabled={isSubmitting || isUploading}
+          />
+        </div>
 
         {/* Active Switch */}
         <div className="space-y-2 pt-2">

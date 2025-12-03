@@ -14,7 +14,6 @@ import type {
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
-import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,15 +23,6 @@ import { Power } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
-type DocumentType =
-  | "homework"
-  | "project"
-  | "quiz"
-  | "midterm"
-  | "lab"
-  | "lecture"
-  | "syllabus";
 
 interface DocumentEditProps {
   documentId: string;
@@ -51,7 +41,6 @@ export default function DocumentEdit({
   const [formData, setFormData] = useState<{
     name: string;
     active: boolean;
-    type: DocumentType;
     departmentIds: string[];
     parameterItemIds: string[];
     classifyAgentId: string | null;
@@ -59,7 +48,6 @@ export default function DocumentEdit({
   }>({
     name: "",
     active: true,
-    type: "homework",
     departmentIds: [],
     parameterItemIds: [],
     classifyAgentId: null,
@@ -112,7 +100,6 @@ export default function DocumentEdit({
       setFormData({
         name: documentDetail.name || "",
         active: documentDetail.active ?? true,
-        type: (documentDetail.type as DocumentType) || "homework",
         departmentIds: documentDetail.department_ids || [],
         parameterItemIds: documentDetail.parameter_item_ids || [],
         classifyAgentId: documentDetail.classify_agent_id || null,
@@ -130,7 +117,6 @@ export default function DocumentEdit({
         body: {
           documentId,
           name: formData.name,
-          type: formData.type,
           active: formData.active,
           department_id: formData.departmentIds.length > 0 ? formData.departmentIds[0] : null,
           parameter_item_ids: formData.parameterItemIds,
@@ -193,17 +179,6 @@ export default function DocumentEdit({
                 />
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <DocumentTypePicker
-              selectedType={formData.type}
-              onSelect={(value) => {
-                setFormData((prev) => ({ ...prev, type: value }));
-              }}
-              label="Type"
-              description="Choose the type of document"
-            />
           </div>
 
           {/* Department Selection */}

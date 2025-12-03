@@ -5,15 +5,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- INSERT DOCUMENTS FOR TRAINING SCENARIOS
 -- ============================================================================
 
-CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus');
-
 CREATE TABLE documents (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
-    type       document_type   NOT NULL           DEFAULT 'homework',
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
     template BOOLEAN NOT NULL DEFAULT FALSE,

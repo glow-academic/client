@@ -20,7 +20,6 @@ class CreateDocumentRequest(BaseModel):
     """Request to create document."""
 
     name: str
-    type: str
     uploadId: str
     departmentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None

@@ -3,7 +3,6 @@ import * as React from "react";
 
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
-import { DocumentTypePicker } from "@/components/documents/DocumentTypePicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,18 +33,9 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Building2, FileText, Tag, X } from "lucide-react";
+import { Building2, Tag, X } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
-
-type DocumentType =
-  | "homework"
-  | "project"
-  | "quiz"
-  | "midterm"
-  | "lab"
-  | "lecture"
-  | "syllabus";
 
 type ParameterItemMappingItem = {
   name: string;
@@ -62,7 +52,6 @@ type ParameterMappingItem = {
 };
 
 export type FileClassification = {
-  type: DocumentType;
   parameterItemIds: string[];
   departmentIds?: string[];
 };
@@ -86,9 +75,6 @@ export interface UploadClassificationDialogProps {
   parameterMapping: Record<string, ParameterMappingItem>;
   validParameterItemIds: string[];
 }
-
-// Global defaults state - tracks the default values to apply to all files
-const DEFAULT_TYPE: DocumentType = "homework";
 
 export function UploadClassificationDialog({
   open,
@@ -118,13 +104,10 @@ export function UploadClassificationDialog({
   const [perFile, setPerFile] = React.useState<
     Record<string, FileClassification>
   >({});
-  const [zipDefaults, setZipDefaults] = React.useState<FileClassification>({
-    type: DEFAULT_TYPE,
+  const [_zipDefaults, _setZipDefaults] = React.useState<FileClassification>({
     parameterItemIds: [],
   });
   // Global defaults state
-  const [globalDefaultType, setGlobalDefaultType] =
-    React.useState<DocumentType>(DEFAULT_TYPE);
   const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
     React.useState<string[]>([]);
   // Department selection state - default based on role
@@ -379,7 +362,6 @@ export function UploadClassificationDialog({
     const next: Record<string, FileClassification> = {};
     files.forEach((f) => {
       const current: FileClassification = perFile[f.name] ?? {
-        type: globalDefaultType,
         parameterItemIds: [...globalDefaultParameterItemIds],
       };
       next[f.name] = current;
@@ -404,16 +386,6 @@ export function UploadClassificationDialog({
     setGlobalDefaultParameterItemIds(intersection);
   }, [perFile]);
 
-  const applyTypeToAll = (type: DocumentType) => {
-    setGlobalDefaultType(type);
-    setPerFile((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([k, v]) => [k, { ...v, type }])
-      )
-    );
-    setZipDefaults((p) => ({ ...p, type }));
-  };
-
   const applyParameterItemsToAll = (incomingIds: string[]) => {
     if (incomingIds.length === 0) return;
     setGlobalDefaultParameterItemIds((prev) => {
@@ -430,7 +402,7 @@ export function UploadClassificationDialog({
         })
       )
     );
-    setZipDefaults((p) => ({
+    _setZipDefaults((p) => ({
       ...p,
       parameterItemIds: Array.from(
         new Set([...(p.parameterItemIds ?? []), ...incomingIds])
@@ -453,7 +425,7 @@ export function UploadClassificationDialog({
         })
       )
     );
-    setZipDefaults((p) => ({
+    _setZipDefaults((p) => ({
       ...p,
       parameterItemIds: (p.parameterItemIds ?? []).filter(
         (id) => !idsToRemove.includes(id)
@@ -471,7 +443,6 @@ export function UploadClassificationDialog({
 
     files.forEach((file) => {
       const fc = perFile[file.name] ?? {
-        type: globalDefaultType,
         parameterItemIds: [...globalDefaultParameterItemIds],
       };
 
@@ -506,7 +477,6 @@ export function UploadClassificationDialog({
   }, [
     files,
     perFile,
-    globalDefaultType,
     globalDefaultParameterItemIds,
     documentParameterIds,
     filteredValidParameterItemIds,
@@ -557,14 +527,6 @@ export function UploadClassificationDialog({
                   />
                 </div>
               )}
-              <div data-testid="document-type-selector">
-                <DocumentTypePicker
-                  selectedType={globalDefaultType}
-                  onSelect={applyTypeToAll}
-                  placeholder="Type"
-                  compact={true}
-                />
-              </div>
               <div
                 className="flex-1 min-w-[120px]"
                 data-testid="document-parameter-selector"
@@ -620,12 +582,6 @@ export function UploadClassificationDialog({
                       </div>
                     </TableHead>
                   )}
-                  <TableHead className="w-[150px]">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>Type</span>
-                    </div>
-                  </TableHead>
                   <TableHead className="min-w-[200px]">
                     <div className="flex items-center gap-2">
                       <Tag className="h-3.5 w-3.5 text-muted-foreground" />
@@ -643,7 +599,6 @@ export function UploadClassificationDialog({
               <TableBody>
                 {files.map((file) => {
                   const fc = perFile[file.name] ?? {
-                    type: globalDefaultType,
                     parameterItemIds: [...globalDefaultParameterItemIds],
                     departmentIds: selectedDepartmentIds,
                   };
@@ -652,7 +607,6 @@ export function UploadClassificationDialog({
                   const keepDefault = keepDefaultPerFile[file.name] ?? true;
 
                   const useDefaultDepartment = keepDefault;
-                  const useDefaultType = keepDefault;
                   const useDefaultParameterItems = keepDefault;
 
                   return (
@@ -696,7 +650,6 @@ export function UploadClassificationDialog({
                                 const prevForFile: FileClassification = prev[
                                   file.name
                                 ] ?? {
-                                  type: globalDefaultType,
                                   parameterItemIds: [
                                     ...globalDefaultParameterItemIds,
                                   ],
@@ -719,38 +672,6 @@ export function UploadClassificationDialog({
                           disabled={useDefaultDepartment}
                         />
                       </TableCell>
-                      <TableCell>
-                        <DocumentTypePicker
-                          selectedType={
-                            useDefaultType ? globalDefaultType : fc.type
-                          }
-                          onSelect={(type) => {
-                            if (!useDefaultType) {
-                              setPerFile((prev) => {
-                                const prevForFile: FileClassification = prev[
-                                  file.name
-                                ] ?? {
-                                  type: globalDefaultType,
-                                  parameterItemIds: [
-                                    ...globalDefaultParameterItemIds,
-                                  ],
-                                  departmentIds: selectedDepartmentIds,
-                                };
-                                return {
-                                  ...prev,
-                                  [file.name]: {
-                                    ...prevForFile,
-                                    type,
-                                  },
-                                } as Record<string, FileClassification>;
-                              });
-                            }
-                          }}
-                          placeholder="Type"
-                          compact={true}
-                          disabled={useDefaultType}
-                        />
-                      </TableCell>
                       <TableCell className="max-w-[300px]">
                         <ParameterItemPicker
                           mapping={parameterItemMapping}
@@ -766,7 +687,6 @@ export function UploadClassificationDialog({
                                 const prevForFile: FileClassification = prev[
                                   file.name
                                 ] ?? {
-                                  type: fc.type,
                                   parameterItemIds: [
                                     ...globalDefaultParameterItemIds,
                                   ],

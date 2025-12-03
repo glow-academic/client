@@ -64,9 +64,10 @@ policy_data AS (
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
-        p.file_path,
-        p.mime_type
+        u.file_path,
+        u.mime_type
     FROM policies p
+    LEFT JOIN uploads u ON u.id = p.upload_id
     LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
     CROSS JOIN user_profile up
     WHERE p.active = true
@@ -83,7 +84,10 @@ policy_mapping_data AS (
             jsonb_build_object(
                 'name', p.name,
                 'description', p.description,
-                'extension', SUBSTRING(p.file_path FROM '\.([^\.]+)$'),
+                'extension', CASE 
+                    WHEN p.file_path IS NOT NULL THEN SUBSTRING(p.file_path FROM '\.([^\.]+)$')
+                    ELSE NULL
+                END,
                 'filePath', p.file_path,
                 'mimeType', p.mime_type
             )

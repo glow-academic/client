@@ -47,7 +47,6 @@ document_data AS (
     SELECT 
         d.id as document_id,
         d.name,
-        d.type,
         d.updated_at,
         d.upload_id::text,
         u.mime_type,
@@ -68,7 +67,7 @@ document_data AS (
     LEFT JOIN document_parameter_items_cte dpic ON dpic.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
-    GROUP BY d.id, d.name, d.type, d.updated_at, d.upload_id, u.mime_type, u.file_path, d.active, 
+    GROUP BY d.id, d.name, d.updated_at, d.upload_id, u.mime_type, u.file_path, d.active, 
              ddd.department_ids, ds.scenario_ids, dpic.parameter_item_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
