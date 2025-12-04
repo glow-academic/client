@@ -20555,6 +20555,17 @@
           "show_default_account": {
             "type": "boolean",
             "title": "Show Default Account"
+          },
+          "default_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Department Id"
           }
         },
         "type": "object",
@@ -20562,7 +20573,8 @@
           "providers",
           "departments",
           "guest_login_enabled",
-          "show_default_account"
+          "show_default_account",
+          "default_department_id"
         ],
         "title": "LoginProvidersResponse",
         "description": "Response with list of active provider options and departments."

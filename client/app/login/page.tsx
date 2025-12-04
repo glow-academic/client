@@ -64,6 +64,7 @@ async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
       departments: [],
       guest_login_enabled: true,
       show_default_account: false,
+      default_department_id: null,
     } as LoginDataOut;
   }
 }
@@ -116,9 +117,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       ? departmentIdFromQuery
       : undefined;
 
-  // Business logic: Pick default department if none provided (first department, or none if empty)
+  // Business logic: Pick default department if none provided
+  // Priority: 1) Valid query param, 2) Default from settings_default_department table, 3) First department alphabetically
   const initialDepartmentId =
     validDepartmentId ||
+    (loginData.default_department_id &&
+    loginData.departments.some((d) => d.id === loginData.default_department_id)
+      ? loginData.default_department_id
+      : undefined) ||
     (loginData.departments.length > 0
       ? loginData.departments[0]?.id
       : undefined);
@@ -131,6 +137,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       departments={loginData.departments}
       initialDepartmentId={initialDepartmentId}
       activeSettings={activeSettings}
+      defaultDepartmentId={loginData.default_department_id || null}
     />
   );
 }

@@ -1,6 +1,7 @@
 """Auth login endpoint - returns list of active provider options and departments."""
 
-from typing import Annotated
+import json
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -40,6 +41,7 @@ class LoginProvidersResponse(BaseModel):
     departments: list[DepartmentOption]
     guest_login_enabled: bool
     show_default_account: bool  # Whether to show "continue as default account" button
+    default_department_id: str | None  # Default department ID from settings_default_department table
 
 
 router = APIRouter()
@@ -64,9 +66,19 @@ async def get_login_providers(
             show_default_account=False,
         )
     
+    # Parse JSON fields - asyncpg may return JSON as strings
+    def parse_jsonb(data: Any) -> Any:  # noqa: ANN401
+        if isinstance(data, str):
+            try:
+                return json.loads(data)
+            except json.JSONDecodeError:
+                return []
+        return data
+    
     # Parse providers JSON - handle empty arrays and null values
-    providers_json = row.get("providers_json")
-    if not providers_json or not isinstance(providers_json, list):
+    providers_json_raw = row.get("providers_json")
+    providers_json = parse_jsonb(providers_json_raw) if providers_json_raw else []
+    if not isinstance(providers_json, list):
         providers_json = []
     
     providers = [
@@ -81,8 +93,9 @@ async def get_login_providers(
     ]
     
     # Parse departments JSON - handle empty arrays and null values
-    departments_json = row.get("departments_json")
-    if not departments_json or not isinstance(departments_json, list):
+    departments_json_raw = row.get("departments_json")
+    departments_json = parse_jsonb(departments_json_raw) if departments_json_raw else []
+    if not isinstance(departments_json, list):
         departments_json = []
     
     departments = [
@@ -98,6 +111,13 @@ async def get_login_providers(
     # Get guest_login_enabled with fallback
     guest_login_enabled = bool(row.get("guest_login_enabled", True))
     
+    # Get default department ID from settings
+    default_department_id = row.get("default_department_id")
+    if default_department_id and isinstance(default_department_id, str):
+        default_department_id = default_department_id.strip() or None
+    else:
+        default_department_id = None
+    
     # Show "continue as default account" if no default providers exist
     has_default_providers = any(p.is_default for p in providers)
     show_default_account = not has_default_providers
@@ -107,5 +127,6 @@ async def get_login_providers(
         departments=departments,
         guest_login_enabled=guest_login_enabled,
         show_default_account=show_default_account,
+        default_department_id=default_department_id,
     )
 

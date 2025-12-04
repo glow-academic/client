@@ -8715,6 +8715,8 @@ export interface components {
             guest_login_enabled: boolean;
             /** Show Default Account */
             show_default_account: boolean;
+            /** Default Department Id */
+            default_department_id: string | null;
         };
         /**
          * LogsBundleRequest

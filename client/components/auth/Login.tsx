@@ -243,6 +243,7 @@ interface LoginProps {
   departments?: DepartmentOption[]; // List of departments for picker
   initialDepartmentId?: string | undefined; // Initial department ID from query parameter
   activeSettings?: SettingsActiveOut | null; // Active settings for theme application
+  defaultDepartmentId?: string | null; // Default department ID from settings_default_department table
 }
 
 export default function Login({
@@ -252,6 +253,7 @@ export default function Login({
   departments = [],
   initialDepartmentId,
   activeSettings,
+  defaultDepartmentId,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -431,10 +433,16 @@ export default function Login({
                   onValueChange={(value) => {
                     setSelectedDepartmentId(value);
                     // Update URL with department parameter and trigger server-side refetch
+                    // If selected department is the default, remove query param to keep URL clean
                     const url = new URL(window.location.href);
-                    if (value) {
+                    if (value && value === defaultDepartmentId) {
+                      // Remove query param if it's the default department
+                      url.searchParams.delete("department");
+                    } else if (value) {
+                      // Set query param for non-default departments
                       url.searchParams.set("department", value);
                     } else {
+                      // Remove query param if no department selected
                       url.searchParams.delete("department");
                     }
                     // Use router.push to trigger server-side refetch (like dashboard filters)
