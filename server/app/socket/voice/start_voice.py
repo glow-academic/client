@@ -4,6 +4,7 @@ import json
 import uuid
 from typing import Any
 
+from app.api.v3.realtime.ephemeral_key import _generate_ephemeral_key_internal
 from app.main import _voice_sessions, get_pool, sio
 from app.utils.agents.build_orchestrator_agent import build_orchestrator_agent
 from app.utils.agents.tools.create_persona_tools import create_persona_tools
@@ -33,7 +34,9 @@ class StartVoiceResponsePayload(BaseModel):
 
     success: bool
     message: str
-    persona_tools: list[dict[str, str]]  # List of {name, description} for each tool
+    ephemeral_key: str
+    persona_tools: list[dict[str, str]]  # List of {name, description, parameters} for each tool
+    config: dict[str, Any]  # Session config (model, audio format, etc.)
 
 
 # Emit helper functions
@@ -75,6 +78,21 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
             return
 
         async with pool.acquire() as conn:
+            # Generate ephemeral key first
+            try:
+                ephemeral_key, expires_in = await _generate_ephemeral_key_internal()
+                logger.info(f"Generated ephemeral key for chat {chat_id} (expires in {expires_in}s)")
+            except Exception as e:
+                logger.error(f"Failed to generate ephemeral key: {e}", exc_info=True)
+                await start_voice_error(
+                    StartVoiceErrorPayload(
+                        success=False,
+                        message=f"Failed to generate ephemeral key: {str(e)}",
+                    ),
+                    room=sid,
+                )
+                return
+
             # Get chat context (similar to send_message)
             sql_context = load_sql("sql/v3/agents/get_simulation_run_context.sql")
             context_row = await conn.fetchrow(sql_context, str(chat_id_uuid))
@@ -130,7 +148,7 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 "context": context,
             }
 
-            # Format persona tools for client
+            # Format persona tools for client (include parameters for RealtimeAgent)
             persona_tools_response = []
             for tool in persona_tools:
                 # Handle different tool types - only FunctionTool has description
@@ -140,12 +158,38 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 else:
                     tool_description = f"Tool for {tool.name}"
 
+                # Extract parameters schema if available
+                tool_parameters = {}
+                if hasattr(tool, "parameters") and tool.parameters:
+                    # Convert Pydantic model to JSON schema
+                    if hasattr(tool.parameters, "model_json_schema"):
+                        tool_parameters = tool.parameters.model_json_schema()
+                    elif hasattr(tool.parameters, "schema"):
+                        tool_parameters = tool.parameters.schema()
+
                 persona_tools_response.append(
                     {
                         "name": tool.name,
                         "description": tool_description,
+                        "parameters": tool_parameters,
                     }
                 )
+
+            # Build session config
+            session_config = {
+                "model": "gpt-realtime",
+                "inputAudioFormat": "pcm16",
+                "outputAudioFormat": "pcm16",
+                "inputAudioTranscription": {
+                    "model": "gpt-4o-mini-transcribe",
+                },
+                "turnDetection": {
+                    "type": "server_vad",
+                    "threshold": 0.5,
+                    "prefixPaddingMs": 300,
+                    "silenceDurationMs": 500,
+                },
+            }
 
             logger.info(
                 f"Started voice session for chat {chat_id} with {len(persona_tools)} persona tools"
@@ -155,7 +199,9 @@ async def _start_voice_impl(sid: str, data: StartVoicePayload) -> None:
                 StartVoiceResponsePayload(
                     success=True,
                     message="Voice session started successfully",
+                    ephemeral_key=ephemeral_key,
                     persona_tools=persona_tools_response,
+                    config=session_config,
                 ),
                 room=sid,
             )

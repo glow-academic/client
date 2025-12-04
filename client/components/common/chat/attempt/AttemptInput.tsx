@@ -32,9 +32,9 @@ import {
 
 import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { api } from "@/lib/api/client";
-import { RealtimeVoiceWrapper } from "@/lib/realtime/RealtimeVoiceWrapper";
+import { RealtimeAgent, RealtimeSession, tool } from "@openai/agents/realtime";
 import { toast } from "sonner";
+import { z } from "zod";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -85,10 +85,10 @@ export default function AttemptInput({
   const [isStartingVoice, setIsStartingVoice] = useState(false);
   const [isStoppingVoice, setIsStoppingVoice] = useState(false);
 
-  const { socket, effectiveProfile } = useProfile();
+  const { socket } = useProfile();
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const realtimeWrapperRef = useRef<RealtimeVoiceWrapper | null>(null);
+  const realtimeSessionRef = useRef<RealtimeSession | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -159,10 +159,10 @@ export default function AttemptInput({
         // Stop voice session on server
         socket.emit("stop_voice", { chat_id: currentChat.id });
 
-        // Disconnect Realtime wrapper
-        if (realtimeWrapperRef.current) {
-          await realtimeWrapperRef.current.disconnect();
-          realtimeWrapperRef.current = null;
+        // Disconnect Realtime session
+        if (realtimeSessionRef.current) {
+          await realtimeSessionRef.current.disconnect();
+          realtimeSessionRef.current = null;
         }
 
         // Stop microphone
@@ -189,26 +189,21 @@ export default function AttemptInput({
       // Start voice mode
       setIsStartingVoice(true);
       try {
-        // Get ephemeral key from server
-        const profileId = effectiveProfile?.id || "guest-profile-id";
-        const ephemeralKeyResponse = await api.post("/realtime/ephemeral-key", {
-          body: { profileId },
-        });
-
-        if (
-          !ephemeralKeyResponse.success ||
-          !ephemeralKeyResponse.ephemeral_key
-        ) {
-          throw new Error(
-            ephemeralKeyResponse.message || "Failed to get ephemeral key"
-          );
-        }
-
-        // Start voice session on server
+        // Start voice session on server - this will return ephemeral key + tools + config
         socket.emit("start_voice", { chat_id: currentChat.id });
 
-        // Wait for server response with persona tools
-        await new Promise<void>((resolve, reject) => {
+        // Wait for server response with ephemeral key, tools, and config
+        const responseData = await new Promise<{
+          success: boolean;
+          message: string;
+          ephemeral_key: string;
+          persona_tools: Array<{
+            name: string;
+            description: string;
+            parameters: Record<string, unknown>;
+          }>;
+          config: Record<string, unknown>;
+        }>((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error("Timeout waiting for voice session start"));
           }, 10000);
@@ -216,7 +211,7 @@ export default function AttemptInput({
           socket.once("start_voice_response", (data) => {
             clearTimeout(timeout);
             if (data.success) {
-              resolve();
+              resolve(data);
             } else {
               reject(
                 new Error(data.message || "Failed to start voice session")
@@ -230,16 +225,71 @@ export default function AttemptInput({
           });
         });
 
-        // Create Realtime wrapper
-        const wrapper = new RealtimeVoiceWrapper({
-          socket,
-          chatId: currentChat.id,
-          ephemeralKey: ephemeralKeyResponse.ephemeral_key,
+        // Convert server tools to RealtimeAgent tools
+        // All persona tools have a message parameter based on server implementation
+        const realtimeTools = responseData.persona_tools.map((toolDef) => {
+          return tool({
+            name: toolDef.name,
+            description: toolDef.description,
+            parameters: z.object({
+              message: z
+                .string()
+                .describe(
+                  `Respond as the persona. This is the message that will be said.`
+                ),
+            }),
+            async execute(args) {
+              // Forward tool call to server via WebSocket
+              socket.emit("voice_realtime_event", {
+                chat_id: currentChat.id,
+                event_type: "response.function_call_arguments.done",
+                event_data: JSON.stringify({
+                  name: toolDef.name,
+                  arguments: args,
+                }),
+              });
+              return `Tool ${toolDef.name} executed`;
+            },
+          });
         });
 
-        // Connect wrapper
-        await wrapper.connect();
-        realtimeWrapperRef.current = wrapper;
+        // Create RealtimeAgent with tools
+        const agent = new RealtimeAgent({
+          name: "Voice Assistant",
+          instructions:
+            "You are a helpful voice assistant that orchestrates conversations between personas.",
+          tools: realtimeTools,
+        });
+
+        // Create RealtimeSession with config from server
+        const session = new RealtimeSession(agent, {
+          model: "gpt-realtime",
+          config: responseData.config,
+        });
+
+        // Set up event listeners - library handles audio playback automatically
+        session.on(
+          "function_call",
+          (event: { name: string; arguments: Record<string, unknown> }) => {
+            // Forward tool call to server with strongly typed event
+            socket.emit("voice_tool_call", {
+              chat_id: currentChat.id,
+              tool_name: event.name,
+              arguments: event.arguments,
+            });
+          }
+        );
+
+        session.on("audio_interrupted", () => {
+          // Notify server of interruption
+          socket.emit("voice_interrupted", {
+            chat_id: currentChat.id,
+          });
+        });
+
+        // Connect session with ephemeral key
+        await session.connect({ apiKey: responseData.ephemeral_key });
+        realtimeSessionRef.current = session;
 
         // Start microphone capture
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -251,7 +301,7 @@ export default function AttemptInput({
         });
         mediaStreamRef.current = stream;
 
-        // Set up audio context for processing
+        // Set up audio context for processing input
         const audioContext = new AudioContext({ sampleRate: 24000 });
         audioContextRef.current = audioContext;
 
@@ -259,9 +309,9 @@ export default function AttemptInput({
         const processor = audioContext.createScriptProcessor(4096, 1, 1);
 
         processor.onaudioprocess = (e) => {
-          if (realtimeWrapperRef.current && voiceModeEnabled) {
+          if (realtimeSessionRef.current && voiceModeEnabled) {
             const inputData = e.inputBuffer.getChannelData(0);
-            // Convert Float32Array to ArrayBuffer for Realtime API
+            // Convert Float32Array to ArrayBuffer (PCM16) for Realtime API
             const buffer = new ArrayBuffer(inputData.length * 2);
             const view = new DataView(buffer);
             for (let i = 0; i < inputData.length; i++) {
@@ -269,7 +319,8 @@ export default function AttemptInput({
               const int16Value = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
               view.setInt16(i * 2, int16Value, true);
             }
-            realtimeWrapperRef.current.appendInputAudio(buffer);
+            // Send audio to session - library handles output automatically
+            realtimeSessionRef.current.sendAudio(buffer);
           }
         };
 
@@ -284,9 +335,9 @@ export default function AttemptInput({
           error instanceof Error ? error.message : "Failed to start voice mode";
         toast.error(errorMessage);
         // Cleanup on error
-        if (realtimeWrapperRef.current) {
-          await realtimeWrapperRef.current.disconnect();
-          realtimeWrapperRef.current = null;
+        if (realtimeSessionRef.current) {
+          await realtimeSessionRef.current.disconnect();
+          realtimeSessionRef.current = null;
         }
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -296,23 +347,17 @@ export default function AttemptInput({
         setIsStartingVoice(false);
       }
     }
-  }, [
-    voiceModeEnabled,
-    currentChat?.id,
-    socket,
-    isConnected,
-    effectiveProfile?.id,
-  ]);
+  }, [voiceModeEnabled, currentChat?.id, socket, isConnected]);
 
   // Cleanup on unmount or chat change
   useEffect(() => {
     return () => {
       // Cleanup voice mode when component unmounts or chat changes
-      if (realtimeWrapperRef.current) {
-        realtimeWrapperRef.current.disconnect().catch(() => {
+      if (realtimeSessionRef.current) {
+        realtimeSessionRef.current.disconnect().catch(() => {
           // Ignore disconnect errors during cleanup
         });
-        realtimeWrapperRef.current = null;
+        realtimeSessionRef.current = null;
       }
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((track) => track.stop());

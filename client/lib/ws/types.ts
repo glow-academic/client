@@ -191,9 +191,12 @@ export type ClientToServerEvents = {
   stop_voice: (payload: {
     chat_id: string;
   }) => void;
-  voice_realtime_event: (payload: {
+  voice_interrupted: (payload: {
     chat_id: string;
-    event_type: string;
-    event_data: string;
+  }) => void;
+  voice_tool_call: (payload: {
+    chat_id: string;
+    tool_name: string;
+    arguments: string;
   }) => void;
 };

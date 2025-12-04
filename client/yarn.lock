@@ -1063,45 +1063,45 @@
   resolved "https://registry.npmjs.org/@open-draft/until/-/until-2.1.0.tgz"
   integrity sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==
 
-"@openai/agents-core@0.1.11":
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/@openai/agents-core/-/agents-core-0.1.11.tgz#9c531cfbb0049c0b6a0e17b3e7b2397372845c3e"
-  integrity sha512-ye8VIAO2wPIg1zClldIj8We/1R55VmdgnMyn0g4YGbp6RD5Wpv9yfH5kPNWxmHvw8ji+XehyggGoklY4FGQoBQ==
+"@openai/agents-core@0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@openai/agents-core/-/agents-core-0.3.4.tgz#7be399acb1b586fc33304ba533c491d7e4413f3e"
+  integrity sha512-PytKxI6JBkz+i2wgFwyT0C7jhMULwMamvRkXb+vdnpDxkf9hnFwkyeQB+u4FjdnOb1S+P2ohkXHcGZlVCQ11WA==
   dependencies:
     debug "^4.4.0"
-    openai "^5.20.2"
+    openai "^6"
   optionalDependencies:
     "@modelcontextprotocol/sdk" "^1.17.2"
 
-"@openai/agents-openai@0.1.11":
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/@openai/agents-openai/-/agents-openai-0.1.11.tgz#061ae91ee99b6400ee86e5224ceaf8e5d33211c6"
-  integrity sha512-TYYbY7o1cNxtOIO4F1a20qkqDT1Iwr9ZEi0MO2sEaeioK8rGB/Ux54iFvsA3IblUYyK+5fD25vr4vXFasvg2Kg==
+"@openai/agents-openai@0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@openai/agents-openai/-/agents-openai-0.3.4.tgz#8149dc80005af4d224aa61f261fced499949d9ed"
+  integrity sha512-Bl7IrJw9uhuFQ/YYWhRaM9wN/+RBQTMNuXr+WGfBqvkD2RxndM7dh5oH0oRN0VAN4qqn9OA351x65g9oHHfrIA==
   dependencies:
-    "@openai/agents-core" "0.1.11"
+    "@openai/agents-core" "0.3.4"
     debug "^4.4.0"
-    openai "^5.20.2"
+    openai "^6"
 
-"@openai/agents-realtime@0.1.11":
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/@openai/agents-realtime/-/agents-realtime-0.1.11.tgz#6c76cfbf9fd1b05412db7b8a33b33ecac397f07f"
-  integrity sha512-8jaNuYU1acra28i7bYrZIPubI6s2ziY2ZudqAVK2ad+giopXcrNSiJTuZ2S3z+ESnIejwMiYLfnY2Le8W0SJ7A==
+"@openai/agents-realtime@0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@openai/agents-realtime/-/agents-realtime-0.3.4.tgz#30a0b0440152d1f0578e5f36878cb7029c2ea489"
+  integrity sha512-qGjctIE7B3S9zbehwvJPF3WhEnki7pcdPfELSoB2WrluJf7Er4KUjUnrmCDUiSM2702OnNLV/5JPo1UcTNO2dQ==
   dependencies:
-    "@openai/agents-core" "0.1.11"
+    "@openai/agents-core" "0.3.4"
     "@types/ws" "^8.18.1"
     debug "^4.4.0"
     ws "^8.18.1"
 
-"@openai/agents@^0.1.0":
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/@openai/agents/-/agents-0.1.11.tgz#3484a3e84314e8b8c3640895c560cecc33c66bfb"
-  integrity sha512-jnaFt54iP71vYDXvpG3EGX2kVRYIU2xBdCT3uFqdXm4KqFAP9JQFNGiKKBEeE5rbXARpqAQpKH+5HfoANndpcQ==
+"@openai/agents@^0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@openai/agents/-/agents-0.3.4.tgz#321b75512d7dafed68adc40b60447ebcee54b018"
+  integrity sha512-QnYrvBgppJ2djlr5ia+eUwfGeE0hvo70OONdOtPHmYNzqKCprRNdnEVb41X5232LPQOFbvwENmACEkrnWbCvdA==
   dependencies:
-    "@openai/agents-core" "0.1.11"
-    "@openai/agents-openai" "0.1.11"
-    "@openai/agents-realtime" "0.1.11"
+    "@openai/agents-core" "0.3.4"
+    "@openai/agents-openai" "0.3.4"
+    "@openai/agents-realtime" "0.3.4"
     debug "^4.4.0"
-    openai "^5.20.2"
+    openai "^6"
 
 "@panva/hkdf@^1.2.1":
   version "1.2.1"
@@ -6627,10 +6627,10 @@ onetime@^6.0.0:
   dependencies:
     mimic-fn "^4.0.0"
 
-openai@^5.20.2:
-  version "5.23.2"
-  resolved "https://registry.yarnpkg.com/openai/-/openai-5.23.2.tgz#f13e2dc2ef6b88aab6a9b97cdc68d41a1d083c68"
-  integrity sha512-MQBzmTulj+MM5O8SKEk/gL8a7s5mktS9zUtAkU257WjvobGc9nKcBuVwjyEEcb9SI8a8Y2G/mzn3vm9n1Jlleg==
+openai@^6:
+  version "6.9.1"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-6.9.1.tgz#a591118d79d14ac01870d29efe869743e9b64167"
+  integrity sha512-vQ5Rlt0ZgB3/BNmTa7bIijYFhz3YBceAA3Z4JuoMSBftBF9YqFHIEhZakSs+O/Ad7EaoEimZvHxD5ylRjN11Lg==
 
 openapi-typescript@^7.10.1:
   version "7.10.1"
@@ -8971,6 +8971,11 @@ zod-to-json-schema@^3.25.0:
   resolved "https://registry.yarnpkg.com/zod-to-json-schema/-/zod-to-json-schema-3.25.0.tgz#df504c957c4fb0feff467c74d03e6aab0b013e1c"
   integrity sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==
 
+zod@3:
+  version "3.25.76"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.25.76.tgz#26841c3f6fd22a6a2760e7ccb719179768471e34"
+  integrity sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==
+
 zod@^3.20.2, zod@^3.23.8:
   version "3.25.57"
   resolved "https://registry.npmjs.org/zod/-/zod-3.25.57.tgz"
@@ -8980,11 +8985,6 @@ zod@^3.20.2, zod@^3.23.8:
   version "4.1.13"
   resolved "https://registry.yarnpkg.com/zod/-/zod-4.1.13.tgz#93699a8afe937ba96badbb0ce8be6033c0a4b6b1"
   integrity sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==
-
-zod@^4.1.11:
-  version "4.1.11"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-4.1.11.tgz#4aab62f76cfd45e6c6166519ba31b2ea019f75f5"
-  integrity sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==
 
 zwitch@^2.0.0:
   version "2.0.4"

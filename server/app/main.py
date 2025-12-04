@@ -405,11 +405,8 @@ from app.socket.simulations.create_practice_scenario import \
     create_practice_scenario  # noqa: E402; type: ignore
 from app.socket.simulations.stop import \
     stop_simulation  # noqa: E402; type: ignore
-from app.socket.voice import (  # noqa: E402; type: ignore
-    start_voice,
-    stop_voice,
-    voice_realtime_event,
-)
+from app.socket.voice import (start_voice,  # noqa: E402; type: ignore
+                              stop_voice, voice_interrupted, voice_tool_call)
 
 
 # Create a combined lifespan to manage both session managers
@@ -851,7 +848,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             stop_chat,
             start_voice,
             stop_voice,
-            voice_realtime_event,
+            voice_interrupted,
+            voice_tool_call,
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)

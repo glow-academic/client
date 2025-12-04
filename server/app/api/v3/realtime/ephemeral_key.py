@@ -4,11 +4,11 @@ import os
 from typing import Annotated, Any
 
 import asyncpg  # type: ignore
+import httpx  # type: ignore
 from app.main import get_db
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from openai import OpenAI
 from pydantic import BaseModel
 
 logger = get_logger(__name__)
@@ -31,6 +31,44 @@ class EphemeralKeyResponse(BaseModel):
     expires_in: int = 3600
 
 
+async def _generate_ephemeral_key_internal() -> tuple[str, int]:
+    """Internal function to generate ephemeral key using OpenAI REST API.
+    
+    Returns:
+        Tuple of (ephemeral_key, expires_in)
+    """
+    # Get OpenAI API key from environment
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise ValueError("OPENAI_API_KEY not configured")
+
+    # Use direct REST API call (OpenAI SDK doesn't support this endpoint yet)
+    async with httpx.AsyncClient() as http_client:
+        response = await http_client.post(
+            "https://api.openai.com/v1/realtime/client_secrets",
+            headers={
+                "Authorization": f"Bearer {openai_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "session": {
+                    "type": "realtime",
+                    "model": "gpt-realtime",
+                }
+            },
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        ephemeral_key = data.get("value")
+        expires_in = data.get("expires_in", 3600)
+        
+        if not ephemeral_key:
+            raise ValueError("No ephemeral key in response")
+        
+        return ephemeral_key, expires_in
+
+
 @router.post("/ephemeral-key", response_model=EphemeralKeyResponse)
 async def generate_ephemeral_key(
     request: EphemeralKeyRequest,
@@ -45,35 +83,17 @@ async def generate_ephemeral_key(
     sql_params: tuple[Any, ...] | None = None
 
     try:
-        # Get OpenAI API key from environment
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY not configured")
-
-        # Create OpenAI client
-        client = OpenAI(api_key=openai_api_key)
-
-        # Generate ephemeral key (expires in 1 hour)
-        # Note: OpenAI Realtime API ephemeral keys are generated via REST API
-        # For now, we'll use a placeholder - actual implementation depends on OpenAI API
-        expires_in = 3600  # 1 hour in seconds
+        ephemeral_key, expires_in = await _generate_ephemeral_key_internal()
         
-        # TODO: Implement actual ephemeral key generation when OpenAI API is available
-        # The OpenAI Python SDK may not have this endpoint yet, so we'll need to use
-        # the REST API directly or wait for SDK support
-        # For now, raise NotImplementedError to indicate this needs implementation
-        raise NotImplementedError(
-            "Ephemeral key generation not yet implemented - waiting for OpenAI API support"
+        logger.info(f"Generated ephemeral key (expires in {expires_in}s)")
+        
+        return EphemeralKeyResponse(
+            success=True,
+            message="Ephemeral key generated successfully",
+            ephemeral_key=ephemeral_key,
+            expires_in=expires_in,
         )
 
-    except NotImplementedError:
-        # Return a proper error response instead of raising
-        logger.error("Ephemeral key generation not yet implemented")
-        return EphemeralKeyResponse(
-            success=False,
-            message="Ephemeral key generation not yet implemented - waiting for OpenAI API support",
-            ephemeral_key=None,
-        )
     except Exception as e:
         logger.error(f"Error generating ephemeral key: {e}", exc_info=True)
         handle_route_error(

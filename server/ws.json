@@ -69,11 +69,16 @@
         "chat_id": "string"
       }
     },
-    "voice_realtime_event": {
+    "voice_interrupted": {
+      "payload": {
+        "chat_id": "string"
+      }
+    },
+    "voice_tool_call": {
       "payload": {
         "chat_id": "string",
-        "event_type": "string",
-        "event_data": "string"
+        "tool_name": "string",
+        "arguments": "string"
       }
     }
   },
