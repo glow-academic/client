@@ -37,7 +37,6 @@ class StaffItem(BaseModel):
     primary_department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None = None
     total_requests: int = 0
-    default_profile: bool
     requests_in_last_day: int = 0
     can_edit: bool
     can_delete: bool

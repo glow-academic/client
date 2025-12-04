@@ -6,9 +6,11 @@ WITH params AS (
     SELECT $1::uuid as department_id, $2::uuid as persona_id, $3::uuid[] as document_ids, $4::uuid[] as parameter_item_ids
 ),
 default_guest AS (
-    SELECT id::text as guest_profile_id
-    FROM profiles 
-    WHERE role = 'guest' AND first_name = 'Default' 
+    -- Get default guest profile from settings system
+    SELECT sdg.profile_id::text as guest_profile_id
+    FROM settings_default_guest sdg
+    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+    WHERE sdg.active = true
     LIMIT 1
 ),
 best_agent AS (
@@ -35,7 +37,7 @@ profile_rate_limit AS (
         prl.requests_per_day as req_per_day
     FROM profiles prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    WHERE prof.id = (SELECT id FROM profiles WHERE role = 'guest' AND first_name = 'Default' LIMIT 1)
+    WHERE prof.id = (SELECT guest_profile_id::uuid FROM default_guest)
 ),
 runs_today AS (
     -- Count model runs for the default guest profile since start of day
@@ -44,7 +46,7 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT id FROM profiles WHERE role = 'guest' AND first_name = 'Default' LIMIT 1)
+    WHERE mrp.profile_id = (SELECT guest_profile_id::uuid FROM default_guest)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )

@@ -43,7 +43,6 @@ class StaffItem(BaseModel):
     primary_department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None
     total_requests: int
-    default_profile: bool
     requests_in_last_day: int
     can_edit: bool
     can_delete: bool
@@ -152,7 +151,6 @@ async def get_profile_list(
                     primary_department_id=primary_department_id,
                     requests_per_day=row["requests_per_day"],
                     total_requests=row["total_requests"] or 0,
-                    default_profile=row["default_profile"],
                     requests_in_last_day=row["requests_in_last_day"],
                     can_edit=row["can_edit"],
                     can_delete=row["can_delete"],

@@ -67,7 +67,6 @@ export default function StaffEditModal({
       primaryEmailIndex: primaryIndex,
       role: staffItem.role || "",
       reqPerDay: staffItem.requests_per_day ?? null,
-      defaultProfile: staffItem.default_profile ?? false,
       departmentId: staffItem.primary_department_id || "",
       active: staffItem.active ?? true,
     };
@@ -80,7 +79,6 @@ export default function StaffEditModal({
     primaryEmailIndex: 0,
     role: "",
     reqPerDay: "" as number | "",
-    defaultProfile: false,
     primaryDepartmentId: "",
   });
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
@@ -98,7 +96,6 @@ export default function StaffEditModal({
         primaryEmailIndex: targetUser.primaryEmailIndex >= 0 ? targetUser.primaryEmailIndex : 0,
         role: targetUser.role || "",
         reqPerDay: targetUser.reqPerDay ?? "",
-        defaultProfile: targetUser.defaultProfile ?? false,
         primaryDepartmentId: targetUser.departmentId || "",
       });
       setRequestsPerDayEnabled(targetUser.reqPerDay != null);
@@ -198,7 +195,6 @@ export default function StaffEditModal({
         requests_per_day: number | null;
         primary_department_id: string;
         active: boolean;
-        default_profile: boolean;
       } = {
         profileId: profileId,
         first_name: formData.firstName,
@@ -474,33 +470,6 @@ export default function StaffEditModal({
                     </div>
                   )}
 
-                {/* Default Profile Section (superadmin only) */}
-                {isSuperadmin && (
-                  <div className="space-y-2 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor="defaultProfile"
-                          className="text-sm flex items-center gap-1.5"
-                        >
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          Default Profile
-                        </Label>
-                        <Switch
-                          id="defaultProfile"
-                          checked={formData.defaultProfile}
-                          onCheckedChange={(checked) =>
-                            handleInputChange("defaultProfile", checked)
-                          }
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground pl-5">
-                        Mark this profile as the default profile for the user
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="space-y-2">

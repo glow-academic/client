@@ -34,7 +34,6 @@ class StaffNewResponse(BaseModel):
     requests_per_day: int | None
     primary_department_id: str | None
     active: bool
-    default_profile: bool
 
     # Permissions
     can_edit: bool
@@ -127,7 +126,6 @@ async def get_staff_new(
             requests_per_day=None,  # Unlimited by default
             primary_department_id=primary_department_id if not is_superadmin else None,
             active=True,
-            default_profile=False,
             # Permissions
             can_edit=True,  # User can always create staff
             # Metadata

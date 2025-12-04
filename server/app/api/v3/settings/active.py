@@ -20,6 +20,7 @@ class SettingsActiveRequest(BaseModel):
     """Request to get active settings."""
 
     profileId: str
+    departmentId: str | None = None  # Optional department ID for department-specific settings
 
 
 class ThemePrimitives(BaseModel):
@@ -266,8 +267,17 @@ async def get_active_settings(
 
     try:
         sql_query = load_sql("sql/v3/settings/get_active_settings.sql")
-        sql_params = ()  # No parameters for this query
-        settings = await conn.fetchrow(sql_query)
+        # Convert departmentId string to UUID if provided
+        department_uuid = None
+        if request.departmentId:
+            try:
+                from uuid import UUID as UUIDType
+                department_uuid = UUIDType(request.departmentId)
+            except ValueError:
+                # Invalid UUID format, treat as None
+                department_uuid = None
+        sql_params = (department_uuid,)
+        settings = await conn.fetchrow(sql_query, department_uuid)
 
         if not settings:
             raise HTTPException(

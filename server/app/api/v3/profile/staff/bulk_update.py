@@ -23,7 +23,6 @@ class BulkUpdateStaffRequest(BaseModel):
     requests_per_day: int | None | str = (
         None  # int for limit, None for unlimited, "__keep__" to not update
     )
-    default_profile: bool | None = None
     primary_department_id: str | None = None
     currentProfileId: str  # Current user's profile ID for permission validation
     active: bool | None = None
@@ -85,7 +84,6 @@ async def bulk_update_profile(
             uuid.UUID(request.currentProfileId),
             profile_uuids,
             request.role,
-            request.default_profile,
             request.active,
             requests_per_day_value,
             primary_department_uuid,

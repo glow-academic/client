@@ -45,7 +45,6 @@ type CohortSearchProfileOut = {
     primary_department_id: string;
     requests_per_day: number | null;
     total_requests: number;
-    default_profile: boolean;
     requests_in_last_day: number;
     can_edit: boolean;
     can_delete: boolean;

@@ -113,11 +113,19 @@ class DBLogHandler(logging.Handler):
             async with _db_pool.acquire() as conn:
                 await conn.execute(
                     """
-                    WITH resolve_profile_id AS (
+                    WITH resolve_guest_profile AS (
+                        SELECT 
+                            sdg.profile_id as guest_profile_id
+                        FROM settings_default_guest sdg
+                        JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+                        WHERE sdg.active = true
+                        LIMIT 1
+                    ),
+                    resolve_profile_id AS (
                         SELECT 
                             CASE 
                                 WHEN $4::text = 'guest-profile-id' THEN
-                                    (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
+                                    (SELECT guest_profile_id FROM resolve_guest_profile)
                                 ELSE $4::uuid
                             END as resolved_profile_id
                     ),

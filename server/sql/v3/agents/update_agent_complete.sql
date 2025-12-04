@@ -1,10 +1,28 @@
 -- Update agent with prompt and department links in a single transaction
 -- Parameters: $1=agentId, $2=name, $3=description, $4=model_id, $5=active, $6=role, $7=prompt_id (nullable), $8=system_prompt (nullable), $9=department_ids (nullable text array), $10=department_ids_for_prompt (nullable text array - never create default prompts, always department-specific overrides), $11=profile_id (uuid or "guest-profile-id")
-WITH resolve_profile_id AS (
+WITH resolve_guest_profile AS (
+    -- Resolve guest-profile-id using settings system (department-specific or default)
+    SELECT 
+        COALESCE(
+            -- Department-specific settings guest profile (if user has departments)
+            (SELECT sdg.profile_id FROM settings_default_guest sdg
+             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+             JOIN settings_departments sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
+             WHERE pd.profile_id = $11::uuid AND sdg.active = true
+             LIMIT 1),
+            -- Fallback to default (active) settings guest profile
+            (SELECT sdg.profile_id FROM settings_default_guest sdg
+             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+             WHERE sdg.active = true
+             LIMIT 1)
+        ) as guest_profile_id
+),
+resolve_profile_id AS (
     SELECT 
         CASE 
             WHEN $11::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
+                (SELECT guest_profile_id FROM resolve_guest_profile)
             WHEN $11::text IS NULL OR $11::text = '' THEN NULL::uuid
             ELSE $11::uuid
         END as resolved_profile_id

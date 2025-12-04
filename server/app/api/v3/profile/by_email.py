@@ -51,7 +51,6 @@ async def get_profile_by_email(
             primaryEmail=primary_email,
             role=row["role"],
             active=row["active"],
-            defaultProfile=row["default_profile"],
             reqPerDay=row["req_per_day"],
             lastLogin=row["last_login"].isoformat() if row["last_login"] else "",
             lastActive=row["last_active"].isoformat() if row["last_active"] else None,

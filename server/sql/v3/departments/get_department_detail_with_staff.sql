@@ -274,7 +274,6 @@ department_staff AS (
         p.active,
         pa.last_active as lastActive,
         prl.requests_per_day as requests_per_day,
-        p.default_profile,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
@@ -285,7 +284,6 @@ department_staff AS (
         CASE 
             WHEN p.id = $2 THEN true
             WHEN up.role = 'superadmin' THEN true
-            WHEN (p.first_name = 'Default') THEN false
             WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
             WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
             WHEN up.role = 'ta' AND p.role = 'guest' THEN true
@@ -294,7 +292,6 @@ department_staff AS (
         CASE 
             WHEN p.id = $2 THEN false
             WHEN up.role = 'superadmin' THEN true
-            WHEN (p.first_name = 'Default') THEN false
             WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
             WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
             WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
@@ -377,7 +374,6 @@ SELECT
             'primary_department_id', ds.department_id,
             'requests_per_day', ds.requests_per_day,
             'total_requests', ds.total_requests,
-            'default_profile', ds.default_profile,
             'requests_in_last_day', ds.requests_in_last_day,
             'can_edit', ds.can_edit,
             'can_delete', ds.can_delete,

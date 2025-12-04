@@ -110,7 +110,6 @@ async def get_create_staff_data(
                             primary_department_id=primary_department_id,
                             requests_per_day=item.get("requests_per_day"),
                             total_requests=item.get("total_requests", 0),
-                            default_profile=item.get("default_profile", False),
                             requests_in_last_day=item.get("requests_in_last_day", 0),
                             can_edit=False,  # Not needed for search modal
                             can_delete=False,  # Not needed for search modal

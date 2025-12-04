@@ -50,9 +50,6 @@ async def delete_profile(
                 status_code=404, detail=f"Profile not found: {request.profileId}"
             )
 
-        if result["default_profile"]:
-            raise HTTPException(status_code=400, detail="Cannot delete default profile")
-
         # Verify deletion occurred (query performs the delete)
         if not result.get("deleted", False):
             raise HTTPException(status_code=500, detail="Failed to delete profile")

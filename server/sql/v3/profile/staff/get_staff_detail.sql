@@ -3,11 +3,20 @@
 --   $1 = profileId (uuid) - target profile to get details for
 --   $2 = currentProfileId (uuid) - current user's profile ID for role visibility check
 -- Returns: All fields needed for editing staff
-WITH resolve_current_profile_id AS (
+WITH resolve_guest_profile AS (
+    -- Resolve guest-profile-id using settings system (default settings only)
+    SELECT 
+        sdg.profile_id as guest_profile_id
+    FROM settings_default_guest sdg
+    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+    WHERE sdg.active = true
+    LIMIT 1
+),
+resolve_current_profile_id AS (
     SELECT 
         CASE 
             WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
+                (SELECT guest_profile_id FROM resolve_guest_profile)
             WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
             ELSE $2::uuid
         END as resolved_profile_id
@@ -25,7 +34,6 @@ target_profile AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        (p.first_name = 'Default') as default_profile,
         prl.requests_per_day,
         p.first_name || ' ' || p.last_name as name
     FROM profiles p
@@ -102,7 +110,6 @@ SELECT
     vp.primary_email,
     vp.role,
     vp.active,
-    vp.default_profile,
     vp.requests_per_day,
     tpd.department_id as primary_department_id,
     COALESCE(cec.can_edit, false) as can_edit,

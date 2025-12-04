@@ -70,7 +70,6 @@ async def create_profile(
             primary_email,
             request.role,
             True,  # active
-            False,  # default_profile
             False,  # viewed_intro
             False,  # viewed_chat
             request.primary_department_id,

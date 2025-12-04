@@ -3490,14 +3490,24 @@
       }
     },
     "/api/v3/auth/login": {
-      "get": {
+      "post": {
         "tags": [
           "v3",
           "auth"
         ],
         "summary": "Get Login Providers",
-        "description": "Get list of active auth provider options for login page.",
-        "operationId": "get_login_providers_api_v3_auth_login_get",
+        "description": "Get list of active auth provider options and departments for login page.",
+        "operationId": "get_login_providers_api_v3_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginProvidersRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -3505,6 +3515,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LoginProvidersResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -3928,6 +3948,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
+      }
+    },
+    "/api/v3/departments/login": {
+      "get": {
+        "tags": [
+          "v3",
+          "departments"
+        ],
+        "summary": "Get Departments For Login",
+        "description": "Get list of active departments for login page.",
+        "operationId": "get_departments_for_login_api_v3_departments_login_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentsLoginResponse"
                 }
               }
             }
@@ -11424,17 +11471,6 @@
             ],
             "title": "Requests Per Day"
           },
-          "default_profile": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Profile"
-          },
           "primary_department_id": {
             "anyOf": [
               {
@@ -16247,6 +16283,30 @@
         "title": "DepartmentNewRequest",
         "description": "Request for default department detail."
       },
+      "DepartmentOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "title": "DepartmentOption",
+        "description": "Department option for login page."
+      },
       "DepartmentSearchProfileRequest": {
         "properties": {
           "departmentId": {
@@ -16367,6 +16427,23 @@
         ],
         "title": "DepartmentsListResponse",
         "description": "Response for departments list."
+      },
+      "DepartmentsLoginResponse": {
+        "properties": {
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentOption"
+            },
+            "type": "array",
+            "title": "Departments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "departments"
+        ],
+        "title": "DepartmentsLoginResponse",
+        "description": "Response with list of active departments."
       },
       "DocumentDetailBulkRequest": {
         "properties": {
@@ -20437,6 +20514,24 @@
         "title": "LogEntry",
         "description": "Log entry."
       },
+      "LoginProvidersRequest": {
+        "properties": {
+          "departmentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentid"
+          }
+        },
+        "type": "object",
+        "title": "LoginProvidersRequest",
+        "description": "Request for login providers with optional department ID."
+      },
       "LoginProvidersResponse": {
         "properties": {
           "providers": {
@@ -20446,18 +20541,31 @@
             "type": "array",
             "title": "Providers"
           },
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentOption"
+            },
+            "type": "array",
+            "title": "Departments"
+          },
           "guest_login_enabled": {
             "type": "boolean",
             "title": "Guest Login Enabled"
+          },
+          "show_default_account": {
+            "type": "boolean",
+            "title": "Show Default Account"
           }
         },
         "type": "object",
         "required": [
           "providers",
-          "guest_login_enabled"
+          "departments",
+          "guest_login_enabled",
+          "show_default_account"
         ],
         "title": "LoginProvidersResponse",
-        "description": "Response with list of active provider options."
+        "description": "Response with list of active provider options and departments."
       },
       "LogsBundleRequest": {
         "properties": {
@@ -24176,10 +24284,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "defaultProfile": {
-            "type": "boolean",
-            "title": "Defaultprofile"
-          },
           "reqPerDay": {
             "anyOf": [
               {
@@ -24235,7 +24339,6 @@
           "primaryEmail",
           "role",
           "active",
-          "defaultProfile",
           "reqPerDay",
           "lastLogin",
           "lastActive",
@@ -24870,13 +24973,18 @@
               }
             ],
             "title": "Icon"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default"
           }
         },
         "type": "object",
         "required": [
           "id",
           "name",
-          "icon"
+          "icon",
+          "is_default"
         ],
         "title": "ProviderOption",
         "description": "Provider option with id (slug), name, and icon URL."
@@ -27923,6 +28031,17 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "departmentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentid"
           }
         },
         "type": "object",
@@ -29165,10 +29284,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
-          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -29200,7 +29315,6 @@
           "requests_per_day",
           "primary_department_id",
           "active",
-          "default_profile",
           "can_edit",
           "valid_department_ids",
           "department_mapping"
@@ -29368,10 +29482,6 @@
             "type": "boolean",
             "title": "Active"
           },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
-          },
           "can_edit": {
             "type": "boolean",
             "title": "Can Edit"
@@ -29407,7 +29517,6 @@
           "requests_per_day",
           "primary_department_id",
           "active",
-          "default_profile",
           "can_edit",
           "valid_department_ids",
           "role_options",
@@ -31808,10 +31917,6 @@
           "active": {
             "type": "boolean",
             "title": "Active"
-          },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
           }
         },
         "type": "object",
@@ -31823,8 +31928,7 @@
           "role",
           "requests_per_day",
           "primary_department_id",
-          "active",
-          "default_profile"
+          "active"
         ],
         "title": "UpdateStaffRequest",
         "description": "Request to update staff."
@@ -33147,10 +33251,6 @@
             "type": "integer",
             "title": "Total Requests"
           },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
-          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day"
@@ -33183,7 +33283,6 @@
           "department_ids",
           "primary_department_id",
           "total_requests",
-          "default_profile",
           "requests_in_last_day",
           "can_edit",
           "can_delete",
@@ -33550,10 +33649,6 @@
             "title": "Total Requests",
             "default": 0
           },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
-          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day",
@@ -33584,7 +33679,6 @@
           "initials",
           "active",
           "primary_department_id",
-          "default_profile",
           "can_edit",
           "can_delete",
           "can_remove"
@@ -33826,10 +33920,6 @@
             "title": "Total Requests",
             "default": 0
           },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
-          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day",
@@ -33859,7 +33949,6 @@
           "initials",
           "active",
           "primary_department_id",
-          "default_profile",
           "can_edit",
           "can_delete",
           "can_remove"
@@ -35841,10 +35930,6 @@
             "type": "integer",
             "title": "Total Requests"
           },
-          "default_profile": {
-            "type": "boolean",
-            "title": "Default Profile"
-          },
           "requests_in_last_day": {
             "type": "integer",
             "title": "Requests In Last Day"
@@ -35875,7 +35960,6 @@
           "primary_department_id",
           "requests_per_day",
           "total_requests",
-          "default_profile",
           "requests_in_last_day",
           "can_edit",
           "can_delete"

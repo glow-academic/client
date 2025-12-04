@@ -145,7 +145,6 @@ async def get_profile_context(
             primaryEmail=result.get("actual_primary_email"),
             role=result["actual_role"],
             active=result["actual_active"],
-            defaultProfile=result["actual_default_profile"],
             reqPerDay=result["actual_req_per_day"],
             lastLogin=result["actual_last_login"].isoformat()
             if result["actual_last_login"]
@@ -175,7 +174,6 @@ async def get_profile_context(
             primaryEmail=result.get("primary_email"),
             role=result["role"],
             active=result["active"],
-            defaultProfile=result["default_profile"],
             reqPerDay=result["req_per_day"],
             lastLogin=result["last_login"].isoformat() if result["last_login"] else "",
             lastActive=result["last_active"].isoformat()

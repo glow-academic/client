@@ -3,12 +3,21 @@
 -- Returns: Updated profile with all fields
 -- Note: NULL parameters mean "don't update this field" (use COALESCE to keep existing value)
 -- last_active is handled separately via profile_activity table
-WITH resolve_profile_id AS (
+WITH resolve_guest_profile AS (
+    -- Resolve guest-profile-id using settings system (default settings only)
+    SELECT 
+        sdg.profile_id::text as guest_profile_id
+    FROM settings_default_guest sdg
+    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+    WHERE sdg.active = true
+    LIMIT 1
+),
+resolve_profile_id AS (
     -- Resolve "guest-profile-id" to actual default guest profile ID
     SELECT 
         CASE 
             WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT id::text FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
+                (SELECT guest_profile_id FROM resolve_guest_profile)
             ELSE $1::text
         END as resolved_profile_id
 ),
@@ -37,7 +46,6 @@ update_profile AS (
         last_name,
         role,
         active,
-        default_profile,
         last_login,
         created_at,
         updated_at
@@ -61,7 +69,6 @@ get_updated_profile AS (
         (SELECT email FROM profile_emails WHERE profile_id = up.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         up.role,
         up.active,
-        up.default_profile,
         (SELECT requests_per_day FROM profile_request_limits WHERE profile_id = up.id AND active = true LIMIT 1) as req_per_day,
         up.last_login,
         COALESCE(
@@ -74,7 +81,7 @@ get_updated_profile AS (
     FROM update_profile up
     LEFT JOIN profile_emails pe ON pe.profile_id = up.id AND pe.active = true
     GROUP BY up.id, up.first_name, up.last_name, up.role, up.active, 
-             up.default_profile, up.last_login, up.created_at, up.updated_at
+             up.last_login, up.created_at, up.updated_at
 )
 SELECT * FROM get_updated_profile
 

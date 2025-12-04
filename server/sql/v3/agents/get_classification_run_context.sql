@@ -24,7 +24,7 @@ profile_rate_limit AS (
         prl.requests_per_day as req_per_day
     FROM profiles p
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    WHERE p.id = (SELECT id FROM profiles WHERE role = 'guest' AND first_name = 'Default' LIMIT 1)
+    WHERE p.id = (SELECT sdg.profile_id FROM settings_default_guest sdg JOIN settings s ON s.id = sdg.settings_id AND s.active = true WHERE sdg.active = true LIMIT 1)
 ),
 runs_today AS (
     -- Count model runs for the default guest profile since start of day
@@ -33,7 +33,7 @@ runs_today AS (
         MIN(mr.created_at) as earliest_run_created_at
     FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
-    WHERE mrp.profile_id = (SELECT id FROM profiles WHERE role = 'guest' AND first_name = 'Default' LIMIT 1)
+    WHERE mrp.profile_id = (SELECT sdg.profile_id FROM settings_default_guest sdg JOIN settings s ON s.id = sdg.settings_id AND s.active = true WHERE sdg.active = true LIMIT 1)
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 )

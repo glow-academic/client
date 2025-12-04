@@ -118,7 +118,6 @@ async def search_simulatable_profiles(
                             primaryEmail=primary_email,
                             role=item.get("role", ""),
                             active=item.get("active", False),
-                            defaultProfile=item.get("default_profile", False),
                             reqPerDay=item.get("req_per_day", 0),
                             lastLogin=to_iso_string(item.get("last_login")),
                             lastActive=to_iso_string(item.get("last_active")),

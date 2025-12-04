@@ -3,10 +3,9 @@
 --   $1 = current_profile_id (uuid) - current user's profile ID for validation
 --   $2 = profile_ids (uuid[]) - array of profile IDs to update
 --   $3 = role (text) - new role (NULL to skip)
---   $4 = default_profile (boolean) - new default_profile (NULL to skip)
---   $5 = active (boolean) - new active (NULL to skip)
---   $6 = requests_per_day (integer) - new requests_per_day (NULL to skip update, use -1 for unlimited)
---   $7 = primary_department_id (uuid) - new primary department (NULL to skip)
+--   $4 = active (boolean) - new active (NULL to skip)
+--   $5 = requests_per_day (integer) - new requests_per_day (NULL to skip update, use -1 for unlimited)
+--   $6 = primary_department_id (uuid) - new primary department (NULL to skip)
 -- Returns: updated_count (integer), validation_errors (text[])
 
 WITH current_user_role AS (
@@ -18,7 +17,6 @@ profile_validation AS (
     SELECT 
         p.id,
         p.role as current_role,
-        p.default_profile,
         cur.role as validator_role,
         -- Check if role assignment is allowed (hierarchy check)
         CASE 
@@ -40,11 +38,8 @@ profile_validation AS (
             WHEN cur.role = 'ta' AND $3 = 'guest' THEN true
             ELSE false
         END as role_level_ok,
-        -- Check if default profile editing is allowed
-        CASE 
-            WHEN (p.first_name = 'Default') AND cur.role != 'superadmin' THEN false
-            ELSE true
-        END as can_edit_default
+        -- All profiles can be edited based on role hierarchy
+        true as can_edit_default
     FROM unnest($2::uuid[]) as profile_id
     CROSS JOIN current_user_role cur
     JOIN profiles p ON p.id = profile_id
@@ -60,8 +55,7 @@ profile_update AS (
     UPDATE profiles
     SET 
         role = COALESCE($3, role),
-        default_profile = COALESCE($4, default_profile),
-        active = COALESCE($5, active),
+        active = COALESCE($4, active),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM validated_profiles)
     RETURNING id
@@ -71,10 +65,10 @@ request_limit_update AS (
     INSERT INTO profile_request_limits (profile_id, requests_per_day, active)
     SELECT 
         pu.id,
-        CASE WHEN $6 = -1 THEN NULL ELSE $6 END,  -- -1 means unlimited (NULL)
+        CASE WHEN $5 = -1 THEN NULL ELSE $5 END,  -- -1 means unlimited (NULL)
         true
     FROM profile_update pu
-    WHERE $6 IS NOT NULL  -- Only update if value provided (not skipping)
+    WHERE $5 IS NOT NULL  -- Only update if value provided (not skipping)
     ON CONFLICT (profile_id, active) 
     WHERE active = true
     DO UPDATE SET 
@@ -85,10 +79,10 @@ department_update AS (
     -- Update primary department if provided (skip if NULL)
     UPDATE profile_departments
     SET 
-        department_id = $7,
+        department_id = $6,
         updated_at = NOW()
     WHERE profile_id IN (SELECT id FROM profile_update)
-        AND $7 IS NOT NULL  -- Only update if value provided (not skipping)
+        AND $6 IS NOT NULL  -- Only update if value provided (not skipping)
     RETURNING profile_id
 )
 SELECT COUNT(*)::integer as updated_count

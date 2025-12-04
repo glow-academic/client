@@ -2,10 +2,11 @@
 -- Parameters: $1=last_active (timestamp with time zone), $2=active (boolean)
 -- Returns: profile_id if updated, or no rows if profile doesn't exist
 WITH get_default_guest AS (
-    -- Get default guest profile ID
-    SELECT id::text as profile_id
-    FROM profiles
-    WHERE role = 'guest' AND first_name = 'Default'
+    -- Get default guest profile ID from settings system
+    SELECT sdg.profile_id::text as profile_id
+    FROM settings_default_guest sdg
+    JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+    WHERE sdg.active = true
     LIMIT 1
 ),
 update_profile AS (

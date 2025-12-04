@@ -26,7 +26,6 @@ class UpdateStaffRequest(BaseModel):
     requests_per_day: int | None
     primary_department_id: str
     active: bool
-    default_profile: bool
 
 
 class UpdateStaffResponse(BaseModel):
@@ -70,7 +69,6 @@ async def update_profile(
             request.active,
             request.primary_department_id,
             request.requests_per_day,
-            request.default_profile,
         )
 
         async with transaction(conn):

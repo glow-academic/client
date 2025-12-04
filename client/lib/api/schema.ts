@@ -1686,13 +1686,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Get Login Providers
-         * @description Get list of active auth provider options for login page.
+         * @description Get list of active auth provider options and departments for login page.
          */
-        get: operations["get_login_providers_api_v3_auth_login_get"];
-        put?: never;
-        post?: never;
+        post: operations["get_login_providers_api_v3_auth_login_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1873,6 +1873,26 @@ export interface paths {
          * @description Search profiles for adding to a department (excludes profiles already in department if departmentId provided).
          */
         post: operations["department_search_profile_api_v3_departments_search_profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/departments/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Departments For Login
+         * @description Get list of active departments for login page.
+         */
+        get: operations["get_departments_for_login_api_v3_departments_login_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5095,8 +5115,6 @@ export interface components {
             role?: string | null;
             /** Requests Per Day */
             requests_per_day?: number | string | null;
-            /** Default Profile */
-            default_profile?: boolean | null;
             /** Primary Department Id */
             primary_department_id?: string | null;
             /** Currentprofileid */
@@ -6999,6 +7017,18 @@ export interface components {
             profileId: string;
         };
         /**
+         * DepartmentOption
+         * @description Department option for login page.
+         */
+        DepartmentOption: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+        };
+        /**
          * DepartmentSearchProfileRequest
          * @description Request for searching profiles to add to a department.
          */
@@ -7054,6 +7084,14 @@ export interface components {
             profile_mapping: {
                 [key: string]: components["schemas"]["ProfileMappingItem"];
             };
+        };
+        /**
+         * DepartmentsLoginResponse
+         * @description Response with list of active departments.
+         */
+        DepartmentsLoginResponse: {
+            /** Departments */
+            departments: components["schemas"]["DepartmentOption"][];
         };
         /**
          * DocumentDetailBulkRequest
@@ -8657,14 +8695,26 @@ export interface components {
             created_at: string;
         };
         /**
+         * LoginProvidersRequest
+         * @description Request for login providers with optional department ID.
+         */
+        LoginProvidersRequest: {
+            /** Departmentid */
+            departmentId?: string | null;
+        };
+        /**
          * LoginProvidersResponse
-         * @description Response with list of active provider options.
+         * @description Response with list of active provider options and departments.
          */
         LoginProvidersResponse: {
             /** Providers */
             providers: components["schemas"]["ProviderOption"][];
+            /** Departments */
+            departments: components["schemas"]["DepartmentOption"][];
             /** Guest Login Enabled */
             guest_login_enabled: boolean;
+            /** Show Default Account */
+            show_default_account: boolean;
         };
         /**
          * LogsBundleRequest
@@ -10021,8 +10071,6 @@ export interface components {
             role: string;
             /** Active */
             active: boolean;
-            /** Defaultprofile */
-            defaultProfile: boolean;
             /** Reqperday */
             reqPerDay: number | null;
             /** Lastlogin */
@@ -10284,6 +10332,8 @@ export interface components {
             name: string;
             /** Icon */
             icon: string | null;
+            /** Is Default */
+            is_default: boolean;
         };
         /**
          * QueryDataRequest
@@ -11451,6 +11501,8 @@ export interface components {
         SettingsActiveRequest: {
             /** Profileid */
             profileId: string;
+            /** Departmentid */
+            departmentId?: string | null;
         };
         /**
          * SettingsActiveResponse
@@ -11966,8 +12018,6 @@ export interface components {
             primary_department_id: string | null;
             /** Active */
             active: boolean;
-            /** Default Profile */
-            default_profile: boolean;
             /** Can Edit */
             can_edit: boolean;
             /** Valid Department Ids */
@@ -12046,8 +12096,6 @@ export interface components {
             primary_department_id: string | null;
             /** Active */
             active: boolean;
-            /** Default Profile */
-            default_profile: boolean;
             /** Can Edit */
             can_edit: boolean;
             /** Valid Department Ids */
@@ -12975,8 +13023,6 @@ export interface components {
             primary_department_id: string;
             /** Active */
             active: boolean;
-            /** Default Profile */
-            default_profile: boolean;
         };
         /**
          * UpdateStaffResponse
@@ -13434,8 +13480,6 @@ export interface components {
             requests_per_day?: number | null;
             /** Total Requests */
             total_requests: number;
-            /** Default Profile */
-            default_profile: boolean;
             /** Requests In Last Day */
             requests_in_last_day: number;
             /** Can Edit */
@@ -13597,8 +13641,6 @@ export interface components {
              * @default 0
              */
             total_requests: number;
-            /** Default Profile */
-            default_profile: boolean;
             /**
              * Requests In Last Day
              * @default 0
@@ -13717,8 +13759,6 @@ export interface components {
              * @default 0
              */
             total_requests: number;
-            /** Default Profile */
-            default_profile: boolean;
             /**
              * Requests In Last Day
              * @default 0
@@ -14364,8 +14404,6 @@ export interface components {
             requests_per_day: number | null;
             /** Total Requests */
             total_requests: number;
-            /** Default Profile */
-            default_profile: boolean;
             /** Requests In Last Day */
             requests_in_last_day: number;
             /** Can Edit */
@@ -17963,14 +18001,18 @@ export interface operations {
             };
         };
     };
-    get_login_providers_api_v3_auth_login_get: {
+    get_login_providers_api_v3_auth_login_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginProvidersRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -17979,6 +18021,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LoginProvidersResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -18276,6 +18327,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_departments_for_login_api_v3_departments_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentsLoginResponse"];
                 };
             };
         };

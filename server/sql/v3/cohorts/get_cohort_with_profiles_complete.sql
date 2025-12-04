@@ -42,7 +42,6 @@ all_staff AS (
         p.active,
         pa.last_active as lastActive,
         prl.requests_per_day as requests_per_day,
-        p.default_profile,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
         CASE 
@@ -51,7 +50,7 @@ all_staff AS (
             ELSE false
         END as can_edit,
         CASE 
-            WHEN up.role = 'superadmin' AND p.default_profile = false THEN true
+            WHEN up.role = 'superadmin' THEN true
             ELSE false
         END as can_delete
     FROM profiles p
@@ -69,7 +68,7 @@ all_staff AS (
     ) pa ON true
     CROSS JOIN user_profile up
     WHERE pd.department_id = ANY($2)
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active,
              pa.last_active, prl.requests_per_day, pc.cohort_ids, rr.run_count, up.role
     ORDER BY p.id, p.last_name, p.first_name
 ),
@@ -77,7 +76,6 @@ available_profiles AS (
     SELECT *
     FROM all_staff
     WHERE profile_id NOT IN (SELECT profile_id FROM current_cohort_profiles)
-        AND default_profile = false
         AND role IN ('instructional', 'ta')
 )
 SELECT
@@ -104,7 +102,6 @@ SELECT
                 FROM unnest(ap.cohort_ids) as cid
             ), ARRAY[]::text[]),
             'requests_per_day', ap.requests_per_day,
-            'default_profile', ap.default_profile,
             'requests_in_last_day', ap.requests_in_last_day,
             'can_edit', ap.can_edit,
             'can_delete', ap.can_delete

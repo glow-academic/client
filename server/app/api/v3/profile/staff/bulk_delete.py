@@ -49,17 +49,14 @@ async def bulk_delete_profile(
             raise HTTPException(status_code=500, detail="Failed to delete profiles")
 
         deleted_count = result.get("deleted_count", 0)
-        default_ids = result.get("default_profile_ids", [])
 
-        if deleted_count == 0 and default_ids:
+        if deleted_count == 0:
             raise HTTPException(
                 status_code=400,
-                detail="No profiles can be deleted (all are default profiles)",
+                detail="No profiles could be deleted",
             )
 
         message = f"{deleted_count} staff members deleted successfully"
-        if default_ids:
-            message += f" ({len(default_ids)} default profiles skipped)"
 
         result_data = BulkDeleteStaffResponse(success=True, message=message)
 

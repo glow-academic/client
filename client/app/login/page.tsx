@@ -1,13 +1,14 @@
 /**
  * app/login/page.tsx
  * This is the login page.
+ * Follows dashboard pattern: query params determine logic, server-side data fetching.
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
  */
 import { getSession } from "@/auth";
 import Login from "@/components/auth/Login";
 import { api } from "@/lib/api/client";
-import type { OutputOf } from "@/lib/api/types";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,44 +38,99 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strong types from OpenAPI ---- */
-type LoginProvidersOut = OutputOf<"/api/v3/auth/login", "get">;
-type DepartmentsLoginOut = OutputOf<"/api/v3/departments/login", "get">;
+type LoginDataIn = InputOf<"/api/v3/auth/login", "post">;
+type LoginDataOut = OutputOf<"/api/v3/auth/login", "post">;
+type SettingsActiveOut = OutputOf<"/api/v3/settings/active", "post">;
 
-async function getLoginProviders(departmentId?: string): Promise<LoginProvidersOut> {
+interface LoginPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+/** ---- Direct fetch for login data (consolidated endpoint) ---- */
+async function getLoginData(departmentId?: string): Promise<LoginDataOut> {
   try {
-    const url = departmentId 
-      ? `/auth/login?department_id=${departmentId}`
-      : "/auth/login";
-    const response = await api.get(url);
-    return response;
+    const input: LoginDataIn = {
+      body: {
+        departmentId: departmentId || null,
+      },
+    };
+    // Type assertion needed - TypeScript can't infer generic return type from api.post
+    // The schema is correct, but the type system needs help resolving the generic types
+    return (await api.post("/auth/login", input)) as LoginDataOut;
   } catch {
-    // Return empty array and default guest_login_enabled if endpoint fails
-    return { providers: [], guest_login_enabled: true, show_default_account: false };
+    // Return empty arrays and defaults if endpoint fails
+    return {
+      providers: [],
+      departments: [],
+      guest_login_enabled: true,
+      show_default_account: false,
+    } as LoginDataOut;
   }
 }
 
-async function getDepartments(): Promise<DepartmentsLoginOut> {
+/** ---- Direct fetch for settings (separate call, like settings page pattern) ---- */
+async function getActiveSettings(
+  departmentId?: string
+): Promise<SettingsActiveOut | null> {
   try {
-    const response = await api.get("/departments/login");
-    return response;
+    // Type assertion needed because departmentId is optional in the API
+    return (await api.post(
+      "/settings/active",
+      {
+        body: {
+          profileId: "guest-profile-id",
+          ...(departmentId ? { departmentId } : {}),
+        },
+      },
+      {
+        cache: "no-store",
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }
+    )) as SettingsActiveOut;
   } catch {
-    // Return empty array if endpoint fails
-    return { departments: [] };
+    // If settings fetch fails, return null - theme will use defaults
+    return null;
   }
 }
 
-export default async function LoginPage() {
-  const [loginData, departmentsData] = await Promise.all([
-    getLoginProviders(),
-    getDepartments(),
-  ]);
-  
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  // Parse search params (following dashboard pattern)
+  const params = await searchParams;
+  const departmentParam = params["department"];
+  const departmentIdFromQuery =
+    typeof departmentParam === "string" ? departmentParam : undefined;
+
+  // Fetch login data (providers + departments) from consolidated endpoint
+  // Explicit type annotation needed because TypeScript can't infer from generic api.post return
+  const loginData: LoginDataOut = await getLoginData(departmentIdFromQuery);
+
+  // Fetch settings separately (like settings page pattern)
+  const activeSettings = await getActiveSettings(departmentIdFromQuery);
+
+  // Business logic: Validate department_id from query param exists in departments list
+  const validDepartmentId =
+    departmentIdFromQuery &&
+    loginData.departments.some((d) => d.id === departmentIdFromQuery)
+      ? departmentIdFromQuery
+      : undefined;
+
+  // Business logic: Pick default department if none provided (first department, or none if empty)
+  const initialDepartmentId =
+    validDepartmentId ||
+    (loginData.departments.length > 0
+      ? loginData.departments[0]?.id
+      : undefined);
+
   return (
     <Login
       providers={loginData.providers}
       guest_login_enabled={loginData.guest_login_enabled}
-      show_default_account={loginData.show_default_account}
-      departments={departmentsData.departments}
+      show_default_account={loginData.show_default_account || false}
+      departments={loginData.departments}
+      initialDepartmentId={initialDepartmentId}
+      activeSettings={activeSettings}
     />
   );
 }

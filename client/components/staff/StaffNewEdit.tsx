@@ -48,7 +48,6 @@ interface FormData {
   requestsPerDayEnabled?: boolean;
   primaryDepartmentId?: string;
   active?: boolean;
-  defaultProfile?: boolean;
 }
 
 export interface StaffNewEditProps {
@@ -88,7 +87,6 @@ export default function StaffNewEdit({
       requestsPerDayEnabled: false,
       primaryDepartmentId: "",
       active: true,
-      defaultProfile: false,
     }),
     []
   );
@@ -151,7 +149,6 @@ export default function StaffNewEdit({
         requestsPerDayEnabled: staffData.requests_per_day != null,
         primaryDepartmentId: staffData.primary_department_id || "",
         active: staffData.active ?? true,
-        defaultProfile: staffData.default_profile ?? false,
       });
       setRequestsPerDayEnabled(staffData.requests_per_day != null);
     } else if (!isEditMode && staffData) {
@@ -164,7 +161,6 @@ export default function StaffNewEdit({
         role: staffData.role || initialFormData.role,
         primaryDepartmentId: staffData.primary_department_id || "",
         active: staffData.active ?? true,
-        defaultProfile: staffData.default_profile ?? false,
       });
     }
   }, [staffData, isEditMode, initialFormData]);
@@ -292,7 +288,6 @@ export default function StaffNewEdit({
             requests_per_day: parsedReqPerDay,
             primary_department_id: departmentId,
             active: formData.active ?? true,
-            default_profile: formData.defaultProfile ?? false,
           },
         });
 
@@ -627,35 +622,6 @@ export default function StaffNewEdit({
               </div>
             )}
 
-            {/* Default Profile Section (superadmin only) */}
-            {isSuperadmin && (
-              <div className="space-y-2 pt-2">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Label
-                      htmlFor="defaultProfile"
-                      className="text-sm flex items-center gap-1.5"
-                    >
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      Default Profile
-                    </Label>
-                    {formData?.defaultProfile !== undefined ? (
-                      <Switch
-                        id="defaultProfile"
-                        checked={formData.defaultProfile}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("defaultProfile", checked)
-                        }
-                        disabled={isReadonly || isSubmitting}
-                      />
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground pl-5">
-                    Mark this profile as the default profile for the user
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Action buttons */}
             <div className="flex justify-end gap-2 pt-4">

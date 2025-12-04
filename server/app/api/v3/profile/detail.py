@@ -32,7 +32,6 @@ class ProfileItem(BaseModel):
     primaryEmail: str | None  # Primary email (first in emails array if exists)
     role: str  # 'superadmin' | 'admin' | 'instructional' | 'ta' | 'guest'
     active: bool
-    defaultProfile: bool
     reqPerDay: int | None
     lastLogin: str  # ISO datetime
     lastActive: str | None  # ISO datetime
@@ -90,7 +89,6 @@ async def get_profile_detail(
             primaryEmail=primary_email,
             role=row["role"],
             active=row["active"],
-            defaultProfile=row["default_profile"],
             reqPerDay=row["req_per_day"],
             lastLogin=row["last_login"].isoformat() if row["last_login"] else "",
             lastActive=row["last_active"].isoformat() if row["last_active"] else None,

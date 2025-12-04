@@ -203,3 +203,23 @@ CREATE INDEX ON settings_default_account (active);
 -- Enforce only one active default account per settings
 CREATE UNIQUE INDEX settings_default_account_one_active
   ON settings_default_account(settings_id) WHERE active = true;
+
+-- Settings → Default Department (with history support)
+-- Links settings to default department for theme determination
+-- Only one active per settings (enforced via unique index)
+CREATE TABLE settings_default_department (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
+  active       BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, department_id)
+);
+
+CREATE INDEX ON settings_default_department (settings_id);
+CREATE INDEX ON settings_default_department (department_id);
+CREATE INDEX ON settings_default_department (active);
+
+-- Enforce only one active default department per settings
+CREATE UNIQUE INDEX settings_default_department_one_active
+  ON settings_default_department(settings_id) WHERE active = true;

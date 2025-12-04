@@ -117,7 +117,6 @@ staff_data AS (
             'primary_department_id', COALESCE(ppd.department_id::text, ''),
             'requests_per_day', prl.requests_per_day,
             'total_requests', COALESCE(ptr.total_requests, 0),
-            'default_profile', p.default_profile,
             'requests_in_last_day', COALESCE(rr.run_count::int, 0)
         ) as staff_item
     FROM profiles p
@@ -145,7 +144,7 @@ staff_data AS (
         -- (used when adding staff to cohorts, so user should see all available)
         true
     )
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active,
              pa.last_active, prl.requests_per_day, pc.cohort_ids, pda.department_ids,
              ppd.department_id, ptr.total_requests, rr.run_count
     ORDER BY p.id, p.last_name, p.first_name

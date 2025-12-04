@@ -64,16 +64,12 @@ export default function StaffBulkEditModal({
   const [keepCurrent, setKeepCurrent] = useState({
     role: true,
     reqPerDay: true,
-    defaultProfile: true,
     primaryDepartment: true,
   });
   const [bulkPrimaryDepartmentId, setBulkPrimaryDepartmentId] = useState<
     string | null
   >(null);
   const [requestsPerDayEnabled, setRequestsPerDayEnabled] = useState(false);
-  const [bulkDefaultProfile, setBulkDefaultProfile] = useState<boolean | null>(
-    null
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSuperadmin = effectiveProfile?.role === "superadmin";
@@ -110,13 +106,10 @@ export default function StaffBulkEditModal({
         setBulkReqPerDay("");
       }
 
-      // Default profile - keep as null (don't change) unless explicitly set
-      setBulkDefaultProfile(null);
       setBulkPrimaryDepartmentId(null);
       setKeepCurrent({
         role: true,
         reqPerDay: true,
-        defaultProfile: true,
         primaryDepartment: true,
       });
     }
@@ -128,12 +121,10 @@ export default function StaffBulkEditModal({
       setBulkRole("__keep__");
       setBulkReqPerDay("");
       setRequestsPerDayEnabled(false);
-      setBulkDefaultProfile(null);
       setBulkPrimaryDepartmentId(null);
       setKeepCurrent({
         role: true,
         reqPerDay: true,
-        defaultProfile: true,
         primaryDepartment: true,
       });
     }
@@ -148,7 +139,6 @@ export default function StaffBulkEditModal({
         profileIds: string[];
         role?: string;
         requests_per_day?: number | null | string;
-        default_profile?: boolean;
         primary_department_id?: string;
         currentProfileId: string;
       } = {
@@ -169,14 +159,6 @@ export default function StaffBulkEditModal({
         }
       } else {
         updates.requests_per_day = "__keep__"; // Don't update
-      }
-
-      if (
-        isSuperadmin &&
-        !keepCurrent.defaultProfile &&
-        bulkDefaultProfile !== null
-      ) {
-        updates.default_profile = bulkDefaultProfile;
       }
 
       // Primary department - only update if not keeping current and value is set
@@ -212,7 +194,6 @@ export default function StaffBulkEditModal({
     bulkReqPerDay,
     requestsPerDayEnabled,
     keepCurrent,
-    bulkDefaultProfile,
     bulkPrimaryDepartmentId,
     isSuperadmin,
     effectiveProfile?.id,
@@ -434,51 +415,6 @@ export default function StaffBulkEditModal({
                           />
                         </TableCell>
                       )}
-                    </TableRow>
-                  )}
-
-                  {/* Default Profile Row (superadmin only) */}
-                  {isSuperadmin && (
-                    <TableRow>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          <Label htmlFor="bulkDefaultProfile">
-                            Default Profile
-                          </Label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Mark selected profiles as default profiles for their
-                          users
-                        </p>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Checkbox
-                          checked={keepCurrent.defaultProfile}
-                          onCheckedChange={(checked) => {
-                            const isChecked = checked === true;
-                            setKeepCurrent((prev) => ({
-                              ...prev,
-                              defaultProfile: isChecked,
-                            }));
-                          }}
-                          disabled={isSubmitting}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          id="bulkDefaultProfile"
-                          checked={bulkDefaultProfile ?? false}
-                          onCheckedChange={(checked) => {
-                            setBulkDefaultProfile(checked);
-                            setKeepCurrent((prev) => ({
-                              ...prev,
-                              defaultProfile: false,
-                            }));
-                          }}
-                          disabled={isSubmitting || keepCurrent.defaultProfile}
-                        />
-                      </TableCell>
                     </TableRow>
                   )}
                 </TableBody>

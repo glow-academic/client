@@ -216,7 +216,6 @@ async def search_staff(
                     'primary_department_id', COALESCE((SELECT pd2.department_id::text FROM profile_departments pd2 WHERE pd2.profile_id = p.id AND pd2.active = true AND pd2.is_primary = true LIMIT 1), ''),
                     'requests_per_day', prl.requests_per_day,
                     'total_requests', COALESCE(ptr.total_requests, 0),
-                    'default_profile', p.default_profile,
                     'requests_in_last_day', COALESCE(rr.run_count::int, 0),
                     'can_edit', false,
                     'can_delete', false
@@ -325,7 +324,6 @@ async def search_staff(
                             primary_department_id=primary_department_id,
                             requests_per_day=item.get("requests_per_day"),
                             total_requests=item.get("total_requests", 0),
-                            default_profile=item.get("default_profile", False),
                             requests_in_last_day=item.get("requests_in_last_day", 0),
                             can_edit=False,  # Not needed for search modal
                             can_delete=False,  # Not needed for search modal

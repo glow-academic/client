@@ -2360,9 +2360,7 @@ export default function Staff({
                               )
                               {s.profile_id === effectiveProfile?.id
                                 ? " – your account"
-                                : s.default_profile
-                                  ? " – default profile"
-                                  : " – cannot delete"}
+                                : " – cannot delete"}
                             </li>
                           ))}
                         </ul>
@@ -2451,9 +2449,7 @@ export default function Staff({
                             )
                             {staffMember.profile_id === effectiveProfile?.id
                               ? " – your account"
-                              : staffMember.default_profile
-                                ? " – default profile"
-                                : " – cannot delete"}
+                              : " – cannot delete"}
                           </p>
                         </div>
                       </div>

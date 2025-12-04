@@ -69,13 +69,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
 import { DataTableColumnHeader } from "@/components/common/table/DataTableColumnHeader";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
-import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
 import {
   Clock,
   Eye,
@@ -90,9 +90,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 // Type-only import from server page
-import type {
-  ProfileListItem,
-} from "@/app/(main)/management/staff/page";
+import type { ProfileListItem } from "@/app/(main)/management/staff/page";
 // Import types from new page (create action)
 import type {
   CreateDepartmentIn,
@@ -210,7 +208,6 @@ const normalizeDepartmentStaffItem = (
       "primary_department_id" in item ? item.primary_department_id : "",
     requests_per_day: item.requests_per_day ?? null,
     total_requests: item.total_requests ?? 0,
-    default_profile: item.default_profile,
     requests_in_last_day: item.requests_in_last_day ?? 0,
     can_edit: item.can_edit,
     can_delete: item.can_delete,
@@ -760,7 +757,6 @@ export default function Department({
           primary_department_id: departmentId || "",
           requests_per_day: null,
           total_requests: 0,
-          default_profile: false,
           requests_in_last_day: 0,
           can_edit: false,
           can_delete: false,
@@ -1518,9 +1514,7 @@ export default function Department({
             )}
           <Button
             type="submit"
-            disabled={
-              isSubmitting || isReadonly || (isEditMode && !hasChanges)
-            }
+            disabled={isSubmitting || isReadonly || (isEditMode && !hasChanges)}
             className="min-w-[120px]"
             data-testid="btn-submit-department"
           >
@@ -1554,8 +1548,8 @@ export default function Department({
                 {selectedStaffIds.length !== 1 ? "s" : ""}?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This will remove them from the department. Changes will be applied
-                when you save.
+                This will remove them from the department. Changes will be
+                applied when you save.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -462,10 +462,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 async with pool.acquire() as conn:
                     result = await conn.fetchval(
                         """
-                        SELECT id::text
-                        FROM profiles
-                        WHERE role = 'guest' AND first_name = 'Default'
-                        ORDER BY created_at DESC
+                        SELECT sdg.profile_id::text
+                        FROM settings_default_guest sdg
+                        JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+                        WHERE sdg.active = true
                         LIMIT 1
                         """
                     )

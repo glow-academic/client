@@ -37,7 +37,6 @@ class StaffDetailResponse(BaseModel):
     requests_per_day: int | None
     primary_department_id: str | None
     active: bool
-    default_profile: bool
     can_edit: bool
     valid_department_ids: list[str]
     department_mapping: DepartmentMapping
@@ -132,7 +131,6 @@ async def get_staff_detail(
             requests_per_day=row.get("requests_per_day"),
             primary_department_id=primary_department_id,
             active=row.get("active", True),
-            default_profile=row.get("default_profile", False),
             can_edit=row.get("can_edit", False),
             valid_department_ids=valid_department_ids,
             department_mapping=department_mapping,

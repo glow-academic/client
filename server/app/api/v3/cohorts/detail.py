@@ -57,7 +57,6 @@ class StaffItem(BaseModel):
     primary_department_id: str  # Primary department ID (for editing)
     requests_per_day: int | None = None
     total_requests: int
-    default_profile: bool
     requests_in_last_day: int
     can_edit: bool
     can_delete: bool
@@ -206,7 +205,6 @@ async def get_cohort_detail(
                                 primary_department_id=primary_department_id,
                                 requests_per_day=s.get("requests_per_day"),
                                 total_requests=s.get("total_requests", 0),
-                                default_profile=s.get("default_profile", False),
                                 requests_in_last_day=s.get("requests_in_last_day", 0),
                                 can_edit=s.get("can_edit", False),
                                 can_delete=s.get("can_delete", False),

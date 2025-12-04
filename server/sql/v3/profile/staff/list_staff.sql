@@ -272,7 +272,6 @@ SELECT DISTINCT ON (p.id)
     p.active,
     pa.last_active as lastActive,
     prl.requests_per_day as requests_per_day,
-    p.default_profile,
     COALESCE(rr.run_count::int, 0) as requests_in_last_day,
     COALESCE(pc.cohort_ids, ARRAY[]::uuid[]) as cohort_ids,
     COALESCE(
@@ -288,8 +287,6 @@ SELECT DISTINCT ON (p.id)
         WHEN p.id = $1 THEN true
         -- Superadmin has no restrictions
         WHEN up.role = 'superadmin' THEN true
-        -- Cannot edit default_profile unless superadmin
-        WHEN (p.first_name = 'Default') THEN false
         -- Role hierarchy: can only edit roles lower than current role
         WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
         WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
@@ -301,8 +298,6 @@ SELECT DISTINCT ON (p.id)
         WHEN p.id = $1 THEN false
         -- Superadmin has no restrictions (except self)
         WHEN up.role = 'superadmin' THEN true
-        -- Cannot delete default_profile unless superadmin
-        WHEN (p.first_name = 'Default') THEN false
         -- Cannot delete profiles with cohort links (prevent orphaned data)
         WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
         -- Role hierarchy: can only delete roles lower than current role
@@ -352,7 +347,7 @@ AND (
     (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
     (up.role = 'guest' AND p.role = 'guest')
 )
-GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile, 
+GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
          pa.last_active, prl.requests_per_day,
          pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
          pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count,

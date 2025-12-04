@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { applyThemeTokens } from "@/lib/theme/apply-theme";
+import type { SettingsActiveOut } from "@/app/(main)/layout-server";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
@@ -239,20 +241,34 @@ interface LoginProps {
   guest_login_enabled?: boolean; // Whether guest login button should be shown
   show_default_account?: boolean; // Whether to show "continue as default account" button
   departments?: DepartmentOption[]; // List of departments for picker
+  initialDepartmentId?: string | undefined; // Initial department ID from query parameter
+  activeSettings?: SettingsActiveOut | null; // Active settings for theme application
 }
 
 export default function Login({
   providers = [],
   guest_login_enabled = true,
-  show_default_account = false,
+  show_default_account: _show_default_account = false,
   departments = [],
+  initialDepartmentId,
+  activeSettings,
 }: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<
     string | null
-  >(departments.length > 0 ? departments[0].id : null);
+  >(
+    initialDepartmentId ||
+      (departments.length > 0 ? (departments[0]?.id ?? null) : null)
+  );
   const router = useRouter();
+
+  // Apply theme tokens from activeSettings (client-side only)
+  useEffect(() => {
+    if (activeSettings?.tokens) {
+      applyThemeTokens(activeSettings.tokens);
+    }
+  }, [activeSettings?.tokens]);
 
   // Animation variants matching Info.tsx
   const fadeInUp = {
@@ -412,7 +428,18 @@ export default function Login({
                 </label>
                 <Select
                   value={selectedDepartmentId || undefined}
-                  onValueChange={setSelectedDepartmentId}
+                  onValueChange={(value) => {
+                    setSelectedDepartmentId(value);
+                    // Update URL with department parameter and trigger server-side refetch
+                    const url = new URL(window.location.href);
+                    if (value) {
+                      url.searchParams.set("department", value);
+                    } else {
+                      url.searchParams.delete("department");
+                    }
+                    // Use router.push to trigger server-side refetch (like dashboard filters)
+                    router.push(url.pathname + url.search);
+                  }}
                 >
                   <SelectTrigger className="w-full bg-white/10 backdrop-blur-xl text-white border-white/20 hover:bg-white/15">
                     <SelectValue placeholder="Select department..." />

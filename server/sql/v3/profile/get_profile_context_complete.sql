@@ -1,17 +1,35 @@
 -- Get profile context with guest-profile-id resolution and emulation validation in a single transaction
 -- Parameters: $1=actualProfileId (may be "guest-profile-id"), $2=effectiveProfileId (may be "guest-profile-id")
 -- Returns: Complete profile context data, or NULL if emulation is unauthorized
-WITH resolve_profile_ids AS (
+WITH resolve_guest_profile AS (
+    -- Resolve guest-profile-id using settings system (department-specific or default)
+    SELECT 
+        COALESCE(
+            -- Department-specific settings guest profile (if user has departments)
+            (SELECT sdg.profile_id FROM settings_default_guest sdg
+             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+             JOIN settings_departments sd ON sd.settings_id = s.id AND sd.active = true
+             JOIN profile_departments pd ON pd.department_id = sd.department_id AND pd.active = true
+             WHERE pd.profile_id IN ($1::uuid, $2::uuid) AND sdg.active = true
+             LIMIT 1),
+            -- Fallback to default (active) settings guest profile
+            (SELECT sdg.profile_id FROM settings_default_guest sdg
+             JOIN settings s ON s.id = sdg.settings_id AND s.active = true
+             WHERE sdg.active = true
+             LIMIT 1)
+        ) as guest_profile_id
+),
+resolve_profile_ids AS (
     -- Resolve "guest-profile-id" to actual default guest profile ID for both actual and effective
     SELECT 
         CASE 
             WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
+                (SELECT guest_profile_id FROM resolve_guest_profile)
             ELSE $1::uuid
         END as resolved_actual_profile_id,
         CASE 
             WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
+                (SELECT guest_profile_id FROM resolve_guest_profile)
             ELSE $2::uuid
         END as resolved_effective_profile_id
 ),
@@ -72,7 +90,6 @@ actual_profile_data AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        (p.first_name = 'Default') as default_profile,
         COALESCE(prl.requests_per_day, 0) as req_per_day,
         p.last_login,
         pa.last_active,
@@ -92,7 +109,7 @@ actual_profile_data AS (
         LIMIT 1
     ) pa ON true
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
-             (p.first_name = 'Default') as default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
+             prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
 ),
 effective_profile_data AS (
@@ -105,7 +122,6 @@ effective_profile_data AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        (p.first_name = 'Default') as default_profile,
         COALESCE(prl.requests_per_day, 0) as req_per_day,
         p.last_login,
         pa.last_active,
@@ -125,7 +141,7 @@ effective_profile_data AS (
         LIMIT 1
     ) pa ON true
     GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
-             (p.first_name = 'Default') as default_profile, prl.requests_per_day, p.last_login, pa.last_active, 
+             prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
 ),
 dept_data AS (
@@ -218,7 +234,6 @@ SELECT
     apd.primary_email as actual_primary_email,
     apd.role as actual_role,
     apd.active as actual_active,
-    apd.default_profile as actual_default_profile,
     apd.req_per_day as actual_req_per_day,
     apd.last_login as actual_last_login,
     apd.last_active as actual_last_active,
@@ -233,7 +248,6 @@ SELECT
     epd.primary_email,
     epd.role,
     epd.active,
-    epd.default_profile,
     epd.req_per_day,
     epd.last_login,
     epd.last_active,
