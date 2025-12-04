@@ -36,6 +36,12 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function InfoPage() {
-  return <Info />;
+export default async function InfoPage() {
+  const session = await getSession();
+  // Check if user is logged in: effectiveProfileId exists and is not guest-profile-id
+  const isLoggedIn =
+    !!session?.effectiveProfileId &&
+    session.effectiveProfileId !== "guest-profile-id";
+
+  return <Info isLoggedIn={isLoggedIn} />;
 }

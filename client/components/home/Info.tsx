@@ -19,7 +19,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-export default function Info() {
+interface InfoProps {
+  isLoggedIn?: boolean;
+}
+
+export default function Info({ isLoggedIn = false }: InfoProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const licensingRef = useRef<HTMLDivElement>(null);
@@ -139,7 +143,7 @@ export default function Info() {
             className="bg-transparent"
           >
             <Link
-              href="/login"
+              href={isLoggedIn ? "/home" : "/login"}
               className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 border-2 ${
                 isOverBlueSection
                   ? "bg-white/10 backdrop-blur-sm border-white text-white hover:bg-white/20 shadow-lg"
@@ -170,7 +174,7 @@ export default function Info() {
                 }
               }}
             >
-              Login
+              {isLoggedIn ? "Home" : "Login"}
             </Link>
           </motion.div>
         </div>

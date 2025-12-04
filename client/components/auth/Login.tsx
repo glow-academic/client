@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { applyThemeTokens } from "@/lib/theme/apply-theme";
 import type { SettingsActiveOut } from "@/app/(main)/layout-server";
+import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
@@ -376,6 +377,31 @@ export default function Login({
     <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 px-4">
       {/* Animated Yellow Sparkles Background */}
       <AnimatedSparkles />
+
+      {/* Back Button - Top Left */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="fixed top-6 left-6 z-50"
+      >
+        <Link
+          href="/"
+          className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 backdrop-blur-xl text-white border border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-300"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+            boxShadow:
+              "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+          }}
+        >
+          {/* Liquid glass shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-lg" />
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          <ArrowLeft className="w-4 h-4 relative z-10" />
+          <span className="text-sm font-medium relative z-10">Back</span>
+        </Link>
+      </motion.div>
 
       <motion.div
         initial="initial"
