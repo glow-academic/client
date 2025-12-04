@@ -16343,10 +16343,6 @@
             "type": "string",
             "title": "Name"
           },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
           "updated_at": {
             "type": "string",
             "title": "Updated At"
@@ -16433,7 +16429,6 @@
         "required": [
           "document_id",
           "name",
-          "type",
           "updated_at",
           "active",
           "scenario_ids",
@@ -16539,16 +16534,6 @@
             "type": "object",
             "title": "Parameter Mapping"
           },
-          "type_options": {
-            "items": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Type Options"
-          },
           "scenario_options": {
             "items": {
               "additionalProperties": {
@@ -16591,7 +16576,6 @@
           "parameter_item_mapping",
           "department_mapping",
           "parameter_mapping",
-          "type_options",
           "scenario_options",
           "department_options",
           "valid_department_ids",

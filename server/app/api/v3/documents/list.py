@@ -33,7 +33,6 @@ class DocumentItem(BaseModel):
 
     document_id: str
     name: str
-    type: str
     updated_at: str
     upload_id: str | None = None
     active: bool
@@ -57,7 +56,6 @@ class DocumentsListResponse(BaseModel):
     department_mapping: dict[str, DepartmentMappingItem]
     parameter_mapping: dict[str, ParameterMappingItem]
     # UI-ready facet options (precomputed on server)
-    type_options: list[dict[str, str]]  # Array of {value, label}
     scenario_options: list[dict[str, str]]  # Array of {value, label}
     department_options: list[dict[str, str]]  # Array of {value, label}
     # Edit dialog data (consolidated from detail endpoint)
@@ -214,7 +212,6 @@ async def get_documents_list(
                 DocumentItem(
                     document_id=str(row["document_id"]),
                     name=row["name"],
-                    type=row["type"],
                     updated_at=row["updated_at"].isoformat()
                     if row["updated_at"]
                     else "",
@@ -233,24 +230,6 @@ async def get_documents_list(
             )
 
         # Build facet options
-        # Collect all document types actually used by returned documents
-        used_types = {doc.type for doc in documents if doc.type}
-        # Map of all possible types with their labels
-        all_type_options = {
-            "homework": "📚 Homework",
-            "project": "🎯 Project",
-            "quiz": "❓ Quiz",
-            "midterm": "📝 Midterm",
-            "lab": "🧪 Lab",
-            "lecture": "📖 Lecture",
-            "syllabus": "📋 Syllabus",
-        }
-        # Filter type_options to only include types used by returned documents
-        type_options = [
-            {"value": doc_type, "label": all_type_options[doc_type]}
-            for doc_type in used_types
-            if doc_type in all_type_options
-        ]
         scenario_options = disambiguate_scenarios(scenario_mapping)
         department_options = [
             {"value": did, "label": d.name or did}
@@ -277,7 +256,6 @@ async def get_documents_list(
             parameter_item_mapping=parameter_item_mapping,
             department_mapping=department_mapping,
             parameter_mapping=parameter_mapping,
-            type_options=type_options,
             scenario_options=scenario_options,
             department_options=department_options,
             valid_department_ids=valid_department_ids,

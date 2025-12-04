@@ -7014,8 +7014,6 @@ export interface components {
             document_id: string;
             /** Name */
             name: string;
-            /** Type */
-            type: string;
             /** Updated At */
             updated_at: string;
             /** Upload Id */
@@ -7086,10 +7084,6 @@ export interface components {
             parameter_mapping: {
                 [key: string]: components["schemas"]["ParameterMappingItem"];
             };
-            /** Type Options */
-            type_options: {
-                [key: string]: string;
-            }[];
             /** Scenario Options */
             scenario_options: {
                 [key: string]: string;
