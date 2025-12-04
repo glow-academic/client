@@ -210,7 +210,7 @@ export function ProfileProviderClient({
         query["guestId"] = guestIdRef.current!;
       }
 
-      const socket = createSocketClient(query);
+      const socket = await createSocketClient(query);
 
       socketRef.current = socket;
 

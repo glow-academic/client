@@ -405,8 +405,8 @@ from app.socket.simulations.create_practice_scenario import \
     create_practice_scenario  # noqa: E402; type: ignore
 from app.socket.simulations.stop import \
     stop_simulation  # noqa: E402; type: ignore
-from app.socket.voice import (start_voice,  # noqa: E402; type: ignore
-                              stop_voice, voice_interrupted, voice_tool_call)
+from app.socket.voice import start_voice  # noqa: E402; type: ignore
+from app.socket.voice import stop_voice, voice_interrupted, voice_tool_call
 
 
 # Create a combined lifespan to manage both session managers
