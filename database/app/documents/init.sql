@@ -10,7 +10,6 @@ CREATE TABLE documents (
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
-    upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
     classified BOOLEAN     NOT NULL           DEFAULT FALSE,
     active BOOLEAN     NOT NULL DEFAULT TRUE,
     template BOOLEAN NOT NULL DEFAULT FALSE,
@@ -21,7 +20,6 @@ CREATE TABLE documents (
 
 CREATE INDEX ON documents (classify_agent_id);
 CREATE INDEX ON documents (document_agent_id);
-CREATE INDEX ON documents (upload_id);
 
 -- Document → Departments junction table (BCNF normalization)
 -- No records = available to all departments (cross-department)
@@ -36,6 +34,21 @@ CREATE TABLE document_departments (
 
 CREATE INDEX ON document_departments (document_id);
 CREATE INDEX ON document_departments (department_id);
+
+-- Document → Uploads junction table (BCNF normalization)
+-- Allows version history of document uploads
+CREATE TABLE document_uploads (
+    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    upload_id UUID NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (document_id, upload_id)
+);
+
+CREATE INDEX ON document_uploads (document_id);
+CREATE INDEX ON document_uploads (upload_id);
+CREATE INDEX ON document_uploads (document_id, active);
 
 -- Note: Document tags are now managed via simulation_tags → simulation_tag_documents
 -- See simulations/init.sql for tag-related tables

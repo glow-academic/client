@@ -1,5 +1,6 @@
 """Document update endpoint - v3 API."""
 
+import json
 import uuid
 from typing import Annotated, Any
 
@@ -23,6 +24,8 @@ class UpdateDocumentRequest(BaseModel):
     parameter_item_ids: list[str] = []
     classify_agent_id: str | None = None
     document_agent_id: str | None = None
+    template: bool | None = None
+    templateArgs: dict[str, Any] | None = None  # Template schema JSON
 
 
 class UpdateDocumentResponse(BaseModel):
@@ -50,6 +53,11 @@ async def update_document(
 
     try:
         async with transaction(conn):
+            # Prepare template args (schema) as JSONB
+            template_args_jsonb = None
+            if request.templateArgs is not None:
+                template_args_jsonb = json.dumps(request.templateArgs)
+
             # Update document with department links and parameter items in a single transaction
             sql_query = load_sql("sql/v3/documents/update_document_complete.sql")
             # Ensure parameter_item_ids is always an array (empty if None)
@@ -62,6 +70,8 @@ async def update_document(
                 param_item_ids,
                 uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
+                request.template,
+                template_args_jsonb,
             )
             await conn.execute(
                 sql_query,
@@ -72,6 +82,8 @@ async def update_document(
                 param_item_ids,
                 uuid.UUID(request.classify_agent_id) if request.classify_agent_id else None,
                 uuid.UUID(request.document_agent_id) if request.document_agent_id else None,
+                request.template,
+                template_args_jsonb,
             )
 
         result = UpdateDocumentResponse(

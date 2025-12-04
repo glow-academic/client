@@ -1,5 +1,5 @@
 -- Update document with department links and parameter items in a single transaction
--- Parameters: $1=documentId, $2=name (nullable text), $3=active (nullable boolean), $4=department_id (nullable uuid), $5=parameter_item_ids (nullable text array), $6=classify_agent_id (nullable uuid), $7=document_agent_id (nullable uuid)
+-- Parameters: $1=documentId, $2=name (nullable text), $3=active (nullable boolean), $4=department_id (nullable uuid), $5=parameter_item_ids (nullable text array), $6=classify_agent_id (nullable uuid), $7=document_agent_id (nullable uuid), $8=template (nullable boolean), $9=template_args (nullable jsonb)
 WITH update_document AS (
     UPDATE documents
     SET 
@@ -7,6 +7,8 @@ WITH update_document AS (
         active = COALESCE($3, active),
         classify_agent_id = COALESCE($6::uuid, classify_agent_id),
         document_agent_id = COALESCE($7::uuid, document_agent_id),
+        template = COALESCE($8, template),
+        template_args = COALESCE($9::jsonb, template_args),
         updated_at = NOW()
     WHERE id = $1::uuid
     RETURNING id::text as document_id

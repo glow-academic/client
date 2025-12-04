@@ -18,6 +18,8 @@ type DocumentsListIn = InputOf<"/api/v3/documents/list", "post">;
 type DocumentsListOut = OutputOf<"/api/v3/documents/list", "post">;
 type DeleteDocumentIn = InputOf<"/api/v3/documents/delete", "post">;
 type DeleteDocumentOut = OutputOf<"/api/v3/documents/delete", "post">;
+type GenerateTemplateIn = InputOf<"/api/v3/documents/generate-template", "post">;
+type GenerateTemplateOut = OutputOf<"/api/v3/documents/generate-template", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -48,6 +50,13 @@ async function deleteDocument(
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/documents/delete", input);
+}
+
+async function generateTemplate(
+  input: GenerateTemplateIn,
+): Promise<GenerateTemplateOut> {
+  "use server";
+  return api.post("/documents/generate-template", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -88,6 +97,7 @@ export default async function DocumentsPage() {
       <Documents
         listData={listData}
         deleteDocumentAction={deleteDocument}
+        generateTemplateAction={generateTemplate}
       />
     </div>
   );
@@ -99,4 +109,6 @@ export type {
   DeleteDocumentOut,
   DocumentsListIn,
   DocumentsListOut,
+  GenerateTemplateIn,
+  GenerateTemplateOut,
 };

@@ -45,12 +45,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Building2, Edit, Eye, Trash2, UploadCloud, X } from "lucide-react";
+import { Building2, Edit, Eye, Sparkles, Trash2, UploadCloud, X } from "lucide-react";
 
 import type {
   DeleteDocumentIn,
   DeleteDocumentOut,
   DocumentsListOut,
+  GenerateTemplateIn,
+  GenerateTemplateOut,
 } from "@/app/(main)/management/documents/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -71,14 +73,19 @@ export interface DocumentsProps {
   deleteDocumentAction?: (
     input: DeleteDocumentIn
   ) => Promise<DeleteDocumentOut>;
+  generateTemplateAction?: (
+    input: GenerateTemplateIn
+  ) => Promise<GenerateTemplateOut>;
 }
 
 export default function Documents({
   listData: serverListData,
   deleteDocumentAction,
+  generateTemplateAction,
 }: DocumentsProps) {
   const router = useRouter();
-  const { departmentIds } = useProfile();
+  const { departmentIds, effectiveProfile } = useProfile();
+  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
 
   // Table state for filtering
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -344,6 +351,44 @@ export default function Documents({
     pageSize,
   ]);
 
+  // Handle generate template
+  const handleGenerateTemplate = async () => {
+    if (!effectiveProfile?.id || !effectiveProfile?.primaryDepartmentId) {
+      toast.error("Profile or department not found");
+      return;
+    }
+
+    setIsGeneratingTemplate(true);
+    try {
+      if (!generateTemplateAction) {
+        toast.error("Generate template action not available");
+        return;
+      }
+
+      const result = await generateTemplateAction({
+        body: {
+          departmentId: effectiveProfile.primaryDepartmentId,
+          profileId: effectiveProfile.id,
+        },
+      });
+
+      if (result.success) {
+        toast.success("Template generated successfully");
+        // Navigate to new page with generated template
+        router.push("/management/documents/new");
+        router.refresh();
+      } else {
+        toast.error(result.message || "Failed to generate template");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate template"
+      );
+    } finally {
+      setIsGeneratingTemplate(false);
+    }
+  };
+
   // Handle document delete
   const handleDelete = async () => {
     if (!deletingDocument) return;
@@ -399,6 +444,23 @@ export default function Documents({
               data-testid="documents-toolbar"
             >
               <div className="flex flex-1 items-center space-x-2 flex-wrap">
+                <Button
+                  onClick={handleGenerateTemplate}
+                  disabled={isGeneratingTemplate}
+                  className="h-8"
+                  data-testid="btn-generate-template"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {isGeneratingTemplate ? "Generating..." : "Generate Template"}
+                </Button>
+                <Button
+                  onClick={() => router.push("/management/documents/new")}
+                  variant="default"
+                  className="h-8"
+                >
+                  <UploadCloud className="h-4 w-4 mr-2" />
+                  New Document
+                </Button>
                 <div className="w-full md:w-auto mb-2 md:mb-0">
                   <Input
                     data-testid="documents-search"

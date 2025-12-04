@@ -18,6 +18,8 @@ type DocumentDetailIn = InputOf<"/api/v3/documents/detail", "post">;
 type DocumentDetailOut = OutputOf<"/api/v3/documents/detail", "post">;
 type UpdateDocumentIn = InputOf<"/api/v3/documents/update", "post">;
 type UpdateDocumentOut = OutputOf<"/api/v3/documents/update", "post">;
+type RenderTemplateIn = InputOf<"/api/v3/documents/render", "post">;
+type RenderTemplateOut = OutputOf<"/api/v3/documents/render", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocument = async (
@@ -85,6 +87,13 @@ async function updateDocument(
   return api.post("/documents/update", input);
 }
 
+async function renderTemplate(
+  input: RenderTemplateIn
+): Promise<RenderTemplateOut> {
+  "use server";
+  return api.post("/documents/render", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DocumentEditPage({
   params,
@@ -109,6 +118,7 @@ export default async function DocumentEditPage({
           documentId={documentId}
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
+          renderTemplateAction={renderTemplate}
         />
       </div>
     );
@@ -138,5 +148,7 @@ export type {
   DocumentDetailOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
+  RenderTemplateIn,
+  RenderTemplateOut,
 };
 

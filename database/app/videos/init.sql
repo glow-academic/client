@@ -11,7 +11,6 @@ CREATE TABLE videos (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   length_seconds INTEGER NOT NULL CHECK (length_seconds > 0),
-  upload_id  UUID        REFERENCES uploads(id) ON DELETE RESTRICT,
   active     BOOLEAN     NOT NULL DEFAULT TRUE,
   objectives_enabled BOOLEAN NOT NULL DEFAULT TRUE,
   image_enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -21,7 +20,6 @@ CREATE TABLE videos (
 
 CREATE INDEX ON videos (outline_agent_id);
 CREATE INDEX ON videos (image_agent_id);
-CREATE INDEX ON videos (upload_id);
 
 -- Outlines table (standalone, can exist independently)
 CREATE TABLE outlines (
@@ -141,4 +139,19 @@ CREATE TABLE video_parameter_items (
 
 CREATE INDEX ON video_parameter_items (video_id);
 CREATE INDEX ON video_parameter_items (parameter_item_id);
+
+-- Video → Uploads junction table (BCNF normalization)
+-- Allows version history of video uploads
+CREATE TABLE video_uploads (
+    video_id UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+    upload_id UUID NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (video_id, upload_id)
+);
+
+CREATE INDEX ON video_uploads (video_id);
+CREATE INDEX ON video_uploads (upload_id);
+CREATE INDEX ON video_uploads (video_id, active);
 

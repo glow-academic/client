@@ -1,6 +1,7 @@
 """Document detail endpoint - v3 API."""
 
 import json
+import os
 import uuid
 from typing import Annotated, Any
 
@@ -8,7 +9,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.main import get_db
+from app.main import UPLOAD_FOLDER, get_db
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -61,6 +62,11 @@ class DocumentDetailResponse(BaseModel):
     document_agent_id: str
     agent_mapping: AgentMapping
     valid_agent_ids: list[str]
+    template: bool
+    template_schema: dict[str, Any] | None
+    template_args: dict[str, Any] | None
+    template_upload_id: str | None
+    template_html: str | None
 
 
 router = APIRouter()
@@ -174,6 +180,39 @@ async def get_document_detail(
         # Document type options (from v2 - typically ["homework", "exam", "lab", "project"])
         document_type_options = ["homework", "exam", "lab", "project"]
 
+        # Parse template fields
+        template = row.get("template", False)
+        template_upload_id = row.get("template_upload_id")
+        
+        # Parse template_args JSONB (this contains the schema, not the args values)
+        template_args_raw = row.get("template_args")
+        template_schema: dict[str, Any] | None = None
+        template_args: dict[str, Any] | None = None
+        template_html: str | None = None
+        
+        if template_args_raw:
+            if isinstance(template_args_raw, str):
+                template_schema = json.loads(template_args_raw)
+            elif isinstance(template_args_raw, dict):
+                template_schema = template_args_raw
+            # For now, template_args (values) is empty - will be populated when user fills form
+            template_args = {}
+
+        # Read template HTML if template upload exists
+        if template and template_upload_id:
+            try:
+                sql_get_upload = load_sql("sql/v3/uploads/get_upload_file_info.sql")
+                upload_row = await conn.fetchrow(sql_get_upload, template_upload_id)
+                if upload_row and upload_row.get("file_path"):
+                    file_path = upload_row["file_path"]
+                    full_path = os.path.join(UPLOAD_FOLDER, file_path)
+                    if os.path.exists(full_path):
+                        with open(full_path, encoding="utf-8") as f:
+                            template_html = f.read()
+            except Exception:
+                # If reading fails, template_html will remain None
+                pass
+
         response_data = DocumentDetailResponse(
             name=row.get("name", ""),
             active=row.get("active", False),
@@ -190,6 +229,11 @@ async def get_document_detail(
             document_agent_id=row.get("document_agent_id", ""),
             agent_mapping=agent_mapping,
             valid_agent_ids=valid_agent_ids,
+            template=template,
+            template_schema=template_schema,
+            template_args=template_args,
+            template_upload_id=template_upload_id,
+            template_html=template_html,
         )
 
         # Cache response

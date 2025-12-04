@@ -2,11 +2,14 @@ WITH document_data AS (
     SELECT 
         d.name,
         d.active,
-        d.upload_id::text,
+        d.template,
+        d.template_args,
         d.classify_agent_id::text,
         d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
-        (SELECT ARRAY_AGG(dpi.parameter_item_id::text) FROM document_parameter_items dpi WHERE dpi.document_id = d.id AND dpi.active = true) as parameter_item_ids
+        (SELECT ARRAY_AGG(dpi.parameter_item_id::text) FROM document_parameter_items dpi WHERE dpi.document_id = d.id AND dpi.active = true) as parameter_item_ids,
+        (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
+        (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as template_upload_id
     FROM documents d
     WHERE d.id = $1
 ),

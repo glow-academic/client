@@ -1,5 +1,6 @@
 """Document create endpoint - v3 API following DHH principles."""
 
+import json
 import uuid
 from typing import Annotated, Any
 
@@ -20,10 +21,13 @@ class CreateDocumentRequest(BaseModel):
     """Request to create document."""
 
     name: str
-    uploadId: str
+    uploadId: str | None = None  # Regular document upload
     departmentIds: list[str] | None = None
     parameterItemIds: list[str] | None = None
     profileId: str
+    template: bool = False
+    templateUploadId: str | None = None  # Template HTML upload
+    templateArgs: dict[str, Any] | None = None  # Template schema JSON
 
 
 class CreateDocumentResponse(BaseModel):
@@ -60,22 +64,33 @@ async def create_document(
             else []
         )
 
+        # Prepare template args (schema) as JSONB
+        template_args_jsonb = None
+        if request_body.templateArgs:
+            template_args_jsonb = json.dumps(request_body.templateArgs)
+
         sql_query = load_sql("sql/v3/documents/insert_document_complete.sql")
         sql_params = (
             document_id,
             request_body.name,
-            uuid.UUID(request_body.uploadId),
+            uuid.UUID(request_body.uploadId) if request_body.uploadId else None,
             dept_uuids,
             param_item_uuids,
+            request_body.template,
+            uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
+            template_args_jsonb,
         )
 
         await conn.execute(
             sql_query,
             document_id,
             request_body.name,
-            uuid.UUID(request_body.uploadId),
+            uuid.UUID(request_body.uploadId) if request_body.uploadId else None,
             dept_uuids,
             param_item_uuids,
+            request_body.template,
+            uuid.UUID(request_body.templateUploadId) if request_body.templateUploadId else None,
+            template_args_jsonb,
         )
 
         result_data = CreateDocumentResponse(
@@ -99,9 +114,5 @@ async def create_document(
             sql_query=sql_query,
             sql_params=sql_params,
             request=request,
-        )
-        return CreateDocumentResponse(
-            success=False,
-            message=f"Failed to create document: {str(e)}",
         )
 

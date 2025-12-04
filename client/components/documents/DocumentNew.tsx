@@ -11,7 +11,13 @@ import type {
   CreateDocumentOut,
   DocumentsListOut,
   FinalizeUploadOut,
+  GenerateTemplateIn,
+  GenerateTemplateOut,
+  RenderTemplateIn,
+  RenderTemplateOut,
 } from "@/app/(main)/management/documents/new/page";
+import TemplatePreview from "@/components/documents/TemplatePreview";
+import TemplateForm, { type TemplateSchema } from "@/components/documents/TemplateForm";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
 import { Badge } from "@/components/ui/badge";
@@ -55,12 +61,20 @@ interface DocumentNewProps {
   listData: DocumentsListOut;
   finalizeUploadAction: (uploadId: string) => Promise<FinalizeUploadOut>;
   createDocumentAction: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
+  generateTemplateAction: (input: GenerateTemplateIn) => Promise<GenerateTemplateOut>;
+  renderTemplateAction: (
+    documentId: string,
+    templateArgs: Record<string, any>,
+    profileId: string
+  ) => Promise<{ success: boolean; rendered_html: string }>;
 }
 
 export default function DocumentNew({
   listData,
   finalizeUploadAction,
   createDocumentAction,
+  generateTemplateAction,
+  renderTemplateAction,
 }: DocumentNewProps) {
   const { effectiveProfile } = useProfile();
   const router = useRouter();
@@ -113,6 +127,15 @@ export default function DocumentNew({
   const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
     []
   );
+
+  // Template state
+  const [isTemplateMode, setIsTemplateMode] = useState(false);
+  const [templateHtml, setTemplateHtml] = useState<string | null>(null);
+  const [templateSchema, setTemplateSchema] = useState<TemplateSchema | null>(null);
+  const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
+  const [templateArgs, setTemplateArgs] = useState<Record<string, any>>({});
+  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+  const [generatedDocumentId, setGeneratedDocumentId] = useState<string | null>(null);
 
   // Extract mappings from list data
   const departmentMapping = useMemo(
@@ -761,8 +784,156 @@ export default function DocumentNew({
     setPendingFiles((prev) => [...prev, ...files]);
   };
 
+  const handleGenerateTemplate = async () => {
+    if (!effectiveProfile?.id) {
+      toast.error("Profile ID required");
+      return;
+    }
+
+    setIsGeneratingTemplate(true);
+    try {
+      const result = await generateTemplateAction({
+        body: {
+          departmentId: selectedDepartmentIds[0] || validDepartmentIds[0] || "",
+          profileId: effectiveProfile.id,
+        },
+      });
+
+      if (result.success) {
+        setTemplateHtml(result.template_html);
+        setTemplateSchema(result.template_schema as TemplateSchema);
+        setTemplateUploadId((result as any).upload_id || null);
+        setIsTemplateMode(true);
+        setTemplateArgs({});
+        toast.success("Template generated successfully");
+      } else {
+        toast.error(result.message || "Failed to generate template");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate template"
+      );
+    } finally {
+      setIsGeneratingTemplate(false);
+    }
+  };
+
+  const handleCreateTemplateDocument = async () => {
+    if (!templateUploadId || !effectiveProfile?.id) {
+      toast.error("Template upload ID required");
+      return;
+    }
+
+    if (!templateSchema) {
+      toast.error("Template schema required");
+      return;
+    }
+
+    const finalDepartmentIds = transformDepartmentIdsForSubmit(
+      selectedDepartmentIds,
+      isSuperadmin,
+      validDepartmentIds
+    );
+
+    try {
+      const createResult = await createDocumentAction({
+        body: {
+          name: `Template Document - ${new Date().toLocaleString()}`,
+          uploadId: null,
+          departmentIds: finalDepartmentIds,
+          parameterItemIds: [],
+          profileId: effectiveProfile.id,
+          template: true,
+          templateUploadId: templateUploadId,
+          templateArgs: templateSchema,
+        } as CreateDocumentIn["body"],
+      });
+
+      if (createResult.success && createResult.documentId) {
+        setGeneratedDocumentId(createResult.documentId);
+        toast.success("Template document created successfully");
+        setTimeout(() => {
+          router.push(`/management/documents/d/${createResult.documentId}`);
+          router.refresh();
+        }, 1000);
+      } else {
+        toast.error(createResult.message || "Failed to create template document");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create template document"
+      );
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Template Generation Section */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Dynamic Template</h3>
+              <p className="text-sm text-muted-foreground">
+                Generate a Jinja2 template document with dynamic fields
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleGenerateTemplate}
+              disabled={isGeneratingTemplate || activeUploads.size > 0}
+            >
+              {isGeneratingTemplate ? "Generating..." : "Generate Template"}
+            </Button>
+          </div>
+
+          {isTemplateMode && templateHtml && templateSchema && (
+            <div className="space-y-4 mt-4 border-t pt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Template Preview */}
+                <div className="space-y-2">
+                  <Label>Template Preview</Label>
+                  <div className="border rounded-md min-h-[400px]">
+                    <TemplatePreview
+                      documentId={null}
+                      templateHtml={templateHtml}
+                      templateArgs={templateArgs}
+                      profileId={effectiveProfile?.id || ""}
+                      renderTemplateAction={async () => {
+                        // Not used when documentId is null
+                        return { success: false, rendered_html: "" };
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Template Form */}
+                <div className="space-y-2">
+                  <Label>Template Arguments</Label>
+                  <div className="border rounded-md p-4 max-h-[400px] overflow-auto">
+                    <TemplateForm
+                      schema={templateSchema}
+                      values={templateArgs}
+                      onChange={setTemplateArgs}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Create Template Document Button */}
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleCreateTemplateDocument}
+                  disabled={!templateUploadId}
+                >
+                  Create Template Document
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       {/* Dropzone */}
       <Card>
         <CardContent className="p-6">

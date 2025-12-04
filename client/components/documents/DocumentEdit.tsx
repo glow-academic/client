@@ -10,11 +10,16 @@ import type {
   DocumentDetailOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
+  RenderTemplateIn,
+  RenderTemplateOut,
 } from "@/app/(main)/management/documents/d/[documentId]/page";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import TemplatePreview from "@/components/documents/TemplatePreview";
+import TemplateForm, { type TemplateSchema } from "@/components/documents/TemplateForm";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -28,15 +33,17 @@ interface DocumentEditProps {
   documentId: string;
   documentDetail: DocumentDetailOut;
   updateDocumentAction: (input: UpdateDocumentIn) => Promise<UpdateDocumentOut>;
+  renderTemplateAction: (input: RenderTemplateIn) => Promise<RenderTemplateOut>;
 }
 
 export default function DocumentEdit({
   documentId,
   documentDetail,
   updateDocumentAction,
+  renderTemplateAction,
 }: DocumentEditProps) {
   const router = useRouter();
-  const { effectiveDepartmentIds } = useProfile();
+  const { effectiveDepartmentIds, effectiveProfile } = useProfile();
   const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
@@ -53,6 +60,9 @@ export default function DocumentEdit({
     classifyAgentId: null,
     documentAgentId: null,
   });
+
+  // Template state
+  const [templateArgs, setTemplateArgs] = useState<Record<string, any>>({});
 
   // Extract mappings from detail response
   const departmentMapping = useMemo(
@@ -105,6 +115,11 @@ export default function DocumentEdit({
         classifyAgentId: documentDetail.classify_agent_id || null,
         documentAgentId: documentDetail.document_agent_id || null,
       });
+
+      // Initialize template args if template document
+      if (documentDetail.template && documentDetail.template_args) {
+        setTemplateArgs(documentDetail.template_args);
+      }
     }
   }, [documentDetail]);
 
@@ -122,6 +137,8 @@ export default function DocumentEdit({
           parameter_item_ids: formData.parameterItemIds,
           classify_agent_id: formData.classifyAgentId || undefined,
           document_agent_id: formData.documentAgentId || undefined,
+          template: documentDetail.template || undefined,
+          templateArgs: documentDetail.template ? templateArgs : undefined,
         },
       });
 
@@ -141,8 +158,62 @@ export default function DocumentEdit({
     return documentDetail?.valid_department_ids || effectiveDepartmentIds;
   }, [documentDetail, effectiveDepartmentIds]);
 
+  const isTemplate = documentDetail?.template === true;
+  const templateSchema = documentDetail?.template_schema as TemplateSchema | null;
+  const templateHtml = documentDetail?.template_html || null;
+
   return (
     <div className="space-y-6">
+      {/* Template Preview Section */}
+      {isTemplate && templateSchema && templateHtml && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Template Preview</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Template Preview */}
+              <div className="space-y-2">
+                <Label>Rendered Output</Label>
+                <div className="border rounded-md min-h-[400px]">
+                  <TemplatePreview
+                    documentId={documentId}
+                    templateHtml={templateHtml}
+                    templateArgs={templateArgs}
+                    profileId={effectiveProfile?.id || ""}
+                    renderTemplateAction={async (docId, args, profId) => {
+                      const result = await renderTemplateAction({
+                        body: {
+                          documentId: docId,
+                          templateArgs: args,
+                          profileId: profId,
+                        },
+                      });
+                      return {
+                        success: result.success,
+                        rendered_html: result.rendered_html,
+                      };
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Template Form */}
+              <div className="space-y-2">
+                <Label>Template Arguments</Label>
+                <div className="border rounded-md p-4 max-h-[400px] overflow-auto">
+                  <TemplateForm
+                    schema={templateSchema}
+                    values={templateArgs}
+                    onChange={setTemplateArgs}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           {/* Document name */}

@@ -25,6 +25,10 @@ type FinalizeUploadOut = OutputOf<
 >;
 type CreateDocumentIn = InputOf<"/api/v3/documents/create", "post">;
 type CreateDocumentOut = OutputOf<"/api/v3/documents/create", "post">;
+type GenerateTemplateIn = InputOf<"/api/v3/documents/generate-template", "post">;
+type GenerateTemplateOut = OutputOf<"/api/v3/documents/generate-template", "post">;
+type RenderTemplateIn = InputOf<"/api/v3/documents/render", "post">;
+type RenderTemplateOut = OutputOf<"/api/v3/documents/render", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getDocumentsList = async (
@@ -55,6 +59,20 @@ async function createDocument(
 ): Promise<CreateDocumentOut> {
   "use server";
   return api.post("/documents/create", input);
+}
+
+async function generateTemplate(
+  input: GenerateTemplateIn,
+): Promise<GenerateTemplateOut> {
+  "use server";
+  return api.post("/documents/generate-template", input);
+}
+
+async function renderTemplate(
+  input: RenderTemplateIn,
+): Promise<RenderTemplateOut> {
+  "use server";
+  return api.post("/documents/render", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -100,6 +118,8 @@ export default async function NewDocumentPage() {
         listData={listData}
         finalizeUploadAction={finalizeUpload}
         createDocumentAction={createDocument}
+        generateTemplateAction={generateTemplate}
+        renderTemplateAction={renderTemplate}
       />
     </div>
   );
@@ -113,5 +133,9 @@ export type {
   FinalizeUploadOut,
   CreateDocumentIn,
   CreateDocumentOut,
+  GenerateTemplateIn,
+  GenerateTemplateOut,
+  RenderTemplateIn,
+  RenderTemplateOut,
 };
 
