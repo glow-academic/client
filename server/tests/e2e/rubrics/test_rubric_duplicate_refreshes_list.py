@@ -21,7 +21,7 @@ def _get_rubric_ids(page: Page) -> set[str]:
 
 def test_rubric_duplicate_refreshes_list(page: Page, base_url: str) -> None:
     """Duplicate a rubric and verify new card appears with refreshed data."""
-    page.goto(f"{base_url}/management/rubrics")
+    page.goto(f"{base_url}/engine/rubrics")
     page.wait_for_load_state("networkidle")
 
     cards = page.get_by_test_id("rubric-card")

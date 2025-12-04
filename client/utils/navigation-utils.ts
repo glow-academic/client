@@ -106,12 +106,14 @@ export const getSectionRoute = (
     // Management routes
     case "management":
       return "/management";
+    case "staff":
+      return "/management/staff";
     case "documents":
       return "/management/documents";
-    case "rubrics":
-      return "/management/rubrics";
     case "parameters":
       return "/management/parameters";
+    case "fields":
+      return "/management/fields";
 
     // Engine routes
     case "engine":
@@ -120,16 +122,16 @@ export const getSectionRoute = (
       return "/engine/agents";
     case "models":
       return "/engine/models";
-    case "keys":
-      return "/engine/keys";
+    case "rubrics":
+      return "/engine/rubrics";
     case "evals":
       return "/engine/evals";
 
     // System routes
     case "system":
       return "/system";
-    case "staff":
-      return "/system/staff";
+    case "keys":
+      return "/system/keys";
     case "auth":
       return "/system/auth";
     case "health":
@@ -168,7 +170,7 @@ export const getSectionRoute = (
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/management/rubrics/r/${rubricId}`;
+        return `/engine/rubrics/r/${rubricId}`;
       }
       if (section.startsWith("document-")) {
         const documentId = section.replace("document-", "");
@@ -204,7 +206,7 @@ export const getSectionRoute = (
           return `/analytics/reports/p/${profileId}`;
         }
         // Staff editing is now done via modals, so redirect to staff list
-        return `/system/staff`;
+        return `/management/staff`;
       }
       if (section.startsWith("department-")) {
         const departmentId = section.replace("department-", "");

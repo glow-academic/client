@@ -34,7 +34,7 @@ import type {
   CreateStaffDataOut,
   ProfileListItem,
   SearchStaffOut,
-} from "@/app/(main)/system/staff/page";
+} from "@/app/(main)/management/staff/page";
 // Import types from new page (create action)
 import type {
   CreateDepartmentIn,

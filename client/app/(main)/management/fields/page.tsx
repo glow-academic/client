@@ -1,12 +1,10 @@
 /**
- * app/(main)/management/rubrics/r/page.tsx
- * Rubric page for the rubrics section. Redirects to rubrics page.
+ * app/(main)/management/fields/page.tsx
+ * Fields list page
  * @AshokSaravanan222 & @siladiea
- * 06/08/2025
+ * 01/20/2025
  */
-
 import { getSession } from "@/auth";
-import { redirect } from "next/navigation";
 
 import { api } from "@/lib/api/client";
 import type { Metadata } from "next";
@@ -32,11 +30,24 @@ export async function generateMetadata(): Promise<Metadata> {
     : "";
 
   return {
-    title: "Rubrics",
-    description: `Rubrics in GLOW${orgPart}.`,
+    title: "Fields",
+    description: `Manage fields in GLOW${orgPart}.`,
   };
 }
 
-export default function RubricsPage() {
-  return redirect("/management/rubrics");
+export default function FieldsPage() {
+  return (
+    <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Fields</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage fields configuration
+        </p>
+      </div>
+      <div className="rounded-lg border p-6">
+        <p className="text-muted-foreground">Fields management coming soon...</p>
+      </div>
+    </div>
+  );
 }
+

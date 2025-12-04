@@ -1,6 +1,6 @@
 /**
- * app/(main)/system/staff/p/page.tsx
- * Staff edit page for the staff section.
+ * app/(main)/engine/rubrics/r/page.tsx
+ * Rubric page for the rubrics section. Redirects to rubrics page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -32,11 +32,11 @@ export async function generateMetadata(): Promise<Metadata> {
     : "";
 
   return {
-    title: "Staff",
-    description: `Manage staff in GLOW${orgPart}.`,
+    title: "Rubrics",
+    description: `Rubrics in GLOW${orgPart}.`,
   };
 }
 
-export default function StaffEditPage() {
-  return redirect("/system/staff");
+export default function RubricsPage() {
+  return redirect("/engine/rubrics");
 }

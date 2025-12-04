@@ -20,7 +20,7 @@ import {
   getCreateStaffData,
   processCSV,
   searchStaff,
-} from "@/app/(main)/system/staff/page";
+} from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentNewIn = InputOf<

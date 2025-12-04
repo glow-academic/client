@@ -1,5 +1,5 @@
 /**
- * app/(main)/engine/keys/loading.tsx
+ * app/(main)/system/keys/loading.tsx
  * Loading skeleton for keys page
  */
 import { Skeleton } from "@/components/ui/skeleton";

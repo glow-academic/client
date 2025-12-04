@@ -58,7 +58,7 @@ def test_staff_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
             effective_profile_id=ADMIN_PROFILE_ID,
         )
 
-        page.goto(f"{base_url}/system/staff")
+        page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
 
         staff_row = page.locator(
@@ -123,7 +123,7 @@ def test_staff_delete_non_deletable_shows_warning(page: Page, base_url: str) -> 
 
     profile_id = non_deletable["profile_id"]
 
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(
@@ -189,7 +189,7 @@ def test_staff_bulk_delete_confirm_and_cancel(page: Page, base_url: str) -> None
             )
             created_profile_ids.append(profile_id)
 
-        page.goto(f"{base_url}/system/staff")
+        page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
 
         # Select multiple staff
@@ -297,7 +297,7 @@ def test_staff_bulk_delete_mixed_deletable_non_deletable(
             (s for s in staff if not s.get("can_delete") and s.get("profile_id")), None
         )
 
-        page.goto(f"{base_url}/system/staff")
+        page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
 
         selected_ids = [created_profile_id]
@@ -369,7 +369,7 @@ def test_staff_bulk_delete_mixed_deletable_non_deletable(
 
 def test_staff_delete_select_all(page: Page, base_url: str) -> None:
     """Test select all checkbox and bulk delete."""
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     # Click select all checkbox

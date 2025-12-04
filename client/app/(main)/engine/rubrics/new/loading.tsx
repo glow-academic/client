@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/rubrics/new/loading.tsx
+ * app/(main)/engine/rubrics/new/loading.tsx
  * Loading skeleton for rubric create page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025

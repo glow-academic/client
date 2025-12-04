@@ -28,7 +28,7 @@ def test_staff_readonly_permissions(page: Page, base_url: str) -> None:
     profile_id = readonly_staff["profile_id"]
     staff_name = f"{readonly_staff.get('first_name', '')} {readonly_staff.get('last_name', '')}".strip()
 
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("staff-search")
@@ -73,7 +73,7 @@ def test_staff_cannot_delete_self(page: Page, base_url: str) -> None:
     if not current_user:
         pytest.skip("Current user profile not found in staff list")
 
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(
@@ -123,7 +123,7 @@ def test_staff_cannot_delete_default_profile(page: Page, base_url: str) -> None:
 
     profile_id = default_staff["profile_id"]
 
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(

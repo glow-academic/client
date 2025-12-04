@@ -1,5 +1,5 @@
 /**
- * app/(main)/engine/keys/k/page.tsx
+ * app/(main)/system/keys/k/page.tsx
  * Key page for the keys section. Redirects to keys page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -38,6 +38,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function KeyPage() {
-  return redirect("/engine/keys");
+  return redirect("/system/keys");
 }
 

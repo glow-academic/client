@@ -19,13 +19,13 @@ import RubricStandardGroup from "./RubricStandardGroup";
 import type {
   CreateRubricIn,
   CreateRubricOut,
-} from "@/app/(main)/management/rubrics/page";
+} from "@/app/(main)/engine/rubrics/page";
 import type {
   RubricNewOut,
   RubricDetailOut,
   UpdateRubricIn,
   UpdateRubricOut,
-} from "@/app/(main)/management/rubrics/r/[rubricId]/page";
+} from "@/app/(main)/engine/rubrics/r/[rubricId]/page";
 
 type RubricItem = {
   rubric_id: string;
@@ -219,7 +219,7 @@ export default function Rubric({
 
   // Event handlers
   const handleCancel = () => {
-    router.push("/management/rubrics");
+    router.push("/engine/rubrics");
   };
 
   // Error state for edit mode when rubric not found

@@ -1,5 +1,5 @@
 /**
- * app/management/rubrics/r/[rubricId]/page.tsx
+ * app/engine/rubrics/r/[rubricId]/page.tsx
  * Rubric editing page
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
@@ -144,7 +144,7 @@ export default async function EditRubricPage({
       return (
         <DepartmentAccessDenied
           resourceType="rubric"
-          redirectPath="/management/rubrics"
+          redirectPath="/engine/rubrics"
         />
       );
     }

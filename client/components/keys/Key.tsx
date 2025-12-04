@@ -25,12 +25,12 @@ import type {
   KeyDetailOut,
   UpdateKeyIn,
   UpdateKeyOut,
-} from "@/app/(main)/engine/keys/k/[keyId]/page";
+} from "@/app/(main)/system/keys/k/[keyId]/page";
 import type {
   CreateKeyIn,
   CreateKeyOut,
   KeyNewOut,
-} from "@/app/(main)/engine/keys/new/page";
+} from "@/app/(main)/system/keys/new/page";
 
 interface FormErrors {
   name?: string;
@@ -217,7 +217,7 @@ export default function Key({
         });
         resetFormAndState();
         toast.success("Key updated successfully!");
-        router.push(`/engine/keys`);
+        router.push(`/system/keys`);
       } else {
         await handleCreateKey({
           name: formData.name!,
@@ -228,7 +228,7 @@ export default function Key({
         });
         resetFormAndState();
         toast.success("Key created successfully!");
-        router.push(`/engine/keys`);
+        router.push(`/system/keys`);
       }
     } catch (error) {
       toast.error(

@@ -1,5 +1,5 @@
 /**
- * app/(main)/engine/keys/k/[keyId]/page.tsx
+ * app/(main)/system/keys/k/[keyId]/page.tsx
  * Key editing page
  */
 
@@ -118,7 +118,7 @@ export default async function EditKeyPage({
       return (
         <DepartmentAccessDenied
           resourceType="key"
-          redirectPath="/engine/keys"
+          redirectPath="/system/keys"
         />
       );
     }

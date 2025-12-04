@@ -80,11 +80,11 @@ export function DepartmentAccessDenied({
       case "agent":
         return "/engine/agents";
       case "rubric":
-        return "/management/rubrics";
+        return "/engine/rubrics";
       case "parameter":
         return "/management/parameters";
       case "key":
-        return "/engine/keys";
+        return "/system/keys";
       case "prompt":
         return "/engine/prompts";
       case "video":

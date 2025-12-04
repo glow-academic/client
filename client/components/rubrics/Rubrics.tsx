@@ -34,7 +34,7 @@ import type {
   RubricsListOut,
   UpdateRubricIn,
   UpdateRubricOut,
-} from "@/app/(main)/management/rubrics/page";
+} from "@/app/(main)/engine/rubrics/page";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
@@ -327,7 +327,7 @@ export default function Rubrics({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/management/rubrics/r/${id}`);
+    router.push(`/engine/rubrics/r/${id}`);
   };
 
   const renderRubricCard = (rubric: (typeof rubrics)[number]) => {

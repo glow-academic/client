@@ -93,23 +93,26 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "create";
 
     case "management":
+      if (second === "staff") {
+        if (third === "p" && fourth) {
+          return `profile-${fourth}`;
+        }
+        return "staff";
+      }
       if (second === "documents") {
         if (third === "d" && fourth) {
           return `document-${fourth}`;
         }
         return "documents";
       }
-      if (second === "rubrics") {
-        if (third === "r" && fourth) {
-          return `rubric-${fourth}`;
-        }
-        return "rubrics";
-      }
       if (second === "parameters") {
         if (third === "p" && fourth) {
           return `parameter-${fourth}`;
         }
         return "parameters";
+      }
+      if (second === "fields") {
+        return "fields";
       }
       if (second) {
         return second;
@@ -129,8 +132,11 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "models";
       }
-      if (second === "keys") {
-        return "keys";
+      if (second === "rubrics") {
+        if (third === "r" && fourth) {
+          return `rubric-${fourth}`;
+        }
+        return "rubrics";
       }
       if (second === "evals") {
         return "evals";
@@ -138,11 +144,8 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "engine";
 
     case "system":
-      if (second === "staff") {
-        if (third === "p" && fourth) {
-          return `profile-${fourth}`;
-        }
-        return "staff";
+      if (second === "keys") {
+        return "keys";
       }
       if (second === "auth") {
         return "auth";
@@ -277,6 +280,9 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "engine":
         title = "Engine";
+        break;
+      case "fields":
+        title = "Fields";
         break;
       case "new":
         title = "New";

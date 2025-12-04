@@ -1,5 +1,5 @@
 /**
- * app/(main)/system/staff/loading.tsx
+ * app/(main)/management/staff/loading.tsx
  * Loading skeleton for staff page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025

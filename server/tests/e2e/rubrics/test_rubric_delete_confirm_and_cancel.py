@@ -33,7 +33,7 @@ def test_rubric_delete_cancel_then_confirm(page: Page, base_url: str) -> None:
     )
 
     # Navigate to list to find the rubric card
-    page.goto(f"{base_url}/management/rubrics")
+    page.goto(f"{base_url}/engine/rubrics")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("rubrics-search")

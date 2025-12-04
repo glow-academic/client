@@ -92,7 +92,7 @@ def test_staff_cache_revalidation_after_edit(page: Page, base_url: str) -> None:
             page, "/api/v3/profile/staff/list"
         )
 
-        page.goto(f"{base_url}/system/staff")
+        page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
 
         initial_count = list_counter["total"]
@@ -183,7 +183,7 @@ def test_staff_cache_revalidation_after_delete(page: Page, base_url: str) -> Non
             page, "/api/v3/profile/staff/list"
         )
 
-        page.goto(f"{base_url}/system/staff")
+        page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
 
         initial_count = list_counter["total"]
@@ -240,7 +240,7 @@ def test_staff_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
         page, "/api/v3/profile/staff/list"
     )
 
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     initial_count = list_counter["total"]
@@ -250,7 +250,7 @@ def test_staff_no_double_fetch_on_navigation(page: Page, base_url: str) -> None:
     page.wait_for_load_state("networkidle")
 
     # Navigate back
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     stop_counter()
@@ -300,7 +300,7 @@ def test_staff_refresh_button(page: Page, base_url: str) -> None:
             page, "/api/v3/profile/staff/list"
         )
 
-        page.goto(f"{base_url}/system/staff")
+        page.goto(f"{base_url}/management/staff")
         page.wait_for_load_state("networkidle")
 
         initial_count = list_counter["total"]

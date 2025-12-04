@@ -290,9 +290,10 @@ export function UnifiedSidebar({
 
     // Management - Available from admin level and up
     if (
+      availableSections.includes("staff") ||
       availableSections.includes("documents") ||
-      availableSections.includes("rubrics") ||
-      availableSections.includes("parameters")
+      availableSections.includes("parameters") ||
+      availableSections.includes("fields")
     ) {
       const managementItems: MenuItem[] = [];
 
@@ -303,19 +304,19 @@ export function UnifiedSidebar({
         items: managementItems,
       });
 
+      if (availableSections.includes("staff")) {
+        managementItems.push({
+          title: "Staff",
+          url: "#",
+          section: "staff",
+        });
+      }
+
       if (availableSections.includes("documents")) {
         managementItems.push({
           title: "Documents",
           url: "#",
           section: "documents",
-        });
-      }
-
-      if (availableSections.includes("rubrics")) {
-        managementItems.push({
-          title: "Rubrics",
-          url: "#",
-          section: "rubrics",
         });
       }
 
@@ -326,6 +327,14 @@ export function UnifiedSidebar({
           section: "parameters",
         });
       }
+
+      if (availableSections.includes("fields")) {
+        managementItems.push({
+          title: "Fields",
+          url: "#",
+          section: "fields",
+        });
+      }
     }
 
     // Engine - Available for admin and superadmin
@@ -333,7 +342,7 @@ export function UnifiedSidebar({
       (effectiveProfile.role === "admin" || effectiveProfile.role === "superadmin") &&
       (availableSections.includes("agents") ||
         availableSections.includes("models") ||
-        availableSections.includes("keys") ||
+        availableSections.includes("rubrics") ||
         availableSections.includes("evals"))
     ) {
       const engineItems: MenuItem[] = [];
@@ -361,11 +370,11 @@ export function UnifiedSidebar({
         });
       }
 
-      if (availableSections.includes("keys")) {
+      if (availableSections.includes("rubrics")) {
         engineItems.push({
-          title: "Keys",
+          title: "Rubrics",
           url: "#",
-          section: "keys",
+          section: "rubrics",
         });
       }
 
@@ -382,11 +391,11 @@ export function UnifiedSidebar({
     if (effectiveProfile.role === "superadmin") {
       const systemItems: MenuItem[] = [];
 
-      if (availableSections.includes("staff")) {
+      if (availableSections.includes("keys")) {
         systemItems.push({
-          title: "Staff",
+          title: "Keys",
           url: "#",
-          section: "staff",
+          section: "keys",
         });
       }
 

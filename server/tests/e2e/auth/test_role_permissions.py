@@ -21,7 +21,7 @@ def test_admin_access(page: Page, base_url: str) -> None:
         page.context.request,
         actual_profile_id=ADMIN_PROFILE_ID,
         effective_profile_id=ADMIN_PROFILE_ID,
-        pathname="/system/staff",
+        pathname="/management/staff",
         bypass_cache=True,
     )
 
@@ -31,11 +31,11 @@ def test_admin_access(page: Page, base_url: str) -> None:
     )
 
     # Navigate to admin pages
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     # Verify admin can access staff management page
-    expect(page).to_have_url(re.compile(r".*/system/staff.*"))
+    expect(page).to_have_url(re.compile(r".*/management/staff.*"))
 
     # Verify staff table is visible
     staff_table = page.get_by_test_id("staff-table")
@@ -67,12 +67,12 @@ def test_guest_access(page: Page, base_url: str) -> None:
     expect(practice_grid).to_be_visible()
 
     # Guest should NOT be able to access admin pages
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     # Should be redirected away or see access denied
     current_url = page.url
-    if "/system/staff" in current_url:
+    if "/management/staff" in current_url:
         # If still on staff page, check for access denied
         page.get_by_text("access denied", exact=False).or_(
             page.get_by_text("permission", exact=False)

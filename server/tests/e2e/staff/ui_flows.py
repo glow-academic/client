@@ -13,7 +13,7 @@ def edit_staff_via_ui(
     updates: dict[str, str] | None = None,
 ) -> None:
     """Edit a staff member through the UI."""
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(
@@ -64,7 +64,7 @@ def edit_staff_via_ui(
 
 def delete_staff_via_ui(page: Page, base_url: str, profile_id: str) -> None:
     """Delete a staff member through the UI."""
-    page.goto(f"{base_url}/system/staff")
+    page.goto(f"{base_url}/management/staff")
     page.wait_for_load_state("networkidle")
 
     staff_row = page.locator(

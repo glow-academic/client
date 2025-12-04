@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RubricPicker } from "@/components/common/forms/RubricPicker";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { ModelRunsSelector } from "./ModelRunsSelector";
-import type { RubricsListOut } from "@/app/(main)/management/rubrics/page";
+import type { RubricsListOut } from "@/app/(main)/engine/rubrics/page";
 import type { CreateEvalIn, CreateEvalOut } from "@/app/(main)/engine/evals/new/page";
 import type { OutputOf } from "@/lib/api/types";
 import { toast } from "sonner";

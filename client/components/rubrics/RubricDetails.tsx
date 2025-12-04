@@ -11,11 +11,11 @@ import { toast } from "sonner";
 import type {
   CreateRubricIn,
   CreateRubricOut,
-} from "@/app/(main)/management/rubrics/page";
+} from "@/app/(main)/engine/rubrics/page";
 import type {
   UpdateRubricIn,
   UpdateRubricOut,
-} from "@/app/(main)/management/rubrics/r/[rubricId]/page";
+} from "@/app/(main)/engine/rubrics/r/[rubricId]/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -307,7 +307,7 @@ export default function RubricDetails({
           toast.success("Rubric created successfully");
           router.refresh();
           // Redirect to the newly created rubric for editing
-          router.push(`/management/rubrics/r/${data.rubricId}`);
+          router.push(`/engine/rubrics/r/${data.rubricId}`);
         }
       } else {
         // V3 update - only update metadata, preserve standard groups

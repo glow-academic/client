@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import type {
   UpdateRubricIn,
   UpdateRubricOut,
-} from "@/app/(main)/management/rubrics/r/[rubricId]/page";
+} from "@/app/(main)/engine/rubrics/r/[rubricId]/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

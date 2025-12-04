@@ -28,7 +28,7 @@ def test_key_readonly_permissions(page: Page, base_url: str) -> None:
     key_id = readonly_key["key_id"]
     key_name = readonly_key["name"]
 
-    page.goto(f"{base_url}/engine/keys")
+    page.goto(f"{base_url}/system/keys")
     page.wait_for_load_state("networkidle")
 
     search_input = page.get_by_test_id("keys-search")
@@ -52,7 +52,7 @@ def test_key_readonly_permissions(page: Page, base_url: str) -> None:
 
     view_button.click()
 
-    page.wait_for_url(f"{base_url}/engine/keys/k/{key_id}")
+    page.wait_for_url(f"{base_url}/system/keys/k/{key_id}")
     page.wait_for_load_state("networkidle")
 
     # Verify page attributes

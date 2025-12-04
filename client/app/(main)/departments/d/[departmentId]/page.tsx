@@ -22,7 +22,7 @@ import {
   processCSV,
   searchStaff,
   updateStaff,
-} from "@/app/(main)/system/staff/page";
+} from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;

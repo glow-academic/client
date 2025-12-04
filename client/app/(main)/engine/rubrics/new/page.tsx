@@ -1,11 +1,11 @@
 /**
- * app/management/rubrics/new/page.tsx
+ * app/engine/rubrics/new/page.tsx
  * New rubric creation page using the unified rubric component
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
 
-import { createRubric } from "@/app/(main)/management/rubrics/page";
+import { createRubric } from "@/app/(main)/engine/rubrics/page";
 import { getSession } from "@/auth";
 
 import Rubric from "@/components/rubrics/Rubric";

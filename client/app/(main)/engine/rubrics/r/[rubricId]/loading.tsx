@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/rubrics/r/[rubricId]/loading.tsx
+ * app/(main)/engine/rubrics/r/[rubricId]/loading.tsx
  * Loading skeleton for rubric edit page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025

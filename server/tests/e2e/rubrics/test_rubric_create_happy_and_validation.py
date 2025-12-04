@@ -23,7 +23,7 @@ def test_rubric_create_validation_and_success(page: Page, base_url: str) -> None
     rubric_id = None
 
     try:
-        page.goto(f"{base_url}/management/rubrics/new")
+        page.goto(f"{base_url}/engine/rubrics/new")
         page.wait_for_load_state("networkidle")
 
         # Verify page attribute
@@ -70,7 +70,7 @@ def test_rubric_create_validation_and_success(page: Page, base_url: str) -> None
 
         # Wait for redirect to edit page (rubrics redirect to edit page after creation)
         page.wait_for_url(
-            re.compile(r".*/management/rubrics/r/[a-f0-9-]+"), timeout=20000
+            re.compile(r".*/engine/rubrics/r/[a-f0-9-]+"), timeout=20000
         )
         page.wait_for_load_state("networkidle")
 

@@ -12,7 +12,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.test_profile_id(ADMIN_PROFILE_ID)]
 
 def test_key_crud_flow(page: Page, base_url: str) -> None:
     """Test full CRUD flow for keys."""
-    page.goto(f"{base_url}/engine/keys")
+    page.goto(f"{base_url}/system/keys")
     page.wait_for_load_state("networkidle")
 
     # Click create button
@@ -21,7 +21,7 @@ def test_key_crud_flow(page: Page, base_url: str) -> None:
         create_button.click()
     else:
         # If keys exist, navigate directly to new page
-        page.goto(f"{base_url}/engine/keys/new")
+        page.goto(f"{base_url}/system/keys/new")
     
     page.wait_for_load_state("networkidle")
 
@@ -45,7 +45,7 @@ def test_key_crud_flow(page: Page, base_url: str) -> None:
     submit_button.click()
 
     # Wait for redirect to list page
-    page.wait_for_url("**/engine/keys", timeout=10000)
+    page.wait_for_url("**/system/keys", timeout=10000)
     page.wait_for_load_state("networkidle")
 
     # Verify key appears in list
@@ -72,7 +72,7 @@ def test_key_crud_flow(page: Page, base_url: str) -> None:
         submit_button.click()
 
         # Wait for redirect
-        page.wait_for_url("**/engine/keys", timeout=10000)
+        page.wait_for_url("**/system/keys", timeout=10000)
         page.wait_for_load_state("networkidle")
 
         # Verify updated name appears

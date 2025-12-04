@@ -12,7 +12,7 @@ import type {
   DeleteKeyIn,
   DeleteKeyOut,
   KeysListOut,
-} from "@/app/(main)/engine/keys/page";
+} from "@/app/(main)/system/keys/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { Input } from "@/components/ui/input";
@@ -269,15 +269,15 @@ export default function Keys({
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/engine/keys/k/${id}`);
+    router.push(`/system/keys/k/${id}`);
   };
 
   const handleView = (id: string) => {
-    router.push(`/engine/keys/k/${id}`);
+    router.push(`/system/keys/k/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/engine/keys/new");
+    router.push("/system/keys/new");
   };
 
   const renderKeyCard = (key: (typeof keys)[number]) => (
