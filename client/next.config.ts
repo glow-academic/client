@@ -15,7 +15,7 @@ module.exports = {
   serverExternalPackages: ["pg", "@auth/pg-adapter"],
   webpack: (
     config: WebpackConfig,
-    { isServer, webpack }: WebpackConfigContext,
+    { isServer, webpack }: WebpackConfigContext
   ): WebpackConfig => {
     if (!isServer) {
       config.resolve = {
@@ -31,7 +31,7 @@ module.exports = {
     config.plugins?.push(
       new webpack.IgnorePlugin({
         resourceRegExp: /^pg-native$|^cloudflare:sockets$/,
-      }),
+      })
     );
 
     return config;

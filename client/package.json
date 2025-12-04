@@ -75,6 +75,7 @@
     "shadcn": "^2.6.0",
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.3",
+    "@openai/agents": "^0.1.0",
     "styled-components": "^4.0.0",
     "tailwind-merge": "^2.0.0",
     "tus-js-client": "^4.3.1",

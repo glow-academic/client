@@ -135,6 +135,9 @@ hint_progress: dict[str, bool] = {}
 guardrail_results: dict[str, Any] = {}
 guardrail_progress: dict[str, bool] = {}
 
+# Global storage for voice sessions (chat_id -> session data)
+_voice_sessions: dict[str, dict[str, Any]] = {}
+
 # Cached guest profile UUID (initialized at startup)
 _guest_profile_id: str | None = None
 
@@ -402,6 +405,11 @@ from app.socket.simulations.create_practice_scenario import \
     create_practice_scenario  # noqa: E402; type: ignore
 from app.socket.simulations.stop import \
     stop_simulation  # noqa: E402; type: ignore
+from app.socket.voice import (  # noqa: E402; type: ignore
+    start_voice,
+    stop_voice,
+    voice_realtime_event,
+)
 
 
 # Create a combined lifespan to manage both session managers
@@ -841,6 +849,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             join_chat,
             leave_chat,
             stop_chat,
+            start_voice,
+            stop_voice,
+            voice_realtime_event,
         ]
 
         # Import server-to-client emit functions (with Pydantic payload models)

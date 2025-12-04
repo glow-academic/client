@@ -185,4 +185,15 @@ export type ClientToServerEvents = {
     chat_id: string;
     chat_type: string;
   }) => void;
+  start_voice: (payload: {
+    chat_id: string;
+  }) => void;
+  stop_voice: (payload: {
+    chat_id: string;
+  }) => void;
+  voice_realtime_event: (payload: {
+    chat_id: string;
+    event_type: string;
+    event_data: string;
+  }) => void;
 };

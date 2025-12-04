@@ -14,8 +14,10 @@ import type {
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import TemplateForm, {
+  type TemplateSchema,
+} from "@/components/documents/TemplateForm";
 import TemplatePreview from "@/components/documents/TemplatePreview";
-import TemplateForm, { type TemplateSchema } from "@/components/documents/TemplateForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,7 +102,12 @@ export default function DocumentEdit({
       const item = parameterItemMapping[itemId];
       return item && deptParameterIds.has(item.parameter_id);
     });
-  }, [formData.departmentIds, departmentMapping, parameterItemMapping, documentDetail]);
+  }, [
+    formData.departmentIds,
+    departmentMapping,
+    parameterItemMapping,
+    documentDetail,
+  ]);
 
   // Initialize form data from document detail
   useEffect(() => {
@@ -131,7 +138,10 @@ export default function DocumentEdit({
           documentId,
           name: formData.name,
           active: formData.active,
-          department_id: formData.departmentIds.length > 0 ? formData.departmentIds[0] : null,
+          department_id:
+            formData.departmentIds.length > 0
+              ? formData.departmentIds[0]
+              : null,
           parameter_item_ids: formData.parameterItemIds,
           classify_agent_id: formData.classifyAgentId || undefined,
           document_agent_id: formData.documentAgentId || undefined,
@@ -157,7 +167,8 @@ export default function DocumentEdit({
   }, [documentDetail, effectiveDepartmentIds]);
 
   const isTemplate = documentDetail?.template === true;
-  const templateSchema = documentDetail?.template_schema as TemplateSchema | null;
+  const templateSchema =
+    documentDetail?.template_schema as TemplateSchema | null;
   const templateHtml = documentDetail?.template_html || null;
 
   return (
@@ -350,4 +361,3 @@ export default function DocumentEdit({
     </div>
   );
 }
-

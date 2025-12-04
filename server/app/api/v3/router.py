@@ -34,6 +34,7 @@ from app.api.v3.pricing import router as pricing_router
 # ============================================================================
 from app.api.v3.profile import router as profile_router
 from app.api.v3.prompts import router as prompts_router
+from app.api.v3.realtime import router as realtime_router
 from app.api.v3.reports import router as reports_router
 from app.api.v3.rubrics import router as rubrics_router
 from app.api.v3.runs import router as runs_router
@@ -97,5 +98,6 @@ router.include_router(runs_router)
 router.include_router(home_router)
 router.include_router(practice_router)
 router.include_router(pricing_router)
+router.include_router(realtime_router)
 router.include_router(schema_router)
 router.include_router(uploads_router)

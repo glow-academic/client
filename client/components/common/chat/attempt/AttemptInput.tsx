@@ -6,7 +6,13 @@
  */
 "use client";
 import { motion } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -14,7 +20,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Loader2, Send, Square } from "lucide-react";
+import { Loader2, Mic, MicOff, Send, Square } from "lucide-react";
 
 // Tooltip
 import {
@@ -24,8 +30,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { useProfile } from "@/contexts/profile-context";
 import { useNoPasteTextarea } from "@/hooks/use-no-paste-textarea";
-import { useMemo } from "react";
+import { api } from "@/lib/api/client";
+import { RealtimeVoiceWrapper } from "@/lib/realtime/RealtimeVoiceWrapper";
+import { toast } from "sonner";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -72,9 +81,16 @@ export default function AttemptInput({
 }: AttemptInputProps) {
   const MAX_INPUT_CHARS = 5000; // generous limit to allow deep explanations without spam
   const [newMessage, setNewMessage] = useState("");
+  const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
+  const [isStartingVoice, setIsStartingVoice] = useState(false);
+  const [isStoppingVoice, setIsStoppingVoice] = useState(false);
 
+  const { socket, effectiveProfile } = useProfile();
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const realtimeWrapperRef = useRef<RealtimeVoiceWrapper | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -129,6 +145,189 @@ export default function AttemptInput({
   };
   const handleStopMessage = () => stopMessage();
 
+  // Voice mode handlers
+  const handleVoiceToggle = useCallback(async () => {
+    if (!currentChat?.id || !socket || !isConnected) {
+      toast.error("Cannot enable voice mode: chat or connection not available");
+      return;
+    }
+
+    if (voiceModeEnabled) {
+      // Stop voice mode
+      setIsStoppingVoice(true);
+      try {
+        // Stop voice session on server
+        socket.emit("stop_voice", { chat_id: currentChat.id });
+
+        // Disconnect Realtime wrapper
+        if (realtimeWrapperRef.current) {
+          await realtimeWrapperRef.current.disconnect();
+          realtimeWrapperRef.current = null;
+        }
+
+        // Stop microphone
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+        }
+
+        if (audioContextRef.current) {
+          await audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
+
+        setVoiceModeEnabled(false);
+        toast.success("Voice mode disabled");
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to stop voice mode";
+        toast.error(errorMessage);
+      } finally {
+        setIsStoppingVoice(false);
+      }
+    } else {
+      // Start voice mode
+      setIsStartingVoice(true);
+      try {
+        // Get ephemeral key from server
+        const profileId = effectiveProfile?.id || "guest-profile-id";
+        const ephemeralKeyResponse = await api.post("/realtime/ephemeral-key", {
+          body: { profileId },
+        });
+
+        if (
+          !ephemeralKeyResponse.success ||
+          !ephemeralKeyResponse.ephemeral_key
+        ) {
+          throw new Error(
+            ephemeralKeyResponse.message || "Failed to get ephemeral key"
+          );
+        }
+
+        // Start voice session on server
+        socket.emit("start_voice", { chat_id: currentChat.id });
+
+        // Wait for server response with persona tools
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error("Timeout waiting for voice session start"));
+          }, 10000);
+
+          socket.once("start_voice_response", (data) => {
+            clearTimeout(timeout);
+            if (data.success) {
+              resolve();
+            } else {
+              reject(
+                new Error(data.message || "Failed to start voice session")
+              );
+            }
+          });
+
+          socket.once("start_voice_error", (data) => {
+            clearTimeout(timeout);
+            reject(new Error(data.message || "Failed to start voice session"));
+          });
+        });
+
+        // Create Realtime wrapper
+        const wrapper = new RealtimeVoiceWrapper({
+          socket,
+          chatId: currentChat.id,
+          ephemeralKey: ephemeralKeyResponse.ephemeral_key,
+        });
+
+        // Connect wrapper
+        await wrapper.connect();
+        realtimeWrapperRef.current = wrapper;
+
+        // Start microphone capture
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+        mediaStreamRef.current = stream;
+
+        // Set up audio context for processing
+        const audioContext = new AudioContext({ sampleRate: 24000 });
+        audioContextRef.current = audioContext;
+
+        const source = audioContext.createMediaStreamSource(stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        processor.onaudioprocess = (e) => {
+          if (realtimeWrapperRef.current && voiceModeEnabled) {
+            const inputData = e.inputBuffer.getChannelData(0);
+            // Convert Float32Array to ArrayBuffer for Realtime API
+            const buffer = new ArrayBuffer(inputData.length * 2);
+            const view = new DataView(buffer);
+            for (let i = 0; i < inputData.length; i++) {
+              const sample = Math.max(-1, Math.min(1, inputData[i] ?? 0));
+              const int16Value = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+              view.setInt16(i * 2, int16Value, true);
+            }
+            realtimeWrapperRef.current.appendInputAudio(buffer);
+          }
+        };
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        setVoiceModeEnabled(true);
+        toast.success("Voice mode enabled");
+      } catch (error) {
+        // Log error for debugging (ESLint allows in catch blocks)
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to start voice mode";
+        toast.error(errorMessage);
+        // Cleanup on error
+        if (realtimeWrapperRef.current) {
+          await realtimeWrapperRef.current.disconnect();
+          realtimeWrapperRef.current = null;
+        }
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+        }
+      } finally {
+        setIsStartingVoice(false);
+      }
+    }
+  }, [
+    voiceModeEnabled,
+    currentChat?.id,
+    socket,
+    isConnected,
+    effectiveProfile?.id,
+  ]);
+
+  // Cleanup on unmount or chat change
+  useEffect(() => {
+    return () => {
+      // Cleanup voice mode when component unmounts or chat changes
+      if (realtimeWrapperRef.current) {
+        realtimeWrapperRef.current.disconnect().catch(() => {
+          // Ignore disconnect errors during cleanup
+        });
+        realtimeWrapperRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {
+          // Ignore close errors during cleanup
+        });
+        audioContextRef.current = null;
+      }
+      setVoiceModeEnabled(false);
+    };
+  }, [currentChat?.id]);
+
   // --- Effects ---
   useEffect(() => {
     setNewMessage("");
@@ -149,7 +348,8 @@ export default function AttemptInput({
           maxTextareaHeight
         );
         const totalHeight = actualTextareaHeight + 24; // Add padding (0px top + 8px bottom + 24px for button area)
-        onHeightChange(Math.min(Math.max(totalHeight, 60), 160)); // Clamp between 60px and 160px
+        const clampedHeight = Math.min(Math.max(totalHeight, 60), 160); // Clamp between 60px and 160px
+        onHeightChange(clampedHeight);
       }
     }
   }, [newMessage, onHeightChange]);
@@ -193,6 +393,41 @@ export default function AttemptInput({
       >
         {/* --- Dynamic Input Area --- */}
         <div className="w-full flex items-end gap-2 shrink-0">
+          {/* Voice toggle button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={voiceModeEnabled ? "default" : "outline"}
+                size="icon"
+                className="min-h-[40px] h-[40px] w-[40px] shrink-0"
+                onClick={handleVoiceToggle}
+                disabled={
+                  readOnly ||
+                  !isConnected ||
+                  !currentChat?.id ||
+                  isStartingVoice ||
+                  isStoppingVoice
+                }
+                data-testid="voice-toggle-button"
+              >
+                {isStartingVoice || isStoppingVoice ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : voiceModeEnabled ? (
+                  <Mic className="h-4 w-4" />
+                ) : (
+                  <MicOff className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {voiceModeEnabled
+                  ? "Voice mode enabled - Click to disable"
+                  : "Enable voice mode"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
           <div className="flex-1 relative">
             <Textarea
               ref={textareaRef}
@@ -202,7 +437,11 @@ export default function AttemptInput({
                   setNewMessage(sanitizeInputLength(value))
                 )
               }
-              placeholder="Type your message (LaTeX supported)"
+              placeholder={
+                voiceModeEnabled
+                  ? "Voice mode active - speak into your microphone"
+                  : "Type your message (LaTeX supported)"
+              }
               disabled={readOnly ? true : false}
               className="w-full text-md resize-none overflow-y-auto text-base max-h-32"
               rows={1}

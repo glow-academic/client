@@ -4191,6 +4191,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/realtime/ephemeral-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Ephemeral Key
+         * @description Generate OpenAI ephemeral key for Realtime API.
+         *
+         *     Server-side only - never expose OpenAI API key to frontend.
+         */
+        post: operations["generate_ephemeral_key_api_v3_realtime_ephemeral_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/schema/list": {
         parameters: {
             query?: never;
@@ -7325,6 +7347,31 @@ export interface components {
             };
             /** Totalpossiblepoints */
             totalPossiblePoints: number;
+        };
+        /**
+         * EphemeralKeyRequest
+         * @description Request to generate ephemeral key.
+         */
+        EphemeralKeyRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * EphemeralKeyResponse
+         * @description Response with ephemeral key.
+         */
+        EphemeralKeyResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Ephemeral Key */
+            ephemeral_key?: string | null;
+            /**
+             * Expires In
+             * @default 3600
+             */
+            expires_in: number;
         };
         /**
          * EvalDetailRequest
@@ -21660,6 +21707,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingRunsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_ephemeral_key_api_v3_realtime_ephemeral_key_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EphemeralKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EphemeralKeyResponse"];
                 };
             };
             /** @description Validation Error */

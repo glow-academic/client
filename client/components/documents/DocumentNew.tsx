@@ -13,13 +13,13 @@ import type {
   FinalizeUploadOut,
   GenerateTemplateIn,
   GenerateTemplateOut,
-  RenderTemplateIn,
-  RenderTemplateOut,
 } from "@/app/(main)/management/documents/new/page";
-import TemplatePreview from "@/components/documents/TemplatePreview";
-import TemplateForm, { type TemplateSchema } from "@/components/documents/TemplateForm";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { ParameterItemPicker } from "@/components/common/forms/ParameterItemPicker";
+import TemplateForm, {
+  type TemplateSchema,
+} from "@/components/documents/TemplateForm";
+import TemplatePreview from "@/components/documents/TemplatePreview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,7 +61,9 @@ interface DocumentNewProps {
   listData: DocumentsListOut;
   finalizeUploadAction: (uploadId: string) => Promise<FinalizeUploadOut>;
   createDocumentAction: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
-  generateTemplateAction: (input: GenerateTemplateIn) => Promise<GenerateTemplateOut>;
+  generateTemplateAction: (
+    input: GenerateTemplateIn
+  ) => Promise<GenerateTemplateOut>;
   renderedHtml?: string | null;
 }
 
@@ -127,11 +129,15 @@ export default function DocumentNew({
   // Template state
   const [isTemplateMode, setIsTemplateMode] = useState(false);
   const [templateHtml, setTemplateHtml] = useState<string | null>(null);
-  const [templateSchema, setTemplateSchema] = useState<TemplateSchema | null>(null);
+  const [templateSchema, setTemplateSchema] = useState<TemplateSchema | null>(
+    null
+  );
   const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
   const [templateArgs, setTemplateArgs] = useState<Record<string, any>>({});
   const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
-  const [generatedDocumentId, setGeneratedDocumentId] = useState<string | null>(null);
+  const [generatedDocumentId, setGeneratedDocumentId] = useState<string | null>(
+    null
+  );
 
   // Extract mappings from list data
   const departmentMapping = useMemo(
@@ -853,11 +859,15 @@ export default function DocumentNew({
           router.refresh();
         }, 1000);
       } else {
-        toast.error(createResult.message || "Failed to create template document");
+        toast.error(
+          createResult.message || "Failed to create template document"
+        );
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create template document"
+        error instanceof Error
+          ? error.message
+          : "Failed to create template document"
       );
     }
   };

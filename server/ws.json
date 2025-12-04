@@ -58,6 +58,23 @@
         "chat_id": "string",
         "chat_type": "string"
       }
+    },
+    "start_voice": {
+      "payload": {
+        "chat_id": "string"
+      }
+    },
+    "stop_voice": {
+      "payload": {
+        "chat_id": "string"
+      }
+    },
+    "voice_realtime_event": {
+      "payload": {
+        "chat_id": "string",
+        "event_type": "string",
+        "event_data": "string"
+      }
     }
   },
   "serverToClient": {

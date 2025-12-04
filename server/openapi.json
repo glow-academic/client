@@ -9205,6 +9205,53 @@
         ]
       }
     },
+    "/api/v3/realtime/ephemeral-key": {
+      "post": {
+        "tags": [
+          "v3",
+          "realtime"
+        ],
+        "summary": "Generate Ephemeral Key",
+        "description": "Generate OpenAI ephemeral key for Realtime API.\n\nServer-side only - never expose OpenAI API key to frontend.",
+        "operationId": "generate_ephemeral_key_api_v3_realtime_ephemeral_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EphemeralKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EphemeralKeyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "realtime"
+        ]
+      }
+    },
     "/api/v3/schema/list": {
       "get": {
         "tags": [
@@ -17042,6 +17089,55 @@
           "totalPossiblePoints"
         ],
         "title": "DynamicRubric"
+      },
+      "EphemeralKeyRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "EphemeralKeyRequest",
+        "description": "Request to generate ephemeral key."
+      },
+      "EphemeralKeyResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "ephemeral_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ephemeral Key"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In",
+            "default": 3600
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "EphemeralKeyResponse",
+        "description": "Response with ephemeral key."
       },
       "EvalDetailRequest": {
         "properties": {

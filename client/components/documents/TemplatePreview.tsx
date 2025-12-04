@@ -4,9 +4,9 @@
  */
 
 "use client";
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CodeViewer from "@/components/common/chat/viewers/CodeViewer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 
 export interface TemplatePreviewProps {
   documentId: string | null;
@@ -92,4 +92,3 @@ export default function TemplatePreview({
     </Tabs>
   );
 }
-
