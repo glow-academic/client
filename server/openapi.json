@@ -4973,6 +4973,53 @@
         ]
       }
     },
+    "/api/v3/documents/render": {
+      "post": {
+        "tags": [
+          "v3",
+          "documents"
+        ],
+        "summary": "Render Document Template",
+        "description": "Render Jinja2 template with template args and theme injection.",
+        "operationId": "render_document_template_api_v3_documents_render_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "documents"
+        ]
+      }
+    },
     "/api/v3/evals/list": {
       "post": {
         "tags": [
@@ -12656,7 +12703,14 @@
             "title": "Name"
           },
           "uploadId": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Uploadid"
           },
           "departmentIds": {
@@ -12690,12 +12744,39 @@
           "profileId": {
             "type": "string",
             "title": "Profileid"
+          },
+          "template": {
+            "type": "boolean",
+            "title": "Template",
+            "default": false
+          },
+          "templateUploadId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templateuploadid"
+          },
+          "templateArgs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templateargs"
           }
         },
         "type": "object",
         "required": [
           "name",
-          "uploadId",
           "profileId"
         ],
         "title": "CreateDocumentRequest",
@@ -16127,6 +16208,56 @@
             },
             "type": "array",
             "title": "Valid Agent Ids"
+          },
+          "template": {
+            "type": "boolean",
+            "title": "Template"
+          },
+          "template_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Schema"
+          },
+          "template_args": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Args"
+          },
+          "template_upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Upload Id"
+          },
+          "template_html": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Html"
           }
         },
         "type": "object",
@@ -16145,7 +16276,12 @@
           "classify_agent_id",
           "document_agent_id",
           "agent_mapping",
-          "valid_agent_ids"
+          "valid_agent_ids",
+          "template",
+          "template_schema",
+          "template_args",
+          "template_upload_id",
+          "template_html"
         ],
         "title": "DocumentDetailResponse",
         "description": "Detailed document response."
@@ -17607,7 +17743,7 @@
             "type": "string",
             "title": "Departmentid"
           },
-          "policyIds": {
+          "documentIds": {
             "anyOf": [
               {
                 "items": {
@@ -17619,7 +17755,7 @@
                 "type": "null"
               }
             ],
-            "title": "Policyids"
+            "title": "Documentids"
           },
           "questionIds": {
             "anyOf": [
@@ -17954,6 +18090,10 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Template Schema"
+          },
+          "upload_id": {
+            "type": "string",
+            "title": "Upload Id"
           }
         },
         "type": "object",
@@ -17961,7 +18101,8 @@
           "success",
           "message",
           "template_html",
-          "template_schema"
+          "template_schema",
+          "upload_id"
         ],
         "title": "GenerateTemplateResponse",
         "description": "Response from document template generation."
@@ -24706,7 +24847,7 @@
             ],
             "title": "Objectiveids"
           },
-          "policyIds": {
+          "documentIds": {
             "anyOf": [
               {
                 "items": {
@@ -24718,7 +24859,7 @@
                 "type": "null"
               }
             ],
-            "title": "Policyids"
+            "title": "Documentids"
           },
           "targets": {
             "items": {
@@ -24759,12 +24900,12 @@
             "title": "Objectiveids",
             "default": []
           },
-          "policyIds": {
+          "documentIds": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Policyids",
+            "title": "Documentids",
             "default": []
           }
         },
@@ -24928,6 +25069,55 @@
         ],
         "title": "RemoveProfilesFromDepartmentResponse",
         "description": "Response for removing profiles from department."
+      },
+      "RenderTemplateRequest": {
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "title": "Documentid"
+          },
+          "templateArgs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Templateargs"
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "documentId",
+          "templateArgs",
+          "profileId"
+        ],
+        "title": "RenderTemplateRequest",
+        "description": "Request to render document template."
+      },
+      "RenderTemplateResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "rendered_html": {
+            "type": "string",
+            "title": "Rendered Html"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message",
+          "rendered_html"
+        ],
+        "title": "RenderTemplateResponse",
+        "description": "Response from template rendering."
       },
       "ReportsBundleFilters": {
         "properties": {
@@ -29559,6 +29749,29 @@
               }
             ],
             "title": "Document Agent Id"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          },
+          "templateArgs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templateargs"
           }
         },
         "type": "object",
@@ -37372,14 +37585,14 @@
             "type": "object",
             "title": "Objective Mapping"
           },
-          "policy_ids": {
+          "document_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Policy Ids"
+            "title": "Document Ids"
           },
-          "policy_mapping": {
+          "document_mapping": {
             "additionalProperties": {
               "additionalProperties": {
                 "type": "string"
@@ -37387,14 +37600,14 @@
               "type": "object"
             },
             "type": "object",
-            "title": "Policy Mapping"
+            "title": "Document Mapping"
           },
-          "valid_policy_ids": {
+          "valid_document_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Policy Ids"
+            "title": "Valid Document Ids"
           },
           "video_images": {
             "items": {
@@ -37499,9 +37712,9 @@
           "problem_statement_mapping",
           "objective_ids",
           "objective_mapping",
-          "policy_ids",
-          "policy_mapping",
-          "valid_policy_ids",
+          "document_ids",
+          "document_mapping",
+          "valid_document_ids",
           "video_images",
           "objectives_history",
           "can_edit",
@@ -37710,14 +37923,14 @@
             "type": "object",
             "title": "Objective Mapping"
           },
-          "policy_ids": {
+          "document_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Policy Ids"
+            "title": "Document Ids"
           },
-          "policy_mapping": {
+          "document_mapping": {
             "additionalProperties": {
               "additionalProperties": {
                 "type": "string"
@@ -37725,14 +37938,14 @@
               "type": "object"
             },
             "type": "object",
-            "title": "Policy Mapping"
+            "title": "Document Mapping"
           },
-          "valid_policy_ids": {
+          "valid_document_ids": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Valid Policy Ids"
+            "title": "Valid Document Ids"
           },
           "video_images": {
             "items": {
@@ -37838,9 +38051,9 @@
           "problem_statement_mapping",
           "objective_ids",
           "objective_mapping",
-          "policy_ids",
-          "policy_mapping",
-          "valid_policy_ids",
+          "document_ids",
+          "document_mapping",
+          "valid_document_ids",
           "video_images",
           "objectives_history",
           "can_edit",

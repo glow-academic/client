@@ -62,11 +62,7 @@ interface DocumentNewProps {
   finalizeUploadAction: (uploadId: string) => Promise<FinalizeUploadOut>;
   createDocumentAction: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
   generateTemplateAction: (input: GenerateTemplateIn) => Promise<GenerateTemplateOut>;
-  renderTemplateAction: (
-    documentId: string,
-    templateArgs: Record<string, any>,
-    profileId: string
-  ) => Promise<{ success: boolean; rendered_html: string }>;
+  renderedHtml?: string | null;
 }
 
 export default function DocumentNew({
@@ -74,7 +70,7 @@ export default function DocumentNew({
   finalizeUploadAction,
   createDocumentAction,
   generateTemplateAction,
-  renderTemplateAction,
+  renderedHtml = null,
 }: DocumentNewProps) {
   const { effectiveProfile } = useProfile();
   const router = useRouter();
@@ -897,12 +893,7 @@ export default function DocumentNew({
                     <TemplatePreview
                       documentId={null}
                       templateHtml={templateHtml}
-                      templateArgs={templateArgs}
-                      profileId={effectiveProfile?.id || ""}
-                      renderTemplateAction={async () => {
-                        // Not used when documentId is null
-                        return { success: false, rendered_html: "" };
-                      }}
+                      renderedHtml={renderedHtml}
                     />
                   </div>
                 </div>

@@ -25,10 +25,15 @@ type FinalizeUploadOut = OutputOf<
 >;
 type CreateDocumentIn = InputOf<"/api/v3/documents/create", "post">;
 type CreateDocumentOut = OutputOf<"/api/v3/documents/create", "post">;
-type GenerateTemplateIn = InputOf<"/api/v3/documents/generate-template", "post">;
-type GenerateTemplateOut = OutputOf<"/api/v3/documents/generate-template", "post">;
-type RenderTemplateIn = InputOf<"/api/v3/documents/render", "post">;
-type RenderTemplateOut = OutputOf<"/api/v3/documents/render", "post">;
+type GenerateTemplateIn = InputOf<
+  "/api/v3/documents/generate-template",
+  "post"
+>;
+type GenerateTemplateOut = OutputOf<
+  "/api/v3/documents/generate-template",
+  "post"
+>;
+// RenderTemplate types removed - not used on new page since we don't have documentId yet
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getDocumentsList = async (
@@ -47,33 +52,26 @@ const getDocumentsList = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function finalizeUpload(
-  uploadId: string,
-): Promise<FinalizeUploadOut> {
+async function finalizeUpload(uploadId: string): Promise<FinalizeUploadOut> {
   "use server";
   return api.post(`/uploads/upload/${uploadId}/finalize`, {});
 }
 
 async function createDocument(
-  input: CreateDocumentIn,
+  input: CreateDocumentIn
 ): Promise<CreateDocumentOut> {
   "use server";
   return api.post("/documents/create", input);
 }
 
 async function generateTemplate(
-  input: GenerateTemplateIn,
+  input: GenerateTemplateIn
 ): Promise<GenerateTemplateOut> {
   "use server";
   return api.post("/documents/generate-template", input);
 }
 
-async function renderTemplate(
-  input: RenderTemplateIn,
-): Promise<RenderTemplateOut> {
-  "use server";
-  return api.post("/documents/render", input);
-}
+// renderTemplate removed - not used on new page since we don't have documentId yet
 
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getSession();
@@ -108,6 +106,11 @@ export default async function NewDocumentPage() {
   // Fetch list data server-side for mappings
   const listData = await getDocumentsList(profileId);
 
+  // Note: Server-side rendering on new page is not implemented since we don't have a documentId yet
+  // The form will handle rendering client-side until document is created
+  // Once document is created, user can navigate to detail page for server-side rendering
+  const renderedHtml: string | null = null;
+
   return (
     <div
       className="space-y-6"
@@ -119,7 +122,7 @@ export default async function NewDocumentPage() {
         finalizeUploadAction={finalizeUpload}
         createDocumentAction={createDocument}
         generateTemplateAction={generateTemplate}
-        renderTemplateAction={renderTemplate}
+        renderedHtml={renderedHtml}
       />
     </div>
   );
@@ -127,15 +130,12 @@ export default async function NewDocumentPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  CreateDocumentIn,
+  CreateDocumentOut,
   DocumentsListIn,
   DocumentsListOut,
   FinalizeUploadIn,
   FinalizeUploadOut,
-  CreateDocumentIn,
-  CreateDocumentOut,
   GenerateTemplateIn,
   GenerateTemplateOut,
-  RenderTemplateIn,
-  RenderTemplateOut,
 };
-

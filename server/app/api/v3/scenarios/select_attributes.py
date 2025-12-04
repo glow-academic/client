@@ -64,7 +64,8 @@ async def select_scenario_attributes(
     """Select persona, documents, and parameter_items for a scenario.
 
     Follows the cohesive pattern: existing links → random selection.
-    Returns a single persona_id (for agent calls) and lists for all selections.
+    Returns persona_id (for backward compatibility with agent calls) and persona_ids (all selected personas).
+    Supports multiple personas per scenario (enables multiple agents in a single room).
 
     Args:
         conn: Database connection
@@ -74,8 +75,8 @@ async def select_scenario_attributes(
 
     Returns:
         dict with keys:
-            - persona_id: UUID | None (single persona for agent calls)
-            - persona_ids: list[UUID] (all selected personas)
+            - persona_id: UUID | None (first persona for backward compatibility with agent calls)
+            - persona_ids: list[UUID] (all selected personas - supports multiple agents)
             - document_ids: list[UUID] (selected documents, 1 document)
             - parameter_item_ids: list[UUID] (selected parameter items)
     """
@@ -196,9 +197,10 @@ async def select_scenario_attributes(
         else:
             logger.info("No active personas found")
 
-    # Randomly pick ONE persona from the linked personas (or the randomly selected one)
-    persona_id = random.choice(scenario_persona_ids) if scenario_persona_ids else None
-    logger.info(f"Using persona_id for scenario generation: {persona_id}")
+    # Get single persona_id for backward compatibility (agent calls may still need single persona)
+    # persona_ids contains all selected personas (supports multiple agents)
+    persona_id = scenario_persona_ids[0] if scenario_persona_ids else None
+    logger.info(f"Using persona_id for scenario generation: {persona_id} (all personas: {scenario_persona_ids})")
 
     # Step 3: Select parameter_items (priority: existing links, then random selection)
     # Priority 1: Check for existing parameter item links

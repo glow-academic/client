@@ -9,8 +9,10 @@ import { getSession } from "@/auth";
 
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
 import DocumentEdit from "@/components/documents/DocumentEdit";
+import type { TemplateSchema } from "@/components/documents/TemplateForm";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { searchParamsToTemplateArgs } from "@/utils/template-args-url";
 import type { Metadata, ResolvingMetadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -97,8 +99,10 @@ async function renderTemplate(
 /** ---- Server renders client with typed data and actions ---- */
 export default async function DocumentEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ documentId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { documentId } = await params;
   const session = await getSession();
@@ -107,6 +111,57 @@ export default async function DocumentEditPage({
   // Fetch document detail (always fresh - source of truth)
   try {
     const documentDetail = await getDocument(documentId, profileId);
+
+    // Parse search params for template args and render server-side if template document
+    let renderedHtml: string | null = null;
+    if (documentDetail.template === true) {
+      const params = await searchParams;
+      const searchParamsObj = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          if (Array.isArray(value)) {
+            value.forEach((v) => searchParamsObj.append(key, v));
+          } else {
+            searchParamsObj.set(key, value);
+          }
+        }
+      });
+
+      // Check if there are template arg params
+      const templateSchema =
+        documentDetail.template_schema as TemplateSchema | null;
+      if (templateSchema) {
+        const hasTemplateParams = Array.from(searchParamsObj.keys()).some(
+          (key) =>
+            key.includes(".") ||
+            templateSchema.fields.some((f) => f.name === key)
+        );
+
+        if (hasTemplateParams) {
+          // Extract template args from search params
+          const templateArgs = searchParamsToTemplateArgs(
+            searchParamsObj,
+            templateSchema
+          );
+
+          // Call render endpoint server-side
+          try {
+            const renderResult = await renderTemplate({
+              body: {
+                documentId,
+                templateArgs,
+                profileId,
+              },
+            });
+            renderedHtml = renderResult.rendered_html;
+          } catch (error) {
+            // If rendering fails, renderedHtml stays null
+            // Component will handle this gracefully
+            console.error("Failed to render template:", error);
+          }
+        }
+      }
+    }
 
     return (
       <div
@@ -118,7 +173,7 @@ export default async function DocumentEditPage({
           documentId={documentId}
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
-          renderTemplateAction={renderTemplate}
+          renderedHtml={renderedHtml}
         />
       </div>
     );
@@ -146,9 +201,8 @@ export default async function DocumentEditPage({
 export type {
   DocumentDetailIn,
   DocumentDetailOut,
-  UpdateDocumentIn,
-  UpdateDocumentOut,
   RenderTemplateIn,
   RenderTemplateOut,
+  UpdateDocumentIn,
+  UpdateDocumentOut,
 };
-

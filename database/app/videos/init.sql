@@ -98,6 +98,19 @@ CREATE INDEX ON video_outlines (video_id);
 CREATE INDEX ON video_outlines (outline_id);
 CREATE INDEX ON video_outlines (video_id, active);
 
+-- Video ↔ Persona junction table (BCNF normalization)
+CREATE TABLE video_personas (
+  video_id UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  persona_id  UUID NOT NULL REFERENCES personas(id)  ON DELETE RESTRICT,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, persona_id)
+);
+
+CREATE INDEX ON video_personas (persona_id);
+CREATE INDEX ON video_personas (video_id, active);
+
 -- Video → Documents junction table (BCNF normalization)
 CREATE TABLE video_documents (
   video_id UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,

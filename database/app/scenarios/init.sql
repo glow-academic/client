@@ -129,11 +129,6 @@ CREATE TABLE scenario_personas (
   PRIMARY KEY (scenario_id, persona_id)
 );
 
--- One active persona per scenario (enforces single current persona)
-CREATE UNIQUE INDEX scenario_personas_one_active_per_scenario
-  ON scenario_personas(scenario_id)
-  WHERE active;
-
 CREATE INDEX ON scenario_personas (persona_id);
 CREATE INDEX ON scenario_personas (scenario_id, active);
 

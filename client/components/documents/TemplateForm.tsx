@@ -4,7 +4,8 @@
  */
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Minus, Trash2 } from "lucide-react";
+import { templateArgsToSearchParams } from "@/utils/template-args-url";
 
 export interface TemplateField {
   name: string;
@@ -37,7 +39,67 @@ export default function TemplateForm({
   values,
   onChange,
 }: TemplateFormProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [formValues, setFormValues] = useState<Record<string, any>>(values);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize form values from search params on mount
+  useEffect(() => {
+    if (schema && searchParams) {
+      // Check if there are any template arg params in URL
+      const hasTemplateParams = Array.from(searchParams.keys()).some((key) =>
+        key.includes(".") || schema.fields.some((f) => f.name === key)
+      );
+      
+      if (hasTemplateParams) {
+        // Import searchParamsToTemplateArgs dynamically to avoid circular deps
+        import("@/utils/template-args-url").then(({ searchParamsToTemplateArgs }) => {
+          const urlArgs = searchParamsToTemplateArgs(searchParams, schema);
+          if (Object.keys(urlArgs).length > 0) {
+            setFormValues(urlArgs);
+            onChange(urlArgs);
+          }
+        });
+      }
+    }
+  }, []); // Only run on mount
+
+  // Sync form values to URL search params with debouncing
+  const syncToUrl = useCallback(
+    (newValues: Record<string, any>) => {
+      if (!schema) return;
+
+      // Clear existing timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+
+      // Debounce URL updates (300ms)
+      debounceTimeoutRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        
+        // Remove existing template arg params
+        const keysToRemove: string[] = [];
+        for (const key of params.keys()) {
+          if (key.includes(".") || schema.fields.some((f) => f.name === key)) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => params.delete(key));
+
+        // Add new template arg params
+        const templateParams = templateArgsToSearchParams(newValues);
+        for (const [key, value] of templateParams.entries()) {
+          params.set(key, value);
+        }
+
+        // Update URL without scrolling
+        router.replace(`?${params.toString()}`, { scroll: false });
+      }, 300);
+    },
+    [schema, searchParams, router]
+  );
 
   useEffect(() => {
     setFormValues(values);
@@ -59,7 +121,17 @@ export default function TemplateForm({
     current[path[path.length - 1]] = value;
     setFormValues(newValues);
     onChange(newValues);
+    syncToUrl(newValues);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const renderField = (
     field: TemplateField,

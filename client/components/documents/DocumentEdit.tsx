@@ -10,8 +10,6 @@ import type {
   DocumentDetailOut,
   UpdateDocumentIn,
   UpdateDocumentOut,
-  RenderTemplateIn,
-  RenderTemplateOut,
 } from "@/app/(main)/management/documents/d/[documentId]/page";
 import { AgentPicker } from "@/components/common/forms/AgentPicker";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
@@ -33,14 +31,14 @@ interface DocumentEditProps {
   documentId: string;
   documentDetail: DocumentDetailOut;
   updateDocumentAction: (input: UpdateDocumentIn) => Promise<UpdateDocumentOut>;
-  renderTemplateAction: (input: RenderTemplateIn) => Promise<RenderTemplateOut>;
+  renderedHtml?: string | null;
 }
 
 export default function DocumentEdit({
   documentId,
   documentDetail,
   updateDocumentAction,
-  renderTemplateAction,
+  renderedHtml = null,
 }: DocumentEditProps) {
   const router = useRouter();
   const { effectiveDepartmentIds, effectiveProfile } = useProfile();
@@ -179,21 +177,7 @@ export default function DocumentEdit({
                   <TemplatePreview
                     documentId={documentId}
                     templateHtml={templateHtml}
-                    templateArgs={templateArgs}
-                    profileId={effectiveProfile?.id || ""}
-                    renderTemplateAction={async (docId, args, profId) => {
-                      const result = await renderTemplateAction({
-                        body: {
-                          documentId: docId,
-                          templateArgs: args,
-                          profileId: profId,
-                        },
-                      });
-                      return {
-                        success: result.success,
-                        rendered_html: result.rendered_html,
-                      };
-                    }}
+                    renderedHtml={renderedHtml}
                   />
                 </div>
               </div>

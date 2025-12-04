@@ -216,15 +216,11 @@ async def randomize_scenario_attributes(
     should_randomize_persona = not targets or "persona" in [t.lower() for t in targets]
     
     if scenario_id and existing_persona_ids:
-        # Use existing persona links from parent
+        # Use existing persona links from parent - keep all personas (supports multiple agents)
         scenario_persona_ids = [uuid.UUID(p) for p in existing_persona_ids]
         logger.info(
             f"Found {len(scenario_persona_ids)} existing persona_ids: {scenario_persona_ids}"
         )
-        # If 2+ personas, randomly pick ONE. If 0 personas, leave empty.
-        if len(scenario_persona_ids) >= 2:
-            scenario_persona_ids = [random.choice(scenario_persona_ids)]
-            logger.info(f"Randomly selected ONE persona: {scenario_persona_ids}")
     elif persona_ids and not should_randomize_persona:
         # Use provided personas only if persona is NOT in targets
         scenario_persona_ids = persona_ids[:1]  # Take first one only
