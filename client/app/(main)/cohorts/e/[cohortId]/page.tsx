@@ -12,19 +12,47 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
-// Import staff actions from staff page
-import {
-  bulkCreateOrUpdateStaff,
-  getCreateStaffData,
-  processCSV,
-  searchStaff,
-} from "@/app/(main)/management/staff/page";
-
 /** ---- Strong types from OpenAPI ---- */
 type CohortDetailIn = InputOf<"/api/v3/cohorts/detail", "post">;
 type CohortDetailOut = OutputOf<"/api/v3/cohorts/detail", "post">;
 type UpdateCohortIn = InputOf<"/api/v3/cohorts/update", "post">;
 type UpdateCohortOut = OutputOf<"/api/v3/cohorts/update", "post">;
+
+/** ---- Types for search-profile endpoint (manual until OpenAPI schema updated) ---- */
+type CohortSearchProfileIn = {
+  body: {
+    cohortId: string | null;
+    query: string | null;
+    departmentIds: string[] | null;
+    limit: number;
+    profileId: string;
+  };
+};
+type CohortSearchProfileOut = {
+  staff: Array<{
+    profile_id: string;
+    first_name: string;
+    last_name: string;
+    emails: string[];
+    primary_email: string | null;
+    name: string;
+    role: string;
+    initials: string;
+    active: boolean;
+    last_active: string | null;
+    cohort_ids: string[];
+    department_ids: string[];
+    primary_department_id: string;
+    requests_per_day: number | null;
+    total_requests: number;
+    default_profile: boolean;
+    requests_in_last_day: number;
+    can_edit: boolean;
+    can_delete: boolean;
+  }>;
+  cohort_mapping: Record<string, { name: string; description: string }>;
+  department_mapping: Record<string, { name: string; description: string }>;
+};
 /** ---- Derived types from server responses ---- */
 type CohortStaffItem = CohortDetailOut["staff"][number];
 
@@ -87,12 +115,24 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server action ---- */
-async function updateCohort(
-  input: UpdateCohortIn
-): Promise<UpdateCohortOut> {
+async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/cohorts/update", input);
+}
+
+/** ---- Server action for searching profiles to add to cohort ---- */
+async function searchCohortProfile(
+  input: CohortSearchProfileIn
+): Promise<CohortSearchProfileOut> {
+  "use server";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (api.post as any)("/cohorts/search-profile", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  }) as Promise<CohortSearchProfileOut>;
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -108,25 +148,6 @@ export default async function CohortEditPage({
   // Fetch cohort detail (always fresh - source of truth)
   const cohortDetail = await getCohort(cohortId, profileId);
 
-  // Fetch initial search data (empty query) for SearchExistingStaffModal
-  const initialSearchData = await searchStaff({
-    body: {
-      query: null,
-      cohortIds: [cohortId],
-      departmentIds: null,
-      limit: 200,
-      profileId,
-    },
-  });
-
-  // Fetch initial create staff data for CreateStaffButton
-  const initialCreateStaffData = await getCreateStaffData({
-    body: {
-      departmentIds: [],
-      profileId,
-    },
-  });
-
   return (
     <div
       className="space-y-6"
@@ -137,11 +158,7 @@ export default async function CohortEditPage({
         cohortId={cohortId}
         cohortDetail={cohortDetail}
         updateCohortAction={updateCohort}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-        searchStaffAction={searchStaff}
-        initialSearchData={initialSearchData}
-        initialCreateStaffData={initialCreateStaffData}
+        searchAddStaff={searchCohortProfile}
       />
     </div>
   );

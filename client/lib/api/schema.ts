@@ -1859,6 +1859,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/departments/search-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Department Search Profile
+         * @description Search profiles for adding to a department (excludes profiles already in department if departmentId provided).
+         */
+        post: operations["department_search_profile_api_v3_departments_search_profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/cohorts/list": {
         parameters: {
             query?: never;
@@ -2158,6 +2178,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/cohorts/search-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cohort Search Profile
+         * @description Search profiles for adding to a cohort (excludes profiles already in cohort if cohortId provided).
+         */
+        post: operations["cohort_search_profile_api_v3_cohorts_search_profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/cohorts/pass-matrix": {
         parameters: {
             query?: never;
@@ -2185,6 +2225,26 @@ export interface paths {
          *     See also cohort_overview() for cohort details.
          */
         post: operations["cohort_pass_matrix_api_v3_cohorts_pass_matrix_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v3/cohorts/add-staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cohort Add Staff
+         * @description Search staff for adding to a cohort (excludes profiles already in cohort).
+         */
+        post: operations["cohort_add_staff_api_v3_cohorts_add_staff_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5151,6 +5211,39 @@ export interface components {
             }[];
         };
         /**
+         * CohortAddStaffRequest
+         * @description Request for searching staff to add to a cohort.
+         */
+        CohortAddStaffRequest: {
+            /** Cohortid */
+            cohortId: string;
+            /** Query */
+            query?: string | null;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * CohortAddStaffResponse
+         * @description Response for cohort add-staff endpoint.
+         */
+        CohortAddStaffResponse: {
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+        };
+        /**
          * CohortDailyFact
          * @description Cohort daily fact.
          */
@@ -5410,6 +5503,41 @@ export interface components {
             status: "success" | "warning" | "danger" | "neutral";
         };
         /**
+         * CohortSearchProfileRequest
+         * @description Request for searching profiles to add to a cohort.
+         */
+        CohortSearchProfileRequest: {
+            /** Cohortid */
+            cohortId?: string | null;
+            /** Query */
+            query?: string | null;
+            /** Departmentids */
+            departmentIds?: string[] | null;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * CohortSearchProfileResponse
+         * @description Response for cohort search-profile endpoint.
+         */
+        CohortSearchProfileResponse: {
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
+        };
+        /**
          * CohortSearchResult
          * @description Cohort search result.
          */
@@ -5616,8 +5744,11 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
-            /** Profile Id */
-            profile_id: string;
+            /**
+             * Profile Ids
+             * @default []
+             */
+            profile_ids: string[];
         };
         /**
          * CreateDepartmentResponse
@@ -6866,6 +6997,39 @@ export interface components {
         DepartmentNewRequest: {
             /** Profileid */
             profileId: string;
+        };
+        /**
+         * DepartmentSearchProfileRequest
+         * @description Request for searching profiles to add to a department.
+         */
+        DepartmentSearchProfileRequest: {
+            /** Departmentid */
+            departmentId?: string | null;
+            /** Query */
+            query?: string | null;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * DepartmentSearchProfileResponse
+         * @description Response for department search-profile endpoint.
+         */
+        DepartmentSearchProfileResponse: {
+            /** Staff */
+            staff: components["schemas"]["app__api__v3__profile__staff__list__StaffItem"][];
+            /** Cohort Mapping */
+            cohort_mapping: {
+                [key: string]: components["schemas"]["CohortMappingItem"];
+            };
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
         };
         /**
          * DepartmentsListRequest
@@ -11782,6 +11946,8 @@ export interface components {
          * @description Response for staff detail endpoint.
          */
         StaffDetailResponse: {
+            /** Profile Id */
+            profile_id: string;
             /** First Name */
             first_name: string;
             /** Last Name */
@@ -12277,6 +12443,11 @@ export interface components {
             description: string;
             /** Active */
             active: boolean;
+            /**
+             * Profile Ids
+             * @default []
+             */
+            profile_ids: string[];
         };
         /**
          * UpdateDepartmentResponse
@@ -18076,6 +18247,39 @@ export interface operations {
             };
         };
     };
+    department_search_profile_api_v3_departments_search_profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentSearchProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentSearchProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_cohorts_list_api_v3_cohorts_list_post: {
         parameters: {
             query?: never;
@@ -18505,6 +18709,39 @@ export interface operations {
             };
         };
     };
+    cohort_search_profile_api_v3_cohorts_search_profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CohortSearchProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortSearchProfileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     cohort_pass_matrix_api_v3_cohorts_pass_matrix_post: {
         parameters: {
             query?: never;
@@ -18525,6 +18762,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CohortPassMatrixResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cohort_add_staff_api_v3_cohorts_add_staff_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CohortAddStaffRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortAddStaffResponse"];
                 };
             };
             /** @description Validation Error */

@@ -19,6 +19,7 @@ class UpdateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
+    profile_ids: list[str] = []
 
 
 class UpdateDepartmentResponse(BaseModel):
@@ -46,20 +47,19 @@ async def update_department(
 
     try:
         async with transaction(conn):
-            sql_query = load_sql("sql/v3/departments/update_department.sql")
+            # Single consolidated query: updates department and all profile relationships using arrays
+            sql_query = load_sql("sql/v3/departments/update_department_complete.sql")
             sql_params = (
                 request.departmentId,
                 request.title,
                 request.description,
                 request.active,
+                request.profile_ids if request.profile_ids else [],
             )
-            await conn.execute(
-                sql_query,
-                request.departmentId,
-                request.title,
-                request.description,
-                request.active,
-            )
+            result = await conn.fetchrow(sql_query, *sql_params)
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Department not found")
 
         result = UpdateDepartmentResponse(
             success=True,

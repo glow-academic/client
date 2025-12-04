@@ -27,6 +27,7 @@ class StaffDetailRequest(BaseModel):
 class StaffDetailResponse(BaseModel):
     """Response for staff detail endpoint."""
 
+    profile_id: str
     first_name: str
     last_name: str
     name: str
@@ -115,7 +116,13 @@ async def get_staff_detail(
         if not isinstance(valid_department_ids, list):
             valid_department_ids = []
         
+        # Handle primary_department_id - convert to string if not None
+        primary_department_id = row.get("primary_department_id")
+        if primary_department_id is not None:
+            primary_department_id = str(primary_department_id)
+        
         response_data = StaffDetailResponse(
+            profile_id=str(row.get("profile_id", "")),
             first_name=row.get("first_name", ""),
             last_name=row.get("last_name", ""),
             name=row.get("name", ""),
@@ -123,7 +130,7 @@ async def get_staff_detail(
             primary_email=primary_email,
             role=row.get("role", ""),
             requests_per_day=row.get("requests_per_day"),
-            primary_department_id=row.get("primary_department_id"),
+            primary_department_id=primary_department_id,
             active=row.get("active", True),
             default_profile=row.get("default_profile", False),
             can_edit=row.get("can_edit", False),

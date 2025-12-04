@@ -9,18 +9,10 @@ import { getSession } from "@/auth";
 
 import Department from "@/components/departments/Department";
 import { api } from "@/lib/api/client";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { revalidateTag } from "next/cache";
 import { cache } from "react";
 
-// Import staff actions from staff page
-import {
-  bulkCreateOrUpdateStaff,
-  getCreateStaffData,
-  processCSV,
-  searchStaff,
-} from "@/app/(main)/management/staff/page";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentNewIn = InputOf<
@@ -34,6 +26,14 @@ type DepartmentNewOut = OutputOf<
 
 type CreateDepartmentIn = InputOf<"/api/v3/departments/create", "post">;
 type CreateDepartmentOut = OutputOf<"/api/v3/departments/create", "post">;
+type DepartmentSearchProfileIn = InputOf<
+  "/api/v3/departments/search-profile",
+  "post"
+>;
+type DepartmentSearchProfileOut = OutputOf<
+  "/api/v3/departments/search-profile",
+  "post"
+>;
 
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
@@ -44,7 +44,7 @@ const getDepartmentDefault = cache(
   },
 );
 
-/** ---- Strongly-typed server action ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createDepartment(
   input: CreateDepartmentIn,
 ): Promise<CreateDepartmentOut> {
@@ -52,6 +52,13 @@ async function createDepartment(
   const out = await api.post("/departments/create", input);
   // No revalidateTag needed - Redis cache handles invalidation
   return out;
+}
+
+async function searchDepartmentProfile(
+  input: DepartmentSearchProfileIn,
+): Promise<DepartmentSearchProfileOut> {
+  "use server";
+  return api.post("/departments/search-profile", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -90,35 +97,12 @@ export default async function NewDepartmentPage() {
     body: { profileId },
   });
 
-  // Fetch initial search data (empty query) for SearchExistingStaffModal
-  const initialSearchData = await searchStaff({
-    body: {
-      query: null,
-      cohortIds: null,
-      departmentIds: null,
-      limit: 200,
-      profileId,
-    },
-  });
-
-  // Fetch initial create staff data for CreateStaffButton
-  const initialCreateStaffData = await getCreateStaffData({
-    body: {
-      departmentIds: [],
-      profileId,
-    },
-  });
-
   return (
     <div className="space-y-6">
       <Department
         departmentDetailDefault={departmentDetailDefault}
         createDepartmentAction={createDepartment}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-        searchStaffAction={searchStaff}
-        initialSearchData={initialSearchData}
-        initialCreateStaffData={initialCreateStaffData}
+        searchAddStaff={searchDepartmentProfile}
       />
     </div>
   );

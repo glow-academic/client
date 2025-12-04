@@ -26,12 +26,13 @@ target_profile AS (
         p.role,
         p.active,
         p.default_profile,
-        p.requests_per_day,
+        prl.requests_per_day,
         p.first_name || ' ' || p.last_name as name
     FROM profiles p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     WHERE p.id = $1
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile, p.requests_per_day
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile, prl.requests_per_day
 ),
 role_visibility_check AS (
     -- Check if current user can see target profile based on role hierarchy
@@ -74,11 +75,11 @@ valid_depts AS (
             ),
             '{}'::jsonb
         ) as dept_mapping,
-        array_agg(d.id::text ORDER BY d.title) as dept_ids
-    FROM departments d
-    JOIN resolve_current_profile_id rpi ON true
-    JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = rpi.resolved_profile_id AND d.active = true
+        COALESCE(array_agg(d.id::text ORDER BY d.title), ARRAY[]::text[]) as dept_ids
+    FROM resolve_current_profile_id rpi
+    LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
+    LEFT JOIN departments d ON d.id = pd.department_id AND d.active = true
+    WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 can_edit_check AS (
     SELECT 
@@ -93,6 +94,7 @@ can_edit_check AS (
     CROSS JOIN current_user_role cur
 )
 SELECT 
+    vp.id::text as profile_id,
     vp.first_name,
     vp.last_name,
     vp.name,

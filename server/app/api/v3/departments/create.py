@@ -18,7 +18,7 @@ class CreateDepartmentRequest(BaseModel):
     title: str
     description: str
     active: bool
-    profile_id: str
+    profile_ids: list[str] = []
 
 
 class CreateDepartmentResponse(BaseModel):
@@ -47,11 +47,15 @@ async def create_department(
 
     try:
         async with transaction(conn):
-            sql_query = load_sql("sql/v3/departments/create_department.sql")
-            sql_params = (request.title, request.description, request.active)
-            dept_row = await conn.fetchrow(
-                sql_query, request.title, request.description, request.active
+            # Single consolidated query: creates department and all profile relationships using arrays
+            sql_query = load_sql("sql/v3/departments/create_department_complete.sql")
+            sql_params = (
+                request.title,
+                request.description,
+                request.active,
+                request.profile_ids if request.profile_ids else [],
             )
+            dept_row = await conn.fetchrow(sql_query, *sql_params)
 
             if not dept_row:
                 raise HTTPException(
@@ -59,21 +63,6 @@ async def create_department(
                 )
 
             department_id = dept_row["department_id"]
-
-            # Automatically link all superadmins, default profiles, and the creator
-            auto_link_query = """
-            SELECT id FROM profiles
-            WHERE role = 'superadmin' OR default_profile = true OR id = $1
-            """
-            profiles_to_link = await conn.fetch(auto_link_query, request.profile_id)
-
-            for profile in profiles_to_link:
-                profile_dept_query = """
-                INSERT INTO profile_departments (profile_id, department_id)
-                VALUES ($1, $2)
-                ON CONFLICT (profile_id, department_id) DO NOTHING
-                """
-                await conn.execute(profile_dept_query, profile["id"], department_id)
 
         result = CreateDepartmentResponse(
             success=True,

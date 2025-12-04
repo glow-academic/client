@@ -941,12 +941,9 @@ export function StaffDataTable({
                 validDepartmentIds={validDepartmentIds}
                 validCohortIds={validCohortIds}
                 {...(isScoped !== undefined && { isScoped })}
-                // Control button visibility:
-                // Staff list page: only CSV import
-                // Cohort/Department pages: only Search Existing
-                showCSVImport={!cohortId && !departmentId}
-                showSearchExisting={!!(cohortId || departmentId)}
-                showManualAdd={false}
+                // Button visibility is now controlled by isScoped:
+                // Staff list page (isScoped=false): shows "CSV Import" button
+                // Cohort/Department pages (isScoped=true): shows "Search Existing" button
               />
             )}
 

@@ -13,20 +13,30 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 
-// Import staff types and actions from staff page
-
 import { deleteDepartment } from "@/app/(main)/departments/page";
-import {
-  bulkCreateOrUpdateStaff,
-  getCreateStaffData,
-  processCSV,
-  searchStaff,
-} from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
 type DepartmentDetailOut = OutputOf<"/api/v3/departments/detail", "post">;
 type UpdateDepartmentIn = InputOf<"/api/v3/departments/update", "post">;
 type UpdateDepartmentOut = OutputOf<"/api/v3/departments/update", "post">;
+
+/** ---- Types for search-profile endpoint ---- */
+type DepartmentSearchProfileIn = InputOf<
+  "/api/v3/departments/search-profile",
+  "post"
+>;
+type DepartmentSearchProfileOut = OutputOf<
+  "/api/v3/departments/search-profile",
+  "post"
+>;
+
+// Search function for department profile search (search-only, no mutation)
+async function searchDepartmentProfile(
+  input: DepartmentSearchProfileIn
+): Promise<DepartmentSearchProfileOut> {
+  "use server";
+  return api.post("/departments/search-profile", input);
+}
 type RemoveProfilesFromDepartmentIn = InputOf<
   "/api/v3/departments/remove-profiles",
   "post"
@@ -146,25 +156,6 @@ export default async function DepartmentEditPage({
   try {
     const departmentDetail = await getDepartment(departmentId, profileId);
 
-    // Fetch initial search data (empty query) for SearchExistingStaffModal
-    const initialSearchData = await searchStaff({
-      body: {
-        query: null,
-        cohortIds: null,
-        departmentIds: [departmentId],
-        limit: 200,
-        profileId,
-      },
-    });
-
-    // Fetch initial create staff data for CreateStaffButton
-    const initialCreateStaffData = await getCreateStaffData({
-      body: {
-        departmentIds: [departmentId],
-        profileId,
-      },
-    });
-
     return (
       <div
         className="space-y-6"
@@ -177,11 +168,7 @@ export default async function DepartmentEditPage({
           updateDepartmentAction={updateDepartment}
           removeProfilesFromDepartmentAction={removeProfilesFromDepartment}
           deleteDepartmentAction={deleteDepartment}
-          processCSVAction={processCSV}
-          bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-          searchStaffAction={searchStaff}
-          initialSearchData={initialSearchData}
-          initialCreateStaffData={initialCreateStaffData}
+          searchAddStaff={searchDepartmentProfile}
           createKeyAction={createKey}
           decryptKeyAction={decryptKey}
           updateKeyAction={updateKey}

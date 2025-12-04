@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v3.cohorts.add_profiles import router as add_profiles_router
+from app.api.v3.cohorts.add_staff import router as add_staff_router
 from app.api.v3.cohorts.create import router as create_router
 from app.api.v3.cohorts.delete import router as delete_router
 from app.api.v3.cohorts.detail import router as detail_router
@@ -17,6 +18,7 @@ from app.api.v3.cohorts.overview import router as overview_router
 from app.api.v3.cohorts.pass_matrix import router as pass_matrix_router
 from app.api.v3.cohorts.remove_profiles import router as remove_profiles_router
 from app.api.v3.cohorts.search import router as search_router
+from app.api.v3.cohorts.search_profile import router as search_profile_router
 from app.api.v3.cohorts.update import router as update_router
 
 router = APIRouter(prefix="/cohorts", tags=["cohorts"])
@@ -35,4 +37,6 @@ router.include_router(update_router)
 router.include_router(delete_router)
 router.include_router(overview_router)
 router.include_router(search_router)
+router.include_router(search_profile_router)
 router.include_router(pass_matrix_router)
+router.include_router(add_staff_router)

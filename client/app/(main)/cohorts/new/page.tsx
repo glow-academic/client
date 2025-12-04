@@ -12,29 +12,52 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
-// Import staff actions from staff page
-import {
-  bulkCreateOrUpdateStaff,
-  getCreateStaffData,
-  processCSV,
-  searchStaff,
-} from "@/app/(main)/management/staff/page";
-
 /** ---- Strong types from OpenAPI ---- */
 type CohortNewIn = InputOf<"/api/v3/cohorts/new", "post">;
-type CohortNewOut = OutputOf<
-  "/api/v3/cohorts/new",
-  "post"
->;
+type CohortNewOut = OutputOf<"/api/v3/cohorts/new", "post">;
 type CreateCohortIn = InputOf<"/api/v3/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/api/v3/cohorts/create", "post">;
+
+/** ---- Types for search-profile endpoint (manual until OpenAPI schema updated) ---- */
+type CohortSearchProfileIn = {
+  body: {
+    cohortId: string | null;
+    query: string | null;
+    departmentIds: string[] | null;
+    limit: number;
+    profileId: string;
+  };
+};
+type CohortSearchProfileOut = {
+  staff: Array<{
+    profile_id: string;
+    first_name: string;
+    last_name: string;
+    emails: string[];
+    primary_email: string | null;
+    name: string;
+    role: string;
+    initials: string;
+    active: boolean;
+    last_active: string | null;
+    cohort_ids: string[];
+    department_ids: string[];
+    primary_department_id: string;
+    requests_per_day: number | null;
+    total_requests: number;
+    default_profile: boolean;
+    requests_in_last_day: number;
+    can_edit: boolean;
+    can_delete: boolean;
+  }>;
+  cohort_mapping: Record<string, { name: string; description: string }>;
+  department_mapping: Record<string, { name: string; description: string }>;
+};
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getCohortDefault = async (
-  profileId: string
-): Promise<CohortNewOut> => {
+const getCohortDefault = async (profileId: string): Promise<CohortNewOut> => {
   return api.post(
     "/cohorts/new",
     { body: { profileId } },
@@ -48,12 +71,24 @@ const getCohortDefault = async (
 };
 
 /** ---- Strongly-typed server action ---- */
-async function createCohort(
-  input: CreateCohortIn,
-): Promise<CreateCohortOut> {
+async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/cohorts/create", input);
+}
+
+/** ---- Server action for searching profiles to add to cohort ---- */
+async function searchCohortProfile(
+  input: CohortSearchProfileIn
+): Promise<CohortSearchProfileOut> {
+  "use server";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (api.post as any)("/cohorts/search-profile", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  }) as Promise<CohortSearchProfileOut>;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -89,25 +124,6 @@ export default async function NewCohortPage() {
   // Fetch cohort default data (for dropdowns and defaults)
   const cohortDetailDefault = await getCohortDefault(profileId);
 
-  // Fetch initial search data (empty query) for SearchExistingStaffModal
-  const initialSearchData = await searchStaff({
-    body: {
-      query: null,
-      cohortIds: null,
-      departmentIds: null,
-      limit: 200,
-      profileId,
-    },
-  });
-
-  // Fetch initial create staff data for CreateStaffButton
-  const initialCreateStaffData = await getCreateStaffData({
-    body: {
-      departmentIds: [],
-      profileId,
-    },
-  });
-
   return (
     <div
       className="space-y-6"
@@ -117,11 +133,7 @@ export default async function NewCohortPage() {
       <Cohort
         cohortDetailDefault={cohortDetailDefault}
         createCohortAction={createCohort}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-        searchStaffAction={searchStaff}
-        initialSearchData={initialSearchData}
-        initialCreateStaffData={initialCreateStaffData}
+        searchAddStaff={searchCohortProfile}
       />
     </div>
   );

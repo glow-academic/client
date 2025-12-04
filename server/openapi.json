@@ -3892,6 +3892,53 @@
         ]
       }
     },
+    "/api/v3/departments/search-profile": {
+      "post": {
+        "tags": [
+          "v3",
+          "departments"
+        ],
+        "summary": "Department Search Profile",
+        "description": "Search profiles for adding to a department (excludes profiles already in department if departmentId provided).",
+        "operationId": "department_search_profile_api_v3_departments_search_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentSearchProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentSearchProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "departments"
+        ]
+      }
+    },
     "/api/v3/cohorts/list": {
       "post": {
         "tags": [
@@ -4507,6 +4554,53 @@
         ]
       }
     },
+    "/api/v3/cohorts/search-profile": {
+      "post": {
+        "tags": [
+          "v3",
+          "cohorts"
+        ],
+        "summary": "Cohort Search Profile",
+        "description": "Search profiles for adding to a cohort (excludes profiles already in cohort if cohortId provided).",
+        "operationId": "cohort_search_profile_api_v3_cohorts_search_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CohortSearchProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohortSearchProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
+      }
+    },
     "/api/v3/cohorts/pass-matrix": {
       "post": {
         "tags": [
@@ -4533,6 +4627,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CohortPassMatrixResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "cohorts"
+        ]
+      }
+    },
+    "/api/v3/cohorts/add-staff": {
+      "post": {
+        "tags": [
+          "v3",
+          "cohorts"
+        ],
+        "summary": "Cohort Add Staff",
+        "description": "Search staff for adding to a cohort (excludes profiles already in cohort).",
+        "operationId": "cohort_add_staff_api_v3_cohorts_add_staff_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CohortAddStaffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohortAddStaffResponse"
                 }
               }
             }
@@ -11659,6 +11800,74 @@
         "title": "ClassifyUploadResponse",
         "description": "Response from upload classification."
       },
+      "CohortAddStaffRequest": {
+        "properties": {
+          "cohortId": {
+            "type": "string",
+            "title": "Cohortid"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 200
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cohortId",
+          "profileId"
+        ],
+        "title": "CohortAddStaffRequest",
+        "description": "Request for searching staff to add to a cohort."
+      },
+      "CohortAddStaffResponse": {
+        "properties": {
+          "staff": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__list__StaffItem"
+            },
+            "type": "array",
+            "title": "Staff"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "staff",
+          "cohort_mapping",
+          "department_mapping"
+        ],
+        "title": "CohortAddStaffResponse",
+        "description": "Response for cohort add-staff endpoint."
+      },
       "CohortDailyFact": {
         "properties": {
           "date": {
@@ -12262,6 +12471,94 @@
         "title": "CohortPerformanceResponse",
         "description": "Cohort performance response."
       },
+      "CohortSearchProfileRequest": {
+        "properties": {
+          "cohortId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohortid"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "departmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentids"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 200
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "CohortSearchProfileRequest",
+        "description": "Request for searching profiles to add to a cohort."
+      },
+      "CohortSearchProfileResponse": {
+        "properties": {
+          "staff": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__list__StaffItem"
+            },
+            "type": "array",
+            "title": "Staff"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "staff",
+          "cohort_mapping",
+          "department_mapping"
+        ],
+        "title": "CohortSearchProfileResponse",
+        "description": "Response for cohort search-profile endpoint."
+      },
       "CohortSearchResult": {
         "properties": {
           "id": {
@@ -12753,17 +13050,20 @@
             "type": "boolean",
             "title": "Active"
           },
-          "profile_id": {
-            "type": "string",
-            "title": "Profile Id"
+          "profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Profile Ids",
+            "default": []
           }
         },
         "type": "object",
         "required": [
           "title",
           "description",
-          "active",
-          "profile_id"
+          "active"
         ],
         "title": "CreateDepartmentRequest",
         "description": "Request for creating a department."
@@ -15946,6 +16246,80 @@
         ],
         "title": "DepartmentNewRequest",
         "description": "Request for default department detail."
+      },
+      "DepartmentSearchProfileRequest": {
+        "properties": {
+          "departmentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departmentid"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 200
+          },
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "DepartmentSearchProfileRequest",
+        "description": "Request for searching profiles to add to a department."
+      },
+      "DepartmentSearchProfileResponse": {
+        "properties": {
+          "staff": {
+            "items": {
+              "$ref": "#/components/schemas/app__api__v3__profile__staff__list__StaffItem"
+            },
+            "type": "array",
+            "title": "Staff"
+          },
+          "cohort_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CohortMappingItem"
+            },
+            "type": "object",
+            "title": "Cohort Mapping"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "staff",
+          "cohort_mapping",
+          "department_mapping"
+        ],
+        "title": "DepartmentSearchProfileResponse",
+        "description": "Response for department search-profile endpoint."
       },
       "DepartmentsListRequest": {
         "properties": {
@@ -28727,6 +29101,10 @@
       },
       "StaffDetailResponse": {
         "properties": {
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
+          },
           "first_name": {
             "type": "string",
             "title": "First Name"
@@ -28812,6 +29190,7 @@
         },
         "type": "object",
         "required": [
+          "profile_id",
           "first_name",
           "last_name",
           "name",
@@ -29953,6 +30332,14 @@
           "active": {
             "type": "boolean",
             "title": "Active"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Profile Ids",
+            "default": []
           }
         },
         "type": "object",
