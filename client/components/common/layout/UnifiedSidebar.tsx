@@ -290,7 +290,6 @@ export function UnifiedSidebar({
 
     // Management - Available from admin level and up
     if (
-      availableSections.includes("policies") ||
       availableSections.includes("documents") ||
       availableSections.includes("rubrics") ||
       availableSections.includes("parameters")
@@ -303,14 +302,6 @@ export function UnifiedSidebar({
         icon: ClipboardList,
         items: managementItems,
       });
-
-      if (availableSections.includes("policies")) {
-        managementItems.push({
-          title: "Policies",
-          url: "#",
-          section: "policies",
-        });
-      }
 
       if (availableSections.includes("documents")) {
         managementItems.push({

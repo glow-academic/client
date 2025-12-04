@@ -3,7 +3,7 @@
 --            $4=upload_id (uuid, nullable),
 --            $5=department_ids (text array, nullable),
 --            $6=outline_ids (text array, nullable),
---            $7=policy_ids (text array, nullable),
+--            $7=document_ids (text array, nullable),
 --            $8=upload_images_json (JSONB string with upload images array),
 --            $9=questions_json (JSONB string with questions array),
 --            $10=parameter_item_ids (text array, nullable)
@@ -52,19 +52,19 @@ link_outlines AS (
         active = true,
         updated_at = NOW()
 ),
-link_policies AS (
-    -- Link policies if provided
-    INSERT INTO video_policies (video_id, policy_id, active, created_at, updated_at)
+link_documents AS (
+    -- Link documents if provided
+    INSERT INTO video_documents (video_id, document_id, active, created_at, updated_at)
     SELECT 
         nv.video_id,
-        policy_id::uuid,
+        document_id::uuid,
         true,
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($7::text[]) as policy_id
+    CROSS JOIN UNNEST($7::text[]) as document_id
     WHERE COALESCE(array_length($7::text[], 1), 0) > 0
-    ON CONFLICT (video_id, policy_id) DO UPDATE SET
+    ON CONFLICT (video_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

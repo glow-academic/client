@@ -22,8 +22,8 @@ class RandomizeVideoRequest(BaseModel):
     departmentIds: list[str] | None = None
     problemStatementIds: list[str] | None = None
     objectiveIds: list[str] | None = None
-    policyIds: list[str] | None = None
-    targets: list[str] = []  # ["problem_statement", "objectives", "policies"]
+    documentIds: list[str] | None = None
+    targets: list[str] = []  # ["problem_statement", "objectives", "documents"]
 
 
 class RandomizeVideoResponse(BaseModel):
@@ -33,7 +33,7 @@ class RandomizeVideoResponse(BaseModel):
     message: str
     problemStatementIds: list[str] = []
     objectiveIds: list[str] = []
-    policyIds: list[str] = []
+    documentIds: list[str] = []
 
 
 router = APIRouter()
@@ -58,7 +58,7 @@ async def randomize_video_attributes(
     conn: asyncpg.Connection,
     problem_statement_ids: list[uuid.UUID] | None = None,
     objective_ids: list[uuid.UUID] | None = None,
-    policy_ids: list[uuid.UUID] | None = None,
+    document_ids: list[uuid.UUID] | None = None,
     department_ids: list[uuid.UUID] | None = None,
     video_id: uuid.UUID | None = None,
     profile_id: uuid.UUID | None = None,
@@ -70,7 +70,7 @@ async def randomize_video_attributes(
     Returns dict with keys:
         - problem_statement_ids: list[UUID]
         - objective_ids: list[UUID]
-        - policy_ids: list[UUID]
+        - document_ids: list[UUID]
     """
     if targets is None:
         targets = []
@@ -111,17 +111,17 @@ async def randomize_video_attributes(
     # Parse JSONB aggregations
     problem_statements_data = parse_jsonb(result.get("problem_statements", []))
     objectives_data = parse_jsonb(result.get("objectives", []))
-    policies_data = parse_jsonb(result.get("policies", []))
+    documents_data = parse_jsonb(result.get("documents", []))
 
     # Get existing links if video_id provided
     existing_problem_statement_ids = result.get("problem_statement_ids") or []
     existing_objective_ids = result.get("objective_ids") or []
-    existing_policy_ids = result.get("policy_ids") or []
+    existing_document_ids = result.get("document_ids") or []
 
     # Step 3: Randomize based on targets
     final_problem_statement_ids: list[uuid.UUID] = []
     final_objective_ids: list[uuid.UUID] = []
-    final_policy_ids: list[uuid.UUID] = []
+    final_document_ids: list[uuid.UUID] = []
 
     # Randomize problem statements
     if "problem_statement" in targets or len(targets) == 0:
@@ -160,28 +160,28 @@ async def randomize_video_attributes(
             uuid.UUID(oid) for oid in existing_objective_ids
         ]
 
-    # Randomize policies (pick 1-2)
-    if "policies" in targets or len(targets) == 0:
-        if policies_data and len(policies_data) > 0:
-            # Pick 1-2 random policies
-            num_policies = random.randint(1, min(2, len(policies_data)))
-            selected_policies = random.sample(policies_data, num_policies)
-            final_policy_ids = [
-                uuid.UUID(str(pol["id"])) for pol in selected_policies
+    # Randomize documents (pick 1-2)
+    if "documents" in targets or len(targets) == 0:
+        if documents_data and len(documents_data) > 0:
+            # Pick 1-2 random documents
+            num_documents = random.randint(1, min(2, len(documents_data)))
+            selected_documents = random.sample(documents_data, num_documents)
+            final_document_ids = [
+                uuid.UUID(str(doc["id"])) for doc in selected_documents
             ]
-        elif existing_policy_ids:
+        elif existing_document_ids:
             # Keep existing if no options available
-            final_policy_ids = [
-                uuid.UUID(pid) for pid in existing_policy_ids
+            final_document_ids = [
+                uuid.UUID(did) for did in existing_document_ids
             ]
     else:
         # Keep existing
-        final_policy_ids = [uuid.UUID(pid) for pid in existing_policy_ids]
+        final_document_ids = [uuid.UUID(did) for did in existing_document_ids]
 
     return {
         "problem_statement_ids": final_problem_statement_ids,
         "objective_ids": final_objective_ids,
-        "policy_ids": final_policy_ids,
+        "document_ids": final_document_ids,
     }
 
 
@@ -205,8 +205,8 @@ async def randomize_video_sections(
         objective_ids = (
             [uuid.UUID(o) for o in request.objectiveIds] if request.objectiveIds else None
         )
-        policy_ids = (
-            [uuid.UUID(p) for p in request.policyIds] if request.policyIds else None
+        document_ids = (
+            [uuid.UUID(p) for p in request.documentIds] if request.documentIds else None
         )
         department_ids = (
             [uuid.UUID(d) for d in request.departmentIds]
@@ -221,8 +221,8 @@ async def randomize_video_sections(
             problem_statement_ids = [ps for ps in problem_statement_ids if ps]
         if objective_ids:
             objective_ids = [o for o in objective_ids if o]
-        if policy_ids:
-            policy_ids = [p for p in policy_ids if p]
+        if document_ids:
+            document_ids = [p for p in document_ids if p]
         if department_ids:
             department_ids = [d for d in department_ids if d]
         targets = [t for t in request.targets if t.strip()] if request.targets else []
@@ -232,7 +232,7 @@ async def randomize_video_sections(
             conn=conn,
             problem_statement_ids=problem_statement_ids,
             objective_ids=objective_ids,
-            policy_ids=policy_ids,
+            document_ids=document_ids,
             department_ids=department_ids,
             video_id=video_id,
             profile_id=profile_id,
@@ -245,7 +245,7 @@ async def randomize_video_sections(
             message="Randomization completed successfully",
             problemStatementIds=[str(psid) for psid in result["problem_statement_ids"]],
             objectiveIds=[str(oid) for oid in result["objective_ids"]],
-            policyIds=[str(pid) for pid in result["policy_ids"]],
+            documentIds=[str(did) for did in result["document_ids"]],
         )
     except HTTPException:
         raise

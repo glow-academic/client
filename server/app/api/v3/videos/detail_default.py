@@ -64,9 +64,9 @@ class VideoDetailResponse(BaseModel):
     problem_statement_mapping: dict[str, ProblemStatementInfo]
     objective_ids: list[str]
     objective_mapping: dict[str, dict[str, str]]
-    policy_ids: list[str]
-    policy_mapping: dict[str, dict[str, str]]
-    valid_policy_ids: list[str]
+    document_ids: list[str]
+    document_mapping: dict[str, dict[str, str]]
+    valid_document_ids: list[str]
     video_images: list[dict[str, Any]]
     objectives_history: list[str]
     can_edit: bool
@@ -154,11 +154,11 @@ async def get_video_new(
                         updated_at=v.get("updated_at", ""),
                     )
 
-        # Parse policy_mapping from JSONB
-        policy_mapping_data = parse_jsonb(result.get("policy_mapping"))
-        policy_mapping: dict[str, dict[str, str]] = {}
-        if isinstance(policy_mapping_data, dict):
-            policy_mapping = {
+        # Parse document_mapping from JSONB
+        document_mapping_data = parse_jsonb(result.get("document_mapping"))
+        document_mapping: dict[str, dict[str, str]] = {}
+        if isinstance(document_mapping_data, dict):
+            document_mapping = {
                 k: {
                     "name": v.get("name", ""),
                     "description": v.get("description", ""),
@@ -167,13 +167,13 @@ async def get_video_new(
                     "mimeType": v.get("mimeType", ""),
                     "uploadId": v.get("uploadId", ""),
                 }
-                for k, v in policy_mapping_data.items()
+                for k, v in document_mapping_data.items()
             }
 
-        # Parse valid_policy_ids
-        valid_policy_ids = result.get("valid_policy_ids") or []
-        if not isinstance(valid_policy_ids, list):
-            valid_policy_ids = []
+        # Parse valid_document_ids
+        valid_document_ids = result.get("valid_document_ids") or []
+        if not isinstance(valid_document_ids, list):
+            valid_document_ids = []
 
         # Parse objectives_history
         objectives_history = result.get("objectives_history") or []
@@ -214,9 +214,9 @@ async def get_video_new(
             objective_ids=[],
             objective_mapping={},
             # Policies (empty for default)
-            policy_ids=[],
-            policy_mapping=policy_mapping,
-            valid_policy_ids=[str(pid) for pid in valid_policy_ids],
+            document_ids=[],
+            document_mapping=document_mapping,
+            valid_document_ids=[str(did) for did in valid_document_ids],
             # Video images (empty for default)
             video_images=[],
             # Objectives history

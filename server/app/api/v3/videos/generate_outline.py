@@ -59,7 +59,7 @@ class GenerateOutlineRequest(BaseModel):
     """Request to generate AI outline."""
 
     departmentId: str
-    policyIds: list[str] | None = None
+    documentIds: list[str] | None = None
     questionIds: list[str] | None = None
     parameterItemIds: list[str] | None = None  # Parameter items to inform outline generation
     existingQuestions: list[ExistingQuestion] | None = None  # Existing questions to inform outline generation
@@ -115,8 +115,8 @@ async def generate_outline(
     try:
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(request.departmentId)
-        policy_ids = (
-            [uuid.UUID(p) for p in request.policyIds] if request.policyIds else None
+        document_ids = (
+            [uuid.UUID(p) for p in request.documentIds] if request.documentIds else None
         )
         question_ids = (
             [uuid.UUID(q) for q in request.questionIds] if request.questionIds else None
@@ -129,8 +129,8 @@ async def generate_outline(
         profile_id = uuid.UUID(request.profileId) if request.profileId else None
 
         # Filter out empty lists
-        if policy_ids and len(policy_ids) == 0:
-            policy_ids = None
+        if document_ids and len(document_ids) == 0:
+            document_ids = None
         if question_ids and len(question_ids) == 0:
             question_ids = None
         if parameter_item_ids and len(parameter_item_ids) == 0:
@@ -144,7 +144,7 @@ async def generate_outline(
         question_progress.clear()
 
         # Get all context data in a single optimized query using SQL file
-        policy_ids_str = [str(p) for p in policy_ids] if policy_ids else []
+        document_ids_str = [str(p) for p in document_ids] if document_ids else []
         question_ids_str = [str(q) for q in question_ids] if question_ids else []
         parameter_item_ids_str = (
             [str(p) for p in parameter_item_ids] if parameter_item_ids else []
@@ -155,7 +155,7 @@ async def generate_outline(
         context_row = await conn.fetchrow(
             sql,
             str(department_id),
-            policy_ids_str if policy_ids_str else None,
+            document_ids_str if document_ids_str else None,
             question_ids_str if question_ids_str else None,
             parameter_item_ids_str if parameter_item_ids_str else None,
             str(profile_id) if profile_id else None,
@@ -216,11 +216,13 @@ async def generate_outline(
             "earliest_run_created_at": context_row["earliest_run_created_at"],
         }
 
-        # Format policy info if policies were provided
-        if not policy_ids or len(policy_ids) == 0:
+        # Format document info if documents were provided
+        if not document_ids or len(document_ids) == 0:
             policy_info = None
         else:
-            policy_info = format_policy_info(context["policies"], video_length_seconds)
+            # Use "documents" from context (which contains policy documents)
+            documents = context.get("documents") or context.get("policies", [])
+            policy_info = format_policy_info(documents, video_length_seconds)
 
         # Format parameter item info if parameter items were provided
         parameter_item_info = None

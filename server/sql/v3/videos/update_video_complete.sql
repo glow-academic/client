@@ -3,7 +3,7 @@
 --            $5=upload_id (uuid, nullable),
 --            $6=department_ids (text array, nullable),
 --            $7=outline_ids (text array, nullable),
---            $8=policy_ids (text array, nullable),
+--            $8=document_ids (text array, nullable),
 --            $9=upload_images_json (JSONB string with upload images array),
 --            $10=questions_json (JSONB string with questions array),
 --            $11=outline_agent_id (nullable uuid), $12=image_agent_id (nullable uuid),
@@ -83,24 +83,24 @@ delete_old_outlines AS (
           FROM UNNEST(COALESCE($7::text[], ARRAY[]::text[])) as outline_id
       )
 ),
-delete_old_policies AS (
-    -- Delete old policy links
-    DELETE FROM video_policies
+delete_old_documents AS (
+    -- Delete old document links
+    DELETE FROM video_documents
     WHERE video_id = $1::uuid
 ),
-link_policies AS (
-    -- Link policies if provided
-    INSERT INTO video_policies (video_id, policy_id, active, created_at, updated_at)
+link_documents AS (
+    -- Link documents if provided
+    INSERT INTO video_documents (video_id, document_id, active, created_at, updated_at)
     SELECT 
         uv.video_id,
-        policy_id::uuid,
+        document_id::uuid,
         true,
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST(COALESCE($8::text[], ARRAY[]::text[])) as policy_id
+    CROSS JOIN UNNEST(COALESCE($8::text[], ARRAY[]::text[])) as document_id
     WHERE COALESCE(array_length($8::text[], 1), 0) > 0
-    ON CONFLICT (video_id, policy_id) DO UPDATE SET
+    ON CONFLICT (video_id, document_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

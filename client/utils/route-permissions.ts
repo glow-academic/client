@@ -257,13 +257,7 @@ export const ROUTE_PERMISSIONS: SectionPermission[] = [
         path: "/management",
         roles: ["admin", "superadmin"],
         title: "Management Overview",
-        redirectTo: "/management/policies",
-      },
-      {
-        path: "/management/policies",
-        roles: ["admin", "superadmin"],
-        title: "Policies",
-        redirectTo: "/management/policies",
+        redirectTo: "/management/documents",
       },
       {
         path: "/management/documents",

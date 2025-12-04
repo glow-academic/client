@@ -1,8 +1,8 @@
--- Get randomization data for videos (problem statements, objectives, policies) and existing video links
+-- Get randomization data for videos (problem statements, objectives, documents) and existing video links
 -- Parameters: 
 --   $1=department_ids (uuid array, nullable)
 --   $2=video_id (uuid, nullable) - if provided, also returns existing video links
--- Returns: problem_statements, objectives, policies, outline_ids, policy_ids as JSON
+-- Returns: problem_statements, objectives, documents, outline_ids, document_ids as JSON
 WITH filtered_problem_statements AS (
     SELECT DISTINCT ps.id, ps.problem_statement, ps.created_at, ps.updated_at
     FROM problem_statements ps
@@ -29,27 +29,38 @@ filtered_objectives AS (
     )
     GROUP BY o.id, o.objective
 ),
-filtered_policies AS (
-    SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description, u.file_path, u.mime_type
-    FROM policies p
-    LEFT JOIN uploads u ON u.id = p.upload_id
-    LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, u.file_path, u.mime_type
+-- Get policy parameter item ID for filtering
+policy_param_item AS (
+    SELECT pi.id
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id
+    WHERE p.name = 'Document Type' AND p.document_parameter = true
+    AND pi.value = 'policy'
+    LIMIT 1
+),
+filtered_documents AS (
+    SELECT DISTINCT d.id, d.name, '' as description, u.file_path, u.mime_type
+    FROM documents d
+    LEFT JOIN uploads u ON u.id = d.upload_id
+    CROSS JOIN policy_param_item ppi
+    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+    WHERE d.active = true
+    GROUP BY d.id, d.name, u.file_path, u.mime_type
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length($1::uuid[], 1), 0) = 0 OR
-         COUNT(pd.policy_id) FILTER (WHERE pd.department_id = ANY($1::uuid[])) > 0
-         OR NOT EXISTS (SELECT 1 FROM policy_departments pd2 WHERE pd2.policy_id = p.id AND pd2.active = true))
+         COUNT(dd.document_id) FILTER (WHERE dd.department_id = ANY($1::uuid[])) > 0
+         OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true))
 ),
 video_outline_links AS (
     SELECT ARRAY_AGG(outline_id::text ORDER BY created_at) as outline_ids
     FROM video_outlines
     WHERE video_id = $2::uuid AND active = true
 ),
-video_policy_links AS (
-    SELECT ARRAY_AGG(policy_id::text ORDER BY created_at) as policy_ids
-    FROM video_policies
+video_document_links AS (
+    SELECT ARRAY_AGG(document_id::text ORDER BY created_at) as document_ids
+    FROM video_documents
     WHERE video_id = $2::uuid AND active = true
 )
 SELECT 
@@ -71,14 +82,14 @@ SELECT
     ) FROM filtered_objectives fo) as objectives,
     (SELECT COALESCE(
         json_agg(DISTINCT jsonb_build_object(
-            'id', fp.id,
-            'name', fp.name,
-            'description', fp.description,
-            'file_path', fp.file_path,
-            'mime_type', fp.mime_type
+            'id', fd.id,
+            'name', fd.name,
+            'description', fd.description,
+            'file_path', fd.file_path,
+            'mime_type', fd.mime_type
         )),
         '[]'::json
-    ) FROM filtered_policies fp) as policies,
+    ) FROM filtered_documents fd) as documents,
     COALESCE((SELECT outline_ids FROM video_outline_links), ARRAY[]::text[]) as outline_ids,
-    COALESCE((SELECT policy_ids FROM video_policy_links), ARRAY[]::text[]) as policy_ids
+    COALESCE((SELECT document_ids FROM video_document_links), ARRAY[]::text[]) as document_ids
 

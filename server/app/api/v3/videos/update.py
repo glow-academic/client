@@ -41,7 +41,7 @@ class UpdateVideoRequest(BaseModel):
     upload_id: str | None = None
     department_ids: list[str] | None
     outline_ids: list[str] | None = None
-    policy_ids: list[str] | None = None
+    document_ids: list[str] | None = None
     upload_ids: list[str] | None = None
     image_names: list[str] | None = None
     active: bool
@@ -84,7 +84,7 @@ async def update_video(
         # This ensures proper handling of empty arrays vs missing data
         department_ids = request.department_ids or []
         outline_ids = request.outline_ids or []  # Always pass array, even if empty
-        policy_ids = request.policy_ids or []
+        document_ids = request.document_ids or []
         upload_ids = request.upload_ids or []
         image_names = request.image_names or []
         questions = request.questions or []
@@ -118,7 +118,7 @@ async def update_video(
             upload_id_uuid,
             department_ids,  # Always pass array, SQL handles empty arrays
             outline_ids,  # Always pass array, SQL handles empty arrays
-            policy_ids,  # Always pass array, SQL handles empty arrays
+            document_ids,  # Always pass array, SQL handles empty arrays
             upload_images_json,
             questions_json,
             request.outline_agent_id,

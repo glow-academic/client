@@ -93,9 +93,6 @@ const getSectionFromSegments = (segments: string[]): string => {
       return "create";
 
     case "management":
-      if (second === "policies") {
-        return "policies";
-      }
       if (second === "documents") {
         if (third === "d" && fourth) {
           return `document-${fourth}`;
@@ -259,9 +256,6 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "videos":
         title = "Videos";
-        break;
-      case "policies":
-        title = "Policies";
         break;
       case "auth":
         title = "Auth";

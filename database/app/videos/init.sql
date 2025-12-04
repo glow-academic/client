@@ -100,18 +100,18 @@ CREATE INDEX ON video_outlines (video_id);
 CREATE INDEX ON video_outlines (outline_id);
 CREATE INDEX ON video_outlines (video_id, active);
 
--- Video → Policies junction table (BCNF normalization)
-CREATE TABLE video_policies (
-  video_id   UUID NOT NULL REFERENCES videos(id)   ON DELETE CASCADE,
-  policy_id  UUID NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
-  active     BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (video_id, policy_id)
+-- Video → Documents junction table (BCNF normalization)
+CREATE TABLE video_documents (
+  video_id UUID NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (video_id, document_id)
 );
 
-CREATE INDEX ON video_policies (video_id);
-CREATE INDEX ON video_policies (policy_id);
+CREATE INDEX ON video_documents (video_id);
+CREATE INDEX ON video_documents (document_id);
 
 -- Video → Images junction table (BCNF normalization)
 -- Uses uploads directly instead of images table

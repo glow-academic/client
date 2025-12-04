@@ -100,46 +100,59 @@ outline_mapping_data AS (
         ) as outline_mapping
     FROM video_all_outlines vao
 ),
-video_policies_agg AS (
-    SELECT ARRAY_AGG(policy_id::text ORDER BY vp.created_at) as policy_ids
-    FROM video_policies vp
-    WHERE vp.video_id = $1 AND vp.active = true
+-- Get policy parameter item ID for filtering
+policy_param_item AS (
+    SELECT pi.id
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id
+    WHERE p.name = 'Document Type' AND p.document_parameter = true
+    AND pi.value = 'policy'
+    LIMIT 1
 ),
-policy_mapping_data AS (
+video_documents_agg AS (
+    SELECT ARRAY_AGG(document_id::text ORDER BY vd.created_at) as document_ids
+    FROM video_documents vd
+    WHERE vd.video_id = $1 AND vd.active = true
+),
+document_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            p.id::text,
+            d.id::text,
             jsonb_build_object(
-                'name', p.name,
-                'description', COALESCE(p.description, ''),
+                'name', d.name,
+                'description', '',
                 'extension', CASE 
                     WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$')
                     ELSE NULL
                 END,
                 'filePath', u.file_path,
                 'mimeType', u.mime_type,
-                'uploadId', CASE WHEN p.upload_id IS NOT NULL THEN p.upload_id::text ELSE NULL END
+                'uploadId', CASE WHEN d.upload_id IS NOT NULL THEN d.upload_id::text ELSE NULL END
             )
-        ) FILTER (WHERE p.id IS NOT NULL),
+        ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM video_policies vp
-    JOIN policies p ON p.id = vp.policy_id
-    LEFT JOIN uploads u ON u.id = p.upload_id
-    WHERE vp.video_id = $1 AND vp.active = true AND p.active = true
+    FROM video_documents vd
+    JOIN documents d ON d.id = vd.document_id
+    LEFT JOIN uploads u ON u.id = d.upload_id
+    CROSS JOIN policy_param_item ppi
+    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    WHERE vd.video_id = $1 AND vd.active = true AND d.active = true
 ),
-valid_policies AS (
-    SELECT ARRAY_AGG(p.id::text ORDER BY p.id) as policy_ids
-    FROM (SELECT DISTINCT p.id FROM policies p
+valid_documents AS (
+    SELECT ARRAY_AGG(d.id::text ORDER BY d.id) as document_ids
+    FROM (SELECT DISTINCT d.id FROM documents d
     CROSS JOIN user_profile up
-    LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
-    WHERE p.active = true
+    CROSS JOIN policy_param_item ppi
+    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
+    WHERE d.active = true
         AND (
             up.role = 'superadmin'
-            OR pd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd2 ON pd2.profile_id = rpi.resolved_profile_id WHERE pd2.active = true)
-            OR NOT EXISTS (SELECT 1 FROM policy_departments pd3 WHERE pd3.policy_id = p.id AND pd3.active = true)
+            OR dd.department_id IN (SELECT department_id FROM resolve_profile_id rpi JOIN profile_departments pd2 ON pd2.profile_id = rpi.resolved_profile_id WHERE pd2.active = true)
+            OR NOT EXISTS (SELECT 1 FROM document_departments dd3 WHERE dd3.document_id = d.id AND dd3.active = true)
         )
-    ) p
+    ) d
 ),
 video_images_data AS (
     SELECT COALESCE(
@@ -293,22 +306,22 @@ valid_agents AS (
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
 ),
--- Video parameters (filtered by video_parameter = true OR policy_parameter = true)
+-- Video parameters (filtered by video_parameter = true OR document_parameter = true)
 video_parameter_data AS (
     SELECT DISTINCT 
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.policy_parameter,
+        p.document_parameter,
         p.video_parameter
     FROM parameters p
     JOIN parameter_items pi ON pi.parameter_id = p.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     CROSS JOIN resolve_profile_id rpi
     LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
-    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
-    GROUP BY p.id, p.name, p.description, p.numerical, p.policy_parameter, p.video_parameter
+    WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
+    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.video_parameter
     HAVING 
         COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
         OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
@@ -323,7 +336,7 @@ video_parameter_mapping_data AS (
                 'name', p.name, 
                 'description', p.description, 
                 'numerical', p.numerical,
-                'policy_parameter', p.policy_parameter,
+                'document_parameter', p.document_parameter,
                 'video_parameter', p.video_parameter
             )
         ), '{}'::jsonb) as parameter_mapping
@@ -342,7 +355,7 @@ video_parameter_items_data AS (
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
     CROSS JOIN resolve_profile_id rpi
     LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
-    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
+    WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
     GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
     HAVING 
         COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
@@ -376,9 +389,9 @@ SELECT
     COALESCE((SELECT department_ids FROM valid_departments), ARRAY[]::text[]) as valid_department_ids,
     COALESCE((SELECT outline_ids FROM video_outlines_agg), ARRAY[]::text[]) as outline_ids,
     COALESCE((SELECT outline_mapping FROM outline_mapping_data), '{}'::jsonb) as outline_mapping,
-    COALESCE((SELECT policy_ids FROM video_policies_agg), ARRAY[]::text[]) as policy_ids,
-    COALESCE((SELECT mapping FROM policy_mapping_data), '{}'::jsonb) as policy_mapping,
-    COALESCE((SELECT policy_ids FROM valid_policies), ARRAY[]::text[]) as valid_policy_ids,
+    COALESCE((SELECT document_ids FROM video_documents_agg), ARRAY[]::text[]) as document_ids,
+    COALESCE((SELECT mapping FROM document_mapping_data), '{}'::jsonb) as document_mapping,
+    COALESCE((SELECT document_ids FROM valid_documents), ARRAY[]::text[]) as valid_document_ids,
     COALESCE((SELECT video_images FROM video_images_data), '[]'::jsonb) as video_images,
     COALESCE((SELECT objectives_history FROM objectives_history_data), ARRAY[]::text[]) as objectives_history,
     vp.can_edit,

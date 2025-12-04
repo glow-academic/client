@@ -58,49 +58,60 @@ problem_statement_mapping_data AS (
     ) as mapping
     FROM problem_statement_data ps
 ),
--- Policies
-policy_data AS (
+-- Get policy parameter item ID for filtering
+policy_param_item AS (
+    SELECT pi.id
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id
+    WHERE p.name = 'Document Type' AND p.document_parameter = true
+    AND pi.value = 'policy'
+    LIMIT 1
+),
+-- Documents (filtered to only include policy documents)
+document_data AS (
     SELECT DISTINCT
-        p.id,
-        p.name,
-        COALESCE(p.description, '') as description,
+        d.id,
+        d.name,
+        '' as description,
         u.file_path,
         u.mime_type,
         u.id as upload_id
-    FROM policies p
-    LEFT JOIN uploads u ON u.id = p.upload_id
-    LEFT JOIN policy_departments pd ON pd.policy_id = p.id AND pd.active = true
+    FROM documents d
+    LEFT JOIN uploads u ON u.id = d.upload_id
+    CROSS JOIN policy_param_item ppi
+    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN user_profile up
-    WHERE p.active = true
+    WHERE d.active = true
         AND (
             up.role = 'superadmin'
-            OR pd.department_id IN (SELECT department_id FROM user_departments)
-            OR NOT EXISTS (SELECT 1 FROM policy_departments pd2 WHERE pd2.policy_id = p.id AND pd2.active = true)
+            OR dd.department_id IN (SELECT department_id FROM user_departments)
+            OR NOT EXISTS (SELECT 1 FROM document_departments dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
         )
 ),
-policy_mapping_data AS (
+document_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            p.id::text,
+            d.id::text,
             jsonb_build_object(
-                'name', p.name,
-                'description', p.description,
+                'name', d.name,
+                'description', d.description,
                 'extension', CASE 
-                    WHEN p.file_path IS NOT NULL THEN SUBSTRING(p.file_path FROM '\.([^\.]+)$')
+                    WHEN d.file_path IS NOT NULL THEN SUBSTRING(d.file_path FROM '\.([^\.]+)$')
                     ELSE NULL
                 END,
-                'filePath', p.file_path,
-                'mimeType', p.mime_type,
-                'uploadId', p.upload_id::text
+                'filePath', d.file_path,
+                'mimeType', d.mime_type,
+                'uploadId', d.upload_id::text
             )
-        ) FILTER (WHERE p.id IS NOT NULL),
+        ) FILTER (WHERE d.id IS NOT NULL),
         '{}'::jsonb
     ) as mapping
-    FROM policy_data p
+    FROM document_data d
 ),
-valid_policy_ids_data AS (
-    SELECT ARRAY_AGG(id::text ORDER BY id) as policy_ids
-    FROM policy_data
+valid_document_ids_data AS (
+    SELECT ARRAY_AGG(id::text ORDER BY id) as document_ids
+    FROM document_data
 ),
 -- Objectives (shared between scenarios only - videos now use outlines)
 objectives_data AS (
@@ -149,20 +160,20 @@ valid_agents AS (
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     )
 ),
--- Video parameters (filtered by video_parameter = true OR policy_parameter = true)
+-- Video parameters (filtered by video_parameter = true OR document_parameter = true)
 video_parameter_data AS (
     SELECT DISTINCT 
         p.id,
         p.name,
         COALESCE(p.description, '') as description,
         p.numerical,
-        p.policy_parameter,
+        p.document_parameter,
         p.video_parameter
     FROM parameters p
     JOIN parameter_items pi ON pi.parameter_id = p.id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
-    GROUP BY p.id, p.name, p.description, p.numerical, p.policy_parameter, p.video_parameter
+    WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
+    GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.video_parameter
     HAVING 
         COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
@@ -177,7 +188,7 @@ video_parameter_mapping_data AS (
                 'name', p.name, 
                 'description', p.description, 
                 'numerical', p.numerical,
-                'policy_parameter', p.policy_parameter,
+                'document_parameter', p.document_parameter,
                 'video_parameter', p.video_parameter
             )
         ), '{}'::jsonb) as parameter_mapping
@@ -194,7 +205,7 @@ video_parameter_items_data AS (
     FROM parameter_items pi
     JOIN parameters p ON p.id = pi.parameter_id
     LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
-    WHERE p.active = true AND (p.video_parameter = true OR p.policy_parameter = true)
+    WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
     GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, p.id, p.name, pi.value
     HAVING 
         COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -218,8 +229,8 @@ SELECT
     COALESCE((SELECT department_ids FROM department_ids_array), ARRAY[]::text[]) as department_ids,
     COALESCE((SELECT mapping FROM department_mapping_data), '{}'::jsonb) as department_mapping,
     COALESCE((SELECT mapping FROM problem_statement_mapping_data), '{}'::jsonb) as problem_statement_mapping,
-    COALESCE((SELECT mapping FROM policy_mapping_data), '{}'::jsonb) as policy_mapping,
-    COALESCE((SELECT policy_ids FROM valid_policy_ids_data), ARRAY[]::text[]) as valid_policy_ids,
+    COALESCE((SELECT mapping FROM document_mapping_data), '{}'::jsonb) as document_mapping,
+    COALESCE((SELECT document_ids FROM valid_document_ids_data), ARRAY[]::text[]) as valid_document_ids,
     COALESCE((SELECT objectives_history FROM objectives_history_data), ARRAY[]::text[]) as objectives_history,
     (SELECT role FROM user_profile) as user_role,
     (SELECT primary_department_id::text FROM user_profile) as primary_department_id,

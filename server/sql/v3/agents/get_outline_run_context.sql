@@ -1,9 +1,18 @@
 -- Get all data needed to run outline agent with optimized JOIN
--- Parameters: $1=department_id (uuid), $2=policy_ids[] (uuid array), $3=question_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=profile_id (uuid, nullable), $6=video_id (uuid, nullable)
--- Returns: agent, model, provider, policies, questions, parameter_items, video_length, and profile data
+-- Parameters: $1=department_id (uuid), $2=document_ids[] (uuid array), $3=question_ids[] (uuid array), $4=parameter_item_ids[] (uuid array), $5=profile_id (uuid, nullable), $6=video_id (uuid, nullable)
+-- Returns: agent, model, provider, documents (policies), questions, parameter_items, video_length, and profile data
 WITH params AS (
     -- Explicitly cast parameters for asyncpg type inference
-    SELECT $1::uuid as department_id, $2::uuid[] as policy_ids, $3::uuid[] as question_ids, $4::uuid[] as parameter_item_ids, $5::uuid as profile_id, $6::uuid as video_id
+    SELECT $1::uuid as department_id, $2::uuid[] as document_ids, $3::uuid[] as question_ids, $4::uuid[] as parameter_item_ids, $5::uuid as profile_id, $6::uuid as video_id
+),
+-- Get policy parameter item ID for filtering
+policy_param_item AS (
+    SELECT pi.id
+    FROM parameter_items pi
+    JOIN parameters p ON p.id = pi.parameter_id
+    WHERE p.name = 'Document Type' AND p.document_parameter = true
+    AND pi.value = 'policy'
+    LIMIT 1
 ),
 video_info AS (
     -- Get video length if video_id is provided
@@ -91,22 +100,24 @@ SELECT
     NULL::text as provider_id,
     m.provider::text as provider_name,
     
-    -- Policies data (aggregated as JSON array)
+    -- Documents (policies) data (aggregated as JSON array)
     -- Include file_path and mime_type so format_policy_info can read actual PDF content
     COALESCE(
         (SELECT json_agg(
             json_build_object(
-                'id', pol.id::text,
-                'name', pol.name,
-                'content', pol.description,
+                'id', d.id::text,
+                'name', d.name,
+                'content', '',
                 'file_path', u.file_path,
                 'mime_type', u.mime_type
             )
-            ORDER BY array_position(p.policy_ids, pol.id)
+            ORDER BY array_position(p.document_ids, d.id)
         )
-        FROM policies pol
-        LEFT JOIN uploads u ON u.id = pol.upload_id
-        WHERE pol.id = ANY(p.policy_ids)
+        FROM documents d
+        LEFT JOIN uploads u ON u.id = d.upload_id
+        CROSS JOIN policy_param_item ppi
+        JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+        WHERE d.id = ANY(p.document_ids) AND d.active = true
         ),
         '[]'::json
     ) as policies,

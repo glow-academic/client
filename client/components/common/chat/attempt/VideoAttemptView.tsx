@@ -6,19 +6,10 @@
  */
 "use client";
 
-import type {
-  AttemptFullOut,
-  CreateQuizIn,
-  CreateQuizOut,
-  SubmitQuizResponseIn,
-  SubmitQuizResponseOut,
-  CompleteQuizIn,
-  CompleteQuizOut,
-} from "@/app/(main)/home/a/[attemptId]/page";
+import type { AttemptFullOut } from "@/app/(main)/home/a/[attemptId]/page";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -48,7 +39,6 @@ import {
 
 // Icons
 import {
-  CheckCircle2,
   Clock,
   FileText,
   ListChecks,
@@ -103,12 +93,31 @@ export default function VideoAttemptView({
   const questions = contentItem.questions;
   const quiz = contentItem.quiz;
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Get documents (policies) from video.policies or fallback to policies prop
+  // video.policies contains documents linked to the video
+  // policies prop contains scenario documents filtered by type='policy'
+  const videoPolicies = useMemo(() => {
+    if (
+      video?.policies &&
+      Array.isArray(video.policies) &&
+      video.policies.length > 0
+    ) {
+      return video.policies;
+    }
+    // Fallback to policies prop (scenario documents filtered by type='policy')
+    return policies || [];
+  }, [video?.policies, policies]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
-  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(
+    new Set()
+  );
+  const [questionAnswers, setQuestionAnswers] = useState<
+    Record<string, string>
+  >({});
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [allQuestionsAnswered, setAllQuestionsAnswered] = useState(false);
@@ -163,7 +172,10 @@ export default function VideoAttemptView({
     for (const question of sortedQuestions) {
       if (question.times && question.times.includes(currentTimeSeconds)) {
         // Check if question already answered correctly
-        if (!answeredQuestions.has(question.id) && activeQuestionId !== question.id) {
+        if (
+          !answeredQuestions.has(question.id) &&
+          activeQuestionId !== question.id
+        ) {
           // Pause video and show question
           if (videoRef.current) {
             videoRef.current.pause();
@@ -362,7 +374,10 @@ export default function VideoAttemptView({
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-2 px-3 py-1 rounded-full w-[85px] overflow-x-auto bg-muted">
                                 <Clock className="h-4 w-4 flex-shrink-0" />
-                                <span className="text-sm font-medium" data-testid="timer">
+                                <span
+                                  className="text-sm font-medium"
+                                  data-testid="timer"
+                                >
                                   {timer.remaining !== null
                                     ? formatTime(timer.remaining)
                                     : formatTime(timer.elapsed)}
@@ -380,7 +395,8 @@ export default function VideoAttemptView({
                     <CollapsibleContent className="pt-2">
                       <div className="px-4 pb-2">
                         <p className="text-sm text-muted-foreground">
-                          Video objectives will be displayed here when available.
+                          Video objectives will be displayed here when
+                          available.
                         </p>
                       </div>
                     </CollapsibleContent>
@@ -430,7 +446,8 @@ export default function VideoAttemptView({
                         </div>
 
                         <span className="text-white text-sm">
-                          {formatTime(currentTime)} / {formatTime(video.lengthSeconds)}
+                          {formatTime(currentTime)} /{" "}
+                          {formatTime(video.lengthSeconds)}
                         </span>
 
                         <Button
@@ -447,32 +464,35 @@ export default function VideoAttemptView({
                       </div>
 
                       {/* Question Popovers */}
-                      {activeQuestionId && (() => {
-                        const question = sortedQuestions.find(
-                          (q) => q.id === activeQuestionId
-                        );
-                        if (!question) return null;
+                      {activeQuestionId &&
+                        (() => {
+                          const question = sortedQuestions.find(
+                            (q) => q.id === activeQuestionId
+                          );
+                          if (!question) return null;
 
-                        return (
-                          <VideoQuestionPopover
-                            key={question.id}
-                            question={question}
-                            quizResponses={quiz?.responses || []}
-                            onSubmitAnswer={handleQuestionAnswered}
-                            onClose={() => {
-                              setActiveQuestionId(null);
-                              if (videoRef.current && !isPlaying) {
-                                videoRef.current.play();
-                                setIsPlaying(true);
-                              }
-                            }}
-                          />
-                        );
-                      })()}
+                          return (
+                            <VideoQuestionPopover
+                              key={question.id}
+                              question={question}
+                              quizResponses={quiz?.responses || []}
+                              onSubmitAnswer={handleQuestionAnswered}
+                              onClose={() => {
+                                setActiveQuestionId(null);
+                                if (videoRef.current && !isPlaying) {
+                                  videoRef.current.play();
+                                  setIsPlaying(true);
+                                }
+                              }}
+                            />
+                          );
+                        })()}
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center bg-muted rounded-lg">
-                      <p className="text-muted-foreground">No video file available</p>
+                      <p className="text-muted-foreground">
+                        No video file available
+                      </p>
                     </div>
                   )}
 
@@ -621,10 +641,7 @@ export default function VideoAttemptView({
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPolicyModal(false)}
-            >
+            <Button variant="outline" onClick={() => setShowPolicyModal(false)}>
               Close
             </Button>
           </DialogFooter>
@@ -660,4 +677,3 @@ export default function VideoAttemptView({
     </div>
   );
 }
-

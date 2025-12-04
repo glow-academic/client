@@ -67,9 +67,9 @@ class VideoDetailResponse(BaseModel):
     problem_statement_mapping: dict[str, ProblemStatementInfo]
     objective_ids: list[str]
     objective_mapping: dict[str, dict[str, str]]
-    policy_ids: list[str]
-    policy_mapping: dict[str, dict[str, str]]
-    valid_policy_ids: list[str]
+    document_ids: list[str]
+    document_mapping: dict[str, dict[str, str]]
+    valid_document_ids: list[str]
     video_images: list[dict[str, Any]]
     objectives_history: list[str]
     can_edit: bool
@@ -244,11 +244,11 @@ async def get_video_detail(
                 for k, v in outline_mapping_data.items()
             }
 
-        # Parse policy_mapping from JSONB
-        policy_mapping_data = parse_jsonb(video.get("policy_mapping"))
-        policy_mapping: dict[str, dict[str, str]] = {}
-        if isinstance(policy_mapping_data, dict):
-            policy_mapping = {
+        # Parse document_mapping from JSONB
+        document_mapping_data = parse_jsonb(video.get("document_mapping"))
+        document_mapping: dict[str, dict[str, str]] = {}
+        if isinstance(document_mapping_data, dict):
+            document_mapping = {
                 k: {
                     "name": v.get("name", ""),
                     "description": v.get("description", ""),
@@ -257,7 +257,7 @@ async def get_video_detail(
                     "mimeType": v.get("mimeType", ""),
                     "uploadId": v.get("uploadId", ""),
                 }
-                for k, v in policy_mapping_data.items()
+                for k, v in document_mapping_data.items()
             }
 
         # Parse video_images from JSONB
@@ -288,13 +288,13 @@ async def get_video_detail(
         if not isinstance(objective_ids, list):
             objective_ids = []
         
-        policy_ids = video.get("policy_ids") or []
-        if not isinstance(policy_ids, list):
-            policy_ids = []
+        document_ids = video.get("document_ids") or []
+        if not isinstance(document_ids, list):
+            document_ids = []
 
-        valid_policy_ids = video.get("valid_policy_ids") or []
-        if not isinstance(valid_policy_ids, list):
-            valid_policy_ids = []
+        valid_document_ids = video.get("valid_document_ids") or []
+        if not isinstance(valid_document_ids, list):
+            valid_document_ids = []
 
         # Parse objectives_history
         objectives_history = video.get("objectives_history") or []
@@ -334,7 +334,7 @@ async def get_video_detail(
                     "name": v.get("name", ""),
                     "description": v.get("description", ""),
                     "numerical": bool(v.get("numerical", False)),
-                    "policy_parameter": bool(v.get("policy_parameter", False)),
+                    "document_parameter": bool(v.get("document_parameter", False)),
                     "video_parameter": bool(v.get("video_parameter", False)),
                 }
                 for k, v in parameter_mapping_data.items()
@@ -386,9 +386,9 @@ async def get_video_detail(
             problem_statement_mapping=problem_statement_mapping,
             objective_ids=[str(oid) for oid in objective_ids],
             objective_mapping=objective_mapping,
-            policy_ids=[str(pid) for pid in policy_ids],
-            policy_mapping=policy_mapping,
-            valid_policy_ids=[str(pid) for pid in valid_policy_ids],
+            document_ids=[str(did) for did in document_ids],
+            document_mapping=document_mapping,
+            valid_document_ids=[str(did) for did in valid_document_ids],
             video_images=video_images,
             objectives_history=[str(obj) for obj in objectives_history],
             can_edit=video["can_edit"],

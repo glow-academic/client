@@ -96,26 +96,29 @@
                 svl.show_problem_statement,
                 svl.show_objectives,
                 svl.show_image,
-                -- Get policies for this video
+                -- Get documents (policies) for this video
                 COALESCE(
                     (SELECT jsonb_agg(
                         jsonb_build_object(
-                            'id', p.id::text,
-                            'name', p.name,
-                            'description', COALESCE(p.description, ''),
+                            'id', d.id::text,
+                            'name', d.name,
+                            'description', '',
                             'extension', CASE 
                                 WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\.([^\.]+)$')
                                 ELSE NULL
                             END,
                             'filePath', u.file_path,
                             'mimeType', u.mime_type,
-                            'uploadId', p.upload_id::text
+                            'uploadId', d.upload_id::text,
+                            'type', 'policy'
                         )
                     )
-                    FROM video_policies vp
-                    JOIN policies p ON p.id = vp.policy_id
-                    LEFT JOIN uploads u ON u.id = p.upload_id
-                    WHERE vp.video_id = v.id AND vp.active = true AND p.active = true),
+                    FROM video_documents vd
+                    JOIN documents d ON d.id = vd.document_id
+                    LEFT JOIN uploads u ON u.id = d.upload_id
+                    JOIN parameter_items pi ON pi.parameter_id = (SELECT id FROM parameters WHERE name = 'Document Type' AND document_parameter = true LIMIT 1)
+                    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = pi.id AND dpi.active = true
+                    WHERE vd.video_id = v.id AND vd.active = true AND d.active = true AND pi.value = 'policy'),
                     '[]'::jsonb
                 ) as policies,
                 -- Get questions with timestamps and options

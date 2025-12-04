@@ -55,7 +55,7 @@ class GenerateQuestionsRequest(BaseModel):
     """Request to generate AI questions."""
 
     departmentId: str
-    policyIds: list[str] | None = None
+    documentIds: list[str] | None = None
     profileId: str | None = None
     videoId: str | None = None
 
@@ -84,14 +84,14 @@ async def generate_questions(
     try:
         # Convert string IDs to UUIDs
         department_id = uuid.UUID(request.departmentId)
-        policy_ids = (
-            [uuid.UUID(p) for p in request.policyIds] if request.policyIds else None
+        document_ids = (
+            [uuid.UUID(p) for p in request.documentIds] if request.documentIds else None
         )
         profile_id = uuid.UUID(request.profileId) if request.profileId else None
 
         # Filter out empty lists
-        if policy_ids and len(policy_ids) == 0:
-            policy_ids = None
+        if document_ids and len(document_ids) == 0:
+            document_ids = None
 
         # Generate questions
         # Clear previous results
@@ -99,13 +99,13 @@ async def generate_questions(
         question_progress.clear()
 
         # Get all context data in a single optimized query using SQL file
-        policy_ids_str = [str(p) for p in policy_ids] if policy_ids else []
+        document_ids_str = [str(p) for p in document_ids] if document_ids else []
 
         sql = load_sql("sql/v3/agents/get_question_run_context.sql")
         context_row = await conn.fetchrow(
             sql,
             str(department_id),
-            policy_ids_str if policy_ids_str else None,
+            document_ids_str if document_ids_str else None,
             str(profile_id) if profile_id else None,
         )
 
@@ -144,11 +144,13 @@ async def generate_questions(
             "earliest_run_created_at": context_row["earliest_run_created_at"],
         }
 
-        # Format policy info if policies were provided
-        if not policy_ids or len(policy_ids) == 0:
+        # Format document info if documents were provided
+        if not document_ids or len(document_ids) == 0:
             policy_info = None
         else:
-            policy_info = format_policy_info(context["policies"])
+            # Use "documents" from context (which contains policy documents)
+            documents = context.get("documents") or context.get("policies", [])
+            policy_info = format_policy_info(documents)
 
         # Create question generation tools
         group_id = None

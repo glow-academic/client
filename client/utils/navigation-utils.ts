@@ -106,8 +106,6 @@ export const getSectionRoute = (
     // Management routes
     case "management":
       return "/management";
-    case "policies":
-      return "/management/policies";
     case "documents":
       return "/management/documents";
     case "rubrics":
