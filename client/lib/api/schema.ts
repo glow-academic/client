@@ -2531,26 +2531,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v3/images/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Image
-         * @description Create a new image.
-         */
-        post: operations["create_image_api_v3_images_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v3/policies/create": {
         parameters: {
             query?: never;
@@ -5771,28 +5751,6 @@ export interface components {
             message: string;
         };
         /**
-         * CreateImageRequest
-         * @description Request to create image.
-         */
-        CreateImageRequest: {
-            /** Name */
-            name: string;
-            /** Uploadid */
-            uploadId: string;
-        };
-        /**
-         * CreateImageResponse
-         * @description Response from create image.
-         */
-        CreateImageResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-            /** Imageid */
-            imageId?: string | null;
-        };
-        /**
          * CreateKeyRequest
          * @description Request to create key.
          */
@@ -6201,8 +6159,10 @@ export interface components {
             document_ids: string[];
             /** Objective Ids */
             objective_ids: string[];
-            /** Image Ids */
-            image_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
             /** Parameters */
             parameters: {
                 [key: string]: string[];
@@ -6356,8 +6316,10 @@ export interface components {
             outline_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
             /**
              * Active
              * @default true
@@ -12734,8 +12696,10 @@ export interface components {
             document_ids: string[];
             /** Objective Ids */
             objective_ids: string[];
-            /** Image Ids */
-            image_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
             /** Parameters */
             parameters: {
                 [key: string]: string[];
@@ -12931,8 +12895,10 @@ export interface components {
             outline_ids?: string[] | null;
             /** Policy Ids */
             policy_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
             /** Active */
             active: boolean;
             /**
@@ -19249,39 +19215,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StopEvalResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_image_api_v3_images_create_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateImageRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateImageResponse"];
                 };
             };
             /** @description Validation Error */

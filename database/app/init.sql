@@ -27,8 +27,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 \i app/system/init.sql
 
--- 4. Strong entity tables - shared between scenarios and videos
-\i app/images/init.sql
+\i app/uploads/init.sql
 
 -- 2. Personas and Agents
 \i app/personas/init.sql

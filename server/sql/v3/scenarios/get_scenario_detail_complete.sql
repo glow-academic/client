@@ -137,17 +137,16 @@ scenario_images_data AS (
     SELECT COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'id', i.id::text,
-                'name', i.name,
-                'upload_id', i.upload_id::text,
+                'id', si.upload_id::text,
+                'name', si.name,
+                'upload_id', si.upload_id::text,
                 'active', si.active
             )
-        ) FILTER (WHERE i.id IS NOT NULL),
+        ) FILTER (WHERE si.upload_id IS NOT NULL),
         '[]'::jsonb
     ) as scenario_images
     FROM scenario_images si
-    JOIN images i ON i.id = si.image_id
-    WHERE si.scenario_id = $1 AND si.active = true AND i.active = true
+    WHERE si.scenario_id = $1 AND si.active = true
 ),
 scenario_objectives_data AS (
     SELECT 

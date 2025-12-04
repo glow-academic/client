@@ -5,7 +5,8 @@
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
 --            $12=document_ids (text array), $13=objective_ids (text array),
 --            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=image_ids (text array, nullable), $16=scenario_agent_id (nullable uuid), $17=image_agent_id (nullable uuid)
+--            $15=upload_images_json (JSONB string with upload images array), $16=scenario_agent_id (nullable uuid), $17=image_agent_id (nullable uuid)
+-- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Returns: scenario_id, name if updated, or no rows if scenario doesn't exist
 -- Note: objective_ids should only contain new objective text (composite IDs filtered in Python)
 WITH scenario_exists AS (
@@ -203,18 +204,20 @@ delete_old_images AS (
 ),
 link_images AS (
     -- Link images if provided (create junction table entries)
-    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+    INSERT INTO scenario_images (scenario_id, upload_id, name, active, created_at, updated_at)
     SELECT 
         $1::uuid,
-        image_id::uuid,
+        (img->>'upload_id')::uuid,
+        img->>'name',
         true,
         NOW(),
         NOW()
-    FROM UNNEST($15::text[]) as image_id
+    FROM jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
     WHERE EXISTS (SELECT 1 FROM scenario_exists)
-      AND COALESCE(array_length($15::text[], 1), 0) > 0
-    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
+      AND jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (scenario_id, upload_id) DO UPDATE SET
         active = true,
+        name = EXCLUDED.name,
         updated_at = NOW()
 )
 SELECT scenario_id, name FROM update_scenario

@@ -355,8 +355,9 @@ export default function Video({
       outlineIds.push(selectedOutlineId);
     }
 
-    // Get video image IDs from images array
-    const imageIds = images.map((img) => img.id);
+    // Get video upload IDs and names from images array
+    const uploadIds = images.map((img) => img.upload_id || img.id);
+    const imageNames = images.map((img) => img.name);
 
     // Provide defaults for required fields
     const videoName = formData.name?.trim() || "New Video";
@@ -377,8 +378,9 @@ export default function Video({
     if (selectedPolicyIds.length > 0) {
       createPayload.policy_ids = selectedPolicyIds;
     }
-    if (imageIds.length > 0) {
-      createPayload.image_ids = imageIds;
+    if (uploadIds.length > 0) {
+      (createPayload as any).upload_ids = uploadIds;
+      (createPayload as any).image_names = imageNames;
     }
     if (currentParameterItemIds.length > 0) {
       (createPayload as any).parameter_item_ids = currentParameterItemIds;
@@ -793,34 +795,19 @@ export default function Video({
 
               const databaseUploadId = finalizeResult.uploadId;
 
-              // Create image with upload_id
-              const createResponse = await fetch("/api/v3/images/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+              // Store upload_id directly (no image creation needed)
+              // Image will be linked to video when form is submitted
+              setImages((prev) => [
+                ...prev,
+                {
+                  id: databaseUploadId, // Use upload_id as id
                   name: file.name,
-                  uploadId: databaseUploadId,
-                }),
-              });
-
-              const createResult = await createResponse.json();
-
-              if (createResult.success && createResult.imageId) {
-                // Append to images array
-                setImages((prev) => [
-                  ...prev,
-                  {
-                    id: createResult.imageId,
-                    name: file.name,
-                    mime_type: file.type,
-                  },
-                ]);
-                toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-              } else {
-                throw new Error(
-                  createResult.message || "Failed to create image"
-                );
-              }
+                  mime_type: file.type,
+                  upload_id: databaseUploadId,
+                  file_path: `/api/v3/uploads/download/${databaseUploadId}`, // Use upload download endpoint
+                },
+              ]);
+              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
             } catch (finalizeError) {
               toast.error(
                 `Failed to finalize upload: ${
@@ -1296,11 +1283,16 @@ export default function Video({
         videoData.video_images.length > 0
       ) {
         const loadedImages = videoData.video_images
-          .map((img: any) => ({
-            id: img.id,
-            name: img.name || "",
-            mime_type: img.mime_type || "image/png",
-          }))
+          .map((img: any) => {
+            const uploadId = img.upload_id || img.id;
+            return {
+              id: uploadId, // Use upload_id as id
+              name: img.name || "",
+              mime_type: img.mime_type || "image/png",
+              upload_id: uploadId,
+              file_path: `/api/v3/uploads/download/${uploadId}`, // Use upload download endpoint
+            };
+          })
           .filter((img: { id?: string }) => img.id);
         if (loadedImages.length > 0) {
           setImages(loadedImages);
@@ -1441,8 +1433,9 @@ export default function Video({
         outlineIds.push(selectedOutlineId);
       }
 
-      // Get video image IDs from images array
-      const imageIds = images.map((img) => img.id);
+      // Get video upload IDs and names from images array
+      const uploadIds = images.map((img) => img.upload_id || img.id);
+      const imageNames = images.map((img) => img.name);
 
       if (isEditMode && videoId) {
         // UPDATE mode
@@ -1461,8 +1454,9 @@ export default function Video({
         if (selectedPolicyIds.length > 0) {
           updatePayload.policy_ids = selectedPolicyIds;
         }
-        if (imageIds.length > 0) {
-          updatePayload.image_ids = imageIds;
+        if (uploadIds.length > 0) {
+          (updatePayload as any).upload_ids = uploadIds;
+          (updatePayload as any).image_names = imageNames;
         }
         if (formData.outlineAgentId) {
           updatePayload.outline_agent_id = formData.outlineAgentId;

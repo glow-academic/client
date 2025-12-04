@@ -4,6 +4,9 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,13 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type ModelRunsFilters = InputOf<"/api/v3/evals/model_runs", "post">;
 type ModelRunsResponse = OutputOf<"/api/v3/evals/model_runs", "post">;
@@ -46,7 +46,9 @@ export function ModelRunsSelector({
   agentIds,
   eval: evalFilter,
 }: ModelRunsSelectorProps) {
-  const [modelRuns, setModelRuns] = useState<ModelRunsResponse["model_runs"]>([]);
+  const [modelRuns, setModelRuns] = useState<ModelRunsResponse["model_runs"]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<Partial<ModelRunsFilters["body"]>>({
     profileId,
@@ -66,7 +68,8 @@ export function ModelRunsSelector({
           search: searchQuery || undefined,
           page: filters.page,
           pageSize: filters.pageSize,
-          agentType: filters.agentType === "all" ? undefined : filters.agentType,
+          agentType:
+            filters.agentType === "all" ? undefined : filters.agentType,
           modelIds: filters.modelIds,
           agentIds: agentIds || filters.agentIds,
           personaIds: filters.personaIds,
@@ -123,7 +126,10 @@ export function ModelRunsSelector({
             <Select
               value={filters.agentType || "all"}
               onValueChange={(value) =>
-                setFilters({ ...filters, agentType: value === "all" ? undefined : value })
+                setFilters({
+                  ...filters,
+                  agentType: value === "all" ? undefined : value,
+                })
               }
             >
               <SelectTrigger>
@@ -162,9 +168,7 @@ export function ModelRunsSelector({
           </div>
         </div>
         <div className="mt-2">
-          <Badge variant="outline">
-            {selectedModelRunIds.length} selected
-          </Badge>
+          <Badge variant="outline">{selectedModelRunIds.length} selected</Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -193,7 +197,9 @@ export function ModelRunsSelector({
                 >
                   <Checkbox
                     checked={selectedModelRunIds.includes(mr.model_run_id)}
-                    onCheckedChange={() => handleToggleModelRun(mr.model_run_id)}
+                    onCheckedChange={() =>
+                      handleToggleModelRun(mr.model_run_id)
+                    }
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -247,4 +253,3 @@ export function ModelRunsSelector({
     </Card>
   );
 }
-

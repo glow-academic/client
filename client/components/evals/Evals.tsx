@@ -6,14 +6,7 @@
  */
 "use client";
 
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Eye,
-  Trash2,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Eye, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -23,6 +16,8 @@ import type {
   DeleteEvalOut,
   EvalsListOut,
 } from "@/app/(main)/engine/evals/page";
+import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
+import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,8 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
-import { DataTablePagination } from "@/components/common/table/DataTablePagination";
+import { useProfile } from "@/contexts/profile-context";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -52,7 +46,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useProfile } from "@/contexts/profile-context";
 
 export interface EvalsProps {
   listData: EvalsListOut;
@@ -84,10 +77,7 @@ export default function Evals({
   const evalsData = serverListData;
 
   // Extract data from response
-  const evalsList = useMemo(
-    () => evalsData?.evals || [],
-    [evalsData?.evals]
-  );
+  const evalsList = useMemo(() => evalsData?.evals || [], [evalsData?.evals]);
 
   // Build agent options from mapping
   const agentOptions = useMemo(
@@ -279,13 +269,7 @@ export default function Evals({
   const tableRows = useMemo(() => {
     return table.getRowModel().rows;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    sortingKey,
-    columnFiltersKey,
-    evalsList.length,
-    pageIndex,
-    pageSize,
-  ]);
+  }, [sortingKey, columnFiltersKey, evalsList.length, pageIndex, pageSize]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

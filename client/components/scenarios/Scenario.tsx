@@ -1296,11 +1296,12 @@ export default function Scenario({
           name?: string;
           upload_id?: string;
         };
-        if (firstImage.id && firstImage.upload_id) {
+        const uploadId = firstImage.upload_id || firstImage.id;
+        if (uploadId) {
           setImage({
-            id: firstImage.id,
+            id: uploadId, // Use upload_id as id
             name: firstImage.name || "",
-            upload_id: firstImage.upload_id,
+            upload_id: uploadId,
           });
         } else {
           setImage(null);
@@ -1899,29 +1900,14 @@ export default function Scenario({
 
             const databaseUploadId = finalizeResult.uploadId;
 
-            // Create image with upload_id
-            const createResponse = await fetch("/api/v3/images/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: file.name,
-                uploadId: databaseUploadId,
-              }),
+            // Store upload_id directly (no image creation needed)
+            // Image will be linked to scenario when form is submitted
+            setImage({
+              id: databaseUploadId, // Use upload_id as id
+              name: file.name,
+              upload_id: databaseUploadId,
             });
-
-            const createResult = await createResponse.json();
-
-            if (createResult.success && createResult.imageId) {
-              // Update image state with the returned imageId
-              setImage({
-                id: createResult.imageId,
-                name: file.name,
-                upload_id: databaseUploadId,
-              });
-              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-            } else {
-              throw new Error(createResult.message || "Failed to create image");
-            }
+            toast.success(`Image uploaded: ${file.name}`, { id: toastId });
           } catch (finalizeError) {
             toast.error(
               `Failed to finalize upload: ${
@@ -2096,7 +2082,8 @@ export default function Scenario({
         persona_ids: string[] | null;
         document_ids: string[];
         objective_ids: string[];
-        image_ids: string[] | null;
+        upload_ids: string[] | null;
+        image_names: string[] | null;
         parameters: Record<string, string[]>;
         scenario_agent_id?: string | null;
       } = {
@@ -2107,7 +2094,8 @@ export default function Scenario({
         persona_ids: selectedPersonaIds.length > 0 ? selectedPersonaIds : null,
         document_ids: currentDocumentIds,
         objective_ids: currentObjectives.filter((obj) => obj.trim()), // Send raw objective text
-        image_ids: image?.id ? [image.id] : null,
+        upload_ids: image?.upload_id || image?.id ? [image.upload_id || image.id] : null,
+        image_names: image?.name ? [image.name] : null,
         parameters: groupParameterItemsByParameterId(
           currentParameterItemIds,
           parameterItemMapping

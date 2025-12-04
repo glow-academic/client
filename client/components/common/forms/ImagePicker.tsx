@@ -16,11 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Image = {
-  id: string;
+  id: string; // upload_id
   name: string;
   file_path: string;
   mime_type: string;
   active: boolean;
+  upload_id: string;
 };
 
 type ImagePickerProps = {
@@ -114,33 +115,19 @@ export function ImagePicker({
 
             const databaseUploadId = finalizeResult.uploadId;
 
-            // Create image with upload_id
-            const createResponse = await fetch("/api/v3/images/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: file.name,
-                uploadId: databaseUploadId,
-              }),
-            });
+            // Store upload_id directly (no image creation needed)
+            // Image will be linked to video/scenario when form is submitted
+            const newImage: Image = {
+              id: databaseUploadId, // Use upload_id as id
+              name: file.name,
+              file_path: `/api/v3/uploads/download/${databaseUploadId}`, // Use upload download endpoint
+              mime_type: file.type,
+              active: true,
+              upload_id: databaseUploadId,
+            };
 
-            const createResult = await createResponse.json();
-
-            if (createResult.success && createResult.imageId) {
-              // Create image object with the returned imageId
-              const newImage: Image = {
-                id: createResult.imageId,
-                name: file.name,
-                file_path: `/api/images/download/${createResult.imageId}`, // Use image download endpoint
-                mime_type: file.type,
-                active: true,
-              };
-
-              onImagesChange([...images, newImage]);
-              toast.success(`Image uploaded: ${file.name}`, { id: toastId });
-            } else {
-              throw new Error(createResult.message || "Failed to create image");
-            }
+            onImagesChange([...images, newImage]);
+            toast.success(`Image uploaded: ${file.name}`, { id: toastId });
           } catch (finalizeError) {
             toast.error(
               `Failed to finalize upload: ${

@@ -5,7 +5,8 @@
 --            $10=department_ids (text array, nullable), $11=persona_ids (text array, nullable),
 --            $12=document_ids (text array), $13=objective_ids (text array), 
 --            $14=parameter_item_ids (text array, flattened from parameters dict),
---            $15=image_ids (text array, nullable)
+--            $15=upload_images_json (JSONB string with upload images array)
+-- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Note: objective_ids should only contain new objective text (composite IDs like "scenarioId_idx" should be filtered out in Python)
 -- Note: problem_statement_versions contains all versions; the one matching problem_statement should be active
 WITH new_scenario AS (
@@ -176,18 +177,21 @@ link_parameters AS (
 ),
 link_images AS (
     -- Link images if provided (create junction table entries)
-    INSERT INTO scenario_images (scenario_id, image_id, active, created_at, updated_at)
+    -- Note: uploads must be created via upload finalize endpoint first
+    INSERT INTO scenario_images (scenario_id, upload_id, name, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
-        image_id::uuid,
+        (img->>'upload_id')::uuid,
+        img->>'name',
         true,
         NOW(),
         NOW()
     FROM new_scenario ns
-    CROSS JOIN UNNEST($15::text[]) as image_id
-    WHERE COALESCE(array_length($15::text[], 1), 0) > 0
-    ON CONFLICT (scenario_id, image_id) DO UPDATE SET
+    CROSS JOIN jsonb_array_elements(COALESCE($15::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($15::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (scenario_id, upload_id) DO UPDATE SET
         active = true,
+        name = EXCLUDED.name,
         updated_at = NOW()
 )
 SELECT scenario_id FROM new_scenario

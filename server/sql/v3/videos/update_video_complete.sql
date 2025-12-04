@@ -4,10 +4,11 @@
 --            $6=department_ids (text array, nullable),
 --            $7=outline_ids (text array, nullable),
 --            $8=policy_ids (text array, nullable),
---            $9=image_ids (text array, nullable),
+--            $9=upload_images_json (JSONB string with upload images array),
 --            $10=questions_json (JSONB string with questions array),
 --            $11=outline_agent_id (nullable uuid), $12=image_agent_id (nullable uuid),
 --            $13=parameter_item_ids (text array, nullable)
+-- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 -- Strategy: Delete all existing questions/options/times/links, then recreate from JSON
 -- Note: file_path and mime_type are NOT updated here - they're managed via video_generations table when video file is generated/uploaded
@@ -110,18 +111,20 @@ delete_old_video_images AS (
 ),
 link_video_images AS (
     -- Link video images if provided (create junction table entries)
-    INSERT INTO video_images (video_id, image_id, active, created_at, updated_at)
+    INSERT INTO video_images (video_id, upload_id, name, active, created_at, updated_at)
     SELECT 
         uv.video_id,
-        image_id::uuid,
+        (img->>'upload_id')::uuid,
+        img->>'name',
         true,
         NOW(),
         NOW()
     FROM updated_video uv
-    CROSS JOIN UNNEST(COALESCE($9::text[], ARRAY[]::text[])) as image_id
-    WHERE COALESCE(array_length($9::text[], 1), 0) > 0
-    ON CONFLICT (video_id, image_id) DO UPDATE SET
+    CROSS JOIN jsonb_array_elements(COALESCE($9::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($9::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (video_id, upload_id) DO UPDATE SET
         active = true,
+        name = EXCLUDED.name,
         updated_at = NOW()
 ),
 questions_data AS (

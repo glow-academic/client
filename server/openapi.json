@@ -5349,53 +5349,6 @@
         ]
       }
     },
-    "/api/v3/images/create": {
-      "post": {
-        "tags": [
-          "v3",
-          "images"
-        ],
-        "summary": "Create Image",
-        "description": "Create a new image.",
-        "operationId": "create_image_api_v3_images_create_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateImageRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateImageResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v3",
-          "images"
-        ]
-      }
-    },
     "/api/v3/policies/create": {
       "post": {
         "tags": [
@@ -13130,55 +13083,6 @@
         ],
         "title": "CreateFeedbackResponse"
       },
-      "CreateImageRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "uploadId": {
-            "type": "string",
-            "title": "Uploadid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "uploadId"
-        ],
-        "title": "CreateImageRequest",
-        "description": "Request to create image."
-      },
-      "CreateImageResponse": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success"
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "imageId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Imageid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "success",
-          "message"
-        ],
-        "title": "CreateImageResponse",
-        "description": "Response from create image."
-      },
       "CreateKeyRequest": {
         "properties": {
           "name": {
@@ -14225,7 +14129,7 @@
             "type": "array",
             "title": "Objective Ids"
           },
-          "image_ids": {
+          "upload_ids": {
             "anyOf": [
               {
                 "items": {
@@ -14237,7 +14141,21 @@
                 "type": "null"
               }
             ],
-            "title": "Image Ids"
+            "title": "Upload Ids"
+          },
+          "image_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Names"
           },
           "parameters": {
             "additionalProperties": {
@@ -14650,7 +14568,7 @@
             ],
             "title": "Policy Ids"
           },
-          "image_ids": {
+          "upload_ids": {
             "anyOf": [
               {
                 "items": {
@@ -14662,7 +14580,21 @@
                 "type": "null"
               }
             ],
-            "title": "Image Ids"
+            "title": "Upload Ids"
+          },
+          "image_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Names"
           },
           "active": {
             "type": "boolean",
@@ -31100,7 +31032,7 @@
             "type": "array",
             "title": "Objective Ids"
           },
-          "image_ids": {
+          "upload_ids": {
             "anyOf": [
               {
                 "items": {
@@ -31112,7 +31044,21 @@
                 "type": "null"
               }
             ],
-            "title": "Image Ids"
+            "title": "Upload Ids"
+          },
+          "image_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Names"
           },
           "parameters": {
             "additionalProperties": {
@@ -31638,7 +31584,7 @@
             ],
             "title": "Policy Ids"
           },
-          "image_ids": {
+          "upload_ids": {
             "anyOf": [
               {
                 "items": {
@@ -31650,7 +31596,21 @@
                 "type": "null"
               }
             ],
-            "title": "Image Ids"
+            "title": "Upload Ids"
+          },
+          "image_names": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Names"
           },
           "active": {
             "type": "boolean",

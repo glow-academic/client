@@ -145,17 +145,16 @@ video_images_data AS (
     SELECT COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'id', i.id::text,
-                'name', i.name,
-                'upload_id', i.upload_id::text,
+                'id', vi.upload_id::text,
+                'name', vi.name,
+                'upload_id', vi.upload_id::text,
                 'active', vi.active
             )
-        ) FILTER (WHERE i.id IS NOT NULL),
+        ) FILTER (WHERE vi.upload_id IS NOT NULL),
         '[]'::jsonb
     ) as video_images
     FROM video_images vi
-    JOIN images i ON i.id = vi.image_id
-    WHERE vi.video_id = $1 AND vi.active = true AND i.active = true
+    WHERE vi.video_id = $1 AND vi.active = true
 ),
 video_all_simulation_links AS (
     SELECT 

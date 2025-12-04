@@ -25,7 +25,8 @@ class UpdateScenarioRequest(BaseModel):
     persona_ids: list[str] | None
     document_ids: list[str]
     objective_ids: list[str]
-    image_ids: list[str] | None = None
+    upload_ids: list[str] | None = None
+    image_names: list[str] | None = None
     parameters: dict[str, list[str]]
     documents_enabled: bool = False
     document_vision_enabled: bool = False
@@ -79,8 +80,19 @@ async def update_scenario(
         persona_ids = request.persona_ids or []
         document_ids = request.document_ids or []
         objective_ids = filtered_objective_ids or []
-        image_ids = request.image_ids or []
+        upload_ids = request.upload_ids or []
+        image_names = request.image_names or []
         parameter_item_ids = parameter_item_ids or []
+
+        # Validate upload_ids and image_names match in length
+        if len(upload_ids) != len(image_names):
+            raise ValueError("upload_ids and image_names must have the same length")
+
+        # Prepare upload images JSON (array of objects with upload_id and name)
+        upload_images_json = json.dumps([
+            {"upload_id": upload_id, "name": name}
+            for upload_id, name in zip(upload_ids, image_names)
+        ]) if upload_ids and image_names else "[]"
 
         # Update scenario with all relationships in a single SQL file
         sql_query = load_sql("sql/v3/scenarios/update_scenario_complete.sql")
@@ -99,7 +111,7 @@ async def update_scenario(
             document_ids,
             objective_ids,
             parameter_item_ids,
-            image_ids if image_ids else None,
+            upload_images_json,
             request.scenario_agent_id,
             request.image_agent_id,
         )

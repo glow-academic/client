@@ -21,7 +21,6 @@ from app.api.v3.feedback import router as feedback_router
 # Batch G: Utility Routes
 # ============================================================================
 from app.api.v3.home import router as home_router
-from app.api.v3.images import router as images_router
 from app.api.v3.keys import router as keys_router
 from app.api.v3.leaderboard import router as leaderboard_router
 from app.api.v3.logs import router as logs_router
@@ -74,7 +73,6 @@ router.include_router(departments_router)
 router.include_router(cohorts_router)
 router.include_router(documents_router)
 router.include_router(evals_router)
-router.include_router(images_router)
 router.include_router(policies_router)
 router.include_router(rubrics_router)
 router.include_router(settings_router)

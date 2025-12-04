@@ -4,9 +4,10 @@
 --            $5=department_ids (text array, nullable),
 --            $6=outline_ids (text array, nullable),
 --            $7=policy_ids (text array, nullable),
---            $8=image_ids (text array, nullable),
+--            $8=upload_images_json (JSONB string with upload images array),
 --            $9=questions_json (JSONB string with questions array),
 --            $10=parameter_item_ids (text array, nullable)
+-- Upload images JSON structure: [{"upload_id": "...", "name": "..."}]
 -- Questions JSON structure: [{"question_text": "...", "type": "choice|frq", "allow_multiple": bool, "times": [seconds], "options": [{"option_text": "...", "type": "discrete|freeform", "is_correct": bool}]}]
 
 WITH new_video AS (
@@ -69,19 +70,21 @@ link_policies AS (
 ),
 link_video_images AS (
     -- Link video images if provided (create junction table entries)
-    -- Note: images must be created via upload finalize endpoint first
-    INSERT INTO video_images (video_id, image_id, active, created_at, updated_at)
+    -- Note: uploads must be created via upload finalize endpoint first
+    INSERT INTO video_images (video_id, upload_id, name, active, created_at, updated_at)
     SELECT 
         nv.video_id,
-        image_id::uuid,
+        (img->>'upload_id')::uuid,
+        img->>'name',
         true,
         NOW(),
         NOW()
     FROM new_video nv
-    CROSS JOIN UNNEST($8::text[]) as image_id
-    WHERE COALESCE(array_length($8::text[], 1), 0) > 0
-    ON CONFLICT (video_id, image_id) DO UPDATE SET
+    CROSS JOIN jsonb_array_elements(COALESCE($8::jsonb, '[]'::jsonb)) as img
+    WHERE jsonb_array_length(COALESCE($8::jsonb, '[]'::jsonb)) > 0
+    ON CONFLICT (video_id, upload_id) DO UPDATE SET
         active = true,
+        name = EXCLUDED.name,
         updated_at = NOW()
 ),
 link_tree_edge AS (

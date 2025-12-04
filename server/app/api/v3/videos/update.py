@@ -42,7 +42,8 @@ class UpdateVideoRequest(BaseModel):
     department_ids: list[str] | None
     outline_ids: list[str] | None = None
     policy_ids: list[str] | None = None
-    image_ids: list[str] | None = None
+    upload_ids: list[str] | None = None
+    image_names: list[str] | None = None
     active: bool
     questions: list[QuestionItem] = []  # Questions with times and options
     outline_agent_id: str | None = None
@@ -84,12 +85,23 @@ async def update_video(
         department_ids = request.department_ids or []
         outline_ids = request.outline_ids or []  # Always pass array, even if empty
         policy_ids = request.policy_ids or []
-        image_ids = request.image_ids or []
+        upload_ids = request.upload_ids or []
+        image_names = request.image_names or []
         questions = request.questions or []
         parameter_item_ids = request.parameter_item_ids or []
 
+        # Validate upload_ids and image_names match in length
+        if len(upload_ids) != len(image_names):
+            raise ValueError("upload_ids and image_names must have the same length")
+
         # Prepare questions JSON for SQL
         questions_json = json.dumps([q.model_dump() for q in questions])
+
+        # Prepare upload images JSON (array of objects with upload_id and name)
+        upload_images_json = json.dumps([
+            {"upload_id": upload_id, "name": name}
+            for upload_id, name in zip(upload_ids, image_names)
+        ]) if upload_ids and image_names else "[]"
 
         # Update video with all relationships in a single SQL file
         # Pass empty arrays instead of None to ensure proper SQL handling
@@ -107,7 +119,7 @@ async def update_video(
             department_ids,  # Always pass array, SQL handles empty arrays
             outline_ids,  # Always pass array, SQL handles empty arrays
             policy_ids,  # Always pass array, SQL handles empty arrays
-            image_ids,  # Always pass array, SQL handles empty arrays
+            upload_images_json,
             questions_json,
             request.outline_agent_id,
             request.image_agent_id,
