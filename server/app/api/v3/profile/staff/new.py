@@ -1,4 +1,4 @@
-"""Staff detail endpoint - get individual staff profile details with role visibility check."""
+"""Staff new endpoint - get default staff details for creation."""
 
 import json
 from typing import Annotated, Any
@@ -17,28 +17,33 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
-class StaffDetailRequest(BaseModel):
-    """Request for staff detail."""
+class StaffNewRequest(BaseModel):
+    """Request to get default staff details."""
 
-    profileId: str  # Target profile to get details for
-    currentProfileId: str  # Current user's profile ID for role visibility check
+    profileId: str
 
 
-class StaffDetailResponse(BaseModel):
-    """Response for staff detail endpoint."""
+class StaffNewResponse(BaseModel):
+    """Response with default staff details and metadata."""
 
+    # Basic fields (empty defaults for creation)
     first_name: str
     last_name: str
-    name: str
-    emails: list[str]  # List of all active emails
-    primary_email: str | None  # Primary email (first in emails array if exists)
+    emails: list[str]
     role: str
     requests_per_day: int | None
     primary_department_id: str | None
     active: bool
     default_profile: bool
+
+    # Permissions
     can_edit: bool
+
+    # Metadata/Options
     valid_department_ids: list[str]
+    role_options: list[str]
+
+    # Mappings
     department_mapping: DepartmentMapping
 
 
@@ -52,56 +57,54 @@ def parse_jsonb(data: Any) -> dict[str, Any] | list[Any] | None:
     return data or {}
 
 
-@router.post("/detail", response_model=StaffDetailResponse)
-async def get_staff_detail(
-    request_body: StaffDetailRequest,
-    request: Request,
+@router.post("/new", response_model=StaffNewResponse)
+async def get_staff_new(
+    request: StaffNewRequest,
+    http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> StaffDetailResponse:
-    """Get staff profile details with role visibility check."""
+) -> StaffNewResponse:
+    """Get default staff structure for creation mode."""
     tags = ["staff"]  # From router tags
 
     # Generate cache key from path and parsed body
-    body_dict = request_body.model_dump()
-    cache_key_val = cache_key(request.url.path, body_dict)
+    body_dict = request.model_dump()
+    cache_key_val = cache_key(http_request.url.path, body_dict)
 
     # Try cache
     cached = await get_cached(cache_key_val)
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return StaffDetailResponse.model_validate(cached["data"])
+        return StaffNewResponse.model_validate(cached["data"])
 
     sql_query: str | None = None
     sql_params: tuple[Any, ...] | None = None
 
     try:
         # Load SQL query
-        sql_query = load_sql("sql/v3/profile/staff/get_staff_detail.sql")
-        sql_params = (
-            request_body.profileId,
-            request_body.currentProfileId,
-        )
+        sql_query = load_sql("sql/v3/profile/staff/get_staff_new_complete.sql")
+        sql_params = (request.profileId,)
 
         # Execute query
-        row = await conn.fetchrow(
-            sql_query, request_body.profileId, request_body.currentProfileId
-        )
+        result = await conn.fetchrow(sql_query, request.profileId)
 
-        # If no row returned, profile is not visible to current user (role hierarchy)
-        if not row:
+        if not result:
             raise HTTPException(
-                status_code=404,
-                detail=f"Profile {request_body.profileId} not found or not visible",
+                status_code=404, detail="Failed to fetch default staff data"
             )
 
-        # Build response
-        emails = row.get("emails") or []
-        primary_email = row.get("primary_email")
-        
+        valid_department_ids = result.get("valid_department_ids", [])
+        if not valid_department_ids:
+            valid_department_ids = []
+
+        # Get user role and primary department for default behavior
+        user_role = str(result.get("user_role", "")).lower()
+        is_superadmin = user_role == "superadmin"
+        primary_department_id = result.get("primary_department_id")
+
         # Parse department_mapping
-        department_mapping_data = parse_jsonb(row.get("department_mapping"))
+        department_mapping_data = parse_jsonb(result.get("dept_mapping"))
         department_mapping: DepartmentMapping = {}
         if isinstance(department_mapping_data, dict):
             for dept_id, ddata in department_mapping_data.items():
@@ -110,24 +113,27 @@ async def get_staff_detail(
                         name=ddata.get("name", ""),
                         description=ddata.get("description", ""),
                     )
-        
-        valid_department_ids = row.get("valid_department_ids") or []
-        if not isinstance(valid_department_ids, list):
-            valid_department_ids = []
-        
-        response_data = StaffDetailResponse(
-            first_name=row.get("first_name", ""),
-            last_name=row.get("last_name", ""),
-            name=row.get("name", ""),
-            emails=emails if isinstance(emails, list) else [],
-            primary_email=primary_email,
-            role=row.get("role", ""),
-            requests_per_day=row.get("requests_per_day"),
-            primary_department_id=row.get("primary_department_id"),
-            active=row.get("active", True),
-            default_profile=row.get("default_profile", False),
-            can_edit=row.get("can_edit", False),
+
+        # Role options
+        role_options = ["superadmin", "admin", "instructional", "ta", "guest"]
+
+        # Default values for new staff
+        response_data = StaffNewResponse(
+            # Basic fields (empty defaults for creation)
+            first_name="",
+            last_name="",
+            emails=[""],
+            role="instructional",  # Default role
+            requests_per_day=None,  # Unlimited by default
+            primary_department_id=primary_department_id if not is_superadmin else None,
+            active=True,
+            default_profile=False,
+            # Permissions
+            can_edit=True,  # User can always create staff
+            # Metadata
             valid_department_ids=valid_department_ids,
+            role_options=role_options,
+            # Mappings
             department_mapping=department_mapping,
         )
 
@@ -144,13 +150,15 @@ async def get_staff_detail(
         return response_data
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
-            route_path=request.url.path,
-            operation="get_staff_detail",
+            route_path=http_request.url.path,
+            operation="get_staff_new",
             sql_query=sql_query,
             sql_params=sql_params,
-            request=request,
+            request=http_request,
         )
 

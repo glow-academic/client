@@ -156,16 +156,15 @@ export interface StaffDataTableProps {
     }>
   ) => void;
   onPreview: (staff: ProfileListItem) => void;
-  onEdit: (staff: ProfileListItem) => void;
+  onEdit?: (staff: ProfileListItem) => void;
   onDelete: (staff: ProfileListItem) => void;
   onRemoveFromCohort?: (staff: ProfileListItem) => void;
   onRemoveFromDepartment?: (staff: ProfileListItem) => void;
-  onBulkEdit: () => void;
+  onBulkEdit?: () => void;
   onBulkDelete: () => void;
   canDelete: (profileId: string) => boolean;
   deletableCount: number;
   canEdit: (profileId: string) => boolean;
-  editableCount: number;
   canRemove?: (profileId: string) => boolean; // Optional: for cohort/department scoped views
   searchStaffAction?: SearchStaffAction;
   processCSVAction?: ProcessCSVAction;
@@ -202,7 +201,6 @@ export function StaffDataTable({
   canDelete,
   deletableCount,
   canEdit,
-  editableCount,
   canRemove,
   searchStaffAction,
   processCSVAction,
@@ -632,7 +630,7 @@ export function StaffDataTable({
                 <p>View Report</p>
               </TooltipContent>
             </Tooltip>
-            {canEdit(staff.profile_id) && !readonly && (
+            {onEdit && canEdit(staff.profile_id) && !readonly && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -943,39 +941,32 @@ export function StaffDataTable({
                 validDepartmentIds={validDepartmentIds}
                 validCohortIds={validCohortIds}
                 {...(isScoped !== undefined && { isScoped })}
+                // Control button visibility:
+                // Staff list page: only CSV import
+                // Cohort/Department pages: only Search Existing
+                showCSVImport={!cohortId && !departmentId}
+                showSearchExisting={!!(cohortId || departmentId)}
+                showManualAdd={false}
               />
             )}
 
-            {/* Bulk edit/delete if any selected and not readonly */}
+            {/* Bulk delete if any selected and not readonly */}
             {selectedCount > 0 && !readonly && (
-              <div className="flex items-center space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onBulkEdit}
-                  className="h-8"
-                  data-testid="btn-bulk-edit-staff"
-                  disabled={editableCount === 0}
-                >
-                  Bulk Edit {editableCount} of {selectedCount}
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={onBulkDelete}
-                  className="h-8"
-                  data-testid="btn-bulk-delete-staff"
-                  disabled={deletableCount === 0}
-                >
-                  {cohortId
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={onBulkDelete}
+                className="h-8"
+                data-testid="btn-bulk-delete-staff"
+                disabled={deletableCount === 0}
+              >
+                {cohortId
+                  ? `Remove ${deletableCount} of ${selectedCount}`
+                  : departmentId
                     ? `Remove ${deletableCount} of ${selectedCount}`
-                    : departmentId
-                      ? `Remove ${deletableCount} of ${selectedCount}`
-                      : `Delete ${deletableCount} of ${selectedCount}`}
-                </Button>
-              </div>
+                    : `Delete ${deletableCount} of ${selectedCount}`}
+              </Button>
             )}
 
             <Button

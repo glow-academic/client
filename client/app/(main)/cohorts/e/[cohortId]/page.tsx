@@ -15,11 +15,9 @@ import type { Metadata, ResolvingMetadata } from "next";
 // Import staff actions from staff page
 import {
   bulkCreateOrUpdateStaff,
-  bulkUpdateStaff,
   getCreateStaffData,
   processCSV,
   searchStaff,
-  updateStaff,
 } from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -144,8 +142,6 @@ export default async function CohortEditPage({
         searchStaffAction={searchStaff}
         initialSearchData={initialSearchData}
         initialCreateStaffData={initialCreateStaffData}
-        updateStaffAction={updateStaff}
-        bulkUpdateStaffAction={bulkUpdateStaff}
       />
     </div>
   );

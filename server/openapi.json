@@ -531,6 +531,55 @@
         ]
       }
     },
+    "/api/v3/profile/staff/new": {
+      "post": {
+        "tags": [
+          "v3",
+          "profile",
+          "staff"
+        ],
+        "summary": "Get Staff New",
+        "description": "Get default staff structure for creation mode.",
+        "operationId": "get_staff_new_api_v3_profile_staff_new_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffNewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffNewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v3",
+          "profile",
+          "staff"
+        ]
+      }
+    },
     "/api/v3/profile/staff/create": {
       "post": {
         "tags": [
@@ -28678,6 +28727,14 @@
       },
       "StaffDetailResponse": {
         "properties": {
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -28703,14 +28760,71 @@
           "role": {
             "type": "string",
             "title": "Role"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "default_profile": {
+            "type": "boolean",
+            "title": "Default Profile"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
           }
         },
         "type": "object",
         "required": [
+          "first_name",
+          "last_name",
           "name",
           "emails",
           "primary_email",
-          "role"
+          "role",
+          "requests_per_day",
+          "primary_department_id",
+          "active",
+          "default_profile",
+          "can_edit",
+          "valid_department_ids",
+          "department_mapping"
         ],
         "title": "StaffDetailResponse",
         "description": "Response for staff detail endpoint."
@@ -28813,6 +28927,115 @@
         ],
         "title": "StaffListResponse",
         "description": "Response for staff list endpoint."
+      },
+      "StaffNewRequest": {
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "title": "Profileid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profileId"
+        ],
+        "title": "StaffNewRequest",
+        "description": "Request to get default staff details."
+      },
+      "StaffNewResponse": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "default_profile": {
+            "type": "boolean",
+            "title": "Default Profile"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "valid_department_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Valid Department Ids"
+          },
+          "role_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Role Options"
+          },
+          "department_mapping": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/app__utils__schema__DepartmentMappingItem"
+            },
+            "type": "object",
+            "title": "Department Mapping"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "emails",
+          "role",
+          "requests_per_day",
+          "primary_department_id",
+          "active",
+          "default_profile",
+          "can_edit",
+          "valid_department_ids",
+          "role_options",
+          "department_mapping"
+        ],
+        "title": "StaffNewResponse",
+        "description": "Response with default staff details and metadata."
       },
       "StandardGroup": {
         "properties": {

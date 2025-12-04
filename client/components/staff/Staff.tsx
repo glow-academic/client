@@ -8,9 +8,7 @@
  */
 "use client";
 
-import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
-import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,8 +79,6 @@ export interface StaffProps {
   // Server actions (pure server actions, no client-side mutations)
   deleteStaffAction?: DeleteStaffAction;
   bulkDeleteStaffAction?: BulkDeleteStaffAction;
-  updateStaffAction?: UpdateStaffAction;
-  bulkUpdateStaffAction?: BulkUpdateStaffAction;
   searchStaffAction?: SearchStaffAction;
   processCSVAction?: ProcessCSVAction;
   bulkCreateOrUpdateStaffAction?: BulkCreateOrUpdateStaffAction;
@@ -94,8 +90,6 @@ export default function Staff({
   initialCreateStaffData,
   deleteStaffAction,
   bulkDeleteStaffAction,
-  updateStaffAction,
-  bulkUpdateStaffAction,
   searchStaffAction,
   processCSVAction,
   bulkCreateOrUpdateStaffAction,
@@ -110,11 +104,6 @@ export default function Staff({
   // Selection state
   const [selectedStaffIds, setSelectedStaffIds] = React.useState<string[]>([]);
 
-  // Edit modal - use list data directly
-  const [editProfileId, setEditProfileId] = React.useState<string | null>(null);
-
-  // Bulk edit modal
-  const [showBulkEditModal, setShowBulkEditModal] = React.useState(false);
 
   // Bulk delete dialog
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
@@ -296,16 +285,12 @@ export default function Staff({
           );
         }, [])}
         onEdit={React.useCallback((staffMember: ProfileListItem) => {
-          setEditProfileId(staffMember.profile_id);
-        }, [])}
+          router.push(`/management/staff/p/${staffMember.profile_id}`);
+        }, [router])}
         onDelete={React.useCallback((staffMember: ProfileListItem) => {
           setDeleteStaffMember(staffMember);
           setShowSingleDeleteDialog(true);
         }, [])}
-        onBulkEdit={React.useCallback(() => {
-          if (selectedStaffIds.length === 0) return;
-          setShowBulkEditModal(true);
-        }, [selectedStaffIds])}
         onBulkDelete={React.useCallback(() => {
           setShowBulkDeleteDialog(true);
         }, [])}
@@ -320,12 +305,6 @@ export default function Staff({
           return selectedStaffIds.filter((id) => {
             const row = staff.find((s) => s.profile_id === id);
             return row?.can_delete ?? false;
-          }).length;
-        }, [selectedStaffIds, staff])}
-        editableCount={React.useMemo(() => {
-          return selectedStaffIds.filter((id) => {
-            const row = staff.find((s) => s.profile_id === id);
-            return row?.can_edit ?? false;
           }).length;
         }, [selectedStaffIds, staff])}
         canEdit={React.useCallback(
@@ -344,47 +323,6 @@ export default function Staff({
         {...(initialCreateStaffData && { initialCreateStaffData })}
       />
 
-      {/* Edit Staff Modal */}
-      {updateStaffAction && (
-        <StaffEditModal
-          profileId={editProfileId}
-          open={!!editProfileId}
-          onOpenChange={(open: boolean) => {
-            if (!open) {
-              setEditProfileId(null);
-            }
-          }}
-          onDone={() => {
-            setEditProfileId(null);
-            router.refresh();
-          }}
-          updateStaffAction={updateStaffAction}
-          staffItem={staff.find((s) => s.profile_id === editProfileId) || null}
-          validDepartmentIds={validDepartmentIds}
-          departmentMapping={departmentMapping}
-        />
-      )}
-
-      {/* Bulk Edit Modal */}
-      {bulkUpdateStaffAction && (
-        <StaffBulkEditModal
-          profileIds={selectedStaffIds}
-          open={showBulkEditModal}
-          onOpenChange={(open: boolean) => {
-            setShowBulkEditModal(open);
-          }}
-          onDone={() => {
-            setSelectedStaffIds([]);
-            router.refresh();
-          }}
-          bulkUpdateStaffAction={bulkUpdateStaffAction}
-          selectedStaffItems={staff.filter((s) =>
-            selectedStaffIds.includes(s.profile_id)
-          )}
-          validDepartmentIds={validDepartmentIds}
-          departmentMapping={departmentMapping}
-        />
-      )}
 
       {/* Bulk Delete Confirmation */}
       <AlertDialog

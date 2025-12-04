@@ -21,7 +21,6 @@ import {
   getCreateStaffData,
   processCSV,
   searchStaff,
-  updateStaff,
 } from "@/app/(main)/management/staff/page";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -183,7 +182,6 @@ export default async function DepartmentEditPage({
           searchStaffAction={searchStaff}
           initialSearchData={initialSearchData}
           initialCreateStaffData={initialCreateStaffData}
-          updateStaffAction={updateStaff}
           createKeyAction={createKey}
           decryptKeyAction={decryptKey}
           updateKeyAction={updateKey}

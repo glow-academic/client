@@ -10,7 +10,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
-import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +65,6 @@ import type {
   BulkCreateOrUpdateStaffAction,
   ProcessCSVAction,
   SearchStaffAction,
-  UpdateStaffAction,
 } from "@/components/staff/Staff";
 // Import staff item types from API responses
 import type { DepartmentStaffItem } from "@/app/(main)/departments/d/[departmentId]/page";
@@ -145,8 +143,6 @@ export interface DepartmentProps {
   searchStaffAction?: SearchStaffAction;
   initialSearchData?: SearchStaffOut;
   initialCreateStaffData?: CreateStaffDataOut;
-  // Staff edit actions
-  updateStaffAction?: UpdateStaffAction;
   // Key management actions
   createKeyAction?: (input: CreateKeyIn) => Promise<CreateKeyOut>;
   decryptKeyAction?: (input: DecryptKeyIn) => Promise<DecryptKeyOut>;
@@ -178,7 +174,6 @@ export default function Department({
   searchStaffAction,
   initialSearchData,
   initialCreateStaffData,
-  updateStaffAction,
   createKeyAction: _createKeyAction,
   decryptKeyAction: _decryptKeyAction,
   updateKeyAction: _updateKeyAction,
@@ -204,8 +199,6 @@ export default function Department({
   // Staff management state (for StaffDataTable)
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  // Edit modal state
-  const [editProfileId, setEditProfileId] = useState<string | null>(null);
   // Delete dialog state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -692,36 +685,6 @@ export default function Department({
               {...(initialSearchData && { initialSearchData })}
             />
           </div>
-        )}
-
-        {/* Edit Staff Modal */}
-        {departmentId && updateStaffAction && departmentData && (
-          <StaffEditModal
-            profileId={editProfileId}
-            open={!!editProfileId}
-            onOpenChange={(open: boolean) => {
-              if (!open) {
-                setEditProfileId(null);
-              }
-            }}
-            onDone={() => {
-              setEditProfileId(null);
-              router.refresh();
-            }}
-            updateStaffAction={updateStaffAction}
-            staffItem={
-              (departmentData.staff || [])
-                .map((item) => normalizeDepartmentStaffItem(item, departmentId))
-                .find((s) => s.profile_id === editProfileId) || null
-            }
-            validDepartmentIds={
-              "valid_department_ids" in departmentData &&
-              Array.isArray(departmentData.valid_department_ids)
-                ? departmentData.valid_department_ids
-                : []
-            }
-            departmentMapping={departmentData.department_mapping || {}}
-          />
         )}
 
         {/* Submit Button */}

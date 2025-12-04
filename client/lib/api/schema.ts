@@ -279,6 +279,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v3/profile/staff/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Staff New
+         * @description Get default staff structure for creation mode.
+         */
+        post: operations["get_staff_new_api_v3_profile_staff_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v3/profile/staff/create": {
         parameters: {
             query?: never;
@@ -11762,6 +11782,10 @@ export interface components {
          * @description Response for staff detail endpoint.
          */
         StaffDetailResponse: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
             /** Name */
             name: string;
             /** Emails */
@@ -11770,6 +11794,22 @@ export interface components {
             primary_email: string | null;
             /** Role */
             role: string;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Active */
+            active: boolean;
+            /** Default Profile */
+            default_profile: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
         };
         /**
          * StaffFilters
@@ -11812,6 +11852,46 @@ export interface components {
             last_active_options: {
                 [key: string]: string;
             }[];
+        };
+        /**
+         * StaffNewRequest
+         * @description Request to get default staff details.
+         */
+        StaffNewRequest: {
+            /** Profileid */
+            profileId: string;
+        };
+        /**
+         * StaffNewResponse
+         * @description Response with default staff details and metadata.
+         */
+        StaffNewResponse: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Emails */
+            emails: string[];
+            /** Role */
+            role: string;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Primary Department Id */
+            primary_department_id: string | null;
+            /** Active */
+            active: boolean;
+            /** Default Profile */
+            default_profile: boolean;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Valid Department Ids */
+            valid_department_ids: string[];
+            /** Role Options */
+            role_options: string[];
+            /** Department Mapping */
+            department_mapping: {
+                [key: string]: components["schemas"]["app__utils__schema__DepartmentMappingItem"];
+            };
         };
         /**
          * StandardGroup
@@ -15653,6 +15733,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StaffDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_new_api_v3_profile_staff_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffNewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffNewResponse"];
                 };
             };
             /** @description Validation Error */

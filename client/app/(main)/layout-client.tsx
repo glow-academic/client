@@ -18,7 +18,6 @@ import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
-import { CreateStaffButton } from "@/components/common/staff/CreateStaffButton";
 import { PracticeCustomizeButton } from "@/components/practice/PracticeCustomizeButton";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { AnalyticsProvider } from "@/contexts/analytics-context";
@@ -88,8 +87,9 @@ function MainLayoutContent({
   const { effectiveProfile, activeProfile } = useProfile();
   const { getEntityName } = useBreadcrumbContext();
 
-  // Check if we're on the staff page
+  // Check if we're on the staff management pages
   const isStaffPage = pathname === "/management/staff";
+  const isStaffManagementPage = pathname?.startsWith("/management/staff");
 
   // Extract mappings from initialCreateStaffData for CreateStaffButton
   const departmentMapping = React.useMemo(() => {
@@ -399,25 +399,19 @@ function MainLayoutContent({
               </div>
             )}
 
-            {/* Create Staff Button - Show in top right for staff page */}
-            {isStaffPage &&
-              initialCreateStaffData &&
-              bulkCreateOrUpdateStaffAction && (
-                <div className="pr-4">
-                  <CreateStaffButton
-                    onCreate={() => router.refresh()}
-                    {...(processCSVAction !== undefined && {
-                      processCSVAction,
-                    })}
-                    {...(bulkCreateOrUpdateStaffAction !== undefined && {
-                      bulkCreateOrUpdateStaffAction,
-                    })}
-                    initialCreateStaffData={initialCreateStaffData}
-                    validDepartmentIds={validDepartmentIds}
-                    validCohortIds={validCohortIds}
-                  />
-                </div>
-              )}
+            {/* Add Staff Button - Show in top right for staff management pages */}
+            {isStaffManagementPage && (
+              <div className="pr-4">
+                <Button
+                  type="button"
+                  onClick={() => router.push("/management/staff/new")}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Staff
+                </Button>
+              </div>
+            )}
 
             {actionButton && <div className="pr-4">{actionButton}</div>}
           </header>

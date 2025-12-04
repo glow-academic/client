@@ -206,8 +206,6 @@ export default async function StaffPage() {
         initialCreateStaffData={initialCreateStaffData}
         deleteStaffAction={deleteStaff}
         bulkDeleteStaffAction={bulkDeleteStaff}
-        updateStaffAction={updateStaff}
-        bulkUpdateStaffAction={bulkUpdateStaff}
         searchStaffAction={searchStaff}
         processCSVAction={processCSV}
         bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}

@@ -45,15 +45,11 @@ import type {
 } from "@/app/(main)/management/staff/page";
 import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
 import { SimulationPicker } from "@/components/common/forms/SimulationPicker";
-import StaffBulkEditModal from "@/components/common/staff/StaffBulkEditModal";
 import { StaffDataTable } from "@/components/common/staff/StaffDataTable";
-import StaffEditModal from "@/components/common/staff/StaffEditModal";
 import type {
   BulkCreateOrUpdateStaffAction,
-  BulkUpdateStaffAction,
   ProcessCSVAction,
   SearchStaffAction,
-  UpdateStaffAction,
 } from "@/components/staff/Staff";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -117,9 +113,6 @@ export interface CohortProps {
   searchStaffAction?: SearchStaffAction;
   initialSearchData?: SearchStaffOut;
   initialCreateStaffData?: CreateStaffDataOut;
-  // Staff edit actions
-  updateStaffAction?: UpdateStaffAction;
-  bulkUpdateStaffAction?: BulkUpdateStaffAction;
 }
 
 interface FormErrors {
@@ -142,8 +135,6 @@ export default function Cohort({
   searchStaffAction,
   initialSearchData,
   initialCreateStaffData,
-  updateStaffAction,
-  bulkUpdateStaffAction,
 }: CohortProps) {
   const router = useRouter();
   const { effectiveProfile, scopedRoles } = useProfile();
@@ -184,8 +175,6 @@ export default function Cohort({
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Modal state management
-  const [editProfileId, setEditProfileId] = useState<string | null>(null);
-  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
   const [showBulkRemoveDialog, setShowBulkRemoveDialog] = useState(false);
   // Staged profiles to be added when cohort is updated
   // Store minimal profile data for immediate display
@@ -1176,9 +1165,6 @@ export default function Cohort({
                       "noopener,noreferrer"
                     );
                   }}
-                  onEdit={(staff) => {
-                    setEditProfileId(staff.profile_id);
-                  }}
                   onDelete={() => {
                     // Delete not available in scoped view
                   }}
@@ -1216,7 +1202,6 @@ export default function Cohort({
                       );
                     }
                   }}
-                  onBulkEdit={() => setShowBulkEditModal(true)}
                   onBulkDelete={() => {
                     // Filter selected staff that can be removed (use server-side can_remove)
                     const removableIds = selectedStaffIds.filter((id) => {
@@ -1307,174 +1292,6 @@ export default function Cohort({
             );
           })()}
 
-        {/* Edit Staff Modal */}
-        {cohortId &&
-          updateStaffAction &&
-          cohortData &&
-          (() => {
-            // Find the staff item from merged staff (existing + staged)
-            const existingStaff = cohortData.staff || [];
-            const existingStaffIds = new Set(
-              existingStaff.map((s) => s.profile_id)
-            );
-            const stagedWithDetails: (ProfileListItem & {
-              isStaged?: boolean;
-            })[] = stagedProfilesToAdd
-              .map((staged) => {
-                const firstName = staged.firstName || "";
-                const lastName = staged.lastName || "";
-                const emails = staged.emails || [];
-                const primaryEmail =
-                  staged.primary_email || (emails.length > 0 ? emails[0] : "");
-                return {
-                  profile_id: staged.profileId,
-                  first_name: firstName,
-                  last_name: lastName,
-                  emails: emails,
-                  primary_email: primaryEmail,
-                  name: `${firstName} ${lastName}`.trim() || primaryEmail,
-                  role: staged.role || "ta",
-                  initials:
-                    `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
-                    "??",
-                  active: true,
-                  last_active: null,
-                  cohort_ids: cohortId ? [cohortId] : [],
-                  department_ids:
-                    formData.departmentIds && formData.departmentIds.length > 0
-                      ? formData.departmentIds
-                      : [],
-                  primary_department_id:
-                    formData.departmentIds && formData.departmentIds.length > 0
-                      ? (formData.departmentIds[0] ?? "")
-                      : "",
-                  requests_per_day: staged.requestsPerDay ?? null,
-                  total_requests: staged.totalRequests ?? 0,
-                  default_profile: false,
-                  requests_in_last_day: 0,
-                  can_edit: false,
-                  can_delete: false,
-                  isStaged: true,
-                };
-              })
-              .filter((p) => !existingStaffIds.has(p.profile_id));
-            const stagedRemovalsSet = new Set(stagedProfilesToRemove);
-            const filteredExistingStaff = existingStaff.filter(
-              (s) => !stagedRemovalsSet.has(s.profile_id)
-            );
-            const normalizedExistingStaff = filteredExistingStaff.map(
-              normalizeCohortStaffItem
-            );
-            const mergedStaff: (ProfileListItemWithRemove & {
-              isStaged?: boolean;
-            })[] = [...stagedWithDetails, ...normalizedExistingStaff];
-            const staffItem =
-              mergedStaff.find((s) => s.profile_id === editProfileId) || null;
-
-            return (
-              <StaffEditModal
-                profileId={editProfileId}
-                open={!!editProfileId}
-                onOpenChange={(open: boolean) => {
-                  if (!open) {
-                    setEditProfileId(null);
-                  }
-                }}
-                onDone={() => {
-                  setEditProfileId(null);
-                  router.refresh();
-                }}
-                updateStaffAction={updateStaffAction}
-                staffItem={staffItem}
-                validDepartmentIds={cohortData.valid_department_ids || []}
-                departmentMapping={departmentMapping}
-              />
-            );
-          })()}
-
-        {/* Bulk Edit Modal */}
-        {cohortId &&
-          cohortData &&
-          bulkUpdateStaffAction &&
-          (() => {
-            // Find selected staff items from merged staff (existing + staged)
-            const existingStaff = cohortData.staff || [];
-            const existingStaffIds = new Set(
-              existingStaff.map((s) => s.profile_id)
-            );
-            const stagedWithDetails: (ProfileListItem & {
-              isStaged?: boolean;
-            })[] = stagedProfilesToAdd
-              .map((staged) => {
-                const firstName = staged.firstName || "";
-                const lastName = staged.lastName || "";
-                const emails = staged.emails || [];
-                const primaryEmail =
-                  staged.primary_email || (emails.length > 0 ? emails[0] : "");
-                return {
-                  profile_id: staged.profileId,
-                  first_name: firstName,
-                  last_name: lastName,
-                  emails: emails,
-                  primary_email: primaryEmail,
-                  name: `${firstName} ${lastName}`.trim() || primaryEmail,
-                  role: staged.role || "ta",
-                  initials:
-                    `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() ||
-                    "??",
-                  active: true,
-                  last_active: null,
-                  cohort_ids: cohortId ? [cohortId] : [],
-                  department_ids:
-                    formData.departmentIds && formData.departmentIds.length > 0
-                      ? formData.departmentIds
-                      : [],
-                  primary_department_id:
-                    formData.departmentIds && formData.departmentIds.length > 0
-                      ? (formData.departmentIds[0] ?? "")
-                      : "",
-                  requests_per_day: staged.requestsPerDay ?? null,
-                  total_requests: staged.totalRequests ?? 0,
-                  default_profile: false,
-                  requests_in_last_day: 0,
-                  can_edit: false,
-                  can_delete: false,
-                  isStaged: true,
-                };
-              })
-              .filter((p) => !existingStaffIds.has(p.profile_id));
-            const stagedRemovalsSet = new Set(stagedProfilesToRemove);
-            const filteredExistingStaff = existingStaff.filter(
-              (s) => !stagedRemovalsSet.has(s.profile_id)
-            );
-            const normalizedExistingStaff = filteredExistingStaff.map(
-              normalizeCohortStaffItem
-            );
-            const mergedStaff: (ProfileListItemWithRemove & {
-              isStaged?: boolean;
-            })[] = [...stagedWithDetails, ...normalizedExistingStaff];
-            const selectedStaffItems = mergedStaff.filter((s) =>
-              selectedStaffIds.includes(s.profile_id)
-            );
-
-            return (
-              <StaffBulkEditModal
-                profileIds={selectedStaffIds}
-                open={showBulkEditModal}
-                onOpenChange={setShowBulkEditModal}
-                onDone={() => {
-                  setSelectedStaffIds([]);
-                  setShowBulkEditModal(false);
-                }}
-                bulkUpdateStaffAction={bulkUpdateStaffAction}
-                selectedStaffItems={selectedStaffItems}
-                validDepartmentIds={cohortData.valid_department_ids || []}
-                departmentMapping={
-                  cohortData.department_mapping_for_staff || {}
-                }
-              />
-            );
-          })()}
 
         {/* Bulk Remove from Cohort Confirmation */}
         {cohortId && (

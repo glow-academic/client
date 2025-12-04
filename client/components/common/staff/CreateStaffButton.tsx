@@ -43,6 +43,10 @@ export interface CreateStaffButtonProps {
   validDepartmentIds: string[];
   validCohortIds: string[];
   isScoped?: boolean;
+  // Control which buttons to show
+  showCSVImport?: boolean;
+  showSearchExisting?: boolean;
+  showManualAdd?: boolean;
 }
 
 export function CreateStaffButton({
@@ -57,6 +61,9 @@ export function CreateStaffButton({
   validDepartmentIds,
   validCohortIds,
   isScoped = false,
+  showCSVImport = true,
+  showSearchExisting = true,
+  showManualAdd = true,
 }: CreateStaffButtonProps) {
   const [showManualModal, setShowManualModal] = React.useState(false);
   const [showCSVModal, setShowCSVModal] = React.useState(false);
@@ -114,20 +121,24 @@ export function CreateStaffButton({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setShowManualModal(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Manual Add
-          </DropdownMenuItem>
-          {searchStaffAction && (
+          {showManualAdd && (
+            <DropdownMenuItem onClick={() => setShowManualModal(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Manual Add
+            </DropdownMenuItem>
+          )}
+          {showSearchExisting && searchStaffAction && (
             <DropdownMenuItem onClick={() => setShowSearchModal(true)}>
               <Search className="h-4 w-4 mr-2" />
               Search Existing
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={() => setShowCSVModal(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            CSV Import
-          </DropdownMenuItem>
+          {showCSVImport && (
+            <DropdownMenuItem onClick={() => setShowCSVModal(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              CSV Import
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
