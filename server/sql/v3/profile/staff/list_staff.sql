@@ -289,7 +289,7 @@ SELECT DISTINCT ON (p.id)
         -- Superadmin has no restrictions
         WHEN up.role = 'superadmin' THEN true
         -- Cannot edit default_profile unless superadmin
-        WHEN p.default_profile = true THEN false
+        WHEN (p.first_name = 'Default') THEN false
         -- Role hierarchy: can only edit roles lower than current role
         WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
         WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
@@ -302,7 +302,7 @@ SELECT DISTINCT ON (p.id)
         -- Superadmin has no restrictions (except self)
         WHEN up.role = 'superadmin' THEN true
         -- Cannot delete default_profile unless superadmin
-        WHEN p.default_profile = true THEN false
+        WHEN (p.first_name = 'Default') THEN false
         -- Cannot delete profiles with cohort links (prevent orphaned data)
         WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
         -- Role hierarchy: can only delete roles lower than current role

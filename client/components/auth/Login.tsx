@@ -5,8 +5,15 @@
  * 06/18/2025
  */
 "use client";
-import { Button } from "@/components/ui/button";
 import { GlowIconComponent } from "@/components/common/GlowIconComponent";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
@@ -218,16 +225,33 @@ interface ProviderOption {
   id: string; // The slug (microsoft, google, purdue)
   name: string; // The display name
   icon: string | null; // The URL to the icon (can be null)
+  is_default?: boolean; // Whether this is a default provider (no department links)
+}
+
+interface DepartmentOption {
+  id: string;
+  title: string;
+  description: string;
 }
 
 interface LoginProps {
   providers?: ProviderOption[]; // Updated to accept ProviderOption array
   guest_login_enabled?: boolean; // Whether guest login button should be shown
+  show_default_account?: boolean; // Whether to show "continue as default account" button
+  departments?: DepartmentOption[]; // List of departments for picker
 }
 
-export default function Login({ providers = [], guest_login_enabled = true }: LoginProps) {
+export default function Login({
+  providers = [],
+  guest_login_enabled = true,
+  show_default_account = false,
+  departments = [],
+}: LoginProps) {
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    string | null
+  >(departments.length > 0 ? departments[0].id : null);
   const router = useRouter();
 
   // Animation variants matching Info.tsx
@@ -380,6 +404,30 @@ export default function Login({ providers = [], guest_login_enabled = true }: Lo
             variants={staggerContainer}
             className="space-y-6 mt-8"
           >
+            {/* Department Picker - only show if departments exist */}
+            {departments.length > 0 && (
+              <motion.div variants={cardVariants}>
+                <label className="block text-sm font-medium text-white/90 mb-2">
+                  Department
+                </label>
+                <Select
+                  value={selectedDepartmentId || undefined}
+                  onValueChange={setSelectedDepartmentId}
+                >
+                  <SelectTrigger className="w-full bg-white/10 backdrop-blur-xl text-white border-white/20 hover:bg-white/15">
+                    <SelectValue placeholder="Select department..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            )}
+
             <div className="space-y-4">
               {/* 🚀 DYNAMIC PROVIDER LIST - Renders buttons for all providers from API */}
               {providers.map((provider) => (
@@ -456,47 +504,47 @@ export default function Login({ providers = [], guest_login_enabled = true }: Lo
 
               {/* Guest Access Button - only show if guest_login_enabled is true */}
               {guest_login_enabled && (
-              <motion.div variants={cardVariants} whileHover="hover">
-                <Button
-                  type="button"
-                  onClick={handleGuestAccess}
-                  disabled={loadingGuest}
-                  data-testid="guest-login-button"
-                  className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
-                    boxShadow:
-                      "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background =
-                      "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
-                  }}
-                >
-                  {/* Liquid glass shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
-                  <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                  <div className="relative flex items-center justify-center space-x-3">
-                    {loadingGuest ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <UserIcon />
-                    )}
-                    <span className="text-base">
-                      {loadingGuest ? "Accessing..." : "Continue as Guest"}
-                    </span>
-                  </div>
-                </Button>
-              </motion.div>
+                <motion.div variants={cardVariants} whileHover="hover">
+                  <Button
+                    type="button"
+                    onClick={handleGuestAccess}
+                    disabled={loadingGuest}
+                    data-testid="guest-login-button"
+                    className="relative w-full h-12 bg-white/10 backdrop-blur-xl text-white font-medium rounded-xl transition-all duration-300 border border-white/20 overflow-hidden hover:bg-white/15 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                      boxShadow:
+                        "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.15) 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 32px 0 rgba(31, 38, 135, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 0 1px rgba(255, 255, 255, 0.2)";
+                    }}
+                  >
+                    {/* Liquid glass shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none rounded-xl" />
+                    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                    <div className="relative flex items-center justify-center space-x-3">
+                      {loadingGuest ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <UserIcon />
+                      )}
+                      <span className="text-base">
+                        {loadingGuest ? "Accessing..." : "Continue as Guest"}
+                      </span>
+                    </div>
+                  </Button>
+                </motion.div>
               )}
             </div>
           </motion.div>

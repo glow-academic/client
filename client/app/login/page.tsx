@@ -38,23 +38,43 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** ---- Strong types from OpenAPI ---- */
 type LoginProvidersOut = OutputOf<"/api/v3/auth/login", "get">;
+type DepartmentsLoginOut = OutputOf<"/api/v3/departments/login", "get">;
 
-async function getLoginProviders(): Promise<LoginProvidersOut> {
+async function getLoginProviders(departmentId?: string): Promise<LoginProvidersOut> {
   try {
-    const response = await api.get("/auth/login");
+    const url = departmentId 
+      ? `/auth/login?department_id=${departmentId}`
+      : "/auth/login";
+    const response = await api.get(url);
     return response;
   } catch {
     // Return empty array and default guest_login_enabled if endpoint fails
-    return { providers: [], guest_login_enabled: true };
+    return { providers: [], guest_login_enabled: true, show_default_account: false };
+  }
+}
+
+async function getDepartments(): Promise<DepartmentsLoginOut> {
+  try {
+    const response = await api.get("/departments/login");
+    return response;
+  } catch {
+    // Return empty array if endpoint fails
+    return { departments: [] };
   }
 }
 
 export default async function LoginPage() {
-  const loginData = await getLoginProviders();
+  const [loginData, departmentsData] = await Promise.all([
+    getLoginProviders(),
+    getDepartments(),
+  ]);
+  
   return (
     <Login
       providers={loginData.providers}
       guest_login_enabled={loginData.guest_login_enabled}
+      show_default_account={loginData.show_default_account}
+      departments={departmentsData.departments}
     />
   );
 }

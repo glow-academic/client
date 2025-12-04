@@ -32,7 +32,7 @@ video_info AS (
 default_guest AS (
     SELECT id::text as guest_profile_id
     FROM profiles 
-    WHERE role = 'guest' AND default_profile = true 
+    WHERE role = 'guest' AND first_name = 'Default' 
     LIMIT 1
 ),
 best_agent AS (
@@ -61,7 +61,7 @@ profile_rate_limit AS (
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
     WHERE prof.id = COALESCE(
         (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT id FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+        (SELECT id FROM profiles WHERE role = 'guest' AND first_name = 'Default' LIMIT 1)
     )
 ),
 runs_today AS (
@@ -73,7 +73,7 @@ runs_today AS (
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = COALESCE(
         (SELECT profile_id FROM params WHERE profile_id IS NOT NULL),
-        (SELECT id FROM profiles WHERE role = 'guest' AND default_profile = true LIMIT 1)
+        (SELECT id FROM profiles WHERE role = 'guest' AND first_name = 'Default' LIMIT 1)
     )
       AND mrp.active = true
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'

@@ -285,7 +285,7 @@ department_staff AS (
         CASE 
             WHEN p.id = $2 THEN true
             WHEN up.role = 'superadmin' THEN true
-            WHEN p.default_profile = true THEN false
+            WHEN (p.first_name = 'Default') THEN false
             WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
             WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
             WHEN up.role = 'ta' AND p.role = 'guest' THEN true
@@ -294,7 +294,7 @@ department_staff AS (
         CASE 
             WHEN p.id = $2 THEN false
             WHEN up.role = 'superadmin' THEN true
-            WHEN p.default_profile = true THEN false
+            WHEN (p.first_name = 'Default') THEN false
             WHEN COALESCE(pacl_all.total_cohort_links, 0) > 0 THEN false
             WHEN up.role = 'admin' AND p.role IN ('instructional', 'ta', 'guest') THEN true
             WHEN up.role = 'instructional' AND p.role IN ('ta', 'guest') THEN true
@@ -336,7 +336,7 @@ department_staff AS (
         (up.role = 'ta' AND p.role IN ('ta', 'guest')) OR
         (up.role = 'guest' AND p.role = 'guest')
     )
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile,
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active,
              pa.last_active, prl.requests_per_day,
              pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
              pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count, up.role

@@ -8,7 +8,7 @@ WITH resolve_profile_id AS (
     SELECT 
         CASE 
             WHEN $1::text = 'guest-profile-id' THEN
-                (SELECT id::text FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+                (SELECT id::text FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
             ELSE $1::text
         END as resolved_profile_id
 ),

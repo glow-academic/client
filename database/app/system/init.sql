@@ -147,3 +147,59 @@ CREATE INDEX ON settings (active);
 -- Enforce only one active settings row
 CREATE UNIQUE INDEX settings_one_active
   ON settings(active) WHERE active = true;
+
+-- Settings → Departments binary relationship table
+-- Tracks which settings are available to departments
+-- No records = available to all departments (cross-department)
+CREATE TABLE settings_departments (
+  settings_id   UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, department_id)
+);
+
+CREATE INDEX ON settings_departments (settings_id);
+CREATE INDEX ON settings_departments (department_id);
+CREATE INDEX ON settings_departments (active);
+
+-- Settings → Default Guest Profile (with history support)
+-- Links settings to default guest profile
+-- Only one active per settings (enforced via unique index)
+CREATE TABLE settings_default_guest (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  profile_id   UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  active       BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, profile_id)
+);
+
+CREATE INDEX ON settings_default_guest (settings_id);
+CREATE INDEX ON settings_default_guest (profile_id);
+CREATE INDEX ON settings_default_guest (active);
+
+-- Enforce only one active default guest per settings
+CREATE UNIQUE INDEX settings_default_guest_one_active
+  ON settings_default_guest(settings_id) WHERE active = true;
+
+-- Settings → Default Superadmin Profile (with history support)
+-- Links settings to default superadmin profile
+-- Only one active per settings (enforced via unique index)
+CREATE TABLE settings_default_account (
+  settings_id UUID NOT NULL REFERENCES settings(id) ON DELETE CASCADE,
+  profile_id   UUID NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT,
+  active       BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (settings_id, profile_id)
+);
+
+CREATE INDEX ON settings_default_account (settings_id);
+CREATE INDEX ON settings_default_account (profile_id);
+CREATE INDEX ON settings_default_account (active);
+
+-- Enforce only one active default account per settings
+CREATE UNIQUE INDEX settings_default_account_one_active
+  ON settings_default_account(settings_id) WHERE active = true;

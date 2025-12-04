@@ -42,7 +42,7 @@ profile_validation AS (
         END as role_level_ok,
         -- Check if default profile editing is allowed
         CASE 
-            WHEN p.default_profile = true AND cur.role != 'superadmin' THEN false
+            WHEN (p.first_name = 'Default') AND cur.role != 'superadmin' THEN false
             ELSE true
         END as can_edit_default
     FROM unnest($2::uuid[]) as profile_id

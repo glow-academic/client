@@ -16,7 +16,6 @@ CREATE TABLE profiles (
   last_name  TEXT        NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   role       profile_role NOT NULL DEFAULT 'guest',
-  default_profile BOOLEAN   NOT NULL DEFAULT FALSE,
   active     BOOLEAN     NOT NULL DEFAULT FALSE
   -- req_per_day moved to profile_request_limits junction table
   -- last_active moved to profile_activity junction table

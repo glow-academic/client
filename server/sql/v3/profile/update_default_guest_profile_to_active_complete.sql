@@ -5,7 +5,7 @@ WITH get_default_guest AS (
     -- Get default guest profile ID
     SELECT id::text as profile_id
     FROM profiles
-    WHERE role = 'guest' AND default_profile = true
+    WHERE role = 'guest' AND first_name = 'Default'
     LIMIT 1
 ),
 update_profile AS (

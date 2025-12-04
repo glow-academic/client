@@ -7,7 +7,7 @@ WITH resolve_current_profile_id AS (
     SELECT 
         CASE 
             WHEN $2::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
             WHEN $2::text IS NULL OR $2::text = '' THEN NULL::uuid
             ELSE $2::uuid
         END as resolved_profile_id
@@ -25,14 +25,14 @@ target_profile AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.active,
-        p.default_profile,
+        (p.first_name = 'Default') as default_profile,
         prl.requests_per_day,
         p.first_name || ' ' || p.last_name as name
     FROM profiles p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     WHERE p.id = $1
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, p.default_profile, prl.requests_per_day
+    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, prl.requests_per_day
 ),
 role_visibility_check AS (
     -- Check if current user can see target profile based on role hierarchy

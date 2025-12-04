@@ -25,7 +25,7 @@ WITH resolve_profile_id AS (
     SELECT 
         CASE 
             WHEN $21::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
             WHEN $21::text IS NULL OR $21::text = '' THEN NULL::uuid
             ELSE $21::uuid
         END as resolved_profile_id

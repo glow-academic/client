@@ -37,3 +37,19 @@ CREATE TABLE auth_items (
 CREATE INDEX ON auth_items (auth_id);
 CREATE INDEX ON auth_items (auth_id, name);
 
+-- Auth → Departments binary relationship table
+-- Tracks which auth providers are available to departments
+-- No records = available to all departments (cross-department)
+CREATE TABLE auth_departments (
+  auth_id       UUID NOT NULL REFERENCES auth(id) ON DELETE CASCADE,
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (auth_id, department_id)
+);
+
+CREATE INDEX ON auth_departments (auth_id);
+CREATE INDEX ON auth_departments (department_id);
+CREATE INDEX ON auth_departments (active);
+

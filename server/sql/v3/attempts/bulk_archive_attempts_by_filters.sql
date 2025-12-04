@@ -20,7 +20,7 @@ resolve_profile_id AS (
     SELECT 
         CASE 
             WHEN $4::text = 'guest-profile-id' THEN
-                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1)
+                (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1)
             WHEN $4::text IS NULL OR $4::text = '' THEN NULL::uuid
             ELSE $4::uuid
         END as resolved_profile_id
@@ -100,7 +100,7 @@ history_attempts AS (
         $8::text[] IS NULL OR cardinality($8::text[]) = 0 OR 'archived' = ANY($8::text[]) OR sa.archived = FALSE
       )
       -- Only filter by profileId if provided
-      AND (($4::text IS NULL OR $4::text = '' OR $4::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $4::text = 'guest-profile-id' THEN (SELECT id::uuid FROM profiles WHERE role = 'guest' AND default_profile = true ORDER BY created_at DESC LIMIT 1) ELSE $4::uuid END)
+      AND (($4::text IS NULL OR $4::text = '' OR $4::text = 'guest-profile-id') OR ap.profile_id = CASE WHEN $4::text = 'guest-profile-id' THEN (SELECT id::uuid FROM profiles WHERE role = 'guest' AND first_name = 'Default' ORDER BY created_at DESC LIMIT 1) ELSE $4::uuid END)
       AND (cardinality($6::uuid[]) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && $6::uuid[]::text[])
       -- Role hierarchy filtering
       AND (
