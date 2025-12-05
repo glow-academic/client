@@ -1,0 +1,1630 @@
+/**
+ * Document.tsx
+ * Unified component for creating and editing documents
+ * Supports both regular document uploads and template documents
+ * @AshokSaravanan222 & @siladiea
+ * 01/21/2025
+ */
+"use client";
+
+import type {
+  DocumentDetailOut,
+  UpdateDocumentIn,
+  UpdateDocumentOut,
+} from "@/app/(main)/management/documents/d/[documentId]/page";
+import type {
+  CreateDocumentIn,
+  CreateDocumentOut,
+  DocumentsListOut,
+  FinalizeUploadOut,
+  GenerateTemplateIn,
+  GenerateTemplateOut,
+} from "@/app/(main)/management/documents/new/page";
+import DocumentViewer from "@/components/common/chat/viewers/DocumentViewer";
+import { AgentPicker } from "@/components/common/forms/AgentPicker";
+import { DepartmentPicker } from "@/components/common/forms/DepartmentPicker";
+import ParameterItemPicker from "@/components/common/forms/ParameterItemPicker";
+import TemplateForm, {
+  type TemplateSchema,
+  isTemplateSchema,
+} from "@/components/documents/TemplateForm";
+import TemplatePreview from "@/components/documents/TemplatePreview";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useProfile } from "@/contexts/profile-context";
+import {
+  getDefaultDepartmentIds,
+  transformDepartmentIdsForSubmit,
+} from "@/utils/department-picker-helpers";
+import { inferMimeFromName } from "@/utils/mime-map";
+import { Building2, FileCode, Power, Tag, UploadCloud, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { toast } from "sonner";
+import * as tus from "tus-js-client";
+import { v4 as uuidv4 } from "uuid";
+
+type FileClassification = {
+  parameterItemIds: string[];
+  departmentIds?: string[];
+};
+
+export interface DocumentProps {
+  documentId?: string;
+  mode?: "create" | "edit";
+  // Server-provided data
+  documentDetail?: DocumentDetailOut;
+  documentDetailDefault?: DocumentsListOut;
+  // Server actions
+  createDocumentAction?: (
+    input: CreateDocumentIn
+  ) => Promise<CreateDocumentOut>;
+  updateDocumentAction?: (
+    input: UpdateDocumentIn
+  ) => Promise<UpdateDocumentOut>;
+  finalizeUploadAction?: (uploadId: string) => Promise<FinalizeUploadOut>;
+  generateTemplateAction?: (
+    input: GenerateTemplateIn
+  ) => Promise<GenerateTemplateOut>;
+  renderedHtml?: string | null;
+}
+
+export default function Document({
+  documentId,
+  mode = documentId ? "edit" : "create",
+  documentDetail: serverDocumentDetail,
+  documentDetailDefault: serverDocumentDetailDefault,
+  createDocumentAction,
+  updateDocumentAction,
+  finalizeUploadAction,
+  generateTemplateAction,
+  renderedHtml = null,
+}: DocumentProps) {
+  const router = useRouter();
+  const { effectiveDepartmentIds, effectiveProfile } = useProfile();
+  const isEditMode = mode === "edit" && !!documentId;
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
+  const defaultDepartmentIds = useMemo(
+    () =>
+      getDefaultDepartmentIds(
+        isSuperadmin,
+        effectiveProfile?.primaryDepartmentId ?? null
+      ),
+    [isSuperadmin, effectiveProfile?.primaryDepartmentId]
+  );
+
+  // Use server-provided data directly
+  const documentDetail = serverDocumentDetail;
+  const documentDetailDefault = serverDocumentDetailDefault;
+
+  // Extract body types for type safety
+  type CreateDocumentBody = CreateDocumentIn extends { body: infer B }
+    ? B
+    : never;
+  type UpdateDocumentBody = UpdateDocumentIn extends { body: infer B }
+    ? B
+    : never;
+  type GenerateTemplateBody = GenerateTemplateIn extends { body: infer B }
+    ? B
+    : never;
+
+  // Form state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<{
+    name: string;
+    active: boolean;
+    template: boolean;
+    departmentIds: string[];
+    parameterItemIds: string[];
+    classifyAgentId: string | null;
+    documentAgentId: string | null;
+  }>({
+    name: "",
+    active: true,
+    template: false,
+    departmentIds: [],
+    parameterItemIds: [],
+    classifyAgentId: null,
+    documentAgentId: null,
+  });
+
+  // Template state
+  const [isTemplateMode, setIsTemplateMode] = useState(false);
+  const [templateHtml, setTemplateHtml] = useState<string | null>(null);
+  const [templateSchema, setTemplateSchema] = useState<TemplateSchema | null>(
+    null
+  );
+  const [templateUploadId, setTemplateUploadId] = useState<string | null>(null);
+  const [templateArgs, setTemplateArgs] = useState<Record<string, unknown>>({});
+  const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+
+  // Create mode: File upload state
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [activeUploads, setActiveUploads] = useState<
+    Map<
+      string,
+      {
+        file: File;
+        progress: number;
+        toastId: string;
+        status: "uploading" | "finalizing" | "completed" | "error";
+      }
+    >
+  >(new Map());
+  const [perFile, setPerFile] = useState<Record<string, FileClassification>>(
+    {}
+  );
+  const [globalDefaultParameterItemIds, setGlobalDefaultParameterItemIds] =
+    useState<string[]>([]);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] =
+    useState<string[]>(defaultDepartmentIds);
+  const [keepDefaultPerFile, setKeepDefaultPerFile] = useState<
+    Record<string, boolean>
+  >({});
+  const [previousDepartmentIds, setPreviousDepartmentIds] = useState<string[]>(
+    []
+  );
+
+  // Extract mappings from data
+  const departmentMapping = useMemo(
+    () =>
+      (isEditMode
+        ? documentDetail?.department_mapping
+        : documentDetailDefault?.department_mapping) || {},
+    [isEditMode, documentDetail, documentDetailDefault]
+  );
+  const parameterItemMapping = useMemo(
+    () =>
+      (isEditMode
+        ? documentDetail?.parameter_item_mapping
+        : documentDetailDefault?.parameter_item_mapping) || {},
+    [isEditMode, documentDetail, documentDetailDefault]
+  );
+  const agentMapping = useMemo(
+    () => (isEditMode ? documentDetail?.agent_mapping : {}) || {},
+    [isEditMode, documentDetail]
+  );
+  const parameterMapping = useMemo(
+    () => (isEditMode ? {} : documentDetailDefault?.parameter_mapping) || {},
+    [isEditMode, documentDetailDefault]
+  );
+
+  const validDepartmentIds = useMemo(() => {
+    if (isEditMode) {
+      return documentDetail?.valid_department_ids || effectiveDepartmentIds;
+    }
+    return documentDetailDefault?.valid_department_ids || [];
+  }, [
+    isEditMode,
+    documentDetail,
+    documentDetailDefault,
+    effectiveDepartmentIds,
+  ]);
+
+  const validParameterItemIds = useMemo(() => {
+    if (isEditMode) {
+      const baseIds = documentDetail?.valid_parameter_item_ids || [];
+      const selectedDeptIds = formData.departmentIds;
+
+      if (selectedDeptIds.length === 0) {
+        return baseIds;
+      }
+
+      const deptParameterIds = new Set<string>();
+      selectedDeptIds.forEach((deptId) => {
+        const deptData = departmentMapping[deptId];
+        if (deptData?.parameter_ids && Array.isArray(deptData.parameter_ids)) {
+          deptData.parameter_ids.forEach((id) => deptParameterIds.add(id));
+        }
+      });
+
+      return baseIds.filter((itemId) => {
+        const item = parameterItemMapping[itemId];
+        return item && deptParameterIds.has(item.parameter_id);
+      });
+    }
+    return Object.keys(parameterItemMapping);
+  }, [
+    isEditMode,
+    documentDetail,
+    formData.departmentIds,
+    departmentMapping,
+    parameterItemMapping,
+  ]);
+
+  // Create mode: Filter valid parameter item IDs based on selected departments
+  const filteredValidParameterItemIds = useMemo(() => {
+    if (isEditMode) return [];
+    const selectedDeptIds = selectedDepartmentIds || [];
+    if (selectedDeptIds.length === 0) {
+      return validParameterItemIds;
+    }
+
+    const selectedDeptParameterItemIds = new Set<string>();
+    selectedDeptIds.forEach((deptId) => {
+      const deptData = departmentMapping[deptId];
+      if (
+        deptData &&
+        "parameter_item_ids" in deptData &&
+        Array.isArray(deptData.parameter_item_ids)
+      ) {
+        deptData.parameter_item_ids.forEach((id: string) =>
+          selectedDeptParameterItemIds.add(id)
+        );
+      }
+    });
+
+    const allDeptParameterItemIds = new Set<string>();
+    Object.values(departmentMapping).forEach((deptData) => {
+      if (
+        deptData?.parameter_item_ids &&
+        Array.isArray(deptData.parameter_item_ids)
+      ) {
+        deptData.parameter_item_ids.forEach((id: string) =>
+          allDeptParameterItemIds.add(id)
+        );
+      }
+    });
+
+    return validParameterItemIds.filter((itemId) => {
+      const inSelectedDepts = selectedDeptParameterItemIds.has(itemId);
+      const isCrossDept = !allDeptParameterItemIds.has(itemId);
+      return inSelectedDepts || isCrossDept;
+    });
+  }, [
+    isEditMode,
+    validParameterItemIds,
+    selectedDepartmentIds,
+    departmentMapping,
+  ]);
+
+  // Create mode: Identify document_parameter=true parameters
+  const documentParameterIds = useMemo(() => {
+    if (isEditMode) return [];
+    return Object.keys(parameterMapping).filter(
+      (paramId) => parameterMapping[paramId]?.document_parameter === true
+    );
+  }, [isEditMode, parameterMapping]);
+
+  // Initialize form data from document detail (edit mode)
+  useEffect(() => {
+    if (isEditMode && documentDetail) {
+      setFormData({
+        name: documentDetail.name || "",
+        active: documentDetail.active ?? true,
+        template: documentDetail.template === true,
+        departmentIds: documentDetail.department_ids || [],
+        parameterItemIds: documentDetail.parameter_item_ids || [],
+        classifyAgentId: documentDetail.classify_agent_id || null,
+        documentAgentId: documentDetail.document_agent_id || null,
+      });
+
+      // Initialize template args if template document
+      if (documentDetail.template && documentDetail.template_args) {
+        setTemplateArgs(documentDetail.template_args);
+      }
+    }
+  }, [isEditMode, documentDetail]);
+
+  // Template mode detection - use formData.template for both modes
+  const templateSchemaForDisplay =
+    isEditMode && documentDetail?.template_schema
+      ? isTemplateSchema(documentDetail.template_schema)
+        ? documentDetail.template_schema
+        : null
+      : templateSchema;
+  const templateHtmlForDisplay =
+    isEditMode && documentDetail?.template_html
+      ? documentDetail.template_html
+      : templateHtml;
+
+  // Create mode: Track department changes and manage staged selections
+  React.useEffect(() => {
+    if (isEditMode) return;
+    const currentDeptIds = selectedDepartmentIds || [];
+    const prevDeptIds = previousDepartmentIds || [];
+
+    if (
+      currentDeptIds.length === prevDeptIds.length &&
+      currentDeptIds.every((id, idx) => id === prevDeptIds[idx])
+    ) {
+      if (prevDeptIds.length === 0 && currentDeptIds.length > 0) {
+        setPreviousDepartmentIds(currentDeptIds);
+      }
+      return;
+    }
+
+    const deselectedDepts = prevDeptIds.filter(
+      (id) => !currentDeptIds.includes(id)
+    );
+    const newlySelectedDepts = currentDeptIds.filter(
+      (id) => !prevDeptIds.includes(id)
+    );
+
+    if (deselectedDepts.length > 0) {
+      // Store staged selections for deselected departments
+    }
+
+    if (newlySelectedDepts.length > 0) {
+      // Restore staged selections for newly selected departments
+    }
+
+    setPreviousDepartmentIds(currentDeptIds);
+  }, [
+    isEditMode,
+    selectedDepartmentIds,
+    previousDepartmentIds,
+    globalDefaultParameterItemIds,
+    perFile,
+    filteredValidParameterItemIds,
+  ]);
+
+  // Create mode: Clear invalid parameter item selections when departments change
+  React.useEffect(() => {
+    if (isEditMode) return;
+    if (globalDefaultParameterItemIds.length > 0) {
+      const validSet = new Set(filteredValidParameterItemIds);
+      const filtered = globalDefaultParameterItemIds.filter((id) =>
+        validSet.has(id)
+      );
+      if (filtered.length !== globalDefaultParameterItemIds.length) {
+        setGlobalDefaultParameterItemIds(filtered);
+      }
+    }
+
+    setPerFile((prev) => {
+      const updated: Record<string, FileClassification> = {};
+      let hasChanges = false;
+      Object.entries(prev).forEach(([fileName, fc]) => {
+        const validSet = new Set(filteredValidParameterItemIds);
+        const filtered = (fc.parameterItemIds || []).filter((id) =>
+          validSet.has(id)
+        );
+        if (filtered.length !== (fc.parameterItemIds || []).length) {
+          hasChanges = true;
+          updated[fileName] = { ...fc, parameterItemIds: filtered };
+        } else {
+          updated[fileName] = fc;
+        }
+      });
+      return hasChanges ? updated : prev;
+    });
+  }, [
+    isEditMode,
+    filteredValidParameterItemIds,
+    globalDefaultParameterItemIds,
+  ]);
+
+  // Create mode: Initialize defaults for new files
+  React.useEffect(() => {
+    if (isEditMode) return;
+    const next: Record<string, FileClassification> = {};
+    pendingFiles.forEach((f) => {
+      const current: FileClassification = perFile[f.name] ?? {
+        parameterItemIds: [...globalDefaultParameterItemIds],
+      };
+      next[f.name] = current;
+    });
+    setPerFile(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, pendingFiles.map((f) => f.name).join("|")]);
+
+  // Create mode: Keep the apply-all parameter items preselected with the intersection across all files
+  React.useEffect(() => {
+    if (isEditMode) return;
+    const allFiles = Object.values(perFile);
+    if (allFiles.length === 0) {
+      setGlobalDefaultParameterItemIds([]);
+      return;
+    }
+    const intersection = allFiles
+      .map((f) => new Set(f.parameterItemIds ?? []))
+      .reduce<string[]>((acc, set, index) => {
+        if (index === 0) return Array.from(set);
+        return acc.filter((id) => set.has(id));
+      }, []);
+    setGlobalDefaultParameterItemIds(intersection);
+  }, [isEditMode, perFile]);
+
+  const applyParameterItemsToAll = (incomingIds: string[]) => {
+    if (incomingIds.length === 0) return;
+    setGlobalDefaultParameterItemIds((prev) => {
+      const merged = Array.from(new Set([...prev, ...incomingIds]));
+      return merged;
+    });
+    setPerFile((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([k, v]) => {
+          const merged = Array.from(
+            new Set([...(v.parameterItemIds ?? []), ...incomingIds])
+          );
+          return [k, { ...v, parameterItemIds: merged }];
+        })
+      )
+    );
+  };
+
+  const removeParameterItemsFromAll = (idsToRemove: string[]) => {
+    if (idsToRemove.length === 0) return;
+    setGlobalDefaultParameterItemIds((prev) =>
+      prev.filter((id) => !idsToRemove.includes(id))
+    );
+    setPerFile((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([k, v]) => {
+          const nextIds = (v.parameterItemIds ?? []).filter(
+            (id) => !idsToRemove.includes(id)
+          );
+          return [k, { ...v, parameterItemIds: nextIds }];
+        })
+      )
+    );
+  };
+
+  // Create mode: Validation errors
+  const validationErrors = useMemo(() => {
+    if (isEditMode) return {};
+    const errors: Record<string, string[]> = {};
+
+    if (documentParameterIds.length === 0) {
+      return errors;
+    }
+
+    pendingFiles.forEach((file) => {
+      const fc = perFile[file.name] ?? {
+        parameterItemIds: [...globalDefaultParameterItemIds],
+      };
+
+      const selectedItemIds = fc.parameterItemIds || [];
+
+      documentParameterIds.forEach((paramId) => {
+        const itemsForParam = filteredValidParameterItemIds.filter((itemId) => {
+          const item = parameterItemMapping[itemId];
+          return item && item.parameter_id === paramId;
+        });
+
+        const hasItemForParam = itemsForParam.some((itemId) =>
+          selectedItemIds.includes(itemId)
+        );
+
+        if (!hasItemForParam && itemsForParam.length > 0) {
+          if (!errors[file.name]) {
+            errors[file.name] = [];
+          }
+          const paramName = parameterMapping[paramId]?.name || paramId;
+          errors[file.name]!.push(
+            `Required: Select at least one ${paramName} option`
+          );
+        }
+      });
+    });
+
+    return errors;
+  }, [
+    isEditMode,
+    pendingFiles,
+    perFile,
+    globalDefaultParameterItemIds,
+    documentParameterIds,
+    filteredValidParameterItemIds,
+    parameterItemMapping,
+    parameterMapping,
+  ]);
+
+  const canSubmit = useMemo(() => {
+    if (isEditMode) return true;
+    return Object.keys(validationErrors).length === 0;
+  }, [isEditMode, validationErrors]);
+
+  // Create mode: Dropzone configuration
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        setPendingFiles((prev) => [...prev, ...acceptedFiles]);
+      }
+    },
+    accept: {
+      "application/pdf": [".pdf"],
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+      "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
+      "text/plain": [".txt"],
+      "application/zip": [".zip"],
+      "text/html": [".html"],
+    },
+    multiple: true,
+    disabled: activeUploads.size > 0 || isEditMode,
+  });
+
+  // Create mode: Upload file function
+  const uploadFile = async (file: File, classification: FileClassification) => {
+    if (!finalizeUploadAction || !createDocumentAction) return;
+
+    const fileId = uuidv4();
+    const toastId = toast.loading(`Preparing upload: ${file.name}`, {
+      description: "0% complete",
+      dismissible: true,
+    });
+
+    setActiveUploads((prev) =>
+      new Map(prev).set(fileId, {
+        file,
+        progress: 0,
+        toastId: toastId as string,
+        status: "uploading",
+      })
+    );
+
+    let tusUploadInstance: tus.Upload | null = null;
+    try {
+      tusUploadInstance = new tus.Upload(file, {
+        endpoint: `/api/uploads/upload`,
+        retryDelays: [0, 3000, 5000, 10000, 20000],
+        metadata: {
+          filename: file.name,
+          filetype: file.type || inferMimeFromName(file.name),
+          fileId: fileId,
+        },
+        onError: (error) => {
+          toast.error(`Upload failed: ${file.name}`, {
+            description: error.message || "An error occurred during upload",
+            id: toastId,
+          });
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(fileId);
+            return newMap;
+          });
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, {
+                ...upload,
+                progress,
+              });
+            }
+            return newMap;
+          });
+
+          toast.loading(`Uploading ${file.name}... ${progress}%`, {
+            description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
+            id: toastId,
+            dismissible: true,
+          });
+        },
+        onSuccess: async () => {
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            const upload = newMap.get(fileId);
+            if (upload) {
+              newMap.set(fileId, {
+                ...upload,
+                status: "finalizing",
+              });
+            }
+            return newMap;
+          });
+
+          try {
+            const uploadUrl = tusUploadInstance?.url || "";
+            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^\/]+)/);
+            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
+              throw new Error("Failed to extract upload ID from upload URL");
+            }
+            const tusUploadId = tusUploadIdMatch[1];
+
+            const finalizeResult = await finalizeUploadAction(tusUploadId);
+
+            if (!finalizeResult.success || !finalizeResult.uploadId) {
+              throw new Error(
+                finalizeResult.message || "Failed to finalize upload"
+              );
+            }
+
+            const databaseUploadId = finalizeResult.uploadId;
+
+            let suggestedParameterItemIds: string[] = [];
+            try {
+              const classifyResponse = await fetch(
+                `/api/v3/uploads/upload/${tusUploadId}/classify`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    profileId: effectiveProfile?.id || "",
+                    parameterIds: null,
+                  }),
+                }
+              );
+
+              if (classifyResponse.ok) {
+                const classifyResult = await classifyResponse.json();
+                if (
+                  classifyResult.success &&
+                  classifyResult.suggestedParameterItemIds
+                ) {
+                  suggestedParameterItemIds =
+                    classifyResult.suggestedParameterItemIds[file.name] || [];
+                }
+              }
+            } catch {
+              // Classification failed, but continue with user's selections
+            }
+
+            const finalParameterItemIds = Array.from(
+              new Set([
+                ...(classification.parameterItemIds || []),
+                ...suggestedParameterItemIds,
+              ])
+            );
+
+            const finalDepartmentIds = transformDepartmentIdsForSubmit(
+              classification.departmentIds || selectedDepartmentIds,
+              isSuperadmin,
+              validDepartmentIds
+            );
+
+            const createResult = await createDocumentAction({
+              body: {
+                name: file.name,
+                uploadId: databaseUploadId,
+                departmentIds: finalDepartmentIds,
+                parameterItemIds: finalParameterItemIds,
+                profileId: effectiveProfile?.id || "",
+              } as CreateDocumentBody,
+            });
+
+            if (createResult.success) {
+              toast.success(`Upload completed: ${file.name}!`, {
+                description: "Document created successfully",
+                id: toastId,
+              });
+
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                const upload = newMap.get(fileId);
+                if (upload) {
+                  newMap.set(fileId, {
+                    ...upload,
+                    status: "completed",
+                  });
+                }
+                return newMap;
+              });
+
+              setTimeout(() => {
+                setActiveUploads((prev) => {
+                  const newMap = new Map(prev);
+                  newMap.delete(fileId);
+                  const remaining = Array.from(newMap.values()).filter(
+                    (u) => u.status !== "completed" && u.status !== "error"
+                  );
+                  if (remaining.length === 0 && newMap.size === 0) {
+                    setTimeout(() => {
+                      router.push("/management/documents");
+                      router.refresh();
+                    }, 500);
+                  }
+                  return newMap;
+                });
+              }, 2000);
+            } else {
+              toast.error(`Document creation failed: ${file.name}`, {
+                description:
+                  createResult.message || "Failed to create document",
+                id: toastId,
+              });
+              setActiveUploads((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(fileId);
+                return newMap;
+              });
+            }
+          } catch (error) {
+            toast.error(`Upload processing failed: ${file.name}`, {
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to process uploaded file",
+              id: toastId,
+            });
+            setActiveUploads((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(fileId);
+              return newMap;
+            });
+          }
+        },
+      });
+
+      await tusUploadInstance.start();
+    } catch {
+      toast.error(`Upload failed: ${file.name}`, {
+        description: "An error occurred during upload",
+        id: toastId,
+      });
+      setActiveUploads((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(fileId);
+        return newMap;
+      });
+    }
+  };
+
+  const handleRemoveFile = (fileName: string) => {
+    setPendingFiles((prev) => prev.filter((f) => f.name !== fileName));
+    setPerFile((prev) => {
+      const next = { ...prev };
+      delete next[fileName];
+      return next;
+    });
+    setKeepDefaultPerFile((prev) => {
+      const next = { ...prev };
+      delete next[fileName];
+      return next;
+    });
+  };
+
+  const handleGenerateTemplate = async () => {
+    if (!effectiveProfile?.id || !generateTemplateAction) {
+      toast.error("Profile ID required");
+      return;
+    }
+
+    setIsGeneratingTemplate(true);
+    try {
+      const result = await generateTemplateAction({
+        body: {
+          departmentId: selectedDepartmentIds[0] || validDepartmentIds[0] || "",
+          profileId: effectiveProfile.id,
+        } as GenerateTemplateBody,
+      });
+
+      if (result.success) {
+        setTemplateHtml(result.template_html);
+        // Validate template_schema structure before setting
+        if (isTemplateSchema(result.template_schema)) {
+          setTemplateSchema(result.template_schema);
+        } else {
+          toast.error("Invalid template schema structure");
+          return;
+        }
+        // Extract upload_id from result - it's part of GenerateTemplateOut
+        setTemplateUploadId(result.upload_id || null);
+        setIsTemplateMode(true);
+        setTemplateArgs({});
+        setFormData((prev) => ({ ...prev, template: true }));
+        toast.success("Template generated successfully");
+      } else {
+        toast.error(result.message || "Failed to generate template");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate template"
+      );
+    } finally {
+      setIsGeneratingTemplate(false);
+    }
+  };
+
+  const handleCreateTemplateDocument = async () => {
+    if (!templateUploadId || !effectiveProfile?.id || !createDocumentAction) {
+      toast.error("Template upload ID required");
+      return;
+    }
+
+    if (!templateSchema) {
+      toast.error("Template schema required");
+      return;
+    }
+
+    const finalDepartmentIds = transformDepartmentIdsForSubmit(
+      selectedDepartmentIds,
+      isSuperadmin,
+      validDepartmentIds
+    );
+
+    try {
+      const createResult = await createDocumentAction({
+        body: {
+          name: `Template Document - ${new Date().toLocaleString()}`,
+          uploadId: null,
+          departmentIds: finalDepartmentIds,
+          parameterItemIds: [],
+          profileId: effectiveProfile.id,
+          template: true,
+          templateUploadId: templateUploadId,
+          // TemplateSchema is a structured object that needs to be sent as Record<string, unknown>
+          // to match server's dict[str, Any] type
+          templateArgs: templateSchema as unknown as Record<string, unknown>,
+        } as CreateDocumentBody,
+      });
+
+      if (createResult.success && createResult.documentId) {
+        toast.success("Template document created successfully");
+        setTimeout(() => {
+          router.push(`/management/documents/d/${createResult.documentId}`);
+          router.refresh();
+        }, 1000);
+      } else {
+        toast.error(
+          createResult.message || "Failed to create template document"
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create template document"
+      );
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isEditMode) {
+      // Edit mode: Update document
+      if (!updateDocumentAction || !documentId) return;
+
+      setIsSubmitting(true);
+      try {
+        const updateBody: UpdateDocumentBody = {
+          documentId,
+          name: formData.name,
+          active: formData.active,
+          department_id:
+            formData.departmentIds.length > 0
+              ? (formData.departmentIds[0] ?? null)
+              : null,
+          parameter_item_ids: formData.parameterItemIds,
+          classify_agent_id: formData.classifyAgentId ?? null,
+          document_agent_id: formData.documentAgentId ?? null,
+          template: formData.template ? true : null,
+          templateArgs: formData.template
+            ? (templateArgs as Record<string, unknown> | null)
+            : null,
+        };
+        await updateDocumentAction({ body: updateBody });
+
+        toast.success("Document updated successfully");
+        router.push("/management/documents");
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update document"
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Create mode: Upload files or create template document
+      if (isTemplateMode && templateUploadId) {
+        // Create template document
+        await handleCreateTemplateDocument();
+      } else if (pendingFiles.length === 0) {
+        toast.error("Please select at least one file to upload");
+        return;
+      } else if (!canSubmit) {
+        const firstError = Object.values(validationErrors)[0];
+        if (firstError && firstError.length > 0) {
+          toast.error(firstError[0]);
+        }
+        return;
+      } else {
+        // Upload regular files
+        const finalDepartmentIds = transformDepartmentIdsForSubmit(
+          selectedDepartmentIds,
+          isSuperadmin,
+          validDepartmentIds
+        );
+
+        for (const file of pendingFiles) {
+          const fc = perFile[file.name] ?? {
+            parameterItemIds: [...globalDefaultParameterItemIds],
+            departmentIds: selectedDepartmentIds,
+          };
+
+          const classification: FileClassification = {
+            ...fc,
+            departmentIds:
+              fc.departmentIds && fc.departmentIds.length > 0
+                ? transformDepartmentIdsForSubmit(
+                    fc.departmentIds,
+                    isSuperadmin,
+                    validDepartmentIds
+                  ) || []
+                : finalDepartmentIds || [],
+          };
+
+          await uploadFile(file, classification);
+        }
+      }
+    }
+  };
+
+  // Handle template switch change
+  const handleTemplateChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, template: checked }));
+    if (!checked) {
+      // Reset template mode when turning off
+      setIsTemplateMode(false);
+      setTemplateHtml(null);
+      setTemplateSchema(null);
+      setTemplateUploadId(null);
+      setTemplateArgs({});
+    }
+  };
+
+  // Handle generate template - sets template mode and updates formData
+  const handleGenerateTemplateWithSwitch = async () => {
+    await handleGenerateTemplate();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Create Mode: File Classification Table */}
+      {!isEditMode && !formData.template && pendingFiles.length > 0 && (
+        <div className="space-y-4">
+          <Label className="text-base font-semibold">File Classification</Label>
+          {/* Defaults Toolbar - only show when multiple files */}
+          {pendingFiles.length > 1 && (
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-md border flex-wrap">
+              <span className="text-xs text-muted-foreground font-medium">
+                Defaults →
+              </span>
+              {validDepartmentIds.length > 1 && (
+                <div data-testid="document-department-selector">
+                  <DepartmentPicker
+                    mapping={departmentMapping}
+                    validIds={validDepartmentIds}
+                    selectedIds={selectedDepartmentIds}
+                    onSelect={setSelectedDepartmentIds}
+                    placeholder="Dept"
+                    multiSelect={true}
+                    compact={true}
+                    buttonClassName="h-7 px-2 text-xs"
+                  />
+                </div>
+              )}
+              <div
+                className="flex-1 min-w-[120px]"
+                data-testid="document-parameter-selector"
+              >
+                <ParameterItemPicker
+                  mapping={parameterItemMapping}
+                  validIds={filteredValidParameterItemIds}
+                  selectedIds={globalDefaultParameterItemIds}
+                  onSelect={(next) => {
+                    const added = next.filter(
+                      (id) => !globalDefaultParameterItemIds.includes(id)
+                    );
+                    const removed = globalDefaultParameterItemIds.filter(
+                      (id) => !next.includes(id)
+                    );
+                    if (added.length) applyParameterItemsToAll(added);
+                    if (removed.length) removeParameterItemsFromAll(removed);
+                    setGlobalDefaultParameterItemIds(next);
+                  }}
+                  parameterId=""
+                  parameterName="Params"
+                  allowCreate={false}
+                  multiSelect={true}
+                  badgesPosition="below"
+                  showClearAll={true}
+                  hideSelectedChips={false}
+                  compact={true}
+                  required={
+                    documentParameterIds.length > 0 &&
+                    documentParameterIds.some((paramId) =>
+                      filteredValidParameterItemIds.some(
+                        (itemId) =>
+                          parameterItemMapping[itemId]?.parameter_id === paramId
+                      )
+                    )
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Table Layout - Documents as rows */}
+          <div className="border rounded-md max-h-[50vh] overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">File Name</TableHead>
+                  {validDepartmentIds.length > 1 && (
+                    <TableHead className="w-[180px]">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Department</span>
+                      </div>
+                    </TableHead>
+                  )}
+                  <TableHead className="min-w-[200px]">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>Parameter Items</span>
+                    </div>
+                  </TableHead>
+                  {pendingFiles.length > 1 && (
+                    <TableHead className="w-[120px]">Keep Default</TableHead>
+                  )}
+                  {pendingFiles.length > 1 && (
+                    <TableHead className="w-[80px]">Actions</TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingFiles.map((file) => {
+                  const fc = perFile[file.name] ?? {
+                    parameterItemIds: [...globalDefaultParameterItemIds],
+                    departmentIds: selectedDepartmentIds,
+                  };
+
+                  const keepDefault = keepDefaultPerFile[file.name] ?? true;
+
+                  const useDefaultDepartment = keepDefault;
+                  const useDefaultParameterItems = keepDefault;
+
+                  return (
+                    <TableRow key={file.name}>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div
+                            className="text-sm font-medium truncate max-w-[180px]"
+                            title={file.name}
+                          >
+                            📄 {file.name}
+                          </div>
+                          <Badge variant="secondary" className="text-xs w-fit">
+                            {Math.round(file.size / 1024)} KB
+                          </Badge>
+                          {validationErrors[file.name] &&
+                            validationErrors[file.name]!.length > 0 && (
+                              <div className="text-xs text-red-600 mt-1">
+                                {validationErrors[file.name]!.map(
+                                  (error, idx) => (
+                                    <div key={idx}>{error}</div>
+                                  )
+                                )}
+                              </div>
+                            )}
+                        </div>
+                      </TableCell>
+                      {validDepartmentIds.length > 1 && (
+                        <TableCell>
+                          <DepartmentPicker
+                            mapping={departmentMapping}
+                            validIds={validDepartmentIds}
+                            selectedIds={
+                              useDefaultDepartment
+                                ? selectedDepartmentIds
+                                : fc.departmentIds || selectedDepartmentIds
+                            }
+                            onSelect={(ids) => {
+                              if (!useDefaultDepartment) {
+                                setPerFile((prev) => {
+                                  const prevForFile: FileClassification = prev[
+                                    file.name
+                                  ] ?? {
+                                    parameterItemIds: [
+                                      ...globalDefaultParameterItemIds,
+                                    ],
+                                    departmentIds: selectedDepartmentIds,
+                                  };
+                                  return {
+                                    ...prev,
+                                    [file.name]: {
+                                      ...prevForFile,
+                                      departmentIds: ids,
+                                    },
+                                  } as Record<string, FileClassification>;
+                                });
+                              }
+                            }}
+                            placeholder="Dept"
+                            multiSelect={true}
+                            compact={true}
+                            buttonClassName="h-7 px-2 text-xs"
+                            disabled={useDefaultDepartment}
+                          />
+                        </TableCell>
+                      )}
+                      <TableCell className="max-w-[300px]">
+                        <ParameterItemPicker
+                          mapping={parameterItemMapping}
+                          validIds={filteredValidParameterItemIds}
+                          selectedIds={
+                            useDefaultParameterItems
+                              ? globalDefaultParameterItemIds
+                              : fc.parameterItemIds
+                          }
+                          onSelect={(parameterItemIds) => {
+                            if (!useDefaultParameterItems) {
+                              setPerFile((prev) => {
+                                const prevForFile: FileClassification = prev[
+                                  file.name
+                                ] ?? {
+                                  parameterItemIds: [
+                                    ...globalDefaultParameterItemIds,
+                                  ],
+                                  departmentIds: selectedDepartmentIds,
+                                };
+                                return {
+                                  ...prev,
+                                  [file.name]: {
+                                    ...prevForFile,
+                                    parameterItemIds,
+                                  },
+                                } as Record<string, FileClassification>;
+                              });
+                            }
+                          }}
+                          parameterId=""
+                          parameterName="Params"
+                          allowCreate={false}
+                          multiSelect={true}
+                          badgesPosition="below"
+                          showClearAll={false}
+                          hideSelectedChips={false}
+                          compact={true}
+                          disabled={useDefaultParameterItems}
+                          required={
+                            documentParameterIds.length > 0 &&
+                            documentParameterIds.some((paramId) =>
+                              filteredValidParameterItemIds.some(
+                                (itemId) =>
+                                  parameterItemMapping[itemId]?.parameter_id ===
+                                  paramId
+                              )
+                            )
+                          }
+                        />
+                      </TableCell>
+                      {pendingFiles.length > 1 && (
+                        <TableCell>
+                          <Checkbox
+                            checked={keepDefault}
+                            onCheckedChange={(checked) => {
+                              setKeepDefaultPerFile((prev) => ({
+                                ...prev,
+                                [file.name]: checked === true,
+                              }));
+                            }}
+                          />
+                        </TableCell>
+                      )}
+                      {pendingFiles.length > 1 && (
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleRemoveFile(file.name)}
+                                  aria-label="Remove file from upload"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove file</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Add More Documents button */}
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  const list = e.target.files;
+                  if (list && list.length > 0) {
+                    const next = Array.from(list);
+                    setPendingFiles((prev) => [...prev, ...next]);
+                    e.currentTarget.value = "";
+                  }
+                }}
+                accept={[
+                  "application/pdf",
+                  "image/*",
+                  "application/msword",
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "text/plain",
+                  "application/zip",
+                  "text/html",
+                  ".java,.py,.c,.h,.cpp,.hpp,.cc,.cs,.js,.jsx,.ts,.tsx,.mjs,.cjs,.html,.css,.scss,.md,.json,.yml,.yaml,.xml,.sh,.bash,.zsh,.rb,.go,.rs,.kt,.swift,.m,.mm,.sql,.ipynb",
+                ].join(",")}
+                className="hidden"
+                id="upload-dialog-file-input"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const el = document.getElementById(
+                    "upload-dialog-file-input"
+                  ) as HTMLInputElement | null;
+                  el?.click();
+                }}
+                className="border bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 border-indigo-200"
+              >
+                + Add More Documents
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form Fields - Inline, No Cards */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          {/* Document name */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="Document name"
+              required
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* Active status */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="active"
+                  className="text-sm flex items-center gap-1.5"
+                >
+                  <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                  Active
+                </Label>
+                <Switch
+                  id="active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, active: checked }))
+                  }
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Department Selection */}
+          {validDepartmentIds && validDepartmentIds.length > 1 && (
+            <div className="flex flex-col gap-2">
+              <Label>Department</Label>
+              <DepartmentPicker
+                mapping={departmentMapping}
+                validIds={validDepartmentIds}
+                selectedIds={
+                  isEditMode ? formData.departmentIds : selectedDepartmentIds
+                }
+                onSelect={(ids) => {
+                  if (isEditMode) {
+                    setFormData((prev) => ({ ...prev, departmentIds: ids }));
+                  } else {
+                    setSelectedDepartmentIds(ids);
+                  }
+                }}
+                multiSelect={true}
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
+
+          {/* Parameter Items */}
+          <div className="flex flex-col gap-2">
+            <Label>Parameter Items</Label>
+            <ParameterItemPicker
+              mapping={parameterItemMapping}
+              selectedIds={
+                isEditMode
+                  ? formData.parameterItemIds
+                  : globalDefaultParameterItemIds
+              }
+              onSelect={(ids) => {
+                if (isEditMode) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    parameterItemIds: ids as string[],
+                  }));
+                } else {
+                  setGlobalDefaultParameterItemIds(ids as string[]);
+                }
+              }}
+              validIds={
+                isEditMode
+                  ? validParameterItemIds
+                  : filteredValidParameterItemIds
+              }
+              parameterId=""
+              parameterName="Parameter Items"
+              allowCreate={false}
+              multiSelect={true}
+              badgesPosition="below"
+              showClearAll={true}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* Template Switch with Generate Button */}
+          <div className="space-y-2 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="template"
+                    className="text-sm flex items-center gap-1.5"
+                  >
+                    <FileCode className="h-3.5 w-3.5 text-muted-foreground" />
+                    Template
+                  </Label>
+                  <Switch
+                    id="template"
+                    checked={formData.template}
+                    onCheckedChange={handleTemplateChange}
+                    disabled={
+                      isSubmitting || (isEditMode && !documentDetail?.template)
+                    }
+                  />
+                </div>
+                {!isEditMode && !formData.template && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateTemplateWithSwitch}
+                    disabled={isGeneratingTemplate || activeUploads.size > 0}
+                    className="h-8"
+                  >
+                    {isGeneratingTemplate ? "Generating..." : "Generate"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Agent Selection */}
+          {isEditMode && (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {/* Classify Agent */}
+              <div className="space-y-2">
+                <Label htmlFor="classifyAgentId">Classify Agent</Label>
+                {formData?.classifyAgentId !== undefined ? (
+                  <AgentPicker
+                    mapping={agentMapping}
+                    validIds={
+                      documentDetail?.valid_agent_ids?.filter((id) => {
+                        const agent = agentMapping[id];
+                        return agent?.roles?.includes("classify");
+                      }) || []
+                    }
+                    selectedIds={
+                      formData?.classifyAgentId
+                        ? [formData.classifyAgentId]
+                        : []
+                    }
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        classifyAgentId: ids[0] || null,
+                      }))
+                    }
+                    placeholder="Select classify agent"
+                    disabled={isSubmitting}
+                    multiSelect={false}
+                  />
+                ) : null}
+              </div>
+
+              {/* Document Agent */}
+              <div className="space-y-2">
+                <Label htmlFor="documentAgentId">Document Agent</Label>
+                {formData?.documentAgentId !== undefined ? (
+                  <AgentPicker
+                    mapping={agentMapping}
+                    validIds={
+                      documentDetail?.valid_agent_ids?.filter((id) => {
+                        const agent = agentMapping[id];
+                        return agent?.roles?.includes("document");
+                      }) || []
+                    }
+                    selectedIds={
+                      formData?.documentAgentId
+                        ? [formData.documentAgentId]
+                        : []
+                    }
+                    onSelect={(ids) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        documentAgentId: ids[0] || null,
+                      }))
+                    }
+                    placeholder="Select document agent"
+                    disabled={isSubmitting}
+                    multiSelect={false}
+                  />
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Document Viewer, Upload Dropzone, or Template Preview - Always in same spot */}
+        {formData.template ? (
+          /* Template Preview - 50% width with args below */
+          templateSchemaForDisplay && templateHtmlForDisplay ? (
+            <div className="space-y-4">
+              <div className="w-full max-w-[50%] min-w-[400px]">
+                <div className="border rounded-md min-h-[400px]">
+                  <TemplatePreview
+                    documentId={documentId || null}
+                    templateHtml={templateHtmlForDisplay}
+                    renderedHtml={renderedHtml}
+                  />
+                </div>
+              </div>
+              <div className="w-full max-w-[50%] min-w-[400px] border rounded-md p-4">
+                <TemplateForm
+                  schema={templateSchemaForDisplay}
+                  values={templateArgs}
+                  onChange={setTemplateArgs}
+                />
+              </div>
+            </div>
+          ) : !isEditMode ? (
+            /* Create mode: Show message to generate template */
+            <div className="text-sm text-muted-foreground p-4 border rounded-md">
+              Click Generate to create a template
+            </div>
+          ) : null
+        ) : isEditMode && documentDetail?.upload_id ? (
+          /* Edit mode: Document Viewer - Show uploaded document */
+          <div className="border rounded-md min-h-[400px]">
+            <DocumentViewer
+              document={{
+                document_id: documentDetail.document_id || documentId || "",
+                name: documentDetail.name || "",
+                updatedAt:
+                  documentDetail.updated_at || new Date().toISOString(),
+                extension: documentDetail.extension || "",
+                scenario_ids: documentDetail.scenario_ids || [],
+                can_edit: documentDetail.can_edit ?? true,
+                can_delete: documentDetail.can_delete ?? false,
+                active: documentDetail.active ?? true,
+                department_ids: documentDetail.department_ids || null,
+                upload_id: documentDetail.upload_id || null,
+                parameter_item_ids: documentDetail.parameter_item_ids || [],
+              }}
+              bare={true}
+            />
+          </div>
+        ) : !isEditMode ? (
+          /* Create mode: File Upload Dropzone */
+          <div className="space-y-4">
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+                isDragActive
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+              } ${activeUploads.size > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <input {...getInputProps()} />
+              <UploadCloud className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-lg font-medium mb-2">
+                {isDragActive
+                  ? "Drop files here"
+                  : "Drag & drop files here, or click to select"}
+              </p>
+            </div>
+
+            {/* Active uploads */}
+            {activeUploads.size > 0 && (
+              <div className="space-y-2">
+                {Array.from(activeUploads.values()).map((upload) => (
+                  <div
+                    key={upload.toastId}
+                    className="flex items-center justify-between p-2 bg-muted rounded"
+                  >
+                    <span className="text-sm">{upload.file.name}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {upload.progress}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {/* Submit buttons */}
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/management/documents")}
+            disabled={isSubmitting || activeUploads.size > 0}
+          >
+            Back
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              isSubmitting ||
+              activeUploads.size > 0 ||
+              (!isEditMode &&
+                !formData.template &&
+                pendingFiles.length === 0) ||
+              (!isEditMode && !formData.template && !canSubmit) ||
+              (!isEditMode && formData.template && !templateUploadId)
+            }
+            data-testid={
+              isEditMode ? "document-update-submit" : "document-classify-submit"
+            }
+          >
+            {isSubmitting
+              ? isEditMode
+                ? "Updating..."
+                : "Uploading..."
+              : isEditMode
+                ? "Update"
+                : formData.template
+                  ? "Create Template Document"
+                  : "Start Upload"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

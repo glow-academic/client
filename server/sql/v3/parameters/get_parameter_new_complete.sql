@@ -50,10 +50,10 @@ default_parameter AS (
     GROUP BY p.id
     HAVING 
         -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-        COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+        COUNT(fdf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
     ORDER BY p.created_at DESC
     LIMIT 1
 ),

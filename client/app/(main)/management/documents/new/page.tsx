@@ -7,7 +7,7 @@
 
 import { getSession } from "@/auth";
 
-import DocumentNew from "@/components/documents/DocumentNew";
+import Document from "@/components/documents/Document";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -117,8 +117,9 @@ export default async function NewDocumentPage() {
       data-page="document-new"
       aria-label="Create new document page"
     >
-      <DocumentNew
-        listData={listData}
+      <Document
+        mode="create"
+        documentDetailDefault={listData}
         finalizeUploadAction={finalizeUpload}
         createDocumentAction={createDocument}
         generateTemplateAction={generateTemplate}

@@ -219,10 +219,10 @@ all_parameters_data AS (
     WHERE p.active = true
     GROUP BY p.id
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      WHERE fp2.parameter_id = p.id AND fd2.active = true)
 ),
 merged_parameters_data AS (
     SELECT 
@@ -462,10 +462,10 @@ parameter_data_for_mapping AS (
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(ud.dept_ids)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                      WHERE pi2.parameter_id = p.id AND pid2.active = true)
+        COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                      WHERE fp2.parameter_id = p.id AND fd2.active = true)
     ORDER BY p.name
 ),
 parameter_mapping_data AS (
@@ -496,10 +496,11 @@ scenario_parameters_mapping_data AS (
         ),
         '{}'::jsonb
     ) as parameter_mapping
-    FROM scenario_parameter_items spi
-    JOIN parameter_items pi ON pi.id = spi.parameter_item_id
-    JOIN parameters p ON p.id = pi.parameter_id
-    WHERE spi.scenario_id = $1 AND spi.active = true AND p.active = true
+    FROM scenario_fields sf
+    JOIN fields f ON f.id = sf.field_id
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    WHERE sf.scenario_id = $1 AND sf.active = true AND p.active = true
 ),
 enhanced_parameter_mapping_data AS (
     SELECT 
@@ -556,21 +557,22 @@ parameter_item_mapping_data AS (
 scenario_parameter_items_mapping_data AS (
     SELECT COALESCE(
         jsonb_object_agg(
-            pi.id::text,
+            f.id::text,
             jsonb_build_object(
-                'name', pi.name,
-                'description', COALESCE(pi.description, ''),
-                'parameter_id', pi.parameter_id::text,
+                'name', f.name,
+                'description', COALESCE(f.description, ''),
+                'parameter_id', fp.parameter_id::text,
                 'parameter_name', p.name,
-                'value', pi.value
+                'value', f.value
             )
         ),
         '{}'::jsonb
     ) as parameter_item_mapping
-    FROM scenario_parameter_items spi
-    JOIN parameter_items pi ON pi.id = spi.parameter_item_id
-    JOIN parameters p ON p.id = pi.parameter_id
-    WHERE spi.scenario_id = $1 AND spi.active = true AND p.active = true
+    FROM scenario_fields sf
+    JOIN fields f ON f.id = sf.field_id
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    WHERE sf.scenario_id = $1 AND sf.active = true AND p.active = true
 ),
 enhanced_parameter_item_mapping_data AS (
     SELECT 
@@ -628,32 +630,33 @@ department_parameter_ids AS (
     FROM departments d
     CROSS JOIN user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE d.id = ANY(ud.dept_ids)
-    AND (pid.department_id = d.id OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                                                 JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                                                 WHERE pi2.parameter_id = p.id AND pid2.active = true))
+    AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                                                 JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                                                 WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
 department_parameter_item_ids AS (
     SELECT 
         d.id as department_id,
-        COALESCE(ARRAY_AGG(pi.id::text ORDER BY pi.id) FILTER (WHERE pi.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
+        COALESCE(ARRAY_AGG(f.id::text ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::text[]) as parameter_item_ids
     FROM departments d
     CROSS JOIN user_departments ud
-    LEFT JOIN parameter_items pi ON true
-    LEFT JOIN parameters p ON p.id = pi.parameter_id AND p.active = true
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    LEFT JOIN fields f ON true
+    LEFT JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    LEFT JOIN parameters p ON p.id = fp.parameter_id AND p.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE d.id = ANY(ud.dept_ids)
     AND p.id IS NOT NULL
     AND (
-        pid.department_id = d.id 
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+        fd.department_id = d.id 
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
     )
     AND (
-        pid.department_id = ANY(ud.dept_ids)
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid3 WHERE pid3.parameter_item_id = pi.id AND pid3.active = true)
+        fd.department_id = ANY(ud.dept_ids)
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd3 WHERE fd3.field_id = f.id AND fd3.active = true)
     )
     GROUP BY d.id
 ),

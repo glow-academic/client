@@ -459,10 +459,10 @@ user_context AS (
             GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
+                COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(udi.ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                              JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                              WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
         ),
         parameter_mapping_data AS (
             SELECT COALESCE(

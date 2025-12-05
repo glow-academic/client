@@ -405,15 +405,15 @@ parameter_data AS (
         par.document_parameter,
         par.persona_parameter
     FROM parameters par
-    JOIN parameter_items pi ON pi.parameter_id = par.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    JOIN field_parameters fp ON fp.parameter_id = par.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
     GROUP BY par.id, par.name, par.description, par.numerical, par.document_parameter, par.persona_parameter
     HAVING 
-        (cardinality($2::uuid[]) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($2::uuid[])) > 0)
-        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                  JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+        (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
+        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                  JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
                   WHERE pi2.parameter_id = par.id AND pid2.active = true))
 ),
 parameter_mapping_data AS (
@@ -428,22 +428,23 @@ parameter_mapping_data AS (
 ),
 parameter_item_data AS (
     SELECT
-        pi.id,
-        pi.name,
-        COALESCE(pi.description, '') as description,
-        pi.parameter_id,
+        f.id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        fp.parameter_id,
         par.name as parameter_name,
-        pi.value
-    FROM parameter_items pi
-    JOIN parameters par ON pi.parameter_id = par.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+        f.value
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters par ON par.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE par.active = true
       AND par.practice_parameter = true
-    GROUP BY pi.id, pi.name, pi.description, pi.parameter_id, par.id, par.name, pi.value
+    GROUP BY f.id, f.name, f.description, fp.parameter_id, par.id, par.name, f.value
     HAVING 
-        (cardinality($2::uuid[]) = 0 OR COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY($2::uuid[])) > 0)
-        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                  WHERE pid2.parameter_item_id = pi.id AND pid2.active = true))
+        (cardinality($2::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY($2::uuid[])) > 0)
+        OR (cardinality($2::uuid[]) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                  WHERE fd2.field_id = f.id AND fd2.active = true))
 ),
 parameter_item_mapping_data AS (
     SELECT COALESCE(

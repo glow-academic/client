@@ -213,9 +213,10 @@ scenario_full_data AS (
     LEFT JOIN documents d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
-    LEFT JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
-    LEFT JOIN parameter_items pi ON pi.id = spi.parameter_item_id
-    LEFT JOIN parameters p_param ON p_param.id = pi.parameter_id
+    LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id
+    LEFT JOIN fields f ON f.id = sf.field_id
+    LEFT JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    LEFT JOIN parameters p_param ON p_param.id = fp.parameter_id
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, s.name, ps.problem_statement, s.active, 
              s.generated, p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 

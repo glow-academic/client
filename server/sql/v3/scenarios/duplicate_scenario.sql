@@ -142,15 +142,15 @@ link_objectives AS (
     CROSS JOIN new_scenario ns
 ),
 copy_parameters AS (
-    INSERT INTO scenario_parameter_items (scenario_id, parameter_item_id, active, created_at, updated_at)
+    INSERT INTO scenario_fields (scenario_id, field_id, active, created_at, updated_at)
     SELECT 
         ns.scenario_id::uuid,
-        spi.parameter_item_id,
-        spi.active,
+        sf.field_id,
+        sf.active,
         NOW(),
         NOW()
     FROM source_scenario ss
-    JOIN scenario_parameter_items spi ON spi.scenario_id = ss.source_id
+    JOIN scenario_fields sf ON sf.scenario_id = ss.source_id
     CROSS JOIN new_scenario ns
 ),
 copy_departments AS (

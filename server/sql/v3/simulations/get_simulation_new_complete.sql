@@ -183,17 +183,17 @@ WITH user_departments AS (
                 p.document_parameter,
                 p.persona_parameter
             FROM parameters p
-            JOIN parameter_items pi ON pi.parameter_id = p.id
-            LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+            JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+            LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
             CROSS JOIN user_department_ids udi
             WHERE p.active = true
             GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.persona_parameter
             HAVING 
                 -- Include if has matching department link via parameter_items OR has no department links at all (cross-dept)
-                COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
-                OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                              JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
-                              WHERE pi2.parameter_id = p.id AND pid2.active = true)
+                COUNT(fd.field_id) FILTER (WHERE pid.department_id = ANY(udi.ids)) > 0
+                OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                              JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
+                              WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true)
         ),
         parameter_mapping_data AS (
             SELECT COALESCE(
@@ -281,9 +281,9 @@ WITH user_departments AS (
                 sf.scenario_id,
                 ARRAY_AGG(DISTINCT sf.field_id) as parameter_item_ids
             FROM scenario_fields sf
-            WHERE spi.scenario_id IN (SELECT id FROM valid_scenarios_list)
-              AND spi.active = true
-            GROUP BY spi.scenario_id
+            WHERE sf.scenario_id IN (SELECT id FROM valid_scenarios_list)
+              AND sf.active = true
+            GROUP BY sf.scenario_id
         ),
         all_document_ids AS (
             SELECT DISTINCT unnest(document_ids) as document_id

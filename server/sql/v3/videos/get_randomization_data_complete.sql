@@ -31,11 +31,12 @@ filtered_objectives AS (
 ),
 -- Get policy parameter item ID for filtering
 policy_param_item AS (
-    SELECT pi.id
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
+    SELECT f.id
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
     WHERE p.name = 'Document Type' AND p.document_parameter = true
-    AND pi.value = 'policy'
+    AND f.value = 'policy'
     LIMIT 1
 ),
 filtered_documents AS (
@@ -44,7 +45,7 @@ filtered_documents AS (
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     CROSS JOIN policy_param_item ppi
-    JOIN document_parameter_items dpi ON dpi.document_id = d.id AND dpi.parameter_item_id = ppi.id AND dpi.active = true
+    JOIN document_fields df ON df.document_id = d.id AND df.field_id = ppi.id AND df.active = true
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE d.active = true
     GROUP BY d.id, d.name, u.file_path, u.mime_type

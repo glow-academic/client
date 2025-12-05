@@ -505,9 +505,9 @@ scenario_documents_data AS (
                 'file_path', d.file_path,
                 'mime_type', d.mime_type,
                 'parameter_item_ids', COALESCE(
-                    (SELECT array_agg(DISTINCT dpi.parameter_item_id::text)
-                     FROM document_parameter_items dpi
-                     WHERE dpi.document_id = d.id AND dpi.active = true),
+                    (SELECT array_agg(DISTINCT df.field_id::text)
+                     FROM document_fields df
+                     WHERE df.document_id = d.id AND df.active = true),
                     ARRAY[]::text[]
                 )
             )

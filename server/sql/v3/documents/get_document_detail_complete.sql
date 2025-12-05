@@ -1,17 +1,30 @@
 WITH document_data AS (
     SELECT 
+        d.id::text as document_id,
         d.name,
         d.active,
         d.template,
         d.template_args,
+        d.updated_at,
         d.classify_agent_id::text,
         d.document_agent_id::text,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id::text) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as parameter_item_ids,
         (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as template_upload_id
+        (SELECT du.upload_id::text FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as template_upload_id,
+        (SELECT u.file_path FROM document_uploads du 
+         JOIN uploads u ON u.id = du.upload_id 
+         WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
+        (SELECT ARRAY_AGG(DISTINCT st.parent_id::text) FROM scenario_documents sd
+         JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
+         WHERE sd.document_id = d.id AND sd.active = true) as scenario_ids,
+        (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id AND sd.active = true) as active_scenario_count,
+        (SELECT COUNT(*) FROM scenario_documents sd WHERE sd.document_id = d.id) as total_scenario_links
     FROM documents d
     WHERE d.id = $1
+),
+user_profile AS (
+    SELECT role FROM profiles WHERE id = $2
 ),
 user_departments AS (
     SELECT DISTINCT d.id, d.title as name, d.description
@@ -117,8 +130,23 @@ SELECT
     vpi.param_item_mapping as parameter_item_mapping,
     vpi.param_item_ids as valid_parameter_item_ids,
     COALESCE(va.agent_mapping, '{}'::jsonb) as agent_mapping,
-    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids
+    COALESCE(va.agent_ids, ARRAY[]::text[]) as valid_agent_ids,
+    CASE 
+        WHEN doc.file_path IS NOT NULL THEN SUBSTRING(doc.file_path FROM '\\.([^\\.]+)$')
+        ELSE NULL
+    END as extension,
+    CASE 
+        WHEN doc.active_scenario_count > 0 THEN false
+        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        ELSE false
+    END as can_edit,
+    CASE 
+        WHEN doc.total_scenario_links > 0 THEN false
+        WHEN up.role IN ('admin', 'instructional', 'superadmin') THEN true
+        ELSE false
+    END as can_delete
 FROM document_data doc
+CROSS JOIN user_profile up
 CROSS JOIN valid_depts vd
 CROSS JOIN valid_param_items vpi
 CROSS JOIN valid_agents va

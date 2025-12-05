@@ -1178,12 +1178,13 @@ param_ids_categorical AS (
 ),
 cat_map AS (
     SELECT 
-        pi.id AS parameter_item_id,
+        f.id AS parameter_item_id,
         pi.parameter_id,
         s.id AS scenario_id
-    FROM parameter_items pi
-    JOIN param_ids_categorical p ON p.id = pi.parameter_id
-    JOIN scenario_parameter_items spi ON spi.parameter_item_id = pi.id
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN param_ids_categorical p ON p.id = fp.parameter_id
+    JOIN scenario_fields sf ON sf.field_id = f.id
     JOIN scenarios s ON s.id = spi.scenario_id
     WHERE s.active = TRUE
 ),
@@ -1227,8 +1228,8 @@ num_map AS (
         pi.parameter_id, 
         pi.value::numeric AS level
     FROM scenarios s
-    JOIN scenario_parameter_items spi ON spi.scenario_id = s.id
-    JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+    JOIN scenario_fields sf ON sf.scenario_id = s.id
+    JOIN fields f ON f.id = sf.field_id
     JOIN nums n ON n.id = pi.parameter_id
     WHERE s.active = TRUE
 ),
@@ -1326,14 +1327,14 @@ sim_param_items_seen AS (
     SELECT
         s.id AS simulation_id,
         p.id AS parameter_id,
-        pi.id AS parameter_item_id,
+        f.id AS parameter_item_id,
         COUNT(a.chat_id)::int AS cnt
     FROM simulations s
     JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
     JOIN scenarios sc ON sc.id = ss_link.scenario_id
     JOIN scen_seen ss ON ss.scenario_id = sc.id
-    JOIN scenario_parameter_items spi ON spi.scenario_id = sc.id
-    JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+    JOIN scenario_fields sf ON sf.scenario_id = sc.id
+    JOIN fields f ON f.id = sf.field_id
     JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = FALSE
     JOIN analytics a ON a.scenario_id = sc.id
     WHERE s.active = TRUE AND sc.active = TRUE
@@ -1349,8 +1350,8 @@ sim_param_nums_seen AS (
     JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
     JOIN scenarios sc ON sc.id = ss_link.scenario_id
     JOIN scen_seen ss ON ss.scenario_id = sc.id
-    JOIN scenario_parameter_items spi ON spi.scenario_id = sc.id
-    JOIN parameter_items pi ON pi.id = spi.parameter_item_id
+    JOIN scenario_fields sf ON sf.scenario_id = sc.id
+    JOIN fields f ON f.id = sf.field_id
     JOIN parameters p ON p.id = pi.parameter_id AND p.numerical = TRUE
     JOIN analytics a ON a.scenario_id = sc.id
     WHERE s.active = TRUE AND sc.active = TRUE
@@ -1468,14 +1469,16 @@ parameter_mapping AS (
           cardinality($7::uuid[]) = 0 
           OR EXISTS (
               SELECT 1 
-              FROM parameter_items pi
-              JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+              FROM fields f
+              JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+              JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
               WHERE pi.parameter_id = p.id AND pid.department_id = ANY($7::uuid[])
           )
           OR NOT EXISTS (
               SELECT 1 
-              FROM parameter_items pi2
-              JOIN parameter_item_departments pid2 ON pid2.parameter_item_id = pi2.id AND pid2.active = true
+              FROM fields f2
+              JOIN field_parameters fp2 ON fp2.field_id = f2.id AND fp2.active = true
+              JOIN field_departments fd2 ON fd2.field_id = f2.id AND fd2.active = true
               WHERE pi2.parameter_id = p.id
           )
       )
@@ -1492,14 +1495,15 @@ parameter_item_mapping AS (
             'value', COALESCE(pi.value, '')
         )
     ), '{}'::jsonb) AS mapping
-    FROM parameter_items pi
-    JOIN parameters p ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
       AND (
           cardinality($7::uuid[]) = 0 
-          OR pid.department_id = ANY($7::uuid[])
-          OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+          OR fd.department_id = ANY($7::uuid[])
+          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
       )
 )
             

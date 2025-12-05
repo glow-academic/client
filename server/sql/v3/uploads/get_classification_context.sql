@@ -9,16 +9,17 @@ WITH user_departments AS (
 ),
 parameter_items_data AS (
     SELECT 
-        pi.id,
-        pi.name,
-        COALESCE(pi.description, '') as description,
-        pi.value,
-        pi.parameter_id,
+        f.id,
+        f.name,
+        COALESCE(f.description, '') as description,
+        f.value,
+        fp.parameter_id,
         p.name as parameter_name,
         p.document_parameter
-    FROM parameter_items pi
-    JOIN parameters p ON p.id = pi.parameter_id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    FROM fields f
+    JOIN field_parameters fp ON fp.field_id = f.id AND fp.active = true
+    JOIN parameters p ON p.id = fp.parameter_id
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
       AND p.document_parameter = true
       AND (
@@ -27,10 +28,10 @@ parameter_items_data AS (
       )
       AND (
           -- Include if item is in user's departments OR is cross-department
-          pid.department_id IN (SELECT department_id FROM user_departments)
-          OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 WHERE pid2.parameter_item_id = pi.id AND pid2.active = true)
+          fd.department_id IN (SELECT department_id FROM user_departments)
+          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
       )
-    GROUP BY pi.id, pi.name, pi.description, pi.value, pi.parameter_id, p.id, p.name, p.document_parameter
+    GROUP BY f.id, f.name, f.description, f.value, fp.parameter_id, p.id, p.name, p.document_parameter
 )
 SELECT 
     id::text,

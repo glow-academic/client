@@ -8,7 +8,7 @@
 import { getSession } from "@/auth";
 
 import { DepartmentAccessDenied } from "@/components/common/layout/DepartmentAccessDenied";
-import DocumentEdit from "@/components/documents/DocumentEdit";
+import Document from "@/components/documents/Document";
 import type { TemplateSchema } from "@/components/documents/TemplateForm";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -169,8 +169,9 @@ export default async function DocumentEditPage({
         data-page="document-edit"
         data-document-id={documentId}
       >
-        <DocumentEdit
+        <Document
           documentId={documentId}
+          mode="edit"
           documentDetail={documentDetail}
           updateDocumentAction={updateDocument}
           renderedHtml={renderedHtml}

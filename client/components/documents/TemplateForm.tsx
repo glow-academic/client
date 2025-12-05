@@ -28,10 +28,28 @@ export interface TemplateSchema {
   fields: TemplateField[];
 }
 
+// Type guard to validate template_schema structure
+// Exported for use in Document.tsx
+export function isTemplateSchema(value: unknown): value is TemplateSchema {
+  if (!value || typeof value !== "object") return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj["name"] === "string" &&
+    Array.isArray(obj["fields"]) &&
+    (obj["fields"] as unknown[]).every(
+      (field: unknown) =>
+        typeof field === "object" &&
+        field !== null &&
+        "name" in field &&
+        "type" in field
+    )
+  );
+}
+
 export interface TemplateFormProps {
   schema: TemplateSchema | null;
-  values: Record<string, any>;
-  onChange: (values: Record<string, any>) => void;
+  values: Record<string, unknown>;
+  onChange: (values: Record<string, unknown>) => void;
 }
 
 export default function TemplateForm({
@@ -41,33 +59,36 @@ export default function TemplateForm({
 }: TemplateFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [formValues, setFormValues] = useState<Record<string, any>>(values);
+  const [formValues, setFormValues] = useState<Record<string, unknown>>(values);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize form values from search params on mount
   useEffect(() => {
     if (schema && searchParams) {
       // Check if there are any template arg params in URL
-      const hasTemplateParams = Array.from(searchParams.keys()).some((key) =>
-        key.includes(".") || schema.fields.some((f) => f.name === key)
+      const hasTemplateParams = Array.from(searchParams.keys()).some(
+        (key) => key.includes(".") || schema.fields.some((f) => f.name === key)
       );
-      
+
       if (hasTemplateParams) {
         // Import searchParamsToTemplateArgs dynamically to avoid circular deps
-        import("@/utils/template-args-url").then(({ searchParamsToTemplateArgs }) => {
-          const urlArgs = searchParamsToTemplateArgs(searchParams, schema);
-          if (Object.keys(urlArgs).length > 0) {
-            setFormValues(urlArgs);
-            onChange(urlArgs);
+        import("@/utils/template-args-url").then(
+          ({ searchParamsToTemplateArgs }) => {
+            const urlArgs = searchParamsToTemplateArgs(searchParams, schema);
+            if (Object.keys(urlArgs).length > 0) {
+              setFormValues(urlArgs);
+              onChange(urlArgs);
+            }
           }
-        });
+        );
       }
     }
-  }, []); // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount - schema and searchParams are stable
 
   // Sync form values to URL search params with debouncing
   const syncToUrl = useCallback(
-    (newValues: Record<string, any>) => {
+    (newValues: Record<string, unknown>) => {
       if (!schema) return;
 
       // Clear existing timeout
@@ -78,7 +99,7 @@ export default function TemplateForm({
       // Debounce URL updates (300ms)
       debounceTimeoutRef.current = setTimeout(() => {
         const params = new URLSearchParams(searchParams.toString());
-        
+
         // Remove existing template arg params
         const keysToRemove: string[] = [];
         for (const key of params.keys()) {
@@ -105,20 +126,29 @@ export default function TemplateForm({
     setFormValues(values);
   }, [values]);
 
-  const updateValue = (path: string[], value: any) => {
+  const updateValue = (path: string[], value: unknown) => {
     const newValues = { ...formValues };
-    let current: any = newValues;
+    let current: Record<string, unknown> = newValues;
 
     // Navigate to the nested path
     for (let i = 0; i < path.length - 1; i++) {
-      if (!current[path[i]]) {
-        current[path[i]] = {};
+      const key = path[i];
+      if (key === undefined) break;
+      if (
+        !current[key] ||
+        typeof current[key] !== "object" ||
+        current[key] === null
+      ) {
+        current[key] = {};
       }
-      current = current[path[i]];
+      current = current[key] as Record<string, unknown>;
     }
 
     // Set the final value
-    current[path[path.length - 1]] = value;
+    const finalKey = path[path.length - 1];
+    if (finalKey !== undefined) {
+      current[finalKey] = value;
+    }
     setFormValues(newValues);
     onChange(newValues);
     syncToUrl(newValues);
@@ -137,7 +167,7 @@ export default function TemplateForm({
     field: TemplateField,
     path: string[] = [],
     indent: number = 0
-  ): JSX.Element | null => {
+  ): React.JSX.Element | null => {
     const fieldPath = [...path, field.name];
     const fieldValue = getNestedValue(formValues, fieldPath);
     const paddingLeft = indent * 24;
@@ -152,10 +182,8 @@ export default function TemplateForm({
             </Label>
             <Textarea
               id={fieldPath.join(".")}
-              value={fieldValue || ""}
-              onChange={(e) =>
-                updateValue(fieldPath, e.target.value)
-              }
+              value={typeof fieldValue === "string" ? fieldValue : ""}
+              onChange={(e) => updateValue(fieldPath, e.target.value)}
               placeholder={`Enter ${field.name}`}
               rows={3}
             />
@@ -172,7 +200,13 @@ export default function TemplateForm({
             <Input
               id={fieldPath.join(".")}
               type="number"
-              value={fieldValue || ""}
+              value={
+                typeof fieldValue === "number"
+                  ? fieldValue
+                  : typeof fieldValue === "string"
+                    ? fieldValue
+                    : ""
+              }
               onChange={(e) =>
                 updateValue(
                   fieldPath,
@@ -193,7 +227,7 @@ export default function TemplateForm({
           >
             <Checkbox
               id={fieldPath.join(".")}
-              checked={fieldValue || false}
+              checked={typeof fieldValue === "boolean" ? fieldValue : false}
               onCheckedChange={(checked) =>
                 updateValue(fieldPath, checked === true)
               }
@@ -229,7 +263,7 @@ export default function TemplateForm({
                 Add Item
               </Button>
             </div>
-            {arrayValue.map((item: any, index: number) => (
+            {arrayValue.map((_item: unknown, index: number) => (
               <Card key={index} className="relative">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -242,7 +276,7 @@ export default function TemplateForm({
                       size="sm"
                       onClick={() => {
                         const newArray = arrayValue.filter(
-                          (_: any, i: number) => i !== index
+                          (_: unknown, i: number) => i !== index
                         );
                         updateValue(fieldPath, newArray);
                       }}
@@ -252,7 +286,11 @@ export default function TemplateForm({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {renderField(field.item!, [...fieldPath, index.toString()], indent + 1)}
+                  {renderField(
+                    field.item!,
+                    [...fieldPath, index.toString()],
+                    indent + 1
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -287,18 +325,25 @@ export default function TemplateForm({
     }
   };
 
-  const getNestedValue = (obj: any, path: string[]): any => {
-    let current = obj;
+  const getNestedValue = (
+    obj: Record<string, unknown>,
+    path: string[]
+  ): unknown => {
+    let current: unknown = obj;
     for (const key of path) {
-      if (current === undefined || current === null) {
+      if (
+        current === undefined ||
+        current === null ||
+        typeof current !== "object"
+      ) {
         return undefined;
       }
-      current = current[key];
+      current = (current as Record<string, unknown>)[key];
     }
     return current;
   };
 
-  const getDefaultValue = (field: TemplateField): any => {
+  const getDefaultValue = (field: TemplateField): unknown => {
     switch (field.type) {
       case "string":
         return "";
@@ -309,7 +354,7 @@ export default function TemplateForm({
       case "array":
         return [];
       case "object":
-        const obj: Record<string, any> = {};
+        const obj: Record<string, unknown> = {};
         if (field.fields) {
           field.fields.forEach((f) => {
             obj[f.name] = getDefaultValue(f);
@@ -335,4 +380,3 @@ export default function TemplateForm({
     </div>
   );
 }
-

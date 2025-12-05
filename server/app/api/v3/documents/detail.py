@@ -47,10 +47,16 @@ class DocumentDetailRequest(BaseModel):
 class DocumentDetailResponse(BaseModel):
     """Detailed document response."""
 
+    document_id: str
     name: str
     active: bool
     type: str
     upload_id: str | None
+    updated_at: str
+    extension: str | None
+    scenario_ids: list[str]
+    can_edit: bool
+    can_delete: bool
     document_type_options: list[str]
     department_ids: list[str] | None
     valid_department_ids: list[str]
@@ -213,11 +219,45 @@ async def get_document_detail(
                 # If reading fails, template_html will remain None
                 pass
 
+        # Parse scenario_ids
+        scenario_ids: list[str] = []
+        if row.get("scenario_ids"):
+            scenario_ids = [str(sid) for sid in row["scenario_ids"]]
+
+        # Get updated_at
+        updated_at = row.get("updated_at")
+        if updated_at:
+            if isinstance(updated_at, str):
+                updated_at_str = updated_at
+            else:
+                updated_at_str = updated_at.isoformat() if hasattr(updated_at, "isoformat") else str(updated_at)
+        else:
+            updated_at_str = ""
+
+        # Get extension
+        extension = row.get("extension")
+
+        # Get can_edit and can_delete
+        can_edit = row.get("can_edit", False)
+        can_delete = row.get("can_delete", False)
+
+        # Get document_id
+        document_id = str(row.get("document_id", request_body.documentId))
+
+        # Type field was removed from documents table - derive from extension or use empty string
+        doc_type = extension if extension else ""
+
         response_data = DocumentDetailResponse(
+            document_id=document_id,
             name=row.get("name", ""),
             active=row.get("active", False),
-            type=row.get("type", ""),
+            type=doc_type,
             upload_id=row.get("upload_id"),
+            updated_at=updated_at_str,
+            extension=extension,
+            scenario_ids=scenario_ids,
+            can_edit=can_edit,
+            can_delete=can_delete,
             document_type_options=document_type_options,
             department_ids=dept_ids,
             valid_department_ids=valid_department_ids,

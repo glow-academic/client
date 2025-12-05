@@ -335,16 +335,16 @@ video_parameter_data AS (
         p.document_parameter,
         p.video_parameter
     FROM parameters p
-    JOIN parameter_items pi ON pi.parameter_id = p.id
-    LEFT JOIN parameter_item_departments pid ON pid.parameter_item_id = pi.id AND pid.active = true
+    JOIN field_parameters fp ON fp.parameter_id = p.id AND fp.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
     CROSS JOIN resolve_profile_id rpi
     LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
     WHERE p.active = true AND (p.video_parameter = true OR p.document_parameter = true)
     GROUP BY p.id, p.name, p.description, p.numerical, p.document_parameter, p.video_parameter
     HAVING 
-        COUNT(pid.parameter_item_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
-        OR NOT EXISTS (SELECT 1 FROM parameter_item_departments pid2 
-                      JOIN parameter_items pi2 ON pi2.id = pid2.parameter_item_id 
+        COUNT(fd.field_id) FILTER (WHERE pid.department_id IN (SELECT department_id FROM resolve_profile_id rpi2 JOIN profile_departments pd2 ON pd2.profile_id = rpi2.resolved_profile_id WHERE pd2.active = true)) > 0
+        OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
+                      JOIN field_parameters fp2 ON fp2.field_id = fd2.field_id 
                       WHERE pi2.parameter_id = p.id AND pid2.active = true)
 ),
 video_parameter_mapping_data AS (

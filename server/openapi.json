@@ -17171,6 +17171,10 @@
       },
       "DocumentDetailResponse": {
         "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -17193,6 +17197,36 @@
               }
             ],
             "title": "Upload Id"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "extension": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extension"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit"
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete"
           },
           "document_type_options": {
             "items": {
@@ -17325,10 +17359,16 @@
         },
         "type": "object",
         "required": [
+          "document_id",
           "name",
           "active",
           "type",
           "upload_id",
+          "updated_at",
+          "extension",
+          "scenario_ids",
+          "can_edit",
+          "can_delete",
           "document_type_options",
           "department_ids",
           "valid_department_ids",

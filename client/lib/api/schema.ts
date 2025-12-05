@@ -7393,6 +7393,8 @@ export interface components {
          * @description Detailed document response.
          */
         DocumentDetailResponse: {
+            /** Document Id */
+            document_id: string;
             /** Name */
             name: string;
             /** Active */
@@ -7401,6 +7403,16 @@ export interface components {
             type: string;
             /** Upload Id */
             upload_id: string | null;
+            /** Updated At */
+            updated_at: string;
+            /** Extension */
+            extension: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Delete */
+            can_delete: boolean;
             /** Document Type Options */
             document_type_options: string[];
             /** Department Ids */
